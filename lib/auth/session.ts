@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { demoMemberships, demoProfiles, demoTenants } from "@/lib/demo-data";
 import { appEnv, shouldAllowDemoFallback } from "@/lib/env";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import type { Profile, Tenant } from "@/lib/types";
 
@@ -12,6 +13,7 @@ export interface SessionContext {
 }
 
 export async function getSessionContext(): Promise<SessionContext> {
+  // Step 1: verify the JWT cookie with the user-scoped client
   const supabase = await createSupabaseServerClient();
 
   if (!supabase) {
@@ -45,7 +47,20 @@ export async function getSessionContext(): Promise<SessionContext> {
     };
   }
 
-  const { data: profileRow } = await supabase
+  // Step 2: read profiles / memberships with the admin client so RLS never
+  // blocks a legitimate server-side lookup.
+  const admin = createSupabaseAdminClient();
+
+  if (!admin) {
+    return {
+      userId: user.id,
+      profile: null,
+      tenant: null,
+      supabaseConfigured: true,
+    };
+  }
+
+  const { data: profileRow } = await admin
     .from("profiles")
     .select("*")
     .eq("id", user.id)
@@ -56,7 +71,7 @@ export async function getSessionContext(): Promise<SessionContext> {
   let tenant: Tenant | null = null;
 
   if (profile?.role === "tenant_admin") {
-    const { data: membershipRow } = await supabase
+    const { data: membershipRow } = await admin
       .from("tenant_memberships")
       .select("tenant_id")
       .eq("user_id", user.id)
@@ -65,7 +80,7 @@ export async function getSessionContext(): Promise<SessionContext> {
     const membership = (membershipRow as { tenant_id: string } | null) ?? null;
 
     if (membership?.tenant_id) {
-      const { data: tenantData } = await supabase
+      const { data: tenantData } = await admin
         .from("tenants")
         .select("*")
         .eq("id", membership.tenant_id)
