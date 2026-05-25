@@ -6,6 +6,7 @@ import { Minus, Plus, ShoppingBag, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Modal } from "@/components/ui/modal";
 import { Textarea } from "@/components/ui/textarea";
 import {
   buildWhatsAppMessage,
@@ -18,15 +19,15 @@ import { cn, formatCurrency } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { supportedCurrencyCodes } from "@/lib/products/constants";
 
-function addToCart(items: CartItem[], product: StorefrontProduct) {
+function addToCart(items: CartItem[], product: StorefrontProduct, quantity: number) {
   const existing = items.find((item) => item.id === product.id);
 
   if (!existing) {
-    return [...items, { ...product, quantity: 1 }];
+    return [...items, { ...product, quantity }];
   }
 
   return items.map((item) =>
-    item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item,
+    item.id === product.id ? { ...item, quantity: item.quantity + quantity } : item,
   );
 }
 
@@ -50,6 +51,9 @@ export function StorefrontClient({
   const [cart, setCart] = useState<CartItem[]>([]);
   const [note, setNote] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedProduct, setSelectedProduct] = useState<StorefrontProduct | null>(null);
+  const [selectedQuantity, setSelectedQuantity] = useState("1");
+  const [quantityError, setQuantityError] = useState<string | null>(null);
 
   const cartTotal = useMemo(() => getCartTotal(cart), [cart]);
   const cartCurrency = useMemo(() => getCartCurrency(cart), [cart]);
@@ -98,6 +102,42 @@ export function StorefrontClient({
 
     return `https://wa.me/${tenant.whatsapp_number}?text=${encodeURIComponent(message)}`;
   }, [cart, note, tenant.company_name, tenant.whatsapp_number]);
+
+  const selectedQuantityValue = Number(selectedQuantity);
+  const selectedLineTotal =
+    selectedProduct && Number.isFinite(selectedQuantityValue) && selectedQuantityValue > 0
+      ? selectedProduct.price * selectedQuantityValue
+      : 0;
+
+  function openAddToCartModal(product: StorefrontProduct) {
+    setSelectedProduct(product);
+    setSelectedQuantity("1");
+    setQuantityError(null);
+  }
+
+  function closeAddToCartModal() {
+    setSelectedProduct(null);
+    setSelectedQuantity("1");
+    setQuantityError(null);
+  }
+
+  function confirmAddToCart(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!selectedProduct) {
+      return;
+    }
+
+    const quantity = Number(selectedQuantity);
+
+    if (!Number.isInteger(quantity) || quantity <= 0) {
+      setQuantityError("Lütfen geçerli bir adet girin.");
+      return;
+    }
+
+    setCart((current) => addToCart(current, selectedProduct, quantity));
+    closeAddToCartModal();
+  }
 
   return (
     <div className="sticky-safe-bottom">
@@ -170,7 +210,7 @@ export function StorefrontClient({
                       </div>
 
                       <Button
-                        onClick={() => setCart((current) => addToCart(current, product))}
+                        onClick={() => openAddToCartModal(product)}
                         disabled={!product.is_in_stock}
                       >
                         <Plus className="size-4" />
@@ -328,6 +368,59 @@ export function StorefrontClient({
           </Button>
         </div>
       </div>
+
+      <Modal
+        open={Boolean(selectedProduct)}
+        onClose={closeAddToCartModal}
+        title={selectedProduct ? `${selectedProduct.product_name} • Sepete Ekle` : "Sepete Ekle"}
+      >
+        {selectedProduct ? (
+          <form onSubmit={confirmAddToCart} className="grid gap-4">
+            <div className="rounded-xl border border-slate-100 bg-slate-50 p-4">
+              <p className="font-semibold text-slate-900">{selectedProduct.product_name}</p>
+              <p className="mt-1 text-sm text-slate-500">{selectedProduct.sku_code}</p>
+              <p className="mt-3 text-lg font-bold text-slate-900">
+                {formatCurrency(selectedProduct.price, selectedProduct.currency)}
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-semibold text-slate-900">Adet</label>
+              <Input
+                type="number"
+                min="1"
+                step="1"
+                inputMode="numeric"
+                value={selectedQuantity}
+                onChange={(event) => {
+                  setSelectedQuantity(event.target.value);
+                  if (quantityError) {
+                    setQuantityError(null);
+                  }
+                }}
+                placeholder="Örn: 20"
+              />
+              {quantityError ? (
+                <p className="text-sm text-amber-700">{quantityError}</p>
+              ) : null}
+            </div>
+
+            <div className="rounded-xl bg-slate-900 p-4 text-white">
+              <p className="text-sm text-slate-300">Toplam</p>
+              <p className="mt-1 text-2xl font-bold">
+                {formatCurrency(selectedLineTotal, selectedProduct.currency)}
+              </p>
+            </div>
+
+            <div className="flex justify-end gap-2">
+              <Button variant="secondary" onClick={closeAddToCartModal}>
+                Vazgeç
+              </Button>
+              <Button type="submit">Sepete Ekle</Button>
+            </div>
+          </form>
+        ) : null}
+      </Modal>
     </div>
   );
 }
