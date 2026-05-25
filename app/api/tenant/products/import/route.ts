@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { shouldAllowDemoFallback } from "@/lib/env";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { getSessionContext } from "@/lib/auth/session";
-import { getTenantProducts } from "@/lib/data";
+import { getTenantCategories, getTenantProducts } from "@/lib/data";
 import { ensureTenantAdminResponse } from "@/lib/tenancy/guards";
 import { productImportRowsSchema } from "@/lib/validators/product";
 
@@ -36,11 +36,34 @@ export async function POST(request: Request) {
     }
 
     const currentProducts = await getTenantProducts(tenant.id);
+    const categories = await getTenantCategories(tenant.id);
+    const categoryMap = new Map(
+      categories.map((category) => [category.name.trim().toLowerCase(), category.id]),
+    );
+    const missingCategory = rows.find(
+      (row) => !categoryMap.get(row.category_name.trim().toLowerCase()),
+    );
+
+    if (missingCategory) {
+      return NextResponse.json(
+        { error: `Kategori bulunamadı: ${missingCategory.category_name}` },
+        { status: 400 },
+      );
+    }
+
     const mappedProducts = rows.map((row, index) => ({
       id: `demo-import-${index}-${row.sku_code}`,
       tenant_id: tenant.id,
+      category_id: categoryMap.get(row.category_name.trim().toLowerCase())!,
       created_at: new Date().toISOString(),
-      ...row,
+      sku_code: row.sku_code,
+      product_name: row.product_name,
+      image_url: row.image_url,
+      currency: row.currency,
+      price_tier_1: row.price_tier_1,
+      price_tier_2: row.price_tier_2,
+      price_tier_3: row.price_tier_3,
+      is_in_stock: row.is_in_stock,
     }));
     const merged = [...mappedProducts, ...currentProducts.filter((product) => {
       return !rows.some((row) => row.sku_code === product.sku_code);
@@ -61,6 +84,29 @@ export async function POST(request: Request) {
     ((existingRows as Array<{ sku_code: string }> | null) ?? []).map((item) => item.sku_code),
   );
 
+  const { data: categoryRows } = await supabase
+    .from("categories")
+    .select("id, name")
+    .eq("tenant_id", tenant.id);
+
+  const categoryMap = new Map(
+    (((categoryRows as Array<{ id: string; name: string }> | null) ?? [])).map((category) => [
+      category.name.trim().toLowerCase(),
+      category.id,
+    ]),
+  );
+
+  const missingCategory = rows.find(
+    (row) => !categoryMap.get(row.category_name.trim().toLowerCase()),
+  );
+
+  if (missingCategory) {
+    return NextResponse.json(
+      { error: `Kategori bulunamadı: ${missingCategory.category_name}` },
+      { status: 400 },
+    );
+  }
+
   const newSkuCount = rows.filter((row) => !existingSkuSet.has(row.sku_code)).length;
 
   if (existingSkuSet.size + newSkuCount > tenant.max_product_limit) {
@@ -72,7 +118,15 @@ export async function POST(request: Request) {
 
   const payload = rows.map((row) => ({
     tenant_id: tenant.id,
-    ...row,
+    category_id: categoryMap.get(row.category_name.trim().toLowerCase())!,
+    sku_code: row.sku_code,
+    product_name: row.product_name,
+    image_url: row.image_url,
+    currency: row.currency,
+    price_tier_1: row.price_tier_1,
+    price_tier_2: row.price_tier_2,
+    price_tier_3: row.price_tier_3,
+    is_in_stock: row.is_in_stock,
   }));
 
   const { error } = await supabase

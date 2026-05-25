@@ -35,7 +35,7 @@ export default async function DashboardHomePage() {
         </Card>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-3">
+      <div className="grid gap-4 lg:grid-cols-4">
         <Card className="p-5">
           <h2 className="text-lg font-semibold text-slate-900">Ürün yönetimi</h2>
           <p className="mt-2 text-sm text-slate-600">
@@ -59,6 +59,19 @@ export default async function DashboardHomePage() {
             className="mt-5 inline-flex rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-900 hover:bg-slate-50"
           >
             Şifreleri yönet
+          </Link>
+        </Card>
+
+        <Card className="p-5">
+          <h2 className="text-lg font-semibold text-slate-900">Ürün kategorileri</h2>
+          <p className="mt-2 text-sm text-slate-600">
+            Kategori oluşturun ve storefront ekranında kategori bazlı filtreleme sunun.
+          </p>
+          <Link
+            href="/categories"
+            className="mt-5 inline-flex rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-900 hover:bg-slate-50"
+          >
+            Kategorileri yönet
           </Link>
         </Card>
 

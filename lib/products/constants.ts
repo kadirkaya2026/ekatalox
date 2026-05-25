@@ -5,6 +5,7 @@ export type CurrencyCode = (typeof supportedCurrencyCodes)[number];
 export const defaultCurrencyCode: CurrencyCode = "TRY";
 
 export const productCsvHeaders = [
+  "category_name",
   "sku_code",
   "product_name",
   "image_url",

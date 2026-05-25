@@ -19,6 +19,7 @@ export async function PATCH(
   const { id } = await ctx.params;
   const formData = await request.formData();
   const parsed = productCreateSchema.safeParse({
+    category_id: formData.get("category_id"),
     sku_code: formData.get("sku_code"),
     product_name: formData.get("product_name"),
     currency: formData.get("currency"),

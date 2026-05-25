@@ -2,7 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Building2, KeyRound, LayoutDashboard, Settings } from "lucide-react";
+import {
+  Building2,
+  FolderTree,
+  KeyRound,
+  LayoutDashboard,
+  Settings,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface SidebarLink {
@@ -14,6 +20,7 @@ interface SidebarLink {
 const tenantLinks: SidebarLink[] = [
   { href: "/", label: "Genel Bakış", icon: LayoutDashboard },
   { href: "/products", label: "Ürünler", icon: Building2 },
+  { href: "/categories", label: "Kategoriler", icon: FolderTree },
   { href: "/access-codes", label: "Şifreler", icon: KeyRound },
   { href: "/settings", label: "Ayarlar", icon: Settings },
 ];

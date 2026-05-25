@@ -4,7 +4,11 @@ export const revalidate = 0;
 import { notFound } from "next/navigation";
 import { PasswordGate } from "@/components/storefront/password-gate";
 import { StorefrontClient } from "@/components/storefront/storefront-client";
-import { getStorefrontProducts, getStorefrontTenant } from "@/lib/data";
+import {
+  getStorefrontProducts,
+  getStorefrontTenant,
+  getTenantCategories,
+} from "@/lib/data";
 import { readStorefrontTier } from "@/lib/storefront/session";
 
 export default async function StorefrontPage(props: PageProps<"/store/[subdomain]">) {
@@ -36,10 +40,19 @@ export default async function StorefrontPage(props: PageProps<"/store/[subdomain
     return <PasswordGate subdomain={subdomain} companyName={tenant.company_name} />;
   }
 
-  const products = await getStorefrontProducts({
-    tenantId: tenant.id,
-    tierLevel,
-  });
+  const [products, categories] = await Promise.all([
+    getStorefrontProducts({
+      tenantId: tenant.id,
+      tierLevel,
+    }),
+    getTenantCategories(tenant.id),
+  ]);
 
-  return <StorefrontClient tenant={tenant} products={products} />;
+  return (
+    <StorefrontClient
+      tenant={tenant}
+      categories={categories}
+      products={products}
+    />
+  );
 }

@@ -18,6 +18,7 @@ export interface Tenant {
 export interface Product {
   id: string;
   tenant_id: string;
+  category_id: string;
   sku_code: string;
   product_name: string;
   image_url: string | null;
@@ -34,6 +35,13 @@ export interface AccessCode {
   tenant_id: string;
   password_code: string;
   price_tier_level: PriceTierLevel;
+  created_at: string;
+}
+
+export interface Category {
+  id: string;
+  tenant_id: string;
+  name: string;
   created_at: string;
 }
 
@@ -64,6 +72,7 @@ export interface DashboardSummary {
 
 export interface StorefrontProduct {
   id: string;
+  category_id: string;
   sku_code: string;
   product_name: string;
   image_url: string | null;

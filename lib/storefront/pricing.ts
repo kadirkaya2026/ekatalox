@@ -15,6 +15,7 @@ export function pickPriceByTier(product: Product, tierLevel: PriceTierLevel) {
 export function toStorefrontProduct(product: Product, tierLevel: PriceTierLevel): StorefrontProduct {
   return {
     id: product.id,
+    category_id: product.category_id,
     sku_code: product.sku_code,
     product_name: product.product_name,
     image_url: product.image_url,

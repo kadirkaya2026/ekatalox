@@ -14,7 +14,7 @@ import {
   getCartCurrency,
   getCartTotal,
 } from "@/lib/storefront/cart";
-import type { CartItem, StorefrontProduct, Tenant } from "@/lib/types";
+import type { CartItem, Category, StorefrontProduct, Tenant } from "@/lib/types";
 import { cn, formatCurrency } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { supportedCurrencyCodes } from "@/lib/products/constants";
@@ -43,14 +43,17 @@ function updateQuantity(items: CartItem[], productId: string, nextQuantity: numb
 
 export function StorefrontClient({
   tenant,
+  categories,
   products,
 }: {
   tenant: Tenant;
+  categories: Category[];
   products: StorefrontProduct[];
 }) {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [note, setNote] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string>("all");
   const [selectedProduct, setSelectedProduct] = useState<StorefrontProduct | null>(null);
   const [selectedQuantity, setSelectedQuantity] = useState("1");
   const [quantityError, setQuantityError] = useState<string | null>(null);
@@ -79,16 +82,24 @@ export function StorefrontClient({
     const normalizedSearch = searchTerm.trim().toLowerCase();
 
     if (!normalizedSearch) {
-      return products;
+      return products.filter((product) =>
+        selectedCategoryId === "all" ? true : product.category_id === selectedCategoryId,
+      );
     }
 
     return products.filter((product) => {
       return (
+        (selectedCategoryId === "all" || product.category_id === selectedCategoryId) &&
         product.product_name.toLowerCase().includes(normalizedSearch) ||
-        product.sku_code.toLowerCase().includes(normalizedSearch)
+        ((selectedCategoryId === "all" || product.category_id === selectedCategoryId) &&
+          product.sku_code.toLowerCase().includes(normalizedSearch))
       );
     });
-  }, [products, searchTerm]);
+  }, [products, searchTerm, selectedCategoryId]);
+  const categoryNameMap = useMemo(
+    () => new Map(categories.map((category) => [category.id, category.name])),
+    [categories],
+  );
   const whatsappHref = useMemo(() => {
     if (!cart.length) {
       return "#";
@@ -165,6 +176,27 @@ export function StorefrontClient({
               />
             </div>
 
+            <Card className="mt-4 p-4">
+              <p className="text-sm font-semibold text-slate-900">Ürün Kategorileri</p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <Button
+                  variant={selectedCategoryId === "all" ? "primary" : "secondary"}
+                  onClick={() => setSelectedCategoryId("all")}
+                >
+                  Tüm ürünleri göster
+                </Button>
+                {categories.map((category) => (
+                  <Button
+                    key={category.id}
+                    variant={selectedCategoryId === category.id ? "primary" : "secondary"}
+                    onClick={() => setSelectedCategoryId(category.id)}
+                  >
+                    {category.name}
+                  </Button>
+                ))}
+              </div>
+            </Card>
+
             <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
               {filteredProducts.map((product) => (
                 <Card key={product.id} className="overflow-hidden">
@@ -186,7 +218,9 @@ export function StorefrontClient({
                         <p className="text-base font-semibold text-slate-900">
                           {product.product_name}
                         </p>
-                        <p className="mt-1 text-sm text-slate-500">{product.sku_code}</p>
+                        <p className="mt-1 text-sm text-slate-500">
+                          {product.sku_code} • {categoryNameMap.get(product.category_id) ?? "Kategori yok"}
+                        </p>
                       </div>
                       <Badge
                         className={cn(
@@ -228,7 +262,7 @@ export function StorefrontClient({
                   Aramanıza uygun ürün bulunamadı.
                 </p>
                 <p className="mt-1 text-sm text-slate-500">
-                  Ürün adını veya SKU kodunu farklı yazmayı deneyin.
+                  Ürün adını, SKU kodunu veya seçili kategoriyi değiştirip tekrar deneyin.
                 </p>
               </Card>
             ) : null}

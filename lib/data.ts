@@ -1,5 +1,6 @@
 import {
   demoAccessCodes,
+  demoCategories,
   demoProducts,
   demoTenants,
 } from "@/lib/demo-data";
@@ -8,6 +9,7 @@ import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { toStorefrontProduct } from "@/lib/storefront/pricing";
 import type {
   AccessCode,
+  Category,
   DashboardSummary,
   PriceTierLevel,
   Product,
@@ -84,6 +86,26 @@ export async function getTenantProducts(tenantId: string): Promise<Product[]> {
     .order("created_at", { ascending: false });
 
   return (data as Product[] | null) ?? [];
+}
+
+export async function getTenantCategories(tenantId: string): Promise<Category[]> {
+  const supabase = createSupabaseAdminClient();
+
+  if (!supabase) {
+    if (!shouldAllowDemoFallback()) {
+      return [];
+    }
+
+    return demoCategories.filter((category) => category.tenant_id === tenantId);
+  }
+
+  const { data } = await supabase
+    .from("categories")
+    .select("*")
+    .eq("tenant_id", tenantId)
+    .order("name", { ascending: true });
+
+  return (data as Category[] | null) ?? [];
 }
 
 export async function getTenantAccessCodes(

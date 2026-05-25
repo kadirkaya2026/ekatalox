@@ -1,11 +1,14 @@
 import { Header } from "@/components/dashboard/header";
 import { ProductsManager } from "@/components/dashboard/products-manager";
 import { requireTenantAdminPage } from "@/lib/auth/session";
-import { getTenantProducts } from "@/lib/data";
+import { getTenantCategories, getTenantProducts } from "@/lib/data";
 
 export default async function TenantProductsPage() {
   const session = await requireTenantAdminPage();
-  const products = await getTenantProducts(session.tenant!.id);
+  const [products, categories] = await Promise.all([
+    getTenantProducts(session.tenant!.id),
+    getTenantCategories(session.tenant!.id),
+  ]);
 
   return (
     <div className="space-y-6">
@@ -15,7 +18,11 @@ export default async function TenantProductsPage() {
         description="CSV import, tekil ürün ekleme, düzenleme modalı, stok yönetimi ve Supabase Storage görsel yükleme bu ekranda toplanır."
       />
 
-      <ProductsManager tenant={session.tenant!} initialProducts={products} />
+      <ProductsManager
+        tenant={session.tenant!}
+        initialProducts={products}
+        initialCategories={categories}
+      />
     </div>
   );
 }

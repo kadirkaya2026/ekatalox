@@ -14,10 +14,11 @@ import {
   defaultCurrencyCode,
   supportedCurrencyCodes,
 } from "@/lib/products/constants";
-import type { Product, Tenant } from "@/lib/types";
+import type { Category, Product, Tenant } from "@/lib/types";
 import { cn, formatCurrency } from "@/lib/utils";
 
 interface ProductFormState {
+  category_id: string;
   sku_code: string;
   product_name: string;
   currency: string;
@@ -29,6 +30,7 @@ interface ProductFormState {
 }
 
 const emptyForm: ProductFormState = {
+  category_id: "",
   sku_code: "",
   product_name: "",
   currency: defaultCurrencyCode,
@@ -41,6 +43,7 @@ const emptyForm: ProductFormState = {
 
 function toFormData(form: ProductFormState) {
   const formData = new FormData();
+  formData.set("category_id", form.category_id);
   formData.set("sku_code", form.sku_code);
   formData.set("product_name", form.product_name);
   formData.set("currency", form.currency);
@@ -58,6 +61,7 @@ function toFormData(form: ProductFormState) {
 
 function productToForm(product: Product): ProductFormState {
   return {
+    category_id: product.category_id,
     sku_code: product.sku_code,
     product_name: product.product_name,
     currency: product.currency ?? defaultCurrencyCode,
@@ -72,11 +76,14 @@ function productToForm(product: Product): ProductFormState {
 export function ProductsManager({
   tenant,
   initialProducts,
+  initialCategories,
 }: {
   tenant: Tenant;
   initialProducts: Product[];
+  initialCategories: Category[];
 }) {
   const [products, setProducts] = useState(initialProducts);
+  const [categories] = useState(initialCategories);
   const [searchTerm, setSearchTerm] = useState("");
   const [createForm, setCreateForm] = useState<ProductFormState>(emptyForm);
   const [editForm, setEditForm] = useState<ProductFormState>(emptyForm);
@@ -100,6 +107,9 @@ export function ProductsManager({
   );
   const filteredProducts = useMemo(() => {
     const normalizedSearch = searchTerm.trim().toLowerCase();
+    const categoryMap = new Map(
+      categories.map((category) => [category.id, category.name.toLowerCase()]),
+    );
 
     if (!normalizedSearch) {
       return products;
@@ -109,10 +119,15 @@ export function ProductsManager({
       return (
         product.product_name.toLowerCase().includes(normalizedSearch) ||
         product.sku_code.toLowerCase().includes(normalizedSearch) ||
-        product.currency.toLowerCase().includes(normalizedSearch)
+        product.currency.toLowerCase().includes(normalizedSearch) ||
+        categoryMap.get(product.category_id)?.includes(normalizedSearch)
       );
     });
-  }, [products, searchTerm]);
+  }, [categories, products, searchTerm]);
+  const categoryNameMap = useMemo(
+    () => new Map(categories.map((category) => [category.id, category.name])),
+    [categories],
+  );
 
   function updateCreateField<Key extends keyof ProductFormState>(
     key: Key,
@@ -322,6 +337,18 @@ export function ProductsManager({
 
           <form onSubmit={createProduct} className="mt-5 grid gap-3">
             <div className="grid gap-3 md:grid-cols-2">
+              <select
+                value={createForm.category_id}
+                onChange={(event) => updateCreateField("category_id", event.target.value)}
+                className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900"
+              >
+                <option value="">Kategori seçin</option>
+                {categories.map((category) => (
+                  <option key={category.id} value={category.id}>
+                    {category.name}
+                  </option>
+                ))}
+              </select>
               <Input
                 placeholder="SKU kodu"
                 value={createForm.sku_code}
@@ -508,7 +535,7 @@ export function ProductsManager({
                       <div>
                         <p className="font-semibold text-slate-900">{product.product_name}</p>
                         <p className="text-sm text-slate-500">
-                          {product.sku_code} • {product.currency}
+                          {product.sku_code} • {categoryNameMap.get(product.category_id) ?? "Kategori yok"} • {product.currency}
                         </p>
                       </div>
                     </div>
@@ -570,7 +597,7 @@ export function ProductsManager({
                 <div className="min-w-0 flex-1">
                   <p className="font-semibold text-slate-900">{product.product_name}</p>
                   <p className="mt-1 text-sm text-slate-500">
-                    {product.sku_code} • {product.currency}
+                    {product.sku_code} • {categoryNameMap.get(product.category_id) ?? "Kategori yok"} • {product.currency}
                   </p>
                   <div className="mt-3">{renderStockBadge(product)}</div>
                 </div>
@@ -625,6 +652,18 @@ export function ProductsManager({
       >
         <form onSubmit={updateProduct} className="grid gap-3">
           <div className="grid gap-3 md:grid-cols-2">
+            <select
+              value={editForm.category_id}
+              onChange={(event) => updateEditField("category_id", event.target.value)}
+              className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900"
+            >
+              <option value="">Kategori seçin</option>
+              {categories.map((category) => (
+                <option key={category.id} value={category.id}>
+                  {category.name}
+                </option>
+              ))}
+            </select>
             <Input
               placeholder="SKU kodu"
               value={editForm.sku_code}
