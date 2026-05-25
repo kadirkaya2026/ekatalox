@@ -1,3 +1,6 @@
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 import { notFound } from "next/navigation";
 import { PasswordGate } from "@/components/storefront/password-gate";
 import { StorefrontClient } from "@/components/storefront/storefront-client";
