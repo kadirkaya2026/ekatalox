@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { shouldAllowDemoFallback } from "@/lib/env";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { ensureSuperAdminResponse } from "@/lib/tenancy/guards";
 import { tenantUpdateSchema } from "@/lib/validators/tenant";
 
@@ -29,7 +29,7 @@ export async function PATCH(
     );
   }
 
-  const supabase = await createSupabaseServerClient();
+  const supabase = createSupabaseAdminClient();
 
   if (!supabase) {
     if (!shouldAllowDemoFallback()) {
@@ -55,7 +55,10 @@ export async function PATCH(
     .single();
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 400 });
+    return NextResponse.json(
+      { error: "Tenant güncellenemedi." },
+      { status: 400 },
+    );
   }
 
   return NextResponse.json({ tenant: data });

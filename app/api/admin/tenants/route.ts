@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
 import { demoTenants } from "@/lib/demo-data";
 import { shouldAllowDemoFallback } from "@/lib/env";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import {
   isReservedSubdomain,
   RESERVED_SUBDOMAIN_MESSAGE,
@@ -17,7 +17,7 @@ export async function GET() {
     return guard;
   }
 
-  const supabase = await createSupabaseServerClient();
+  const supabase = createSupabaseAdminClient();
 
   if (!supabase) {
     if (!shouldAllowDemoFallback()) {
@@ -65,7 +65,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const supabase = await createSupabaseServerClient();
+  const supabase = createSupabaseAdminClient();
 
   if (!supabase) {
     if (!shouldAllowDemoFallback()) {
@@ -98,7 +98,10 @@ export async function POST(request: Request) {
     .single();
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 400 });
+    return NextResponse.json(
+      { error: "Tenant oluşturulamadı. Alt alan adı veya veri çakışması olabilir." },
+      { status: 400 },
+    );
   }
 
   return NextResponse.json({ tenant: data });
