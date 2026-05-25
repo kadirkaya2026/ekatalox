@@ -77,6 +77,7 @@ export function ProductsManager({
   initialProducts: Product[];
 }) {
   const [products, setProducts] = useState(initialProducts);
+  const [searchTerm, setSearchTerm] = useState("");
   const [createForm, setCreateForm] = useState<ProductFormState>(emptyForm);
   const [editForm, setEditForm] = useState<ProductFormState>(emptyForm);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
@@ -97,6 +98,21 @@ export function ProductsManager({
     }),
     [products.length, tenant.max_product_limit],
   );
+  const filteredProducts = useMemo(() => {
+    const normalizedSearch = searchTerm.trim().toLowerCase();
+
+    if (!normalizedSearch) {
+      return products;
+    }
+
+    return products.filter((product) => {
+      return (
+        product.product_name.toLowerCase().includes(normalizedSearch) ||
+        product.sku_code.toLowerCase().includes(normalizedSearch) ||
+        product.currency.toLowerCase().includes(normalizedSearch)
+      );
+    });
+  }, [products, searchTerm]);
 
   function updateCreateField<Key extends keyof ProductFormState>(
     key: Key,
@@ -451,6 +467,13 @@ export function ProductsManager({
           <p className="mt-1 text-sm text-slate-600">
             Masaüstünde tablo, mobilde kart düzeni ile hızlı yönetim.
           </p>
+          <div className="mt-4 max-w-md">
+            <Input
+              placeholder="Ürün adı veya SKU ara"
+              value={searchTerm}
+              onChange={(event) => setSearchTerm(event.target.value)}
+            />
+          </div>
         </div>
 
         <TableWrapper>
@@ -466,7 +489,7 @@ export function ProductsManager({
               </tr>
             </thead>
             <tbody>
-              {products.map((product) => (
+              {filteredProducts.map((product) => (
                 <tr key={product.id} className="border-t border-slate-100">
                   <td className="px-4 py-4">
                     <div className="flex items-center gap-3">
@@ -517,8 +540,19 @@ export function ProductsManager({
           </Table>
         </TableWrapper>
 
+        {!filteredProducts.length ? (
+          <div className="border-t border-slate-100 px-5 py-8 text-center">
+            <p className="text-sm font-semibold text-slate-900">
+              Aramanıza uygun ürün bulunamadı.
+            </p>
+            <p className="mt-1 text-sm text-slate-500">
+              Ürün adı, SKU veya para birimi ile tekrar deneyin.
+            </p>
+          </div>
+        ) : null}
+
         <div className="grid gap-4 p-4 md:hidden">
-          {products.map((product) => (
+          {filteredProducts.map((product) => (
             <Card key={product.id} className="p-4">
               <div className="flex gap-3">
                 <div className="relative h-20 w-20 overflow-hidden rounded-xl bg-slate-100">

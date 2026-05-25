@@ -9,11 +9,14 @@ import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import {
   buildWhatsAppMessage,
+  getCartTotalsByCurrency,
   getCartCurrency,
   getCartTotal,
 } from "@/lib/storefront/cart";
 import type { CartItem, StorefrontProduct, Tenant } from "@/lib/types";
 import { cn, formatCurrency } from "@/lib/utils";
+import { Input } from "@/components/ui/input";
+import { supportedCurrencyCodes } from "@/lib/products/constants";
 
 function addToCart(items: CartItem[], product: StorefrontProduct) {
   const existing = items.find((item) => item.id === product.id);
@@ -46,9 +49,42 @@ export function StorefrontClient({
 }) {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [note, setNote] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
 
   const cartTotal = useMemo(() => getCartTotal(cart), [cart]);
   const cartCurrency = useMemo(() => getCartCurrency(cart), [cart]);
+  const cartTotalsByCurrency = useMemo(() => getCartTotalsByCurrency(cart), [cart]);
+  const cartTotalEntries = useMemo(
+    () =>
+      supportedCurrencyCodes
+        .map((currency) => ({
+          currency,
+          total: cartTotalsByCurrency[currency],
+        }))
+        .filter(
+          (
+            item,
+          ): item is {
+            currency: (typeof supportedCurrencyCodes)[number];
+            total: number;
+          } => typeof item.total === "number",
+        ),
+    [cartTotalsByCurrency],
+  );
+  const filteredProducts = useMemo(() => {
+    const normalizedSearch = searchTerm.trim().toLowerCase();
+
+    if (!normalizedSearch) {
+      return products;
+    }
+
+    return products.filter((product) => {
+      return (
+        product.product_name.toLowerCase().includes(normalizedSearch) ||
+        product.sku_code.toLowerCase().includes(normalizedSearch)
+      );
+    });
+  }, [products, searchTerm]);
   const whatsappHref = useMemo(() => {
     if (!cart.length) {
       return "#";
@@ -80,8 +116,17 @@ export function StorefrontClient({
               </p>
             </div>
 
+            <div className="mt-6">
+              <Input
+                placeholder="Ürün adı veya SKU ara"
+                value={searchTerm}
+                onChange={(event) => setSearchTerm(event.target.value)}
+                className="bg-white"
+              />
+            </div>
+
             <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-              {products.map((product) => (
+              {filteredProducts.map((product) => (
                 <Card key={product.id} className="overflow-hidden">
                   <div className="relative h-52 bg-slate-100">
                     {product.image_url ? (
@@ -136,6 +181,17 @@ export function StorefrontClient({
                 </Card>
               ))}
             </div>
+
+            {!filteredProducts.length ? (
+              <Card className="mt-6 p-6">
+                <p className="text-sm font-semibold text-slate-900">
+                  Aramanıza uygun ürün bulunamadı.
+                </p>
+                <p className="mt-1 text-sm text-slate-500">
+                  Ürün adını veya SKU kodunu farklı yazmayı deneyin.
+                </p>
+              </Card>
+            ) : null}
           </div>
 
           <aside className="hidden xl:block">
@@ -218,9 +274,19 @@ export function StorefrontClient({
                 />
                 <div className="rounded-2xl bg-slate-900 p-4 text-white">
                   <p className="text-sm text-slate-300">Toplam</p>
-                  <p className="mt-1 text-2xl font-bold">
-                    {formatCurrency(cartTotal, cartCurrency)}
-                  </p>
+                  <div className="mt-2 space-y-1">
+                    {cartTotalEntries.length ? (
+                      cartTotalEntries.map(({ currency, total }) => (
+                        <p key={currency} className="text-2xl font-bold">
+                          {currency}: {formatCurrency(total, currency)}
+                        </p>
+                      ))
+                    ) : (
+                      <p className="text-2xl font-bold">
+                        {formatCurrency(cartTotal, cartCurrency)}
+                      </p>
+                    )}
+                  </div>
                 </div>
                 <Button
                   asChild
@@ -239,9 +305,19 @@ export function StorefrontClient({
         <div className="container-shell flex items-center gap-3 px-0">
           <div className="min-w-0 flex-1">
             <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Sepet toplamı</p>
-            <p className="mt-1 truncate text-lg font-bold text-slate-900">
-              {formatCurrency(cartTotal, cartCurrency)}
-            </p>
+            <div className="mt-1 space-y-1">
+              {cartTotalEntries.length ? (
+                cartTotalEntries.map(({ currency, total }) => (
+                  <p key={currency} className="truncate text-lg font-bold text-slate-900">
+                    {currency}: {formatCurrency(total, currency)}
+                  </p>
+                ))
+              ) : (
+                <p className="truncate text-lg font-bold text-slate-900">
+                  {formatCurrency(cartTotal, cartCurrency)}
+                </p>
+              )}
+            </div>
           </div>
           <Button
             asChild
