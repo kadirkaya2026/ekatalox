@@ -4,11 +4,7 @@ import { createBrowserClient } from "@supabase/ssr";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { appEnv, hasSupabaseEnv } from "@/lib/env";
 
-/** `.ekatalox.com` in production, undefined on localhost */
-function cookieDomain(): string | undefined {
-  const root = appEnv.rootDomain;
-  return root === "localhost" ? undefined : `.${root}`;
-}
+const AUTH_COOKIE_DOMAIN = ".ekatalox.com";
 
 let browserClient: SupabaseClient | null = null;
 
@@ -18,13 +14,12 @@ export function createSupabaseBrowserClient() {
   }
 
   if (!browserClient) {
-    const domain = cookieDomain();
     browserClient = createBrowserClient(
       appEnv.supabaseUrl,
       appEnv.supabaseAnonKey,
       {
         cookieOptions: {
-          ...(domain ? { domain } : {}),
+          domain: AUTH_COOKIE_DOMAIN,
           path: "/",
           sameSite: "lax",
           secure: true,
