@@ -5,7 +5,6 @@ import {
 } from "@/lib/demo-data";
 import { shouldAllowDemoFallback } from "@/lib/env";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { toStorefrontProduct } from "@/lib/storefront/pricing";
 import type {
   AccessCode,
@@ -27,7 +26,7 @@ function groupCountByTenant(
 }
 
 export async function getTenantsOverview(): Promise<TenantWithRelations[]> {
-  const supabase = await createSupabaseServerClient();
+  const supabase = createSupabaseAdminClient();
 
   if (!supabase) {
     if (!shouldAllowDemoFallback()) {
@@ -68,7 +67,7 @@ export async function getTenantsOverview(): Promise<TenantWithRelations[]> {
 }
 
 export async function getTenantProducts(tenantId: string): Promise<Product[]> {
-  const supabase = await createSupabaseServerClient();
+  const supabase = createSupabaseAdminClient();
 
   if (!supabase) {
     if (!shouldAllowDemoFallback()) {
@@ -90,7 +89,7 @@ export async function getTenantProducts(tenantId: string): Promise<Product[]> {
 export async function getTenantAccessCodes(
   tenantId: string,
 ): Promise<AccessCode[]> {
-  const supabase = await createSupabaseServerClient();
+  const supabase = createSupabaseAdminClient();
 
   if (!supabase) {
     if (!shouldAllowDemoFallback()) {
