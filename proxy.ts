@@ -3,6 +3,21 @@ import { NextResponse } from "next/server";
 import { appEnv } from "@/lib/env";
 import { getInternalPathFromHost, resolveHost } from "@/lib/tenancy/resolve-host";
 
+/**
+ * Resolve the effective hostname for a request.
+ *
+ * Vercel and other CDN/proxy layers sometimes forward the original domain in
+ * `x-forwarded-host` while the `host` header contains an internal service
+ * address. We prefer `x-forwarded-host` so that tenant routing is always
+ * based on the public-facing domain.
+ */
+function effectiveHost(request: NextRequest): string | null {
+  return (
+    request.headers.get("x-forwarded-host") ??
+    request.headers.get("host")
+  );
+}
+
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
@@ -15,9 +30,9 @@ export function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
-  const hostHeader = request.headers.get("host");
-  const hostResolution = resolveHost(hostHeader);
-  const normalizedHost = (hostHeader ?? "").replace(/:\d+$/, "").toLowerCase();
+  const host = effectiveHost(request);
+  const hostResolution = resolveHost(host);
+  const normalizedHost = (host ?? "").replace(/:\d+$/, "").toLowerCase();
   const isManagedProductionHost = normalizedHost.endsWith(`.${appEnv.rootDomain}`);
   const isManagedLocalHost = normalizedHost.endsWith(".localhost");
 
@@ -29,7 +44,7 @@ export function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
-  const rewrittenPath = getInternalPathFromHost(hostHeader, pathname);
+  const rewrittenPath = getInternalPathFromHost(host, pathname);
   const url = request.nextUrl.clone();
   url.pathname = rewrittenPath;
 
