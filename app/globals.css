@@ -1,0 +1,67 @@
+@import "tailwindcss";
+
+@theme inline {
+  --color-background: #f8fafc;
+  --color-foreground: #0f172a;
+  --color-card: #ffffff;
+  --color-card-foreground: #0f172a;
+  --color-muted: #e2e8f0;
+  --color-muted-foreground: #475569;
+  --color-border: #e2e8f0;
+  --color-primary: #0f172a;
+  --color-primary-foreground: #ffffff;
+  --color-accent: #059669;
+  --color-accent-foreground: #ffffff;
+  --color-success: #059669;
+  --font-sans: var(--font-inter);
+}
+
+* {
+  @apply border-slate-200;
+}
+
+html {
+  @apply bg-slate-50;
+}
+
+body {
+  @apply min-h-screen bg-slate-50 font-sans text-slate-900 antialiased;
+}
+
+a {
+  @apply transition-colors;
+}
+
+button,
+input,
+select,
+textarea {
+  @apply outline-none;
+}
+
+input:focus,
+select:focus,
+textarea:focus,
+button:focus-visible {
+  @apply ring-2 ring-emerald-200 ring-offset-2 ring-offset-slate-50;
+}
+
+::selection {
+  @apply bg-emerald-100 text-slate-900;
+}
+
+.container-shell {
+  @apply mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8;
+}
+
+.panel-card {
+  @apply rounded-xl border border-slate-100 bg-white shadow-sm;
+}
+
+.data-surface {
+  @apply rounded-2xl border border-slate-200 bg-white shadow-sm;
+}
+
+.sticky-safe-bottom {
+  padding-bottom: calc(env(safe-area-inset-bottom) + 6rem);
+}
