@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
-import { shouldAllowDemoFallback } from "@/lib/env";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { uploadProductImage } from "@/lib/storage/product-images";
 import { getSessionContext } from "@/lib/auth/session";
 import { ensureTenantAdminResponse } from "@/lib/tenancy/guards";
@@ -36,25 +35,13 @@ export async function PATCH(
   }
 
   const image = formData.get("image");
-  const supabase = await createSupabaseServerClient();
+  const supabase = createSupabaseAdminClient();
 
   if (!supabase) {
-    if (!shouldAllowDemoFallback()) {
-      return NextResponse.json(
-        { error: "Supabase production yapılandırması eksik." },
-        { status: 500 },
-      );
-    }
-
-    return NextResponse.json({
-      product: {
-        id,
-        tenant_id: tenant.id,
-        image_url: null,
-        created_at: new Date().toISOString(),
-        ...parsed.data,
-      },
-    });
+    return NextResponse.json(
+      { error: "Sunucu yapılandırması eksik." },
+      { status: 500 },
+    );
   }
 
   let imageUrl: string | undefined;

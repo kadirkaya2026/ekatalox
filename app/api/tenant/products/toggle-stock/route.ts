@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
-import { shouldAllowDemoFallback } from "@/lib/env";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { getSessionContext } from "@/lib/auth/session";
 import { ensureTenantAdminResponse } from "@/lib/tenancy/guards";
 
@@ -20,22 +19,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Ürün seçilmedi." }, { status: 400 });
   }
 
-  const supabase = await createSupabaseServerClient();
+  const supabase = createSupabaseAdminClient();
 
   if (!supabase) {
-    if (!shouldAllowDemoFallback()) {
-      return NextResponse.json(
-        { error: "Supabase production yapılandırması eksik." },
-        { status: 500 },
-      );
-    }
-
-    return NextResponse.json({
-      product: {
-        id: productId,
-        is_in_stock,
-      },
-    });
+    return NextResponse.json(
+      { error: "Sunucu yapılandırması eksik." },
+      { status: 500 },
+    );
   }
 
   const { data, error } = await supabase
