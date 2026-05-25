@@ -7,7 +7,11 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
-import { buildWhatsAppMessage, getCartTotal } from "@/lib/storefront/cart";
+import {
+  buildWhatsAppMessage,
+  getCartCurrency,
+  getCartTotal,
+} from "@/lib/storefront/cart";
 import type { CartItem, StorefrontProduct, Tenant } from "@/lib/types";
 import { cn, formatCurrency } from "@/lib/utils";
 
@@ -44,6 +48,7 @@ export function StorefrontClient({
   const [note, setNote] = useState("");
 
   const cartTotal = useMemo(() => getCartTotal(cart), [cart]);
+  const cartCurrency = useMemo(() => getCartCurrency(cart), [cart]);
   const whatsappHref = useMemo(() => {
     if (!cart.length) {
       return "#";
@@ -115,7 +120,7 @@ export function StorefrontClient({
                           Fiyatınız
                         </p>
                         <p className="mt-1 text-xl font-bold text-slate-900">
-                          {formatCurrency(product.price)}
+                          {formatCurrency(product.price, product.currency)}
                         </p>
                       </div>
 
@@ -153,7 +158,7 @@ export function StorefrontClient({
                         <div>
                           <p className="font-semibold text-slate-900">{item.product_name}</p>
                           <p className="mt-1 text-sm text-slate-500">
-                            {formatCurrency(item.price)}
+                            {formatCurrency(item.price, item.currency)}
                           </p>
                         </div>
                         <button
@@ -193,7 +198,7 @@ export function StorefrontClient({
                           </button>
                         </div>
                         <p className="text-sm font-semibold text-slate-900">
-                          {formatCurrency(item.quantity * item.price)}
+                          {formatCurrency(item.quantity * item.price, item.currency)}
                         </p>
                       </div>
                     </div>
@@ -213,7 +218,9 @@ export function StorefrontClient({
                 />
                 <div className="rounded-2xl bg-slate-900 p-4 text-white">
                   <p className="text-sm text-slate-300">Toplam</p>
-                  <p className="mt-1 text-2xl font-bold">{formatCurrency(cartTotal)}</p>
+                  <p className="mt-1 text-2xl font-bold">
+                    {formatCurrency(cartTotal, cartCurrency)}
+                  </p>
                 </div>
                 <Button
                   asChild
@@ -233,7 +240,7 @@ export function StorefrontClient({
           <div className="min-w-0 flex-1">
             <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Sepet toplamı</p>
             <p className="mt-1 truncate text-lg font-bold text-slate-900">
-              {formatCurrency(cartTotal)}
+              {formatCurrency(cartTotal, cartCurrency)}
             </p>
           </div>
           <Button

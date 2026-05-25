@@ -1,3 +1,5 @@
+import type { CurrencyCode } from "@/lib/products/constants";
+
 export type TenantStatus = "active" | "suspended";
 export type MaxProductLimit = 300 | 500 | 1000;
 export type UserRole = "super_admin" | "tenant_admin";
@@ -19,6 +21,7 @@ export interface Product {
   sku_code: string;
   product_name: string;
   image_url: string | null;
+  currency: CurrencyCode;
   price_tier_1: number;
   price_tier_2: number;
   price_tier_3: number;
@@ -65,6 +68,7 @@ export interface StorefrontProduct {
   product_name: string;
   image_url: string | null;
   is_in_stock: boolean;
+  currency: CurrencyCode;
   price: number;
 }
 

@@ -1,4 +1,9 @@
 import Papa from "papaparse";
+import {
+  isCurrencyCode,
+  normalizeCurrencyCode,
+  productCsvHeaders,
+} from "@/lib/products/constants";
 import type { Product } from "@/lib/types";
 
 export interface ParsedCsvResult {
@@ -8,6 +13,7 @@ export interface ParsedCsvResult {
       | "sku_code"
       | "product_name"
       | "image_url"
+      | "currency"
       | "price_tier_1"
       | "price_tier_2"
       | "price_tier_3"
@@ -46,14 +52,26 @@ export function parseProductsCsv(csvText: string): ParsedCsvResult {
   });
 
   const errors: string[] = [];
+  const parsedHeaders = (parsed.meta.fields ?? []).map((field) => field.trim());
+  const missingHeaders = productCsvHeaders.filter((header) => !parsedHeaders.includes(header));
+
+  if (missingHeaders.length) {
+    errors.push(`Eksik CSV başlıkları: ${missingHeaders.join(", ")}`);
+  }
 
   const rows = parsed.data
     .map((row, index) => {
       const sku_code = row.sku_code?.trim();
       const product_name = row.product_name?.trim();
+      const currency = normalizeCurrencyCode(row.currency);
 
       if (!sku_code || !product_name) {
         errors.push(`Satır ${index + 2}: sku_code ve product_name zorunludur.`);
+        return null;
+      }
+
+      if (!isCurrencyCode(currency)) {
+        errors.push(`Satır ${index + 2}: currency alanı TRY, USD veya EUR olmalıdır.`);
         return null;
       }
 
@@ -61,6 +79,7 @@ export function parseProductsCsv(csvText: string): ParsedCsvResult {
         sku_code,
         product_name,
         image_url: row.image_url?.trim() || null,
+        currency,
         price_tier_1: normalizeNumber(row.price_tier_1),
         price_tier_2: normalizeNumber(row.price_tier_2),
         price_tier_3: normalizeNumber(row.price_tier_3),

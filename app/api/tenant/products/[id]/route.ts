@@ -21,6 +21,7 @@ export async function PATCH(
   const parsed = productCreateSchema.safeParse({
     sku_code: formData.get("sku_code"),
     product_name: formData.get("product_name"),
+    currency: formData.get("currency"),
     price_tier_1: formData.get("price_tier_1"),
     price_tier_2: formData.get("price_tier_2"),
     price_tier_3: formData.get("price_tier_3"),

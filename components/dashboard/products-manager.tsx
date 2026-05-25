@@ -9,13 +9,18 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Modal } from "@/components/ui/modal";
 import { Table, TableWrapper } from "@/components/ui/table";
-import { parseProductsCsv } from "@/lib/csv/parse-products";
+import { parseProductsCsv, type ParsedCsvResult } from "@/lib/csv/parse-products";
+import {
+  defaultCurrencyCode,
+  supportedCurrencyCodes,
+} from "@/lib/products/constants";
 import type { Product, Tenant } from "@/lib/types";
 import { cn, formatCurrency } from "@/lib/utils";
 
 interface ProductFormState {
   sku_code: string;
   product_name: string;
+  currency: string;
   price_tier_1: string;
   price_tier_2: string;
   price_tier_3: string;
@@ -26,6 +31,7 @@ interface ProductFormState {
 const emptyForm: ProductFormState = {
   sku_code: "",
   product_name: "",
+  currency: defaultCurrencyCode,
   price_tier_1: "",
   price_tier_2: "",
   price_tier_3: "",
@@ -37,6 +43,7 @@ function toFormData(form: ProductFormState) {
   const formData = new FormData();
   formData.set("sku_code", form.sku_code);
   formData.set("product_name", form.product_name);
+  formData.set("currency", form.currency);
   formData.set("price_tier_1", form.price_tier_1 || "0");
   formData.set("price_tier_2", form.price_tier_2 || "0");
   formData.set("price_tier_3", form.price_tier_3 || "0");
@@ -53,6 +60,7 @@ function productToForm(product: Product): ProductFormState {
   return {
     sku_code: product.sku_code,
     product_name: product.product_name,
+    currency: product.currency ?? defaultCurrencyCode,
     price_tier_1: String(product.price_tier_1),
     price_tier_2: String(product.price_tier_2),
     price_tier_3: String(product.price_tier_3),
@@ -75,7 +83,7 @@ export function ProductsManager({
   const [csvSummary, setCsvSummary] = useState<{
     totalRows: number;
     errors: string[];
-    csvText: string;
+    rows: ParsedCsvResult["rows"];
   } | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -117,13 +125,13 @@ export function ProductsManager({
       setCsvSummary({
         totalRows: parsed.rows.length,
         errors: parsed.errors,
-        csvText,
+        rows: parsed.rows,
       });
     });
   }
 
   function importCsv() {
-    if (!csvSummary?.csvText) {
+    if (!csvSummary?.rows.length) {
       setMessage("Önce bir CSV seçin.");
       return;
     }
@@ -133,7 +141,7 @@ export function ProductsManager({
       const response = await fetch("/api/tenant/products/import", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ csvText: csvSummary.csvText }),
+        body: JSON.stringify({ rows: csvSummary.rows }),
       });
 
       const result = await response.json();
@@ -181,6 +189,10 @@ export function ProductsManager({
   function openEdit(product: Product) {
     setEditingProduct(product);
     setEditForm(productToForm(product));
+  }
+
+  function downloadTemplate() {
+    window.location.assign("/api/tenant/products/export-template");
   }
 
   function updateProduct(event: React.FormEvent<HTMLFormElement>) {
@@ -306,7 +318,18 @@ export function ProductsManager({
               />
             </div>
 
-            <div className="grid gap-3 md:grid-cols-3">
+            <div className="grid gap-3 md:grid-cols-4">
+              <select
+                value={createForm.currency}
+                onChange={(event) => updateCreateField("currency", event.target.value)}
+                className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900"
+              >
+                {supportedCurrencyCodes.map((currency) => (
+                  <option key={currency} value={currency}>
+                    {currency}
+                  </option>
+                ))}
+              </select>
               <Input
                 type="number"
                 step="0.01"
@@ -370,12 +393,16 @@ export function ProductsManager({
             <div>
               <h2 className="text-lg font-semibold text-slate-900">CSV içe aktarma</h2>
               <p className="text-sm text-slate-600">
-                Beklenen kolonlar: sku_code, product_name, image_url, fiyatlar ve is_in_stock.
+                Beklenen kolonlar: sku_code, product_name, image_url, currency, fiyatlar ve is_in_stock.
               </p>
             </div>
           </div>
 
           <div className="mt-5 space-y-4">
+            <Button variant="secondary" onClick={downloadTemplate}>
+              Örnek CSV İndir
+            </Button>
+
             <label className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-6 text-sm text-slate-600">
               <Upload className="size-4 text-emerald-700" />
               <span>CSV dosyası seç</span>
@@ -457,19 +484,21 @@ export function ProductsManager({
                       </div>
                       <div>
                         <p className="font-semibold text-slate-900">{product.product_name}</p>
-                        <p className="text-sm text-slate-500">{product.sku_code}</p>
+                        <p className="text-sm text-slate-500">
+                          {product.sku_code} • {product.currency}
+                        </p>
                       </div>
                     </div>
                   </td>
                   <td className="px-4 py-4">{renderStockBadge(product)}</td>
                   <td className="px-4 py-4 text-base font-semibold text-slate-900">
-                    {formatCurrency(Number(product.price_tier_1))}
+                    {formatCurrency(Number(product.price_tier_1), product.currency)}
                   </td>
                   <td className="px-4 py-4 text-base font-semibold text-slate-900">
-                    {formatCurrency(Number(product.price_tier_2))}
+                    {formatCurrency(Number(product.price_tier_2), product.currency)}
                   </td>
                   <td className="px-4 py-4 text-base font-semibold text-slate-900">
-                    {formatCurrency(Number(product.price_tier_3))}
+                    {formatCurrency(Number(product.price_tier_3), product.currency)}
                   </td>
                   <td className="px-4 py-4">
                     <div className="flex justify-end gap-2">
@@ -506,7 +535,9 @@ export function ProductsManager({
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="font-semibold text-slate-900">{product.product_name}</p>
-                  <p className="mt-1 text-sm text-slate-500">{product.sku_code}</p>
+                  <p className="mt-1 text-sm text-slate-500">
+                    {product.sku_code} • {product.currency}
+                  </p>
                   <div className="mt-3">{renderStockBadge(product)}</div>
                 </div>
               </div>
@@ -515,19 +546,19 @@ export function ProductsManager({
                 <div>
                   <p className="text-xs text-slate-500">Katman 1</p>
                   <p className="mt-1 text-sm font-semibold text-slate-900">
-                    {formatCurrency(Number(product.price_tier_1))}
+                    {formatCurrency(Number(product.price_tier_1), product.currency)}
                   </p>
                 </div>
                 <div>
                   <p className="text-xs text-slate-500">Katman 2</p>
                   <p className="mt-1 text-sm font-semibold text-slate-900">
-                    {formatCurrency(Number(product.price_tier_2))}
+                    {formatCurrency(Number(product.price_tier_2), product.currency)}
                   </p>
                 </div>
                 <div>
                   <p className="text-xs text-slate-500">Katman 3</p>
                   <p className="mt-1 text-sm font-semibold text-slate-900">
-                    {formatCurrency(Number(product.price_tier_3))}
+                    {formatCurrency(Number(product.price_tier_3), product.currency)}
                   </p>
                 </div>
               </div>
@@ -572,7 +603,18 @@ export function ProductsManager({
             />
           </div>
 
-          <div className="grid gap-3 md:grid-cols-3">
+          <div className="grid gap-3 md:grid-cols-4">
+            <select
+              value={editForm.currency}
+              onChange={(event) => updateEditField("currency", event.target.value)}
+              className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900"
+            >
+              {supportedCurrencyCodes.map((currency) => (
+                <option key={currency} value={currency}>
+                  {currency}
+                </option>
+              ))}
+            </select>
             <Input
               type="number"
               step="0.01"

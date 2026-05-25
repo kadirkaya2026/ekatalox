@@ -35,6 +35,7 @@ export const demoProducts: Product[] = [
     product_name: "iPhone 15 128GB",
     image_url:
       "https://images.unsplash.com/photo-1695048133142-1a20484d2569?auto=format&fit=crop&w=900&q=80",
+    currency: "TRY",
     price_tier_1: 41250,
     price_tier_2: 41890,
     price_tier_3: 42390,
@@ -48,6 +49,7 @@ export const demoProducts: Product[] = [
     product_name: "Samsung S24 256GB",
     image_url:
       "https://images.unsplash.com/photo-1610945415295-d9bbf067e59c?auto=format&fit=crop&w=900&q=80",
+    currency: "TRY",
     price_tier_1: 35890,
     price_tier_2: 36490,
     price_tier_3: 36990,
@@ -61,6 +63,7 @@ export const demoProducts: Product[] = [
     product_name: "Redmi Note 13",
     image_url:
       "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=900&q=80",
+    currency: "TRY",
     price_tier_1: 10350,
     price_tier_2: 10750,
     price_tier_3: 10990,

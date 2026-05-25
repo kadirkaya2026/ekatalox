@@ -1,14 +1,24 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
+import {
+  defaultCurrencyCode,
+  isCurrencyCode,
+  normalizeCurrencyCode,
+} from "@/lib/products/constants";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-export function formatCurrency(value: number) {
+export function formatCurrency(value: number, currency = defaultCurrencyCode) {
+  const normalizedCurrency = normalizeCurrencyCode(currency);
+  const safeCurrency = isCurrencyCode(normalizedCurrency)
+    ? normalizedCurrency
+    : defaultCurrencyCode;
+
   return new Intl.NumberFormat("tr-TR", {
     style: "currency",
-    currency: "TRY",
+    currency: safeCurrency,
     maximumFractionDigits: 2,
   }).format(value);
 }

@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
 import { shouldAllowDemoFallback } from "@/lib/env";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { getSessionContext } from "@/lib/auth/session";
-import { parseProductsCsv } from "@/lib/csv/parse-products";
 import { getTenantProducts } from "@/lib/data";
 import { ensureTenantAdminResponse } from "@/lib/tenancy/guards";
+import { productImportRowsSchema } from "@/lib/validators/product";
 
 export async function POST(request: Request) {
   const guard = await ensureTenantAdminResponse();
@@ -14,17 +14,18 @@ export async function POST(request: Request) {
 
   const session = await getSessionContext();
   const tenant = session.tenant!;
-  const { csvText } = await request.json();
-  const parsed = parseProductsCsv(String(csvText ?? ""));
+  const body = await request.json();
+  const parsed = productImportRowsSchema.safeParse(body.rows ?? []);
 
-  if (parsed.errors.length) {
+  if (!parsed.success) {
     return NextResponse.json(
-      { error: parsed.errors[0] ?? "CSV dosyası doğrulanamadı." },
+      { error: parsed.error.issues[0]?.message ?? "CSV dosyası doğrulanamadı." },
       { status: 400 },
     );
   }
 
-  const supabase = await createSupabaseServerClient();
+  const rows = parsed.data;
+  const supabase = createSupabaseAdminClient();
 
   if (!supabase) {
     if (!shouldAllowDemoFallback()) {
@@ -35,18 +36,18 @@ export async function POST(request: Request) {
     }
 
     const currentProducts = await getTenantProducts(tenant.id);
-    const mappedProducts = parsed.rows.map((row, index) => ({
+    const mappedProducts = rows.map((row, index) => ({
       id: `demo-import-${index}-${row.sku_code}`,
       tenant_id: tenant.id,
       created_at: new Date().toISOString(),
       ...row,
     }));
     const merged = [...mappedProducts, ...currentProducts.filter((product) => {
-      return !parsed.rows.some((row) => row.sku_code === product.sku_code);
+      return !rows.some((row) => row.sku_code === product.sku_code);
     })];
 
     return NextResponse.json({
-      count: parsed.rows.length,
+      count: rows.length,
       products: merged,
     });
   }
@@ -60,7 +61,7 @@ export async function POST(request: Request) {
     ((existingRows as Array<{ sku_code: string }> | null) ?? []).map((item) => item.sku_code),
   );
 
-  const newSkuCount = parsed.rows.filter((row) => !existingSkuSet.has(row.sku_code)).length;
+  const newSkuCount = rows.filter((row) => !existingSkuSet.has(row.sku_code)).length;
 
   if (existingSkuSet.size + newSkuCount > tenant.max_product_limit) {
     return NextResponse.json(
@@ -69,7 +70,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const payload = parsed.rows.map((row) => ({
+  const payload = rows.map((row) => ({
     tenant_id: tenant.id,
     ...row,
   }));
@@ -89,7 +90,7 @@ export async function POST(request: Request) {
     .order("created_at", { ascending: false });
 
   return NextResponse.json({
-    count: parsed.rows.length,
+    count: rows.length,
     products: data ?? [],
   });
 }

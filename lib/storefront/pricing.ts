@@ -19,6 +19,7 @@ export function toStorefrontProduct(product: Product, tierLevel: PriceTierLevel)
     product_name: product.product_name,
     image_url: product.image_url,
     is_in_stock: product.is_in_stock,
+    currency: product.currency,
     price: pickPriceByTier(product, tierLevel),
   };
 }
