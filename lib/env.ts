@@ -1,5 +1,10 @@
 const env = {
-  supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL ?? "",
+  // SUPABASE_URL is read at runtime (no build-time inlining) so server-side
+  // admin clients work even when the NEXT_PUBLIC_ variable was absent at build.
+  supabaseUrl:
+    process.env.SUPABASE_URL ??
+    process.env.NEXT_PUBLIC_SUPABASE_URL ??
+    "",
   supabaseAnonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "",
   supabaseServiceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY ?? "",
   rootDomain: process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? "ekatalox.com",
@@ -28,7 +33,7 @@ export function hasSupabaseEnv() {
 }
 
 export function hasServiceRoleEnv() {
-  return hasSupabaseEnv() && Boolean(env.supabaseServiceRoleKey);
+  return Boolean(env.supabaseUrl && env.supabaseServiceRoleKey);
 }
 
 export function requireSupabaseEnv() {
