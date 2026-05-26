@@ -224,9 +224,9 @@ export function StorefrontClient({
         </div>
       </header>
 
-      <main className="container-shell mt-8">
-        <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
-          <section className="space-y-6">
+      <main className="mx-auto mt-8 w-full max-w-7xl overflow-hidden px-3 sm:px-6 lg:px-8">
+        <div className="grid min-w-0 max-w-full gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
+          <section className="min-w-0 max-w-full space-y-6">
             <div className="space-y-2">
               <h2 className="text-sm font-bold uppercase tracking-wider text-slate-400">
                 Ürün Kategorileri
@@ -264,9 +264,9 @@ export function StorefrontClient({
               />
             </div>
 
-            <div id="catalog-grid" className="min-w-0 scroll-mt-6">
+            <div id="catalog-grid" className="min-w-0 max-w-full scroll-mt-6">
               {filteredProducts.length ? (
-                <div className="grid min-w-0 grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4">
+                <div className="grid min-w-0 max-w-full grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-2 sm:gap-4 md:grid-cols-3 lg:grid-cols-4">
                   {filteredProducts.map((product) => (
                     <article key={product.id} className={theme.productCard}>
                       <div className={theme.productImageWrap}>
