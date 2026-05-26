@@ -42,7 +42,7 @@ export function Sidebar({
   const links = mode === "admin" ? adminLinks : tenantLinks;
 
   return (
-    <aside className="flex h-full w-full flex-col bg-slate-900 text-white">
+    <aside className="flex h-full w-full flex-col bg-slate-900 text-white md:sticky md:top-0 md:h-screen">
       <div className="border-b border-slate-800 px-6 py-6">
         <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">
           eKatalox
@@ -51,7 +51,7 @@ export function Sidebar({
         <p className="mt-1 text-sm text-slate-400">{subtitle}</p>
       </div>
 
-      <nav className="flex flex-1 flex-col gap-2 p-4">
+      <nav className="flex flex-1 flex-col gap-2 overflow-y-auto p-4">
         {links.map((link) => {
           const active =
             pathname === link.href ||

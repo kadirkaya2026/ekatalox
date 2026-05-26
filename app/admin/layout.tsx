@@ -9,15 +9,17 @@ export default async function AdminLayout({
   await requireSuperAdminPage();
 
   return (
-    <div className="min-h-screen bg-slate-50 md:grid md:grid-cols-[280px_1fr]">
-      <div className="hidden md:block">
+    <div className="min-h-screen bg-slate-50 md:grid md:h-screen md:grid-cols-[280px_1fr] md:overflow-hidden">
+      <div className="hidden md:block md:h-screen">
         <Sidebar
           mode="admin"
           title="Süper Admin"
           subtitle="Tenant ve şifre yönetimi"
         />
       </div>
-      <main className="container-shell py-6">{children}</main>
+      <main className="container-shell py-6 md:h-screen md:overflow-y-auto">
+        {children}
+      </main>
     </div>
   );
 }

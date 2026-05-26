@@ -86,7 +86,11 @@ export async function POST(request: Request) {
       ),
     ];
 
-    return NextResponse.json({ count: rows.length, products: merged });
+    return NextResponse.json({
+      count: rows.length,
+      products: merged,
+      categories,
+    });
   }
 
   // -------------------------------------------------------------------------
@@ -184,11 +188,22 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: upsertError.message }, { status: 400 });
   }
 
-  const { data } = await supabase
-    .from("products")
-    .select("*")
-    .eq("tenant_id", tenant.id)
-    .order("created_at", { ascending: false });
+  const [{ data: products }, { data: categories }] = await Promise.all([
+    supabase
+      .from("products")
+      .select("*")
+      .eq("tenant_id", tenant.id)
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("categories")
+      .select("*")
+      .eq("tenant_id", tenant.id)
+      .order("name", { ascending: true }),
+  ]);
 
-  return NextResponse.json({ count: rows.length, products: data ?? [] });
+  return NextResponse.json({
+    count: rows.length,
+    products: products ?? [],
+    categories: categories ?? [],
+  });
 }

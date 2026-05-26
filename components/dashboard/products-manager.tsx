@@ -2,7 +2,15 @@
 
 import { useMemo, useRef, useState, useTransition } from "react";
 import Image from "next/image";
-import { FileSpreadsheet, ImagePlus, PencilLine, Plus, Upload } from "lucide-react";
+import {
+  AlertTriangle,
+  FileSpreadsheet,
+  ImagePlus,
+  PencilLine,
+  Plus,
+  Trash2,
+  Upload,
+} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -41,6 +49,13 @@ const emptyForm: ProductFormState = {
   image: null,
 };
 
+const PACKAGE_UPGRADE_PHONE = "905354172510";
+
+function buildPackageUpgradeHref(companyName: string) {
+  const message = `Merhaba, paketimi yükseltmek istiyorum. Firma: ${companyName}`;
+  return `https://wa.me/${PACKAGE_UPGRADE_PHONE}?text=${encodeURIComponent(message)}`;
+}
+
 function toFormData(form: ProductFormState) {
   const formData = new FormData();
   formData.set("category_id", form.category_id);
@@ -75,19 +90,25 @@ function productToForm(product: Product): ProductFormState {
 
 export function ProductsManager({
   tenant,
+  products: controlledProducts,
+  onProductsUpdated,
   initialProducts,
   initialCategories,
 }: {
   tenant: Tenant;
+  products?: Product[];
+  onProductsUpdated?: (products: Product[]) => void;
   initialProducts: Product[];
   initialCategories: Category[];
 }) {
-  const [products, setProducts] = useState(initialProducts);
-  const [categories] = useState(initialCategories);
+  const [internalProducts, setInternalProducts] = useState(initialProducts);
   const [searchTerm, setSearchTerm] = useState("");
   const [createForm, setCreateForm] = useState<ProductFormState>(emptyForm);
   const [editForm, setEditForm] = useState<ProductFormState>(emptyForm);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Product | null>(null);
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+  const [selectedProductIds, setSelectedProductIds] = useState<string[]>([]);
   const [csvSummary, setCsvSummary] = useState<{
     totalRows: number;
     errors: string[];
@@ -96,6 +117,9 @@ export function ProductsManager({
   const [message, setMessage] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const products = controlledProducts ?? internalProducts;
+  const syncProducts = onProductsUpdated ?? setInternalProducts;
+  const categories = initialCategories;
 
   const usage = useMemo(
     () => ({
@@ -127,6 +151,17 @@ export function ProductsManager({
   const categoryNameMap = useMemo(
     () => new Map(categories.map((category) => [category.id, category.name])),
     [categories],
+  );
+  const isLimitFull = usage.remaining <= 0;
+  const filteredProductIds = filteredProducts.map((product) => product.id);
+  const allFilteredSelected =
+    filteredProductIds.length > 0 &&
+    filteredProductIds.every((id) => selectedProductIds.includes(id));
+  const someFilteredSelected =
+    filteredProductIds.some((id) => selectedProductIds.includes(id)) &&
+    !allFilteredSelected;
+  const selectedProducts = products.filter((product) =>
+    selectedProductIds.includes(product.id),
   );
 
   function updateCreateField<Key extends keyof ProductFormState>(
@@ -167,6 +202,11 @@ export function ProductsManager({
       return;
     }
 
+    if (isLimitFull) {
+      setMessage("Paketiniz dolu. Yeni ürün eklemek için paketinizi yükseltin veya ürün silin.");
+      return;
+    }
+
     setMessage(null);
     startTransition(async () => {
       const response = await fetch("/api/tenant/products/import", {
@@ -183,7 +223,7 @@ export function ProductsManager({
       }
 
       if (result.products) {
-        setProducts(result.products as Product[]);
+        syncProducts(result.products as Product[]);
       }
 
       setMessage(`CSV içeri alındı. ${result.count ?? 0} satır işlendi.`);
@@ -198,6 +238,11 @@ export function ProductsManager({
     event.preventDefault();
     setMessage(null);
 
+    if (isLimitFull) {
+      setMessage("Paketiniz dolu. Yeni ürün eklemek için paketinizi yükseltin veya ürün silin.");
+      return;
+    }
+
     startTransition(async () => {
       const response = await fetch("/api/tenant/products", {
         method: "POST",
@@ -211,7 +256,7 @@ export function ProductsManager({
         return;
       }
 
-      setProducts((current) => [result.product as Product, ...current]);
+      syncProducts([result.product as Product, ...products]);
       setCreateForm(emptyForm);
       setMessage("Yeni ürün eklendi.");
     });
@@ -246,8 +291,8 @@ export function ProductsManager({
         return;
       }
 
-      setProducts((current) =>
-        current.map((item) =>
+      syncProducts(
+        products.map((item) =>
           item.id === editingProduct.id ? (result.product as Product) : item,
         ),
       );
@@ -275,14 +320,83 @@ export function ProductsManager({
         return;
       }
 
-      setProducts((current) =>
-        current.map((item) =>
+      syncProducts(
+        products.map((item) =>
           item.id === product.id
             ? { ...item, is_in_stock: result.product.is_in_stock }
             : item,
         ),
       );
       setMessage("Stok durumu güncellendi.");
+    });
+  }
+
+  function toggleSelectProduct(productId: string) {
+    setSelectedProductIds((current) =>
+      current.includes(productId)
+        ? current.filter((id) => id !== productId)
+        : [...current, productId],
+    );
+  }
+
+  function toggleSelectAllFiltered() {
+    setSelectedProductIds((current) => {
+      if (allFilteredSelected) {
+        return current.filter((id) => !filteredProductIds.includes(id));
+      }
+
+      return Array.from(new Set([...current, ...filteredProductIds]));
+    });
+  }
+
+  function handleDeleteProduct(product: Product) {
+    setMessage(null);
+    startTransition(async () => {
+      const response = await fetch(`/api/tenant/products/${product.id}`, {
+        method: "DELETE",
+      });
+      const result = await response.json();
+
+      if (!response.ok) {
+        setMessage(result.error ?? "Ürün silinemedi.");
+        return;
+      }
+
+      const updatedProducts = products.filter((item) => item.id !== product.id);
+      syncProducts(updatedProducts);
+      setSelectedProductIds((current) =>
+        current.filter((id) => id !== product.id),
+      );
+      setDeleteTarget(null);
+      setMessage("Ürün kalıcı olarak silindi.");
+    });
+  }
+
+  function handleBulkDelete() {
+    if (!selectedProductIds.length) {
+      return;
+    }
+
+    setMessage(null);
+    startTransition(async () => {
+      const response = await fetch("/api/tenant/products/bulk-delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ productIds: selectedProductIds }),
+      });
+      const result = await response.json();
+
+      if (!response.ok) {
+        setMessage(result.error ?? "Seçilen ürünler silinemedi.");
+        return;
+      }
+
+      const deletedIds = new Set<string>(result.deletedIds ?? []);
+      const updatedProducts = products.filter((item) => !deletedIds.has(item.id));
+      syncProducts(updatedProducts);
+      setSelectedProductIds([]);
+      setBulkDeleteOpen(false);
+      setMessage(`${deletedIds.size} ürün kalıcı olarak silindi.`);
     });
   }
 
@@ -314,6 +428,27 @@ export function ProductsManager({
           <p className="mt-2 text-3xl font-bold text-emerald-700">{usage.remaining}</p>
         </Card>
       </div>
+
+      {isLimitFull ? (
+        <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-4">
+          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            <div className="flex items-start gap-3">
+              <AlertTriangle className="mt-0.5 size-5 shrink-0 text-amber-700" />
+              <div>
+                <p className="text-sm font-semibold text-amber-900">
+                  Paketiniz doldu, yeni ürün ekleyemezsiniz.
+                </p>
+                <p className="mt-1 text-sm text-amber-800">
+                  Limitiniz {usage.limit} ürüne ulaştı. Paket yükseltebilir veya ürün silerek yeniden yer açabilirsiniz.
+                </p>
+              </div>
+            </div>
+            <Button asChild href={buildPackageUpgradeHref(tenant.company_name)}>
+              Paketimi Yükseltmek İstiyorum
+            </Button>
+          </div>
+        </div>
+      ) : null}
 
       {message ? (
         <div className="rounded-xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
@@ -478,7 +613,7 @@ export function ProductsManager({
                 <Button
                   className="mt-4"
                   onClick={importCsv}
-                  disabled={pending || csvSummary.errors.length > 0}
+                  disabled={pending || csvSummary.errors.length > 0 || isLimitFull}
                 >
                   CSV&apos;yi içeri al
                 </Button>
@@ -490,23 +625,57 @@ export function ProductsManager({
 
       <Card className="overflow-hidden">
         <div className="border-b border-slate-100 px-5 py-4">
-          <h2 className="text-lg font-semibold text-slate-900">Mevcut ürünler</h2>
-          <p className="mt-1 text-sm text-slate-600">
-            Masaüstünde tablo, mobilde kart düzeni ile hızlı yönetim.
-          </p>
-          <div className="mt-4 max-w-md">
-            <Input
-              placeholder="Ürün adı veya SKU ara"
-              value={searchTerm}
-              onChange={(event) => setSearchTerm(event.target.value)}
-            />
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+            <div>
+              <h2 className="text-lg font-semibold text-slate-900">Mevcut ürünler</h2>
+              <p className="mt-1 text-sm text-slate-600">
+                Masaüstünde tablo, mobilde kart düzeni ile hızlı yönetim.
+              </p>
+            </div>
+            <div className="w-full max-w-md">
+              <Input
+                placeholder="Ürün adı veya SKU ara"
+                value={searchTerm}
+                onChange={(event) => setSearchTerm(event.target.value)}
+              />
+            </div>
           </div>
+
+          {selectedProductIds.length ? (
+            <div className="mt-4 flex flex-col gap-3 rounded-xl border border-red-100 bg-red-50 px-4 py-4 md:flex-row md:items-center md:justify-between">
+              <p className="text-sm font-semibold text-red-800">
+                {selectedProductIds.length} ürün seçildi. Bu işlem geri alınamaz.
+              </p>
+              <Button
+                variant="secondary"
+                className="border-red-200 bg-white text-red-700 hover:bg-red-100"
+                onClick={() => setBulkDeleteOpen(true)}
+                disabled={pending}
+              >
+                <Trash2 className="size-4" />
+                Seçilenleri Sil
+              </Button>
+            </div>
+          ) : null}
         </div>
 
         <TableWrapper>
           <Table>
             <thead className="bg-slate-50 text-left text-xs uppercase tracking-[0.16em] text-slate-500">
               <tr>
+                <th className="px-4 py-3">
+                  <input
+                    type="checkbox"
+                    checked={allFilteredSelected}
+                    ref={(element) => {
+                      if (element) {
+                        element.indeterminate = someFilteredSelected;
+                      }
+                    }}
+                    onChange={toggleSelectAllFiltered}
+                    aria-label="Tüm filtrelenmiş ürünleri seç"
+                  />
+                </th>
                 <th className="px-4 py-3">Ürün</th>
                 <th className="px-4 py-3">Stok</th>
                 <th className="px-4 py-3">Katman 1</th>
@@ -518,6 +687,14 @@ export function ProductsManager({
             <tbody>
               {filteredProducts.map((product) => (
                 <tr key={product.id} className="border-t border-slate-100">
+                  <td className="px-4 py-4">
+                    <input
+                      type="checkbox"
+                      checked={selectedProductIds.includes(product.id)}
+                      onChange={() => toggleSelectProduct(product.id)}
+                      aria-label={`${product.product_name} seç`}
+                    />
+                  </td>
                   <td className="px-4 py-4">
                     <div className="flex items-center gap-3">
                       <div className="relative h-14 w-14 overflow-hidden rounded-xl bg-slate-100">
@@ -559,6 +736,14 @@ export function ProductsManager({
                         <PencilLine className="size-4" />
                         Düzenle
                       </Button>
+                      <Button
+                        variant="secondary"
+                        className="border-red-200 text-red-700 hover:bg-red-50"
+                        onClick={() => setDeleteTarget(product)}
+                      >
+                        <Trash2 className="size-4" />
+                        Sil
+                      </Button>
                     </div>
                   </td>
                 </tr>
@@ -581,6 +766,16 @@ export function ProductsManager({
         <div className="grid gap-4 p-4 md:hidden">
           {filteredProducts.map((product) => (
             <Card key={product.id} className="p-4">
+              <div className="mb-3 flex items-center justify-between">
+                <label className="flex items-center gap-2 text-sm text-slate-600">
+                  <input
+                    type="checkbox"
+                    checked={selectedProductIds.includes(product.id)}
+                    onChange={() => toggleSelectProduct(product.id)}
+                  />
+                  Seç
+                </label>
+              </div>
               <div className="flex gap-3">
                 <div className="relative h-20 w-20 overflow-hidden rounded-xl bg-slate-100">
                   {product.image_url ? (
@@ -638,6 +833,13 @@ export function ProductsManager({
                   onClick={() => openEdit(product)}
                 >
                   Düzenle
+                </Button>
+                <Button
+                  variant="secondary"
+                  className="flex-1 border-red-200 text-red-700 hover:bg-red-50"
+                  onClick={() => setDeleteTarget(product)}
+                >
+                  Sil
                 </Button>
               </div>
             </Card>
@@ -737,6 +939,77 @@ export function ProductsManager({
             </Button>
           </div>
         </form>
+      </Modal>
+
+      <Modal
+        open={Boolean(deleteTarget)}
+        onClose={() => setDeleteTarget(null)}
+        title="Ürünü kalıcı olarak sil"
+      >
+        {deleteTarget ? (
+          <div className="space-y-4">
+            <div className="rounded-xl border border-red-100 bg-red-50 p-4">
+              <p className="text-sm font-semibold text-red-900">
+                {deleteTarget.product_name}
+              </p>
+              <p className="mt-1 text-sm text-red-800">
+                SKU: {deleteTarget.sku_code}
+              </p>
+              <p className="mt-3 text-sm text-red-800">
+                Bu işlem geri alınamaz. Ürün kaydı ve bağlı görsel kalıcı olarak silinecektir.
+              </p>
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="secondary" onClick={() => setDeleteTarget(null)}>
+                Vazgeç
+              </Button>
+              <Button onClick={() => handleDeleteProduct(deleteTarget)} disabled={pending}>
+                <Trash2 className="size-4" />
+                Kalıcı Olarak Sil
+              </Button>
+            </div>
+          </div>
+        ) : null}
+      </Modal>
+
+      <Modal
+        open={bulkDeleteOpen}
+        onClose={() => setBulkDeleteOpen(false)}
+        title="Seçili ürünleri kalıcı olarak sil"
+      >
+        <div className="space-y-4">
+          <div className="rounded-xl border border-red-100 bg-red-50 p-4">
+            <p className="text-sm font-semibold text-red-900">
+              {selectedProductIds.length} ürün kalıcı olarak silinecek.
+            </p>
+            <p className="mt-2 text-sm text-red-800">
+              Bu işlem geri alınamaz. Seçtiğiniz ürün kayıtları ve bağlı görseller
+              Storage’dan silinecektir.
+            </p>
+            {selectedProducts.length ? (
+              <ul className="mt-3 space-y-1 text-sm text-red-800">
+                {selectedProducts.slice(0, 5).map((product) => (
+                  <li key={product.id}>
+                    • {product.product_name} ({product.sku_code})
+                  </li>
+                ))}
+                {selectedProducts.length > 5 ? (
+                  <li>• ve {selectedProducts.length - 5} ürün daha</li>
+                ) : null}
+              </ul>
+            ) : null}
+          </div>
+
+          <div className="flex justify-end gap-2">
+            <Button variant="secondary" onClick={() => setBulkDeleteOpen(false)}>
+              Vazgeç
+            </Button>
+            <Button onClick={handleBulkDelete} disabled={pending}>
+              <Trash2 className="size-4" />
+              Seçilenleri Kalıcı Olarak Sil
+            </Button>
+          </div>
+        </div>
       </Modal>
     </div>
   );

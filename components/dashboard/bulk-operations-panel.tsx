@@ -24,7 +24,7 @@ import { parseProductsCsv } from "@/lib/csv/parse-products";
 import { sanitizeFileName } from "@/lib/storage/storage-helpers";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import type { ParsedCsvResult } from "@/lib/csv/parse-products";
-import type { Product, Tenant } from "@/lib/types";
+import type { Category, Product, Tenant } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 // ---------------------------------------------------------------------------
@@ -92,7 +92,54 @@ interface ZipState {
 
 interface Props {
   tenant: Tenant;
+  usage: {
+    total: number;
+    limit: number;
+    remaining: number;
+  };
   onProductsUpdated?: (products: Product[]) => void;
+  onCategoriesUpdated?: (categories: Category[]) => void;
+}
+
+const PACKAGE_UPGRADE_PHONE = "905354172510";
+
+function buildPackageUpgradeHref(companyName: string) {
+  const message = `Merhaba, paketimi yükseltmek istiyorum. Firma: ${companyName}`;
+  return `https://wa.me/${PACKAGE_UPGRADE_PHONE}?text=${encodeURIComponent(message)}`;
+}
+
+function PackageLimitAlert({
+  tenant,
+  usage,
+}: {
+  tenant: Tenant;
+  usage: Props["usage"];
+}) {
+  if (usage.remaining > 0) {
+    return null;
+  }
+
+  return (
+    <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
+      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <div>
+          <p className="text-sm font-semibold text-amber-900">
+            Paketiniz doldu, yeni ürün eklemek için paketinizi yükseltin.
+          </p>
+          <p className="mt-1 text-sm text-amber-800">
+            Mevcut kullanım: {usage.total} / {usage.limit}. Ürün sildiğiniz anda kapasiteniz tekrar açılır.
+          </p>
+        </div>
+        <Button
+          asChild
+          href={buildPackageUpgradeHref(tenant.company_name)}
+          className="shrink-0"
+        >
+          Paketimi Yükseltmek İstiyorum
+        </Button>
+      </div>
+    </div>
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -331,10 +378,14 @@ function ProgressBar({ value }: { value: number }) {
 // ---------------------------------------------------------------------------
 function ProductImportTab({
   tenant,
+  usage,
   onProductsUpdated,
+  onCategoriesUpdated,
 }: {
   tenant: Tenant;
+  usage: Props["usage"];
   onProductsUpdated?: (products: Product[]) => void;
+  onCategoriesUpdated?: (categories: Category[]) => void;
 }) {
   const [state, setState] = useState<CsvState>({
     status: "idle",
@@ -344,6 +395,16 @@ function ProductImportTab({
   });
 
   const handleFile = useCallback(async (file: File) => {
+    if (usage.remaining <= 0) {
+      setState({
+        status: "error",
+        file: null,
+        parsed: null,
+        message: "Ürün limitiniz dolu. Yeni ürün eklemek için paketinizi yükseltin veya ürün silin.",
+      });
+      return;
+    }
+
     const isValid =
       file.name.endsWith(".csv") ||
       file.name.endsWith(".xlsx") ||
@@ -376,10 +437,18 @@ function ProductImportTab({
         message: "Dosya okunamadı. Lütfen şablona uygun bir dosya yükleyin.",
       });
     }
-  }, []);
+  }, [usage.remaining]);
 
   const handleImport = useCallback(async () => {
     if (!state.parsed?.rows.length) return;
+    if (usage.remaining <= 0) {
+      setState((s) => ({
+        ...s,
+        status: "error",
+        message: "Ürün limitiniz dolu. Yeni ürün eklemek için paketinizi yükseltin veya ürün silin.",
+      }));
+      return;
+    }
 
     setState((s) => ({ ...s, status: "importing", message: null }));
 
@@ -405,6 +474,10 @@ function ProductImportTab({
         onProductsUpdated?.(result.products as Product[]);
       }
 
+      if (result.categories) {
+        onCategoriesUpdated?.(result.categories as Category[]);
+      }
+
       setState({
         status: "done",
         file: null,
@@ -418,7 +491,7 @@ function ProductImportTab({
         message: "Sunucuya bağlanılamadı. Lütfen tekrar deneyin.",
       }));
     }
-  }, [state.parsed, onProductsUpdated]);
+  }, [state.parsed, onCategoriesUpdated, onProductsUpdated, usage.remaining]);
 
   const reset = useCallback(() => {
     setState({ status: "idle", file: null, parsed: null, message: null });
@@ -429,6 +502,8 @@ function ProductImportTab({
 
   return (
     <div className="space-y-6">
+      <PackageLimitAlert tenant={tenant} usage={usage} />
+
       {/* Steps */}
       <div className="rounded-xl border border-slate-100 bg-slate-50 p-5">
         <Step
@@ -498,6 +573,7 @@ function ProductImportTab({
         <Dropzone
           accept=".csv,.xlsx,.xls,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
           onFile={handleFile}
+          disabled={usage.remaining <= 0}
           label="Excel veya CSV dosyasını buraya sürükleyin ya da tıklayın"
           hint=".xlsx veya .csv — maks. boyut sınırı yok"
         />
@@ -560,7 +636,7 @@ function ProductImportTab({
 
           {state.parsed.errors.length === 0 ? (
             <div className="border-t border-slate-100 px-4 py-3">
-              <Button onClick={handleImport} disabled={isLoading}>
+              <Button onClick={handleImport} disabled={isLoading || usage.remaining <= 0}>
                 {isLoading ? (
                   <>
                     <Loader2 className="size-4 animate-spin" />
@@ -915,7 +991,12 @@ function ImageImportTab({ tenant }: { tenant: Tenant }) {
 // ---------------------------------------------------------------------------
 // Main exported component
 // ---------------------------------------------------------------------------
-export function BulkOperationsPanel({ tenant, onProductsUpdated }: Props) {
+export function BulkOperationsPanel({
+  tenant,
+  usage,
+  onProductsUpdated,
+  onCategoriesUpdated,
+}: Props) {
   const [activeTab, setActiveTab] = useState<TabId>("products");
 
   return (
@@ -963,7 +1044,9 @@ export function BulkOperationsPanel({ tenant, onProductsUpdated }: Props) {
         {activeTab === "products" ? (
           <ProductImportTab
             tenant={tenant}
+            usage={usage}
             onProductsUpdated={onProductsUpdated}
+            onCategoriesUpdated={onCategoriesUpdated}
           />
         ) : (
           <ImageImportTab tenant={tenant} />
