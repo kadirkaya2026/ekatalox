@@ -68,12 +68,17 @@ export function LoginForm({ target }: { target?: string }) {
 
       const { data: profile } = await supabase
         .from("profiles")
-        .select("role")
+        .select("role, must_change_password")
         .eq("id", user.id)
         .maybeSingle();
 
       if (profile?.role === "super_admin") {
         window.location.href = "https://admin.ekatalox.com/";
+        return;
+      }
+
+      if (profile?.must_change_password) {
+        window.location.href = "https://app.ekatalox.com/settings?forcePasswordChange=1";
         return;
       }
 

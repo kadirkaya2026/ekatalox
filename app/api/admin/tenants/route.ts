@@ -1,14 +1,14 @@
-import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
 import { demoTenants } from "@/lib/demo-data";
 import { shouldAllowDemoFallback } from "@/lib/env";
+import { generateTemporaryPassword } from "@/lib/auth/password";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import {
   isReservedSubdomain,
   RESERVED_SUBDOMAIN_MESSAGE,
 } from "@/lib/tenancy/reserved-subdomains";
 import { ensureSuperAdminResponse } from "@/lib/tenancy/guards";
-import type { Tenant } from "@/lib/types";
+import type { Profile, Tenant } from "@/lib/types";
 import { tenantSchema } from "@/lib/validators/tenant";
 
 export async function GET() {
@@ -75,34 +75,111 @@ export async function POST(request: Request) {
       );
     }
 
+    const temporaryPassword = generateTemporaryPassword();
     const tenant: Tenant = {
-      id: randomUUID(),
+      id: crypto.randomUUID(),
       status: "active",
       created_at: new Date().toISOString(),
-      ...parsed.data,
+      company_name: parsed.data.company_name,
+      subdomain: parsed.data.subdomain.toLowerCase(),
+      max_product_limit: parsed.data.max_product_limit,
+      whatsapp_number: parsed.data.whatsapp_number,
+    };
+    const profile: Profile = {
+      id: crypto.randomUUID(),
+      full_name: parsed.data.tenant_admin_full_name ?? null,
+      role: "tenant_admin",
+      must_change_password: true,
+      created_at: new Date().toISOString(),
     };
 
-    return NextResponse.json({ tenant });
+    return NextResponse.json({
+      tenant,
+      tenantAdmin: {
+        email: parsed.data.tenant_admin_email,
+        temporaryPassword,
+        profile,
+      },
+    });
   }
 
+  const temporaryPassword = generateTemporaryPassword();
   const payload = {
-    ...parsed.data,
+    company_name: parsed.data.company_name,
     subdomain: parsed.data.subdomain.toLowerCase(),
+    max_product_limit: parsed.data.max_product_limit,
+    whatsapp_number: parsed.data.whatsapp_number,
     status: "active",
   };
 
-  const { data, error } = await supabase
+  const { data: tenant, error: tenantError } = await supabase
     .from("tenants")
     .insert(payload)
     .select("*")
     .single();
 
-  if (error) {
+  if (tenantError || !tenant) {
     return NextResponse.json(
       { error: "Tenant oluşturulamadı. Alt alan adı veya veri çakışması olabilir." },
       { status: 400 },
     );
   }
 
-  return NextResponse.json({ tenant: data });
+  const { data: authUser, error: authError } = await supabase.auth.admin.createUser({
+    email: parsed.data.tenant_admin_email,
+    password: temporaryPassword,
+    email_confirm: true,
+    user_metadata: {
+      full_name: parsed.data.tenant_admin_full_name ?? parsed.data.company_name,
+    },
+  });
+
+  if (authError || !authUser.user) {
+    await supabase.from("tenants").delete().eq("id", tenant.id);
+    return NextResponse.json(
+      { error: "Tenant admin hesabı oluşturulamadı." },
+      { status: 400 },
+    );
+  }
+
+  const profilePayload = {
+    id: authUser.user.id,
+    full_name: parsed.data.tenant_admin_full_name ?? null,
+    role: "tenant_admin",
+    must_change_password: true,
+  };
+
+  const { error: profileError } = await supabase.from("profiles").upsert(profilePayload);
+
+  if (profileError) {
+    await supabase.auth.admin.deleteUser(authUser.user.id);
+    await supabase.from("tenants").delete().eq("id", tenant.id);
+    return NextResponse.json(
+      { error: "Tenant admin profili oluşturulamadı." },
+      { status: 400 },
+    );
+  }
+
+  const { error: membershipError } = await supabase.from("tenant_memberships").insert({
+    tenant_id: tenant.id,
+    user_id: authUser.user.id,
+  });
+
+  if (membershipError) {
+    await supabase.from("profiles").delete().eq("id", authUser.user.id);
+    await supabase.auth.admin.deleteUser(authUser.user.id);
+    await supabase.from("tenants").delete().eq("id", tenant.id);
+    return NextResponse.json(
+      { error: "Tenant admin üyeliği oluşturulamadı." },
+      { status: 400 },
+    );
+  }
+
+  return NextResponse.json({
+    tenant,
+    tenantAdmin: {
+      email: parsed.data.tenant_admin_email,
+      temporaryPassword,
+    },
+  });
 }

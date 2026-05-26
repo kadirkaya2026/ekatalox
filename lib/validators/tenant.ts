@@ -22,6 +22,8 @@ export const tenantSchema = z.object({
   subdomain: subdomainSchema,
   max_product_limit: z.union([z.literal(300), z.literal(500), z.literal(1000)]),
   whatsapp_number: z.string().min(10, "WhatsApp numarası zorunludur."),
+  tenant_admin_email: z.email("Geçerli bir tenant admin e-postası girin."),
+  tenant_admin_full_name: z.string().min(2, "Tenant admin adı zorunludur.").optional(),
 });
 
 export const tenantUpdateSchema = z.object({

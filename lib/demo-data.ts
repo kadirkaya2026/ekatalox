@@ -120,6 +120,7 @@ export const demoProfiles: Profile[] = [
     id: "demo-super-admin",
     full_name: "Süper Admin",
     role: "super_admin",
+    must_change_password: false,
     created_at: new Date("2026-01-01").toISOString(),
   },
 ];

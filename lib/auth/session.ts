@@ -130,7 +130,8 @@ export async function requireTenantAdminPage() {
       profile: {
         id: membership?.user_id ?? "demo-tenant-admin",
         full_name: "Demo Tenant Admin",
-        role: "tenant_admin",
+        role: "tenant_admin" as const,
+        must_change_password: false,
         created_at: new Date().toISOString(),
       },
     };

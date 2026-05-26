@@ -17,6 +17,8 @@ interface NewTenantForm {
   subdomain: string;
   max_product_limit: MaxProductLimit;
   whatsapp_number: string;
+  tenant_admin_email: string;
+  tenant_admin_full_name: string;
 }
 
 const defaultForm: NewTenantForm = {
@@ -24,6 +26,8 @@ const defaultForm: NewTenantForm = {
   subdomain: "",
   max_product_limit: 300,
   whatsapp_number: "",
+  tenant_admin_email: "",
+  tenant_admin_full_name: "",
 };
 
 function getSubdomainMessage(value: string) {
@@ -54,6 +58,11 @@ export function AdminTenantsManager({
   const [codeDrafts, setCodeDrafts] = useState<Record<string, string>>({});
   const [tierDrafts, setTierDrafts] = useState<Record<string, 1 | 2 | 3>>({});
   const [message, setMessage] = useState<string | null>(null);
+  const [createdCredentials, setCreatedCredentials] = useState<{
+    email: string;
+    password: string;
+    subdomain: string;
+  } | null>(null);
   const [pending, startTransition] = useTransition();
 
   const totals = useMemo(
@@ -90,6 +99,13 @@ export function AdminTenantsManager({
       }
 
       setTenants((current) => [result.tenant as TenantWithRelations, ...current]);
+      if (result.tenantAdmin) {
+        setCreatedCredentials({
+          email: result.tenantAdmin.email,
+          password: result.tenantAdmin.temporaryPassword,
+          subdomain: result.tenant.subdomain,
+        });
+      }
       setForm(defaultForm);
       setMessage("Yeni tenant oluşturuldu.");
     });
@@ -269,6 +285,24 @@ export function AdminTenantsManager({
               setForm((current) => ({ ...current, whatsapp_number: event.target.value }))
             }
           />
+          <Input
+            type="email"
+            placeholder="tenant-admin@firma.com"
+            value={form.tenant_admin_email}
+            onChange={(event) =>
+              setForm((current) => ({ ...current, tenant_admin_email: event.target.value }))
+            }
+          />
+          <Input
+            placeholder="Tenant admin adı"
+            value={form.tenant_admin_full_name}
+            onChange={(event) =>
+              setForm((current) => ({
+                ...current,
+                tenant_admin_full_name: event.target.value,
+              }))
+            }
+          />
           <div className="md:col-span-2 xl:col-span-4">
             <p className="mb-3 text-sm text-slate-500">
               Ayrılmış kelimeler: admin, app, www, api, ekatalox, assets
@@ -390,6 +424,40 @@ export function AdminTenantsManager({
           </Card>
         ))}
       </div>
+
+      {createdCredentials ? (
+        <Card className="p-5">
+          <p className="text-sm font-semibold text-slate-900">
+            Tenant admin hesabı oluşturuldu
+          </p>
+          <div className="mt-4 space-y-2 text-sm text-slate-600">
+            <p>
+              <span className="font-medium text-slate-900">Giriş adresi:</span>{" "}
+              {createdCredentials.email}
+            </p>
+            <p>
+              <span className="font-medium text-slate-900">Geçici şifre:</span>{" "}
+              {createdCredentials.password}
+            </p>
+            <p>
+              <span className="font-medium text-slate-900">Panel:</span>{" "}
+              app.ekatalox.com
+            </p>
+            <p>
+              <span className="font-medium text-slate-900">Mağaza:</span>{" "}
+              {createdCredentials.subdomain}.ekatalox.com
+            </p>
+            <p className="pt-2 text-amber-700">
+              Bu şifre yalnız bir kez gösterilir. Lütfen şimdi kaydedin.
+            </p>
+          </div>
+          <div className="mt-4">
+            <Button variant="secondary" onClick={() => setCreatedCredentials(null)}>
+              Kapat
+            </Button>
+          </div>
+        </Card>
+      ) : null}
     </div>
   );
 }
