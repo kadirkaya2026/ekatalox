@@ -35,7 +35,7 @@ export const storefrontThemes: Record<StorefrontThemeKey, StorefrontThemeClasses
     heroTitle: "text-3xl font-extrabold tracking-tight text-slate-900 md:text-4xl",
     heroDescription: "mt-3 text-base text-slate-600 max-w-2xl leading-relaxed",
     heroHeading: "text-lg font-semibold text-emerald-800",
-    categoryRail: "flex max-w-full gap-2 overflow-x-auto pb-3 pt-1 scrollbar-none whitespace-nowrap",
+    categoryRail: "flex max-w-full gap-2 overflow-x-auto pb-3 pt-1 scrollbar-none whitespace-nowrap lg:flex-wrap lg:overflow-visible lg:whitespace-normal",
     categoryChip: (active) =>
       cn(
         "rounded-full px-5 py-2.5 text-sm font-semibold transition shadow-sm",
@@ -66,7 +66,7 @@ export const storefrontThemes: Record<StorefrontThemeKey, StorefrontThemeClasses
     heroTitle: "text-3xl font-extrabold tracking-tight text-white md:text-4xl",
     heroDescription: "mt-3 text-base text-slate-400 max-w-2xl leading-relaxed",
     heroHeading: "text-lg font-semibold text-emerald-400",
-    categoryRail: "flex max-w-full gap-2 overflow-x-auto pb-3 pt-1 scrollbar-none whitespace-nowrap",
+    categoryRail: "flex max-w-full gap-2 overflow-x-auto pb-3 pt-1 scrollbar-none whitespace-nowrap lg:flex-wrap lg:overflow-visible lg:whitespace-normal",
     categoryChip: (active) =>
       cn(
         "rounded-full px-5 py-2.5 text-sm font-semibold transition shadow-sm",
@@ -97,7 +97,7 @@ export const storefrontThemes: Record<StorefrontThemeKey, StorefrontThemeClasses
     heroTitle: "text-3xl font-bold tracking-tight text-rose-950 md:text-4xl",
     heroDescription: "mt-3 text-base text-slate-600 max-w-2xl leading-relaxed",
     heroHeading: "text-lg font-semibold text-rose-700",
-    categoryRail: "flex max-w-full gap-2 overflow-x-auto pb-3 pt-1 scrollbar-none whitespace-nowrap",
+    categoryRail: "flex max-w-full gap-2 overflow-x-auto pb-3 pt-1 scrollbar-none whitespace-nowrap lg:flex-wrap lg:overflow-visible lg:whitespace-normal",
     categoryChip: (active) =>
       cn(
         "rounded-full px-5 py-2.5 text-sm font-semibold transition shadow-sm",
