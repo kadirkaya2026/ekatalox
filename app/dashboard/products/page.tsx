@@ -1,5 +1,5 @@
 import { Header } from "@/components/dashboard/header";
-import { ProductsManager } from "@/components/dashboard/products-manager";
+import { ProductsPageShell } from "@/components/dashboard/products-page-shell";
 import { requireTenantAdminPage } from "@/lib/auth/session";
 import { getTenantCategories, getTenantProducts } from "@/lib/data";
 
@@ -15,10 +15,10 @@ export default async function TenantProductsPage() {
       <Header
         eyebrow="Ürün Yönetimi"
         title="Ürünleri masaüstünde tablo, mobilde kart görünümüyle yönetin"
-        description="CSV import, tekil ürün ekleme, düzenleme modalı, stok yönetimi ve Supabase Storage görsel yükleme bu ekranda toplanır."
+        description="Toplu işlemler, tekil ürün ekleme, düzenleme modalı, stok yönetimi ve Supabase Storage görsel yükleme bu ekranda toplanır."
       />
 
-      <ProductsManager
+      <ProductsPageShell
         tenant={session.tenant!}
         initialProducts={products}
         initialCategories={categories}
