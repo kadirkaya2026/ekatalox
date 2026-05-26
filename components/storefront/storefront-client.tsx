@@ -1102,7 +1102,7 @@ export function StorefrontClient({
       <Modal
         open={Boolean(selectedProduct)}
         onClose={closeAddToCartModal}
-        title={selectedProduct ? `${selectedProduct.product_name} • Sepete Ekle` : "Sepete Ekle"}
+        title="Sepete Ekle"
       >
         {selectedProduct ? (
           <form onSubmit={confirmAddToCart} className="grid gap-4">
