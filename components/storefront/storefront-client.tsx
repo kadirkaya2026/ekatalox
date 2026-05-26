@@ -137,7 +137,6 @@ function renderBannerItem(
   banner: BannerItem,
   index: number,
   title: string,
-  description: string,
 ) {
   return (
     <div
@@ -159,44 +158,26 @@ function renderBannerItem(
         aria-hidden="true"
         className="absolute inset-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.05),transparent_60%)]"
       />
-      <div className="relative grid min-h-[260px] gap-6 p-5 sm:p-6 md:min-h-[340px] md:grid-cols-[1.1fr_0.9fr] md:gap-8 md:p-8 lg:min-h-[400px] lg:gap-12 lg:p-12">
-        <div
-          className={cn(
-            "flex max-w-2xl flex-col justify-center",
-            banner.image_url ? "" : "md:pr-10",
-          )}
-        >
-          <h3 className="max-w-xl text-2xl font-bold tracking-tight text-white sm:text-3xl lg:text-[2.9rem] lg:leading-[1.02]">
-            {banner.title ?? `${title} için öne çıkan fırsatlar`}
-          </h3>
-          <p className="mt-4 max-w-xl text-sm leading-7 text-white/80 sm:text-base lg:text-lg">
-            {banner.description ??
-              description ??
-              "Esnafınıza özel kampanya, duyuru ve indirim içeriklerini bu alanda yayınlayabilirsiniz."}
-          </p>
-        </div>
-
-        <div className="relative h-full min-h-[220px] overflow-hidden rounded-[1.75rem] border border-white/15 bg-white/10 backdrop-blur-sm md:min-h-[300px]">
-          {banner.image_url ? (
-            <Image
-              src={banner.image_url}
-              alt={banner.title ?? `${title} banner`}
-              fill
-              className="object-cover"
-              sizes="(max-width: 768px) 100vw, 42vw"
-              unoptimized
-            />
-          ) : (
-            <div className="flex h-full items-center justify-center p-8 text-center text-white/70">
-              <div>
-                <p className="text-lg font-semibold sm:text-xl">Banner görseli eklenmedi</p>
-                <p className="mt-2 text-sm leading-6 sm:text-base">
-                  Yönetim panelinden bu segmente görsel, bağlantı ve CTA tanımlayabilirsiniz.
-                </p>
-              </div>
+      <div className="relative min-h-[260px] md:min-h-[340px] lg:min-h-[400px]">
+        {banner.image_url ? (
+          <Image
+            src={banner.image_url}
+            alt={banner.title ?? `${title} banner`}
+            fill
+            className="object-cover"
+            sizes="100vw"
+            unoptimized
+          />
+        ) : (
+          <div className="flex h-full min-h-[260px] items-center justify-center p-8 text-center text-white/70 md:min-h-[340px] lg:min-h-[400px]">
+            <div>
+              <p className="text-lg font-semibold sm:text-xl">Banner görseli eklenmedi</p>
+              <p className="mt-2 text-sm leading-6 sm:text-base">
+                Yönetim panelinden bu segmente banner görseli yükleyebilirsiniz.
+              </p>
             </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -326,8 +307,6 @@ export function StorefrontClient({
     [cart],
   );
   const storefrontTitle = storefrontSettings.storefront_title || tenant.company_name;
-  const storefrontDescription =
-    storefrontSettings.storefront_description || "Profesyonel B2B vitrin ve sipariş deneyimi";
 
   useEffect(() => {
     if (!isMounted) {
@@ -922,7 +901,6 @@ export function StorefrontClient({
                     currentBanner,
                     activeBannerIndex,
                     storefrontTitle,
-                    storefrontDescription,
                   )
                 : null}
               {bannerItems.length > 1 ? (
