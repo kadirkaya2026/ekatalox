@@ -21,12 +21,17 @@
 }
 
 html {
-  @apply bg-slate-50 overflow-x-hidden;
+  @apply overflow-x-hidden;
   scroll-behavior: smooth;
+  background: #0b0f19;
 }
 
 body {
-  @apply min-h-screen overflow-x-hidden bg-slate-50 font-sans text-slate-900 antialiased;
+  @apply min-h-screen overflow-x-hidden antialiased;
+  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, "SF Pro Display", system-ui, sans-serif;
+  text-rendering: optimizeLegibility;
+  background: #0b0f19;
+  color: #fff;
 }
 
 a {
@@ -48,7 +53,8 @@ button:focus-visible {
 }
 
 ::selection {
-  @apply bg-emerald-100 text-slate-900;
+  background: rgba(0, 210, 255, 0.3);
+  color: #fff;
 }
 
 .container-shell {
@@ -67,74 +73,69 @@ button:focus-visible {
   padding-bottom: calc(env(safe-area-inset-bottom) + 6rem);
 }
 
-.ek-homepage {
-  background: #0b0f19;
-  color: #fff;
-}
-
-.ek-homepage section[id] {
+section[id] {
   scroll-margin-top: 6rem;
 }
 
-.ek-homepage .display-headline {
+.display-headline {
   font-weight: 700;
   letter-spacing: -0.04em;
   line-height: 0.98;
 }
 
-.ek-homepage .text-balance {
+.text-balance {
   text-wrap: balance;
 }
 
-.ek-homepage .text-gradient-neon {
+.text-gradient-neon {
   background: linear-gradient(135deg, #00d2ff 0%, #7928ca 100%);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
-.ek-homepage .bg-grid {
+.bg-grid {
   background-image:
     linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px),
     linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
   background-size: 60px 60px;
 }
 
-.ek-homepage .mask-radial-fade {
+.mask-radial-fade {
   mask-image: radial-gradient(circle at center, black 0%, black 40%, transparent 75%);
   -webkit-mask-image: radial-gradient(circle at center, black 0%, black 40%, transparent 75%);
 }
 
-.ek-homepage .glass {
+.glass {
   background: rgba(255, 255, 255, 0.04);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-.ek-homepage .neon-line {
+.neon-line {
   background: linear-gradient(90deg, transparent 0%, #00d2ff 30%, #7928ca 70%, transparent 100%);
   height: 1px;
 }
 
-.ek-homepage .shimmer {
+.shimmer {
   background: linear-gradient(110deg, transparent 35%, rgba(0, 210, 255, 0.15) 50%, transparent 65%);
   background-size: 200% 100%;
   animation: ek-homepage-shimmer 3s linear infinite;
 }
 
-.ek-homepage ::selection {
-  background: rgba(0, 210, 255, 0.3);
-  color: #fff;
-}
-
-.ek-homepage .animate-float {
+.animate-float {
   animation: ek-homepage-float 6s ease-in-out infinite;
 }
 
-.ek-homepage .animate-pulse-glow {
+.animate-pulse-glow {
   animation: ek-homepage-pulse-glow 3s ease-in-out infinite;
 }
+
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: #0B0F19; }
+::-webkit-scrollbar-thumb { background: #1f2937; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #334155; }
 
 @keyframes ek-homepage-shimmer {
   0% {
