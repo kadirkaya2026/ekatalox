@@ -190,6 +190,56 @@ async function parseSpreadsheetFile(file: File): Promise<ParsedCsvResult> {
 }
 
 // ---------------------------------------------------------------------------
+// Helpers: ZIP image filtering and SKU extraction
+// ---------------------------------------------------------------------------
+function getZipEntryBaseName(entryName: string) {
+  const segments = entryName.split("/").filter(Boolean);
+  return segments[segments.length - 1] ?? "";
+}
+
+function shouldIgnoreZipEntry(entryName: string) {
+  const segments = entryName.split("/").filter(Boolean);
+  if (segments.length === 0) {
+    return true;
+  }
+
+  if (segments.some((segment) => segment === "__MACOSX")) {
+    return true;
+  }
+
+  const baseName = segments[segments.length - 1] ?? "";
+  if (!baseName || baseName === ".DS_Store" || baseName.startsWith(".")) {
+    return true;
+  }
+
+  return segments.slice(0, -1).some((segment) => segment.startsWith("."));
+}
+
+function getZipImageEntryInfo(entryName: string) {
+  if (shouldIgnoreZipEntry(entryName)) {
+    return null;
+  }
+
+  const baseName = getZipEntryBaseName(entryName);
+  const extensionIndex = baseName.lastIndexOf(".");
+  if (extensionIndex <= 0) {
+    return null;
+  }
+
+  const extension = baseName.slice(extensionIndex).toLowerCase();
+  if (!IMAGE_EXTS.has(extension)) {
+    return null;
+  }
+
+  const skuCode = baseName.slice(0, extensionIndex).trim();
+  if (!skuCode || skuCode.startsWith(".")) {
+    return null;
+  }
+
+  return { baseName, skuCode };
+}
+
+// ---------------------------------------------------------------------------
 // Helper: upload a single compressed image to Supabase Storage
 // ---------------------------------------------------------------------------
 async function uploadCompressedImage(params: {
@@ -740,13 +790,22 @@ function ImageImportTab({ tenant }: { tenant: Tenant }) {
         const zip = await JSZip.loadAsync(file);
 
         // 4) Filter image files
-        const imageEntries: Array<{ name: string; entry: import("jszip").JSZipObject }> = [];
+        const imageEntries: Array<{
+          name: string;
+          baseName: string;
+          skuCode: string;
+          entry: import("jszip").JSZipObject;
+        }> = [];
         zip.forEach((relativePath, entry) => {
           if (entry.dir) return;
-          const ext = relativePath.slice(relativePath.lastIndexOf(".")).toLowerCase();
-          if (IMAGE_EXTS.has(ext)) {
-            imageEntries.push({ name: relativePath, entry });
-          }
+          const imageInfo = getZipImageEntryInfo(relativePath);
+          if (!imageInfo) return;
+          imageEntries.push({
+            name: relativePath,
+            baseName: imageInfo.baseName,
+            skuCode: imageInfo.skuCode,
+            entry,
+          });
         });
 
         if (imageEntries.length === 0) {
@@ -773,18 +832,14 @@ function ImageImportTab({ tenant }: { tenant: Tenant }) {
         });
 
         const allUpdates: Array<{ sku_code: string; image_url: string }> = [];
-        const failedSkus: string[] = [];
+        const uploadFailedSkus: string[] = [];
 
         // Process in batches of BATCH_SIZE
         for (let i = 0; i < imageEntries.length; i += BATCH_SIZE) {
           const batch = imageEntries.slice(i, i + BATCH_SIZE);
 
           const batchResults = await Promise.allSettled(
-            batch.map(async ({ name, entry }) => {
-              // Derive SKU code from file name (strip path and extension)
-              const baseName = name.includes("/") ? name.split("/").pop()! : name;
-              const skuCode = baseName.slice(0, baseName.lastIndexOf("."));
-
+            batch.map(async ({ baseName, skuCode, entry }) => {
               setState((s) => ({
                 ...s,
                 progress: s.progress
@@ -814,11 +869,7 @@ function ImageImportTab({ tenant }: { tenant: Tenant }) {
               allUpdates.push(result.value);
             } else {
               const idx = batchResults.indexOf(result);
-              const baseName = batch[idx].name.includes("/")
-                ? batch[idx].name.split("/").pop()!
-                : batch[idx].name;
-              const skuCode = baseName.slice(0, baseName.lastIndexOf("."));
-              failedSkus.push(skuCode);
+              uploadFailedSkus.push(batch[idx].skuCode);
             }
           }
 
@@ -828,22 +879,48 @@ function ImageImportTab({ tenant }: { tenant: Tenant }) {
               ? {
                   ...s.progress,
                   completed: Math.min(i + batch.length, imageEntries.length),
-                  failedSkus: [...failedSkus],
+                  failedSkus: [...uploadFailedSkus],
                 }
               : null,
           }));
         }
 
+        let successCount = allUpdates.length;
+        const dbFailedSkus: string[] = [];
+
         // 6) Bulk-update DB
         if (allUpdates.length > 0) {
-          await fetch("/api/tenant/products/bulk-image-update", {
+          const response = await fetch("/api/tenant/products/bulk-image-update", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ updates: allUpdates }),
           });
+
+          const result = (await response.json().catch(() => null)) as
+            | { count?: number; failedSkus?: string[]; error?: string }
+            | null;
+
+          if (!response.ok) {
+            throw new Error(result?.error ?? "Ürün resimleri eşleştirilemedi.");
+          }
+
+          if (typeof result?.count === "number") {
+            successCount = result.count;
+          }
+
+          if (Array.isArray(result?.failedSkus)) {
+            dbFailedSkus.push(
+              ...result.failedSkus.filter(
+                (sku): sku is string =>
+                  typeof sku === "string" && sku.trim().length > 0,
+              ),
+            );
+          }
         }
 
-        const successCount = allUpdates.length;
+        const failedSkus = Array.from(
+          new Set([...uploadFailedSkus, ...dbFailedSkus]),
+        );
 
         setState({
           status: "done",

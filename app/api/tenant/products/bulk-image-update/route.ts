@@ -39,13 +39,14 @@ export async function POST(request: Request) {
   const failedSkus: string[] = [];
 
   for (const update of parsed.data) {
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from("products")
       .update({ image_url: update.image_url })
       .eq("tenant_id", tenant.id)
-      .eq("sku_code", update.sku_code);
+      .eq("sku_code", update.sku_code)
+      .select("id");
 
-    if (error) {
+    if (error || !data?.length) {
       failedSkus.push(update.sku_code);
     } else {
       successCount++;
