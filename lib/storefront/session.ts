@@ -1,8 +1,19 @@
 import { cookies } from "next/headers";
+import type { NextResponse } from "next/server";
 import type { PriceTierLevel } from "@/lib/types";
 
 export function getStorefrontTierCookieName(subdomain: string) {
   return `ekatalox-tier-${subdomain}`;
+}
+
+function getStorefrontTierCookieOptions(secure: boolean) {
+  return {
+    httpOnly: true,
+    sameSite: "lax" as const,
+    secure,
+    path: "/",
+    maxAge: 60 * 60 * 12,
+  };
 }
 
 export async function readStorefrontTier(subdomain: string) {
@@ -21,16 +32,48 @@ export async function writeStorefrontTier(
   tierLevel: PriceTierLevel,
 ) {
   const cookieStore = await cookies();
-  cookieStore.set(getStorefrontTierCookieName(subdomain), String(tierLevel), {
-    httpOnly: true,
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
-    path: "/",
-    maxAge: 60 * 60 * 12,
-  });
+  cookieStore.set(
+    getStorefrontTierCookieName(subdomain),
+    String(tierLevel),
+    getStorefrontTierCookieOptions(process.env.NODE_ENV === "production"),
+  );
 }
 
 export async function clearStorefrontTier(subdomain: string) {
   const cookieStore = await cookies();
   cookieStore.delete(getStorefrontTierCookieName(subdomain));
+}
+
+export function isSecureStorefrontRequest(request: Request) {
+  const forwardedProto = request.headers.get("x-forwarded-proto");
+
+  if (forwardedProto) {
+    return forwardedProto === "https";
+  }
+
+  return new URL(request.url).protocol === "https:";
+}
+
+export function setStorefrontTierCookie(params: {
+  response: NextResponse;
+  subdomain: string;
+  tierLevel: PriceTierLevel;
+  secure: boolean;
+}) {
+  params.response.cookies.set(
+    getStorefrontTierCookieName(params.subdomain),
+    String(params.tierLevel),
+    getStorefrontTierCookieOptions(params.secure),
+  );
+}
+
+export function clearStorefrontTierCookie(params: {
+  response: NextResponse;
+  subdomain: string;
+  secure: boolean;
+}) {
+  params.response.cookies.set(getStorefrontTierCookieName(params.subdomain), "", {
+    ...getStorefrontTierCookieOptions(params.secure),
+    maxAge: 0,
+  });
 }

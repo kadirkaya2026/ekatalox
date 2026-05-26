@@ -138,6 +138,34 @@ export function AdminTenantsManager({
     });
   }
 
+  function deleteTenant(id: string, companyName: string) {
+    const confirmed = window.confirm(
+      `${companyName} tenantını ve bağlı verilerini kalıcı olarak silmek istediğinize emin misiniz?`,
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setMessage(null);
+
+    startTransition(async () => {
+      const response = await fetch(`/api/admin/tenants/${id}`, {
+        method: "DELETE",
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        setMessage(result.error ?? "Tenant silinemedi.");
+        return;
+      }
+
+      setTenants((current) => current.filter((tenant) => tenant.id !== id));
+      setMessage("Tenant ve bağlı verileri silindi.");
+    });
+  }
+
   function createAccessCode(tenantId: string) {
     const password_code = codeDrafts[tenantId]?.trim();
     const price_tier_level = tierDrafts[tenantId] ?? 1;
@@ -360,6 +388,14 @@ export function AdminTenantsManager({
                   disabled={pending}
                 >
                   {tenant.status === "active" ? "Askıya al" : "Yeniden aç"}
+                </Button>
+                <Button
+                  variant="secondary"
+                  onClick={() => deleteTenant(tenant.id, tenant.company_name)}
+                  disabled={pending}
+                  className="border-rose-200 text-rose-700 hover:bg-rose-50 hover:text-rose-800"
+                >
+                  Tamamen sil
                 </Button>
               </div>
             </div>

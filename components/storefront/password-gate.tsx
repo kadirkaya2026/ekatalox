@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -13,7 +12,6 @@ export function PasswordGate({
   subdomain: string;
   companyName: string;
 }) {
-  const router = useRouter();
   const [code, setCode] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -36,7 +34,7 @@ export function PasswordGate({
         return;
       }
 
-      router.refresh();
+      window.location.assign("/");
     });
   }
 

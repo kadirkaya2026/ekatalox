@@ -1,11 +1,16 @@
 import { NextResponse } from "next/server";
 import { validateAccessCode } from "@/lib/data";
-import { clearStorefrontTier, writeStorefrontTier } from "@/lib/storefront/session";
+import {
+  clearStorefrontTierCookie,
+  isSecureStorefrontRequest,
+  setStorefrontTierCookie,
+} from "@/lib/storefront/session";
 
 export async function POST(request: Request) {
   const body = await request.json();
   const subdomain = String(body.subdomain ?? "").trim().toLowerCase();
   const code = String(body.code ?? "").trim();
+  const secure = isSecureStorefrontRequest(request);
 
   if (!subdomain || !code) {
     return NextResponse.json(
@@ -17,16 +22,15 @@ export async function POST(request: Request) {
   const matched = await validateAccessCode({ subdomain, code });
 
   if (!matched) {
-    await clearStorefrontTier(subdomain);
-    return NextResponse.json(
+    const response = NextResponse.json(
       { error: "Girilen şifre kodu geçersiz." },
       { status: 401 },
     );
+    clearStorefrontTierCookie({ response, subdomain, secure });
+    return response;
   }
 
-  await writeStorefrontTier(subdomain, matched.tierLevel);
-
-  return NextResponse.json({
+  const response = NextResponse.json({
     success: true,
     tierLevel: matched.tierLevel,
     tenant: {
@@ -35,4 +39,12 @@ export async function POST(request: Request) {
       subdomain: matched.tenant.subdomain,
     },
   });
+  setStorefrontTierCookie({
+    response,
+    subdomain,
+    tierLevel: matched.tierLevel,
+    secure,
+  });
+
+  return response;
 }

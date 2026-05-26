@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 import { shouldAllowDemoFallback } from "@/lib/env";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import {
+  getProductImagePathFromPublicUrl,
+  PRODUCT_IMAGES_BUCKET,
+} from "@/lib/storage/product-images";
 import { ensureSuperAdminResponse } from "@/lib/tenancy/guards";
 import { tenantUpdateSchema } from "@/lib/validators/tenant";
 
@@ -62,4 +66,155 @@ export async function PATCH(
   }
 
   return NextResponse.json({ tenant: data });
+}
+
+export async function DELETE(
+  _request: Request,
+  ctx: RouteContext<"/api/admin/tenants/[id]">,
+) {
+  const guard = await ensureSuperAdminResponse();
+  if (guard) {
+    return guard;
+  }
+
+  const { id } = await ctx.params;
+  const supabase = createSupabaseAdminClient();
+
+  if (!supabase) {
+    if (!shouldAllowDemoFallback()) {
+      return NextResponse.json(
+        { error: "Supabase production yapılandırması eksik." },
+        { status: 500 },
+      );
+    }
+
+    return NextResponse.json({ success: true });
+  }
+
+  const [{ data: productRows, error: productsError }, { data: membershipRows, error: membershipsError }] =
+    await Promise.all([
+      supabase.from("products").select("image_url").eq("tenant_id", id),
+      supabase.from("tenant_memberships").select("user_id").eq("tenant_id", id),
+    ]);
+
+  if (productsError || membershipsError) {
+    return NextResponse.json(
+      { error: "Tenant verileri silme öncesi okunamadı." },
+      { status: 400 },
+    );
+  }
+
+  const imagePaths = Array.from(
+    new Set(
+      ((productRows as Array<{ image_url: string | null }> | null) ?? [])
+        .map((product) => getProductImagePathFromPublicUrl(product.image_url))
+        .filter((path): path is string => Boolean(path)),
+    ),
+  );
+
+  if (imagePaths.length) {
+    const { error: storageError } = await supabase.storage
+      .from(PRODUCT_IMAGES_BUCKET)
+      .remove(imagePaths);
+
+    if (storageError) {
+      return NextResponse.json(
+        { error: "Tenant görselleri silinemedi." },
+        { status: 400 },
+      );
+    }
+  }
+
+  const membershipUserIds = Array.from(
+    new Set(
+      ((membershipRows as Array<{ user_id: string }> | null) ?? []).map(
+        (membership) => membership.user_id,
+      ),
+    ),
+  );
+
+  let deletableUserIds: string[] = [];
+
+  if (membershipUserIds.length) {
+    const [{ data: allMembershipRows, error: allMembershipsError }, { data: profileRows, error: profilesError }] =
+      await Promise.all([
+        supabase
+          .from("tenant_memberships")
+          .select("user_id")
+          .in("user_id", membershipUserIds),
+        supabase.from("profiles").select("id, role").in("id", membershipUserIds),
+      ]);
+
+    if (allMembershipsError || profilesError) {
+      return NextResponse.json(
+        { error: "Tenant kullanıcıları silme öncesi doğrulanamadı." },
+        { status: 400 },
+      );
+    }
+
+    const membershipCounts = ((allMembershipRows as Array<{ user_id: string }> | null) ?? []).reduce<
+      Record<string, number>
+    >((counts, membership) => {
+      counts[membership.user_id] = (counts[membership.user_id] ?? 0) + 1;
+      return counts;
+    }, {});
+
+    const profileMap = new Map(
+      (((profileRows as Array<{ id: string; role: string }> | null) ?? [])).map((profile) => [
+        profile.id,
+        profile.role,
+      ]),
+    );
+
+    deletableUserIds = membershipUserIds.filter(
+      (userId) =>
+        membershipCounts[userId] === 1 && profileMap.get(userId) === "tenant_admin",
+    );
+  }
+
+  const [
+    accessCodesDelete,
+    productsDelete,
+    categoriesDelete,
+    membershipsDelete,
+  ] = await Promise.all([
+    supabase.from("access_codes").delete().eq("tenant_id", id),
+    supabase.from("products").delete().eq("tenant_id", id),
+    supabase.from("categories").delete().eq("tenant_id", id),
+    supabase.from("tenant_memberships").delete().eq("tenant_id", id),
+  ]);
+
+  if (
+    accessCodesDelete.error ||
+    productsDelete.error ||
+    categoriesDelete.error ||
+    membershipsDelete.error
+  ) {
+    return NextResponse.json(
+      { error: "Tenant ilişkili verileri silinemedi." },
+      { status: 400 },
+    );
+  }
+
+  const { error: tenantDeleteError } = await supabase.from("tenants").delete().eq("id", id);
+
+  if (tenantDeleteError) {
+    return NextResponse.json(
+      { error: "Tenant silinemedi." },
+      { status: 400 },
+    );
+  }
+
+  for (const userId of deletableUserIds) {
+    const { error: deleteUserError } = await supabase.auth.admin.deleteUser(userId);
+
+    if (deleteUserError) {
+      return NextResponse.json(
+        { error: "Tenant silindi ancak bağlı admin hesabı kaldırılamadı." },
+        { status: 400 },
+      );
+    }
+  }
+
+  return NextResponse.json({ success: true });
 }

@@ -35,6 +35,13 @@ export function proxy(request: NextRequest) {
   const normalizedHost = (host ?? "").replace(/:\d+$/, "").toLowerCase();
   const isManagedProductionHost = normalizedHost.endsWith(`.${appEnv.rootDomain}`);
   const isManagedLocalHost = normalizedHost.endsWith(".localhost");
+  const forwardedProto = request.headers.get("x-forwarded-proto");
+
+  if (isManagedProductionHost && forwardedProto === "http") {
+    const url = request.nextUrl.clone();
+    url.protocol = "https";
+    return NextResponse.redirect(url);
+  }
 
   if (hostResolution.kind === "unknown" && (isManagedProductionHost || isManagedLocalHost)) {
     return new NextResponse("Not Found", { status: 404 });
