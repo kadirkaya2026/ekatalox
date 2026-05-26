@@ -503,8 +503,8 @@ export function StorefrontClient({
         </div>
       </header>
 
-      <main className="mx-auto mt-8 w-full max-w-7xl overflow-hidden px-3 sm:px-6 lg:px-8">
-        <div className="grid min-w-0 max-w-full gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
+      <main className="mx-auto mt-8 w-full max-w-7xl px-3 sm:px-6 lg:px-8">
+        <div className="grid min-w-0 max-w-full gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
           <section className="min-w-0 max-w-full space-y-6">
             <div className="space-y-2">
               <h2 className="text-sm font-bold uppercase tracking-wider text-slate-400">
@@ -624,7 +624,7 @@ export function StorefrontClient({
             </div>
           </section>
 
-          <aside className="hidden lg:block">
+          <aside className="hidden xl:block">
             <div className={theme.desktopCartPanel}>
               <div className="flex items-center gap-2 border-b border-slate-100/20 pb-4">
                 <ShoppingBag className="size-5 text-emerald-600" />
