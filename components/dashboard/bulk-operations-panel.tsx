@@ -47,9 +47,9 @@ const TURKISH_COLUMN_MAP: Record<string, string> = {
   "Stok Kodu (SKU)": "sku_code",
   "Ürün Adı": "product_name",
   "Para Birimi": "currency",
-  "Peşin Fiyatı": "price_tier_1",
-  "3 Taksit Fiyatı": "price_tier_2",
-  "6 Taksit Fiyatı": "price_tier_3",
+  "1. Liste Fiyatı": "price_tier_1",
+  "2. Liste Fiyatı": "price_tier_2",
+  "3. Liste Fiyatı": "price_tier_3",
   "Stok Durumu": "is_in_stock",
 };
 
@@ -58,9 +58,9 @@ const TURKISH_TEMPLATE_HEADERS = [
   "Stok Kodu (SKU)",
   "Ürün Adı",
   "Para Birimi",
-  "Peşin Fiyatı",
-  "3 Taksit Fiyatı",
-  "6 Taksit Fiyatı",
+  "1. Liste Fiyatı",
+  "2. Liste Fiyatı",
+  "3. Liste Fiyatı",
   "Stok Durumu",
 ];
 
@@ -441,7 +441,7 @@ function ProductImportTab({
           number={2}
           icon={FileSpreadsheet}
           title="Şablonu doldurun"
-          description='Ürün bilgilerinizi şablondaki sütunlara girin: "Kategori Adı", "Stok Kodu (SKU)", "Ürün Adı", "Para Birimi", "Peşin Fiyatı", "3 Taksit Fiyatı", "6 Taksit Fiyatı", "Stok Durumu". Stok Durumu için "Var" veya "Yok" yazın. Sütun adlarını değiştirmeyin.'
+          description='Ürün bilgilerinizi şablondaki sütunlara girin: "Kategori Adı", "Stok Kodu (SKU)", "Ürün Adı", "Para Birimi", "1. Liste Fiyatı", "2. Liste Fiyatı", "3. Liste Fiyatı", "Stok Durumu". Stok Durumu için "Var" veya "Yok" yazın. Sütun adlarını değiştirmeyin.'
         />
         <div className="flex gap-4">
           <div className="flex flex-col items-center">
