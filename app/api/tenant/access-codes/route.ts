@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
 import { shouldAllowDemoFallback } from "@/lib/env";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { getSessionContext } from "@/lib/auth/session";
 import { ensureTenantAdminResponse } from "@/lib/tenancy/guards";
 import { accessCodeSchema } from "@/lib/validators/access-code";
@@ -27,7 +27,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const supabase = await createSupabaseServerClient();
+  const supabase = createSupabaseAdminClient();
 
   if (!supabase) {
     if (!shouldAllowDemoFallback()) {
@@ -53,7 +53,7 @@ export async function POST(request: Request) {
     .single();
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 400 });
+    return NextResponse.json({ error: "Şifre eklenemedi." }, { status: 400 });
   }
 
   return NextResponse.json({ accessCode: data });
@@ -72,7 +72,7 @@ export async function DELETE(request: Request) {
     return NextResponse.json({ error: "Silinecek kod seçilmedi." }, { status: 400 });
   }
 
-  const supabase = await createSupabaseServerClient();
+  const supabase = createSupabaseAdminClient();
 
   if (!supabase) {
     if (!shouldAllowDemoFallback()) {
@@ -92,7 +92,7 @@ export async function DELETE(request: Request) {
     .eq("tenant_id", session.tenant!.id);
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 400 });
+    return NextResponse.json({ error: "Şifre silinemedi." }, { status: 400 });
   }
 
   return NextResponse.json({ success: true });
