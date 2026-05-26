@@ -8,7 +8,9 @@ import {
   getStorefrontProducts,
   getStorefrontTenant,
   getTenantCategories,
+  getTenantStorefrontSettings,
 } from "@/lib/data";
+import { storefrontThemes } from "@/lib/storefront/themes";
 import {
   isStorefrontTierStateValid,
   readStorefrontTier,
@@ -43,19 +45,25 @@ export default async function StorefrontPage(props: PageProps<"/store/[subdomain
     return <PasswordGate subdomain={subdomain} companyName={tenant.company_name} />;
   }
 
-  const [products, categories] = await Promise.all([
+  const [products, categories, storefrontSettings] = await Promise.all([
     getStorefrontProducts({
       tenantId: tenant.id,
       tierLevel: tierState.tierLevel,
     }),
     getTenantCategories(tenant.id),
+    getTenantStorefrontSettings(tenant.id),
   ]);
+  const theme =
+    storefrontThemes[storefrontSettings.theme_key] ?? storefrontThemes.minimal;
 
   return (
-    <StorefrontClient
-      tenant={tenant}
-      categories={categories}
-      products={products}
-    />
+    <div className={theme.page}>
+      <StorefrontClient
+        tenant={tenant}
+        categories={categories}
+        products={products}
+        storefrontSettings={storefrontSettings}
+      />
+    </div>
   );
 }
