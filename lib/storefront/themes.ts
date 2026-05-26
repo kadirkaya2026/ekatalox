@@ -71,7 +71,7 @@ export const storefrontThemes: Record<StorefrontThemeKey, StorefrontThemeClasses
     productImageWrap:
       "relative aspect-square w-full overflow-hidden bg-[linear-gradient(180deg,#f8fafc_0%,#eef2ff_100%)]",
     productTitle:
-      "min-w-0 break-words text-[15px] font-semibold leading-6 text-slate-900 transition duration-150 line-clamp-2 group-hover:text-emerald-700 sm:text-base",
+      "min-w-0 break-words text-[13px] font-semibold leading-5 text-slate-900 transition duration-150 line-clamp-2 group-hover:text-emerald-700 sm:text-[14px]",
     productMeta: "min-w-0 text-xs text-slate-500 line-clamp-2",
     productPrice: "min-w-0 text-lg font-bold tracking-tight text-slate-950",
     stockBadgeIn:
@@ -123,7 +123,7 @@ export const storefrontThemes: Record<StorefrontThemeKey, StorefrontThemeClasses
     productImageWrap:
       "relative aspect-square w-full overflow-hidden bg-[linear-gradient(180deg,rgba(2,6,23,0.95)_0%,rgba(15,23,42,0.88)_100%)]",
     productTitle:
-      "min-w-0 break-words text-[15px] font-semibold leading-6 text-slate-100 transition duration-150 line-clamp-2 group-hover:text-emerald-400 sm:text-base",
+      "min-w-0 break-words text-[13px] font-semibold leading-5 text-slate-100 transition duration-150 line-clamp-2 group-hover:text-emerald-400 sm:text-[14px]",
     productMeta: "min-w-0 text-xs text-slate-500 line-clamp-2",
     productPrice: "min-w-0 text-lg font-bold tracking-tight text-emerald-400",
     stockBadgeIn:
@@ -175,7 +175,7 @@ export const storefrontThemes: Record<StorefrontThemeKey, StorefrontThemeClasses
     productImageWrap:
       "relative aspect-square w-full overflow-hidden bg-[linear-gradient(180deg,rgba(255,241,242,0.72)_0%,rgba(255,255,255,1)_100%)]",
     productTitle:
-      "min-w-0 break-words text-[15px] font-semibold leading-6 text-slate-800 transition duration-150 line-clamp-2 group-hover:text-rose-700 sm:text-base",
+      "min-w-0 break-words text-[13px] font-semibold leading-5 text-slate-800 transition duration-150 line-clamp-2 group-hover:text-rose-700 sm:text-[14px]",
     productMeta: "min-w-0 text-xs text-rose-400 line-clamp-2",
     productPrice: "min-w-0 text-lg font-bold tracking-tight text-rose-800",
     stockBadgeIn:

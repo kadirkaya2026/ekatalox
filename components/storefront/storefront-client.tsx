@@ -977,15 +977,10 @@ export function StorefrontClient({
               {visibleProducts.map((product) => (
                 <article key={product.id} className={theme.productCard}>
                   <div className={cn(theme.productImageWrap, "p-4 sm:p-5")}>
-                    <div className="absolute left-4 right-4 top-4 z-10 flex items-start justify-between gap-2">
-                      <span className="max-w-[65%] truncate rounded-full border border-white/70 bg-white/80 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500 backdrop-blur">
+                    <div className="absolute left-3 right-3 top-3 z-10 flex items-start">
+                      <span className="max-w-[58%] truncate rounded-full border border-white/70 bg-white/80 px-2.5 py-0.5 text-[9px] font-semibold uppercase tracking-[0.12em] text-slate-500 backdrop-blur sm:max-w-[62%] sm:px-3 sm:py-1 sm:text-[10px]">
                         {categoryNameMap.get(product.category_id) || "Genel"}
                       </span>
-                      {product.sku_code ? (
-                        <span className="max-w-[35%] truncate rounded-full bg-slate-900/80 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-white">
-                          {product.sku_code}
-                        </span>
-                      ) : null}
                     </div>
                     {product.image_url ? (
                       <Image
