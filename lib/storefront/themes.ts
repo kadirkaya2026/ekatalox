@@ -66,13 +66,18 @@ export const storefrontThemes: Record<StorefrontThemeKey, StorefrontThemeClasses
     searchWrap: "relative rounded-2xl shadow-sm border border-slate-100 bg-white",
     searchInput: "pl-12 pr-4 py-4 rounded-2xl focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500",
     searchIcon: "absolute left-4 top-1/2 -translate-y-1/2 size-5 text-slate-400",
-    productCard: "group min-w-0 flex flex-col overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm hover:shadow-md transition duration-200",
-    productImageWrap: "relative aspect-square w-full overflow-hidden bg-slate-50",
-    productTitle: "min-w-0 break-words font-semibold text-slate-900 group-hover:text-emerald-700 transition duration-150 line-clamp-2",
-    productMeta: "min-w-0 truncate text-xs text-slate-500",
-    productPrice: "min-w-0 text-base font-bold text-slate-950 sm:text-lg",
-    stockBadgeIn: "bg-emerald-50 text-emerald-700 font-semibold px-2.5 py-1 text-xs rounded-full",
-    stockBadgeOut: "bg-slate-100 text-slate-500 font-semibold px-2.5 py-1 text-xs rounded-full",
+    productCard:
+      "group min-w-0 flex h-full flex-col overflow-hidden rounded-[1.75rem] border border-slate-200/80 bg-white shadow-[0_12px_32px_rgba(15,23,42,0.06)] transition duration-300 hover:-translate-y-1 hover:border-slate-300 hover:shadow-[0_20px_48px_rgba(15,23,42,0.12)]",
+    productImageWrap:
+      "relative aspect-square w-full overflow-hidden bg-[linear-gradient(180deg,#f8fafc_0%,#eef2ff_100%)]",
+    productTitle:
+      "min-w-0 break-words text-[15px] font-semibold leading-6 text-slate-900 transition duration-150 line-clamp-2 group-hover:text-emerald-700 sm:text-base",
+    productMeta: "min-w-0 text-xs text-slate-500 line-clamp-2",
+    productPrice: "min-w-0 text-lg font-bold tracking-tight text-slate-950",
+    stockBadgeIn:
+      "inline-flex items-center rounded-full bg-emerald-50 px-3 py-1 text-[11px] font-semibold text-emerald-700",
+    stockBadgeOut:
+      "inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-[11px] font-semibold text-slate-500",
     primaryButton: "bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white rounded-xl shadow-sm transition",
     stickyCart: "fixed bottom-4 inset-x-4 z-40 rounded-2xl bg-slate-900 text-white p-4 shadow-[0_16px_40px_rgba(15,23,42,0.16)] md:bottom-6 max-w-lg mx-auto border border-white/10",
     stickyCartText: "text-white font-bold",
@@ -113,13 +118,18 @@ export const storefrontThemes: Record<StorefrontThemeKey, StorefrontThemeClasses
     searchWrap: "relative rounded-2xl shadow-sm border border-slate-800 bg-slate-900/80",
     searchInput: "pl-12 pr-4 py-4 rounded-2xl focus:ring-2 focus:ring-emerald-400/20 focus:border-emerald-400 text-white placeholder:text-slate-500 bg-transparent",
     searchIcon: "absolute left-4 top-1/2 -translate-y-1/2 size-5 text-slate-500",
-    productCard: "group min-w-0 flex flex-col overflow-hidden rounded-2xl border border-slate-900 bg-slate-900/60 hover:border-slate-800/80 hover:bg-slate-900 transition duration-200",
-    productImageWrap: "relative aspect-square w-full overflow-hidden bg-slate-950/80",
-    productTitle: "min-w-0 break-words font-semibold text-slate-100 group-hover:text-emerald-400 transition duration-150 line-clamp-2",
-    productMeta: "min-w-0 truncate text-xs text-slate-500",
-    productPrice: "min-w-0 text-base font-bold text-emerald-400 sm:text-lg",
-    stockBadgeIn: "bg-emerald-500/10 text-emerald-400 font-semibold px-2.5 py-1 text-xs rounded-full",
-    stockBadgeOut: "bg-slate-800 text-slate-500 font-semibold px-2.5 py-1 text-xs rounded-full",
+    productCard:
+      "group min-w-0 flex h-full flex-col overflow-hidden rounded-[1.75rem] border border-slate-900 bg-slate-900/70 shadow-[0_14px_36px_rgba(0,0,0,0.22)] transition duration-300 hover:-translate-y-1 hover:border-slate-700 hover:bg-slate-900 hover:shadow-[0_24px_56px_rgba(0,0,0,0.32)]",
+    productImageWrap:
+      "relative aspect-square w-full overflow-hidden bg-[linear-gradient(180deg,rgba(2,6,23,0.95)_0%,rgba(15,23,42,0.88)_100%)]",
+    productTitle:
+      "min-w-0 break-words text-[15px] font-semibold leading-6 text-slate-100 transition duration-150 line-clamp-2 group-hover:text-emerald-400 sm:text-base",
+    productMeta: "min-w-0 text-xs text-slate-500 line-clamp-2",
+    productPrice: "min-w-0 text-lg font-bold tracking-tight text-emerald-400",
+    stockBadgeIn:
+      "inline-flex items-center rounded-full bg-emerald-500/10 px-3 py-1 text-[11px] font-semibold text-emerald-400",
+    stockBadgeOut:
+      "inline-flex items-center rounded-full bg-slate-800 px-3 py-1 text-[11px] font-semibold text-slate-500",
     primaryButton: "bg-emerald-500 hover:bg-emerald-400 active:bg-emerald-600 text-slate-950 rounded-xl shadow-sm transition font-bold",
     stickyCart: "fixed bottom-4 inset-x-4 z-40 rounded-2xl bg-slate-900 text-white p-4 shadow-[0_16px_40px_rgba(0,0,0,0.4)] md:bottom-6 max-w-lg mx-auto border border-emerald-500/20",
     stickyCartText: "text-emerald-400 font-bold",
@@ -160,13 +170,18 @@ export const storefrontThemes: Record<StorefrontThemeKey, StorefrontThemeClasses
     searchWrap: "relative rounded-2xl shadow-sm border border-rose-100/80 bg-white",
     searchInput: "pl-12 pr-4 py-4 rounded-2xl focus:ring-2 focus:ring-rose-400/20 focus:border-rose-400",
     searchIcon: "absolute left-4 top-1/2 -translate-y-1/2 size-5 text-rose-300",
-    productCard: "group min-w-0 flex flex-col overflow-hidden rounded-2xl border border-rose-100/40 bg-white hover:border-rose-200/60 shadow-sm hover:shadow-md transition duration-200",
-    productImageWrap: "relative aspect-square w-full overflow-hidden bg-rose-50/10",
-    productTitle: "min-w-0 break-words font-semibold text-slate-800 group-hover:text-rose-700 transition duration-150 line-clamp-2",
-    productMeta: "min-w-0 truncate text-xs text-rose-400",
-    productPrice: "min-w-0 text-base font-bold text-rose-800 sm:text-lg",
-    stockBadgeIn: "bg-rose-50 text-rose-700 font-semibold px-2.5 py-1 text-xs rounded-full",
-    stockBadgeOut: "bg-slate-100 text-slate-500 font-semibold px-2.5 py-1 text-xs rounded-full",
+    productCard:
+      "group min-w-0 flex h-full flex-col overflow-hidden rounded-[1.75rem] border border-rose-100/50 bg-white shadow-[0_12px_32px_rgba(76,5,25,0.06)] transition duration-300 hover:-translate-y-1 hover:border-rose-200/80 hover:shadow-[0_20px_48px_rgba(76,5,25,0.12)]",
+    productImageWrap:
+      "relative aspect-square w-full overflow-hidden bg-[linear-gradient(180deg,rgba(255,241,242,0.72)_0%,rgba(255,255,255,1)_100%)]",
+    productTitle:
+      "min-w-0 break-words text-[15px] font-semibold leading-6 text-slate-800 transition duration-150 line-clamp-2 group-hover:text-rose-700 sm:text-base",
+    productMeta: "min-w-0 text-xs text-rose-400 line-clamp-2",
+    productPrice: "min-w-0 text-lg font-bold tracking-tight text-rose-800",
+    stockBadgeIn:
+      "inline-flex items-center rounded-full bg-rose-50 px-3 py-1 text-[11px] font-semibold text-rose-700",
+    stockBadgeOut:
+      "inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-[11px] font-semibold text-slate-500",
     primaryButton: "bg-rose-700 hover:bg-rose-800 active:bg-rose-900 text-white rounded-xl shadow-sm transition",
     stickyCart: "fixed bottom-4 inset-x-4 z-40 rounded-2xl bg-rose-950 text-white p-4 shadow-[0_16px_40px_rgba(76,5,25,0.16)] md:bottom-6 max-w-lg mx-auto border border-rose-800/10",
     stickyCartText: "text-rose-100 font-bold",
