@@ -23,6 +23,13 @@ export async function POST(request: Request) {
   const session = await getSessionContext();
   const tenant = session.tenant!;
   const body = await request.json();
+  const parsedHeaders: string[] = Array.isArray(body.parsedHeaders)
+    ? (body.parsedHeaders as unknown[])
+        .filter((value: unknown): value is string => typeof value === "string")
+        .map((value: string) => value.trim())
+    : [];
+  const hasPackageQuantityColumn = parsedHeaders.includes("package_quantity");
+  const hasCartonQuantityColumn = parsedHeaders.includes("carton_quantity");
   const parsed = productImportRowsSchema.safeParse(body.rows ?? []);
 
   if (!parsed.success) {
@@ -78,6 +85,8 @@ export async function POST(request: Request) {
       price_tier_2: row.price_tier_2,
       price_tier_3: row.price_tier_3,
       is_in_stock: row.is_in_stock,
+      package_quantity: row.package_quantity,
+      carton_quantity: row.carton_quantity,
     }));
 
     const merged = [
@@ -212,6 +221,8 @@ export async function POST(request: Request) {
       price_tier_2: row.price_tier_2,
       price_tier_3: row.price_tier_3,
       is_in_stock: row.is_in_stock,
+      ...(hasPackageQuantityColumn ? { package_quantity: row.package_quantity } : {}),
+      ...(hasCartonQuantityColumn ? { carton_quantity: row.carton_quantity } : {}),
       display_order,
     };
   });

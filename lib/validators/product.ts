@@ -12,6 +12,32 @@ const imageUrlSchema = z
   .union([z.string().url("Geçerli bir görsel adresi girin."), z.literal(""), z.null(), z.undefined()])
   .transform((value) => value || null);
 
+const optionalPositiveIntegerSchema = z
+  .union([z.string(), z.number(), z.null(), z.undefined()])
+  .transform((value, ctx) => {
+    if (value === null || value === undefined) {
+      return null;
+    }
+
+    const normalized = String(value).trim();
+
+    if (!normalized) {
+      return null;
+    }
+
+    const parsedValue = Number(normalized);
+
+    if (!Number.isInteger(parsedValue) || parsedValue <= 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Paket ve koli adetleri pozitif tam sayı olmalıdır.",
+      });
+      return z.NEVER;
+    }
+
+    return parsedValue;
+  });
+
 export const productBaseSchema = z.object({
   category_id: z.string().min(1, "Kategori seçimi zorunludur."),
   sku_code: z.string().min(1, "Stok kodu zorunludur."),
@@ -23,6 +49,8 @@ export const productBaseSchema = z.object({
   is_in_stock: z
     .union([z.boolean(), z.string()])
     .transform((value) => (typeof value === "boolean" ? value : value === "true")),
+  package_quantity: optionalPositiveIntegerSchema,
+  carton_quantity: optionalPositiveIntegerSchema,
 });
 
 export const productCreateSchema = productBaseSchema.extend({
@@ -41,6 +69,8 @@ export const productImportRowSchema = z.object({
     .union([z.boolean(), z.string()])
     .transform((value) => (typeof value === "boolean" ? value : value === "true")),
   image_url: imageUrlSchema,
+  package_quantity: optionalPositiveIntegerSchema,
+  carton_quantity: optionalPositiveIntegerSchema,
 });
 
 export const productImportRowsSchema = z.array(productImportRowSchema);

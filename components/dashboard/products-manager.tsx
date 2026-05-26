@@ -42,6 +42,8 @@ interface ProductFormState {
   price_tier_2: string;
   price_tier_3: string;
   is_in_stock: boolean;
+  package_quantity: string;
+  carton_quantity: string;
   image: File | null;
 }
 
@@ -54,6 +56,8 @@ const emptyForm: ProductFormState = {
   price_tier_2: "",
   price_tier_3: "",
   is_in_stock: true,
+  package_quantity: "",
+  carton_quantity: "",
   image: null,
 };
 
@@ -74,6 +78,8 @@ function toFormData(form: ProductFormState) {
   formData.set("price_tier_2", form.price_tier_2 || "0");
   formData.set("price_tier_3", form.price_tier_3 || "0");
   formData.set("is_in_stock", String(form.is_in_stock));
+  formData.set("package_quantity", form.package_quantity.trim());
+  formData.set("carton_quantity", form.carton_quantity.trim());
 
   if (form.image) {
     formData.set("image", form.image);
@@ -92,6 +98,8 @@ function productToForm(product: Product): ProductFormState {
     price_tier_2: String(product.price_tier_2),
     price_tier_3: String(product.price_tier_3),
     is_in_stock: product.is_in_stock,
+    package_quantity: product.package_quantity ? String(product.package_quantity) : "",
+    carton_quantity: product.carton_quantity ? String(product.carton_quantity) : "",
     image: null,
   };
 }
@@ -131,6 +139,7 @@ export function ProductsManager({
   const [csvSummary, setCsvSummary] = useState<{
     totalRows: number;
     errors: string[];
+    parsedHeaders: string[];
     rows: ParsedCsvResult["rows"];
   } | null>(null);
   const [draggedProductId, setDraggedProductId] = useState<string | null>(null);
@@ -220,6 +229,7 @@ export function ProductsManager({
       setCsvSummary({
         totalRows: parsed.rows.length,
         errors: parsed.errors,
+        parsedHeaders: parsed.parsedHeaders,
         rows: parsed.rows,
       });
     });
@@ -241,7 +251,10 @@ export function ProductsManager({
       const response = await fetch("/api/tenant/products/import", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ rows: csvSummary.rows }),
+        body: JSON.stringify({
+          rows: csvSummary.rows,
+          parsedHeaders: csvSummary.parsedHeaders,
+        }),
       });
 
       const result = await response.json();
@@ -631,6 +644,25 @@ export function ProductsManager({
               />
             </div>
 
+            <div className="grid gap-3 md:grid-cols-2">
+              <Input
+                type="number"
+                min="1"
+                step="1"
+                placeholder="Paket adedi"
+                value={createForm.package_quantity}
+                onChange={(event) => updateCreateField("package_quantity", event.target.value)}
+              />
+              <Input
+                type="number"
+                min="1"
+                step="1"
+                placeholder="Koli adedi"
+                value={createForm.carton_quantity}
+                onChange={(event) => updateCreateField("carton_quantity", event.target.value)}
+              />
+            </div>
+
             <label className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-5 text-sm text-slate-600">
               <ImagePlus className="size-4 text-emerald-700" />
               <span>
@@ -672,7 +704,7 @@ export function ProductsManager({
               <h2 className="text-lg font-semibold text-slate-900">CSV içe aktarma</h2>
               <p className="text-sm text-slate-600">
                 Beklenen kolonlar: sku_code, product_name, image_url, currency,
-                fiyatlar ve is_in_stock.
+                fiyatlar, is_in_stock, package_quantity ve carton_quantity.
               </p>
             </div>
           </div>
@@ -1096,6 +1128,25 @@ export function ProductsManager({
               step="0.01"
               value={editForm.price_tier_3}
               onChange={(event) => updateEditField("price_tier_3", event.target.value)}
+            />
+          </div>
+
+          <div className="grid gap-3 md:grid-cols-2">
+            <Input
+              type="number"
+              min="1"
+              step="1"
+              placeholder="Paket adedi"
+              value={editForm.package_quantity}
+              onChange={(event) => updateEditField("package_quantity", event.target.value)}
+            />
+            <Input
+              type="number"
+              min="1"
+              step="1"
+              placeholder="Koli adedi"
+              value={editForm.carton_quantity}
+              onChange={(event) => updateEditField("carton_quantity", event.target.value)}
             />
           </div>
 

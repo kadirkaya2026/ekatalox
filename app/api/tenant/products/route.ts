@@ -24,6 +24,8 @@ export async function POST(request: Request) {
     price_tier_2: formData.get("price_tier_2"),
     price_tier_3: formData.get("price_tier_3"),
     is_in_stock: formData.get("is_in_stock"),
+    package_quantity: formData.get("package_quantity"),
+    carton_quantity: formData.get("carton_quantity"),
   });
 
   if (!parsed.success) {

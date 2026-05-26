@@ -2,11 +2,12 @@ import Papa from "papaparse";
 import {
   isCurrencyCode,
   normalizeCurrencyCode,
-  productCsvHeaders,
+  requiredProductCsvHeaders,
 } from "@/lib/products/constants";
 import type { Product } from "@/lib/types";
 
 export interface ParsedCsvResult {
+  parsedHeaders: string[];
   rows: Array<{
     category_name: string;
     sku_code: string;
@@ -17,6 +18,8 @@ export interface ParsedCsvResult {
     price_tier_2: Product["price_tier_2"];
     price_tier_3: Product["price_tier_3"];
     is_in_stock: Product["is_in_stock"];
+    package_quantity: Product["package_quantity"];
+    carton_quantity: Product["carton_quantity"];
   }>;
   errors: string[];
 }
@@ -93,6 +96,28 @@ function sanitizePrice(value: string | number | undefined): number {
   return Number.isFinite(result) ? result : 0;
 }
 
+function sanitizeOptionalPositiveInteger(
+  value: string | number | undefined,
+  rowNumber: number,
+  fieldLabel: string,
+  errors: string[],
+) {
+  const normalized = String(value ?? "").trim();
+
+  if (!normalized) {
+    return null;
+  }
+
+  const parsedValue = Number(normalized);
+
+  if (!Number.isInteger(parsedValue) || parsedValue <= 0) {
+    errors.push(`Satır ${rowNumber}: ${fieldLabel} pozitif tam sayı olmalıdır.`);
+    return null;
+  }
+
+  return parsedValue;
+}
+
 export function parseProductsCsv(csvText: string): ParsedCsvResult {
   const parsed = Papa.parse<Record<string, string>>(csvText, {
     header: true,
@@ -101,7 +126,9 @@ export function parseProductsCsv(csvText: string): ParsedCsvResult {
 
   const errors: string[] = [];
   const parsedHeaders = (parsed.meta.fields ?? []).map((field) => field.trim());
-  const missingHeaders = productCsvHeaders.filter((header) => !parsedHeaders.includes(header));
+  const missingHeaders = requiredProductCsvHeaders.filter(
+    (header) => !parsedHeaders.includes(header),
+  );
 
   if (missingHeaders.length) {
     errors.push(`Eksik CSV başlıkları: ${missingHeaders.join(", ")}`);
@@ -126,6 +153,19 @@ export function parseProductsCsv(csvText: string): ParsedCsvResult {
         return null;
       }
 
+      const package_quantity = sanitizeOptionalPositiveInteger(
+        row.package_quantity,
+        index + 2,
+        "package_quantity",
+        errors,
+      );
+      const carton_quantity = sanitizeOptionalPositiveInteger(
+        row.carton_quantity,
+        index + 2,
+        "carton_quantity",
+        errors,
+      );
+
       return {
         category_name,
         sku_code,
@@ -136,6 +176,8 @@ export function parseProductsCsv(csvText: string): ParsedCsvResult {
         price_tier_2: sanitizePrice(row.price_tier_2),
         price_tier_3: sanitizePrice(row.price_tier_3),
         is_in_stock: normalizeBoolean(row.is_in_stock),
+        package_quantity,
+        carton_quantity,
       };
     })
     .filter(Boolean) as ParsedCsvResult["rows"];
@@ -146,5 +188,5 @@ export function parseProductsCsv(csvText: string): ParsedCsvResult {
     });
   }
 
-  return { rows, errors };
+  return { parsedHeaders, rows, errors };
 }

@@ -28,7 +28,7 @@ export function buildWhatsAppMessage(params: {
 }) {
   const lines = params.items.map((item) => {
     const lineTotal = item.price * item.quantity;
-    return `• ${item.product_name} x ${item.quantity} = ${formatCurrency(lineTotal, item.currency)}`;
+    return `• ${item.product_name} x ${item.quantity} adet = ${formatCurrency(lineTotal, item.currency)}`;
   });
   const totalsByCurrency = getCartTotalsByCurrency(params.items);
   const totalLines = supportedCurrencyCodes

@@ -29,6 +29,8 @@ export interface Product {
   price_tier_2: number;
   price_tier_3: number;
   is_in_stock: boolean;
+  package_quantity: number | null;
+  carton_quantity: number | null;
   created_at: string;
 }
 
@@ -108,6 +110,8 @@ export interface StorefrontProduct {
   is_in_stock: boolean;
   currency: CurrencyCode;
   price: number;
+  package_quantity: number | null;
+  carton_quantity: number | null;
 }
 
 export interface CartItem extends StorefrontProduct {

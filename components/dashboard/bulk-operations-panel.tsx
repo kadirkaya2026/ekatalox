@@ -51,6 +51,8 @@ const TURKISH_COLUMN_MAP: Record<string, string> = {
   "2. Liste Fiyatı": "price_tier_2",
   "3. Liste Fiyatı": "price_tier_3",
   "Stok Durumu": "is_in_stock",
+  "Paket Adedi": "package_quantity",
+  "Koli Adedi": "carton_quantity",
 };
 
 const TURKISH_TEMPLATE_HEADERS = [
@@ -62,6 +64,8 @@ const TURKISH_TEMPLATE_HEADERS = [
   "2. Liste Fiyatı",
   "3. Liste Fiyatı",
   "Stok Durumu",
+  "Paket Adedi",
+  "Koli Adedi",
 ];
 
 // ---------------------------------------------------------------------------
@@ -159,7 +163,7 @@ async function parseSpreadsheetFile(file: File): Promise<ParsedCsvResult> {
   });
 
   if (!rawRows.length) {
-    return { rows: [], errors: ["Dosya boş."] };
+    return { parsedHeaders: [], rows: [], errors: ["Dosya boş."] };
   }
 
   const headers = (rawRows[0] as string[]).map((h) => String(h ?? "").trim());
@@ -506,7 +510,10 @@ function ProductImportTab({
       const response = await fetch("/api/tenant/products/import", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ rows: state.parsed.rows }),
+        body: JSON.stringify({
+          rows: state.parsed.rows,
+          parsedHeaders: state.parsed.parsedHeaders,
+        }),
       });
 
       const result = await response.json();
@@ -566,7 +573,7 @@ function ProductImportTab({
           number={2}
           icon={FileSpreadsheet}
           title="Şablonu doldurun"
-          description='Ürün bilgilerinizi şablondaki sütunlara girin: "Kategori Adı", "Stok Kodu (SKU)", "Ürün Adı", "Para Birimi", "1. Liste Fiyatı", "2. Liste Fiyatı", "3. Liste Fiyatı", "Stok Durumu". Stok Durumu için "Var" veya "Yok" yazın. Sütun adlarını değiştirmeyin.'
+          description='Ürün bilgilerinizi şablondaki sütunlara girin: "Kategori Adı", "Stok Kodu (SKU)", "Ürün Adı", "Para Birimi", "1. Liste Fiyatı", "2. Liste Fiyatı", "3. Liste Fiyatı", "Stok Durumu", "Paket Adedi", "Koli Adedi". Stok Durumu için "Var" veya "Yok" yazın. Paket/Koli adedi boş bırakılabilir. Sütun adlarını değiştirmeyin.'
         />
         <div className="flex gap-4">
           <div className="flex flex-col items-center">
@@ -602,6 +609,8 @@ function ProductImportTab({
             "110",
             "120",
             "Var",
+            "20",
+            "200",
           ];
           const ws = XLSX.utils.aoa_to_sheet([
             TURKISH_TEMPLATE_HEADERS,

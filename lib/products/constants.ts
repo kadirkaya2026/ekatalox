@@ -14,6 +14,20 @@ export const productCsvHeaders = [
   "price_tier_2",
   "price_tier_3",
   "is_in_stock",
+  "package_quantity",
+  "carton_quantity",
+] as const;
+
+export const requiredProductCsvHeaders = [
+  "category_name",
+  "sku_code",
+  "product_name",
+  "image_url",
+  "currency",
+  "price_tier_1",
+  "price_tier_2",
+  "price_tier_3",
+  "is_in_stock",
 ] as const;
 
 export function normalizeCurrencyCode(value: unknown) {

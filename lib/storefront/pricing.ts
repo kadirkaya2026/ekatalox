@@ -22,5 +22,7 @@ export function toStorefrontProduct(product: Product, tierLevel: PriceTierLevel)
     is_in_stock: product.is_in_stock,
     currency: product.currency,
     price: pickPriceByTier(product, tierLevel),
+    package_quantity: product.package_quantity,
+    carton_quantity: product.carton_quantity,
   };
 }

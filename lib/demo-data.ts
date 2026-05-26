@@ -70,6 +70,8 @@ export const demoProducts: Product[] = [
     price_tier_2: 41890,
     price_tier_3: 42390,
     is_in_stock: true,
+    package_quantity: 20,
+    carton_quantity: 200,
     created_at: new Date("2026-01-10").toISOString(),
   },
   {
@@ -86,6 +88,8 @@ export const demoProducts: Product[] = [
     price_tier_2: 36490,
     price_tier_3: 36990,
     is_in_stock: true,
+    package_quantity: null,
+    carton_quantity: null,
     created_at: new Date("2026-01-11").toISOString(),
   },
   {
@@ -102,6 +106,8 @@ export const demoProducts: Product[] = [
     price_tier_2: 10750,
     price_tier_3: 10990,
     is_in_stock: false,
+    package_quantity: 10,
+    carton_quantity: null,
     created_at: new Date("2026-01-12").toISOString(),
   },
 ];

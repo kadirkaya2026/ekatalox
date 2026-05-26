@@ -97,6 +97,36 @@ function addToCart(items: CartItem[], product: StorefrontProduct, quantity: numb
   );
 }
 
+function getUnitSummary(product: StorefrontProduct) {
+  const parts: string[] = [];
+
+  if (product.package_quantity) {
+    parts.push(`Paket: ${product.package_quantity} adet`);
+  }
+
+  if (product.carton_quantity) {
+    parts.push(`Koli: ${product.carton_quantity} adet`);
+  }
+
+  return parts.join("  ");
+}
+
+function parseUnitCount(value: string) {
+  const normalized = value.trim();
+
+  if (!normalized) {
+    return 0;
+  }
+
+  const parsedValue = Number(normalized);
+
+  if (!Number.isInteger(parsedValue) || parsedValue < 0) {
+    return null;
+  }
+
+  return parsedValue;
+}
+
 function updateQuantity(items: CartItem[], productId: string, nextQuantity: number) {
   if (nextQuantity <= 0) {
     return items.filter((item) => item.id !== productId);
@@ -206,7 +236,9 @@ export function StorefrontClient({
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>("all");
   const [selectedProduct, setSelectedProduct] = useState<StorefrontProduct | null>(null);
-  const [selectedQuantity, setSelectedQuantity] = useState("1");
+  const [selectedQuantity, setSelectedQuantity] = useState("0");
+  const [selectedPackageCount, setSelectedPackageCount] = useState("0");
+  const [selectedCartonCount, setSelectedCartonCount] = useState("0");
   const [quantityError, setQuantityError] = useState<string | null>(null);
   const [visibleCount, setVisibleCount] = useState(24);
   const [hoveredCategoryId, setHoveredCategoryId] = useState<string | null>(null);
@@ -298,10 +330,36 @@ export function StorefrontClient({
     return `https://wa.me/${tenant.whatsapp_number}?text=${encodeURIComponent(message)}`;
   }, [cart, note, tenant.company_name, tenant.whatsapp_number]);
 
-  const selectedQuantityValue = Number(selectedQuantity);
+  const selectedQuantityValue = parseUnitCount(selectedQuantity);
+  const selectedPackageCountValue = parseUnitCount(selectedPackageCount);
+  const selectedCartonCountValue = parseUnitCount(selectedCartonCount);
+  const selectedTotalQuantity = useMemo(() => {
+    if (!selectedProduct) {
+      return 0;
+    }
+
+    if (
+      selectedQuantityValue === null ||
+      selectedPackageCountValue === null ||
+      selectedCartonCountValue === null
+    ) {
+      return 0;
+    }
+
+    return (
+      selectedQuantityValue +
+      selectedPackageCountValue * (selectedProduct.package_quantity ?? 0) +
+      selectedCartonCountValue * (selectedProduct.carton_quantity ?? 0)
+    );
+  }, [
+    selectedCartonCountValue,
+    selectedPackageCountValue,
+    selectedProduct,
+    selectedQuantityValue,
+  ]);
   const selectedLineTotal =
-    selectedProduct && Number.isFinite(selectedQuantityValue) && selectedQuantityValue > 0
-      ? selectedProduct.price * selectedQuantityValue
+    selectedProduct && selectedTotalQuantity > 0
+      ? selectedProduct.price * selectedTotalQuantity
       : 0;
   const cartItemCount = useMemo(
     () => cart.reduce((total, item) => total + item.quantity, 0),
@@ -336,7 +394,9 @@ export function StorefrontClient({
 
   function openAddToCartModal(product: StorefrontProduct) {
     setSelectedProduct(product);
-    setSelectedQuantity("1");
+    setSelectedQuantity("0");
+    setSelectedPackageCount("0");
+    setSelectedCartonCount("0");
     setQuantityError(null);
   }
 
@@ -354,7 +414,9 @@ export function StorefrontClient({
 
   function closeAddToCartModal() {
     setSelectedProduct(null);
-    setSelectedQuantity("1");
+    setSelectedQuantity("0");
+    setSelectedPackageCount("0");
+    setSelectedCartonCount("0");
     setQuantityError(null);
   }
 
@@ -365,14 +427,21 @@ export function StorefrontClient({
       return;
     }
 
-    const quantity = Number(selectedQuantity);
-
-    if (!Number.isInteger(quantity) || quantity <= 0) {
-      setQuantityError("Lütfen geçerli bir adet girin.");
+    if (
+      selectedQuantityValue === null ||
+      selectedPackageCountValue === null ||
+      selectedCartonCountValue === null
+    ) {
+      setQuantityError("Lütfen adet, paket ve koli alanlarına geçerli tam sayı girin.");
       return;
     }
 
-    setCart((current) => addToCart(current, selectedProduct, quantity));
+    if (selectedTotalQuantity <= 0) {
+      setQuantityError("Sepete eklemek için en az bir değer girin.");
+      return;
+    }
+
+    setCart((current) => addToCart(current, selectedProduct, selectedTotalQuantity));
     closeAddToCartModal();
   }
 
@@ -1005,6 +1074,9 @@ export function StorefrontClient({
                           ? `SKU: ${product.sku_code}`
                           : "SKU bilgisi tanımlanmadı"}
                       </p>
+                      {getUnitSummary(product) ? (
+                        <p className="text-xs text-slate-500">{getUnitSummary(product)}</p>
+                      ) : null}
                     </div>
 
                     <div className="mt-5 border-t border-slate-100/80 pt-4">
@@ -1109,32 +1181,78 @@ export function StorefrontClient({
             <div className="rounded-xl border border-slate-100 bg-slate-50 p-4">
               <p className="font-semibold text-slate-900">{selectedProduct.product_name}</p>
               <p className="mt-1 text-sm text-slate-500">{selectedProduct.sku_code}</p>
+              {getUnitSummary(selectedProduct) ? (
+                <p className="mt-1 text-sm text-slate-500">{getUnitSummary(selectedProduct)}</p>
+              ) : null}
               <p className="mt-3 text-lg font-bold text-slate-900">
                 {formatCurrency(selectedProduct.price, selectedProduct.currency)}
               </p>
             </div>
 
-            <div className="space-y-2">
-              <label className="text-sm font-semibold text-slate-900">Adet</label>
-              <Input
-                type="number"
-                min="1"
-                step="1"
-                inputMode="numeric"
-                value={selectedQuantity}
-                onChange={(event) => {
-                  setSelectedQuantity(event.target.value);
-                  if (quantityError) {
-                    setQuantityError(null);
-                  }
-                }}
-                placeholder="Örn: 20"
-              />
-              {quantityError ? <p className="text-sm text-amber-700">{quantityError}</p> : null}
+            <div className="grid gap-3 sm:grid-cols-3">
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-slate-900">ADET</label>
+                <Input
+                  type="number"
+                  min="0"
+                  step="1"
+                  inputMode="numeric"
+                  value={selectedQuantity}
+                  onChange={(event) => {
+                    setSelectedQuantity(event.target.value);
+                    if (quantityError) {
+                      setQuantityError(null);
+                    }
+                  }}
+                  placeholder="0"
+                />
+              </div>
+
+              {selectedProduct.package_quantity ? (
+                <div className="space-y-2">
+                  <label className="text-sm font-semibold text-slate-900">PAKET</label>
+                  <Input
+                    type="number"
+                    min="0"
+                    step="1"
+                    inputMode="numeric"
+                    value={selectedPackageCount}
+                    onChange={(event) => {
+                      setSelectedPackageCount(event.target.value);
+                      if (quantityError) {
+                        setQuantityError(null);
+                      }
+                    }}
+                    placeholder="0"
+                  />
+                </div>
+              ) : null}
+
+              {selectedProduct.carton_quantity ? (
+                <div className="space-y-2">
+                  <label className="text-sm font-semibold text-slate-900">KOLİ</label>
+                  <Input
+                    type="number"
+                    min="0"
+                    step="1"
+                    inputMode="numeric"
+                    value={selectedCartonCount}
+                    onChange={(event) => {
+                      setSelectedCartonCount(event.target.value);
+                      if (quantityError) {
+                        setQuantityError(null);
+                      }
+                    }}
+                    placeholder="0"
+                  />
+                </div>
+              ) : null}
             </div>
+            {quantityError ? <p className="text-sm text-amber-700">{quantityError}</p> : null}
 
             <div className="rounded-xl bg-slate-900 p-4 text-white">
               <p className="text-sm text-slate-300">Toplam</p>
+              <p className="mt-1 text-sm text-slate-300">{selectedTotalQuantity} adet</p>
               <p className="mt-1 text-2xl font-bold">
                 {formatCurrency(selectedLineTotal, selectedProduct.currency)}
               </p>
