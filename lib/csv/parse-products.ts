@@ -33,13 +33,63 @@ function normalizeBoolean(value: string | boolean | undefined) {
   return ["1", "true", "var", "evet", "yes", "stock", "stokta"].includes(normalized);
 }
 
-function normalizeNumber(value: string | number | undefined) {
-  const normalized = String(value ?? "")
-    .replace(/\./g, "")
-    .replace(",", ".")
+/**
+ * Akıllı fiyat temizleyici.
+ *
+ * Desteklenen formatlar (örnekler):
+ *   "1,20"        → 1.20   (Türkçe ondalık virgülü)
+ *   "1.20"        → 1.20   (standart ondalık nokta)
+ *   "1.200,50"    → 1200.50 (Türkçe: nokta=binlik, virgül=ondalık)
+ *   "1,200.50"    → 1200.50 (İngilizce: virgül=binlik, nokta=ondalık)
+ *   "1.20 USD"    → 1.20
+ *   "150 TL"      → 150
+ *   "1.500"       → 1500  (binlik nokta — 3 hane)
+ *   ""  / "abc"   → 0
+ */
+function sanitizePrice(value: string | number | undefined): number {
+  if (typeof value === "number") {
+    return Number.isFinite(value) ? value : 0;
+  }
+
+  // Harf, para birimi sembolü ve boşlukları sil; sadece rakam, nokta, virgül, eksi kal
+  let raw = String(value ?? "")
+    .replace(/[^\d.,-]/g, "")
     .trim();
 
-  const result = Number(normalized);
+  if (!raw) return 0;
+
+  const hasDot = raw.includes(".");
+  const hasComma = raw.includes(",");
+
+  if (hasDot && hasComma) {
+    // Her ikisi var → hangisi son geliyorsa o ondalık ayraç
+    if (raw.lastIndexOf(",") > raw.lastIndexOf(".")) {
+      // "1.200,50" → nokta=binlik, virgül=ondalık
+      raw = raw.replace(/\./g, "").replace(",", ".");
+    } else {
+      // "1,200.50" → virgül=binlik, nokta=ondalık
+      raw = raw.replace(/,/g, "");
+    }
+  } else if (hasComma && !hasDot) {
+    // Sadece virgül var
+    // Virgülden sonra 1-2 hane → ondalık ("1,20")
+    // Virgülden sonra 3 hane  → binlik  ("1,200")
+    if (/,\d{1,2}$/.test(raw)) {
+      raw = raw.replace(",", ".");
+    } else {
+      raw = raw.replace(/,/g, "");
+    }
+  } else if (hasDot && !hasComma) {
+    // Sadece nokta var
+    // Noktadan sonra tam 3 hane → binlik ayraç ("1.500")
+    // Diğer durum → ondalık nokta ("1.20")
+    if (/\.\d{3}$/.test(raw)) {
+      raw = raw.replace(/\./g, "");
+    }
+    // aksi hâlde olduğu gibi bırak
+  }
+
+  const result = parseFloat(raw);
   return Number.isFinite(result) ? result : 0;
 }
 
@@ -82,9 +132,9 @@ export function parseProductsCsv(csvText: string): ParsedCsvResult {
         product_name,
         image_url: row.image_url?.trim() || null,
         currency,
-        price_tier_1: normalizeNumber(row.price_tier_1),
-        price_tier_2: normalizeNumber(row.price_tier_2),
-        price_tier_3: normalizeNumber(row.price_tier_3),
+        price_tier_1: sanitizePrice(row.price_tier_1),
+        price_tier_2: sanitizePrice(row.price_tier_2),
+        price_tier_3: sanitizePrice(row.price_tier_3),
         is_in_stock: normalizeBoolean(row.is_in_stock),
       };
     })
