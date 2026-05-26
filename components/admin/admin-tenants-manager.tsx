@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Modal } from "@/components/ui/modal";
 import {
   isReservedSubdomain,
   RESERVED_SUBDOMAIN_MESSAGE,
@@ -425,39 +426,44 @@ export function AdminTenantsManager({
         ))}
       </div>
 
-      {createdCredentials ? (
-        <Card className="p-5">
-          <p className="text-sm font-semibold text-slate-900">
-            Tenant admin hesabı oluşturuldu
-          </p>
-          <div className="mt-4 space-y-2 text-sm text-slate-600">
-            <p>
-              <span className="font-medium text-slate-900">Giriş adresi:</span>{" "}
-              {createdCredentials.email}
-            </p>
-            <p>
-              <span className="font-medium text-slate-900">Geçici şifre:</span>{" "}
-              {createdCredentials.password}
-            </p>
-            <p>
-              <span className="font-medium text-slate-900">Panel:</span>{" "}
-              app.ekatalox.com
-            </p>
-            <p>
-              <span className="font-medium text-slate-900">Mağaza:</span>{" "}
-              {createdCredentials.subdomain}.ekatalox.com
-            </p>
-            <p className="pt-2 text-amber-700">
+      <Modal
+        open={Boolean(createdCredentials)}
+        onClose={() => setCreatedCredentials(null)}
+        title="Tenant admin hesabı oluşturuldu"
+      >
+        {createdCredentials ? (
+          <div className="space-y-4">
+            <div className="rounded-xl border border-slate-100 bg-slate-50 p-4 text-sm text-slate-600">
+              <p>
+                <span className="font-medium text-slate-900">Giriş adresi:</span>{" "}
+                {createdCredentials.email}
+              </p>
+              <p className="mt-2">
+                <span className="font-medium text-slate-900">Geçici şifre:</span>{" "}
+                {createdCredentials.password}
+              </p>
+              <p className="mt-2">
+                <span className="font-medium text-slate-900">Panel:</span>{" "}
+                app.ekatalox.com
+              </p>
+              <p className="mt-2">
+                <span className="font-medium text-slate-900">Mağaza:</span>{" "}
+                {createdCredentials.subdomain}.ekatalox.com
+              </p>
+            </div>
+
+            <p className="text-sm text-amber-700">
               Bu şifre yalnız bir kez gösterilir. Lütfen şimdi kaydedin.
             </p>
+
+            <div className="flex justify-end">
+              <Button variant="secondary" onClick={() => setCreatedCredentials(null)}>
+                Kapat
+              </Button>
+            </div>
           </div>
-          <div className="mt-4">
-            <Button variant="secondary" onClick={() => setCreatedCredentials(null)}>
-              Kapat
-            </Button>
-          </div>
-        </Card>
-      ) : null}
+        ) : null}
+      </Modal>
     </div>
   );
 }
