@@ -1,9 +1,14 @@
 import { cookies } from "next/headers";
 import type { NextResponse } from "next/server";
-import type { PriceTierLevel } from "@/lib/types";
+import type { PriceTierLevel, Tenant } from "@/lib/types";
 
 export function getStorefrontTierCookieName(subdomain: string) {
   return `ekatalox-tier-${subdomain}`;
+}
+
+interface StorefrontTierCookieValue {
+  tenantId: string;
+  tierLevel: PriceTierLevel;
 }
 
 function getStorefrontTierCookieOptions(secure: boolean) {
@@ -21,7 +26,30 @@ export async function readStorefrontTier(subdomain: string) {
   const value = cookieStore.get(getStorefrontTierCookieName(subdomain))?.value;
 
   if (value === "1" || value === "2" || value === "3") {
-    return Number(value) as PriceTierLevel;
+    return {
+      tenantId: "",
+      tierLevel: Number(value) as PriceTierLevel,
+    };
+  }
+
+  if (!value) {
+    return null;
+  }
+
+  try {
+    const parsed = JSON.parse(value) as Partial<StorefrontTierCookieValue>;
+
+    if (
+      typeof parsed.tenantId === "string" &&
+      (parsed.tierLevel === 1 || parsed.tierLevel === 2 || parsed.tierLevel === 3)
+    ) {
+      return {
+        tenantId: parsed.tenantId,
+        tierLevel: parsed.tierLevel,
+      };
+    }
+  } catch {
+    return null;
   }
 
   return null;
@@ -56,13 +84,17 @@ export function isSecureStorefrontRequest(request: Request) {
 
 export function setStorefrontTierCookie(params: {
   response: NextResponse;
+  tenantId: string;
   subdomain: string;
   tierLevel: PriceTierLevel;
   secure: boolean;
 }) {
   params.response.cookies.set(
     getStorefrontTierCookieName(params.subdomain),
-    String(params.tierLevel),
+    JSON.stringify({
+      tenantId: params.tenantId,
+      tierLevel: params.tierLevel,
+    } satisfies StorefrontTierCookieValue),
     getStorefrontTierCookieOptions(params.secure),
   );
 }
@@ -76,4 +108,19 @@ export function clearStorefrontTierCookie(params: {
     ...getStorefrontTierCookieOptions(params.secure),
     maxAge: 0,
   });
+}
+
+export function isStorefrontTierStateValid(params: {
+  cookieState: Awaited<ReturnType<typeof readStorefrontTier>>;
+  tenant: Tenant;
+}) {
+  if (!params.cookieState) {
+    return false;
+  }
+
+  if (!params.cookieState.tenantId) {
+    return true;
+  }
+
+  return params.cookieState.tenantId === params.tenant.id;
 }

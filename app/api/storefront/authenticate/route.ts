@@ -41,6 +41,7 @@ export async function POST(request: Request) {
   });
   setStorefrontTierCookie({
     response,
+    tenantId: matched.tenant.id,
     subdomain,
     tierLevel: matched.tierLevel,
     secure,

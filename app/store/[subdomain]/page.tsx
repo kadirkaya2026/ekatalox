@@ -9,7 +9,10 @@ import {
   getStorefrontTenant,
   getTenantCategories,
 } from "@/lib/data";
-import { readStorefrontTier } from "@/lib/storefront/session";
+import {
+  isStorefrontTierStateValid,
+  readStorefrontTier,
+} from "@/lib/storefront/session";
 
 export default async function StorefrontPage(props: PageProps<"/store/[subdomain]">) {
   const { subdomain } = await props.params;
@@ -34,16 +37,16 @@ export default async function StorefrontPage(props: PageProps<"/store/[subdomain
     );
   }
 
-  const tierLevel = await readStorefrontTier(subdomain);
+  const tierState = await readStorefrontTier(subdomain);
 
-  if (!tierLevel) {
+  if (!tierState || !isStorefrontTierStateValid({ cookieState: tierState, tenant })) {
     return <PasswordGate subdomain={subdomain} companyName={tenant.company_name} />;
   }
 
   const [products, categories] = await Promise.all([
     getStorefrontProducts({
       tenantId: tenant.id,
-      tierLevel,
+      tierLevel: tierState.tierLevel,
     }),
     getTenantCategories(tenant.id),
   ]);
