@@ -152,24 +152,24 @@ function renderBannerItem(
     >
       <div
         aria-hidden="true"
-        className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.16),transparent_38%)]"
+        className="absolute inset-0 hidden bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.16),transparent_38%)] md:block"
       />
       <div
         aria-hidden="true"
-        className="absolute inset-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.05),transparent_60%)]"
+        className="absolute inset-0 hidden bg-[linear-gradient(135deg,rgba(255,255,255,0.05),transparent_60%)] md:block"
       />
-      <div className="relative min-h-[260px] md:min-h-[340px] lg:min-h-[400px]">
+      <div className="relative aspect-[16/7] bg-slate-950 sm:aspect-[3/1] md:min-h-[340px] md:aspect-auto md:bg-transparent lg:min-h-[400px]">
         {banner.image_url ? (
           <Image
             src={banner.image_url}
             alt={banner.title ?? `${title} banner`}
             fill
-            className="object-cover"
+            className="object-contain object-center p-2 sm:p-3 md:object-cover md:p-0"
             sizes="100vw"
             unoptimized
           />
         ) : (
-          <div className="flex h-full min-h-[260px] items-center justify-center p-8 text-center text-white/70 md:min-h-[340px] lg:min-h-[400px]">
+          <div className="flex h-full min-h-[180px] items-center justify-center p-8 text-center text-white/70 sm:min-h-[220px] md:min-h-[340px] lg:min-h-[400px]">
             <div>
               <p className="text-lg font-semibold sm:text-xl">Banner görseli eklenmedi</p>
               <p className="mt-2 text-sm leading-6 sm:text-base">
@@ -212,6 +212,7 @@ export function StorefrontClient({
   const [hoveredCategoryId, setHoveredCategoryId] = useState<string | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [activeBannerIndex, setActiveBannerIndex] = useState(0);
+  const [isMobileOrderNoteOpen, setIsMobileOrderNoteOpen] = useState(false);
   const isMounted = useSyncExternalStore(
     subscribeToMountState,
     getClientMountedState,
@@ -396,6 +397,7 @@ export function StorefrontClient({
     if (typeof window !== "undefined") {
       window.localStorage.removeItem(cartStorageKey);
     }
+    setIsMobileOrderNoteOpen(false);
   }
 
   function renderCartDrawer() {
@@ -411,13 +413,13 @@ export function StorefrontClient({
           className="absolute inset-0 h-full w-full"
           onClick={() => setIsCartOpen(false)}
         />
-        <div className="absolute inset-x-0 bottom-0 max-h-[90vh] rounded-t-[2rem] bg-white shadow-[0_-24px_80px_rgba(15,23,42,0.22)] lg:inset-y-0 lg:left-auto lg:right-0 lg:h-full lg:max-h-none lg:w-[460px] lg:rounded-l-[2rem] lg:rounded-tr-none">
-          <div className="flex h-full max-h-[88vh] flex-col lg:max-h-none">
+        <div className="absolute inset-x-0 bottom-0 max-h-[94dvh] rounded-t-[2rem] bg-white shadow-[0_-24px_80px_rgba(15,23,42,0.22)] lg:inset-y-0 lg:left-auto lg:right-0 lg:h-full lg:max-h-none lg:w-[460px] lg:rounded-l-[2rem] lg:rounded-tr-none">
+          <div className="flex h-full max-h-[94dvh] flex-col lg:max-h-none">
             <div className="flex justify-center pt-3 lg:hidden">
               <span className="h-1.5 w-14 rounded-full bg-slate-200" />
             </div>
 
-            <div className="border-b border-slate-100 px-5 pb-4 pt-3 lg:px-6 lg:pt-5">
+            <div className="border-b border-slate-100 px-4 pb-3 pt-3 sm:px-5 lg:px-6 lg:pb-4 lg:pt-5">
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-400">
@@ -430,7 +432,7 @@ export function StorefrontClient({
                     <span className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600">
                       {cartItemCount} ürün
                     </span>
-                    <span className="rounded-full border border-slate-200/80 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-500">
+                    <span className="hidden rounded-full border border-slate-200/80 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-500 sm:inline-flex">
                       Hızlı sipariş özeti
                     </span>
                   </div>
@@ -457,7 +459,7 @@ export function StorefrontClient({
               </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto px-5 py-5 lg:px-6">
+            <div className="flex-1 overflow-y-auto px-4 py-4 sm:px-5 lg:px-6">
               {cart.length ? (
                 <div className="space-y-4">
                   {cart.map((item) => (
@@ -582,14 +584,14 @@ export function StorefrontClient({
               )}
             </div>
 
-            <div className="border-t border-slate-100 bg-[linear-gradient(180deg,#ffffff_0%,#f8fafc_100%)] px-5 py-5 lg:px-6">
-              <div className="rounded-[1.75rem] border border-slate-200/80 bg-white p-4 shadow-[0_14px_40px_rgba(15,23,42,0.06)]">
+            <div className="shrink-0 border-t border-slate-100 bg-[linear-gradient(180deg,#ffffff_0%,#f8fafc_100%)] px-4 py-4 sm:px-5 lg:px-6 lg:py-5">
+              <div className="rounded-[1.5rem] border border-slate-200/80 bg-white p-3 shadow-[0_14px_40px_rgba(15,23,42,0.06)] sm:rounded-[1.75rem] sm:p-4">
                 <div className="flex items-center justify-between gap-3">
                   <div>
                     <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">
                       Sipariş Notu
                     </p>
-                    <p className="mt-1 text-sm text-slate-500">
+                    <p className="mt-1 hidden text-sm text-slate-500 md:block">
                       İsterseniz teslimat veya sipariş detayını ekleyin.
                     </p>
                   </div>
@@ -598,20 +600,39 @@ export function StorefrontClient({
                   </span>
                 </div>
 
+                <button
+                  type="button"
+                  onClick={() => setIsMobileOrderNoteOpen((current) => !current)}
+                  className="mt-3 flex w-full items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-left md:hidden"
+                >
+                  <span className="text-sm font-semibold text-slate-700">
+                    Sipariş notu ekle
+                  </span>
+                  <ChevronDown
+                    className={cn(
+                      "size-4 text-slate-500 transition-transform",
+                      isMobileOrderNoteOpen && "rotate-180",
+                    )}
+                  />
+                </button>
+
                 <Textarea
                   placeholder="Sipariş notu (opsiyonel)"
                   value={note}
                   onChange={(event) => setNote(event.target.value)}
-                  className="mt-4 min-h-24 rounded-[1.25rem] border-slate-200 bg-slate-50/70"
+                  className={cn(
+                    "mt-4 rounded-[1.25rem] border-slate-200 bg-slate-50/70",
+                    isMobileOrderNoteOpen ? "block min-h-20" : "hidden md:block md:min-h-24",
+                  )}
                 />
 
-                <div className="mt-4 rounded-[1.5rem] bg-slate-950 p-4 text-white shadow-[0_18px_48px_rgba(15,23,42,0.24)]">
+                <div className="mt-3 rounded-[1.35rem] bg-slate-950 p-3 text-white shadow-[0_18px_48px_rgba(15,23,42,0.24)] sm:mt-4 sm:rounded-[1.5rem] sm:p-4">
                   <div className="flex items-start justify-between gap-3">
                     <div>
                       <p className="text-[11px] font-medium uppercase tracking-[0.22em] text-slate-400">
                         Toplamlar
                       </p>
-                      <p className="mt-1 text-sm text-slate-300">
+                      <p className="mt-1 text-xs text-slate-300 sm:text-sm">
                         {cartItemCount} ürün için sipariş özeti
                       </p>
                     </div>
@@ -625,7 +646,7 @@ export function StorefrontClient({
                       cartTotalEntries.map(({ currency, total }) => (
                         <div
                           key={currency}
-                          className="flex items-center justify-between gap-3 rounded-full bg-white/5 px-4 py-3"
+                          className="flex items-center justify-between gap-3 rounded-full bg-white/5 px-4 py-2.5 sm:py-3"
                         >
                           <p className="text-sm font-semibold text-slate-300">{currency}</p>
                           <p className="text-lg font-bold tracking-tight text-white">
@@ -634,7 +655,7 @@ export function StorefrontClient({
                         </div>
                       ))
                     ) : (
-                      <div className="flex items-center justify-between gap-3 rounded-full bg-white/5 px-4 py-3">
+                      <div className="flex items-center justify-between gap-3 rounded-full bg-white/5 px-4 py-2.5 sm:py-3">
                         <p className="text-sm font-semibold text-slate-300">{cartCurrency}</p>
                         <p className="text-lg font-bold tracking-tight text-white">
                           {formatCurrency(cartTotal, cartCurrency)}
@@ -648,7 +669,7 @@ export function StorefrontClient({
                   asChild
                   href={whatsappHref}
                   className={cn(
-                    "mt-4 h-12 w-full rounded-full px-5 text-base font-bold shadow-none",
+                    "mt-3 h-11 w-full rounded-full px-5 text-base font-bold shadow-none sm:mt-4 sm:h-12",
                     theme.stickyCartButton,
                     !cart.length && "pointer-events-none opacity-50",
                   )}
