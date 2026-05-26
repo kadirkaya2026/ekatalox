@@ -264,9 +264,9 @@ export function StorefrontClient({
               />
             </div>
 
-            <div id="catalog-grid" className="scroll-mt-6">
+            <div id="catalog-grid" className="min-w-0 scroll-mt-6">
               {filteredProducts.length ? (
-                <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
+                <div className="grid min-w-0 grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4">
                   {filteredProducts.map((product) => (
                     <article key={product.id} className={theme.productCard}>
                       <div className={theme.productImageWrap}>
@@ -293,17 +293,19 @@ export function StorefrontClient({
                           </p>
                         </div>
 
-                        <div className="mt-4 border-t border-slate-100/20 pt-3">
+                        <div className="mt-4 min-w-0 border-t border-slate-100/20 pt-3">
                           <div className="space-y-2">
-                            <div className="flex items-center justify-between gap-2">
+                            <div className="min-w-0 space-y-2 sm:flex sm:items-center sm:justify-between sm:gap-2 sm:space-y-0">
                               <p className={theme.productPrice}>
                                 {formatCurrency(product.price, product.currency)}
                               </p>
-                              {product.is_in_stock ? (
-                                <span className={theme.stockBadgeIn}>Stokta</span>
-                              ) : (
-                                <span className={theme.stockBadgeOut}>Tükendi</span>
-                              )}
+                              <div className="shrink-0">
+                                {product.is_in_stock ? (
+                                  <span className={theme.stockBadgeIn}>Stokta</span>
+                                ) : (
+                                  <span className={theme.stockBadgeOut}>Tükendi</span>
+                                )}
+                              </div>
                             </div>
                             <Button
                               onClick={() => openAddToCartModal(product)}
