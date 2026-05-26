@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSessionContext } from "@/lib/auth/session";
 import { shouldAllowDemoFallback } from "@/lib/env";
+import { getDefaultTenantStorefrontSettings } from "@/lib/data";
 import { revalidateStorefrontCache } from "@/lib/storefront/cache";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { ensureTenantAdminResponse } from "@/lib/tenancy/guards";
@@ -14,7 +15,36 @@ export async function PATCH(request: Request) {
 
   const session = await getSessionContext();
   const body = await request.json();
-  const parsed = storefrontSettingsSchema.safeParse(body);
+  const supabase = createSupabaseAdminClient();
+
+  let existingSettings = getDefaultTenantStorefrontSettings(session.tenant!.id);
+
+  if (supabase) {
+    const { data } = await supabase
+      .from("tenant_storefront_settings")
+      .select(
+        "tenant_id, theme_key, logo_url, storefront_title, storefront_description, hero_heading, hero_cta_label",
+      )
+      .eq("tenant_id", session.tenant!.id)
+      .maybeSingle();
+
+    if (data) {
+      existingSettings = {
+        ...existingSettings,
+        ...data,
+      };
+    }
+  }
+
+  const parsed = storefrontSettingsSchema.safeParse({
+    whatsapp_number: body.whatsapp_number,
+    storefront_title: body.storefront_title ?? existingSettings.storefront_title,
+    storefront_description:
+      body.storefront_description ?? existingSettings.storefront_description,
+    hero_heading: body.hero_heading ?? existingSettings.hero_heading,
+    hero_cta_label: body.hero_cta_label ?? existingSettings.hero_cta_label,
+    theme_key: body.theme_key ?? existingSettings.theme_key,
+  });
 
   if (!parsed.success) {
     return NextResponse.json(
@@ -22,8 +52,6 @@ export async function PATCH(request: Request) {
       { status: 400 },
     );
   }
-
-  const supabase = createSupabaseAdminClient();
 
   if (!supabase) {
     if (!shouldAllowDemoFallback()) {
