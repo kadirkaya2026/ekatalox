@@ -121,6 +121,7 @@ export function StorefrontClient({
   const [selectedProduct, setSelectedProduct] = useState<StorefrontProduct | null>(null);
   const [selectedQuantity, setSelectedQuantity] = useState("1");
   const [quantityError, setQuantityError] = useState<string | null>(null);
+  const [visibleCount, setVisibleCount] = useState(24);
 
   const theme = storefrontThemes[storefrontSettings.theme_key] ?? storefrontThemes.minimal;
   const cartStorageKey = useMemo(() => getCartStorageKey(tenant.id), [tenant.id]);
@@ -167,6 +168,8 @@ export function StorefrontClient({
     });
   }, [products, searchTerm, selectedCategoryId]);
 
+  const visibleProducts = filteredProducts.slice(0, visibleCount);
+
   const whatsappHref = useMemo(() => {
     if (!cart.length) {
       return "#";
@@ -192,6 +195,10 @@ export function StorefrontClient({
   const heroHeading =
     storefrontSettings.hero_heading || "Güncel fiyatlar ve hızlı sipariş tek ekranda";
   const heroCtaLabel = storefrontSettings.hero_cta_label || "Ürünleri İncele";
+
+  useEffect(() => {
+    setVisibleCount(24);
+  }, [searchTerm, selectedCategoryId]);
 
   useEffect(() => {
     setCart(readStoredCart(cartStorageKey));
@@ -539,7 +546,7 @@ export function StorefrontClient({
             <div id="catalog-grid" className="min-w-0 max-w-full scroll-mt-6">
               {filteredProducts.length ? (
                 <div className="grid min-w-0 max-w-full grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-2 sm:gap-4 md:grid-cols-3 lg:grid-cols-4">
-                  {filteredProducts.map((product) => (
+                  {visibleProducts.map((product) => (
                     <article key={product.id} className={theme.productCard}>
                       <div className={theme.productImageWrap}>
                         {product.image_url ? (
@@ -601,6 +608,18 @@ export function StorefrontClient({
                     Arama kriterlerini veya seçili kategoriyi değiştirmeyi deneyin.
                   </p>
                 </Card>
+              )}
+
+              {filteredProducts.length > visibleCount && (
+                <div className="mt-8 flex justify-center">
+                  <button
+                    type="button"
+                    onClick={() => setVisibleCount((prev) => prev + 24)}
+                    className="rounded-2xl border border-slate-200 bg-white px-8 py-3 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 hover:shadow"
+                  >
+                    Daha Fazla Ürün Göster ({filteredProducts.length - visibleCount} ürün kaldı)
+                  </button>
+                </div>
               )}
             </div>
           </section>
