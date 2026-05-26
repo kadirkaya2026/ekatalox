@@ -41,6 +41,29 @@ const COMPRESSION_OPTIONS = {
   initialQuality: 0.75,
 };
 
+// Türkçe kolon başlıkları → teknik alan adı eşlemesi
+const TURKISH_COLUMN_MAP: Record<string, string> = {
+  "Kategori Adı": "category_name",
+  "Stok Kodu (SKU)": "sku_code",
+  "Ürün Adı": "product_name",
+  "Para Birimi": "currency",
+  "Peşin Fiyatı": "price_tier_1",
+  "3 Taksit Fiyatı": "price_tier_2",
+  "6 Taksit Fiyatı": "price_tier_3",
+  "Stok Durumu": "is_in_stock",
+};
+
+const TURKISH_TEMPLATE_HEADERS = [
+  "Kategori Adı",
+  "Stok Kodu (SKU)",
+  "Ürün Adı",
+  "Para Birimi",
+  "Peşin Fiyatı",
+  "3 Taksit Fiyatı",
+  "6 Taksit Fiyatı",
+  "Stok Durumu",
+];
+
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
@@ -73,21 +96,50 @@ interface Props {
 }
 
 // ---------------------------------------------------------------------------
-// Helper: parse xlsx/csv → ParsedCsvResult
+// Helper: parse xlsx/csv → ParsedCsvResult (Türkçe ve İngilizce başlık destekli)
 // ---------------------------------------------------------------------------
 async function parseSpreadsheetFile(file: File): Promise<ParsedCsvResult> {
-  if (file.name.endsWith(".xlsx") || file.name.endsWith(".xls")) {
-    const XLSX = await import("xlsx");
-    const buffer = await file.arrayBuffer();
-    const workbook = XLSX.read(buffer, { type: "array" });
-    const firstSheetName = workbook.SheetNames[0];
-    const sheet = workbook.Sheets[firstSheetName];
-    const csvString: string = XLSX.utils.sheet_to_csv(sheet);
+  const XLSX = await import("xlsx");
+  const buffer = await file.arrayBuffer();
+  const workbook = XLSX.read(buffer, { type: "array" });
+  const firstSheetName = workbook.SheetNames[0];
+  const sheet = workbook.Sheets[firstSheetName];
+
+  // Ham satırları dizi olarak al
+  const rawRows = XLSX.utils.sheet_to_json<unknown[]>(sheet, {
+    header: 1,
+    defval: "",
+  });
+
+  if (!rawRows.length) {
+    return { rows: [], errors: ["Dosya boş."] };
+  }
+
+  const headers = (rawRows[0] as string[]).map((h) => String(h ?? "").trim());
+  const isTurkish = headers.some((h) => h in TURKISH_COLUMN_MAP);
+
+  if (isTurkish) {
+    // Türkçe başlıkları İngilizce alan adlarına çevir
+    const englishHeaders = headers.map((h) => TURKISH_COLUMN_MAP[h] ?? h);
+
+    // image_url şablonda yok; parse fonksiyonu için boş sütun olarak ekle
+    const hasImageUrl = englishHeaders.includes("image_url");
+    if (!hasImageUrl) englishHeaders.push("image_url");
+
+    const remappedRows: unknown[][] = [englishHeaders];
+    for (let i = 1; i < rawRows.length; i++) {
+      const row = rawRows[i] as unknown[];
+      remappedRows.push(hasImageUrl ? row : [...row, ""]);
+    }
+
+    const newSheet = XLSX.utils.aoa_to_sheet(remappedRows);
+    const csvString: string = XLSX.utils.sheet_to_csv(newSheet);
     return parseProductsCsv(csvString);
   }
 
-  const csvText = await file.text();
-  return parseProductsCsv(csvText);
+  // İngilizce başlıklar — mevcut parser yeterli
+  const csvString: string = XLSX.utils.sheet_to_csv(sheet);
+  return parseProductsCsv(csvString);
 }
 
 // ---------------------------------------------------------------------------
@@ -389,7 +441,7 @@ function ProductImportTab({
           number={2}
           icon={FileSpreadsheet}
           title="Şablonu doldurun"
-          description="Ürün bilgilerinizi şablondaki sütunlara sadık kalarak girin. Sütun adlarını kesinlikle değiştirmeyin. (category_name, sku_code, product_name, currency, price_tier_1, price_tier_2, price_tier_3, is_in_stock)"
+          description='Ürün bilgilerinizi şablondaki sütunlara girin: "Kategori Adı", "Stok Kodu (SKU)", "Ürün Adı", "Para Birimi", "Peşin Fiyatı", "3 Taksit Fiyatı", "6 Taksit Fiyatı", "Stok Durumu". Stok Durumu için "Var" veya "Yok" yazın. Sütun adlarını değiştirmeyin.'
         />
         <div className="flex gap-4">
           <div className="flex flex-col items-center">
@@ -414,11 +466,31 @@ function ProductImportTab({
       {/* Template download */}
       <Button
         variant="secondary"
-        onClick={() => window.location.assign("/api/tenant/products/export-template")}
+        onClick={async () => {
+          const XLSX = await import("xlsx");
+          const sampleRow = [
+            "Elektronik",
+            "A1001",
+            "Örnek Ürün",
+            "TRY",
+            "100",
+            "110",
+            "120",
+            "Var",
+          ];
+          const ws = XLSX.utils.aoa_to_sheet([
+            TURKISH_TEMPLATE_HEADERS,
+            sampleRow,
+          ]);
+          ws["!cols"] = TURKISH_TEMPLATE_HEADERS.map(() => ({ wch: 22 }));
+          const wb = XLSX.utils.book_new();
+          XLSX.utils.book_append_sheet(wb, ws, "Ürünler");
+          XLSX.writeFile(wb, "urun-sablonu.xlsx");
+        }}
         className="gap-2"
       >
         <Download className="size-4" />
-        Şablonu İndir (.csv)
+        Şablonu İndir (.xlsx)
       </Button>
 
       {/* Dropzone */}
