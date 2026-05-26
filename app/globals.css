@@ -22,6 +22,7 @@
 
 html {
   @apply bg-slate-50 overflow-x-hidden;
+  scroll-behavior: smooth;
 }
 
 body {
@@ -64,4 +65,105 @@ button:focus-visible {
 
 .sticky-safe-bottom {
   padding-bottom: calc(env(safe-area-inset-bottom) + 6rem);
+}
+
+.ek-homepage {
+  background: #0b0f19;
+  color: #fff;
+}
+
+.ek-homepage section[id] {
+  scroll-margin-top: 6rem;
+}
+
+.ek-homepage .display-headline {
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  line-height: 0.98;
+}
+
+.ek-homepage .text-balance {
+  text-wrap: balance;
+}
+
+.ek-homepage .text-gradient-neon {
+  background: linear-gradient(135deg, #00d2ff 0%, #7928ca 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.ek-homepage .bg-grid {
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+  background-size: 60px 60px;
+}
+
+.ek-homepage .mask-radial-fade {
+  mask-image: radial-gradient(circle at center, black 0%, black 40%, transparent 75%);
+  -webkit-mask-image: radial-gradient(circle at center, black 0%, black 40%, transparent 75%);
+}
+
+.ek-homepage .glass {
+  background: rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.ek-homepage .neon-line {
+  background: linear-gradient(90deg, transparent 0%, #00d2ff 30%, #7928ca 70%, transparent 100%);
+  height: 1px;
+}
+
+.ek-homepage .shimmer {
+  background: linear-gradient(110deg, transparent 35%, rgba(0, 210, 255, 0.15) 50%, transparent 65%);
+  background-size: 200% 100%;
+  animation: ek-homepage-shimmer 3s linear infinite;
+}
+
+.ek-homepage ::selection {
+  background: rgba(0, 210, 255, 0.3);
+  color: #fff;
+}
+
+.ek-homepage .animate-float {
+  animation: ek-homepage-float 6s ease-in-out infinite;
+}
+
+.ek-homepage .animate-pulse-glow {
+  animation: ek-homepage-pulse-glow 3s ease-in-out infinite;
+}
+
+@keyframes ek-homepage-shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+@keyframes ek-homepage-float {
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes ek-homepage-pulse-glow {
+  0%,
+  100% {
+    opacity: 0.5;
+  }
+
+  50% {
+    opacity: 1;
+  }
 }
