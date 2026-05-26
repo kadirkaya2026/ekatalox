@@ -6,6 +6,56 @@ export const storefrontThemeKeySchema = z.enum([
   "soft-commerce",
 ]);
 
+const optionalUrlSchema = z
+  .union([z.string().trim().url("Geçerli bir bağlantı girin."), z.literal(""), z.null(), z.undefined()])
+  .transform((value) => value || null);
+
+const optionalColorSchema = z
+  .union([z.string().trim(), z.literal(""), z.null(), z.undefined()])
+  .transform((value) => value || null)
+  .refine(
+    (value) =>
+      value === null || /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(value),
+    {
+      message: "Renk değeri HEX formatında olmalıdır.",
+    },
+  );
+
+export const bannerItemSchema = z
+  .object({
+    id: z.string().min(1, "Banner kimliği zorunludur."),
+    title: z
+      .string()
+      .trim()
+      .max(80, "Banner başlığı en fazla 80 karakter olabilir.")
+      .nullable()
+      .optional()
+      .transform((value) => value || null),
+    description: z
+      .string()
+      .trim()
+      .max(180, "Banner açıklaması en fazla 180 karakter olabilir.")
+      .nullable()
+      .optional()
+      .transform((value) => value || null),
+    image_url: optionalUrlSchema,
+    cta_label: z
+      .string()
+      .trim()
+      .max(32, "CTA metni en fazla 32 karakter olabilir.")
+      .nullable()
+      .optional()
+      .transform((value) => value || null),
+    cta_href: optionalUrlSchema,
+    background_color: optionalColorSchema,
+  })
+  .refine(
+    (value) => Boolean(value.title || value.description || value.image_url),
+    {
+      message: "Her banner için en az başlık, açıklama veya görsel girin.",
+    },
+  );
+
 export const storefrontSettingsSchema = z.object({
   whatsapp_number: z.string().min(10, "WhatsApp numarası zorunludur."),
   storefront_title: z
@@ -36,6 +86,10 @@ export const storefrontSettingsSchema = z.object({
     .nullable()
     .optional()
     .transform((value) => value || null),
+  banner_items: z
+    .array(bannerItemSchema)
+    .max(6, "En fazla 6 banner ekleyebilirsiniz.")
+    .default([]),
   theme_key: storefrontThemeKeySchema,
 });
 

@@ -33,12 +33,24 @@ export const demoCategories: Category[] = [
     id: "cat-phone",
     tenant_id: "tenant-lucatech",
     name: "Telefonlar",
+    parent_id: null,
+    display_order: 1,
     created_at: new Date("2026-01-01").toISOString(),
+  },
+  {
+    id: "cat-apple",
+    tenant_id: "tenant-lucatech",
+    name: "Apple",
+    parent_id: "cat-phone",
+    display_order: 2,
+    created_at: new Date("2026-01-01T12:00:00").toISOString(),
   },
   {
     id: "cat-kampanya",
     tenant_id: "tenant-lucatech",
     name: "Kampanyalı Ürünler",
+    parent_id: null,
+    display_order: 3,
     created_at: new Date("2026-01-02").toISOString(),
   },
 ];
@@ -47,7 +59,8 @@ export const demoProducts: Product[] = [
   {
     id: "prd-1",
     tenant_id: "tenant-lucatech",
-    category_id: "cat-phone",
+    category_id: "cat-apple",
+    display_order: 1,
     sku_code: "APL-IPH-15-128",
     product_name: "iPhone 15 128GB",
     image_url:
@@ -63,6 +76,7 @@ export const demoProducts: Product[] = [
     id: "prd-2",
     tenant_id: "tenant-lucatech",
     category_id: "cat-phone",
+    display_order: 2,
     sku_code: "SMS-S24-256",
     product_name: "Samsung S24 256GB",
     image_url:
@@ -78,6 +92,7 @@ export const demoProducts: Product[] = [
     id: "prd-3",
     tenant_id: "tenant-lucatech",
     category_id: "cat-kampanya",
+    display_order: 3,
     sku_code: "XIA-RED-13",
     product_name: "Redmi Note 13",
     image_url:

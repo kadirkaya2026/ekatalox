@@ -2,12 +2,20 @@
 
 import { useState, useTransition } from "react";
 import Image from "next/image";
-import { ImageUp, LoaderCircle, Palette, Store } from "lucide-react";
+import {
+  ImageUp,
+  LoaderCircle,
+  Palette,
+  Plus,
+  Store,
+  Trash2,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import type {
+  BannerItem,
   Profile,
   StorefrontThemeKey,
   Tenant,
@@ -53,6 +61,19 @@ interface StorefrontFormState {
   hero_heading: string;
   hero_cta_label: string;
   theme_key: StorefrontThemeKey;
+  banner_items: BannerItem[];
+}
+
+function createEmptyBanner(index: number): BannerItem {
+  return {
+    id: `banner-${Date.now()}-${index}`,
+    title: "",
+    description: "",
+    image_url: "",
+    cta_label: "",
+    cta_href: "",
+    background_color: index % 2 === 0 ? "#0f172a" : "#065f46",
+  };
 }
 
 function toStorefrontFormState(
@@ -65,6 +86,7 @@ function toStorefrontFormState(
     hero_heading: settings.hero_heading ?? "",
     hero_cta_label: settings.hero_cta_label ?? "",
     theme_key: settings.theme_key,
+    banner_items: settings.banner_items ?? [],
   };
 }
 
@@ -79,6 +101,7 @@ function validateStorefrontForm(params: {
     hero_heading: params.form.hero_heading,
     hero_cta_label: params.form.hero_cta_label,
     theme_key: params.form.theme_key,
+    banner_items: params.form.banner_items,
   });
 }
 
@@ -190,6 +213,37 @@ export function TenantSettingsForm({
     setLogoMessage(null);
     setStorefrontMessage(null);
     setStorefrontErrors((current) => ({ ...current, [key]: undefined }));
+  }
+
+  function updateBannerField(
+    bannerId: string,
+    key: keyof BannerItem,
+    value: BannerItem[keyof BannerItem],
+  ) {
+    setStorefrontForm((current) => ({
+      ...current,
+      banner_items: current.banner_items.map((banner) =>
+        banner.id === bannerId ? { ...banner, [key]: value } : banner,
+      ),
+    }));
+    setStorefrontMessage(null);
+    setStorefrontErrors((current) => ({ ...current, banner_items: undefined }));
+  }
+
+  function addBanner() {
+    setStorefrontForm((current) => ({
+      ...current,
+      banner_items: [...current.banner_items, createEmptyBanner(current.banner_items.length)],
+    }));
+    setStorefrontMessage(null);
+  }
+
+  function removeBanner(bannerId: string) {
+    setStorefrontForm((current) => ({
+      ...current,
+      banner_items: current.banner_items.filter((banner) => banner.id !== bannerId),
+    }));
+    setStorefrontMessage(null);
   }
 
   function saveStorefrontSettings(event: React.FormEvent<HTMLFormElement>) {
@@ -344,9 +398,7 @@ export function TenantSettingsForm({
               <Button type="submit" disabled={pending}>
                 {pending ? "Kaydediliyor..." : "Kaydet"}
               </Button>
-              {message ? (
-                <p className="text-sm text-emerald-700">{message}</p>
-              ) : null}
+              {message ? <p className="text-sm text-emerald-700">{message}</p> : null}
             </form>
           </Card>
 
@@ -388,7 +440,8 @@ export function TenantSettingsForm({
               Storefront Görünüm Ayarları
             </h2>
             <p className="mt-1 text-sm text-slate-600">
-              Logo, vitrin metinleri ve hazır tema seçimi ile müşteri mağazanızı kişiselleştirin.
+              Logo, vitrin metinleri, banner alanı ve hazır tema seçimi ile müşteri
+              mağazanızı kişiselleştirin.
             </p>
           </div>
           <div className="rounded-xl border border-slate-100 bg-slate-50 px-4 py-3 text-xs text-slate-500">
@@ -419,6 +472,7 @@ export function TenantSettingsForm({
                         alt="Storefront logo önizlemesi"
                         fill
                         className="object-contain"
+                        unoptimized
                       />
                     ) : (
                       <Store className="size-8 text-slate-300" />
@@ -569,10 +623,123 @@ export function TenantSettingsForm({
               </div>
 
               <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-semibold text-slate-900">Banner / kampanya alanı</p>
+                    <p className="mt-1 text-sm text-slate-500">
+                      Carousel alanı için kampanya, duyuru veya indirim kartları ekleyin.
+                    </p>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={addBanner}
+                    disabled={storefrontForm.banner_items.length >= 6}
+                  >
+                    <Plus className="size-4" />
+                    Banner ekle
+                  </Button>
+                </div>
+
+                <div className="mt-4 space-y-4">
+                  {storefrontForm.banner_items.length ? (
+                    storefrontForm.banner_items.map((banner, index) => (
+                      <div
+                        key={banner.id}
+                        className="rounded-2xl border border-slate-200 bg-white p-4"
+                      >
+                        <div className="mb-4 flex items-center justify-between gap-3">
+                          <div>
+                            <p className="text-sm font-semibold text-slate-900">
+                              Banner #{index + 1}
+                            </p>
+                            <p className="text-xs text-slate-500">
+                              Görsel URL opsiyoneldir; boşsa placeholder gösterilir.
+                            </p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => removeBanner(banner.id)}
+                            className="rounded-xl border border-red-200 px-3 py-2 text-sm font-semibold text-red-700 transition hover:bg-red-50"
+                          >
+                            <Trash2 className="size-4" />
+                          </button>
+                        </div>
+
+                        <div className="grid gap-3">
+                          <Input
+                            value={banner.title ?? ""}
+                            onChange={(event) =>
+                              updateBannerField(banner.id, "title", event.target.value)
+                            }
+                            placeholder="Banner başlığı"
+                          />
+                          <Textarea
+                            value={banner.description ?? ""}
+                            onChange={(event) =>
+                              updateBannerField(banner.id, "description", event.target.value)
+                            }
+                            placeholder="Banner açıklaması"
+                            className="min-h-24"
+                          />
+                          <div className="grid gap-3 md:grid-cols-2">
+                            <Input
+                              value={banner.image_url ?? ""}
+                              onChange={(event) =>
+                                updateBannerField(banner.id, "image_url", event.target.value)
+                              }
+                              placeholder="Görsel URL"
+                            />
+                            <Input
+                              value={banner.background_color ?? ""}
+                              onChange={(event) =>
+                                updateBannerField(
+                                  banner.id,
+                                  "background_color",
+                                  event.target.value,
+                                )
+                              }
+                              placeholder="#0f172a"
+                            />
+                          </div>
+                          <div className="grid gap-3 md:grid-cols-2">
+                            <Input
+                              value={banner.cta_label ?? ""}
+                              onChange={(event) =>
+                                updateBannerField(banner.id, "cta_label", event.target.value)
+                              }
+                              placeholder="CTA yazısı"
+                            />
+                            <Input
+                              value={banner.cta_href ?? ""}
+                              onChange={(event) =>
+                                updateBannerField(banner.id, "cta_href", event.target.value)
+                              }
+                              placeholder="CTA linki"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="rounded-2xl border border-dashed border-slate-200 bg-white px-4 py-6 text-center text-sm text-slate-500">
+                      Henüz banner eklenmedi. İsterseniz boş bırakabilirsiniz; storefront tarafında
+                      alan şık bir placeholder olarak görünür.
+                    </div>
+                  )}
+                </div>
+                {storefrontErrors.banner_items ? (
+                  <p className="mt-3 text-sm text-amber-700">
+                    {storefrontErrors.banner_items}
+                  </p>
+                ) : null}
+              </div>
+
+              <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4">
                 <p className="text-sm font-semibold text-slate-900">Canlı geri bildirim</p>
                 <p className="mt-1 text-sm text-slate-500">
-                  Logo ayrı olarak anında yüklenir. Metin ve tema değişiklikleri bu karttaki
-                  kaydet butonuyla yayınlanır.
+                  Logo ayrı olarak anında yüklenir. Metin, tema ve banner değişiklikleri bu
+                  karttaki kaydet butonuyla yayınlanır.
                 </p>
               </div>
 
@@ -583,7 +750,9 @@ export function TenantSettingsForm({
                   ) : null}
                 </div>
                 <Button type="submit" disabled={storefrontPending}>
-                  {storefrontPending ? "Storefront kaydediliyor..." : "Storefront ayarlarını kaydet"}
+                  {storefrontPending
+                    ? "Storefront kaydediliyor..."
+                    : "Storefront ayarlarını kaydet"}
                 </Button>
               </div>
             </form>

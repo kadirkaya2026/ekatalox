@@ -20,6 +20,7 @@ export interface Product {
   id: string;
   tenant_id: string;
   category_id: string;
+  display_order: number;
   sku_code: string;
   product_name: string;
   image_url: string | null;
@@ -43,7 +44,19 @@ export interface Category {
   id: string;
   tenant_id: string;
   name: string;
+  parent_id: string | null;
+  display_order: number;
   created_at: string;
+}
+
+export interface BannerItem {
+  id: string;
+  title: string | null;
+  description: string | null;
+  image_url: string | null;
+  cta_label: string | null;
+  cta_href: string | null;
+  background_color: string | null;
 }
 
 export interface Profile {
@@ -70,6 +83,7 @@ export interface TenantStorefrontSettings {
   storefront_description: string | null;
   hero_heading: string | null;
   hero_cta_label: string | null;
+  banner_items: BannerItem[];
   created_at: string;
   updated_at: string;
 }

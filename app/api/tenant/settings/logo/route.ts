@@ -59,7 +59,7 @@ export async function POST(request: Request) {
 
   const { data: existingSettings } = await supabase
     .from("tenant_storefront_settings")
-    .select("logo_url, theme_key, storefront_title, storefront_description, hero_heading, hero_cta_label")
+    .select("logo_url, theme_key, storefront_title, storefront_description, hero_heading, hero_cta_label, banner_items")
     .eq("tenant_id", session.tenant!.id)
     .maybeSingle();
 
@@ -93,6 +93,7 @@ export async function POST(request: Request) {
         storefront_description: existingSettings?.storefront_description ?? null,
         hero_heading: existingSettings?.hero_heading ?? null,
         hero_cta_label: existingSettings?.hero_cta_label ?? null,
+        banner_items: existingSettings?.banner_items ?? [],
         logo_url: publicUrlData.publicUrl,
       },
       { onConflict: "tenant_id" },

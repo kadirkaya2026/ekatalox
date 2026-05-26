@@ -67,9 +67,18 @@ export async function POST(request: Request) {
     });
   }
 
+  const { data: lastProduct } = await supabase
+    .from("products")
+    .select("display_order")
+    .eq("tenant_id", tenant.id)
+    .order("display_order", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
   const payload = {
     id: productId,
     tenant_id: tenant.id,
+    display_order: (lastProduct?.display_order ?? 0) + 1,
     ...parsed.data,
     image_url: imageUrl,
   };

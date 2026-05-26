@@ -39,15 +39,45 @@ export async function POST(request: Request) {
     return NextResponse.json({
       category: {
         id: randomUUID(),
+        parent_id: parsed.data.parent_id ?? null,
+        display_order: 0,
         created_at: new Date().toISOString(),
         ...parsed.data,
       },
     });
   }
 
+  if (parsed.data.parent_id) {
+    const { data: parentCategory } = await supabase
+      .from("categories")
+      .select("id")
+      .eq("id", parsed.data.parent_id)
+      .eq("tenant_id", session.tenant!.id)
+      .maybeSingle();
+
+    if (!parentCategory) {
+      return NextResponse.json(
+        { error: "Seçilen üst kategori bulunamadı." },
+        { status: 400 },
+      );
+    }
+  }
+
+  const { data: lastCategory } = await supabase
+    .from("categories")
+    .select("display_order")
+    .eq("tenant_id", session.tenant!.id)
+    .order("display_order", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
   const { data, error } = await supabase
     .from("categories")
-    .insert(parsed.data)
+    .insert({
+      ...parsed.data,
+      parent_id: parsed.data.parent_id ?? null,
+      display_order: (lastCategory?.display_order ?? 0) + 1,
+    })
     .select("*")
     .single();
 
@@ -96,6 +126,19 @@ export async function DELETE(request: Request) {
   if ((count ?? 0) > 0) {
     return NextResponse.json(
       { error: "Bu kategoriye bağlı ürünler olduğu için silinemez." },
+      { status: 400 },
+    );
+  }
+
+  const { count: childCount } = await supabase
+    .from("categories")
+    .select("*", { count: "exact", head: true })
+    .eq("tenant_id", session.tenant!.id)
+    .eq("parent_id", id);
+
+  if ((childCount ?? 0) > 0) {
+    return NextResponse.json(
+      { error: "Bu kategoriye bağlı alt kategoriler olduğu için silinemez." },
       { status: 400 },
     );
   }

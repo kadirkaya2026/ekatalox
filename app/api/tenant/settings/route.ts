@@ -23,7 +23,7 @@ export async function PATCH(request: Request) {
     const { data } = await supabase
       .from("tenant_storefront_settings")
       .select(
-        "tenant_id, theme_key, logo_url, storefront_title, storefront_description, hero_heading, hero_cta_label",
+        "tenant_id, theme_key, logo_url, storefront_title, storefront_description, hero_heading, hero_cta_label, banner_items",
       )
       .eq("tenant_id", session.tenant!.id)
       .maybeSingle();
@@ -43,6 +43,7 @@ export async function PATCH(request: Request) {
       body.storefront_description ?? existingSettings.storefront_description,
     hero_heading: body.hero_heading ?? existingSettings.hero_heading,
     hero_cta_label: body.hero_cta_label ?? existingSettings.hero_cta_label,
+    banner_items: body.banner_items ?? existingSettings.banner_items,
     theme_key: body.theme_key ?? existingSettings.theme_key,
   });
 
@@ -74,6 +75,7 @@ export async function PATCH(request: Request) {
         storefront_description: parsed.data.storefront_description,
         hero_heading: parsed.data.hero_heading,
         hero_cta_label: parsed.data.hero_cta_label,
+        banner_items: parsed.data.banner_items,
       },
     });
   }
@@ -96,6 +98,7 @@ export async function PATCH(request: Request) {
     storefront_description: parsed.data.storefront_description,
     hero_heading: parsed.data.hero_heading,
     hero_cta_label: parsed.data.hero_cta_label,
+    banner_items: parsed.data.banner_items,
   };
 
   const { data: storefrontSettings, error: storefrontError } = await supabase

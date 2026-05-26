@@ -68,6 +68,7 @@ export async function POST(request: Request) {
       id: `demo-import-${index}-${row.sku_code}`,
       tenant_id: tenant.id,
       category_id: categoryMap.get(normalizeCategoryName(row.category_name))!,
+      display_order: index + 1,
       created_at: new Date().toISOString(),
       sku_code: row.sku_code,
       product_name: row.product_name,
@@ -100,13 +101,18 @@ export async function POST(request: Request) {
   // 1. Fetch existing SKUs for limit check
   const { data: existingRows } = await supabase
     .from("products")
-    .select("sku_code")
+    .select("sku_code, display_order")
     .eq("tenant_id", tenant.id);
 
+  const existingProducts = (existingRows as Array<{
+    sku_code: string;
+    display_order: number;
+  }> | null) ?? [];
   const existingSkuSet = new Set(
-    ((existingRows as Array<{ sku_code: string }> | null) ?? []).map(
-      (item) => item.sku_code,
-    ),
+    existingProducts.map((item) => item.sku_code),
+  );
+  const existingDisplayOrderMap = new Map(
+    existingProducts.map((item) => [item.sku_code, item.display_order]),
   );
 
   // 2. Load all existing categories into an in-memory cache
@@ -114,6 +120,15 @@ export async function POST(request: Request) {
     .from("categories")
     .select("id, name")
     .eq("tenant_id", tenant.id);
+  const { data: lastCategory } = await supabase
+    .from("categories")
+    .select("display_order")
+    .eq("tenant_id", tenant.id)
+    .order("display_order", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  let nextCategoryDisplayOrder = (lastCategory?.display_order ?? 0) + 1;
+
 
   // categoryCache: normalized name → uuid
   const categoryCache = new Map<string, string>(
@@ -137,7 +152,11 @@ export async function POST(request: Request) {
     // Not found → auto-create the category
     const { data: newCategory, error: createError } = await supabase
       .from("categories")
-      .insert({ tenant_id: tenant.id, name: rawName.trim() })
+      .insert({
+        tenant_id: tenant.id,
+        name: rawName.trim(),
+        display_order: nextCategoryDisplayOrder,
+      })
       .select("id, name")
       .single();
 
@@ -152,6 +171,7 @@ export async function POST(request: Request) {
 
     // Seed cache so subsequent rows in this batch reuse the new id
     categoryCache.set(key, (newCategory as { id: string; name: string }).id);
+    nextCategoryDisplayOrder += 1;
   }
 
   // 4. Product limit check (only new SKUs count toward the limit)
@@ -166,19 +186,35 @@ export async function POST(request: Request) {
     );
   }
 
+  let nextProductDisplayOrder =
+    existingProducts.reduce(
+      (maxValue, item) => Math.max(maxValue, item.display_order ?? 0),
+      0,
+    ) + 1;
+
   // 5. Build upsert payload — every category_id is now guaranteed to exist
-  const payload = rows.map((row) => ({
-    tenant_id: tenant.id,
-    category_id: categoryCache.get(normalizeCategoryName(row.category_name))!,
-    sku_code: row.sku_code,
-    product_name: row.product_name,
-    image_url: row.image_url,
-    currency: row.currency,
-    price_tier_1: row.price_tier_1,
-    price_tier_2: row.price_tier_2,
-    price_tier_3: row.price_tier_3,
-    is_in_stock: row.is_in_stock,
-  }));
+  const payload = rows.map((row) => {
+    const existingDisplayOrder = existingDisplayOrderMap.get(row.sku_code);
+    const display_order = existingDisplayOrder ?? nextProductDisplayOrder;
+
+    if (existingDisplayOrder === undefined) {
+      nextProductDisplayOrder += 1;
+    }
+
+    return {
+      tenant_id: tenant.id,
+      category_id: categoryCache.get(normalizeCategoryName(row.category_name))!,
+      sku_code: row.sku_code,
+      product_name: row.product_name,
+      image_url: row.image_url,
+      currency: row.currency,
+      price_tier_1: row.price_tier_1,
+      price_tier_2: row.price_tier_2,
+      price_tier_3: row.price_tier_3,
+      is_in_stock: row.is_in_stock,
+      display_order,
+    };
+  });
 
   const { error: upsertError } = await supabase
     .from("products")
@@ -193,11 +229,13 @@ export async function POST(request: Request) {
       .from("products")
       .select("*")
       .eq("tenant_id", tenant.id)
+      .order("display_order", { ascending: true })
       .order("created_at", { ascending: false }),
     supabase
       .from("categories")
       .select("*")
       .eq("tenant_id", tenant.id)
+      .order("display_order", { ascending: true })
       .order("name", { ascending: true }),
   ]);
 

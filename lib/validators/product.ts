@@ -48,3 +48,7 @@ export const productImportRowsSchema = z.array(productImportRowSchema);
 export const productBulkDeleteSchema = z.object({
   productIds: z.array(z.string().uuid()).min(1, "En az bir ürün seçin."),
 });
+
+export const productReorderSchema = z.object({
+  productIds: z.array(z.string().min(1)).min(1, "Sıralanacak ürün bulunamadı."),
+});

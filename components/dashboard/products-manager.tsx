@@ -4,7 +4,11 @@ import { useMemo, useRef, useState, useTransition } from "react";
 import Image from "next/image";
 import {
   AlertTriangle,
+  ArrowDown,
+  ArrowUp,
+  ArrowUpDown,
   FileSpreadsheet,
+  GripVertical,
   ImagePlus,
   PencilLine,
   Plus,
@@ -17,6 +21,10 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Modal } from "@/components/ui/modal";
 import { Table, TableWrapper } from "@/components/ui/table";
+import {
+  buildCategoryTree,
+  flattenCategoryTree,
+} from "@/lib/categories/tree";
 import { parseProductsCsv, type ParsedCsvResult } from "@/lib/csv/parse-products";
 import {
   defaultCurrencyCode,
@@ -88,6 +96,17 @@ function productToForm(product: Product): ProductFormState {
   };
 }
 
+function reorderProducts(products: Product[], fromIndex: number, toIndex: number) {
+  const nextProducts = [...products];
+  const [movedProduct] = nextProducts.splice(fromIndex, 1);
+  nextProducts.splice(toIndex, 0, movedProduct);
+
+  return nextProducts.map((product, index) => ({
+    ...product,
+    display_order: index + 1,
+  }));
+}
+
 export function ProductsManager({
   tenant,
   products: controlledProducts,
@@ -114,12 +133,15 @@ export function ProductsManager({
     errors: string[];
     rows: ParsedCsvResult["rows"];
   } | null>(null);
+  const [draggedProductId, setDraggedProductId] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const products = controlledProducts ?? internalProducts;
   const syncProducts = onProductsUpdated ?? setInternalProducts;
   const categories = initialCategories;
+  const categoryTree = useMemo(() => buildCategoryTree(categories), [categories]);
+  const flatCategories = useMemo(() => flattenCategoryTree(categoryTree), [categoryTree]);
 
   const usage = useMemo(
     () => ({
@@ -129,17 +151,26 @@ export function ProductsManager({
     }),
     [products.length, tenant.max_product_limit],
   );
+
   const filteredProducts = useMemo(() => {
     const normalizedSearch = searchTerm.trim().toLowerCase();
     const categoryMap = new Map(
       categories.map((category) => [category.id, category.name.toLowerCase()]),
     );
 
+    const orderedProducts = [...products].sort((left, right) => {
+      if (left.display_order !== right.display_order) {
+        return left.display_order - right.display_order;
+      }
+
+      return left.product_name.localeCompare(right.product_name, "tr-TR");
+    });
+
     if (!normalizedSearch) {
-      return products;
+      return orderedProducts;
     }
 
-    return products.filter((product) => {
+    return orderedProducts.filter((product) => {
       return (
         product.product_name.toLowerCase().includes(normalizedSearch) ||
         product.sku_code.toLowerCase().includes(normalizedSearch) ||
@@ -148,6 +179,7 @@ export function ProductsManager({
       );
     });
   }, [categories, products, searchTerm]);
+
   const categoryNameMap = useMemo(
     () => new Map(categories.map((category) => [category.id, category.name])),
     [categories],
@@ -160,9 +192,6 @@ export function ProductsManager({
   const someFilteredSelected =
     filteredProductIds.some((id) => selectedProductIds.includes(id)) &&
     !allFilteredSelected;
-  const selectedProducts = products.filter((product) =>
-    selectedProductIds.includes(product.id),
-  );
 
   function updateCreateField<Key extends keyof ProductFormState>(
     key: Key,
@@ -256,7 +285,7 @@ export function ProductsManager({
         return;
       }
 
-      syncProducts([result.product as Product, ...products]);
+      syncProducts([...products, result.product as Product]);
       setCreateForm(emptyForm);
       setMessage("Yeni ürün eklendi.");
     });
@@ -364,9 +393,7 @@ export function ProductsManager({
 
       const updatedProducts = products.filter((item) => item.id !== product.id);
       syncProducts(updatedProducts);
-      setSelectedProductIds((current) =>
-        current.filter((id) => id !== product.id),
-      );
+      setSelectedProductIds((current) => current.filter((id) => id !== product.id));
       setDeleteTarget(null);
       setMessage("Ürün kalıcı olarak silindi.");
     });
@@ -398,6 +425,77 @@ export function ProductsManager({
       setBulkDeleteOpen(false);
       setMessage(`${deletedIds.size} ürün kalıcı olarak silindi.`);
     });
+  }
+
+  function persistProductOrder(nextProducts: Product[]) {
+    setMessage(null);
+    startTransition(async () => {
+      const response = await fetch("/api/tenant/products/reorder", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          productIds: nextProducts.map((product) => product.id),
+        }),
+      });
+      const result = await response.json();
+
+      if (!response.ok) {
+        setMessage(result.error ?? "Ürün sıralaması kaydedilemedi.");
+        return;
+      }
+
+      if (result.products) {
+        syncProducts(result.products as Product[]);
+      }
+
+      setMessage("Ürün vitrin sırası güncellendi.");
+    });
+  }
+
+  function handleMoveProduct(productId: string, direction: "up" | "down") {
+    const visibleIndex = filteredProducts.findIndex((product) => product.id === productId);
+
+    if (visibleIndex < 0) {
+      return;
+    }
+
+    const targetVisibleIndex = direction === "up" ? visibleIndex - 1 : visibleIndex + 1;
+
+    if (targetVisibleIndex < 0 || targetVisibleIndex >= filteredProducts.length) {
+      return;
+    }
+
+    const targetProductId = filteredProducts[targetVisibleIndex]?.id;
+    const sourceIndex = products.findIndex((product) => product.id === productId);
+    const targetIndex = products.findIndex((product) => product.id === targetProductId);
+
+    if (sourceIndex < 0 || targetIndex < 0) {
+      return;
+    }
+
+    const nextProducts = reorderProducts(products, sourceIndex, targetIndex);
+    syncProducts(nextProducts);
+    persistProductOrder(nextProducts);
+  }
+
+  function handleProductDrop(targetProductId: string) {
+    if (!draggedProductId || draggedProductId === targetProductId) {
+      setDraggedProductId(null);
+      return;
+    }
+
+    const sourceIndex = products.findIndex((product) => product.id === draggedProductId);
+    const targetIndex = products.findIndex((product) => product.id === targetProductId);
+
+    if (sourceIndex < 0 || targetIndex < 0) {
+      setDraggedProductId(null);
+      return;
+    }
+
+    const nextProducts = reorderProducts(products, sourceIndex, targetIndex);
+    syncProducts(nextProducts);
+    setDraggedProductId(null);
+    persistProductOrder(nextProducts);
   }
 
   const renderStockBadge = (product: Product) => (
@@ -439,7 +537,8 @@ export function ProductsManager({
                   Paketiniz doldu, yeni ürün ekleyemezsiniz.
                 </p>
                 <p className="mt-1 text-sm text-amber-800">
-                  Limitiniz {usage.limit} ürüne ulaştı. Paket yükseltebilir veya ürün silerek yeniden yer açabilirsiniz.
+                  Limitiniz {usage.limit} ürüne ulaştı. Paket yükseltebilir veya ürün
+                  silerek yeniden yer açabilirsiniz.
                 </p>
               </div>
             </div>
@@ -478,8 +577,9 @@ export function ProductsManager({
                 className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900"
               >
                 <option value="">Kategori seçin</option>
-                {categories.map((category) => (
+                {flatCategories.map((category) => (
                   <option key={category.id} value={category.id}>
+                    {"— ".repeat(category.depth)}
                     {category.name}
                   </option>
                 ))}
@@ -571,7 +671,8 @@ export function ProductsManager({
             <div>
               <h2 className="text-lg font-semibold text-slate-900">CSV içe aktarma</h2>
               <p className="text-sm text-slate-600">
-                Beklenen kolonlar: sku_code, product_name, image_url, currency, fiyatlar ve is_in_stock.
+                Beklenen kolonlar: sku_code, product_name, image_url, currency,
+                fiyatlar ve is_in_stock.
               </p>
             </div>
           </div>
@@ -641,6 +742,21 @@ export function ProductsManager({
             </div>
           </div>
 
+          <div className="mt-4 rounded-xl border border-slate-100 bg-slate-50 px-4 py-4">
+            <div className="flex items-start gap-3">
+              <div className="rounded-xl bg-white p-2 text-slate-500 shadow-sm">
+                <ArrowUpDown className="size-4" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-slate-900">Vitrin sıralaması</p>
+                <p className="mt-1 text-sm text-slate-600">
+                  Ürünleri sürükleyip bırakın veya yukarı/aşağı butonlarıyla sıralayın.
+                  Bu sıra storefront tarafında doğrudan kullanılır.
+                </p>
+              </div>
+            </div>
+          </div>
+
           {selectedProductIds.length ? (
             <div className="mt-4 flex flex-col gap-3 rounded-xl border border-red-100 bg-red-50 px-4 py-4 md:flex-row md:items-center md:justify-between">
               <p className="text-sm font-semibold text-red-800">
@@ -676,6 +792,7 @@ export function ProductsManager({
                     aria-label="Tüm filtrelenmiş ürünleri seç"
                   />
                 </th>
+                <th className="px-4 py-3">Sıra</th>
                 <th className="px-4 py-3">Ürün</th>
                 <th className="px-4 py-3">Stok</th>
                 <th className="px-4 py-3">Katman 1</th>
@@ -685,8 +802,19 @@ export function ProductsManager({
               </tr>
             </thead>
             <tbody>
-              {filteredProducts.map((product) => (
-                <tr key={product.id} className="border-t border-slate-100">
+              {filteredProducts.map((product, index) => (
+                <tr
+                  key={product.id}
+                  className={cn(
+                    "border-t border-slate-100",
+                    draggedProductId === product.id && "bg-emerald-50/60",
+                  )}
+                  draggable
+                  onDragStart={() => setDraggedProductId(product.id)}
+                  onDragOver={(event) => event.preventDefault()}
+                  onDrop={() => handleProductDrop(product.id)}
+                  onDragEnd={() => setDraggedProductId(null)}
+                >
                   <td className="px-4 py-4">
                     <input
                       type="checkbox"
@@ -694,6 +822,38 @@ export function ProductsManager({
                       onChange={() => toggleSelectProduct(product.id)}
                       aria-label={`${product.product_name} seç`}
                     />
+                  </td>
+                  <td className="px-4 py-4">
+                    <div className="flex items-center gap-3">
+                      <div className="rounded-lg border border-slate-200 bg-white p-2 text-slate-400">
+                        <GripVertical className="size-4" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold text-slate-900">
+                          {index + 1}
+                        </p>
+                        <div className="mt-1 flex gap-1">
+                          <button
+                            type="button"
+                            onClick={() => handleMoveProduct(product.id, "up")}
+                            disabled={index === 0 || pending}
+                            className="rounded-md border border-slate-200 px-2 py-1 text-slate-600 transition hover:bg-slate-50 disabled:opacity-40"
+                            aria-label={`${product.product_name} yukarı taşı`}
+                          >
+                            <ArrowUp className="size-3" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleMoveProduct(product.id, "down")}
+                            disabled={index === filteredProducts.length - 1 || pending}
+                            className="rounded-md border border-slate-200 px-2 py-1 text-slate-600 transition hover:bg-slate-50 disabled:opacity-40"
+                            aria-label={`${product.product_name} aşağı taşı`}
+                          >
+                            <ArrowDown className="size-3" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
                   </td>
                   <td className="px-4 py-4">
                     <div className="flex items-center gap-3">
@@ -712,7 +872,9 @@ export function ProductsManager({
                       <div>
                         <p className="font-semibold text-slate-900">{product.product_name}</p>
                         <p className="text-sm text-slate-500">
-                          {product.sku_code} • {categoryNameMap.get(product.category_id) ?? "Kategori yok"} • {product.currency}
+                          {product.sku_code} •{" "}
+                          {categoryNameMap.get(product.category_id) ?? "Kategori yok"} •{" "}
+                          {product.currency}
                         </p>
                       </div>
                     </div>
@@ -764,7 +926,7 @@ export function ProductsManager({
         ) : null}
 
         <div className="grid gap-4 p-4 md:hidden">
-          {filteredProducts.map((product) => (
+          {filteredProducts.map((product, index) => (
             <Card key={product.id} className="p-4">
               <div className="mb-3 flex items-center justify-between">
                 <label className="flex items-center gap-2 text-sm text-slate-600">
@@ -775,7 +937,12 @@ export function ProductsManager({
                   />
                   Seç
                 </label>
+                <div className="flex items-center gap-2 text-sm text-slate-500">
+                  <GripVertical className="size-4" />
+                  <span>Sıra {index + 1}</span>
+                </div>
               </div>
+
               <div className="flex gap-3">
                 <div className="relative h-20 w-20 overflow-hidden rounded-xl bg-slate-100">
                   {product.image_url ? (
@@ -792,10 +959,31 @@ export function ProductsManager({
                 <div className="min-w-0 flex-1">
                   <p className="font-semibold text-slate-900">{product.product_name}</p>
                   <p className="mt-1 text-sm text-slate-500">
-                    {product.sku_code} • {categoryNameMap.get(product.category_id) ?? "Kategori yok"} • {product.currency}
+                    {product.sku_code} •{" "}
+                    {categoryNameMap.get(product.category_id) ?? "Kategori yok"} •{" "}
+                    {product.currency}
                   </p>
                   <div className="mt-3">{renderStockBadge(product)}</div>
                 </div>
+              </div>
+
+              <div className="mt-4 flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => handleMoveProduct(product.id, "up")}
+                  disabled={index === 0 || pending}
+                  className="flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 disabled:opacity-40"
+                >
+                  Yukarı taşı
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleMoveProduct(product.id, "down")}
+                  disabled={index === filteredProducts.length - 1 || pending}
+                  className="flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 disabled:opacity-40"
+                >
+                  Aşağı taşı
+                </button>
               </div>
 
               <div className="mt-4 grid grid-cols-3 gap-2 rounded-xl bg-slate-50 p-3 text-center">
@@ -860,8 +1048,9 @@ export function ProductsManager({
               className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900"
             >
               <option value="">Kategori seçin</option>
-              {categories.map((category) => (
+              {flatCategories.map((category) => (
                 <option key={category.id} value={category.id}>
+                  {"— ".repeat(category.depth)}
                   {category.name}
                 </option>
               ))}
@@ -952,11 +1141,10 @@ export function ProductsManager({
               <p className="text-sm font-semibold text-red-900">
                 {deleteTarget.product_name}
               </p>
-              <p className="mt-1 text-sm text-red-800">
-                SKU: {deleteTarget.sku_code}
-              </p>
+              <p className="mt-1 text-sm text-red-800">SKU: {deleteTarget.sku_code}</p>
               <p className="mt-3 text-sm text-red-800">
-                Bu işlem geri alınamaz. Ürün kaydı ve bağlı görsel kalıcı olarak silinecektir.
+                Bu işlem geri alınamaz. Ürün kaydı ve bağlı görsel kalıcı olarak
+                silinecektir.
               </p>
             </div>
             <div className="flex justify-end gap-2">
@@ -980,26 +1168,13 @@ export function ProductsManager({
         <div className="space-y-4">
           <div className="rounded-xl border border-red-100 bg-red-50 p-4">
             <p className="text-sm font-semibold text-red-900">
-              {selectedProductIds.length} ürün kalıcı olarak silinecek.
+              {selectedProductIds.length} ürün silinecek
             </p>
             <p className="mt-2 text-sm text-red-800">
-              Bu işlem geri alınamaz. Seçtiğiniz ürün kayıtları ve bağlı görseller
-              Storage’dan silinecektir.
+              Bu işlem geri alınamaz. Seçili ürün kayıtları ve bağlı görseller
+              kalıcı olarak kaldırılacaktır.
             </p>
-            {selectedProducts.length ? (
-              <ul className="mt-3 space-y-1 text-sm text-red-800">
-                {selectedProducts.slice(0, 5).map((product) => (
-                  <li key={product.id}>
-                    • {product.product_name} ({product.sku_code})
-                  </li>
-                ))}
-                {selectedProducts.length > 5 ? (
-                  <li>• ve {selectedProducts.length - 5} ürün daha</li>
-                ) : null}
-              </ul>
-            ) : null}
           </div>
-
           <div className="flex justify-end gap-2">
             <Button variant="secondary" onClick={() => setBulkDeleteOpen(false)}>
               Vazgeç

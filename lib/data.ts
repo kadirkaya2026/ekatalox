@@ -43,6 +43,7 @@ export function getDefaultTenantStorefrontSettings(
     storefront_description: null,
     hero_heading: null,
     hero_cta_label: null,
+    banner_items: [],
     created_at: now,
     updated_at: now,
   };
@@ -104,6 +105,7 @@ export async function getTenantProducts(tenantId: string): Promise<Product[]> {
     .from("products")
     .select("*")
     .eq("tenant_id", tenantId)
+    .order("display_order", { ascending: true })
     .order("created_at", { ascending: false });
 
   return (data as Product[] | null) ?? [];
@@ -124,6 +126,7 @@ export async function getTenantCategories(tenantId: string): Promise<Category[]>
     .from("categories")
     .select("*")
     .eq("tenant_id", tenantId)
+    .order("display_order", { ascending: true })
     .order("name", { ascending: true });
 
   return (data as Category[] | null) ?? [];
@@ -283,6 +286,7 @@ export async function getStorefrontProducts(params: {
       .from("products")
       .select("*")
       .eq("tenant_id", params.tenantId)
+      .order("display_order", { ascending: true })
       .order("created_at", { ascending: false });
 
     products = (data as Product[] | null) ?? [];
