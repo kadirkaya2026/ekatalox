@@ -4,6 +4,10 @@ import { shouldAllowDemoFallback } from "@/lib/env";
 import { getDefaultTenantStorefrontSettings } from "@/lib/data";
 import { revalidateStorefrontCache } from "@/lib/storefront/cache";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import {
+  getBannerObjectPath,
+  STOREFRONT_BANNERS_BUCKET,
+} from "@/lib/storage/banners";
 import { ensureTenantAdminResponse } from "@/lib/tenancy/guards";
 import { storefrontSettingsSchema } from "@/lib/validators/storefront-settings";
 
@@ -91,6 +95,19 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: tenantError.message }, { status: 400 });
   }
 
+  const previousManagedBannerPaths = new Set(
+    (existingSettings.banner_items ?? [])
+      .map((item) => getBannerObjectPath(item.image_url))
+      .filter((path): path is string => typeof path === "string")
+      .filter((path) => path.startsWith(`${session.tenant!.id}/`)),
+  );
+  const nextManagedBannerPaths = new Set(
+    parsed.data.banner_items
+      .map((item) => getBannerObjectPath(item.image_url))
+      .filter((path): path is string => typeof path === "string")
+      .filter((path) => path.startsWith(`${session.tenant!.id}/`)),
+  );
+
   const storefrontPayload = {
     tenant_id: session.tenant!.id,
     theme_key: parsed.data.theme_key,
@@ -109,6 +126,14 @@ export async function PATCH(request: Request) {
 
   if (storefrontError) {
     return NextResponse.json({ error: storefrontError.message }, { status: 400 });
+  }
+
+  const staleBannerPaths = [...previousManagedBannerPaths].filter(
+    (path) => !nextManagedBannerPaths.has(path),
+  );
+
+  if (staleBannerPaths.length) {
+    await supabase.storage.from(STOREFRONT_BANNERS_BUCKET).remove(staleBannerPaths);
   }
 
   revalidateStorefrontCache({

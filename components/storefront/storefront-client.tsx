@@ -174,15 +174,6 @@ function renderBannerItem(
               description ??
               "Esnafınıza özel kampanya, duyuru ve indirim içeriklerini bu alanda yayınlayabilirsiniz."}
           </p>
-          {banner.cta_label && banner.cta_href ? (
-            <Button
-              asChild
-              href={banner.cta_href}
-              className="mt-8 h-11 w-fit rounded-full bg-white px-6 text-slate-900 hover:bg-slate-100"
-            >
-              {banner.cta_label}
-            </Button>
-          ) : null}
         </div>
 
         <div className="relative h-full min-h-[220px] overflow-hidden rounded-[1.75rem] border border-white/15 bg-white/10 backdrop-blur-sm md:min-h-[300px]">

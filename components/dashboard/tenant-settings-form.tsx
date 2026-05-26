@@ -23,8 +23,12 @@ import type {
 } from "@/lib/types";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import {
+  allowedBannerMimeTypes,
   allowedLogoMimeTypes,
+  maxBannerFileSizeBytes,
   maxLogoFileSizeBytes,
+  requiredBannerHeight,
+  requiredBannerWidth,
   storefrontSettingsSchema,
 } from "@/lib/validators/storefront-settings";
 
@@ -64,14 +68,36 @@ interface StorefrontFormState {
   banner_items: BannerItem[];
 }
 
+function loadImageDimensions(file: File) {
+  return new Promise<{ width: number; height: number }>((resolve, reject) => {
+    const objectUrl = URL.createObjectURL(file);
+    const image = new window.Image();
+
+    image.onload = () => {
+      resolve({
+        width: image.naturalWidth,
+        height: image.naturalHeight,
+      });
+      URL.revokeObjectURL(objectUrl);
+    };
+
+    image.onerror = () => {
+      reject(new Error("Banner görselinin çözünürlüğü okunamadı."));
+      URL.revokeObjectURL(objectUrl);
+    };
+
+    image.src = objectUrl;
+  });
+}
+
 function createEmptyBanner(index: number): BannerItem {
   return {
     id: `banner-${Date.now()}-${index}`,
     title: "",
     description: "",
     image_url: "",
-    cta_label: "",
-    cta_href: "",
+    cta_label: null,
+    cta_href: null,
     background_color: index % 2 === 0 ? "#0f172a" : "#065f46",
   };
 }
@@ -86,7 +112,11 @@ function toStorefrontFormState(
     hero_heading: settings.hero_heading ?? "",
     hero_cta_label: settings.hero_cta_label ?? "",
     theme_key: settings.theme_key,
-    banner_items: settings.banner_items ?? [],
+    banner_items: (settings.banner_items ?? []).map((banner) => ({
+      ...banner,
+      cta_label: null,
+      cta_href: null,
+    })),
   };
 }
 
@@ -101,7 +131,11 @@ function validateStorefrontForm(params: {
     hero_heading: params.form.hero_heading,
     hero_cta_label: params.form.hero_cta_label,
     theme_key: params.form.theme_key,
-    banner_items: params.form.banner_items,
+    banner_items: params.form.banner_items.map((banner) => ({
+      ...banner,
+      cta_label: null,
+      cta_href: null,
+    })),
   });
 }
 
@@ -127,6 +161,9 @@ export function TenantSettingsForm({
   const [storefrontPending, startStorefrontTransition] = useTransition();
   const [storefrontMessage, setStorefrontMessage] = useState<string | null>(null);
   const [logoMessage, setLogoMessage] = useState<string | null>(null);
+  const [bannerUploadState, setBannerUploadState] = useState<
+    Record<string, { pending?: boolean; message?: string | null }>
+  >({});
   const [storefrontErrors, setStorefrontErrors] = useState<
     Partial<Record<keyof StorefrontFormState | "logo", string>>
   >({});
@@ -238,12 +275,140 @@ export function TenantSettingsForm({
     setStorefrontMessage(null);
   }
 
-  function removeBanner(bannerId: string) {
+  function setBannerUploadStatus(
+    bannerId: string,
+    nextState: { pending?: boolean; message?: string | null },
+  ) {
+    setBannerUploadState((current) => ({
+      ...current,
+      [bannerId]: {
+        ...current[bannerId],
+        ...nextState,
+      },
+    }));
+  }
+
+  async function removeBanner(bannerId: string) {
+    const targetBanner = storefrontForm.banner_items.find((banner) => banner.id === bannerId);
+
+    if (targetBanner?.image_url?.startsWith("http")) {
+      setBannerUploadStatus(bannerId, { pending: true, message: null });
+
+      const response = await fetch("/api/tenant/settings/banner-image", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ image_url: targetBanner.image_url }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        setBannerUploadStatus(bannerId, {
+          pending: false,
+          message: result.error ?? "Banner görseli silinemedi.",
+        });
+        return;
+      }
+    }
+
     setStorefrontForm((current) => ({
       ...current,
       banner_items: current.banner_items.filter((banner) => banner.id !== bannerId),
     }));
+    setBannerUploadState((current) => {
+      const nextState = { ...current };
+      delete nextState[bannerId];
+      return nextState;
+    });
     setStorefrontMessage(null);
+  }
+
+  async function handleBannerFileChange(bannerId: string, file: File | null) {
+    if (!file) {
+      return;
+    }
+
+    if (
+      !allowedBannerMimeTypes.includes(
+        file.type as (typeof allowedBannerMimeTypes)[number],
+      )
+    ) {
+      setBannerUploadStatus(bannerId, {
+        pending: false,
+        message: "Banner yalnız PNG, JPEG veya WEBP olabilir.",
+      });
+      return;
+    }
+
+    if (file.size > maxBannerFileSizeBytes) {
+      setBannerUploadStatus(bannerId, {
+        pending: false,
+        message: "Banner görseli en fazla 2MB olabilir.",
+      });
+      return;
+    }
+
+    try {
+      const dimensions = await loadImageDimensions(file);
+
+      if (
+        dimensions.width !== requiredBannerWidth ||
+        dimensions.height !== requiredBannerHeight
+      ) {
+        setBannerUploadStatus(bannerId, {
+          pending: false,
+          message: `Banner görseli tam olarak ${requiredBannerWidth}x${requiredBannerHeight}px olmalıdır.`,
+        });
+        return;
+      }
+    } catch (error) {
+      setBannerUploadStatus(bannerId, {
+        pending: false,
+        message:
+          error instanceof Error
+            ? error.message
+            : "Banner görselinin çözünürlüğü okunamadı.",
+      });
+      return;
+    }
+
+    const previousImageUrl =
+      storefrontForm.banner_items.find((banner) => banner.id === bannerId)?.image_url ?? null;
+
+    setBannerUploadStatus(bannerId, {
+      pending: true,
+      message: null,
+    });
+
+    startStorefrontTransition(async () => {
+      const formData = new FormData();
+      formData.set("image", file);
+
+      if (previousImageUrl) {
+        formData.set("previous_image_url", previousImageUrl);
+      }
+
+      const response = await fetch("/api/tenant/settings/banner-image", {
+        method: "POST",
+        body: formData,
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        setBannerUploadStatus(bannerId, {
+          pending: false,
+          message: result.error ?? "Banner görseli yüklenemedi.",
+        });
+        return;
+      }
+
+      updateBannerField(bannerId, "image_url", result.image_url as string);
+      setBannerUploadStatus(bannerId, {
+        pending: false,
+        message: "Banner görseli yüklendi.",
+      });
+    });
   }
 
   function saveStorefrontSettings(event: React.FormEvent<HTMLFormElement>) {
@@ -654,12 +819,14 @@ export function TenantSettingsForm({
                               Banner #{index + 1}
                             </p>
                             <p className="text-xs text-slate-500">
-                              Görsel URL opsiyoneldir; boşsa placeholder gösterilir.
+                              Zorunlu ölçü: 1200x400 px • Maksimum dosya boyutu: 2MB
                             </p>
                           </div>
                           <button
                             type="button"
-                            onClick={() => removeBanner(banner.id)}
+                            onClick={() => {
+                              void removeBanner(banner.id);
+                            }}
                             className="rounded-xl border border-red-200 px-3 py-2 text-sm font-semibold text-red-700 transition hover:bg-red-50"
                           >
                             <Trash2 className="size-4" />
@@ -682,14 +849,54 @@ export function TenantSettingsForm({
                             placeholder="Banner açıklaması"
                             className="min-h-24"
                           />
-                          <div className="grid gap-3 md:grid-cols-2">
-                            <Input
-                              value={banner.image_url ?? ""}
-                              onChange={(event) =>
-                                updateBannerField(banner.id, "image_url", event.target.value)
-                              }
-                              placeholder="Görsel URL"
+                          <label className="block cursor-pointer rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-4 transition hover:border-emerald-300 hover:bg-emerald-50/40">
+                            <input
+                              type="file"
+                              accept="image/png,image/jpeg,image/webp"
+                              className="hidden"
+                              onChange={(event) => {
+                                handleBannerFileChange(
+                                  banner.id,
+                                  event.target.files?.[0] ?? null,
+                                );
+                                event.target.value = "";
+                              }}
                             />
+                            <div className="grid gap-4 md:grid-cols-[180px_minmax(0,1fr)] md:items-center">
+                              <div className="relative aspect-[3/1] overflow-hidden rounded-2xl border border-slate-200 bg-white">
+                                {banner.image_url ? (
+                                  <Image
+                                    src={banner.image_url}
+                                    alt={`Banner ${index + 1} önizleme`}
+                                    fill
+                                    className="object-cover"
+                                    sizes="180px"
+                                    unoptimized
+                                  />
+                                ) : (
+                                  <div className="flex h-full items-center justify-center text-center text-xs text-slate-400">
+                                    1200x400 önizleme
+                                  </div>
+                                )}
+                              </div>
+                              <div>
+                                <p className="text-sm font-semibold text-slate-900">
+                                  {bannerUploadState[banner.id]?.pending
+                                    ? "Banner yükleniyor..."
+                                    : "Banner görselini bilgisayarınızdan yükleyin"}
+                                </p>
+                                <p className="mt-1 text-sm text-slate-500">
+                                  Harici link gerekmez • Sadece 1200x400 px • PNG, JPEG veya WEBP • Maksimum 2MB
+                                </p>
+                                {bannerUploadState[banner.id]?.message ? (
+                                  <p className="mt-2 text-sm text-emerald-700">
+                                    {bannerUploadState[banner.id]?.message}
+                                  </p>
+                                ) : null}
+                              </div>
+                            </div>
+                          </label>
+                          <div className="grid gap-3 md:grid-cols-2">
                             <Input
                               value={banner.background_color ?? ""}
                               onChange={(event) =>
@@ -700,22 +907,6 @@ export function TenantSettingsForm({
                                 )
                               }
                               placeholder="#0f172a"
-                            />
-                          </div>
-                          <div className="grid gap-3 md:grid-cols-2">
-                            <Input
-                              value={banner.cta_label ?? ""}
-                              onChange={(event) =>
-                                updateBannerField(banner.id, "cta_label", event.target.value)
-                              }
-                              placeholder="CTA yazısı"
-                            />
-                            <Input
-                              value={banner.cta_href ?? ""}
-                              onChange={(event) =>
-                                updateBannerField(banner.id, "cta_href", event.target.value)
-                              }
-                              placeholder="CTA linki"
                             />
                           </div>
                         </div>

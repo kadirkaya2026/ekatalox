@@ -10,6 +10,10 @@ const optionalUrlSchema = z
   .union([z.string().trim().url("Geçerli bir bağlantı girin."), z.literal(""), z.null(), z.undefined()])
   .transform((value) => value || null);
 
+const droppedBannerActionSchema = z
+  .union([z.string().trim(), z.literal(""), z.null(), z.undefined()])
+  .transform(() => null);
+
 const optionalColorSchema = z
   .union([z.string().trim(), z.literal(""), z.null(), z.undefined()])
   .transform((value) => value || null)
@@ -39,14 +43,8 @@ export const bannerItemSchema = z
       .optional()
       .transform((value) => value || null),
     image_url: optionalUrlSchema,
-    cta_label: z
-      .string()
-      .trim()
-      .max(32, "CTA metni en fazla 32 karakter olabilir.")
-      .nullable()
-      .optional()
-      .transform((value) => value || null),
-    cta_href: optionalUrlSchema,
+    cta_label: droppedBannerActionSchema,
+    cta_href: droppedBannerActionSchema,
     background_color: optionalColorSchema,
   })
   .refine(
@@ -100,3 +98,13 @@ export const allowedLogoMimeTypes = [
 ] as const;
 
 export const maxLogoFileSizeBytes = 1024 * 1024;
+
+export const allowedBannerMimeTypes = [
+  "image/png",
+  "image/jpeg",
+  "image/webp",
+] as const;
+
+export const maxBannerFileSizeBytes = 2 * 1024 * 1024;
+export const requiredBannerWidth = 1200;
+export const requiredBannerHeight = 400;
