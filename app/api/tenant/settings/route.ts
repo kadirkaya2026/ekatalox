@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
 import { getSessionContext } from "@/lib/auth/session";
 import { shouldAllowDemoFallback } from "@/lib/env";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { revalidateStorefrontCache } from "@/lib/storefront/cache";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { ensureTenantAdminResponse } from "@/lib/tenancy/guards";
+import { storefrontSettingsSchema } from "@/lib/validators/storefront-settings";
 
 export async function PATCH(request: Request) {
   const guard = await ensureTenantAdminResponse();
@@ -11,16 +13,17 @@ export async function PATCH(request: Request) {
   }
 
   const session = await getSessionContext();
-  const { whatsapp_number } = await request.json();
+  const body = await request.json();
+  const parsed = storefrontSettingsSchema.safeParse(body);
 
-  if (!whatsapp_number) {
+  if (!parsed.success) {
     return NextResponse.json(
-      { error: "WhatsApp numarası zorunludur." },
+      { error: parsed.error.issues[0]?.message ?? "Ayarlar doğrulanamadı." },
       { status: 400 },
     );
   }
 
-  const supabase = await createSupabaseServerClient();
+  const supabase = createSupabaseAdminClient();
 
   if (!supabase) {
     if (!shouldAllowDemoFallback()) {
@@ -33,21 +36,54 @@ export async function PATCH(request: Request) {
     return NextResponse.json({
       tenant: {
         ...session.tenant,
-        whatsapp_number,
+        whatsapp_number: parsed.data.whatsapp_number,
+      },
+      storefrontSettings: {
+        tenant_id: session.tenant!.id,
+        theme_key: parsed.data.theme_key,
+        logo_url: null,
+        storefront_title: parsed.data.storefront_title,
+        storefront_description: parsed.data.storefront_description,
+        hero_heading: parsed.data.hero_heading,
+        hero_cta_label: parsed.data.hero_cta_label,
       },
     });
   }
 
-  const { data, error } = await supabase
+  const { data: tenant, error: tenantError } = await supabase
     .from("tenants")
-    .update({ whatsapp_number })
+    .update({ whatsapp_number: parsed.data.whatsapp_number })
     .eq("id", session.tenant!.id)
     .select("*")
     .single();
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 400 });
+  if (tenantError) {
+    return NextResponse.json({ error: tenantError.message }, { status: 400 });
   }
 
-  return NextResponse.json({ tenant: data });
+  const storefrontPayload = {
+    tenant_id: session.tenant!.id,
+    theme_key: parsed.data.theme_key,
+    storefront_title: parsed.data.storefront_title,
+    storefront_description: parsed.data.storefront_description,
+    hero_heading: parsed.data.hero_heading,
+    hero_cta_label: parsed.data.hero_cta_label,
+  };
+
+  const { data: storefrontSettings, error: storefrontError } = await supabase
+    .from("tenant_storefront_settings")
+    .upsert(storefrontPayload, { onConflict: "tenant_id" })
+    .select("*")
+    .single();
+
+  if (storefrontError) {
+    return NextResponse.json({ error: storefrontError.message }, { status: 400 });
+  }
+
+  revalidateStorefrontCache({
+    tenantId: session.tenant!.id,
+    subdomain: session.tenant!.subdomain,
+  });
+
+  return NextResponse.json({ tenant, storefrontSettings });
 }

@@ -1,3 +1,4 @@
+import { unstable_cache } from "next/cache";
 import {
   demoAccessCodes,
   demoCategories,
@@ -15,6 +16,7 @@ import type {
   Product,
   StorefrontProduct,
   Tenant,
+  TenantStorefrontSettings,
   TenantWithRelations,
 } from "@/lib/types";
 
@@ -25,6 +27,25 @@ function groupCountByTenant(
     accumulator[item.tenant_id] = (accumulator[item.tenant_id] ?? 0) + 1;
     return accumulator;
   }, {});
+}
+
+export function getDefaultTenantStorefrontSettings(
+  tenantId: string,
+): TenantStorefrontSettings {
+  const now = new Date().toISOString();
+
+  return {
+    id: `storefront-default-${tenantId}`,
+    tenant_id: tenantId,
+    theme_key: "minimal",
+    logo_url: null,
+    storefront_title: null,
+    storefront_description: null,
+    hero_heading: null,
+    hero_cta_label: null,
+    created_at: now,
+    updated_at: now,
+  };
 }
 
 export async function getTenantsOverview(): Promise<TenantWithRelations[]> {
@@ -106,6 +127,37 @@ export async function getTenantCategories(tenantId: string): Promise<Category[]>
     .order("name", { ascending: true });
 
   return (data as Category[] | null) ?? [];
+}
+
+export async function getTenantStorefrontSettings(
+  tenantId: string,
+): Promise<TenantStorefrontSettings> {
+  const readStorefrontSettings = unstable_cache(
+    async (resolvedTenantId: string) => {
+      const supabase = createSupabaseAdminClient();
+
+      if (!supabase) {
+        return getDefaultTenantStorefrontSettings(resolvedTenantId);
+      }
+
+      const { data } = await supabase
+        .from("tenant_storefront_settings")
+        .select("*")
+        .eq("tenant_id", resolvedTenantId)
+        .maybeSingle();
+
+      return (
+        (data as TenantStorefrontSettings | null) ??
+        getDefaultTenantStorefrontSettings(resolvedTenantId)
+      );
+    },
+    [tenantId],
+    {
+      tags: [`storefront_${tenantId}`],
+    },
+  );
+
+  return readStorefrontSettings(tenantId);
 }
 
 export async function getTenantAccessCodes(

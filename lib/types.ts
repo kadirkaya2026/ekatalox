@@ -4,6 +4,7 @@ export type TenantStatus = "active" | "suspended";
 export type MaxProductLimit = 300 | 500 | 1000;
 export type UserRole = "super_admin" | "tenant_admin";
 export type PriceTierLevel = 1 | 2 | 3;
+export type StorefrontThemeKey = "minimal" | "premium-dark" | "soft-commerce";
 
 export interface Tenant {
   id: string;
@@ -58,6 +59,19 @@ export interface TenantMembership {
   tenant_id: string;
   user_id: string;
   created_at: string;
+}
+
+export interface TenantStorefrontSettings {
+  id: string;
+  tenant_id: string;
+  theme_key: StorefrontThemeKey;
+  logo_url: string | null;
+  storefront_title: string | null;
+  storefront_description: string | null;
+  hero_heading: string | null;
+  hero_cta_label: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface TenantWithRelations extends Tenant {

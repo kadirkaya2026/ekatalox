@@ -1,10 +1,8 @@
 import { NextResponse } from "next/server";
 import { shouldAllowDemoFallback } from "@/lib/env";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
-import {
-  getProductImagePathFromPublicUrl,
-  PRODUCT_IMAGES_BUCKET,
-} from "@/lib/storage/product-images";
+import { PRODUCT_IMAGES_BUCKET } from "@/lib/storage/product-images";
+import { getStorageObjectPathFromPublicUrl } from "@/lib/storage/storage-helpers";
 import { ensureSuperAdminResponse } from "@/lib/tenancy/guards";
 import { tenantUpdateSchema } from "@/lib/validators/tenant";
 
@@ -107,7 +105,9 @@ export async function DELETE(
   const imagePaths = Array.from(
     new Set(
       ((productRows as Array<{ image_url: string | null }> | null) ?? [])
-        .map((product) => getProductImagePathFromPublicUrl(product.image_url))
+        .map((product) =>
+          getStorageObjectPathFromPublicUrl(product.image_url, PRODUCT_IMAGES_BUCKET),
+        )
         .filter((path): path is string => Boolean(path)),
     ),
   );

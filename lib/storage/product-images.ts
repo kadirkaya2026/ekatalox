@@ -1,14 +1,10 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import {
+  sanitizeFileName,
+  STORE_ASSETS_BUCKET,
+} from "@/lib/storage/storage-helpers";
 
-export const PRODUCT_IMAGES_BUCKET = "product-images";
-
-export function sanitizeFileName(fileName: string) {
-  return fileName
-    .normalize("NFKD")
-    .replace(/[^\w.-]+/g, "-")
-    .replace(/-{2,}/g, "-")
-    .toLowerCase();
-}
+export const PRODUCT_IMAGES_BUCKET = STORE_ASSETS_BUCKET;
 
 export function buildProductImagePath(params: {
   tenantId: string;
@@ -18,6 +14,13 @@ export function buildProductImagePath(params: {
   return `${params.tenantId}/products/${params.productId}-${sanitizeFileName(
     params.fileName,
   )}`;
+}
+
+export function buildTenantBrandingPath(params: {
+  tenantId: string;
+  fileName: string;
+}) {
+  return `${params.tenantId}/branding/logo-${sanitizeFileName(params.fileName)}`;
 }
 
 export async function uploadProductImage(params: {
@@ -48,26 +51,6 @@ export async function uploadProductImage(params: {
     .getPublicUrl(filePath);
 
   return data.publicUrl;
-}
-
-export function getProductImagePathFromPublicUrl(imageUrl: string | null) {
-  if (!imageUrl) {
-    return null;
-  }
-
-  try {
-    const url = new URL(imageUrl);
-    const marker = `/storage/v1/object/public/${PRODUCT_IMAGES_BUCKET}/`;
-    const markerIndex = url.pathname.indexOf(marker);
-
-    if (markerIndex === -1) {
-      return null;
-    }
-
-    return decodeURIComponent(url.pathname.slice(markerIndex + marker.length));
-  } catch {
-    return null;
-  }
 }
 
 export function isImageFile(file: File | null) {
