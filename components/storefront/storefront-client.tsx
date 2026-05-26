@@ -688,8 +688,8 @@ export function StorefrontClient({
     <div className="contents">
       <header className="sticky top-0 z-40 border-b border-slate-200/80 bg-white/95 backdrop-blur">
         <div className="container-shell py-4">
-          <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(260px,420px)_auto] lg:items-center">
-            <div className="flex min-w-0 items-center gap-3 sm:gap-4">
+          <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(260px,420px)_auto] lg:items-center">
+            <div className="col-span-2 flex min-w-0 items-center gap-3 sm:gap-4 lg:col-span-1">
               <button
                 type="button"
                 className="flex size-11 items-center justify-center rounded-xl border border-slate-200 bg-white md:hidden"
@@ -723,7 +723,7 @@ export function StorefrontClient({
             <div
               className={cn(
                 theme.searchWrap,
-                "h-11 max-w-none rounded-full border-slate-200/80 bg-slate-50 shadow-none lg:justify-self-center lg:w-full lg:max-w-md",
+                "h-10 min-w-0 max-w-none rounded-full border-slate-200/80 bg-slate-50 shadow-none lg:h-11 lg:justify-self-center lg:w-full lg:max-w-md",
               )}
             >
               <Search className={cn(theme.searchIcon, "left-4 size-4 text-slate-400")} />
@@ -733,7 +733,7 @@ export function StorefrontClient({
                 onChange={(event) => handleSearchChange(event.target.value)}
                 className={cn(
                   theme.searchInput,
-                  "h-11 rounded-full border-0 bg-transparent py-2 pl-10 pr-4 text-sm placeholder:text-slate-400 focus-visible:ring-0 focus:ring-0",
+                  "h-10 rounded-full border-0 bg-transparent py-2 pl-10 pr-4 text-sm placeholder:text-slate-400 focus-visible:ring-0 focus:ring-0 lg:h-11",
                 )}
               />
             </div>
