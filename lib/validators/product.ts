@@ -44,3 +44,7 @@ export const productImportRowSchema = z.object({
 });
 
 export const productImportRowsSchema = z.array(productImportRowSchema);
+
+export const productBulkDeleteSchema = z.object({
+  productIds: z.array(z.string().uuid()).min(1, "En az bir ürün seçin."),
+});
