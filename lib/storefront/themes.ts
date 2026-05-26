@@ -8,6 +8,10 @@ export interface StorefrontThemeClasses {
   heroTitle: string;
   heroDescription: string;
   heroHeading: string;
+  categorySidebar: string;
+  categorySidebarTitle: string;
+  categorySidebarItem: (active: boolean) => string;
+  categorySidebarCount: (active: boolean) => string;
   categoryChip: (active: boolean) => string;
   categoryRail: string;
   searchWrap: string;
@@ -35,6 +39,22 @@ export const storefrontThemes: Record<StorefrontThemeKey, StorefrontThemeClasses
     heroTitle: "text-3xl font-extrabold tracking-tight text-slate-900 md:text-4xl",
     heroDescription: "mt-3 text-base text-slate-600 max-w-2xl leading-relaxed",
     heroHeading: "text-lg font-semibold text-emerald-800",
+    categorySidebar:
+      "sticky top-6 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm",
+    categorySidebarTitle:
+      "px-3 pb-2 text-xs font-bold uppercase tracking-[0.18em] text-slate-400",
+    categorySidebarItem: (active) =>
+      cn(
+        "flex w-full items-center justify-between gap-3 rounded-r-xl border-l-4 px-4 py-3 text-left text-sm font-semibold transition",
+        active
+          ? "border-slate-900 bg-slate-900/5 text-slate-950"
+          : "border-transparent text-slate-600 hover:bg-slate-50 hover:text-slate-900",
+      ),
+    categorySidebarCount: (active) =>
+      cn(
+        "inline-flex min-w-8 items-center justify-center rounded-full px-2 py-1 text-xs font-bold transition",
+        active ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-500",
+      ),
     categoryRail: "flex max-w-full gap-2 overflow-x-auto pb-3 pt-1 scrollbar-none whitespace-nowrap lg:flex-wrap lg:overflow-visible lg:whitespace-normal",
     categoryChip: (active) =>
       cn(
@@ -66,6 +86,22 @@ export const storefrontThemes: Record<StorefrontThemeKey, StorefrontThemeClasses
     heroTitle: "text-3xl font-extrabold tracking-tight text-white md:text-4xl",
     heroDescription: "mt-3 text-base text-slate-400 max-w-2xl leading-relaxed",
     heroHeading: "text-lg font-semibold text-emerald-400",
+    categorySidebar:
+      "sticky top-6 rounded-2xl border border-slate-800 bg-slate-900/80 p-3 shadow-sm",
+    categorySidebarTitle:
+      "px-3 pb-2 text-xs font-bold uppercase tracking-[0.18em] text-slate-500",
+    categorySidebarItem: (active) =>
+      cn(
+        "flex w-full items-center justify-between gap-3 rounded-r-xl border-l-4 px-4 py-3 text-left text-sm font-semibold transition",
+        active
+          ? "border-emerald-400 bg-emerald-500/10 text-white"
+          : "border-transparent text-slate-300 hover:bg-slate-800/80 hover:text-white",
+      ),
+    categorySidebarCount: (active) =>
+      cn(
+        "inline-flex min-w-8 items-center justify-center rounded-full px-2 py-1 text-xs font-bold transition",
+        active ? "bg-emerald-400 text-slate-950" : "bg-slate-800 text-slate-400",
+      ),
     categoryRail: "flex max-w-full gap-2 overflow-x-auto pb-3 pt-1 scrollbar-none whitespace-nowrap lg:flex-wrap lg:overflow-visible lg:whitespace-normal",
     categoryChip: (active) =>
       cn(
@@ -97,6 +133,22 @@ export const storefrontThemes: Record<StorefrontThemeKey, StorefrontThemeClasses
     heroTitle: "text-3xl font-bold tracking-tight text-rose-950 md:text-4xl",
     heroDescription: "mt-3 text-base text-slate-600 max-w-2xl leading-relaxed",
     heroHeading: "text-lg font-semibold text-rose-700",
+    categorySidebar:
+      "sticky top-6 rounded-2xl border border-rose-100/80 bg-white p-3 shadow-sm",
+    categorySidebarTitle:
+      "px-3 pb-2 text-xs font-bold uppercase tracking-[0.18em] text-rose-300",
+    categorySidebarItem: (active) =>
+      cn(
+        "flex w-full items-center justify-between gap-3 rounded-r-xl border-l-4 px-4 py-3 text-left text-sm font-semibold transition",
+        active
+          ? "border-rose-700 bg-rose-50 text-rose-950"
+          : "border-transparent text-slate-600 hover:bg-rose-50/70 hover:text-rose-800",
+      ),
+    categorySidebarCount: (active) =>
+      cn(
+        "inline-flex min-w-8 items-center justify-center rounded-full px-2 py-1 text-xs font-bold transition",
+        active ? "bg-rose-700 text-white" : "bg-rose-50 text-rose-500",
+      ),
     categoryRail: "flex max-w-full gap-2 overflow-x-auto pb-3 pt-1 scrollbar-none whitespace-nowrap lg:flex-wrap lg:overflow-visible lg:whitespace-normal",
     categoryChip: (active) =>
       cn(

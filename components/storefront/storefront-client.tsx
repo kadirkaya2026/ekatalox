@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import Image from "next/image";
 import {
   Minus,
@@ -100,6 +100,18 @@ function updateQuantity(items: CartItem[], productId: string, nextQuantity: numb
   );
 }
 
+function subscribeToMountState() {
+  return () => {};
+}
+
+function getClientMountedState() {
+  return true;
+}
+
+function getServerMountedState() {
+  return false;
+}
+
 export function StorefrontClient({
   tenant,
   categories,
@@ -111,8 +123,13 @@ export function StorefrontClient({
   products: StorefrontProduct[];
   storefrontSettings: TenantStorefrontSettings;
 }) {
-  const [cart, setCart] = useState<CartItem[]>([]);
-  const [isMounted, setIsMounted] = useState(false);
+  const [cart, setCart] = useState<CartItem[]>(() => {
+    if (typeof window === "undefined") {
+      return [];
+    }
+
+    return readStoredCart(getCartStorageKey(tenant.id));
+  });
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [note, setNote] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
@@ -122,6 +139,11 @@ export function StorefrontClient({
   const [selectedQuantity, setSelectedQuantity] = useState("1");
   const [quantityError, setQuantityError] = useState<string | null>(null);
   const [visibleCount, setVisibleCount] = useState(24);
+  const isMounted = useSyncExternalStore(
+    subscribeToMountState,
+    getClientMountedState,
+    getServerMountedState,
+  );
 
   const theme = storefrontThemes[storefrontSettings.theme_key] ?? storefrontThemes.minimal;
   const cartStorageKey = useMemo(() => getCartStorageKey(tenant.id), [tenant.id]);
@@ -129,6 +151,26 @@ export function StorefrontClient({
     () => new Map(categories.map((category) => [category.id, category.name])),
     [categories],
   );
+  const categoryOptions = useMemo(() => {
+    const counts = new Map<string, number>();
+
+    products.forEach((product) => {
+      counts.set(product.category_id, (counts.get(product.category_id) ?? 0) + 1);
+    });
+
+    return [
+      {
+        id: "all",
+        name: "Tüm Ürünler",
+        count: products.length,
+      },
+      ...categories.map((category) => ({
+        id: category.id,
+        name: category.name,
+        count: counts.get(category.id) ?? 0,
+      })),
+    ];
+  }, [categories, products]);
 
   const cartTotal = useMemo(() => getCartTotal(cart), [cart]);
   const cartCurrency = useMemo(() => getCartCurrency(cart), [cart]);
@@ -197,15 +239,6 @@ export function StorefrontClient({
   const heroCtaLabel = storefrontSettings.hero_cta_label || "Ürünleri İncele";
 
   useEffect(() => {
-    setVisibleCount(24);
-  }, [searchTerm, selectedCategoryId]);
-
-  useEffect(() => {
-    setCart(readStoredCart(cartStorageKey));
-    setIsMounted(true);
-  }, [cartStorageKey]);
-
-  useEffect(() => {
     if (!isMounted) {
       return;
     }
@@ -222,6 +255,16 @@ export function StorefrontClient({
     setSelectedProduct(product);
     setSelectedQuantity("1");
     setQuantityError(null);
+  }
+
+  function handleCategoryChange(categoryId: string) {
+    setSelectedCategoryId(categoryId);
+    setVisibleCount(24);
+  }
+
+  function handleSearchChange(value: string) {
+    setSearchTerm(value);
+    setVisibleCount(24);
   }
 
   function closeAddToCartModal() {
@@ -504,127 +547,151 @@ export function StorefrontClient({
       </header>
 
       <main className="mx-auto mt-8 w-full max-w-7xl px-3 sm:px-6 lg:px-8">
-        <div className="grid min-w-0 max-w-full gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
-          <section className="min-w-0 max-w-full space-y-6">
-            <div className="space-y-2">
-              <h2 className="text-sm font-bold uppercase tracking-wider text-slate-400">
-                Ürün Kategorileri
-              </h2>
-              <div className={theme.categoryRail}>
-                <button
-                  type="button"
-                  onClick={() => setSelectedCategoryId("all")}
-                  className={theme.categoryChip(selectedCategoryId === "all")}
-                >
-                  Tüm ürünler
-                </button>
-                {categories.map((category) => (
-                  <button
-                    key={category.id}
-                    type="button"
-                    onClick={() => setSelectedCategoryId(category.id)}
-                    className={theme.categoryChip(selectedCategoryId === category.id)}
-                  >
-                    {category.name}
-                  </button>
-                ))}
-              </div>
-            </div>
+        <div className="grid min-w-0 max-w-full gap-6 2xl:grid-cols-[minmax(0,1fr)_360px]">
+          <section className="min-w-0 max-w-full">
+            <div className="grid min-w-0 max-w-full gap-6 lg:grid-cols-[16rem_minmax(0,1fr)] xl:grid-cols-[18rem_minmax(0,1fr)]">
+              <aside className="hidden lg:block">
+                <div className={theme.categorySidebar}>
+                  <p className={theme.categorySidebarTitle}>Kategoriler</p>
+                  <nav aria-label="Kategoriler" className="space-y-2">
+                    {categoryOptions.map((category) => {
+                      const isActive = selectedCategoryId === category.id;
 
-            <div className={theme.searchWrap}>
-              <Search className={theme.searchIcon} />
-              <Input
-                placeholder="Ürün adı veya SKU koduna göre arama yapın..."
-                value={searchTerm}
-                onChange={(event) => setSearchTerm(event.target.value)}
-                onFocus={() => setIsSearchFocused(true)}
-                onBlur={() => setIsSearchFocused(false)}
-                className={theme.searchInput}
-              />
-            </div>
+                      return (
+                        <button
+                          key={category.id}
+                          type="button"
+                          onClick={() => handleCategoryChange(category.id)}
+                          className={theme.categorySidebarItem(isActive)}
+                          aria-current={isActive ? "page" : undefined}
+                        >
+                          <span className="truncate">{category.name}</span>
+                          <span className={theme.categorySidebarCount(isActive)}>
+                            {category.count}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </nav>
+                </div>
+              </aside>
 
-            <div id="catalog-grid" className="min-w-0 max-w-full scroll-mt-6">
-              {filteredProducts.length ? (
-                <div className="grid min-w-0 max-w-full grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-2 sm:gap-4 md:grid-cols-3 lg:grid-cols-4">
-                  {visibleProducts.map((product) => (
-                    <article key={product.id} className={theme.productCard}>
-                      <div className={theme.productImageWrap}>
-                        {product.image_url ? (
-                          <Image
-                            src={product.image_url}
-                            alt={product.product_name}
-                            fill
-                            className="object-contain transition duration-300 group-hover:scale-105"
-                          />
-                        ) : (
-                          <div className="flex h-full w-full items-center justify-center">
-                            <Store className="size-8 text-slate-300" />
+              <div className="min-w-0 space-y-6">
+                <div className="space-y-2 lg:hidden">
+                  <h2 className="text-sm font-bold uppercase tracking-wider text-slate-400">
+                    Ürün Kategorileri
+                  </h2>
+                  <div className={theme.categoryRail}>
+                    {categoryOptions.map((category) => (
+                      <button
+                        key={category.id}
+                        type="button"
+                        onClick={() => handleCategoryChange(category.id)}
+                        className={theme.categoryChip(selectedCategoryId === category.id)}
+                      >
+                        {category.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className={cn(theme.searchWrap, "max-w-2xl")}>
+                  <Search className={theme.searchIcon} />
+                  <Input
+                    placeholder="Ürün adı veya SKU koduna göre arama yapın..."
+                    value={searchTerm}
+                    onChange={(event) => handleSearchChange(event.target.value)}
+                    onFocus={() => setIsSearchFocused(true)}
+                    onBlur={() => setIsSearchFocused(false)}
+                    className={theme.searchInput}
+                  />
+                </div>
+
+                <div id="catalog-grid" className="min-w-0 max-w-full scroll-mt-6">
+                  {filteredProducts.length ? (
+                    <div className="grid min-w-0 max-w-full grid-cols-2 gap-2 sm:gap-4 md:grid-cols-3">
+                      {visibleProducts.map((product) => (
+                        <article key={product.id} className={theme.productCard}>
+                          <div className={theme.productImageWrap}>
+                            {product.image_url ? (
+                              <Image
+                                src={product.image_url}
+                                alt={product.product_name}
+                                fill
+                                className="object-contain transition duration-300 group-hover:scale-105"
+                              />
+                            ) : (
+                              <div className="flex h-full w-full items-center justify-center">
+                                <Store className="size-8 text-slate-300" />
+                              </div>
+                            )}
                           </div>
-                        )}
-                      </div>
 
-                      <div className="flex flex-1 flex-col p-3 sm:p-4">
-                        <div className="flex-1 space-y-1">
-                          <p className={theme.productTitle}>{product.product_name}</p>
-                          <p className={theme.productMeta}>
-                            {product.sku_code} •{" "}
-                            {categoryNameMap.get(product.category_id) || "Genel"}
-                          </p>
-                        </div>
-
-                        <div className="mt-4 min-w-0 border-t border-slate-100/20 pt-3">
-                          <div className="space-y-2">
-                            <div className="min-w-0 space-y-2 sm:flex sm:items-center sm:justify-between sm:gap-2 sm:space-y-0">
-                              <p className={theme.productPrice}>
-                                {formatCurrency(product.price, product.currency)}
+                          <div className="flex flex-1 flex-col p-3 sm:p-4">
+                            <div className="flex-1 space-y-1">
+                              <p className={theme.productTitle}>{product.product_name}</p>
+                              <p className={theme.productMeta}>
+                                {product.sku_code} •{" "}
+                                {categoryNameMap.get(product.category_id) || "Genel"}
                               </p>
-                              <div className="shrink-0">
-                                {product.is_in_stock ? (
-                                  <span className={theme.stockBadgeIn}>Stokta</span>
-                                ) : (
-                                  <span className={theme.stockBadgeOut}>Tükendi</span>
-                                )}
+                            </div>
+
+                            <div className="mt-4 min-w-0 border-t border-slate-100/20 pt-3">
+                              <div className="space-y-2">
+                                <div className="min-w-0 space-y-2 sm:flex sm:items-center sm:justify-between sm:gap-2 sm:space-y-0">
+                                  <p className={theme.productPrice}>
+                                    {formatCurrency(product.price, product.currency)}
+                                  </p>
+                                  <div className="shrink-0">
+                                    {product.is_in_stock ? (
+                                      <span className={theme.stockBadgeIn}>Stokta</span>
+                                    ) : (
+                                      <span className={theme.stockBadgeOut}>Tükendi</span>
+                                    )}
+                                  </div>
+                                </div>
+                                <Button
+                                  onClick={() => openAddToCartModal(product)}
+                                  disabled={!product.is_in_stock}
+                                  className="w-full rounded-xl bg-slate-100 text-slate-900 hover:bg-slate-200"
+                                  variant="secondary"
+                                >
+                                  <Plus className="mr-1 size-4" />
+                                  Ekle
+                                </Button>
                               </div>
                             </div>
-                            <Button
-                              onClick={() => openAddToCartModal(product)}
-                              disabled={!product.is_in_stock}
-                              className="w-full rounded-xl bg-slate-100 text-slate-900 hover:bg-slate-200"
-                              variant="secondary"
-                            >
-                              <Plus className="mr-1 size-4" />
-                              Ekle
-                            </Button>
                           </div>
-                        </div>
-                      </div>
-                    </article>
-                  ))}
-                </div>
-              ) : (
-                <Card className="border-dashed bg-transparent p-8 text-center">
-                  <p className="text-base font-semibold">Uyuşan ürün bulunamadı.</p>
-                  <p className="mt-1 text-sm text-slate-500">
-                    Arama kriterlerini veya seçili kategoriyi değiştirmeyi deneyin.
-                  </p>
-                </Card>
-              )}
+                        </article>
+                      ))}
+                    </div>
+                  ) : (
+                    <Card className="border-dashed bg-transparent p-8 text-center">
+                      <p className="text-base font-semibold">Uyuşan ürün bulunamadı.</p>
+                      <p className="mt-1 text-sm text-slate-500">
+                        Arama kriterlerini veya seçili kategoriyi değiştirmeyi deneyin.
+                      </p>
+                    </Card>
+                  )}
 
-              {filteredProducts.length > visibleCount && (
-                <div className="mt-8 flex justify-center">
-                  <button
-                    type="button"
-                    onClick={() => setVisibleCount((prev) => prev + 24)}
-                    className="rounded-2xl border border-slate-200 bg-white px-8 py-3 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 hover:shadow"
-                  >
-                    Daha Fazla Ürün Göster ({filteredProducts.length - visibleCount} ürün kaldı)
-                  </button>
+                  {filteredProducts.length > visibleCount && (
+                    <div className="mt-8 flex justify-center">
+                      <button
+                        type="button"
+                        onClick={() => setVisibleCount((prev) => prev + 24)}
+                        className="rounded-2xl border border-slate-200 bg-white px-8 py-3 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 hover:shadow"
+                      >
+                        Daha Fazla Ürün Göster ({filteredProducts.length - visibleCount} ürün
+                        kaldı)
+                      </button>
+                    </div>
+                  )}
                 </div>
-              )}
+              </div>
             </div>
           </section>
 
-          <aside className="hidden xl:block">
+          <aside className="hidden 2xl:block">
             <div className={theme.desktopCartPanel}>
               <div className="flex items-center gap-2 border-b border-slate-100/20 pb-4">
                 <ShoppingBag className="size-5 text-emerald-600" />
@@ -731,7 +798,7 @@ export function StorefrontClient({
         <button
           type="button"
           onClick={() => setIsCartOpen(true)}
-          className={cn(theme.stickyCart, "text-left xl:hidden")}
+          className={cn(theme.stickyCart, "text-left 2xl:hidden")}
         >
           <div className="flex items-center gap-3">
             <div className="min-w-0 flex-1">
