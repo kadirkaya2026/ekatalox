@@ -29,13 +29,13 @@ export interface StorefrontThemeClasses {
 
 export const storefrontThemes: Record<StorefrontThemeKey, StorefrontThemeClasses> = {
   minimal: {
-    page: "bg-slate-50 min-h-screen text-slate-900 pb-28 xl:pb-6",
+    page: "min-h-screen w-full max-w-full overflow-x-hidden bg-slate-50 text-slate-900 pb-28 xl:pb-6",
     hero: "bg-white border-b border-slate-100 py-12 md:py-16",
     heroPanel: "rounded-3xl bg-slate-50 border border-slate-100 px-6 py-8 sm:px-8",
     heroTitle: "text-3xl font-extrabold tracking-tight text-slate-900 md:text-4xl",
     heroDescription: "mt-3 text-base text-slate-600 max-w-2xl leading-relaxed",
     heroHeading: "text-lg font-semibold text-emerald-800",
-    categoryRail: "flex gap-2 overflow-x-auto pb-3 pt-1 scrollbar-none whitespace-nowrap",
+    categoryRail: "flex max-w-full gap-2 overflow-x-auto pb-3 pt-1 scrollbar-none whitespace-nowrap",
     categoryChip: (active) =>
       cn(
         "rounded-full px-5 py-2.5 text-sm font-semibold transition shadow-sm",
@@ -60,13 +60,13 @@ export const storefrontThemes: Record<StorefrontThemeKey, StorefrontThemeClasses
     desktopCartPanel: "sticky top-6 rounded-2xl border border-slate-100 bg-white p-5 shadow-sm",
   },
   "premium-dark": {
-    page: "bg-slate-950 min-h-screen text-slate-100 pb-28 xl:pb-6",
+    page: "min-h-screen w-full max-w-full overflow-x-hidden bg-slate-950 text-slate-100 pb-28 xl:pb-6",
     hero: "bg-gradient-to-b from-slate-900 to-slate-950 border-b border-slate-800 py-12 md:py-16",
     heroPanel: "rounded-3xl bg-slate-900/60 border border-slate-800/80 px-6 py-8 sm:px-8",
     heroTitle: "text-3xl font-extrabold tracking-tight text-white md:text-4xl",
     heroDescription: "mt-3 text-base text-slate-400 max-w-2xl leading-relaxed",
     heroHeading: "text-lg font-semibold text-emerald-400",
-    categoryRail: "flex gap-2 overflow-x-auto pb-3 pt-1 scrollbar-none whitespace-nowrap",
+    categoryRail: "flex max-w-full gap-2 overflow-x-auto pb-3 pt-1 scrollbar-none whitespace-nowrap",
     categoryChip: (active) =>
       cn(
         "rounded-full px-5 py-2.5 text-sm font-semibold transition shadow-sm",
@@ -91,13 +91,13 @@ export const storefrontThemes: Record<StorefrontThemeKey, StorefrontThemeClasses
     desktopCartPanel: "sticky top-6 rounded-2xl border border-slate-900 bg-slate-900/60 p-5 shadow-sm",
   },
   "soft-commerce": {
-    page: "bg-rose-50/20 min-h-screen text-slate-800 pb-28 xl:pb-6",
+    page: "min-h-screen w-full max-w-full overflow-x-hidden bg-rose-50/20 text-slate-800 pb-28 xl:pb-6",
     hero: "bg-gradient-to-b from-rose-50/40 to-transparent py-12 md:py-16",
     heroPanel: "rounded-3xl bg-white border border-rose-100/60 px-6 py-8 sm:px-8 shadow-sm",
     heroTitle: "text-3xl font-bold tracking-tight text-rose-950 md:text-4xl",
     heroDescription: "mt-3 text-base text-slate-600 max-w-2xl leading-relaxed",
     heroHeading: "text-lg font-semibold text-rose-700",
-    categoryRail: "flex gap-2 overflow-x-auto pb-3 pt-1 scrollbar-none whitespace-nowrap",
+    categoryRail: "flex max-w-full gap-2 overflow-x-auto pb-3 pt-1 scrollbar-none whitespace-nowrap",
     categoryChip: (active) =>
       cn(
         "rounded-full px-5 py-2.5 text-sm font-semibold transition shadow-sm",
