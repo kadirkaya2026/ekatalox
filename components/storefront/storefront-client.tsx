@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import {
   Minus,
@@ -9,6 +9,7 @@ import {
   ShoppingBag,
   Store,
   Trash2,
+  X,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -32,6 +33,50 @@ import type {
   TenantStorefrontSettings,
 } from "@/lib/types";
 import { cn, formatCurrency } from "@/lib/utils";
+
+function getCartStorageKey(tenantId: string) {
+  return `ekatalox_cart_${tenantId}`;
+}
+
+function isValidCartItem(item: unknown): item is CartItem {
+  if (!item || typeof item !== "object") {
+    return false;
+  }
+
+  const cartItem = item as Partial<CartItem>;
+
+  return (
+    typeof cartItem.id === "string" &&
+    typeof cartItem.category_id === "string" &&
+    typeof cartItem.product_name === "string" &&
+    typeof cartItem.price === "number" &&
+    typeof cartItem.currency === "string" &&
+    typeof cartItem.is_in_stock === "boolean" &&
+    typeof cartItem.quantity === "number" &&
+    Number.isFinite(cartItem.quantity) &&
+    cartItem.quantity > 0
+  );
+}
+
+function readStoredCart(storageKey: string) {
+  try {
+    const storedValue = window.localStorage.getItem(storageKey);
+
+    if (!storedValue) {
+      return [];
+    }
+
+    const parsedValue = JSON.parse(storedValue);
+
+    if (!Array.isArray(parsedValue)) {
+      return [];
+    }
+
+    return parsedValue.filter(isValidCartItem);
+  } catch {
+    return [];
+  }
+}
 
 function addToCart(items: CartItem[], product: StorefrontProduct, quantity: number) {
   const existing = items.find((item) => item.id === product.id);
@@ -67,6 +112,8 @@ export function StorefrontClient({
   storefrontSettings: TenantStorefrontSettings;
 }) {
   const [cart, setCart] = useState<CartItem[]>([]);
+  const [isMounted, setIsMounted] = useState(false);
+  const [isCartOpen, setIsCartOpen] = useState(false);
   const [note, setNote] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [isSearchFocused, setIsSearchFocused] = useState(false);
@@ -76,6 +123,7 @@ export function StorefrontClient({
   const [quantityError, setQuantityError] = useState<string | null>(null);
 
   const theme = storefrontThemes[storefrontSettings.theme_key] ?? storefrontThemes.minimal;
+  const cartStorageKey = useMemo(() => getCartStorageKey(tenant.id), [tenant.id]);
   const categoryNameMap = useMemo(
     () => new Map(categories.map((category) => [category.id, category.name])),
     [categories],
@@ -145,6 +193,24 @@ export function StorefrontClient({
     storefrontSettings.hero_heading || "Güncel fiyatlar ve hızlı sipariş tek ekranda";
   const heroCtaLabel = storefrontSettings.hero_cta_label || "Ürünleri İncele";
 
+  useEffect(() => {
+    setCart(readStoredCart(cartStorageKey));
+    setIsMounted(true);
+  }, [cartStorageKey]);
+
+  useEffect(() => {
+    if (!isMounted) {
+      return;
+    }
+
+    if (!cart.length) {
+      window.localStorage.removeItem(cartStorageKey);
+      return;
+    }
+
+    window.localStorage.setItem(cartStorageKey, JSON.stringify(cart));
+  }, [cart, cartStorageKey, isMounted]);
+
   function openAddToCartModal(product: StorefrontProduct) {
     setSelectedProduct(product);
     setSelectedQuantity("1");
@@ -173,6 +239,212 @@ export function StorefrontClient({
 
     setCart((current) => addToCart(current, selectedProduct, quantity));
     closeAddToCartModal();
+  }
+
+  function updateCartItemQuantity(productId: string, value: string) {
+    if (value === "") {
+      setCart((current) => updateQuantity(current, productId, 0));
+      return;
+    }
+
+    const quantity = Number.parseInt(value, 10);
+
+    if (!Number.isFinite(quantity) || quantity <= 0) {
+      setCart((current) => updateQuantity(current, productId, 0));
+      return;
+    }
+
+    setCart((current) => updateQuantity(current, productId, quantity));
+  }
+
+  function clearCart() {
+    setCart([]);
+    window.localStorage.removeItem(cartStorageKey);
+  }
+
+  function renderCartDrawer() {
+    if (!isCartOpen) {
+      return null;
+    }
+
+    return (
+      <div className="fixed inset-0 z-50 bg-slate-950/55 backdrop-blur-sm">
+        <div className="absolute inset-x-0 bottom-0 max-h-[88vh] rounded-t-3xl bg-white shadow-2xl lg:inset-y-0 lg:left-auto lg:right-0 lg:h-full lg:max-h-none lg:w-[440px] lg:rounded-l-3xl lg:rounded-tr-none">
+          <div className="flex h-full max-h-[88vh] flex-col lg:max-h-none">
+            <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
+                  Sipariş Özeti
+                </p>
+                <h2 className="mt-1 text-xl font-bold text-slate-900">Sepetim</h2>
+              </div>
+              <div className="flex items-center gap-2">
+                {cart.length ? (
+                  <button
+                    type="button"
+                    onClick={clearCart}
+                    className="rounded-full bg-slate-100 px-3 py-2 text-xs font-bold text-slate-700 transition hover:bg-slate-200"
+                  >
+                    Sepeti Boşalt
+                  </button>
+                ) : null}
+                <button
+                  type="button"
+                  onClick={() => setIsCartOpen(false)}
+                  className="flex size-10 items-center justify-center rounded-full bg-slate-100 text-slate-600 transition hover:bg-slate-200"
+                  aria-label="Sepeti kapat"
+                >
+                  <X className="size-5" />
+                </button>
+              </div>
+            </div>
+
+            <div className="flex-1 overflow-y-auto px-5 py-4">
+              {cart.length ? (
+                <div className="space-y-3">
+                  {cart.map((item) => (
+                    <div
+                      key={item.id}
+                      className="rounded-2xl border border-slate-100 bg-slate-50 p-3"
+                    >
+                      <div className="flex gap-3">
+                        <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl border border-slate-200 bg-white">
+                          {item.image_url ? (
+                            <Image
+                              src={item.image_url}
+                              alt={item.product_name}
+                              fill
+                              className="object-contain"
+                            />
+                          ) : (
+                            <div className="flex h-full w-full items-center justify-center">
+                              <Store className="size-5 text-slate-300" />
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="min-w-0 flex-1">
+                          <p className="line-clamp-2 text-sm font-semibold text-slate-900">
+                            {item.product_name}
+                          </p>
+                          <p className="mt-1 text-xs text-slate-500">
+                            {item.sku_code} • {formatCurrency(item.price, item.currency)}
+                          </p>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setCart((current) => updateQuantity(current, item.id, 0))
+                          }
+                          className="h-fit rounded-full p-2 text-slate-400 transition hover:bg-rose-50 hover:text-rose-600"
+                          aria-label="Ürünü sepetten çıkar"
+                        >
+                          <Trash2 className="size-4" />
+                        </button>
+                      </div>
+
+                      <div className="mt-3 flex items-center justify-between gap-3">
+                        <div className="flex items-center rounded-xl border border-slate-200 bg-white">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setCart((current) =>
+                                updateQuantity(current, item.id, item.quantity - 1),
+                              )
+                            }
+                            className="flex size-10 items-center justify-center text-slate-700 transition hover:bg-slate-50"
+                            aria-label="Adedi azalt"
+                          >
+                            <Minus className="size-4" />
+                          </button>
+                          <input
+                            type="number"
+                            min="0"
+                            inputMode="numeric"
+                            value={item.quantity}
+                            onChange={(event) =>
+                              updateCartItemQuantity(item.id, event.target.value)
+                            }
+                            className="h-10 w-16 border-x border-slate-200 bg-transparent text-center text-sm font-bold text-slate-900 outline-none"
+                            aria-label="Ürün adedi"
+                          />
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setCart((current) =>
+                                updateQuantity(current, item.id, item.quantity + 1),
+                              )
+                            }
+                            className="flex size-10 items-center justify-center text-slate-700 transition hover:bg-slate-50"
+                            aria-label="Adedi artır"
+                          >
+                            <Plus className="size-4" />
+                          </button>
+                        </div>
+
+                        <p className="text-sm font-bold text-slate-900">
+                          {formatCurrency(item.price * item.quantity, item.currency)}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="flex h-full min-h-[280px] flex-col items-center justify-center text-center">
+                  <ShoppingBag className="size-10 text-slate-300" />
+                  <p className="mt-3 text-sm font-semibold text-slate-900">
+                    Sepetiniz şu an boş.
+                  </p>
+                  <p className="mt-1 text-sm text-slate-500">
+                    Ürünleri inceleyip sepete ekleyebilirsiniz.
+                  </p>
+                </div>
+              )}
+            </div>
+
+            <div className="border-t border-slate-100 bg-white px-5 py-4">
+              <Textarea
+                placeholder="Sipariş notu (opsiyonel)"
+                value={note}
+                onChange={(event) => setNote(event.target.value)}
+              />
+
+              <div className="mt-4 rounded-2xl bg-slate-900 p-4 text-white">
+                <p className="text-xs font-medium uppercase tracking-[0.18em] text-slate-400">
+                  Toplamlar
+                </p>
+                <div className="mt-2 space-y-1">
+                  {cartTotalEntries.length ? (
+                    cartTotalEntries.map(({ currency, total }) => (
+                      <p key={currency} className="text-xl font-bold">
+                        {currency}: {formatCurrency(total, currency)}
+                      </p>
+                    ))
+                  ) : (
+                    <p className="text-xl font-bold">
+                      {formatCurrency(cartTotal, cartCurrency)}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              <Button
+                asChild
+                href={whatsappHref}
+                className={cn(
+                  "mt-4 w-full py-3 text-base font-bold",
+                  theme.stickyCartButton,
+                  !cart.length && "pointer-events-none opacity-50",
+                )}
+              >
+                <span>WhatsApp ile Siparişi Tamamla</span>
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -338,12 +610,14 @@ export function StorefrontClient({
               <div className="flex items-center gap-2 border-b border-slate-100/20 pb-4">
                 <ShoppingBag className="size-5 text-emerald-600" />
                 <h3 className="text-lg font-bold">Sipariş Sepetiniz</h3>
-                <Badge className="ml-auto bg-emerald-50 font-bold text-emerald-700">
-                  {cart.reduce((total, item) => total + item.quantity, 0)} ürün
-                </Badge>
+                {isMounted ? (
+                  <Badge className="ml-auto bg-emerald-50 font-bold text-emerald-700">
+                    {cart.reduce((total, item) => total + item.quantity, 0)} ürün
+                  </Badge>
+                ) : null}
               </div>
 
-              {cart.length ? (
+              {isMounted && cart.length ? (
                 <div className="mt-4 space-y-4">
                   <div className="max-h-[320px] space-y-3 overflow-y-auto pr-1">
                     {cart.map((item) => (
@@ -371,33 +645,13 @@ export function StorefrontClient({
                           <p className="mt-0.5 text-xs text-slate-400">
                             {formatCurrency(item.price, item.currency)}
                           </p>
-                          <div className="mt-2 flex items-center gap-2">
-                            <button
-                              type="button"
-                              onClick={() =>
-                                setCart((current) =>
-                                  updateQuantity(current, item.id, item.quantity - 1),
-                                )
-                              }
-                              className="flex size-6 items-center justify-center rounded bg-slate-100 text-slate-800 transition hover:bg-slate-200"
-                            >
-                              <Minus className="size-3" />
-                            </button>
-                            <span className="min-w-[16px] px-1 text-center text-xs font-semibold">
-                              {item.quantity}
-                            </span>
-                            <button
-                              type="button"
-                              onClick={() =>
-                                setCart((current) =>
-                                  updateQuantity(current, item.id, item.quantity + 1),
-                                )
-                              }
-                              className="flex size-6 items-center justify-center rounded bg-slate-100 text-slate-800 transition hover:bg-slate-200"
-                            >
-                              <Plus className="size-3" />
-                            </button>
-                          </div>
+                          <button
+                            type="button"
+                            onClick={() => setIsCartOpen(true)}
+                            className="mt-2 rounded-lg bg-slate-100 px-3 py-2 text-xs font-semibold text-slate-800 transition hover:bg-slate-200"
+                          >
+                            Sepeti düzenle
+                          </button>
                         </div>
 
                         <button
@@ -412,12 +666,6 @@ export function StorefrontClient({
                       </div>
                     ))}
                   </div>
-
-                  <Textarea
-                    placeholder="Siparişinize eklemek istediğiniz özel bir not var mı?"
-                    value={note}
-                    onChange={(event) => setNote(event.target.value)}
-                  />
 
                   <div className="rounded-xl bg-slate-900 p-4 text-white">
                     <p className="text-xs font-medium text-slate-400">
@@ -439,11 +687,11 @@ export function StorefrontClient({
                   </div>
 
                   <Button
-                    asChild
-                    href={whatsappHref}
+                    type="button"
+                    onClick={() => setIsCartOpen(true)}
                     className="w-full bg-emerald-600 py-3 font-bold text-white hover:bg-emerald-700"
                   >
-                    <span>WhatsApp’tan Sipariş Ver</span>
+                    Sepeti Aç ve Tamamla
                   </Button>
                 </div>
               ) : (
@@ -460,8 +708,12 @@ export function StorefrontClient({
         </div>
       </main>
 
-      {cart.length && !isSearchFocused ? (
-        <div className={theme.stickyCart}>
+      {isMounted && cart.length && !isSearchFocused ? (
+        <button
+          type="button"
+          onClick={() => setIsCartOpen(true)}
+          className={cn(theme.stickyCart, "text-left")}
+        >
           <div className="flex items-center gap-3">
             <div className="min-w-0 flex-1">
               <p className="text-[10px] uppercase tracking-wider text-slate-400">
@@ -481,12 +733,12 @@ export function StorefrontClient({
                 )}
               </div>
             </div>
-            <Button asChild href={whatsappHref} className={theme.stickyCartButton}>
-              <span>WhatsApp</span>
-            </Button>
+            <span className={theme.stickyCartButton}>Sepeti Aç</span>
           </div>
-        </div>
+        </button>
       ) : null}
+
+      {renderCartDrawer()}
 
       <Modal
         open={Boolean(selectedProduct)}
