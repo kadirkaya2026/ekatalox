@@ -337,8 +337,6 @@ export function StorefrontClient({
   const storefrontTitle = storefrontSettings.storefront_title || tenant.company_name;
   const storefrontDescription =
     storefrontSettings.storefront_description || "Profesyonel B2B vitrin ve sipariş deneyimi";
-  const selectedCategoryName =
-    selectedCategoryId === "all" ? null : categoryNameMap.get(selectedCategoryId) ?? null;
 
   useEffect(() => {
     if (!isMounted) {
@@ -968,17 +966,9 @@ export function StorefrontClient({
         <section id="catalog-grid" className="scroll-mt-28 pt-1">
           <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div>
-              <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-400">
-                {selectedCategoryName ? "Filtrelenmiş Koleksiyon" : "Seçili Koleksiyon"}
-              </p>
-              <h2 className="mt-2 text-2xl font-bold tracking-tight text-slate-900 sm:text-[2rem]">
-                Ürün Vitrini
+              <h2 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-[2rem]">
+                Ürünler
               </h2>
-              <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
-                {selectedCategoryName
-                  ? `${selectedCategoryName} kategorisindeki ürünler sade, dengeli ve hızlı taranabilir bir gridde listelenir.`
-                  : "Filtrelenmiş ürünler sade, dengeli ve hızlı taranabilir bir grid yapısında listelenir."}
-              </p>
             </div>
             <div className="flex flex-wrap items-center gap-3">
               <div className="rounded-full border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-600 shadow-sm">
