@@ -1032,7 +1032,7 @@ export function StorefrontClient({
           )}
         </section>
 
-        {sections.length > 0 ? (
+        {sections.length > 0 && selectedCategoryId === "all" && !searchTerm ? (
           <div className="mb-10 space-y-10">
             {sections.map((section) => {
               const visibleSectionProducts = section.products.slice(0, 8);
@@ -1149,7 +1149,9 @@ export function StorefrontClient({
           <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div>
               <h2 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-[2rem]">
-                Ürünler
+                {selectedCategoryId === "all"
+                  ? "Tüm Ürünler"
+                  : (categoryNameMap.get(selectedCategoryId) ?? "Ürünler")}
               </h2>
             </div>
             <div className="flex flex-wrap items-center gap-3">
