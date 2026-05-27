@@ -30,8 +30,8 @@ export async function POST(req: NextRequest) {
 
     await transporter.sendMail({
       from: `"Ekatalox İletişim Formu" <${process.env.SMTP_USER}>`,
-      to: 'info@ekatalox.com',
-      replyTo: email,
+      to: process.env.CONTACT_RECIPIENT ?? process.env.SMTP_USER,
+      replyTo: `"${name}" <${email}>`,
       subject: `[İletişim] ${subjectLabels[subject] ?? subject} — ${name}`,
       html: `
         <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:24px;background:#f9f9f9;border-radius:8px;">
