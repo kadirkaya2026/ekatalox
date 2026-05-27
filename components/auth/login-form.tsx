@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { translateAuthError } from "@/lib/auth/translate-error";
 
 export function LoginForm({ target }: { target?: string }) {
   const [email, setEmail] = useState("");
@@ -38,6 +39,16 @@ export function LoginForm({ target }: { target?: string }) {
     event.preventDefault();
     setError(null);
 
+    if (!email.trim()) {
+      setError("E-posta adresi zorunludur.");
+      return;
+    }
+
+    if (!password) {
+      setError("Şifre zorunludur.");
+      return;
+    }
+
     if (!supabase) {
       if (!canUseDemoFallback) {
         setError("Supabase yapılandırması eksik. Lütfen production environment değerlerini girin.");
@@ -55,7 +66,7 @@ export function LoginForm({ target }: { target?: string }) {
       });
 
       if (signInError) {
-        setError(signInError.message);
+        setError(translateAuthError(signInError.message));
         return;
       }
 
