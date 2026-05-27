@@ -95,10 +95,22 @@ export function TenantSettingsForm({
     });
   }
 
+  const startDate = new Date(tenant.created_at);
+  const expiryDate = new Date(startDate);
+  expiryDate.setFullYear(expiryDate.getFullYear() + 1);
+  const daysLeft = Math.ceil((expiryDate.getTime() - Date.now()) / 86_400_000);
+  const nearExpiry = daysLeft <= 90 && daysLeft > 0;
+
+  const dateFormatter = new Intl.DateTimeFormat("tr-TR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
+
   return (
     <div className="grid gap-6 xl:grid-cols-[0.8fr_1.2fr]">
       <Card className="p-5">
-        <h2 className="text-lg font-semibold text-slate-900">Tenant bilgileri</h2>
+        <h2 className="text-lg font-semibold text-slate-900">Üyelik bilgileri</h2>
         <dl className="mt-5 space-y-4 text-sm text-slate-600">
           <div>
             <dt className="text-slate-500">Firma</dt>
@@ -125,17 +137,34 @@ export function TenantSettingsForm({
           <div>
             <dt className="text-slate-500">Rol</dt>
             <dd className="mt-1 font-medium text-slate-900">
-              {profile.role === "tenant_admin" ? "Tenant Admin" : profile.role}
+              {profile.role === "tenant_admin" ? "Yönetici" : profile.role}
+            </dd>
+          </div>
+          <div>
+            <dt className="text-slate-500">Üyelik başlangıcı</dt>
+            <dd className="mt-1 font-medium text-slate-900">
+              {dateFormatter.format(startDate)}
+            </dd>
+          </div>
+          <div>
+            <dt className="text-slate-500">Üyelik bitiş tarihi</dt>
+            <dd className="mt-1 font-medium text-slate-900">
+              {dateFormatter.format(expiryDate)}
             </dd>
           </div>
         </dl>
+        {nearExpiry ? (
+          <div className="mt-5 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+            Paket tarihinizin bitmesine çok az kaldı, yenilemek için iletişime geçin.
+          </div>
+        ) : null}
       </Card>
 
       <div className="space-y-6">
         <Card className="p-5">
           <h2 className="text-lg font-semibold text-slate-900">Sipariş yönlendirme</h2>
           <p className="mt-1 text-sm text-slate-600">
-            Storefront sepetindeki WhatsApp siparişleri bu numaraya yönlendirilir.
+            Müşterilerinizin sepetindeki ürünleri WhatsApp ile bu numaraya yönlendirilir.
           </p>
           <form onSubmit={save} className="mt-5 space-y-4">
             <Input value={whatsapp} onChange={(event) => setWhatsapp(event.target.value)} />

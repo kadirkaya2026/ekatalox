@@ -12,7 +12,7 @@ export default async function TenantBannerSettingsPage() {
       <Header
         eyebrow="Ayarlar / Banner"
         title="Banner Ayarları"
-        description="Storefront carousel alanı için kampanya, duyuru ve indirim banner'ları yönetin."
+        description="Mağaza vitrin carousel alanı için kampanya, duyuru ve indirim banner'ları yönetin."
       />
 
       <TenantBannerForm initialStorefrontSettings={storefrontSettings} />

@@ -538,7 +538,7 @@ export function ProductsManager({
                 <p className="text-sm font-semibold text-slate-900">Vitrin sıralaması</p>
                 <p className="mt-1 text-sm text-slate-600">
                   Ürünleri sürükleyip bırakın veya yukarı/aşağı butonlarıyla sıralayın.
-                  Bu sıra storefront tarafında doğrudan kullanılır.
+                  Bu sıra müşteri vitrininde doğrudan kullanılır.
                 </p>
               </div>
             </div>

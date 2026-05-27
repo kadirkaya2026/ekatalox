@@ -12,9 +12,9 @@ export default async function TenantSettingsPage(
   return (
     <div className="space-y-6">
       <Header
-        eyebrow="Tenant Ayarları"
-        title="Storefront yönlendirme ve tenant detayları"
-        description="WhatsApp sipariş numarasını yönetin ve tenant paketinizi görüntüleyin."
+        eyebrow="Hesap Ayarları"
+        title="Sipariş yönlendirme ve üyelik bilgileri"
+        description="WhatsApp sipariş numarasını yönetin ve üyelik bilgilerinizi görüntüleyin."
       />
 
       <TenantSettingsForm

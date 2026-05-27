@@ -12,7 +12,7 @@ export default async function TenantCategoriesPage() {
       <Header
         eyebrow="Kategori Yönetimi"
         title="Ürün kategorilerini yönetin"
-        description="Storefront filtreleri ve ürün yönetimi için kategorileri buradan oluşturup kaldırın."
+        description="Mağaza filtreleri ve ürün yönetimi için kategorileri buradan oluşturup kaldırın."
       />
 
       <CategoriesManager

@@ -105,7 +105,7 @@ export function AccessCodesManager({
           <div>
             <h2 className="text-lg font-semibold text-slate-900">Aktif erişim kodları</h2>
             <p className="mt-1 text-sm text-slate-600">
-              Tenant: {tenant.company_name} • {tenant.subdomain}.ekatalox.com
+              {tenant.company_name} • {tenant.subdomain}.ekatalox.com
             </p>
           </div>
           <Badge className="bg-slate-100 text-slate-700">{codes.length} kod</Badge>

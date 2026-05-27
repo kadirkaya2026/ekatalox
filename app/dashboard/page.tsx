@@ -11,7 +11,7 @@ export default async function DashboardHomePage() {
   return (
     <div className="space-y-6">
       <Header
-        eyebrow="Tenant Dashboard"
+        eyebrow="Kontrol Paneli"
         title={`${summary.tenant.company_name} yönetim paneli`}
         description="Ürünlerinizi, fiyat katmanlarınızı ve mağaza erişim şifrelerinizi tek panelden yönetin."
       />
@@ -65,7 +65,7 @@ export default async function DashboardHomePage() {
         <Card className="p-5">
           <h2 className="text-lg font-semibold text-slate-900">Ürün kategorileri</h2>
           <p className="mt-2 text-sm text-slate-600">
-            Kategori oluşturun ve storefront ekranında kategori bazlı filtreleme sunun.
+            Kategori oluşturun ve ürün listenizde kategori bazlı filtreleme sunun.
           </p>
           <Link
             href="/categories"
@@ -76,9 +76,9 @@ export default async function DashboardHomePage() {
         </Card>
 
         <Card className="p-5">
-          <h2 className="text-lg font-semibold text-slate-900">Storefront ayarları</h2>
+          <h2 className="text-lg font-semibold text-slate-900">Mağaza ayarları</h2>
           <p className="mt-2 text-sm text-slate-600">
-            WhatsApp yönlendirme numaranızı kontrol edin ve tenant bilgilerinizi görüntüleyin.
+            WhatsApp yönlendirme numaranızı kontrol edin ve üyelik bilgilerinizi görüntüleyin.
           </p>
           <Link
             href="/settings"
