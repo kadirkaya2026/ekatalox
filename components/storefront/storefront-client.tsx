@@ -248,6 +248,7 @@ export function StorefrontClient({
   const [visibleCount, setVisibleCount] = useState(24);
   const [hoveredCategoryId, setHoveredCategoryId] = useState<string | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [expandedMobileCategoryId, setExpandedMobileCategoryId] = useState<string | null>(null);
   const [activeBannerIndex, setActiveBannerIndex] = useState(0);
   const [isMobileOrderNoteOpen, setIsMobileOrderNoteOpen] = useState(false);
   const isMounted = useSyncExternalStore(
@@ -902,12 +903,9 @@ export function StorefrontClient({
                         <button
                           type="button"
                           onClick={() => handleCategoryChange(category.id)}
-                          className="mb-2 flex w-full items-center justify-between rounded-xl bg-slate-50 px-4 py-3 text-left text-sm font-semibold text-slate-900"
+                          className="mb-2 w-full rounded-xl bg-slate-50 px-4 py-3 text-left text-sm font-semibold text-slate-900"
                         >
-                          <span>{category.name} içindeki tüm ürünler</span>
-                          <span className="rounded-full bg-white px-2 py-1 text-xs text-slate-500">
-                            {categoryCounts.get(category.id) ?? 0}
-                          </span>
+                          {category.name} içindeki tüm ürünler
                         </button>
 
                         <div className="space-y-2">
@@ -916,12 +914,9 @@ export function StorefrontClient({
                               key={child.id}
                               type="button"
                               onClick={() => handleCategoryChange(child.id)}
-                              className="flex w-full items-center justify-between rounded-xl px-4 py-3 text-left text-sm text-slate-700 transition hover:bg-slate-50"
+                              className="w-full rounded-xl px-4 py-3 text-left text-sm text-slate-700 transition hover:bg-slate-50"
                             >
-                              <span>{child.name}</span>
-                              <span className="rounded-full bg-slate-100 px-2 py-1 text-xs text-slate-500">
-                                {categoryCounts.get(child.id) ?? 0}
-                              </span>
+                              {child.name}
                             </button>
                           ))}
                         </div>
@@ -946,41 +941,57 @@ export function StorefrontClient({
                 >
                   Tüm Ürünler
                 </button>
-                {topCategories.map((category) => (
+                {topCategories.map((category) => {
+                  const isExpanded = expandedMobileCategoryId === category.id;
+                  return (
                   <div
                     key={category.id}
                     className="rounded-[1.4rem] border border-slate-200/80 bg-slate-50/80 p-2"
                   >
-                    <button
-                      type="button"
-                      onClick={() => handleCategoryChange(category.id)}
-                      className="flex w-full items-center justify-between rounded-xl px-3 py-3 text-left text-sm font-semibold text-slate-900"
-                    >
-                      <span>{category.name}</span>
-                      <span className="rounded-full bg-white px-2 py-1 text-xs text-slate-500">
-                        {categoryCounts.get(category.id) ?? 0}
-                      </span>
-                    </button>
+                    <div className="flex w-full items-center">
+                      <button
+                        type="button"
+                        onClick={() => handleCategoryChange(category.id)}
+                        className="flex-1 rounded-xl px-3 py-3 text-left text-sm font-semibold text-slate-900"
+                      >
+                        {category.name}
+                      </button>
+                      {category.children.length ? (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setExpandedMobileCategoryId(isExpanded ? null : category.id)
+                          }
+                          className="flex size-9 items-center justify-center rounded-xl text-slate-500 transition hover:bg-slate-200"
+                          aria-label={isExpanded ? "Alt kategorileri kapat" : "Alt kategorileri aç"}
+                        >
+                          <ChevronDown
+                            className={cn(
+                              "size-4 transition-transform duration-200",
+                              isExpanded && "rotate-180",
+                            )}
+                          />
+                        </button>
+                      ) : null}
+                    </div>
 
-                    {category.children.length ? (
+                    {category.children.length && isExpanded ? (
                       <div className="mt-1 space-y-1 border-t border-slate-200 pt-2">
                         {category.children.map((child) => (
                           <button
                             key={child.id}
                             type="button"
                             onClick={() => handleCategoryChange(child.id)}
-                            className="flex w-full items-center justify-between rounded-xl px-3 py-3 text-left text-sm text-slate-600"
+                            className="w-full rounded-xl px-3 py-3 text-left text-sm text-slate-600"
                           >
-                            <span>{child.name}</span>
-                            <span className="rounded-full bg-white px-2 py-1 text-xs text-slate-500">
-                              {categoryCounts.get(child.id) ?? 0}
-                            </span>
+                            {child.name}
                           </button>
                         ))}
                       </div>
                     ) : null}
                   </div>
-                ))}
+                  );
+                })}
               </div>
             ) : null}
           </div>
