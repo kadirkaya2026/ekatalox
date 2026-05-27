@@ -899,26 +899,20 @@ export function StorefrontClient({
                     </button>
 
                     {category.children.length && isOpen ? (
-                      <div className="absolute left-0 top-full z-30 mt-2 min-w-[280px] rounded-2xl border border-slate-200 bg-white p-3 shadow-xl">
-                        <button
-                          type="button"
-                          onClick={() => handleCategoryChange(category.id)}
-                          className="mb-2 w-full rounded-xl bg-slate-50 px-4 py-3 text-left text-sm font-semibold text-slate-900"
-                        >
-                          {category.name} içindeki tüm ürünler
-                        </button>
-
-                        <div className="space-y-2">
-                          {category.children.map((child) => (
-                            <button
-                              key={child.id}
-                              type="button"
-                              onClick={() => handleCategoryChange(child.id)}
-                              className="w-full rounded-xl px-4 py-3 text-left text-sm text-slate-700 transition hover:bg-slate-50"
-                            >
-                              {child.name}
-                            </button>
-                          ))}
+                      <div className="absolute left-0 top-full z-30 pt-1">
+                        <div className="min-w-[220px] rounded-2xl border border-slate-200 bg-white p-2 shadow-xl">
+                          <div className="space-y-0.5">
+                            {category.children.map((child) => (
+                              <button
+                                key={child.id}
+                                type="button"
+                                onClick={() => handleCategoryChange(child.id)}
+                                className="w-full rounded-xl px-4 py-2.5 text-left text-sm text-slate-700 transition hover:bg-slate-50"
+                              >
+                                {child.name}
+                              </button>
+                            ))}
+                          </div>
                         </div>
                       </div>
                     ) : null}
