@@ -221,6 +221,7 @@ export function StorefrontClient({
   storefrontSettings,
   sections = [],
   subdomain,
+  pageTitle,
 }: {
   tenant: Tenant;
   categories: Category[];
@@ -228,6 +229,7 @@ export function StorefrontClient({
   storefrontSettings: TenantStorefrontSettings;
   sections?: StorefrontSectionWithProducts[];
   subdomain?: string;
+  pageTitle?: string;
 }) {
   const [cart, setCart] = useState<CartItem[]>(() => {
     if (typeof window === "undefined") {
@@ -1149,9 +1151,9 @@ export function StorefrontClient({
           <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div>
               <h2 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-[2rem]">
-                {selectedCategoryId === "all"
-                  ? "Tüm Ürünler"
-                  : (categoryNameMap.get(selectedCategoryId) ?? "Ürünler")}
+                {selectedCategoryId !== "all"
+                  ? (categoryNameMap.get(selectedCategoryId) ?? "Ürünler")
+                  : (pageTitle ?? "Tüm Ürünler")}
               </h2>
             </div>
             <div className="flex flex-wrap items-center gap-3">

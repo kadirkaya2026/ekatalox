@@ -83,6 +83,7 @@ export default async function SectionDetailPage(props: {
         storefrontSettings={storefrontSettings}
         sections={[]}
         subdomain={subdomain}
+        pageTitle={section.title}
       />
     </div>
   );
