@@ -105,7 +105,7 @@ export function Sidebar({
               </Link>
 
               {link.children && parentActive ? (
-                <div className="ml-4 mt-1 flex flex-col gap-1 border-l border-slate-700 pl-3">
+                <div className="ml-7 mt-1 flex flex-col gap-1 border-l-2 border-slate-600 pl-4">
                   {link.children.map((child) => {
                     const childActive = isActive(child.href);
                     return (
