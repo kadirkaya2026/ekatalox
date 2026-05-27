@@ -15,19 +15,37 @@ const plans = [
 const Page = () => {
   const [form, setForm] = useState({ fullName: '', company: '', email: '', password: '', plan: 'profesyonel' })
   const [submitted, setSubmitted] = useState(false)
-  const [errors, setErrors] = useState({})
+  const [sending, setSending] = useState(false)
+  const [errors, setErrors] = useState<Record<string, string>>({})
+  const [apiError, setApiError] = useState('')
 
-  const set = (k) => (e) => setForm({ ...form, [k]: e.target.value })
+  const set = (k: string) => (e: React.ChangeEvent<HTMLInputElement>) => setForm({ ...form, [k]: e.target.value })
 
-  const submit = (e) => {
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault()
-    const errs = {}
+    const errs: Record<string, string> = {}
     if (!form.fullName.trim()) errs.fullName = 'Adınızı girin'
     if (!form.company.trim()) errs.company = 'Şirket adını girin'
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) errs.email = 'Geçerli bir e-posta girin'
     if (form.password.length < 6) errs.password = 'Şifre en az 6 karakter olmalı'
     setErrors(errs)
-    if (Object.keys(errs).length === 0) setSubmitted(true)
+    if (Object.keys(errs).length > 0) return
+
+    setSending(true)
+    setApiError('')
+    try {
+      const res = await fetch('/api/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fullName: form.fullName, company: form.company, email: form.email, plan: form.plan }),
+      })
+      if (!res.ok) throw new Error()
+      setSubmitted(true)
+    } catch {
+      setApiError('Bir hata oluştu. Lütfen tekrar deneyin veya info@ekatalox.com adresine yazın.')
+    } finally {
+      setSending(false)
+    }
   }
 
   return (
@@ -101,23 +119,37 @@ const Page = () => {
                     <div>
                       <label className="text-xs text-slate-400 mb-2 block uppercase tracking-wider">Plan seçimi</label>
                       <div className="grid grid-cols-3 gap-2">
-                        {plans.map(p => (
-                          <button key={p.id} type="button" onClick={() => setForm({ ...form, plan: p.id })}
-                            className={`relative p-3 rounded-xl border text-left transition-all ${
-                              form.plan === p.id ? 'border-[#00D2FF]/60 bg-[#00D2FF]/5' : 'border-white/10 bg-white/[0.02] hover:border-white/20'
-                            }`}>
-                            {p.featured && (
-                              <span className="absolute -top-2 left-1/2 -translate-x-1/2 px-1.5 py-0.5 rounded-full bg-gradient-to-r from-[#00D2FF] to-[#7928CA] text-[8px] text-white font-medium uppercase tracking-wider">Popüler</span>
-                            )}
-                            <div className="text-[11px] text-slate-400">{p.name}</div>
-                            <div className="text-sm text-white font-semibold mt-1">{p.price}<span className="text-[10px] text-slate-500 font-normal ml-1">{p.unit}</span></div>
-                          </button>
-                        ))}
+                        {plans.map(p => {
+                          const selected = form.plan === p.id
+                          return (
+                            <button key={p.id} type="button" onClick={() => setForm({ ...form, plan: p.id })}
+                              className={`relative p-3 rounded-xl border text-left transition-all duration-200 overflow-hidden ${
+                                selected
+                                  ? 'border-[#00D2FF] ring-1 ring-[#00D2FF]/30 bg-gradient-to-b from-[#00D2FF]/15 to-[#7928CA]/10'
+                                  : 'border-white/10 bg-white/[0.02] hover:border-white/20'
+                              }`}>
+                              {selected && (
+                                <span className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-[#00D2FF] to-[#7928CA]" />
+                              )}
+                              {p.featured && !selected && (
+                                <span className="absolute -top-2 left-1/2 -translate-x-1/2 px-1.5 py-0.5 rounded-full bg-gradient-to-r from-[#00D2FF] to-[#7928CA] text-[8px] text-white font-medium uppercase tracking-wider">Popüler</span>
+                              )}
+                              {selected && (
+                                <span className="absolute top-2 right-2">
+                                  <Check className="w-3 h-3 text-[#00D2FF]" />
+                                </span>
+                              )}
+                              <div className={`text-[11px] ${selected ? 'text-white' : 'text-slate-400'}`}>{p.name}</div>
+                              <div className="text-sm text-white font-semibold mt-1">{p.price}<span className="text-[10px] text-slate-500 font-normal ml-1">{p.unit}</span></div>
+                            </button>
+                          )
+                        })}
                       </div>
                     </div>
 
-                    <button type="submit" className="w-full inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-full bg-white text-black font-medium text-sm hover:scale-[1.01] transition-transform shadow-[0_0_40px_rgba(0,210,255,0.2)] mt-2">
-                      Ücretsiz Hesap Aç <ArrowRight className="w-4 h-4" />
+                    {apiError && <div className="text-sm text-red-400 text-center">{apiError}</div>}
+                    <button type="submit" disabled={sending} className="w-full inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-full bg-white text-black font-medium text-sm hover:scale-[1.01] transition-transform shadow-[0_0_40px_rgba(0,210,255,0.2)] mt-2 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:scale-100">
+                      {sending ? 'Lütfen bekleyin…' : <><span>Ücretsiz Hesap Aç</span><ArrowRight className="w-4 h-4" /></>}
                     </button>
 
                     <p className="text-[11px] text-slate-500 text-center">
@@ -138,7 +170,7 @@ const Page = () => {
                       Hoşgeldiniz, {form.fullName.split(' ')[0]}!
                     </motion.h3>
                     <motion.p initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.45 }} className="mt-3 text-slate-400 max-w-sm mx-auto">
-                      Workspace'iniz hazırlanıyor. <span className="text-white">{form.email}</span> adresine giriş bağlantısı gönderildi.
+                      Talebiniz alındı. <span className="text-white">{form.email}</span> adresine en kısa sürede dönüş sağlayacağız.
                     </motion.p>
                     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.55 }} className="mt-6 inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-[11px] text-slate-300">
                       <Sparkles className="w-3 h-3 text-[#00D2FF]" />
@@ -161,7 +193,10 @@ const Page = () => {
   )
 }
 
-const Field = ({ label, type = 'text', placeholder, value, onChange, error }) => (
+const Field = ({ label, type = 'text', placeholder, value, onChange, error }: {
+  label: string; type?: string; placeholder: string; value: string;
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void; error?: string
+}) => (
   <div>
     <label className="text-xs text-slate-400 mb-1.5 block uppercase tracking-wider">{label}</label>
     <input type={type} placeholder={placeholder} value={value} onChange={onChange}
