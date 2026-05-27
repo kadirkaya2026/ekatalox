@@ -2180,9 +2180,9 @@ const Footer = () => (
     <div className="max-w-7xl mx-auto px-6 py-16 md:py-20">
       <div className="grid grid-cols-2 md:grid-cols-5 gap-10">
         <div className="col-span-2">
-          <div className="flex items-center gap-2">
+          <Link href="/#top" className="flex items-center gap-2">
             <EkataloxLogo className="h-10 w-[180px]" />
-          </div>
+          </Link>
           <p className="mt-4 text-sm text-slate-400 max-w-xs">
             Toptancılar ve distribütörler için yeni nesil B2B vitrin platformu. Excel'den canlı dijital kataloğa.
           </p>
@@ -2232,9 +2232,9 @@ const Navbar = () => (
   <nav className="fixed top-0 left-0 right-0 z-50">
     <div className="backdrop-blur-xl bg-[#0B0F19]/60 border-b border-white/5">
       <div className="max-w-7xl mx-auto px-6 h-14 flex items-center justify-between">
-        <div className="flex items-center gap-2">
+        <Link href="/#top" className="flex items-center gap-2">
           <EkataloxLogo className="h-8 w-[148px]" priority />
-        </div>
+        </Link>
         <div className="hidden md:flex items-center gap-8 text-sm text-slate-300">
           <a href="#demo" className="hover:text-white transition-colors">Özellikler</a>
           <Link href="/musteriler" className="hover:text-white transition-colors">Müşteriler</Link>
@@ -2254,7 +2254,7 @@ const Navbar = () => (
 // ----------------------------- ROOT ------------------------------------------
 const App = () => {
   return (
-    <main className="relative bg-[#0B0F19] text-white">
+    <main id="top" className="relative bg-[#0B0F19] text-white">
       <Navbar />
       <Hero />
       <ExcelSimulator />

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import type { FormEvent, ReactNode } from "react";
 import { useRef, useState } from "react";
 import {
@@ -213,9 +214,9 @@ function LandingNavbar() {
     <nav className="fixed top-0 left-0 right-0 z-50">
       <div className="border-b border-white/5 bg-[#0B0F19]/70 backdrop-blur-xl">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6">
-          <a href="#top" className="flex items-center gap-2">
+          <Link href="/#top" className="flex items-center gap-2">
             <EkataloxLogo className="h-8 w-[148px]" priority />
-          </a>
+          </Link>
 
           <div className="hidden items-center gap-8 text-sm text-slate-300 md:flex">
             {navItems.map((item) => (
@@ -1742,9 +1743,9 @@ function LandingFooter() {
       <div className="mx-auto max-w-7xl px-6 py-16 md:py-20">
         <div className="grid grid-cols-2 gap-10 md:grid-cols-5">
           <div className="col-span-2">
-            <div className="flex items-center gap-2">
+            <Link href="/#top" className="flex items-center gap-2">
               <EkataloxLogo className="h-10 w-[180px]" />
-            </div>
+            </Link>
             <p className="mt-4 max-w-xs text-sm text-slate-400">
               Toptancılar ve distribütörler için Apple tarzı, simülatörlü ve
               karar odaklı yeni nesil B2B lansman sayfası.

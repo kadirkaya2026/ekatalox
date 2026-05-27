@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState, useTransition } from "react";
 import { EkataloxLogo } from "@/components/brand/ekatalox-logo";
 import { Button } from "@/components/ui/button";
@@ -90,9 +91,9 @@ export function LoginForm({ target }: { target?: string }) {
   return (
     <div className="container-shell flex min-h-screen items-center justify-center py-10">
       <Card className="w-full max-w-md p-6">
-        <div className="inline-flex rounded-2xl bg-slate-950 px-4 py-3">
+        <Link href="/#top" className="inline-flex rounded-2xl bg-slate-950 px-4 py-3">
           <EkataloxLogo className="h-10 w-[176px]" priority />
-        </div>
+        </Link>
         <h1 className="mt-3 text-2xl font-semibold text-slate-900">
           Yönetim paneline erişin
         </h1>

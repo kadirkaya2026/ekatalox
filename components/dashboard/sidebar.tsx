@@ -45,7 +45,9 @@ export function Sidebar({
   return (
     <aside className="flex h-full w-full flex-col bg-slate-900 text-white md:sticky md:top-0 md:h-screen">
       <div className="border-b border-slate-800 px-6 py-6">
-        <EkataloxLogo className="h-8 w-[148px]" priority />
+        <Link href="/#top" className="inline-flex">
+          <EkataloxLogo className="h-8 w-[148px]" priority />
+        </Link>
         <h2 className="mt-3 text-xl font-semibold">{title}</h2>
         <p className="mt-1 text-sm text-slate-400">{subtitle}</p>
       </div>

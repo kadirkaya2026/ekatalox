@@ -8,7 +8,7 @@ export const SiteNavbar = () => (
   <nav className="fixed top-0 left-0 right-0 z-50">
     <div className="backdrop-blur-xl bg-[#0B0F19]/70 border-b border-white/5">
       <div className="max-w-7xl mx-auto px-6 h-14 flex items-center justify-between">
-        <Link href="/" className="flex items-center gap-2">
+        <Link href="/#top" className="flex items-center gap-2">
           <EkataloxLogo className="h-8 w-[148px]" priority />
         </Link>
         <div className="hidden md:flex items-center gap-7 text-sm text-slate-300">
@@ -33,7 +33,7 @@ export const SiteFooter = () => (
     <div className="max-w-7xl mx-auto px-6 py-16 md:py-20">
       <div className="grid grid-cols-2 md:grid-cols-5 gap-10">
         <div className="col-span-2">
-          <Link href="/" className="flex items-center gap-2">
+          <Link href="/#top" className="flex items-center gap-2">
             <EkataloxLogo className="h-10 w-[180px]" />
           </Link>
           <p className="mt-4 text-sm text-slate-400 max-w-xs">
