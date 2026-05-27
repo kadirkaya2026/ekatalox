@@ -1,6 +1,7 @@
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { PasswordGate } from "@/components/storefront/password-gate";
 import { StorefrontClient } from "@/components/storefront/storefront-client";
@@ -15,6 +16,21 @@ import {
   isStorefrontTierStateValid,
   readStorefrontTier,
 } from "@/lib/storefront/session";
+
+export async function generateMetadata(props: {
+  params: Promise<{ subdomain: string; sectionId: string }>;
+}): Promise<Metadata> {
+  return {
+    robots: {
+      index: false,
+      follow: false,
+      googleBot: {
+        index: false,
+        follow: false,
+      },
+    },
+  };
+}
 
 export default async function SectionDetailPage(props: {
   params: Promise<{ subdomain: string; sectionId: string }>;

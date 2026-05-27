@@ -37,6 +37,14 @@ export async function generateMetadata(
     icons: settings.site_favicon_url
       ? { icon: settings.site_favicon_url }
       : undefined,
+    robots: {
+      index: false,
+      follow: false,
+      googleBot: {
+        index: false,
+        follow: false,
+      },
+    },
   };
 }
 
