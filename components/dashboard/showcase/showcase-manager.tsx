@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Image from "next/image";
 import { Plus, Trash2, X, Store, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -64,7 +64,7 @@ export function ShowcaseManager({
   }, [allProducts, addProductSection, productSearch]);
 
   // Load section products on mount
-  useState(() => {
+  useEffect(() => {
     async function load() {
       try {
         const res = await fetch("/api/tenant/showcase");
@@ -76,7 +76,7 @@ export function ShowcaseManager({
       }
     }
     load();
-  });
+  }, []);
 
   async function handleCreateSection() {
     if (!newTitle.trim()) {
