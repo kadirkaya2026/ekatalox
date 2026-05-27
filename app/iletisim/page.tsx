@@ -14,18 +14,37 @@ const departments = [
 const Page = () => {
   const [form, setForm] = useState({ name: '', company: '', email: '', phone: '', subject: 'demo', message: '' })
   const [sent, setSent] = useState(false)
-  const [errors, setErrors] = useState({})
+  const [sending, setSending] = useState(false)
+  const [errors, setErrors] = useState<Record<string, string>>({})
+  const [apiError, setApiError] = useState('')
 
-  const set = (k) => (e) => setForm({ ...form, [k]: e.target.value })
+  const set = (k: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
+    setForm({ ...form, [k]: e.target.value })
 
-  const submit = (e) => {
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault()
-    const errs = {}
+    const errs: Record<string, string> = {}
     if (!form.name.trim()) errs.name = 'Adınızı girin'
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) errs.email = 'Geçerli e-posta girin'
     if (form.message.trim().length < 10) errs.message = 'En az 10 karakter yazın'
     setErrors(errs)
-    if (Object.keys(errs).length === 0) setSent(true)
+    if (Object.keys(errs).length > 0) return
+
+    setSending(true)
+    setApiError('')
+    try {
+      const res = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form),
+      })
+      if (!res.ok) throw new Error('Gönderim başarısız')
+      setSent(true)
+    } catch {
+      setApiError('Mesaj gönderilemedi. Lütfen tekrar deneyin veya info@ekatalox.com adresine yazın.')
+    } finally {
+      setSending(false)
+    }
   }
 
   return (
@@ -57,8 +76,8 @@ const Page = () => {
             ))}
 
             <div className="pt-6 grid grid-cols-2 gap-4">
-              <InfoTile icon={Phone} label="Telefon" value="+90 (212) 999 99 99" />
-              <InfoTile icon={Mail} label="Genel" value="merhaba@ekatalox.com" />
+              <InfoTile icon={Phone} label="Telefon" value="+90 535 417 25 10" />
+              <InfoTile icon={Mail} label="Genel" value="info@ekatalox.com" />
               <InfoTile icon={MessageCircle} label="Canlı Destek" value="Hafta içi 09:00 - 18:00" />
               <InfoTile icon={MapPin} label="Merkez" value="Levent, İstanbul" />
             </div>
@@ -98,8 +117,9 @@ const Page = () => {
                       }`} />
                     {errors.message && <div className="mt-1 text-[11px] text-red-400">{errors.message}</div>}
                   </div>
-                  <button type="submit" className="w-full mt-2 inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-full bg-white text-black font-medium text-sm hover:scale-[1.01] transition-transform">
-                    Mesajı Gönder <ArrowRight className="w-4 h-4" />
+                  {apiError && <div className="text-sm text-red-400 text-center">{apiError}</div>}
+                  <button type="submit" disabled={sending} className="w-full mt-2 inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-full bg-white text-black font-medium text-sm hover:scale-[1.01] transition-transform disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:scale-100">
+                    {sending ? 'Gönderiliyor…' : <><span>Mesajı Gönder</span><ArrowRight className="w-4 h-4" /></>}
                   </button>
                 </motion.form>
               ) : (
