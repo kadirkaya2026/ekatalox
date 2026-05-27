@@ -52,7 +52,7 @@ const Hero = () => {
             className="display-headline text-5xl sm:text-6xl md:text-7xl lg:text-8xl text-white text-balance"
           >
             Toptan Ticaretin <br />
-            <span className="text-gradient-neon">Yeni Nesil Vitrini.</span>
+            <span className="text-gradient-neon">Dijital İşletim Sistemi.</span>
           </motion.h1>
 
           <motion.p
@@ -61,7 +61,7 @@ const Hero = () => {
             transition={{ duration: 1, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
             className="mt-7 text-lg md:text-2xl text-slate-400 max-w-3xl mx-auto font-light text-balance"
           >
-            Excel'inizi yükleyin, dijital kataloğunuzu <span className="text-white font-medium">5 saniyede</span> dünyaya açın.
+            Excel operasyonlarını ve WhatsApp sipariş kargaşasını geride bırakın. Dijital kataloğunuz <span className="text-white font-medium">1 dakikada</span> yayında.
           </motion.p>
 
           <motion.div
@@ -660,7 +660,7 @@ const StepSection = () => {
   const steps = [
     {
       n: '01',
-      title: "Excel'i Fırlat",
+      title: "Anlık Excel Entegrasyonu",
       desc: 'Stok listenizi sürükle-bırak ile saniyeler içinde sisteme yükleyin. .xlsx, .xls ve .csv formatları desteklenir.',
       icon: FileSpreadsheet,
       visual: <ExcelDropVisual />,
@@ -694,7 +694,7 @@ const StepSection = () => {
         >
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full glass text-xs text-slate-300 mb-6">
             <Zap className="w-3 h-3 text-[#00D2FF]" />
-            5 Saniyelik Süreç
+            1 Dakikalık Süreç
           </div>
           <h2 className="display-headline text-4xl md:text-6xl lg:text-7xl text-white text-balance">
             Excel'den vitrine. <br />
@@ -1102,7 +1102,7 @@ const ExtraStatsCard = () => (
     </div>
     <div className="grid grid-cols-3 gap-3 mt-6">
       {[
-        { v: '5sn', l: 'Kurulum' },
+        { v: '1dk', l: 'Kurulum' },
         { v: '99.9%', l: 'Uptime' },
         { v: '∞', l: 'Ürün' },
       ].map((s, i) => (
@@ -1122,7 +1122,7 @@ const Comparison = () => {
       criteria: 'Kurulum Süresi',
       sub: 'Vitrinin yayına alınma süresi',
       values: [
-        { v: '5 saniye', tone: 'good', hint: 'Excel yüklendiği anda' },
+        { v: '1 dakika', tone: 'good', hint: 'Excel yüklendiği anda' },
         { v: '3 hafta', tone: 'bad', hint: 'Tema, kurulum, geliştirme' },
         { v: 'Günler', tone: 'meh', hint: 'PDF/WhatsApp hazırlığı' },
       ],
@@ -1467,8 +1467,8 @@ const AlexWhatsApp = () => {
   const messages = [
     { from: 'user',  text: 'Alex, depoda MagSafe kılıf kaç adet kaldı?', time: '14:32' },
     { from: 'alex',  text: 'Canlı stok kontrolü yapıldı: 142 adet kaldı. Son 24 saatte 18 adet satıldı.', time: '14:32' },
-    { from: 'user',  text: "Ahmet Toptan'a 20 adet sipariş gir, ödeme linkini fırlat.", time: '14:33' },
-    { from: 'alex',  text: "Sipariş ön muhasebeye işlendi. Ödeme linki Ahmet Toptan'a WhatsApp üzerinden iletildi. ⚡", time: '14:33' },
+    { from: 'user',  text: "Ahmet Toptan'a 20 adet sipariş oluştur, ödeme talimatını ilet.", time: '14:33' },
+    { from: 'alex',  text: "Sipariş ön muhasebeye işlendi. Ödeme talimatı Ahmet Toptan'a WhatsApp üzerinden iletildi. ⚡", time: '14:33' },
   ]
   return (
     <section className="relative py-28 md:py-36 px-6">
@@ -1491,14 +1491,14 @@ const AlexWhatsApp = () => {
               Yazın. <span className="text-gradient-neon">Alex hallediyor.</span>
             </h2>
             <p className="mt-5 text-lg text-slate-400 font-light max-w-md leading-relaxed">
-              Kurumsal planda yapay zekâ asistanınız Alex; siparişten tahsilata, stok kontrolünden muhasebe kaydına kadar her şeyi WhatsApp üzerinden halleder.
+              Kurumsal planda otonom AI asistanınız Alex; sipariş işlemeden tahsilata, stok analizinden muhasebe entegrasyonuna kadar tüm operasyonel yükü WhatsApp üzerinden otonom biçimde yönetir.
             </p>
             <div className="mt-8 grid grid-cols-2 gap-3 max-w-md">
               {[
-                ['Sipariş Yönetimi', 'WhatsApp üzerinden'],
-                ['Ödeme Fırlatma', 'PayTR / iZico bağlantısı'],
-                ['Otomatik Tahsilat', 'Vade hatırlatma'],
-                ['Canlı Stok', '"Kaç adet?" → cevap'],
+                ['Otonom Sipariş Yönetimi', 'WhatsApp doğal dil arayüzü'],
+                ['Otonom Tahsilat ve Ödeme', 'PayTR / iZico entegrasyonu'],
+                ['Otomatik Vadeli Tahsilat', 'Kurumsal hatırlatma akışı'],
+                ['Anlık Stok Zekası', 'Doğal dil sorgu motoru'],
               ].map(([t, s]) => (
                 <div key={t} className="p-3 rounded-xl border border-white/10 bg-white/[0.02]">
                   <div className="text-sm text-white font-medium">{t}</div>
@@ -1689,7 +1689,7 @@ const FAQ = () => {
     },
     {
       q: 'Müşterilerimin sipariş vermesi için bir uygulama indirmesi gerekir mi?',
-      a: 'Hayır. Müşterileriniz linkinize tıklar, ürünleri sepete ekler ve doğrudan kendi WhatsApp uygulamaları üzerinden jilet gibi dizilmiş siparişi fırlatır.',
+      a: 'Hayır. Müşterileriniz linkinize tıklar, ürünleri sepete ekler ve doğrudan kendi WhatsApp uygulamaları üzerinden yapılandırılmış sipariş formunu iletir.',
     },
   ]
   const [open, setOpen] = useState(0)
@@ -1794,11 +1794,11 @@ const Pricing = () => {
         '500 Ürün Kapasitesi',
         "Excel'den 1 Dakikada Canlı Vitrin",
         '3 Seviyeli Müşteri Fiyat Listesi (Bayi / Toptan / Perakende)',
-        "Müşteriden WhatsApp'a Jilet Gibi Sipariş Listesi (Not Defteri Kaosuna Son)",
+        "Optimize WhatsApp Sipariş Formu (Yapılandırılmış B2B Sipariş Akışı)",
         '3:1 Akıllı Banner Alanı (Tasarımcı/Ajans Gerektirmez)',
         'Otomatik Kur Senkronizasyonu (USD/EUR/TRY)',
         'ekatalox.com Subdomain Adresi',
-        'SIFIR Yazılımcı Bağımlılığı (Çocuğun Bile Yapabileceği Sadelikte)',
+        'Kodsuz (No-Code) Altyapı · Sıfır Yazılımcı Bağımlılığı',
       ],
     },
     {
@@ -1832,8 +1832,8 @@ const Pricing = () => {
       features: [
         '5.000 Ürün Kapasitesi & Akıllı Stok Yönetimi',
         'Yapay Zeka Asistanı Alex: WhatsApp üzerinden Alex ile yazışarak sipariş yönetimi ve anlık sesli/yazılı raporlama.',
-        "Alex ile Akıllı Ödeme Altyapısı: PayTR/iZico bağlantısı ile WhatsApp'tan otomatik ödeme linki fırlatma ve gelen ödemeleri sisteme işleme.",
-        'Alex ile Otomatik Tahsilat: Vadesi gelen borçlar için Alex tarafından otomatik, kurumsal WhatsApp hatırlatma mesajları.',
+        "Alex ile Akıllı Ödeme Altyapısı: PayTR/iZico entegrasyonu ile WhatsApp üzerinden otomatik ödeme talimatı ve gelen ödemelerin sisteme otonom entegrasyonu.",
+        'Otonom Tahsilat ve Ödeme: Vadesi gelen borçlar için Alex tarafından otomatik kurumsal WhatsApp hatırlatma akışı ve ödeme takibi.',
         "Alex ile WhatsApp'tan Muhasebe Kaydı: Sadece yazışarak stok girişleri ve cari hesap güncellemeleri.",
         "Alex ile Anlık Stok Kontrolü: WhatsApp'tan \u201cMagsafe kılıf kaç adet kaldı?\u201d diye sorun, canlı veriyi getirsin.",
         'Saha Satış Temsilcisi (Plasiyer) Modülü & White-Label Desteği',
