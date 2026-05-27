@@ -117,3 +117,22 @@ export interface StorefrontProduct {
 export interface CartItem extends StorefrontProduct {
   quantity: number;
 }
+
+export interface StorefrontSection {
+  id: string;
+  tenant_id: string;
+  title: string;
+  display_order: number;
+  created_at: string;
+}
+
+export interface StorefrontSectionProduct {
+  id: string;
+  section_id: string;
+  product_id: string;
+  display_order: number;
+}
+
+export interface StorefrontSectionWithProducts extends StorefrontSection {
+  products: StorefrontProduct[];
+}

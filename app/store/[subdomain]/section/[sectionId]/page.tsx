@@ -5,7 +5,6 @@ import { notFound } from "next/navigation";
 import { PasswordGate } from "@/components/storefront/password-gate";
 import { StorefrontClient } from "@/components/storefront/storefront-client";
 import {
-  getStorefrontProducts,
   getStorefrontSections,
   getStorefrontTenant,
   getTenantCategories,
@@ -17,8 +16,10 @@ import {
   readStorefrontTier,
 } from "@/lib/storefront/session";
 
-export default async function StorefrontPage(props: PageProps<"/store/[subdomain]">) {
-  const { subdomain } = await props.params;
+export default async function SectionDetailPage(props: {
+  params: Promise<{ subdomain: string; sectionId: string }>;
+}) {
+  const { subdomain, sectionId } = await props.params;
   const tenant = await getStorefrontTenant(subdomain);
 
   if (!tenant) {
@@ -46,26 +47,41 @@ export default async function StorefrontPage(props: PageProps<"/store/[subdomain
     return <PasswordGate subdomain={subdomain} companyName={tenant.company_name} />;
   }
 
-  const [products, categories, storefrontSettings, sections] = await Promise.all([
-    getStorefrontProducts({
-      tenantId: tenant.id,
-      tierLevel: tierState.tierLevel,
-    }),
+  const [sections, categories, storefrontSettings] = await Promise.all([
+    getStorefrontSections(tenant.id, tierState.tierLevel),
     getTenantCategories(tenant.id),
     getTenantStorefrontSettings(tenant.id),
-    getStorefrontSections(tenant.id, tierState.tierLevel),
   ]);
-  const theme =
-    storefrontThemes[storefrontSettings.theme_key] ?? storefrontThemes.minimal;
+
+  const section = sections.find((s) => s.id === sectionId);
+
+  if (!section) {
+    notFound();
+  }
+
+  const theme = storefrontThemes[storefrontSettings.theme_key] ?? storefrontThemes.minimal;
 
   return (
     <div className={theme.page}>
+      <div className="container-shell py-4">
+        <nav className="flex items-center gap-2 text-sm text-slate-500">
+          <a
+            href={`/store/${subdomain}`}
+            className="font-medium transition hover:text-slate-900"
+          >
+            Anasayfa
+          </a>
+          <span>/</span>
+          <span className="font-semibold text-slate-900">{section.title}</span>
+        </nav>
+      </div>
+
       <StorefrontClient
         tenant={tenant}
         categories={categories}
-        products={products}
+        products={section.products}
         storefrontSettings={storefrontSettings}
-        sections={sections}
+        sections={[]}
         subdomain={subdomain}
       />
     </div>

@@ -33,6 +33,7 @@ const tenantLinks: SidebarLink[] = [
     children: [
       { href: "/products/add", label: "Ürün Ekle" },
       { href: "/products/bulk", label: "Toplu Ürün Ekleme" },
+      { href: "/products/showcase", label: "Vitrin Ürünleri" },
     ],
   },
   { href: "/categories", label: "Kategoriler", icon: FolderTree },

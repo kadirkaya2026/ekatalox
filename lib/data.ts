@@ -15,6 +15,8 @@ import type {
   PriceTierLevel,
   Product,
   StorefrontProduct,
+  StorefrontSection,
+  StorefrontSectionWithProducts,
   Tenant,
   TenantStorefrontSettings,
   TenantWithRelations,
@@ -293,4 +295,204 @@ export async function getStorefrontProducts(params: {
   }
 
   return products.map((product) => toStorefrontProduct(product, params.tierLevel));
+}
+
+export async function getTenantStorefrontSections(
+  tenantId: string,
+): Promise<StorefrontSection[]> {
+  const supabase = createSupabaseAdminClient();
+
+  if (!supabase) {
+    return [];
+  }
+
+  const { data } = await supabase
+    .from("storefront_sections")
+    .select("*")
+    .eq("tenant_id", tenantId)
+    .order("display_order", { ascending: true })
+    .order("created_at", { ascending: true });
+
+  return (data as StorefrontSection[] | null) ?? [];
+}
+
+export async function getTenantSectionProducts(sectionId: string): Promise<Product[]> {
+  const supabase = createSupabaseAdminClient();
+
+  if (!supabase) {
+    return [];
+  }
+
+  const { data } = await supabase
+    .from("storefront_section_products")
+    .select("product_id, display_order, products(*)")
+    .eq("section_id", sectionId)
+    .order("display_order", { ascending: true });
+
+  if (!data) {
+    return [];
+  }
+
+  return data
+    .map((row: { products: unknown }) => row.products)
+    .filter((p): p is Product => Boolean(p));
+}
+
+export async function getStorefrontSections(
+  tenantId: string,
+  tierLevel: PriceTierLevel,
+): Promise<StorefrontSectionWithProducts[]> {
+  const supabase = createSupabaseAdminClient();
+
+  if (!supabase) {
+    return [];
+  }
+
+  const { data: sections } = await supabase
+    .from("storefront_sections")
+    .select("*")
+    .eq("tenant_id", tenantId)
+    .order("display_order", { ascending: true })
+    .order("created_at", { ascending: true });
+
+  if (!sections || sections.length === 0) {
+    return [];
+  }
+
+  const sectionIds = (sections as StorefrontSection[]).map((s) => s.id);
+
+  const { data: sectionProductRows } = await supabase
+    .from("storefront_section_products")
+    .select("section_id, display_order, products(*)")
+    .in("section_id", sectionIds)
+    .order("display_order", { ascending: true });
+
+  const productsBySectionId = new Map<string, StorefrontProduct[]>();
+
+  for (const row of (sectionProductRows ?? []) as Array<{
+    section_id: string;
+    display_order: number;
+    products: unknown;
+  }>) {
+    if (!row.products) {
+      continue;
+    }
+    const product = row.products as Product;
+    const storefrontProduct = toStorefrontProduct(product, tierLevel);
+    const existing = productsBySectionId.get(row.section_id) ?? [];
+    existing.push(storefrontProduct);
+    productsBySectionId.set(row.section_id, existing);
+  }
+
+  return (sections as StorefrontSection[]).map((section) => ({
+    ...section,
+    products: productsBySectionId.get(section.id) ?? [],
+  }));
+}
+
+export async function createStorefrontSection(
+  tenantId: string,
+  title: string,
+): Promise<StorefrontSection | null> {
+  const supabase = createSupabaseAdminClient();
+
+  if (!supabase) {
+    return null;
+  }
+
+  const { data: existing } = await supabase
+    .from("storefront_sections")
+    .select("id")
+    .eq("tenant_id", tenantId);
+
+  if ((existing?.length ?? 0) >= 3) {
+    return null;
+  }
+
+  const { data: last } = await supabase
+    .from("storefront_sections")
+    .select("display_order")
+    .eq("tenant_id", tenantId)
+    .order("display_order", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  const { data, error } = await supabase
+    .from("storefront_sections")
+    .insert({
+      tenant_id: tenantId,
+      title: title.trim(),
+      display_order: (last?.display_order ?? 0) + 1,
+    })
+    .select("*")
+    .single();
+
+  if (error || !data) {
+    return null;
+  }
+
+  return data as StorefrontSection;
+}
+
+export async function deleteStorefrontSection(sectionId: string): Promise<boolean> {
+  const supabase = createSupabaseAdminClient();
+
+  if (!supabase) {
+    return false;
+  }
+
+  const { error } = await supabase
+    .from("storefront_sections")
+    .delete()
+    .eq("id", sectionId);
+
+  return !error;
+}
+
+export async function addProductToSection(
+  sectionId: string,
+  productId: string,
+): Promise<boolean> {
+  const supabase = createSupabaseAdminClient();
+
+  if (!supabase) {
+    return false;
+  }
+
+  const { data: last } = await supabase
+    .from("storefront_section_products")
+    .select("display_order")
+    .eq("section_id", sectionId)
+    .order("display_order", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  const { error } = await supabase
+    .from("storefront_section_products")
+    .upsert({
+      section_id: sectionId,
+      product_id: productId,
+      display_order: (last?.display_order ?? 0) + 1,
+    });
+
+  return !error;
+}
+
+export async function removeProductFromSection(
+  sectionId: string,
+  productId: string,
+): Promise<boolean> {
+  const supabase = createSupabaseAdminClient();
+
+  if (!supabase) {
+    return false;
+  }
+
+  const { error } = await supabase
+    .from("storefront_section_products")
+    .delete()
+    .eq("section_id", sectionId)
+    .eq("product_id", productId);
+
+  return !error;
 }

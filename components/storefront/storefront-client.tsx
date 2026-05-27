@@ -36,6 +36,7 @@ import type {
   CartItem,
   Category,
   StorefrontProduct,
+  StorefrontSectionWithProducts,
   Tenant,
   TenantStorefrontSettings,
 } from "@/lib/types";
@@ -218,11 +219,15 @@ export function StorefrontClient({
   categories,
   products,
   storefrontSettings,
+  sections = [],
+  subdomain,
 }: {
   tenant: Tenant;
   categories: Category[];
   products: StorefrontProduct[];
   storefrontSettings: TenantStorefrontSettings;
+  sections?: StorefrontSectionWithProducts[];
+  subdomain?: string;
 }) {
   const [cart, setCart] = useState<CartItem[]>(() => {
     if (typeof window === "undefined") {
@@ -1021,6 +1026,119 @@ export function StorefrontClient({
             </div>
           )}
         </section>
+
+        {sections.length > 0 ? (
+          <div className="mb-10 space-y-10">
+            {sections.map((section) => {
+              const visibleSectionProducts = section.products.slice(0, 8);
+              const hasMore = section.products.length > 8;
+              const sectionHref = subdomain
+                ? `/store/${subdomain}/section/${section.id}`
+                : null;
+
+              return (
+                <section key={section.id}>
+                  <div className="mb-5 flex items-end justify-between gap-4">
+                    <h2 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-[2rem]">
+                      {section.title}
+                    </h2>
+                    {hasMore && sectionHref ? (
+                      <a
+                        href={sectionHref}
+                        className="shrink-0 rounded-full border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50"
+                      >
+                        Devamı →
+                      </a>
+                    ) : null}
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4 sm:gap-5 md:grid-cols-3 xl:grid-cols-4">
+                    {visibleSectionProducts.map((product) => (
+                      <article key={product.id} className={theme.productCard}>
+                        <div className={cn(theme.productImageWrap, "p-4 sm:p-5")}>
+                          <div className="absolute left-3 right-3 top-3 z-10 flex items-start">
+                            <span className="max-w-[58%] truncate rounded-full border border-white/70 bg-white/80 px-2.5 py-0.5 text-[9px] font-semibold uppercase tracking-[0.12em] text-slate-500 backdrop-blur sm:max-w-[62%] sm:px-3 sm:py-1 sm:text-[10px]">
+                              {categoryNameMap.get(product.category_id) || "Genel"}
+                            </span>
+                          </div>
+                          {product.image_url ? (
+                            <Image
+                              src={product.image_url}
+                              alt={product.product_name}
+                              fill
+                              className="object-contain p-6 transition duration-500 group-hover:scale-[1.06]"
+                              unoptimized
+                            />
+                          ) : (
+                            <div className="flex h-full w-full items-center justify-center rounded-[1.4rem] border border-dashed border-slate-200/80 bg-white/70">
+                              <Store className="size-9 text-slate-300" />
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="flex flex-1 flex-col p-4 sm:p-5">
+                          <div className="flex-1 space-y-2">
+                            <p className={theme.productTitle}>{product.product_name}</p>
+                            <p className={theme.productMeta}>
+                              {product.sku_code
+                                ? `SKU: ${product.sku_code}`
+                                : "SKU bilgisi tanımlanmadı"}
+                            </p>
+                            {getUnitSummary(product) ? (
+                              <p className="text-xs text-slate-500">{getUnitSummary(product)}</p>
+                            ) : null}
+                          </div>
+
+                          <div className="mt-5 border-t border-slate-100/80 pt-4">
+                            <div className="space-y-3">
+                              <div className="space-y-2 sm:flex sm:items-center sm:justify-between sm:gap-3 sm:space-y-0">
+                                <p className={theme.productPrice}>
+                                  {formatCurrency(product.price, product.currency)}
+                                </p>
+                                <div className="shrink-0">
+                                  {product.is_in_stock ? (
+                                    <span className={theme.stockBadgeIn}>Stokta</span>
+                                  ) : (
+                                    <span className={theme.stockBadgeOut}>Tükendi</span>
+                                  )}
+                                </div>
+                              </div>
+                              <Button
+                                onClick={() => openAddToCartModal(product)}
+                                disabled={!product.is_in_stock}
+                                className={cn(
+                                  "h-11 w-full rounded-full border-0 shadow-none",
+                                  product.is_in_stock
+                                    ? "bg-slate-900 text-white hover:bg-slate-800"
+                                    : "bg-slate-100 text-slate-400 hover:bg-slate-100",
+                                )}
+                                variant="secondary"
+                              >
+                                <Plus className="mr-1 size-4" />
+                                Sepete Ekle
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      </article>
+                    ))}
+                  </div>
+
+                  {hasMore && sectionHref ? (
+                    <div className="mt-6 flex justify-center">
+                      <a
+                        href={sectionHref}
+                        className="rounded-full border border-slate-200 bg-white px-8 py-3 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 hover:shadow"
+                      >
+                        Tüm {section.title} Ürünlerini Gör ({section.products.length} ürün)
+                      </a>
+                    </div>
+                  ) : null}
+                </section>
+              );
+            })}
+          </div>
+        ) : null}
 
         <section id="catalog-grid" className="scroll-mt-28 pt-1">
           <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
