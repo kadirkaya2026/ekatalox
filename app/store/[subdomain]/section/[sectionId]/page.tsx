@@ -84,6 +84,7 @@ export default async function SectionDetailPage(props: {
         sections={[]}
         subdomain={subdomain}
         pageTitle={section.title}
+        homeHref={`/store/${subdomain}`}
       />
     </div>
   );

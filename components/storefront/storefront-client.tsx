@@ -222,6 +222,7 @@ export function StorefrontClient({
   sections = [],
   subdomain,
   pageTitle,
+  homeHref,
 }: {
   tenant: Tenant;
   categories: Category[];
@@ -230,6 +231,7 @@ export function StorefrontClient({
   sections?: StorefrontSectionWithProducts[];
   subdomain?: string;
   pageTitle?: string;
+  homeHref?: string;
 }) {
   const [cart, setCart] = useState<CartItem[]>(() => {
     if (typeof window === "undefined") {
@@ -775,7 +777,11 @@ export function StorefrontClient({
               >
                 {mobileMenuOpen ? <X className="size-5" /> : <Menu className="size-5" />}
               </button>
-              <div className="flex min-w-0 items-center gap-3 sm:gap-4">
+              <a
+                href={homeHref ?? "#"}
+                onClick={homeHref ? undefined : (e) => { e.preventDefault(); handleCategoryChange("all"); }}
+                className="flex min-w-0 items-center gap-3 sm:gap-4"
+              >
                 <div className="relative flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-[1.4rem] border border-slate-200 bg-white shadow-sm sm:h-16 sm:w-16 lg:h-20 lg:w-20 lg:rounded-[1.75rem]">
                   {storefrontSettings.logo_url ? (
                     <Image
@@ -794,7 +800,7 @@ export function StorefrontClient({
                     {storefrontTitle}
                   </p>
                 </div>
-              </div>
+              </a>
             </div>
 
             <div
@@ -860,18 +866,27 @@ export function StorefrontClient({
               )}
               aria-label="Ana kategoriler"
             >
-              <button
-                type="button"
-                onClick={() => handleCategoryChange("all")}
-                className={cn(
-                  "rounded-full px-4 py-2.5 text-[13px] font-semibold transition",
-                  selectedCategoryId === "all"
-                    ? "bg-slate-900 text-white"
-                    : "text-slate-700 hover:bg-slate-100",
-                )}
-              >
-                Tüm Ürünler
-              </button>
+              {homeHref ? (
+                <a
+                  href={homeHref}
+                  className="rounded-full px-4 py-2.5 text-[13px] font-semibold transition text-slate-700 hover:bg-slate-100"
+                >
+                  Tüm Ürünler
+                </a>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => handleCategoryChange("all")}
+                  className={cn(
+                    "rounded-full px-4 py-2.5 text-[13px] font-semibold transition",
+                    selectedCategoryId === "all"
+                      ? "bg-slate-900 text-white"
+                      : "text-slate-700 hover:bg-slate-100",
+                  )}
+                >
+                  Tüm Ürünler
+                </button>
+              )}
 
               {topCategories.map((category) => {
                 const isActive =
@@ -925,18 +940,27 @@ export function StorefrontClient({
 
             {mobileMenuOpen ? (
               <div className="space-y-2 border-t border-slate-100 py-3 md:hidden">
-                <button
-                  type="button"
-                  onClick={() => handleCategoryChange("all")}
-                  className={cn(
-                    "w-full rounded-2xl px-4 py-3 text-left text-sm font-semibold",
-                    selectedCategoryId === "all"
-                      ? "bg-slate-900 text-white"
-                      : "bg-slate-50 text-slate-700",
-                  )}
-                >
-                  Tüm Ürünler
-                </button>
+                {homeHref ? (
+                  <a
+                    href={homeHref}
+                    className="block w-full rounded-2xl px-4 py-3 text-left text-sm font-semibold bg-slate-50 text-slate-700"
+                  >
+                    Tüm Ürünler
+                  </a>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => handleCategoryChange("all")}
+                    className={cn(
+                      "w-full rounded-2xl px-4 py-3 text-left text-sm font-semibold",
+                      selectedCategoryId === "all"
+                        ? "bg-slate-900 text-white"
+                        : "bg-slate-50 text-slate-700",
+                    )}
+                  >
+                    Tüm Ürünler
+                  </button>
+                )}
                 {topCategories.map((category) => {
                   const isExpanded = expandedMobileCategoryId === category.id;
                   return (
