@@ -10,7 +10,7 @@ const planLabels: Record<string, string> = {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
-    const { fullName, company, email, plan } = body
+    const { fullName, company, email, phone, plan } = body
 
     if (!fullName?.trim() || !company?.trim() || !email?.trim() || !plan?.trim()) {
       return NextResponse.json({ error: 'Eksik alanlar' }, { status: 400 })
@@ -38,6 +38,7 @@ export async function POST(req: NextRequest) {
             <tr><td style="padding:10px 0;color:#555;width:130px;font-weight:bold;border-bottom:1px solid #eee;">Ad Soyad</td><td style="padding:10px 0;color:#222;border-bottom:1px solid #eee;">${fullName}</td></tr>
             <tr><td style="padding:10px 0;color:#555;font-weight:bold;border-bottom:1px solid #eee;">Şirket</td><td style="padding:10px 0;color:#222;border-bottom:1px solid #eee;">${company}</td></tr>
             <tr><td style="padding:10px 0;color:#555;font-weight:bold;border-bottom:1px solid #eee;">E-posta</td><td style="padding:10px 0;color:#222;border-bottom:1px solid #eee;">${email}</td></tr>
+            ${phone ? `<tr><td style="padding:10px 0;color:#555;font-weight:bold;border-bottom:1px solid #eee;">Telefon</td><td style="padding:10px 0;color:#222;border-bottom:1px solid #eee;">${phone}</td></tr>` : ''}
             <tr>
               <td style="padding:10px 0;color:#555;font-weight:bold;">Seçilen Plan</td>
               <td style="padding:10px 0;">

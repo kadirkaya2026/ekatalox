@@ -13,7 +13,7 @@ const plans = [
 ]
 
 const Page = () => {
-  const [form, setForm] = useState({ fullName: '', company: '', email: '', password: '', plan: 'profesyonel' })
+  const [form, setForm] = useState({ fullName: '', company: '', email: '', phone: '', password: '', plan: 'profesyonel' })
   const [submitted, setSubmitted] = useState(false)
   const [sending, setSending] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
@@ -37,7 +37,7 @@ const Page = () => {
       const res = await fetch('/api/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ fullName: form.fullName, company: form.company, email: form.email, plan: form.plan }),
+        body: JSON.stringify({ fullName: form.fullName, company: form.company, email: form.email, phone: form.phone, plan: form.plan }),
       })
       if (!res.ok) throw new Error()
       setSubmitted(true)
@@ -114,6 +114,7 @@ const Page = () => {
                     <Field label="Ad Soyad" placeholder="Ahmet Yılmaz" value={form.fullName} onChange={set('fullName')} error={errors.fullName} />
                     <Field label="Şirket Adı" placeholder="Toptan A.Ş." value={form.company} onChange={set('company')} error={errors.company} />
                     <Field label="Kurumsal E-posta" type="email" placeholder="isim@firmaniz.com" value={form.email} onChange={set('email')} error={errors.email} />
+                    <Field label="Telefon" type="tel" placeholder="+90 5XX XXX XX XX" value={form.phone} onChange={set('phone')} />
                     <Field label="Şifre" type="password" placeholder="En az 6 karakter" value={form.password} onChange={set('password')} error={errors.password} />
 
                     <div>
