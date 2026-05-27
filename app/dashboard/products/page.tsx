@@ -14,10 +14,9 @@ export default async function TenantProductsPage() {
     <div className="space-y-6">
       <Header
         eyebrow="Ürün Yönetimi"
-        title="Ürünleri masaüstünde tablo, mobilde kart görünümüyle yönetin"
-        description="Toplu işlemler, tekil ürün ekleme, düzenleme modalı, stok yönetimi ve Supabase Storage görsel yükleme bu ekranda toplanır."
+        title="Ürünler"
+        description="Ürün listesini yönetin. Tekil ürün eklemek için «Ürün Ekle», toplu içe aktarma için «Toplu Ürün Ekleme» sayfasını kullanın."
       />
-
       <ProductsPageShell
         tenant={session.tenant!}
         initialProducts={products}

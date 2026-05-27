@@ -1,19 +1,19 @@
 "use client";
 
-import { useMemo, useRef, useState, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import Image from "next/image";
 import {
   AlertTriangle,
   ArrowDown,
   ArrowUp,
   ArrowUpDown,
-  FileSpreadsheet,
+  Check,
+  ChevronDown,
   GripVertical,
   ImagePlus,
+  ListFilter,
   PencilLine,
-  Plus,
   Trash2,
-  Upload,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -24,8 +24,8 @@ import { Table, TableWrapper } from "@/components/ui/table";
 import {
   buildCategoryTree,
   flattenCategoryTree,
+  getDescendantCategoryIds,
 } from "@/lib/categories/tree";
-import { parseProductsCsv, type ParsedCsvResult } from "@/lib/csv/parse-products";
 import {
   defaultCurrencyCode,
   supportedCurrencyCodes,
@@ -130,27 +130,35 @@ export function ProductsManager({
 }) {
   const [internalProducts, setInternalProducts] = useState(initialProducts);
   const [searchTerm, setSearchTerm] = useState("");
-  const [createForm, setCreateForm] = useState<ProductFormState>(emptyForm);
   const [editForm, setEditForm] = useState<ProductFormState>(emptyForm);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Product | null>(null);
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
   const [selectedProductIds, setSelectedProductIds] = useState<string[]>([]);
-  const [csvSummary, setCsvSummary] = useState<{
-    totalRows: number;
-    errors: string[];
-    parsedHeaders: string[];
-    rows: ParsedCsvResult["rows"];
-  } | null>(null);
+  const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
+  const [categoryFilterOpen, setCategoryFilterOpen] = useState(false);
   const [draggedProductId, setDraggedProductId] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const categoryFilterRef = useRef<HTMLDivElement | null>(null);
   const products = controlledProducts ?? internalProducts;
   const syncProducts = onProductsUpdated ?? setInternalProducts;
   const categories = initialCategories;
   const categoryTree = useMemo(() => buildCategoryTree(categories), [categories]);
   const flatCategories = useMemo(() => flattenCategoryTree(categoryTree), [categoryTree]);
+  const selectedCategoryProductIds = useMemo(() => {
+    if (!selectedCategoryIds.length) {
+      return null;
+    }
+
+    const categoryIds = new Set(
+      selectedCategoryIds.flatMap((categoryId) =>
+        getDescendantCategoryIds(categories, categoryId),
+      ),
+    );
+
+    return categoryIds;
+  }, [categories, selectedCategoryIds]);
 
   const usage = useMemo(
     () => ({
@@ -175,11 +183,18 @@ export function ProductsManager({
       return left.product_name.localeCompare(right.product_name, "tr-TR");
     });
 
-    if (!normalizedSearch) {
-      return orderedProducts;
-    }
-
     return orderedProducts.filter((product) => {
+      const matchesCategory =
+        !selectedCategoryProductIds || selectedCategoryProductIds.has(product.category_id);
+
+      if (!matchesCategory) {
+        return false;
+      }
+
+      if (!normalizedSearch) {
+        return true;
+      }
+
       return (
         product.product_name.toLowerCase().includes(normalizedSearch) ||
         product.sku_code.toLowerCase().includes(normalizedSearch) ||
@@ -187,7 +202,7 @@ export function ProductsManager({
         categoryMap.get(product.category_id)?.includes(normalizedSearch)
       );
     });
-  }, [categories, products, searchTerm]);
+  }, [categories, products, searchTerm, selectedCategoryProductIds]);
 
   const categoryNameMap = useMemo(
     () => new Map(categories.map((category) => [category.id, category.name])),
@@ -202,12 +217,20 @@ export function ProductsManager({
     filteredProductIds.some((id) => selectedProductIds.includes(id)) &&
     !allFilteredSelected;
 
-  function updateCreateField<Key extends keyof ProductFormState>(
-    key: Key,
-    value: ProductFormState[Key],
-  ) {
-    setCreateForm((current) => ({ ...current, [key]: value }));
-  }
+  useEffect(() => {
+    function handlePointerDown(event: MouseEvent) {
+      if (!categoryFilterRef.current?.contains(event.target as Node)) {
+        setCategoryFilterOpen(false);
+      }
+    }
+
+    if (!categoryFilterOpen) {
+      return;
+    }
+
+    document.addEventListener("mousedown", handlePointerDown);
+    return () => document.removeEventListener("mousedown", handlePointerDown);
+  }, [categoryFilterOpen]);
 
   function updateEditField<Key extends keyof ProductFormState>(
     key: Key,
@@ -216,101 +239,9 @@ export function ProductsManager({
     setEditForm((current) => ({ ...current, [key]: value }));
   }
 
-  function handleCsvSelect(event: React.ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
-
-    if (!file) {
-      setCsvSummary(null);
-      return;
-    }
-
-    file.text().then((csvText) => {
-      const parsed = parseProductsCsv(csvText);
-      setCsvSummary({
-        totalRows: parsed.rows.length,
-        errors: parsed.errors,
-        parsedHeaders: parsed.parsedHeaders,
-        rows: parsed.rows,
-      });
-    });
-  }
-
-  function importCsv() {
-    if (!csvSummary?.rows.length) {
-      setMessage("Önce bir CSV seçin.");
-      return;
-    }
-
-    if (isLimitFull) {
-      setMessage("Paketiniz dolu. Yeni ürün eklemek için paketinizi yükseltin veya ürün silin.");
-      return;
-    }
-
-    setMessage(null);
-    startTransition(async () => {
-      const response = await fetch("/api/tenant/products/import", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          rows: csvSummary.rows,
-          parsedHeaders: csvSummary.parsedHeaders,
-        }),
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        setMessage(result.error ?? "CSV içeri aktarılamadı.");
-        return;
-      }
-
-      if (result.products) {
-        syncProducts(result.products as Product[]);
-      }
-
-      setMessage(`CSV içeri alındı. ${result.count ?? 0} satır işlendi.`);
-      setCsvSummary(null);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = "";
-      }
-    });
-  }
-
-  function createProduct(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setMessage(null);
-
-    if (isLimitFull) {
-      setMessage("Paketiniz dolu. Yeni ürün eklemek için paketinizi yükseltin veya ürün silin.");
-      return;
-    }
-
-    startTransition(async () => {
-      const response = await fetch("/api/tenant/products", {
-        method: "POST",
-        body: toFormData(createForm),
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        setMessage(result.error ?? "Ürün eklenemedi.");
-        return;
-      }
-
-      syncProducts([...products, result.product as Product]);
-      setCreateForm(emptyForm);
-      setMessage("Yeni ürün eklendi.");
-    });
-  }
-
   function openEdit(product: Product) {
     setEditingProduct(product);
     setEditForm(productToForm(product));
-  }
-
-  function downloadTemplate() {
-    window.location.assign("/api/tenant/products/export-template");
   }
 
   function updateProduct(event: React.FormEvent<HTMLFormElement>) {
@@ -389,6 +320,18 @@ export function ProductsManager({
 
       return Array.from(new Set([...current, ...filteredProductIds]));
     });
+  }
+
+  function toggleCategoryFilter(categoryId: string) {
+    setSelectedCategoryIds((current) =>
+      current.includes(categoryId)
+        ? current.filter((id) => id !== categoryId)
+        : [...current, categoryId],
+    );
+  }
+
+  function clearCategoryFilters() {
+    setSelectedCategoryIds([]);
   }
 
   function handleDeleteProduct(product: Product) {
@@ -568,194 +511,6 @@ export function ProductsManager({
         </div>
       ) : null}
 
-      <div className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
-        <Card className="p-5">
-          <div className="flex items-center gap-3">
-            <div className="rounded-xl bg-emerald-50 p-3 text-emerald-700">
-              <Plus className="size-5" />
-            </div>
-            <div>
-              <h2 className="text-lg font-semibold text-slate-900">+ Yeni Ürün</h2>
-              <p className="text-sm text-slate-600">
-                Tekil ürün ekleyin, fiyat katmanlarını ve stok durumunu tanımlayın.
-              </p>
-            </div>
-          </div>
-
-          <form onSubmit={createProduct} className="mt-5 grid gap-3">
-            <div className="grid gap-3 md:grid-cols-2">
-              <select
-                value={createForm.category_id}
-                onChange={(event) => updateCreateField("category_id", event.target.value)}
-                className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900"
-              >
-                <option value="">Kategori seçin</option>
-                {flatCategories.map((category) => (
-                  <option key={category.id} value={category.id}>
-                    {"— ".repeat(category.depth)}
-                    {category.name}
-                  </option>
-                ))}
-              </select>
-              <Input
-                placeholder="SKU kodu"
-                value={createForm.sku_code}
-                onChange={(event) => updateCreateField("sku_code", event.target.value)}
-              />
-              <Input
-                placeholder="Ürün adı"
-                value={createForm.product_name}
-                onChange={(event) => updateCreateField("product_name", event.target.value)}
-              />
-            </div>
-
-            <div className="grid gap-3 md:grid-cols-4">
-              <select
-                value={createForm.currency}
-                onChange={(event) => updateCreateField("currency", event.target.value)}
-                className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900"
-              >
-                {supportedCurrencyCodes.map((currency) => (
-                  <option key={currency} value={currency}>
-                    {currency}
-                  </option>
-                ))}
-              </select>
-              <Input
-                type="number"
-                step="0.01"
-                placeholder="Toptancı"
-                value={createForm.price_tier_1}
-                onChange={(event) => updateCreateField("price_tier_1", event.target.value)}
-              />
-              <Input
-                type="number"
-                step="0.01"
-                placeholder="Bayi"
-                value={createForm.price_tier_2}
-                onChange={(event) => updateCreateField("price_tier_2", event.target.value)}
-              />
-              <Input
-                type="number"
-                step="0.01"
-                placeholder="Telefoncu"
-                value={createForm.price_tier_3}
-                onChange={(event) => updateCreateField("price_tier_3", event.target.value)}
-              />
-            </div>
-
-            <div className="grid gap-3 md:grid-cols-2">
-              <Input
-                type="number"
-                min="1"
-                step="1"
-                placeholder="Paket adedi"
-                value={createForm.package_quantity}
-                onChange={(event) => updateCreateField("package_quantity", event.target.value)}
-              />
-              <Input
-                type="number"
-                min="1"
-                step="1"
-                placeholder="Koli adedi"
-                value={createForm.carton_quantity}
-                onChange={(event) => updateCreateField("carton_quantity", event.target.value)}
-              />
-            </div>
-
-            <label className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-5 text-sm text-slate-600">
-              <ImagePlus className="size-4 text-emerald-700" />
-              <span>
-                {createForm.image ? createForm.image.name : "Ürün fotoğrafı yükle"}
-              </span>
-              <input
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={(event) =>
-                  updateCreateField("image", event.target.files?.[0] ?? null)
-                }
-              />
-            </label>
-
-            <label className="flex items-center gap-3 rounded-xl border border-slate-100 bg-slate-50 px-4 py-3 text-sm text-slate-700">
-              <input
-                type="checkbox"
-                checked={createForm.is_in_stock}
-                onChange={(event) =>
-                  updateCreateField("is_in_stock", event.target.checked)
-                }
-              />
-              Stokta görünsün
-            </label>
-
-            <Button type="submit" disabled={pending || usage.remaining <= 0}>
-              {pending ? "Kaydediliyor..." : "Yeni ürünü kaydet"}
-            </Button>
-          </form>
-        </Card>
-
-        <Card className="p-5">
-          <div className="flex items-center gap-3">
-            <div className="rounded-xl bg-slate-100 p-3 text-slate-700">
-              <FileSpreadsheet className="size-5" />
-            </div>
-            <div>
-              <h2 className="text-lg font-semibold text-slate-900">CSV içe aktarma</h2>
-              <p className="text-sm text-slate-600">
-                Beklenen kolonlar: sku_code, product_name, image_url, currency,
-                fiyatlar, is_in_stock, package_quantity ve carton_quantity.
-              </p>
-            </div>
-          </div>
-
-          <div className="mt-5 space-y-4">
-            <Button variant="secondary" onClick={downloadTemplate}>
-              Örnek CSV İndir
-            </Button>
-
-            <label className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-6 text-sm text-slate-600">
-              <Upload className="size-4 text-emerald-700" />
-              <span>CSV dosyası seç</span>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept=".csv,text/csv"
-                className="hidden"
-                onChange={handleCsvSelect}
-              />
-            </label>
-
-            {csvSummary ? (
-              <div className="rounded-xl border border-slate-100 bg-white p-4">
-                <p className="text-sm font-semibold text-slate-900">
-                  Önizleme: {csvSummary.totalRows} satır
-                </p>
-                {csvSummary.errors.length ? (
-                  <ul className="mt-3 space-y-2 text-sm text-slate-600">
-                    {csvSummary.errors.map((error) => (
-                      <li key={error}>• {error}</li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p className="mt-2 text-sm text-emerald-700">
-                    Dosya başarılı şekilde parse edildi.
-                  </p>
-                )}
-
-                <Button
-                  className="mt-4"
-                  onClick={importCsv}
-                  disabled={pending || csvSummary.errors.length > 0 || isLimitFull}
-                >
-                  CSV&apos;yi içeri al
-                </Button>
-              </div>
-            ) : null}
-          </div>
-        </Card>
-      </div>
-
       <Card className="overflow-hidden">
         <div className="border-b border-slate-100 px-5 py-4">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
@@ -765,12 +520,12 @@ export function ProductsManager({
                 Masaüstünde tablo, mobilde kart düzeni ile hızlı yönetim.
               </p>
             </div>
-            <div className="w-full max-w-md">
-              <Input
-                placeholder="Ürün adı veya SKU ara"
-                value={searchTerm}
-                onChange={(event) => setSearchTerm(event.target.value)}
-              />
+            <div className="w-full lg:max-w-md">
+                <Input
+                  placeholder="Ürün adı veya SKU ara"
+                  value={searchTerm}
+                  onChange={(event) => setSearchTerm(event.target.value)}
+                />
             </div>
           </div>
 
@@ -829,7 +584,86 @@ export function ProductsManager({
                 <th className="px-4 py-3">Stok</th>
                 <th className="px-4 py-3">Katman 1</th>
                 <th className="px-4 py-3">Katman 2</th>
-                <th className="px-4 py-3">Katman 3</th>
+                <th className="px-4 py-3">
+                  <div className="relative inline-flex items-center gap-2" ref={categoryFilterRef}>
+                    <span>Katman 3</span>
+                    <Button
+                      variant="secondary"
+                      className="h-9 gap-2 px-3 py-2 text-xs"
+                      onClick={() => setCategoryFilterOpen((current) => !current)}
+                    >
+                      <ListFilter className="size-3.5" />
+                      {selectedCategoryIds.length
+                        ? `Kategori (${selectedCategoryIds.length})`
+                        : "Kategori"}
+                      <ChevronDown
+                        className={cn(
+                          "size-3.5 transition-transform",
+                          categoryFilterOpen && "rotate-180",
+                        )}
+                      />
+                    </Button>
+
+                    {categoryFilterOpen ? (
+                      <div className="absolute left-full top-1/2 z-20 ml-3 w-80 -translate-y-1/2 rounded-xl border border-slate-200 bg-white p-3 shadow-lg">
+                        <div className="flex items-center justify-between gap-3 border-b border-slate-100 pb-3">
+                          <div>
+                            <p className="text-sm font-semibold normal-case tracking-normal text-slate-900">
+                              Kategorilere göre filtrele
+                            </p>
+                            <p className="mt-1 text-xs normal-case tracking-normal text-slate-500">
+                              İşaretli kategorilerdeki ürünler listelenir.
+                            </p>
+                          </div>
+                          {selectedCategoryIds.length ? (
+                            <button
+                              type="button"
+                              onClick={clearCategoryFilters}
+                              className="text-xs font-semibold normal-case tracking-normal text-emerald-700 transition hover:text-emerald-800"
+                            >
+                              Temizle
+                            </button>
+                          ) : null}
+                        </div>
+
+                        {flatCategories.length ? (
+                          <div className="mt-3 max-h-72 space-y-1 overflow-y-auto pr-1">
+                            {flatCategories.map((category) => {
+                              const checked = selectedCategoryIds.includes(category.id);
+
+                              return (
+                                <label
+                                  key={category.id}
+                                  className="flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2 normal-case tracking-normal transition hover:bg-slate-50"
+                                >
+                                  <input
+                                    type="checkbox"
+                                    checked={checked}
+                                    onChange={() => toggleCategoryFilter(category.id)}
+                                    className="size-4 rounded border-slate-300 text-emerald-600"
+                                  />
+                                  <span
+                                    className="min-w-0 text-sm text-slate-700"
+                                    style={{ paddingLeft: `${category.depth * 12}px` }}
+                                  >
+                                    {category.name}
+                                  </span>
+                                  {checked ? (
+                                    <Check className="ml-auto size-4 text-emerald-600" />
+                                  ) : null}
+                                </label>
+                              );
+                            })}
+                          </div>
+                        ) : (
+                          <p className="mt-3 text-sm normal-case tracking-normal text-slate-500">
+                            Henüz kategori bulunmuyor.
+                          </p>
+                        )}
+                      </div>
+                    ) : null}
+                  </div>
+                </th>
                 <th className="px-4 py-3 text-right">Aksiyon</th>
               </tr>
             </thead>
@@ -949,10 +783,10 @@ export function ProductsManager({
         {!filteredProducts.length ? (
           <div className="border-t border-slate-100 px-5 py-8 text-center">
             <p className="text-sm font-semibold text-slate-900">
-              Aramanıza uygun ürün bulunamadı.
+              Filtrelerinize uygun ürün bulunamadı.
             </p>
             <p className="mt-1 text-sm text-slate-500">
-              Ürün adı, SKU veya para birimi ile tekrar deneyin.
+              Kategori seçimini temizleyin veya ürün adı, SKU ya da para birimi ile tekrar deneyin.
             </p>
           </div>
         ) : null}

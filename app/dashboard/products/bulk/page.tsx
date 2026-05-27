@@ -1,0 +1,29 @@
+import { Header } from "@/components/dashboard/header";
+import { BulkOperationsPanel } from "@/components/dashboard/bulk-operations-panel";
+import { CsvImportCard } from "@/components/dashboard/csv-import-card";
+import { requireTenantAdminPage } from "@/lib/auth/session";
+import { getTenantProducts } from "@/lib/data";
+
+export default async function ProductBulkPage() {
+  const session = await requireTenantAdminPage();
+  const products = await getTenantProducts(session.tenant!.id);
+  const tenant = session.tenant!;
+
+  const usage = {
+    total: products.length,
+    limit: tenant.max_product_limit,
+    remaining: Math.max(tenant.max_product_limit - products.length, 0),
+  };
+
+  return (
+    <div className="space-y-6">
+      <Header
+        eyebrow="Ürün Yönetimi"
+        title="Toplu Ürün Ekleme"
+        description="Excel/CSV ile yüzlerce ürünü tek seferde ekleyin, toplu resim yükleyin veya basit CSV içe aktarma yapın."
+      />
+      <BulkOperationsPanel tenant={tenant} usage={usage} />
+      <CsvImportCard tenant={tenant} />
+    </div>
+  );
+}

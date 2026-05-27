@@ -1,0 +1,275 @@
+"use client";
+
+import { useMemo, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
+import { AlertTriangle, ImagePlus, Plus } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { buildCategoryTree, flattenCategoryTree } from "@/lib/categories/tree";
+import {
+  defaultCurrencyCode,
+  supportedCurrencyCodes,
+} from "@/lib/products/constants";
+import type { Category, Product, Tenant } from "@/lib/types";
+
+interface ProductFormState {
+  category_id: string;
+  sku_code: string;
+  product_name: string;
+  currency: string;
+  price_tier_1: string;
+  price_tier_2: string;
+  price_tier_3: string;
+  is_in_stock: boolean;
+  package_quantity: string;
+  carton_quantity: string;
+  image: File | null;
+}
+
+const emptyForm: ProductFormState = {
+  category_id: "",
+  sku_code: "",
+  product_name: "",
+  currency: defaultCurrencyCode,
+  price_tier_1: "",
+  price_tier_2: "",
+  price_tier_3: "",
+  is_in_stock: true,
+  package_quantity: "",
+  carton_quantity: "",
+  image: null,
+};
+
+const PACKAGE_UPGRADE_PHONE = "905354172510";
+
+function buildPackageUpgradeHref(companyName: string) {
+  const message = `Merhaba, paketimi yükseltmek istiyorum. Firma: ${companyName}`;
+  return `https://wa.me/${PACKAGE_UPGRADE_PHONE}?text=${encodeURIComponent(message)}`;
+}
+
+function toFormData(form: ProductFormState) {
+  const formData = new FormData();
+  formData.set("category_id", form.category_id);
+  formData.set("sku_code", form.sku_code);
+  formData.set("product_name", form.product_name);
+  formData.set("currency", form.currency);
+  formData.set("price_tier_1", form.price_tier_1 || "0");
+  formData.set("price_tier_2", form.price_tier_2 || "0");
+  formData.set("price_tier_3", form.price_tier_3 || "0");
+  formData.set("is_in_stock", String(form.is_in_stock));
+  formData.set("package_quantity", form.package_quantity.trim());
+  formData.set("carton_quantity", form.carton_quantity.trim());
+  if (form.image) {
+    formData.set("image", form.image);
+  }
+  return formData;
+}
+
+export function ProductAddForm({
+  tenant,
+  initialCategories,
+}: {
+  tenant: Tenant;
+  initialCategories: Category[];
+}) {
+  const router = useRouter();
+  const [form, setForm] = useState<ProductFormState>(emptyForm);
+  const [message, setMessage] = useState<string | null>(null);
+  const [pending, startTransition] = useTransition();
+
+  const categoryTree = useMemo(() => buildCategoryTree(initialCategories), [initialCategories]);
+  const flatCategories = useMemo(() => flattenCategoryTree(categoryTree), [categoryTree]);
+
+  const productCount = 0;
+  const isLimitFull = tenant.max_product_limit <= productCount;
+
+  function updateField<Key extends keyof ProductFormState>(
+    key: Key,
+    value: ProductFormState[Key],
+  ) {
+    setForm((current) => ({ ...current, [key]: value }));
+  }
+
+  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setMessage(null);
+
+    startTransition(async () => {
+      const response = await fetch("/api/tenant/products", {
+        method: "POST",
+        body: toFormData(form),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        setMessage(result.error ?? "Ürün eklenemedi.");
+        return;
+      }
+
+      router.push("/dashboard/products");
+    });
+  }
+
+  return (
+    <div className="space-y-6">
+      {isLimitFull ? (
+        <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-4">
+          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            <div className="flex items-start gap-3">
+              <AlertTriangle className="mt-0.5 size-5 shrink-0 text-amber-700" />
+              <div>
+                <p className="text-sm font-semibold text-amber-900">
+                  Paketiniz doldu, yeni ürün ekleyemezsiniz.
+                </p>
+                <p className="mt-1 text-sm text-amber-800">
+                  Limitiniz {tenant.max_product_limit} ürüne ulaştı. Paket yükseltebilir
+                  veya ürün silerek yeniden yer açabilirsiniz.
+                </p>
+              </div>
+            </div>
+            <Button asChild href={buildPackageUpgradeHref(tenant.company_name)}>
+              Paketimi Yükseltmek İstiyorum
+            </Button>
+          </div>
+        </div>
+      ) : null}
+
+      {message ? (
+        <div className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-800">
+          {message}
+        </div>
+      ) : null}
+
+      <Card className="p-5">
+        <div className="flex items-center gap-3">
+          <div className="rounded-xl bg-emerald-50 p-3 text-emerald-700">
+            <Plus className="size-5" />
+          </div>
+          <div>
+            <h2 className="text-lg font-semibold text-slate-900">Yeni Ürün</h2>
+            <p className="text-sm text-slate-600">
+              Tekil ürün ekleyin, fiyat katmanlarını ve stok durumunu tanımlayın.
+            </p>
+          </div>
+        </div>
+
+        <form onSubmit={handleSubmit} className="mt-5 grid gap-3">
+          <div className="grid gap-3 md:grid-cols-2">
+            <select
+              value={form.category_id}
+              onChange={(event) => updateField("category_id", event.target.value)}
+              className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900"
+            >
+              <option value="">Kategori seçin</option>
+              {flatCategories.map((category) => (
+                <option key={category.id} value={category.id}>
+                  {"— ".repeat(category.depth)}
+                  {category.name}
+                </option>
+              ))}
+            </select>
+            <Input
+              placeholder="SKU kodu"
+              value={form.sku_code}
+              onChange={(event) => updateField("sku_code", event.target.value)}
+            />
+            <Input
+              placeholder="Ürün adı"
+              value={form.product_name}
+              onChange={(event) => updateField("product_name", event.target.value)}
+            />
+          </div>
+
+          <div className="grid gap-3 md:grid-cols-4">
+            <select
+              value={form.currency}
+              onChange={(event) => updateField("currency", event.target.value)}
+              className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900"
+            >
+              {supportedCurrencyCodes.map((currency) => (
+                <option key={currency} value={currency}>
+                  {currency}
+                </option>
+              ))}
+            </select>
+            <Input
+              type="number"
+              step="0.01"
+              placeholder="Toptancı"
+              value={form.price_tier_1}
+              onChange={(event) => updateField("price_tier_1", event.target.value)}
+            />
+            <Input
+              type="number"
+              step="0.01"
+              placeholder="Bayi"
+              value={form.price_tier_2}
+              onChange={(event) => updateField("price_tier_2", event.target.value)}
+            />
+            <Input
+              type="number"
+              step="0.01"
+              placeholder="Telefoncu"
+              value={form.price_tier_3}
+              onChange={(event) => updateField("price_tier_3", event.target.value)}
+            />
+          </div>
+
+          <div className="grid gap-3 md:grid-cols-2">
+            <Input
+              type="number"
+              min="1"
+              step="1"
+              placeholder="Paket adedi"
+              value={form.package_quantity}
+              onChange={(event) => updateField("package_quantity", event.target.value)}
+            />
+            <Input
+              type="number"
+              min="1"
+              step="1"
+              placeholder="Koli adedi"
+              value={form.carton_quantity}
+              onChange={(event) => updateField("carton_quantity", event.target.value)}
+            />
+          </div>
+
+          <label className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-5 text-sm text-slate-600">
+            <ImagePlus className="size-4 text-emerald-700" />
+            <span>{form.image ? form.image.name : "Ürün fotoğrafı yükle"}</span>
+            <input
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(event) => updateField("image", event.target.files?.[0] ?? null)}
+            />
+          </label>
+
+          <label className="flex items-center gap-3 rounded-xl border border-slate-100 bg-slate-50 px-4 py-3 text-sm text-slate-700">
+            <input
+              type="checkbox"
+              checked={form.is_in_stock}
+              onChange={(event) => updateField("is_in_stock", event.target.checked)}
+            />
+            Stokta görünsün
+          </label>
+
+          <div className="flex gap-3">
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => router.push("/dashboard/products")}
+            >
+              Geri dön
+            </Button>
+            <Button type="submit" disabled={pending || isLimitFull}>
+              {pending ? "Kaydediliyor..." : "Yeni ürünü kaydet"}
+            </Button>
+          </div>
+        </form>
+      </Card>
+    </div>
+  );
+}
