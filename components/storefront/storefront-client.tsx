@@ -516,16 +516,7 @@ export function StorefrontClient({
                     </span>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  {cart.length ? (
-                    <button
-                      type="button"
-                      onClick={clearCart}
-                      className="rounded-full border border-slate-200 bg-white px-3.5 py-2 text-xs font-bold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
-                    >
-                      Sepeti Boşalt
-                    </button>
-                  ) : null}
+                <div className="flex items-center">
                   <button
                     type="button"
                     onClick={() => setIsCartOpen(false)}
@@ -597,7 +588,7 @@ export function StorefrontClient({
                       </div>
 
                       <div className="mt-4 flex items-center justify-between gap-3 border-t border-slate-200/80 pt-4">
-                        <div className="flex items-center rounded-full border border-slate-200 bg-white p-1 shadow-sm">
+                        <div className="flex items-center rounded-full border border-slate-200 bg-white p-0.5 sm:p-1 shadow-sm">
                           <button
                             type="button"
                             onClick={() =>
@@ -605,7 +596,7 @@ export function StorefrontClient({
                                 updateQuantity(current, item.id, item.quantity - 1),
                               )
                             }
-                            className="flex size-9 items-center justify-center rounded-full text-slate-700 transition hover:bg-slate-100"
+                            className="flex size-8 sm:size-9 items-center justify-center rounded-full text-slate-700 transition hover:bg-slate-100"
                             aria-label="Adedi azalt"
                           >
                             <Minus className="size-4" />
@@ -618,7 +609,7 @@ export function StorefrontClient({
                             onChange={(event) =>
                               updateCartItemQuantity(item.id, event.target.value)
                             }
-                            className="h-9 w-14 bg-transparent text-center text-sm font-bold text-slate-900 outline-none"
+                            className="h-8 sm:h-9 w-10 sm:w-14 bg-transparent text-center text-sm font-bold text-slate-900 outline-none"
                             aria-label="Ürün adedi"
                           />
                           <button
@@ -628,14 +619,14 @@ export function StorefrontClient({
                                 updateQuantity(current, item.id, item.quantity + 1),
                               )
                             }
-                            className="flex size-9 items-center justify-center rounded-full text-slate-700 transition hover:bg-slate-100"
+                            className="flex size-8 sm:size-9 items-center justify-center rounded-full text-slate-700 transition hover:bg-slate-100"
                             aria-label="Adedi artır"
                           >
                             <Plus className="size-4" />
                           </button>
                         </div>
 
-                        <div className="text-right">
+                        <div className="shrink-0 text-right">
                           <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">
                             Ara Toplam
                           </p>
@@ -664,7 +655,7 @@ export function StorefrontClient({
             </div>
 
             <div className="shrink-0 border-t border-slate-100 bg-[linear-gradient(180deg,#ffffff_0%,#f8fafc_100%)] px-4 py-4 sm:px-5 lg:px-6 lg:py-5">
-              <div className="rounded-[1.5rem] border border-slate-200/80 bg-white p-3 shadow-[0_14px_40px_rgba(15,23,42,0.06)] sm:rounded-[1.75rem] sm:p-4">
+              <div className="rounded-[1.5rem] border border-slate-200/80 bg-white p-2.5 sm:p-3 lg:p-4 shadow-[0_14px_40px_rgba(15,23,42,0.06)] sm:rounded-[1.75rem]">
                 <div className="flex items-center justify-between gap-3">
                   <div>
                     <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">
@@ -682,7 +673,7 @@ export function StorefrontClient({
                 <button
                   type="button"
                   onClick={() => setIsMobileOrderNoteOpen((current) => !current)}
-                  className="mt-3 flex w-full items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-left md:hidden"
+                  className="mt-2 flex w-full items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2 sm:py-3 text-left md:hidden"
                 >
                   <span className="text-sm font-semibold text-slate-700">
                     Sipariş notu ekle
@@ -700,12 +691,12 @@ export function StorefrontClient({
                   value={note}
                   onChange={(event) => setNote(event.target.value)}
                   className={cn(
-                    "mt-4 rounded-[1.25rem] border-slate-200 bg-slate-50/70",
-                    isMobileOrderNoteOpen ? "block min-h-20" : "hidden md:block md:min-h-24",
+                    "mt-2 sm:mt-4 rounded-[1.25rem] border-slate-200 bg-slate-50/70 text-sm",
+                    isMobileOrderNoteOpen ? "block min-h-[3.25rem] sm:min-h-20" : "hidden md:block md:min-h-24",
                   )}
                 />
 
-                <div className="mt-3 rounded-[1.35rem] bg-slate-950 p-3 text-white shadow-[0_18px_48px_rgba(15,23,42,0.24)] sm:mt-4 sm:rounded-[1.5rem] sm:p-4">
+                <div className="mt-3 rounded-[1.35rem] bg-slate-950 p-3.5 text-white shadow-[0_18px_48px_rgba(15,23,42,0.24)] sm:mt-4 sm:rounded-[1.5rem] sm:p-4">
                   <div className="flex items-start justify-between gap-3">
                     <div>
                       <p className="text-[11px] font-medium uppercase tracking-[0.22em] text-slate-400">
@@ -715,17 +706,17 @@ export function StorefrontClient({
                         {cartItemCount} ürün için sipariş özeti
                       </p>
                     </div>
-                    <span className="rounded-full bg-white/10 px-3 py-1 text-[11px] font-semibold text-white/80">
+                    <span className="shrink-0 rounded-full bg-white/10 px-3 py-1 text-[11px] font-semibold text-white/80">
                       Hazır
                     </span>
                   </div>
 
-                  <div className="mt-4 space-y-2">
+                  <div className="mt-3 sm:mt-4 space-y-2">
                     {cartTotalEntries.length ? (
                       cartTotalEntries.map(({ currency, total }) => (
                         <div
                           key={currency}
-                          className="flex items-center justify-between gap-3 rounded-full bg-white/5 px-4 py-2.5 sm:py-3"
+                          className="flex items-center justify-between gap-2 sm:gap-3 rounded-full bg-white/5 px-3 sm:px-4 py-2 sm:py-3"
                         >
                           <p className="text-sm font-semibold text-slate-300">{currency}</p>
                           <p className="text-lg font-bold tracking-tight text-white">
@@ -734,7 +725,7 @@ export function StorefrontClient({
                         </div>
                       ))
                     ) : (
-                      <div className="flex items-center justify-between gap-3 rounded-full bg-white/5 px-4 py-2.5 sm:py-3">
+                      <div className="flex items-center justify-between gap-2 sm:gap-3 rounded-full bg-white/5 px-3 sm:px-4 py-2 sm:py-3">
                         <p className="text-sm font-semibold text-slate-300">{cartCurrency}</p>
                         <p className="text-lg font-bold tracking-tight text-white">
                           {formatCurrency(cartTotal, cartCurrency)}
@@ -755,6 +746,15 @@ export function StorefrontClient({
                 >
                   <span>WhatsApp ile Siparişi Tamamla</span>
                 </Button>
+                {cart.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={clearCart}
+                    className="mt-2 w-full text-center text-[11px] font-medium text-slate-400 transition hover:text-rose-500"
+                  >
+                    Sepeti Boşalt
+                  </button>
+                )}
               </div>
             </div>
           </div>
