@@ -1,0 +1,1 @@
+export { default } from "@/emergent-homepage/app/hakkimizda/page";

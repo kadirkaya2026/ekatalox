@@ -2187,7 +2187,7 @@ const Footer = () => (
             Toptancılar ve distribütörler için yeni nesil B2B vitrin platformu. Excel'den canlı dijital kataloğa.
           </p>
           <div className="mt-6 flex gap-3">
-            <Link href="/kayit" className="px-4 py-2 rounded-full glass text-xs text-white hover:bg-white/10 transition-colors">Workspace Giriş</Link>
+            <Link href="/login" className="px-4 py-2 rounded-full glass text-xs text-white hover:bg-white/10 transition-colors">Workspace Giriş</Link>
             <Link href="/kayit" className="px-4 py-2 rounded-full bg-white text-black text-xs font-medium hover:scale-105 transition-transform">Ücretsiz Başla</Link>
           </div>
         </div>
@@ -2244,7 +2244,7 @@ const Navbar = () => (
           <Link href="/iletisim" className="hover:text-white transition-colors">İletişim</Link>
         </div>
         <div className="flex items-center gap-3">
-          <Link href="/kayit" className="hidden sm:inline text-sm text-slate-300 hover:text-white">Giriş</Link>
+          <Link href="/login" className="hidden sm:inline text-sm text-slate-300 hover:text-white">Giriş</Link>
           <Link href="/kayit" className="px-4 py-1.5 rounded-full bg-white text-black text-sm font-medium hover:scale-105 transition-transform">Başla</Link>
         </div>
       </div>
