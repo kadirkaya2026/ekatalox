@@ -11,3 +11,10 @@ export function buildTenantBrandingPath(params: {
 }) {
   return `${params.tenantId}/branding/logo-${sanitizeFileName(params.fileName)}`;
 }
+
+export function buildTenantFaviconPath(params: {
+  tenantId: string;
+  fileName: string;
+}) {
+  return `${params.tenantId}/branding/favicon-${sanitizeFileName(params.fileName)}`;
+}

@@ -27,7 +27,7 @@ export async function PATCH(request: Request) {
     const { data } = await supabase
       .from("tenant_storefront_settings")
       .select(
-        "tenant_id, theme_key, logo_url, storefront_title, storefront_description, hero_heading, hero_cta_label, banner_items",
+        "tenant_id, theme_key, logo_url, storefront_title, storefront_description, banner_items, site_tab_title, site_favicon_url",
       )
       .eq("tenant_id", session.tenant!.id)
       .maybeSingle();
@@ -41,14 +41,14 @@ export async function PATCH(request: Request) {
   }
 
   const parsed = storefrontSettingsSchema.safeParse({
-    whatsapp_number: body.whatsapp_number,
+    whatsapp_number: body.whatsapp_number ?? session.tenant!.whatsapp_number,
     storefront_title: body.storefront_title ?? existingSettings.storefront_title,
     storefront_description:
       body.storefront_description ?? existingSettings.storefront_description,
-    hero_heading: body.hero_heading ?? existingSettings.hero_heading,
-    hero_cta_label: body.hero_cta_label ?? existingSettings.hero_cta_label,
     banner_items: body.banner_items ?? existingSettings.banner_items,
     theme_key: body.theme_key ?? existingSettings.theme_key,
+    site_tab_title: body.site_tab_title ?? existingSettings.site_tab_title,
+    site_favicon_url: body.site_favicon_url ?? existingSettings.site_favicon_url,
   });
 
   if (!parsed.success) {
@@ -77,9 +77,9 @@ export async function PATCH(request: Request) {
         logo_url: null,
         storefront_title: parsed.data.storefront_title,
         storefront_description: parsed.data.storefront_description,
-        hero_heading: parsed.data.hero_heading,
-        hero_cta_label: parsed.data.hero_cta_label,
         banner_items: parsed.data.banner_items,
+        site_tab_title: parsed.data.site_tab_title,
+        site_favicon_url: parsed.data.site_favicon_url,
       },
     });
   }
@@ -113,9 +113,9 @@ export async function PATCH(request: Request) {
     theme_key: parsed.data.theme_key,
     storefront_title: parsed.data.storefront_title,
     storefront_description: parsed.data.storefront_description,
-    hero_heading: parsed.data.hero_heading,
-    hero_cta_label: parsed.data.hero_cta_label,
     banner_items: parsed.data.banner_items,
+    site_tab_title: parsed.data.site_tab_title,
+    site_favicon_url: parsed.data.site_favicon_url,
   };
 
   const { data: storefrontSettings, error: storefrontError } = await supabase

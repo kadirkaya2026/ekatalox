@@ -46,6 +46,8 @@ export function getDefaultTenantStorefrontSettings(
     hero_heading: null,
     hero_cta_label: null,
     banner_items: [],
+    site_tab_title: null,
+    site_favicon_url: null,
     created_at: now,
     updated_at: now,
   };

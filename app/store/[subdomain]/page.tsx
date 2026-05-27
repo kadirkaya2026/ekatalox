@@ -1,6 +1,7 @@
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { PasswordGate } from "@/components/storefront/password-gate";
 import { StorefrontClient } from "@/components/storefront/storefront-client";
@@ -16,6 +17,28 @@ import {
   isStorefrontTierStateValid,
   readStorefrontTier,
 } from "@/lib/storefront/session";
+
+export async function generateMetadata(
+  props: PageProps<"/store/[subdomain]">,
+): Promise<Metadata> {
+  const { subdomain } = await props.params;
+  const tenant = await getStorefrontTenant(subdomain);
+
+  if (!tenant) {
+    return {};
+  }
+
+  const settings = await getTenantStorefrontSettings(tenant.id);
+  const title =
+    settings.site_tab_title ?? settings.storefront_title ?? tenant.company_name;
+
+  return {
+    title,
+    icons: settings.site_favicon_url
+      ? { icon: settings.site_favicon_url }
+      : undefined,
+  };
+}
 
 export default async function StorefrontPage(props: PageProps<"/store/[subdomain]">) {
   const { subdomain } = await props.params;

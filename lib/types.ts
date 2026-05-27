@@ -86,6 +86,8 @@ export interface TenantStorefrontSettings {
   hero_heading: string | null;
   hero_cta_label: string | null;
   banner_items: BannerItem[];
+  site_tab_title: string | null;
+  site_favicon_url: string | null;
   created_at: string;
   updated_at: string;
 }

@@ -4,14 +4,14 @@ import { shouldAllowDemoFallback } from "@/lib/env";
 import { revalidateStorefrontCache } from "@/lib/storefront/cache";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import {
-  buildTenantBrandingPath,
+  buildTenantFaviconPath,
   STOREFRONT_BRANDING_BUCKET,
 } from "@/lib/storage/branding";
 import { getStorageObjectPathFromPublicUrl } from "@/lib/storage/storage-helpers";
 import { ensureTenantAdminResponse } from "@/lib/tenancy/guards";
 import {
-  allowedLogoMimeTypes,
-  maxLogoFileSizeBytes,
+  allowedFaviconMimeTypes,
+  maxFaviconFileSizeBytes,
 } from "@/lib/validators/storefront-settings";
 
 export async function POST(request: Request) {
@@ -22,22 +22,22 @@ export async function POST(request: Request) {
 
   const session = await getSessionContext();
   const formData = await request.formData();
-  const logo = formData.get("logo");
+  const favicon = formData.get("favicon");
 
-  if (!(logo instanceof File)) {
-    return NextResponse.json({ error: "Logo dosyası zorunludur." }, { status: 400 });
+  if (!(favicon instanceof File)) {
+    return NextResponse.json({ error: "Favicon dosyası zorunludur." }, { status: 400 });
   }
 
-  if (!allowedLogoMimeTypes.includes(logo.type as (typeof allowedLogoMimeTypes)[number])) {
+  if (!allowedFaviconMimeTypes.includes(favicon.type as (typeof allowedFaviconMimeTypes)[number])) {
     return NextResponse.json(
-      { error: "Logo yalnız PNG, JPEG veya WEBP olabilir." },
+      { error: "Favicon yalnız PNG, JPEG, WEBP veya ICO olabilir." },
       { status: 400 },
     );
   }
 
-  if (logo.size > maxLogoFileSizeBytes) {
+  if (favicon.size > maxFaviconFileSizeBytes) {
     return NextResponse.json(
-      { error: "Logo boyutu en fazla 1MB olabilir." },
+      { error: "Favicon boyutu en fazla 512KB olabilir." },
       { status: 400 },
     );
   }
@@ -53,26 +53,28 @@ export async function POST(request: Request) {
     }
 
     return NextResponse.json({
-      logo_url: `https://example.com/${session.tenant!.id}/branding/${logo.name}`,
+      storefrontSettings: {
+        site_favicon_url: `https://example.com/${session.tenant!.id}/branding/favicon-${favicon.name}`,
+      },
     });
   }
 
   const { data: existingSettings } = await supabase
     .from("tenant_storefront_settings")
-    .select("logo_url, theme_key, storefront_title, storefront_description, banner_items, site_tab_title, site_favicon_url")
+    .select("site_favicon_url, theme_key, logo_url, storefront_title, storefront_description, banner_items, site_tab_title")
     .eq("tenant_id", session.tenant!.id)
     .maybeSingle();
 
-  const filePath = buildTenantBrandingPath({
+  const filePath = buildTenantFaviconPath({
     tenantId: session.tenant!.id,
-    fileName: logo.name,
+    fileName: favicon.name,
   });
 
   const { error: uploadError } = await supabase.storage
     .from(STOREFRONT_BRANDING_BUCKET)
-    .upload(filePath, logo, {
+    .upload(filePath, favicon, {
       upsert: true,
-      contentType: logo.type,
+      contentType: favicon.type,
     });
 
   if (uploadError) {
@@ -89,12 +91,12 @@ export async function POST(request: Request) {
       {
         tenant_id: session.tenant!.id,
         theme_key: existingSettings?.theme_key ?? "minimal",
+        logo_url: existingSettings?.logo_url ?? null,
         storefront_title: existingSettings?.storefront_title ?? null,
         storefront_description: existingSettings?.storefront_description ?? null,
         banner_items: existingSettings?.banner_items ?? [],
         site_tab_title: existingSettings?.site_tab_title ?? null,
-        site_favicon_url: existingSettings?.site_favicon_url ?? null,
-        logo_url: publicUrlData.publicUrl,
+        site_favicon_url: publicUrlData.publicUrl,
       },
       { onConflict: "tenant_id" },
     )
@@ -106,13 +108,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: storefrontError.message }, { status: 400 });
   }
 
-  const oldLogoPath = getStorageObjectPathFromPublicUrl(
-    existingSettings?.logo_url ?? null,
+  const oldFaviconPath = getStorageObjectPathFromPublicUrl(
+    existingSettings?.site_favicon_url ?? null,
     STOREFRONT_BRANDING_BUCKET,
   );
 
-  if (oldLogoPath && oldLogoPath !== filePath) {
-    await supabase.storage.from(STOREFRONT_BRANDING_BUCKET).remove([oldLogoPath]);
+  if (oldFaviconPath && oldFaviconPath !== filePath) {
+    await supabase.storage.from(STOREFRONT_BRANDING_BUCKET).remove([oldFaviconPath]);
   }
 
   revalidateStorefrontCache({

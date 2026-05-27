@@ -1,7 +1,6 @@
 import { Header } from "@/components/dashboard/header";
 import { TenantSettingsForm } from "@/components/dashboard/tenant-settings-form";
 import { requireTenantAdminPage } from "@/lib/auth/session";
-import { getTenantStorefrontSettings } from "@/lib/data";
 
 export default async function TenantSettingsPage(
   props: PageProps<"/dashboard/settings">,
@@ -9,7 +8,6 @@ export default async function TenantSettingsPage(
   const session = await requireTenantAdminPage();
   const searchParams = await props.searchParams;
   const forcePasswordChange = searchParams.forcePasswordChange === "1";
-  const storefrontSettings = await getTenantStorefrontSettings(session.tenant!.id);
 
   return (
     <div className="space-y-6">
@@ -22,7 +20,6 @@ export default async function TenantSettingsPage(
       <TenantSettingsForm
         tenant={session.tenant!}
         profile={session.profile!}
-        initialStorefrontSettings={storefrontSettings}
         forcePasswordChange={forcePasswordChange}
       />
     </div>

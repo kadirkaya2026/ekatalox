@@ -38,7 +38,16 @@ const tenantLinks: SidebarLink[] = [
   },
   { href: "/categories", label: "Kategoriler", icon: FolderTree },
   { href: "/access-codes", label: "Şifreler", icon: KeyRound },
-  { href: "/settings", label: "Ayarlar", icon: Settings },
+  {
+    href: "/settings",
+    label: "Ayarlar",
+    icon: Settings,
+    children: [
+      { href: "/settings/theme", label: "Tema" },
+      { href: "/settings/banner", label: "Banner" },
+      { href: "/settings/site", label: "Site Kimliği" },
+    ],
+  },
 ];
 
 const adminLinks: SidebarLink[] = [

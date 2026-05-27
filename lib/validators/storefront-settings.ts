@@ -70,25 +70,19 @@ export const storefrontSettingsSchema = z.object({
     .nullable()
     .optional()
     .transform((value) => value || null),
-  hero_heading: z
-    .string()
-    .trim()
-    .max(120, "Hero başlığı en fazla 120 karakter olabilir.")
-    .nullable()
-    .optional()
-    .transform((value) => value || null),
-  hero_cta_label: z
-    .string()
-    .trim()
-    .max(40, "Buton yazısı en fazla 40 karakter olabilir.")
-    .nullable()
-    .optional()
-    .transform((value) => value || null),
   banner_items: z
     .array(bannerItemSchema)
     .max(6, "En fazla 6 banner ekleyebilirsiniz.")
     .default([]),
   theme_key: storefrontThemeKeySchema,
+  site_tab_title: z
+    .string()
+    .trim()
+    .max(80, "Sekme başlığı en fazla 80 karakter olabilir.")
+    .nullable()
+    .optional()
+    .transform((value) => value || null),
+  site_favicon_url: optionalUrlSchema,
 });
 
 export const allowedLogoMimeTypes = [
@@ -108,3 +102,13 @@ export const allowedBannerMimeTypes = [
 export const maxBannerFileSizeBytes = 2 * 1024 * 1024;
 export const requiredBannerWidth = 1200;
 export const requiredBannerHeight = 400;
+
+export const allowedFaviconMimeTypes = [
+  "image/png",
+  "image/jpeg",
+  "image/webp",
+  "image/x-icon",
+  "image/vnd.microsoft.icon",
+] as const;
+
+export const maxFaviconFileSizeBytes = 512 * 1024;
