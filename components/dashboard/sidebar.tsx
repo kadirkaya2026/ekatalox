@@ -9,6 +9,7 @@ import {
   LayoutDashboard,
   Settings,
 } from "lucide-react";
+import { EkataloxLogo } from "@/components/brand/ekatalox-logo";
 import { cn } from "@/lib/utils";
 
 interface SidebarLink {
@@ -44,9 +45,7 @@ export function Sidebar({
   return (
     <aside className="flex h-full w-full flex-col bg-slate-900 text-white md:sticky md:top-0 md:h-screen">
       <div className="border-b border-slate-800 px-6 py-6">
-        <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">
-          eKatalox
-        </p>
+        <EkataloxLogo className="h-8 w-[148px]" priority />
         <h2 className="mt-3 text-xl font-semibold">{title}</h2>
         <p className="mt-1 text-sm text-slate-400">{subtitle}</p>
       </div>

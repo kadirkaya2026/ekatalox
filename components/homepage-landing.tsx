@@ -29,6 +29,7 @@ import {
   Upload,
   Zap,
 } from "lucide-react";
+import { EkataloxLogo } from "@/components/brand/ekatalox-logo";
 
 type SimulatorState = "idle" | "processing" | "ready";
 type CategoryId = "hoparlor" | "sarj" | "kablo" | "powerbank";
@@ -213,10 +214,7 @@ function LandingNavbar() {
       <div className="border-b border-white/5 bg-[#0B0F19]/70 backdrop-blur-xl">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6">
           <a href="#top" className="flex items-center gap-2">
-            <div className="h-8 w-8 rounded-xl bg-gradient-to-br from-[#00D2FF] to-[#7928CA]" />
-            <span className="text-lg font-semibold tracking-tight text-white">
-              eKatalox
-            </span>
+            <EkataloxLogo className="h-8 w-[148px]" priority />
           </a>
 
           <div className="hidden items-center gap-8 text-sm text-slate-300 md:flex">
@@ -1745,10 +1743,7 @@ function LandingFooter() {
         <div className="grid grid-cols-2 gap-10 md:grid-cols-5">
           <div className="col-span-2">
             <div className="flex items-center gap-2">
-              <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-[#00D2FF] to-[#7928CA]" />
-              <span className="text-xl font-semibold tracking-tight text-white">
-                eKatalox
-              </span>
+              <EkataloxLogo className="h-10 w-[180px]" />
             </div>
             <p className="mt-4 max-w-xs text-sm text-slate-400">
               Toptancılar ve distribütörler için Apple tarzı, simülatörlü ve
