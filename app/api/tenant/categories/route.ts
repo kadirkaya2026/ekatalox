@@ -88,6 +88,50 @@ export async function POST(request: Request) {
   return NextResponse.json({ category: data });
 }
 
+export async function PATCH(request: Request) {
+  const guard = await ensureTenantAdminResponse();
+  if (guard) {
+    return guard;
+  }
+
+  const session = await getSessionContext();
+  const { id, name } = await request.json();
+
+  if (!id || !name?.trim()) {
+    return NextResponse.json(
+      { error: "Kategori id ve yeni isim gereklidir." },
+      { status: 400 },
+    );
+  }
+
+  const supabase = createSupabaseAdminClient();
+
+  if (!supabase) {
+    if (!shouldAllowDemoFallback()) {
+      return NextResponse.json(
+        { error: "Sunucu yapılandırması eksik." },
+        { status: 500 },
+      );
+    }
+
+    return NextResponse.json({ success: true });
+  }
+
+  const { data, error } = await supabase
+    .from("categories")
+    .update({ name: name.trim() })
+    .eq("id", id)
+    .eq("tenant_id", session.tenant!.id)
+    .select("*")
+    .single();
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 400 });
+  }
+
+  return NextResponse.json({ category: data });
+}
+
 export async function DELETE(request: Request) {
   const guard = await ensureTenantAdminResponse();
   if (guard) {
