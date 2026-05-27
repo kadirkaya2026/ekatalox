@@ -39,3 +39,11 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# local exports / reports
+lucatech-*.json
+lucatech-*.xlsx
+lucatech-*.mjs
+
+# sub-project folders
+emergent-homepage/
