@@ -112,6 +112,7 @@ export interface TenantStorefrontSettings {
   discount_threshold: number;
   discount_percentage: number;
   is_discount_active: boolean;
+  discount_condition_note: string | null;
   created_at: string;
   updated_at: string;
 }

@@ -29,6 +29,9 @@ export function TenantSettingsForm({
   const [isDiscountActive, setIsDiscountActive] = useState(
     storefrontSettings.is_discount_active ?? false,
   );
+  const [discountConditionNote, setDiscountConditionNote] = useState(
+    storefrontSettings.discount_condition_note ?? "",
+  );
   const [password, setPassword] = useState("");
   const [passwordRepeat, setPasswordRepeat] = useState("");
   const [message, setMessage] = useState<string | null>(null);
@@ -112,6 +115,7 @@ export function TenantSettingsForm({
           discount_threshold: parsedThreshold,
           discount_percentage: parsedPercentage,
           is_discount_active: isDiscountActive,
+          discount_condition_note: discountConditionNote.trim() || null,
         }),
       });
 
@@ -340,6 +344,27 @@ export function TenantSettingsForm({
                   </p>
                 )}
               </div>
+            </div>
+
+
+            <div>
+              <label className="mb-2 block text-sm font-medium text-slate-700">
+                İskonto şart notu <span className="text-slate-400 font-normal">(opsiyonel)</span>
+              </label>
+              <textarea
+                rows={3}
+                maxLength={300}
+                value={discountConditionNote}
+                onChange={(event) => {
+                  setDiscountConditionNote(event.target.value);
+                  setDiscountMessage(null);
+                }}
+                placeholder="Örn: Bu indirim sadece nakit alımlarda geçerlidir."
+                className="w-full resize-none rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-slate-400 focus:outline-none"
+              />
+              <p className="mt-1.5 text-xs text-slate-400">
+                Müşteri sepette bu notu görür; WhatsApp sipariş metnine de eklenir.
+              </p>
             </div>
 
             <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">

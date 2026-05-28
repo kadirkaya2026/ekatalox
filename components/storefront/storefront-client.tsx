@@ -732,6 +732,7 @@ export function StorefrontClient({
         percentage: storefrontSettings.discount_percentage,
         isActive: storefrontSettings.is_discount_active,
       },
+      discountConditionNote: storefrontSettings.discount_condition_note,
     });
 
     return `https://wa.me/${tenant.whatsapp_number}?text=${encodeURIComponent(message)}`;
@@ -742,6 +743,7 @@ export function StorefrontClient({
     storefrontSettings.discount_threshold,
     storefrontSettings.is_discount_active,
     tenant.company_name,
+    storefrontSettings.discount_condition_note,
     tenant.whatsapp_number,
   ]);
   const cartItemCount = useMemo(
@@ -1216,6 +1218,18 @@ export function StorefrontClient({
                     cartDiscountSummary.currency,
                   )}.`}
             </p>
+            {storefrontSettings.discount_condition_note?.trim() && !compact ? (
+              <p
+                className={cn(
+                  "mt-2 rounded-xl border px-3 py-2 text-xs font-medium leading-5",
+                  cartDiscountSummary.isQualified
+                    ? "border-emerald-200 bg-emerald-50 text-emerald-800"
+                    : "border-amber-200 bg-amber-50 text-amber-800",
+                )}
+              >
+                ⚠️ Şart: {storefrontSettings.discount_condition_note}
+              </p>
+            ) : null}
           </div>
         </div>
       </div>

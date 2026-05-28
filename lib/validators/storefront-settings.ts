@@ -112,6 +112,12 @@ export const storefrontSettingsSchema = z
       .max(100, "İskonto oranı en fazla %100 olabilir.")
       .default(0),
     is_discount_active: z.boolean().default(false),
+    discount_condition_note: z
+      .string()
+      .max(300, "Şart notu en fazla 300 karakter olabilir.")
+      .nullable()
+      .optional()
+      .default(null),
   })
   .superRefine((value, ctx) => {
     if (value.is_active) {

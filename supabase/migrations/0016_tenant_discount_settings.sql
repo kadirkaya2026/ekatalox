@@ -16,3 +16,6 @@ alter table public.tenant_storefront_settings
 alter table public.tenant_storefront_settings
   add constraint tenant_storefront_settings_discount_percentage_check
   check (discount_percentage >= 0 and discount_percentage <= 100);
+
+alter table public.tenant_storefront_settings
+  add column if not exists discount_condition_note text;

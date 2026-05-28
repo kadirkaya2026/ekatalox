@@ -64,6 +64,7 @@ export function getDefaultTenantStorefrontSettings(
     discount_threshold: 0,
     discount_percentage: 0,
     is_discount_active: false,
+    discount_condition_note: null,
     created_at: now,
     updated_at: now,
   };

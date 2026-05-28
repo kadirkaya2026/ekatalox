@@ -24,6 +24,7 @@ export interface CartDiscountConfig {
   threshold: number;
   percentage: number;
   isActive: boolean;
+  conditionNote?: string | null;
 }
 
 export interface CartDiscountSummary {
@@ -97,6 +98,7 @@ export function buildWhatsAppMessage(params: {
   items: CartItem[];
   note?: string;
   discountConfig?: CartDiscountConfig | null;
+  discountConditionNote?: string | null;
 }) {
   const lines = params.items.map((item) => {
     const lineTotal = item.price * item.quantity;
@@ -164,6 +166,10 @@ export function buildWhatsAppMessage(params: {
           ),
         ];
   const noteLine = params.note?.trim() ? `Not: ${params.note.trim()}` : null;
+  const conditionLine =
+    params.discountConditionNote?.trim()
+      ? `⚠️ İskonto Şartı: ${params.discountConditionNote.trim()}`
+      : null;
 
   return [
     `Merhaba, ${params.tenantName} için sipariş oluşturmak istiyorum.`,
@@ -171,6 +177,7 @@ export function buildWhatsAppMessage(params: {
     ...lines,
     "",
     ...totalSection,
+    ...(conditionLine ? ["", conditionLine] : []),
     ...(noteLine ? ["", noteLine] : []),
   ]
     .filter(Boolean)
