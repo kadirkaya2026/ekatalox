@@ -6,6 +6,7 @@ import {
   ChevronDown,
   Menu,
   Minus,
+  OctagonAlert,
   Plus,
   Search,
   ShoppingCart,
@@ -87,6 +88,10 @@ function readStoredCart(storageKey: string) {
 }
 
 function addToCart(items: CartItem[], product: StorefrontProduct, quantity: number) {
+  if (!product.is_in_stock || quantity <= 0) {
+    return items;
+  }
+
   const existing = items.find((item) => item.id === product.id);
 
   if (!existing) {
@@ -403,6 +408,10 @@ export function StorefrontClient({
   }, [bannerItems.length]);
 
   function openAddToCartModal(product: StorefrontProduct) {
+    if (!product.is_in_stock) {
+      return;
+    }
+
     setSelectedProduct(product);
     setSelectedQuantity("0");
     setSelectedPackageCount("0");
@@ -433,7 +442,7 @@ export function StorefrontClient({
   function confirmAddToCart(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    if (!selectedProduct) {
+    if (!selectedProduct || !selectedProduct.is_in_stock) {
       return;
     }
 
@@ -1130,7 +1139,10 @@ export function StorefrontClient({
                                   {product.is_in_stock ? (
                                     <span className={theme.stockBadgeIn}>Stokta</span>
                                   ) : (
-                                    <span className={theme.stockBadgeOut}>Tükendi</span>
+                                    <span className={theme.stockBadgeOut}>
+                                      <OctagonAlert className="mr-1 size-3.5" />
+                                      Tükendi
+                                    </span>
                                   )}
                                 </div>
                               </div>
@@ -1141,12 +1153,12 @@ export function StorefrontClient({
                                   "h-11 w-full rounded-full border-0 shadow-none",
                                   product.is_in_stock
                                     ? "bg-slate-900 text-white hover:bg-slate-800"
-                                    : "bg-slate-100 text-slate-400 hover:bg-slate-100",
+                                    : "cursor-not-allowed bg-slate-100 text-slate-400 hover:bg-slate-100",
                                 )}
                                 variant="secondary"
                               >
                                 <Plus className="mr-1 size-4" />
-                                Sepete Ekle
+                                {product.is_in_stock ? "Sepete Ekle" : "Stok Tükendi"}
                               </Button>
                             </div>
                           </div>
@@ -1240,7 +1252,10 @@ export function StorefrontClient({
                             {product.is_in_stock ? (
                               <span className={theme.stockBadgeIn}>Stokta</span>
                             ) : (
-                              <span className={theme.stockBadgeOut}>Tükendi</span>
+                              <span className={theme.stockBadgeOut}>
+                                <OctagonAlert className="mr-1 size-3.5" />
+                                Tükendi
+                              </span>
                             )}
                           </div>
                         </div>
@@ -1251,12 +1266,12 @@ export function StorefrontClient({
                             "h-11 w-full rounded-full border-0 shadow-none",
                             product.is_in_stock
                               ? "bg-slate-900 text-white hover:bg-slate-800"
-                              : "bg-slate-100 text-slate-400 hover:bg-slate-100",
+                              : "cursor-not-allowed bg-slate-100 text-slate-400 hover:bg-slate-100",
                           )}
                           variant="secondary"
                         >
                           <Plus className="mr-1 size-4" />
-                          Sepete Ekle
+                          {product.is_in_stock ? "Sepete Ekle" : "Stok Tükendi"}
                         </Button>
                       </div>
                     </div>
