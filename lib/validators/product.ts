@@ -82,3 +82,8 @@ export const productBulkDeleteSchema = z.object({
 export const productReorderSchema = z.object({
   productIds: z.array(z.string().min(1)).min(1, "Sıralanacak ürün bulunamadı."),
 });
+
+export const productBulkCategoryUpdateSchema = z.object({
+  productIds: z.array(z.string().uuid()).min(1, "En az bir ürün seçin."),
+  category_id: z.string().uuid("Geçerli bir kategori seçin."),
+});

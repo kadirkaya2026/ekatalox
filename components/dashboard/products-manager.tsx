@@ -138,6 +138,8 @@ export function ProductsManager({
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
   const [categoryFilterOpen, setCategoryFilterOpen] = useState(false);
   const [draggedProductId, setDraggedProductId] = useState<string | null>(null);
+  const [inlineCategoryProductId, setInlineCategoryProductId] = useState<string | null>(null);
+  const [bulkCategoryId, setBulkCategoryId] = useState<string>("");
   const [message, setMessage] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const categoryFilterRef = useRef<HTMLDivElement | null>(null);
@@ -454,6 +456,66 @@ export function ProductsManager({
     persistProductOrder(nextProducts);
   }
 
+  function handleInlineCategoryChange(product: Product, newCategoryId: string) {
+    setInlineCategoryProductId(null);
+    if (newCategoryId === product.category_id) {
+      return;
+    }
+
+    setMessage(null);
+    startTransition(async () => {
+      const formData = toFormData({ ...productToForm(product), category_id: newCategoryId });
+      const response = await fetch(`/api/tenant/products/${product.id}`, {
+        method: "PATCH",
+        body: formData,
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        setMessage(result.error ?? "Kategori güncellenemedi.");
+        return;
+      }
+
+      syncProducts(
+        products.map((item) =>
+          item.id === product.id ? (result.product as Product) : item,
+        ),
+      );
+      setMessage("Kategori güncellendi.");
+    });
+  }
+
+  function handleBulkCategoryUpdate() {
+    if (!selectedProductIds.length || !bulkCategoryId) {
+      return;
+    }
+
+    setMessage(null);
+    startTransition(async () => {
+      const response = await fetch("/api/tenant/products/bulk-update-category", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ productIds: selectedProductIds, category_id: bulkCategoryId }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        setMessage(result.error ?? "Kategoriler güncellenemedi.");
+        return;
+      }
+
+      const updatedMap = new Map<string, Product>(
+        (result.updatedProducts as Product[]).map((p) => [p.id, p]),
+      );
+      syncProducts(products.map((item) => updatedMap.get(item.id) ?? item));
+      setSelectedProductIds([]);
+      setBulkCategoryId("");
+      setMessage(`${result.updatedProducts.length} ürünün kategorisi güncellendi.`);
+    });
+  }
+
   const renderStockBadge = (product: Product) => (
     <Badge
       className={cn(
@@ -545,19 +607,50 @@ export function ProductsManager({
           </div>
 
           {selectedProductIds.length ? (
-            <div className="mt-4 flex flex-col gap-3 rounded-xl border border-red-100 bg-red-50 px-4 py-4 md:flex-row md:items-center md:justify-between">
-              <p className="text-sm font-semibold text-red-800">
-                {selectedProductIds.length} ürün seçildi. Bu işlem geri alınamaz.
-              </p>
-              <Button
-                variant="secondary"
-                className="border-red-200 bg-white text-red-700 hover:bg-red-100"
-                onClick={() => setBulkDeleteOpen(true)}
-                disabled={pending}
-              >
-                <Trash2 className="size-4" />
-                Seçilenleri Sil
-              </Button>
+            <div className="mt-4 space-y-3">
+              <div className="flex flex-col gap-3 rounded-xl border border-blue-100 bg-blue-50 px-4 py-4 md:flex-row md:items-center md:justify-between">
+                <p className="text-sm font-semibold text-blue-800">
+                  {selectedProductIds.length} ürün seçildi — Kategori değiştir:
+                </p>
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                  <select
+                    value={bulkCategoryId}
+                    onChange={(e) => setBulkCategoryId(e.target.value)}
+                    className="rounded-lg border border-blue-200 bg-white px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  >
+                    <option value="">Kategori seçin</option>
+                    {flatCategories.map((category) => (
+                      <option key={category.id} value={category.id}>
+                        {"— ".repeat(category.depth)}{category.name}
+                      </option>
+                    ))}
+                  </select>
+                  <Button
+                    variant="secondary"
+                    className="border-blue-200 bg-white text-blue-700 hover:bg-blue-100 disabled:opacity-50"
+                    onClick={handleBulkCategoryUpdate}
+                    disabled={!bulkCategoryId || pending}
+                  >
+                    <Check className="size-4" />
+                    Tümüne Uygula
+                  </Button>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-3 rounded-xl border border-red-100 bg-red-50 px-4 py-4 md:flex-row md:items-center md:justify-between">
+                <p className="text-sm font-semibold text-red-800">
+                  {selectedProductIds.length} ürün seçildi. Bu işlem geri alınamaz.
+                </p>
+                <Button
+                  variant="secondary"
+                  className="border-red-200 bg-white text-red-700 hover:bg-red-100"
+                  onClick={() => setBulkDeleteOpen(true)}
+                  disabled={pending}
+                >
+                  <Trash2 className="size-4" />
+                  Seçilenleri Sil
+                </Button>
+              </div>
             </div>
           ) : null}
         </div>
@@ -581,6 +674,7 @@ export function ProductsManager({
                 </th>
                 <th className="px-4 py-3">Sıra</th>
                 <th className="px-4 py-3">Ürün</th>
+                <th className="px-4 py-3">Kategori</th>
                 <th className="px-4 py-3">Stok</th>
                 <th className="px-4 py-3">Katman 1</th>
                 <th className="px-4 py-3">Katman 2</th>
@@ -738,12 +832,41 @@ export function ProductsManager({
                       <div>
                         <p className="font-semibold text-slate-900">{product.product_name}</p>
                         <p className="text-sm text-slate-500">
-                          {product.sku_code} •{" "}
-                          {categoryNameMap.get(product.category_id) ?? "Kategori yok"} •{" "}
-                          {product.currency}
+                          {product.sku_code} • {product.currency}
                         </p>
                       </div>
                     </div>
+                  </td>
+                  <td className="px-4 py-4">
+                    {inlineCategoryProductId === product.id ? (
+                      <select
+                        autoFocus
+                        value={product.category_id}
+                        onChange={(e) => handleInlineCategoryChange(product, e.target.value)}
+                        onBlur={() => setInlineCategoryProductId(null)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Escape") setInlineCategoryProductId(null);
+                        }}
+                        className="rounded-lg border border-emerald-300 bg-white px-2 py-1.5 text-sm text-slate-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-400"
+                      >
+                        <option value="">Kategori seçin</option>
+                        {flatCategories.map((category) => (
+                          <option key={category.id} value={category.id}>
+                            {"— ".repeat(category.depth)}{category.name}
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => setInlineCategoryProductId(product.id)}
+                        className="group flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-sm text-slate-700 transition hover:bg-slate-100"
+                        title="Tıkla ve değiştir"
+                      >
+                        <span>{categoryNameMap.get(product.category_id) ?? "—"}</span>
+                        <PencilLine className="size-3.5 text-slate-400 opacity-0 transition group-hover:opacity-100" />
+                      </button>
+                    )}
                   </td>
                   <td className="px-4 py-4">{renderStockBadge(product)}</td>
                   <td className="px-4 py-4 text-base font-semibold text-slate-900">
@@ -825,11 +948,39 @@ export function ProductsManager({
                 <div className="min-w-0 flex-1">
                   <p className="font-semibold text-slate-900">{product.product_name}</p>
                   <p className="mt-1 text-sm text-slate-500">
-                    {product.sku_code} •{" "}
-                    {categoryNameMap.get(product.category_id) ?? "Kategori yok"} •{" "}
-                    {product.currency}
+                    {product.sku_code} • {product.currency}
                   </p>
-                  <div className="mt-3">{renderStockBadge(product)}</div>
+                  <div className="mt-2">
+                    {inlineCategoryProductId === product.id ? (
+                      <select
+                        autoFocus
+                        value={product.category_id}
+                        onChange={(e) => handleInlineCategoryChange(product, e.target.value)}
+                        onBlur={() => setInlineCategoryProductId(null)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Escape") setInlineCategoryProductId(null);
+                        }}
+                        className="w-full rounded-lg border border-emerald-300 bg-white px-2 py-1.5 text-sm text-slate-900"
+                      >
+                        <option value="">Kategori seçin</option>
+                        {flatCategories.map((category) => (
+                          <option key={category.id} value={category.id}>
+                            {"— ".repeat(category.depth)}{category.name}
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => setInlineCategoryProductId(product.id)}
+                        className="flex items-center gap-1 text-sm text-slate-600 underline-offset-2 hover:underline"
+                      >
+                        <span>{categoryNameMap.get(product.category_id) ?? "Kategori yok"}</span>
+                        <PencilLine className="size-3 text-slate-400" />
+                      </button>
+                    )}
+                  </div>
+                  <div className="mt-2">{renderStockBadge(product)}</div>
                 </div>
               </div>
 
