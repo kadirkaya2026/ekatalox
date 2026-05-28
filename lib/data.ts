@@ -76,6 +76,8 @@ export function getDefaultTenantStorefrontSettings(
     card_campaign_threshold: 0,
     is_card_campaign_active: false,
     card_campaign_note: null,
+    cash_discount_tiers: [],
+    card_campaign_tiers: [],
     updated_at: now,
   };
 }

@@ -650,72 +650,62 @@ export function StorefrontClient({
   const cartDiscountSummary = useMemo(
     () =>
       getCartDiscountSummary(cart, {
-        threshold: storefrontSettings.cash_discount_threshold,
-        percentage: storefrontSettings.cash_discount_percentage,
+        tiers: storefrontSettings.cash_discount_tiers ?? [],
         isActive: storefrontSettings.is_cash_discount_active,
       }),
     [
       cart,
-      storefrontSettings.cash_discount_percentage,
-      storefrontSettings.cash_discount_threshold,
+      storefrontSettings.cash_discount_tiers,
       storefrontSettings.is_cash_discount_active,
     ],
   );
   const cartCardCampaignStatus = useMemo(
     () =>
       getCartCardCampaignStatus(cart, {
-        threshold: storefrontSettings.card_campaign_threshold,
+        tiers: storefrontSettings.card_campaign_tiers ?? [],
         isActive: storefrontSettings.is_card_campaign_active,
       }),
     [
       cart,
-      storefrontSettings.card_campaign_threshold,
+      storefrontSettings.card_campaign_tiers,
       storefrontSettings.is_card_campaign_active,
     ],
   );
   const cartPaymentSummary = useMemo(() => {
     if (!selectedPaymentMethod || !cart.length) return null;
 
-    if (selectedPaymentMethod === "cash") {
-      return getCartPaymentSummary(
-        cart,
-        "cash",
-        {
-          threshold: storefrontSettings.cash_discount_threshold,
-          percentage: storefrontSettings.cash_discount_percentage,
-          isActive: storefrontSettings.is_cash_discount_active,
-        },
-        null,
-      );
-    }
+    const cashConfig = {
+      tiers: storefrontSettings.cash_discount_tiers ?? [],
+      isActive: storefrontSettings.is_cash_discount_active,
+    };
+    const cardConfig = {
+      tiers: storefrontSettings.card_campaign_tiers ?? [],
+      isActive: storefrontSettings.is_card_campaign_active,
+    };
 
-    // card
     const activeOptions =
       (storefrontSettings.card_installment_options ?? []).filter(
         (o: InstallmentOption) => o.isActive,
       );
     const selectedInstallment =
-      selectedInstallmentCount !== null
+      selectedPaymentMethod === "card" && selectedInstallmentCount !== null
         ? (activeOptions.find((o: InstallmentOption) => o.count === selectedInstallmentCount) ?? null)
         : null;
+
     return getCartPaymentSummary(
       cart,
-      "card",
-      {
-        threshold: storefrontSettings.card_campaign_threshold,
-        percentage: 0,
-        isActive: storefrontSettings.is_card_campaign_active,
-      },
+      selectedPaymentMethod,
+      cashConfig,
+      cardConfig,
       selectedInstallment,
     );
   }, [
     cart,
     selectedPaymentMethod,
     selectedInstallmentCount,
-    storefrontSettings.cash_discount_threshold,
-    storefrontSettings.cash_discount_percentage,
+    storefrontSettings.cash_discount_tiers,
     storefrontSettings.is_cash_discount_active,
-    storefrontSettings.card_campaign_threshold,
+    storefrontSettings.card_campaign_tiers,
     storefrontSettings.is_card_campaign_active,
     storefrontSettings.card_installment_options,
   ]);
@@ -800,17 +790,14 @@ export function StorefrontClient({
     let discountConfig = null;
     if (selectedPaymentMethod === "cash") {
       discountConfig = {
-        threshold: storefrontSettings.cash_discount_threshold,
-        percentage: storefrontSettings.cash_discount_percentage,
+        tiers: storefrontSettings.cash_discount_tiers ?? [],
         isActive: storefrontSettings.is_cash_discount_active,
       };
-    } else if (selectedPaymentMethod === "card") {
-      discountConfig = {
-        threshold: storefrontSettings.card_campaign_threshold,
-        percentage: 0,
-        isActive: storefrontSettings.is_card_campaign_active,
-      };
     }
+    const cardCfg =
+      selectedPaymentMethod === "card"
+        ? { tiers: storefrontSettings.card_campaign_tiers ?? [], isActive: storefrontSettings.is_card_campaign_active }
+        : null;
 
     const discountConditionNote =
       selectedPaymentMethod === "cash"
@@ -825,7 +812,8 @@ export function StorefrontClient({
       note,
       paymentMethod: selectedPaymentMethod,
       selectedInstallment,
-      discountConfig,
+      cashConfig: discountConfig,
+      cardConfig: cardCfg,
       discountConditionNote,
     });
 
@@ -835,11 +823,10 @@ export function StorefrontClient({
     note,
     selectedPaymentMethod,
     selectedInstallmentCount,
-    storefrontSettings.cash_discount_threshold,
-    storefrontSettings.cash_discount_percentage,
+    storefrontSettings.cash_discount_tiers,
     storefrontSettings.is_cash_discount_active,
     storefrontSettings.cash_discount_note,
-    storefrontSettings.card_campaign_threshold,
+    storefrontSettings.card_campaign_tiers,
     storefrontSettings.is_card_campaign_active,
     storefrontSettings.card_campaign_note,
     storefrontSettings.card_installment_options,
@@ -1303,7 +1290,7 @@ export function StorefrontClient({
                   s.isQualified ? "text-blue-700" : "text-amber-700",
                 )}
               >
-                {s.isQualified ? "Kart Kampanyası" : "Kart Kampanyası"}
+                Kart Kampanyası
               </p>
               <p
                 className={cn(
@@ -1312,8 +1299,12 @@ export function StorefrontClient({
                 )}
               >
                 {s.isQualified
-                  ? "Tebrikler! Taksit Komisyonu Sıfırlandı! 🎉"
-                  : `${formatCurrency(s.remainingAmount, s.currency)} daha ekle, 0 Komisyon Kazan! 💳`}
+                  ? s.nextTier
+                    ? `${s.appliedTier!.maxFreeInstallmentCount} taksite kadar 0 Komisyon aktif 🎉 — ${formatCurrency(s.remainingAmount, s.currency)} daha ekle, ${s.nextTier.maxFreeInstallmentCount} taksite çık!`
+                    : `Tebrikler! ${s.appliedTier!.maxFreeInstallmentCount} taksite kadar 0 Komisyon! 🎉`
+                  : s.nextTier
+                    ? `${formatCurrency(s.remainingAmount, s.currency)} daha ekle, ${s.nextTier.maxFreeInstallmentCount} taksite kadar 0 Komisyon kazan! 💳`
+                    : "0 Komisyon kampanyası aktif 💳"}
               </p>
               <p
                 className={cn(
@@ -1322,8 +1313,10 @@ export function StorefrontClient({
                 )}
               >
                 {s.isQualified
-                  ? `Sepetin ${formatCurrency(s.subtotal, s.currency)} — seçtiğin taksit seçeneğine vade farkı uygulanmaz.`
-                  : `Baraj ${formatCurrency(s.threshold, s.currency)} · Sepetin şu an ${formatCurrency(s.subtotal, s.currency)}`}
+                  ? `Sepetin ${formatCurrency(s.subtotal, s.currency)} — ${s.appliedTier!.maxFreeInstallmentCount} taksit ve altına vade farkı uygulanmaz.`
+                  : s.nextTier
+                    ? `İlk baraj ${formatCurrency(s.nextTier.threshold, s.currency)} · Sepetin şu an ${formatCurrency(s.subtotal, s.currency)}`
+                    : `Sepetin ${formatCurrency(s.subtotal, s.currency)}`}
               </p>
             </div>
           </div>
@@ -1374,11 +1367,12 @@ export function StorefrontClient({
               )}
             >
               {cartDiscountSummary.isQualified
-                ? `Tebrikler! %${percentageLabel} İskonto Kazandınız! 🎉`
-                : `${formatCurrency(
-                    cartDiscountSummary.remainingAmount,
-                    cartDiscountSummary.currency,
-                  )} daha mal ekle, %${percentageLabel} İskonto Kazan! 🚀`}
+                ? cartDiscountSummary.nextTier
+                  ? `%${percentageLabel} aktif 🎉 — ${formatCurrency(cartDiscountSummary.remainingAmount, cartDiscountSummary.currency)} daha ekle, %${formatDiscountPercentage(cartDiscountSummary.nextTier.percentage)} kazan!`
+                  : `Tebrikler! %${percentageLabel} İskonto Kazandınız! 🎉`
+                : cartDiscountSummary.nextTier
+                  ? `${formatCurrency(cartDiscountSummary.remainingAmount, cartDiscountSummary.currency)} daha mal ekle, %${formatDiscountPercentage(cartDiscountSummary.nextTier.percentage)} İskonto Kazan! 🚀`
+                  : `%${percentageLabel} İskonto Kampanyası 🚀`}
             </p>
             <p
               className={cn(
@@ -1387,20 +1381,10 @@ export function StorefrontClient({
               )}
             >
               {cartDiscountSummary.isQualified
-                ? `Ara toplam ${formatCurrency(
-                    cartDiscountSummary.subtotal,
-                    cartDiscountSummary.currency,
-                  )} oldu. Net toplamın artık ${formatCurrency(
-                    cartDiscountSummary.totalAfterDiscount,
-                    cartDiscountSummary.currency,
-                  )}.`
-                : `Baraj ${formatCurrency(
-                    cartDiscountSummary.threshold,
-                    cartDiscountSummary.currency,
-                  )} · Sepetin şu an ${formatCurrency(
-                    cartDiscountSummary.subtotal,
-                    cartDiscountSummary.currency,
-                  )}.`}
+                ? `Ara toplam ${formatCurrency(cartDiscountSummary.subtotal, cartDiscountSummary.currency)} oldu. Net toplamın artık ${formatCurrency(cartDiscountSummary.totalAfterDiscount, cartDiscountSummary.currency)}.`
+                : cartDiscountSummary.nextTier
+                  ? `İlk baraj ${formatCurrency(cartDiscountSummary.nextTier.threshold, cartDiscountSummary.currency)} · Sepetin şu an ${formatCurrency(cartDiscountSummary.subtotal, cartDiscountSummary.currency)}.`
+                  : `Sepetin şu an ${formatCurrency(cartDiscountSummary.subtotal, cartDiscountSummary.currency)}.`}
             </p>
             {storefrontSettings.cash_discount_note?.trim() && !compact ? (
               <p

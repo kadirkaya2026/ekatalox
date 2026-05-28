@@ -3,7 +3,7 @@ import {
   supportedCurrencyCodes,
   type CurrencyCode,
 } from "@/lib/products/constants";
-import type { CartItem, InstallmentOption } from "@/lib/types";
+import type { CartItem, CashDiscountTier, CardCampaignTier, InstallmentOption } from "@/lib/types";
 
 export function getCartTotal(items: CartItem[]) {
   return items.reduce((total, item) => total + item.price * item.quantity, 0);
@@ -37,8 +37,21 @@ export const DEFAULT_INSTALLMENT_OPTIONS: InstallmentOption[] = [
   { count: 12, label: "12 Taksit", isActive: false, surchargePercentage: 0 },
 ];
 
-// ─── Interfaces ───────────────────────────────────────────────────────────────
+// ─── Config interfaces ────────────────────────────────────────────────────────
 
+/** Nakit iskonto tiered config */
+export interface CashTieredConfig {
+  tiers: CashDiscountTier[];
+  isActive: boolean;
+}
+
+/** Kart 0-komisyon tiered config */
+export interface CardTieredConfig {
+  tiers: CardCampaignTier[];
+  isActive: boolean;
+}
+
+// Backward-compat — hâlâ kullanılabilir
 export interface CartDiscountConfig {
   threshold: number;
   percentage: number;
@@ -50,30 +63,62 @@ export interface CartDiscountConfig {
 export interface CartPaymentSummary {
   currency: CurrencyCode;
   paymentMethod: "cash" | "card";
-  /** Sepet ham toplamı */
   subtotal: number;
-  /** İskonto uygulanmak için gereken minimum tutar */
   discountThreshold: number;
-  /** Baraj erişildi mi */
   isQualified: boolean;
-  /** Baraj'a kalan tutar */
   remainingAmount: number;
-  /** Uygulanan iskonto yüzdesi — sadece nakit kampanyası (kart = 0) */
   discountPercentage: number;
-  /** İskonto tutarı — sadece nakit */
   discountAmount: number;
-  /** İskonto sonrası ara toplam */
   afterDiscount: number;
-  /** Seçilen taksit seçeneği */
   selectedInstallment: InstallmentOption | null;
-  /** Vade farkı yüzdesi (0 komisyon kampanyası aktifse her zaman 0) */
   surchargePercentage: number;
-  /** Vade farkı tutarı */
   surchargeAmount: number;
-  /** Nihai tutar */
   finalTotal: number;
-  /** Kart kampanyası: baraj geçilince taksit komisyonu sıfırlandı */
   zeroCommissionApplied: boolean;
+  /** Hangi nakit tier uygulandı */
+  appliedCashTier: CashDiscountTier | null;
+  /** Hangi kart tier uygulandı */
+  appliedCardTier: CardCampaignTier | null;
+}
+
+// ─── Tier seçim helpers ────────────────────────────────────────────────────────
+
+function getBestCashTier(tiers: CashDiscountTier[], subtotal: number): CashDiscountTier | null {
+  return (
+    tiers
+      .filter((t) => t.threshold > 0 && t.percentage > 0 && subtotal >= t.threshold)
+      .sort((a, b) => b.threshold - a.threshold)[0] ?? null
+  );
+}
+
+export function getNextCashTier(
+  tiers: CashDiscountTier[],
+  subtotal: number,
+): CashDiscountTier | null {
+  return (
+    tiers
+      .filter((t) => t.threshold > 0 && t.percentage > 0 && subtotal < t.threshold)
+      .sort((a, b) => a.threshold - b.threshold)[0] ?? null
+  );
+}
+
+function getBestCardTier(tiers: CardCampaignTier[], subtotal: number): CardCampaignTier | null {
+  return (
+    tiers
+      .filter((t) => t.threshold > 0 && subtotal >= t.threshold)
+      .sort((a, b) => b.threshold - a.threshold)[0] ?? null
+  );
+}
+
+export function getNextCardTier(
+  tiers: CardCampaignTier[],
+  subtotal: number,
+): CardCampaignTier | null {
+  return (
+    tiers
+      .filter((t) => t.threshold > 0 && subtotal < t.threshold)
+      .sort((a, b) => a.threshold - b.threshold)[0] ?? null
+  );
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -101,7 +146,8 @@ function formatWhatsAppMoney(value: number, currency: CurrencyCode) {
 export function getCartPaymentSummary(
   items: CartItem[],
   paymentMethod: "cash" | "card",
-  discountConfig: CartDiscountConfig | null,
+  cashConfig: CashTieredConfig | null,
+  cardConfig: CardTieredConfig | null,
   selectedInstallment: InstallmentOption | null,
 ): CartPaymentSummary | null {
   if (!items.length) return null;
@@ -110,51 +156,69 @@ export function getCartPaymentSummary(
   const currencies = Object.entries(totalsByCurrency).filter(
     (entry): entry is [CurrencyCode, number] => typeof entry[1] === "number",
   );
-
   if (currencies.length !== 1) return null;
 
   const [currency, subtotal] = currencies[0];
   const roundedSubtotal = roundCurrencyAmount(subtotal);
 
-  const threshold = discountConfig?.threshold ?? 0;
-  const campaignActive = !!(discountConfig?.isActive) && threshold > 0;
+  // ── Nakit ──
+  const appliedCashTier =
+    paymentMethod === "cash" && cashConfig?.isActive && (cashConfig.tiers?.length ?? 0) > 0
+      ? getBestCashTier(cashConfig.tiers, roundedSubtotal)
+      : null;
 
-  // Nakit: % > 0 şartı var | Kart: sadece threshold yeterli (0 komisyon için)
-  const isQualified =
-    campaignActive &&
-    (paymentMethod === "cash"
-      ? (discountConfig?.percentage ?? 0) > 0 && roundedSubtotal >= threshold
-      : roundedSubtotal >= threshold);
-
-  // Nakit: fiyat indirimi | Kart: fiyat indirimi yok
-  const discountPercentage =
-    paymentMethod === "cash" && isQualified ? (discountConfig?.percentage ?? 0) : 0;
+  const discountThreshold = appliedCashTier?.threshold ?? 0;
+  const isQualified = appliedCashTier !== null;
+  const discountPercentage = appliedCashTier?.percentage ?? 0;
   const discountAmount =
     discountPercentage > 0
       ? roundCurrencyAmount((roundedSubtotal * discountPercentage) / 100)
       : 0;
   const afterDiscount = roundCurrencyAmount(roundedSubtotal - discountAmount);
 
-  // Kart: baraj geçildiyse taksit komisyonu sıfırlanır
-  const zeroCommissionApplied = paymentMethod === "card" && isQualified;
+  // ── Kart ──
+  const appliedCardTier =
+    paymentMethod === "card" && cardConfig?.isActive && (cardConfig.tiers?.length ?? 0) > 0
+      ? getBestCardTier(cardConfig.tiers, roundedSubtotal)
+      : null;
+
+  const zeroCommissionApplied =
+    paymentMethod === "card" &&
+    appliedCardTier !== null &&
+    selectedInstallment !== null &&
+    selectedInstallment.count <= appliedCardTier.maxFreeInstallmentCount;
+
   const surchargePercentage = zeroCommissionApplied
     ? 0
     : paymentMethod === "card"
       ? (selectedInstallment?.surchargePercentage ?? 0)
       : 0;
+
   const finalTotal =
     surchargePercentage > 0
       ? roundCurrencyAmount(afterDiscount / (1 - surchargePercentage / 100))
       : afterDiscount;
   const surchargeAmount = roundCurrencyAmount(finalTotal - afterDiscount);
 
+  const remainingForNextCashTier =
+    paymentMethod === "cash" && cashConfig?.isActive
+      ? roundCurrencyAmount(
+          Math.max((getNextCashTier(cashConfig.tiers ?? [], roundedSubtotal)?.threshold ?? 0) - roundedSubtotal, 0),
+        )
+      : 0;
+
   return {
     currency,
     paymentMethod,
     subtotal: roundedSubtotal,
-    discountThreshold: threshold,
+    discountThreshold,
     isQualified,
-    remainingAmount: roundCurrencyAmount(Math.max(threshold - roundedSubtotal, 0)),
+    remainingAmount:
+      paymentMethod === "cash"
+        ? remainingForNextCashTier
+        : roundCurrencyAmount(
+            Math.max((appliedCardTier?.threshold ?? cardConfig?.tiers?.[0]?.threshold ?? 0) - roundedSubtotal, 0),
+          ),
     discountPercentage,
     discountAmount,
     afterDiscount,
@@ -163,23 +227,29 @@ export function getCartPaymentSummary(
     surchargeAmount,
     finalTotal,
     zeroCommissionApplied,
+    appliedCashTier,
+    appliedCardTier,
   };
 }
 
-/** Kart kampanyası upsell bar için — ödeme yöntemi seçilmeden önce de gösterilir */
+/** Kart kampanyası upsell bar — ödeme yöntemi seçilmeden önce de gösterilir */
 export interface CartCardCampaignStatus {
   currency: CurrencyCode;
-  threshold: number;
   subtotal: number;
   isQualified: boolean;
+  /** Ulaşılan en iyi tier */
+  appliedTier: CardCampaignTier | null;
+  /** Bir sonraki tier */
+  nextTier: CardCampaignTier | null;
+  /** Sonraki tiere kalan tutar */
   remainingAmount: number;
 }
 
 export function getCartCardCampaignStatus(
   items: CartItem[],
-  config: { threshold: number; isActive: boolean },
+  config: CardTieredConfig,
 ): CartCardCampaignStatus | null {
-  if (!items.length || !config.isActive || config.threshold <= 0) return null;
+  if (!items.length || !config.isActive || !config.tiers?.length) return null;
 
   const totalsByCurrency = getCartTotalsByCurrency(items);
   const currencies = Object.entries(totalsByCurrency).filter(
@@ -189,57 +259,73 @@ export function getCartCardCampaignStatus(
 
   const [currency, subtotal] = currencies[0];
   const rounded = roundCurrencyAmount(subtotal);
+
+  const appliedTier = getBestCardTier(config.tiers, rounded);
+  const nextTier = getNextCardTier(config.tiers, rounded);
+
   return {
     currency,
-    threshold: config.threshold,
     subtotal: rounded,
-    isQualified: rounded >= config.threshold,
-    remainingAmount: roundCurrencyAmount(Math.max(config.threshold - rounded, 0)),
+    isQualified: appliedTier !== null,
+    appliedTier,
+    nextTier,
+    remainingAmount: roundCurrencyAmount(Math.max((nextTier?.threshold ?? 0) - rounded, 0)),
   };
 }
 
-/** Backward-compat wrapper — sadece iskonto özeti (taksit yok) */
+/** Nakit kampanyası upsell bar — taksit yok, sadece iskonto özeti */
 export interface CartDiscountSummary {
   currency: CurrencyCode;
+  subtotal: number;
+  isQualified: boolean;
+  /** Ulaşılan en iyi tier */
+  appliedTier: CashDiscountTier | null;
+  /** Bir sonraki tier */
+  nextTier: CashDiscountTier | null;
+  /** Backward compat */
   threshold: number;
   percentage: number;
-  subtotal: number;
   remainingAmount: number;
   discountAmount: number;
   totalAfterDiscount: number;
-  isQualified: boolean;
 }
 
 export function getCartDiscountSummary(
   items: CartItem[],
-  config?: CartDiscountConfig | null,
+  config?: CashTieredConfig | null,
 ): CartDiscountSummary | null {
-  if (!items.length || !config?.isActive || config.threshold <= 0 || config.percentage <= 0) {
-    return null;
-  }
+  if (!items.length || !config?.isActive || !config.tiers?.length) return null;
 
   const totalsByCurrency = getCartTotalsByCurrency(items);
   const currencies = Object.entries(totalsByCurrency).filter(
     (entry): entry is [CurrencyCode, number] => typeof entry[1] === "number",
   );
-
   if (currencies.length !== 1) return null;
 
   const [currency, subtotal] = currencies[0];
-  const isQualified = subtotal >= config.threshold;
-  const discountAmount = isQualified
-    ? roundCurrencyAmount((subtotal * config.percentage) / 100)
-    : 0;
+  const rounded = roundCurrencyAmount(subtotal);
+
+  const appliedTier = getBestCashTier(config.tiers, rounded);
+  const nextTier = getNextCashTier(config.tiers, rounded);
+
+  const percentage = appliedTier?.percentage ?? 0;
+  const threshold = appliedTier?.threshold ?? nextTier?.threshold ?? 0;
+  const discountAmount =
+    appliedTier
+      ? roundCurrencyAmount((rounded * appliedTier.percentage) / 100)
+      : 0;
 
   return {
     currency,
-    threshold: config.threshold,
-    percentage: config.percentage,
-    subtotal: roundCurrencyAmount(subtotal),
-    remainingAmount: roundCurrencyAmount(Math.max(config.threshold - subtotal, 0)),
+    subtotal: rounded,
+    isQualified: appliedTier !== null,
+    appliedTier,
+    nextTier,
+    threshold,
+    percentage,
+    remainingAmount: roundCurrencyAmount(Math.max((nextTier?.threshold ?? 0) - rounded, 0)),
     discountAmount,
-    totalAfterDiscount: roundCurrencyAmount(subtotal - discountAmount),
-    isQualified,
+    totalAfterDiscount: roundCurrencyAmount(rounded - discountAmount),
   };
 }
 
@@ -251,7 +337,8 @@ export function buildWhatsAppMessage(params: {
   note?: string;
   paymentMethod?: "cash" | "card" | null;
   selectedInstallment?: InstallmentOption | null;
-  discountConfig?: CartDiscountConfig | null;
+  cashConfig?: CashTieredConfig | null;
+  cardConfig?: CardTieredConfig | null;
   discountConditionNote?: string | null;
 }) {
   const lines = params.items.map((item) => {
@@ -269,7 +356,8 @@ export function buildWhatsAppMessage(params: {
       ? getCartPaymentSummary(
           params.items,
           paymentMethod,
-          params.discountConfig ?? null,
+          params.cashConfig ?? null,
+          params.cardConfig ?? null,
           params.selectedInstallment ?? null,
         )
       : null;
@@ -366,7 +454,6 @@ export function buildWhatsAppMessage(params: {
     ...(noteLine ? ["", noteLine] : []),
   ]
     .filter((line, i, arr) => {
-      // remove consecutive empty lines
       if (line === "" && arr[i - 1] === "") return false;
       return true;
     })

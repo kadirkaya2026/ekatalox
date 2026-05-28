@@ -1,11 +1,16 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Banknote, CreditCard, ShoppingCart, Sparkles } from "lucide-react";
+import { Banknote, CreditCard, Plus, Trash2, ShoppingCart, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import type { InstallmentOption, TenantStorefrontSettings } from "@/lib/types";
+import type {
+  CashDiscountTier,
+  CardCampaignTier,
+  InstallmentOption,
+  TenantStorefrontSettings,
+} from "@/lib/types";
 import { DEFAULT_INSTALLMENT_OPTIONS } from "@/lib/storefront/cart";
 
 export function TenantPaymentSettingsForm({
@@ -16,11 +21,8 @@ export function TenantPaymentSettingsForm({
   const [tab, setTab] = useState<"cash" | "card">("cash");
 
   // ── Nakit kampanyası state ─────────────────────────────────────────────────
-  const [cashThreshold, setCashThreshold] = useState(
-    String(storefrontSettings.cash_discount_threshold ?? 0),
-  );
-  const [cashPercentage, setCashPercentage] = useState(
-    String(storefrontSettings.cash_discount_percentage ?? 0),
+  const [cashTiers, setCashTiers] = useState<CashDiscountTier[]>(
+    storefrontSettings.cash_discount_tiers ?? [],
   );
   const [isCashActive, setIsCashActive] = useState(
     storefrontSettings.is_cash_discount_active ?? false,
@@ -28,8 +30,8 @@ export function TenantPaymentSettingsForm({
   const [cashNote, setCashNote] = useState(storefrontSettings.cash_discount_note ?? "");
 
   // ── Kart kampanyası state ──────────────────────────────────────────────────
-  const [cardThreshold, setCardThreshold] = useState(
-    String(storefrontSettings.card_campaign_threshold ?? 0),
+  const [cardTiers, setCardTiers] = useState<CardCampaignTier[]>(
+    storefrontSettings.card_campaign_tiers ?? [],
   );
   const [isCardActive, setIsCardActive] = useState(
     storefrontSettings.is_card_campaign_active ?? false,
@@ -43,66 +45,61 @@ export function TenantPaymentSettingsForm({
     return [...saved, ...extras].sort((a, b) => a.count - b.count);
   });
 
-  // ── UI / form state ────────────────────────────────────────────────────────
+  // ── UI state ────────────────────────────────────────────────────────────────
   const [message, setMessage] = useState<string | null>(null);
-  const [cashThresholdError, setCashThresholdError] = useState<string | null>(null);
-  const [cashPercentageError, setCashPercentageError] = useState<string | null>(null);
-  const [cardThresholdError, setCardThresholdError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
+  // ── Tier helpers ─────────────────────────────────────────────────────────────
+  function addCashTier() {
+    setCashTiers((prev) => [...prev, { threshold: 0, percentage: 0 }]);
+    setMessage(null);
+  }
+
+  function updateCashTier(index: number, field: keyof CashDiscountTier, value: number) {
+    setCashTiers((prev) =>
+      prev.map((t, i) => (i === index ? { ...t, [field]: value } : t)),
+    );
+    setMessage(null);
+  }
+
+  function removeCashTier(index: number) {
+    setCashTiers((prev) => prev.filter((_, i) => i !== index));
+    setMessage(null);
+  }
+
+  function addCardTier() {
+    setCardTiers((prev) => [...prev, { threshold: 0, maxFreeInstallmentCount: 3 }]);
+    setMessage(null);
+  }
+
+  function updateCardTier(index: number, field: keyof CardCampaignTier, value: number) {
+    setCardTiers((prev) =>
+      prev.map((t, i) => (i === index ? { ...t, [field]: value } : t)),
+    );
+    setMessage(null);
+  }
+
+  function removeCardTier(index: number) {
+    setCardTiers((prev) => prev.filter((_, i) => i !== index));
+    setMessage(null);
+  }
+
+  // ── Save ────────────────────────────────────────────────────────────────────
   function save(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setMessage(null);
-    setCashThresholdError(null);
-    setCashPercentageError(null);
-    setCardThresholdError(null);
-
-    const parsedCashThreshold = Number(cashThreshold);
-    const parsedCashPercentage = Number(cashPercentage);
-    const parsedCardThreshold = Number(cardThreshold);
-
-    let hasError = false;
-
-    if (!Number.isFinite(parsedCashThreshold) || parsedCashThreshold < 0) {
-      setCashThresholdError("Baraj tutarı sıfırdan küçük olamaz.");
-      hasError = true;
-    }
-    if (!Number.isFinite(parsedCashPercentage) || parsedCashPercentage < 0 || parsedCashPercentage > 100) {
-      setCashPercentageError("İskonto oranı 0 ile 100 arasında olmalıdır.");
-      hasError = true;
-    }
-    if (!Number.isFinite(parsedCardThreshold) || parsedCardThreshold < 0) {
-      setCardThresholdError("Baraj tutarı sıfırdan küçük olamaz.");
-      hasError = true;
-    }
-
-    if (isCashActive && parsedCashThreshold <= 0) {
-      setCashThresholdError("Kampanyayı aktif etmek için baraj 0'dan büyük olmalıdır.");
-      hasError = true;
-    }
-    if (isCashActive && parsedCashPercentage <= 0) {
-      setCashPercentageError("Kampanyayı aktif etmek için iskonto oranı 0'dan büyük olmalıdır.");
-      hasError = true;
-    }
-    if (isCardActive && parsedCardThreshold <= 0) {
-      setCardThresholdError("Kampanyayı aktif etmek için baraj 0'dan büyük olmalıdır.");
-      hasError = true;
-    }
-
-    if (hasError) return;
 
     startTransition(async () => {
       const response = await fetch("/api/tenant/settings", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          cash_discount_threshold: parsedCashThreshold,
-          cash_discount_percentage: parsedCashPercentage,
           is_cash_discount_active: isCashActive,
           cash_discount_note: cashNote.trim() || null,
-          card_campaign_threshold: parsedCardThreshold,
+          cash_discount_tiers: cashTiers,
           is_card_campaign_active: isCardActive,
           card_campaign_note: cardNote.trim() || null,
+          card_campaign_tiers: cardTiers,
           card_installment_options: cardInstallmentOptions,
         }),
       });
@@ -130,11 +127,11 @@ export function TenantPaymentSettingsForm({
               Ödeme &amp; İskonto Ayarları
             </div>
             <h2 className="mt-3 text-lg font-semibold text-slate-900">
-              Bağımsız nakit ve kart kampanyaları
+              Basamaklı nakit ve kart kampanyaları
             </h2>
             <p className="mt-1 text-sm leading-6 text-slate-600">
-              Her iki kampanyayı aynı anda tanımlayabilir ve aktif edebilirsiniz. Müşteri
-              ödeme yöntemini seçtiğinde yalnızca o yöntemin kampanyası uygulanır.
+              Her iki kampanyaya birden fazla baraj tanımlayabilirsiniz. Müşteri sepetine
+              uygun en yüksek baraj otomatik uygulanır.
             </p>
           </div>
         </div>
@@ -183,104 +180,129 @@ export function TenantPaymentSettingsForm({
         {tab === "cash" && (
           <div className="space-y-4">
             <div className="rounded-2xl border border-slate-200 bg-slate-50/60 p-4">
-              <p className="mb-4 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
-                Nakit İskonto Kampanyası
-              </p>
-
-              <div className="grid gap-4 md:grid-cols-2">
-                <div>
-                  <label className="mb-2 block text-sm font-medium text-slate-700">
-                    Baraj tutarı
-                  </label>
-                  <Input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    inputMode="decimal"
-                    value={cashThreshold}
-                    onChange={(e) => {
-                      setCashThreshold(e.target.value);
-                      setMessage(null);
-                      setCashThresholdError(null);
-                    }}
-                    placeholder="500"
-                  />
-                  {cashThresholdError ? (
-                    <p className="mt-2 text-sm text-amber-700">{cashThresholdError}</p>
-                  ) : (
-                    <p className="mt-2 text-xs text-slate-400">Ham para birimiyle. Örn: 500 USD</p>
-                  )}
-                </div>
-
-                <div>
-                  <label className="mb-2 block text-sm font-medium text-slate-700">
-                    İskonto oranı (%)
-                  </label>
-                  <Input
-                    type="number"
-                    min="0"
-                    max="100"
-                    step="0.01"
-                    inputMode="decimal"
-                    value={cashPercentage}
-                    onChange={(e) => {
-                      setCashPercentage(e.target.value);
-                      setMessage(null);
-                      setCashPercentageError(null);
-                    }}
-                    placeholder="7.5"
-                  />
-                  {cashPercentageError ? (
-                    <p className="mt-2 text-sm text-amber-700">{cashPercentageError}</p>
-                  ) : (
-                    <p className="mt-2 text-xs text-slate-400">Baraj geçilince uygulanacak %</p>
-                  )}
-                </div>
-              </div>
-
-              <div className="mt-4">
-                <label className="mb-2 block text-sm font-medium text-slate-700">
-                  Şart notu{" "}
-                  <span className="font-normal text-slate-400">(opsiyonel)</span>
-                </label>
-                <textarea
-                  rows={2}
-                  maxLength={300}
-                  value={cashNote}
-                  onChange={(e) => {
-                    setCashNote(e.target.value);
-                    setMessage(null);
-                  }}
-                  placeholder="Örn: Bu indirim sadece nakit alımlarda geçerlidir."
-                  className="w-full resize-none rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-slate-400 focus:outline-none"
-                />
-              </div>
-
-              <div className="mt-4 flex items-start justify-between gap-4 rounded-xl border border-slate-200 bg-white px-4 py-3">
-                <div>
-                  <p className="text-sm font-semibold text-slate-900">Nakit kampanyasını aktif et</p>
-                  <p className="mt-0.5 text-xs text-slate-500">
-                    Aktifken nakit ödeyen müşterilere otomatik iskonto uygulanır.
-                  </p>
-                </div>
+              <div className="mb-3 flex items-center justify-between">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+                  Nakit İskonto Barajları
+                </p>
                 <button
                   type="button"
-                  onClick={() => {
-                    setIsCashActive((v) => !v);
-                    setMessage(null);
-                  }}
-                  aria-pressed={isCashActive}
-                  className={`relative inline-flex h-7 w-12 shrink-0 rounded-full transition ${
-                    isCashActive ? "bg-emerald-600" : "bg-slate-300"
-                  }`}
+                  onClick={addCashTier}
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-emerald-700"
                 >
-                  <span
-                    className={`absolute top-1 size-5 rounded-full bg-white shadow-sm transition ${
-                      isCashActive ? "left-6" : "left-1"
-                    }`}
-                  />
+                  <Plus className="size-3.5" />
+                  Baraj Ekle
                 </button>
               </div>
+
+              {cashTiers.length === 0 ? (
+                <p className="rounded-xl border border-dashed border-slate-200 p-4 text-center text-sm text-slate-400">
+                  Henüz baraj eklenmedi. &ldquo;Baraj Ekle&rdquo; butonuna basın.
+                </p>
+              ) : (
+                <div className="space-y-2">
+                  {/* Başlık satırı */}
+                  <div className="grid grid-cols-[1fr_1fr_auto] gap-3 px-1">
+                    <span className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">Baraj tutarı</span>
+                    <span className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">İskonto oranı (%)</span>
+                    <span className="w-8" />
+                  </div>
+                  {cashTiers
+                    .slice()
+                    .sort((a, b) => a.threshold - b.threshold)
+                    .map((tier, idx) => {
+                      const realIdx = cashTiers.findIndex(
+                        (t) => t.threshold === tier.threshold && t.percentage === tier.percentage,
+                      );
+                      return (
+                        <div key={idx} className="grid grid-cols-[1fr_1fr_auto] items-center gap-3 rounded-xl border border-slate-200 bg-white p-3">
+                          <div>
+                            <Input
+                              type="number"
+                              min="0"
+                              step="0.01"
+                              inputMode="decimal"
+                              value={tier.threshold}
+                              onChange={(e) =>
+                                updateCashTier(realIdx, "threshold", Number(e.target.value))
+                              }
+                              placeholder="500"
+                              className="h-9"
+                            />
+                          </div>
+                          <div className="relative">
+                            <Input
+                              type="number"
+                              min="0"
+                              max="100"
+                              step="0.01"
+                              inputMode="decimal"
+                              value={tier.percentage}
+                              onChange={(e) =>
+                                updateCashTier(realIdx, "percentage", Number(e.target.value))
+                              }
+                              placeholder="7.5"
+                              className="h-9 pr-7"
+                            />
+                            <span className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-slate-400">
+                              %
+                            </span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => removeCashTier(realIdx)}
+                            className="flex size-8 items-center justify-center rounded-lg text-slate-400 transition hover:bg-rose-50 hover:text-rose-600"
+                          >
+                            <Trash2 className="size-4" />
+                          </button>
+                        </div>
+                      );
+                    })}
+                </div>
+              )}
+
+              <p className="mt-2 text-xs text-slate-400">
+                En yüksek barajı geçen müşteriye o tier&apos;ın iskontosu uygulanır.
+              </p>
+            </div>
+
+            {/* Şart notu */}
+            <div className="rounded-2xl border border-slate-200 bg-slate-50/60 p-4">
+              <label className="mb-2 block text-sm font-medium text-slate-700">
+                Şart notu{" "}
+                <span className="font-normal text-slate-400">(opsiyonel)</span>
+              </label>
+              <textarea
+                rows={2}
+                maxLength={300}
+                value={cashNote}
+                onChange={(e) => { setCashNote(e.target.value); setMessage(null); }}
+                placeholder="Örn: Bu indirim sadece nakit alımlarda geçerlidir."
+                className="w-full resize-none rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-slate-400 focus:outline-none"
+              />
+            </div>
+
+            {/* Toggle */}
+            <div className="flex items-start justify-between gap-4 rounded-2xl border border-slate-200 bg-slate-50/60 px-4 py-3">
+              <div>
+                <p className="text-sm font-semibold text-slate-900">Nakit kampanyasını aktif et</p>
+                <p className="mt-0.5 text-xs text-slate-500">
+                  Aktifken nakit ödeyen müşterilere otomatik iskonto uygulanır.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => { setIsCashActive((v) => !v); setMessage(null); }}
+                aria-pressed={isCashActive}
+                className={`relative inline-flex h-7 w-12 shrink-0 rounded-full transition ${
+                  isCashActive ? "bg-emerald-600" : "bg-slate-300"
+                }`}
+              >
+                <span
+                  className={`absolute top-1 size-5 rounded-full bg-white shadow-sm transition ${
+                    isCashActive ? "left-6" : "left-1"
+                  }`}
+                />
+              </button>
             </div>
           </div>
         )}
@@ -288,96 +310,148 @@ export function TenantPaymentSettingsForm({
         {/* ── KART SEKMESİ ───────────────────────────────── */}
         {tab === "card" && (
           <div className="space-y-4">
-            {/* 0 Komisyon kampanyası */}
+            {/* 0 Komisyon barajları */}
             <div className="rounded-2xl border border-slate-200 bg-slate-50/60 p-4">
-              <p className="mb-4 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
-                0 Komisyon Kampanyası
-              </p>
+              <div className="mb-3 flex items-center justify-between">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+                  0 Komisyon Barajları
+                </p>
+                <button
+                  type="button"
+                  onClick={addCardTier}
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-blue-700"
+                >
+                  <Plus className="size-3.5" />
+                  Baraj Ekle
+                </button>
+              </div>
 
-              <div className="mb-4 flex items-start gap-3 rounded-xl border border-blue-100 bg-blue-50 px-4 py-3">
+              <div className="mb-3 flex items-start gap-3 rounded-xl border border-blue-100 bg-blue-50 px-4 py-3">
                 <span className="mt-0.5 text-lg">💳</span>
                 <div>
                   <p className="text-sm font-semibold text-blue-800">Kart kampanyası: 0 Komisyon</p>
                   <p className="mt-0.5 text-xs text-blue-700">
-                    Baraj aşılınca müşterinin seçtiği taksit seçeneğinin vade farkı otomatik
-                    sıfırlanır. Fiyat indirimi uygulanmaz.
+                    Barajı aşan müşteri, belirtilen taksit sayısına kadar 0 vade farkıyla ödeme yapar.
+                    Baraj dışındaki taksitler normal vade farkıyla görünür.
                   </p>
                 </div>
               </div>
 
+              {cardTiers.length === 0 ? (
+                <p className="rounded-xl border border-dashed border-slate-200 p-4 text-center text-sm text-slate-400">
+                  Henüz baraj eklenmedi. &ldquo;Baraj Ekle&rdquo; butonuna basın.
+                </p>
+              ) : (
+                <div className="space-y-2">
+                  <div className="grid grid-cols-[1fr_1fr_auto] gap-3 px-1">
+                    <span className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">Baraj tutarı</span>
+                    <span className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">Maks. ücretsiz taksit</span>
+                    <span className="w-8" />
+                  </div>
+                  {cardTiers
+                    .slice()
+                    .sort((a, b) => a.threshold - b.threshold)
+                    .map((tier, idx) => {
+                      const realIdx = cardTiers.findIndex(
+                        (t) =>
+                          t.threshold === tier.threshold &&
+                          t.maxFreeInstallmentCount === tier.maxFreeInstallmentCount,
+                      );
+                      return (
+                        <div
+                          key={idx}
+                          className="grid grid-cols-[1fr_1fr_auto] items-center gap-3 rounded-xl border border-slate-200 bg-white p-3"
+                        >
+                          <Input
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            inputMode="decimal"
+                            value={tier.threshold}
+                            onChange={(e) =>
+                              updateCardTier(realIdx, "threshold", Number(e.target.value))
+                            }
+                            placeholder="1000"
+                            className="h-9"
+                          />
+                          <select
+                            value={tier.maxFreeInstallmentCount}
+                            onChange={(e) =>
+                              updateCardTier(
+                                realIdx,
+                                "maxFreeInstallmentCount",
+                                Number(e.target.value),
+                              )
+                            }
+                            className="h-9 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-900 focus:border-slate-400 focus:outline-none"
+                          >
+                            {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((n) => (
+                              <option key={n} value={n}>
+                                {n === 1 ? "Peşin" : `${n} Taksit`}
+                              </option>
+                            ))}
+                          </select>
+                          <button
+                            type="button"
+                            onClick={() => removeCardTier(realIdx)}
+                            className="flex size-8 items-center justify-center rounded-lg text-slate-400 transition hover:bg-rose-50 hover:text-rose-600"
+                          >
+                            <Trash2 className="size-4" />
+                          </button>
+                        </div>
+                      );
+                    })}
+                </div>
+              )}
+              <p className="mt-2 text-xs text-slate-400">
+                Örn: 1000$ barajında 6 taksit → sepet ≥ 1000$ ise 6 taksit ve altı ücretsiz.
+              </p>
+            </div>
+
+            {/* Şart notu */}
+            <div className="rounded-2xl border border-slate-200 bg-slate-50/60 p-4">
+              <label className="mb-2 block text-sm font-medium text-slate-700">
+                Şart notu{" "}
+                <span className="font-normal text-slate-400">(opsiyonel)</span>
+              </label>
+              <textarea
+                rows={2}
+                maxLength={300}
+                value={cardNote}
+                onChange={(e) => { setCardNote(e.target.value); setMessage(null); }}
+                placeholder="Örn: 1000 USD ve üzeri kart alımlarında taksit komisyonu yok."
+                className="w-full resize-none rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-slate-400 focus:outline-none"
+              />
+            </div>
+
+            {/* Toggle */}
+            <div className="flex items-start justify-between gap-4 rounded-2xl border border-slate-200 bg-slate-50/60 px-4 py-3">
               <div>
-                <label className="mb-2 block text-sm font-medium text-slate-700">
-                  Baraj tutarı
-                </label>
-                <Input
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  inputMode="decimal"
-                  value={cardThreshold}
-                  onChange={(e) => {
-                    setCardThreshold(e.target.value);
-                    setMessage(null);
-                    setCardThresholdError(null);
-                  }}
-                  placeholder="1000"
-                />
-                {cardThresholdError ? (
-                  <p className="mt-2 text-sm text-amber-700">{cardThresholdError}</p>
-                ) : (
-                  <p className="mt-2 text-xs text-slate-400">Ham para birimiyle. Örn: 1000 USD</p>
-                )}
+                <p className="text-sm font-semibold text-slate-900">Kart kampanyasını aktif et</p>
+                <p className="mt-0.5 text-xs text-slate-500">
+                  Aktifken kart ile ödeyen ve barajı geçen müşterilerde vade farkı sıfırlanır.
+                </p>
               </div>
-
-              <div className="mt-4">
-                <label className="mb-2 block text-sm font-medium text-slate-700">
-                  Şart notu{" "}
-                  <span className="font-normal text-slate-400">(opsiyonel)</span>
-                </label>
-                <textarea
-                  rows={2}
-                  maxLength={300}
-                  value={cardNote}
-                  onChange={(e) => {
-                    setCardNote(e.target.value);
-                    setMessage(null);
-                  }}
-                  placeholder="Örn: 1000 USD ve üzeri kart alımlarında taksit komisyonu yok."
-                  className="w-full resize-none rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-slate-400 focus:outline-none"
-                />
-              </div>
-
-              <div className="mt-4 flex items-start justify-between gap-4 rounded-xl border border-slate-200 bg-white px-4 py-3">
-                <div>
-                  <p className="text-sm font-semibold text-slate-900">Kart kampanyasını aktif et</p>
-                  <p className="mt-0.5 text-xs text-slate-500">
-                    Aktifken kart ile ödeyen ve barajı geçen müşterilerde vade farkı sıfırlanır.
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsCardActive((v) => !v);
-                    setMessage(null);
-                  }}
-                  aria-pressed={isCardActive}
-                  className={`relative inline-flex h-7 w-12 shrink-0 rounded-full transition ${
-                    isCardActive ? "bg-blue-600" : "bg-slate-300"
+              <button
+                type="button"
+                onClick={() => { setIsCardActive((v) => !v); setMessage(null); }}
+                aria-pressed={isCardActive}
+                className={`relative inline-flex h-7 w-12 shrink-0 rounded-full transition ${
+                  isCardActive ? "bg-blue-600" : "bg-slate-300"
+                }`}
+              >
+                <span
+                  className={`absolute top-1 size-5 rounded-full bg-white shadow-sm transition ${
+                    isCardActive ? "left-6" : "left-1"
                   }`}
-                >
-                  <span
-                    className={`absolute top-1 size-5 rounded-full bg-white shadow-sm transition ${
-                      isCardActive ? "left-6" : "left-1"
-                    }`}
-                  />
-                </button>
-              </div>
+                />
+              </button>
             </div>
 
             {/* Taksit seçenekleri */}
             <div className="rounded-2xl border border-slate-200 bg-slate-50/60 p-4">
               <p className="mb-4 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
-                Taksit Seçenekleri
+                Taksit Seçenekleri &amp; Vade Farkları
               </p>
               <div className="space-y-2">
                 {cardInstallmentOptions.map((option, index) => (

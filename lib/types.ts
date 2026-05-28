@@ -94,6 +94,16 @@ export interface TenantMembership {
 
 export type DiscountPaymentMethod = "cash" | "card";
 
+export interface CashDiscountTier {
+  threshold: number;
+  percentage: number;
+}
+
+export interface CardCampaignTier {
+  threshold: number;
+  maxFreeInstallmentCount: number;
+}
+
 export interface InstallmentOption {
   count: number;
   label: string;
@@ -133,6 +143,9 @@ export interface TenantStorefrontSettings {
   card_campaign_threshold: number;
   is_card_campaign_active: boolean;
   card_campaign_note: string | null;
+  // Tier (basamaklı) kampanya dizileri
+  cash_discount_tiers: CashDiscountTier[];
+  card_campaign_tiers: CardCampaignTier[];
   created_at: string;
   updated_at: string;
 }

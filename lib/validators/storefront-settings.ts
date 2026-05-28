@@ -142,6 +142,23 @@ export const storefrontSettingsSchema = z
     card_campaign_threshold: z.coerce.number().min(0).default(0),
     is_card_campaign_active: z.boolean().default(false),
     card_campaign_note: z.string().max(300).nullable().optional().default(null),
+    // Tier (basamaklı) kampanya dizileri
+    cash_discount_tiers: z
+      .array(
+        z.object({
+          threshold: z.coerce.number().min(0),
+          percentage: z.coerce.number().min(0).max(100),
+        }),
+      )
+      .default([]),
+    card_campaign_tiers: z
+      .array(
+        z.object({
+          threshold: z.coerce.number().min(0),
+          maxFreeInstallmentCount: z.coerce.number().int().min(1).max(12),
+        }),
+      )
+      .default([]),
   })
   .superRefine((value, ctx) => {
     if (value.is_active) {
@@ -183,6 +200,22 @@ export const storefrontSettingsSchema = z
         code: "custom",
         path: ["card_campaign_threshold"],
         message: "Kart kampanyasını yayına almak için baraj 0'dan büyük olmalıdır.",
+      });
+    }
+
+    if (value.is_cash_discount_active && value.cash_discount_tiers.length === 0) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["cash_discount_tiers"],
+        message: "Nakit kampanyasını aktif etmek için en az bir baraj tanımlanmalıdır.",
+      });
+    }
+
+    if (value.is_card_campaign_active && value.card_campaign_tiers.length === 0) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["card_campaign_tiers"],
+        message: "Kart kampanyasını aktif etmek için en az bir baraj tanımlanmalıdır.",
       });
     }
   });

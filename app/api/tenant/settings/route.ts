@@ -67,7 +67,7 @@ export async function PATCH(request: Request) {
     const { data } = await supabase
       .from("tenant_storefront_settings")
       .select(
-        "tenant_id, theme_key, logo_url, storefront_title, storefront_description, banner_items, site_tab_title, site_favicon_url, announcement_title, announcement_body, is_active, version, max_display_count, discount_threshold, discount_percentage, is_discount_active, discount_condition_note, discount_payment_method, card_installment_options, cash_discount_threshold, cash_discount_percentage, is_cash_discount_active, cash_discount_note, card_campaign_threshold, is_card_campaign_active, card_campaign_note",
+        "tenant_id, theme_key, logo_url, storefront_title, storefront_description, banner_items, site_tab_title, site_favicon_url, announcement_title, announcement_body, is_active, version, max_display_count, discount_threshold, discount_percentage, is_discount_active, discount_condition_note, discount_payment_method, card_installment_options, cash_discount_threshold, cash_discount_percentage, is_cash_discount_active, cash_discount_note, card_campaign_threshold, is_card_campaign_active, card_campaign_note, cash_discount_tiers, card_campaign_tiers",
       )
       .eq("tenant_id", session.tenant!.id)
       .maybeSingle();
@@ -121,6 +121,10 @@ export async function PATCH(request: Request) {
       body.is_card_campaign_active ?? existingSettings.is_card_campaign_active,
     card_campaign_note:
       body.card_campaign_note ?? existingSettings.card_campaign_note,
+    cash_discount_tiers:
+      body.cash_discount_tiers ?? existingSettings.cash_discount_tiers,
+    card_campaign_tiers:
+      body.card_campaign_tiers ?? existingSettings.card_campaign_tiers,
   });
 
   if (!parsed.success) {
@@ -188,6 +192,8 @@ export async function PATCH(request: Request) {
         card_campaign_threshold: parsed.data.card_campaign_threshold,
         is_card_campaign_active: parsed.data.is_card_campaign_active,
         card_campaign_note: parsed.data.card_campaign_note,
+        cash_discount_tiers: parsed.data.cash_discount_tiers,
+        card_campaign_tiers: parsed.data.card_campaign_tiers,
       },
     });
   }
@@ -242,6 +248,8 @@ export async function PATCH(request: Request) {
     card_campaign_threshold: parsed.data.card_campaign_threshold,
     is_card_campaign_active: parsed.data.is_card_campaign_active,
     card_campaign_note: parsed.data.card_campaign_note ?? null,
+    cash_discount_tiers: parsed.data.cash_discount_tiers,
+    card_campaign_tiers: parsed.data.card_campaign_tiers,
   };
 
   const { data: storefrontSettings, error: storefrontError } = await supabase
