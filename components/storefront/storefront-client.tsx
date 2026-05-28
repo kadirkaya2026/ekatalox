@@ -39,6 +39,7 @@ import {
   buildWhatsAppMessage,
   CartDiscountConfig,
   formatDiscountPercentage,
+  getCartCardCampaignStatus,
   getCartCurrency,
   getCartDiscountSummary,
   getCartPaymentSummary,
@@ -660,6 +661,21 @@ export function StorefrontClient({
       storefrontSettings.is_discount_active,
     ],
   );
+  const cartCardCampaignStatus = useMemo(
+    () =>
+      storefrontSettings.discount_payment_method === "card"
+        ? getCartCardCampaignStatus(cart, {
+            threshold: storefrontSettings.discount_threshold,
+            isActive: storefrontSettings.is_discount_active,
+          })
+        : null,
+    [
+      cart,
+      storefrontSettings.discount_payment_method,
+      storefrontSettings.discount_threshold,
+      storefrontSettings.is_discount_active,
+    ],
+  );
   const cartPaymentSummary = useMemo(() => {
     if (!selectedPaymentMethod || !cart.length) return null;
     const discountApplies =
@@ -1216,6 +1232,65 @@ export function StorefrontClient({
   }
 
   function renderCartDiscountStatus(compact = false) {
+    // Kart kampanyası (0 komisyon)
+    if (cartCardCampaignStatus && (!selectedPaymentMethod || selectedPaymentMethod === "card")) {
+      const s = cartCardCampaignStatus;
+      return (
+        <div
+          className={cn(
+            "overflow-hidden rounded-[1.55rem] border p-4 shadow-[0_18px_42px_rgba(15,23,42,0.08)]",
+            s.isQualified
+              ? "border-blue-200 bg-[radial-gradient(circle_at_top_right,rgba(59,130,246,0.18),transparent_42%),linear-gradient(135deg,#eff6ff_0%,#ffffff_50%,#f0f9ff_100%)]"
+              : "border-amber-200 bg-[radial-gradient(circle_at_top_right,rgba(14,165,233,0.18),transparent_42%),linear-gradient(135deg,#fff7ed_0%,#ffffff_48%,#eff6ff_100%)]",
+          )}
+        >
+          <div className="flex items-start gap-3">
+            <div
+              className={cn(
+                "flex shrink-0 items-center justify-center rounded-2xl",
+                compact ? "size-10" : "size-12",
+                s.isQualified ? "bg-blue-100 text-blue-700" : "bg-amber-100 text-amber-700",
+              )}
+            >
+              <CreditCard className={compact ? "size-4" : "size-5"} />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p
+                className={cn(
+                  "font-semibold uppercase tracking-[0.2em]",
+                  compact ? "text-[10px]" : "text-[11px]",
+                  s.isQualified ? "text-blue-700" : "text-amber-700",
+                )}
+              >
+                {s.isQualified ? "0 Komisyon aktif" : "Kart fırsatı"}
+              </p>
+              <p
+                className={cn(
+                  "mt-1 font-bold tracking-tight text-slate-950",
+                  compact ? "text-sm leading-5" : "text-base leading-6",
+                )}
+              >
+                {s.isQualified
+                  ? "Tebrikler! Taksit Komisyonu Sıfırlandı! 🎉"
+                  : `${formatCurrency(s.remainingAmount, s.currency)} daha ekle, 0 Komisyon Kazan! 💳`}
+              </p>
+              <p
+                className={cn(
+                  "mt-1 text-slate-600",
+                  compact ? "text-[11px] leading-4" : "text-sm leading-5",
+                )}
+              >
+                {s.isQualified
+                  ? `Sepetin ${formatCurrency(s.subtotal, s.currency)} — seçtiğin taksit seçeneğine vade farkı uygulanmaz.`
+                  : `Baraj ${formatCurrency(s.threshold, s.currency)} · Sepetin şu an ${formatCurrency(s.subtotal, s.currency)}`}
+              </p>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // Nakit kampanyası (iskonto)
     if (!cartDiscountSummary) {
       return null;
     }
@@ -2460,7 +2535,7 @@ export function StorefrontClient({
         </section>
       </main>
 
-      {isMounted && cart.length && cartDiscountSummary && (!selectedPaymentMethod || selectedPaymentMethod === storefrontSettings.discount_payment_method) ? (
+      {isMounted && cart.length && (cartDiscountSummary || cartCardCampaignStatus) && (!selectedPaymentMethod || selectedPaymentMethod === storefrontSettings.discount_payment_method) ? (
         <motion.div
           initial={{ opacity: 0, y: 14, scale: 0.97 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}

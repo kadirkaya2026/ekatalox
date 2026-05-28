@@ -77,7 +77,7 @@ export function TenantPaymentSettingsForm({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           discount_threshold: parsedThreshold,
-          discount_percentage: parsedPercentage,
+          discount_percentage: discountPaymentTab === "card" ? 0 : parsedPercentage,
           is_discount_active: isDiscountActive,
           discount_condition_note: discountConditionNote.trim() || null,
           discount_payment_method: discountPaymentMethod,
@@ -186,30 +186,43 @@ export function TenantPaymentSettingsForm({
               )}
             </div>
 
-            <div>
-              <label className="mb-2 block text-sm font-medium text-slate-700">
-                İskonto oranı (%)
-              </label>
-              <Input
-                type="number"
-                min="0"
-                max="100"
-                step="0.01"
-                inputMode="decimal"
-                value={discountPercentage}
-                onChange={(e) => {
-                  setDiscountPercentage(e.target.value);
-                  setMessage(null);
-                  setPercentageError(null);
-                }}
-                placeholder="10"
-              />
-              {percentageError ? (
-                <p className="mt-2 text-sm text-amber-700">{percentageError}</p>
-              ) : (
-                <p className="mt-2 text-xs text-slate-400">Baraj geçilince uygulanacak %</p>
-              )}
-            </div>
+            {discountPaymentTab === "cash" ? (
+              <div>
+                <label className="mb-2 block text-sm font-medium text-slate-700">
+                  İskonto oranı (%)
+                </label>
+                <Input
+                  type="number"
+                  min="0"
+                  max="100"
+                  step="0.01"
+                  inputMode="decimal"
+                  value={discountPercentage}
+                  onChange={(e) => {
+                    setDiscountPercentage(e.target.value);
+                    setMessage(null);
+                    setPercentageError(null);
+                  }}
+                  placeholder="10"
+                />
+                {percentageError ? (
+                  <p className="mt-2 text-sm text-amber-700">{percentageError}</p>
+                ) : (
+                  <p className="mt-2 text-xs text-slate-400">Baraj geçilince uygulanacak %</p>
+                )}
+              </div>
+            ) : (
+              <div className="flex items-start gap-3 rounded-xl border border-blue-100 bg-blue-50 px-4 py-3">
+                <span className="mt-0.5 text-lg">0️⃣</span>
+                <div>
+                  <p className="text-sm font-semibold text-blue-800">0 Komisyon Kampanyası</p>
+                  <p className="mt-0.5 text-xs text-blue-700">
+                    Baraj aşılınca seçilen taksit seçeneğinin vade farkı otomatik sıfırlanır.
+                    Fiyat indirimi uygulanmaz.
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="mt-4">

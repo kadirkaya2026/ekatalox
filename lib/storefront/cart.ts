@@ -58,20 +58,22 @@ export interface CartPaymentSummary {
   isQualified: boolean;
   /** Baraj'a kalan tutar */
   remainingAmount: number;
-  /** Uygulanan iskonto yüzdesi (0 = iskonto yok) */
+  /** Uygulanan iskonto yüzdesi — sadece nakit kampanyası (kart = 0) */
   discountPercentage: number;
-  /** İskonto tutarı */
+  /** İskonto tutarı — sadece nakit */
   discountAmount: number;
   /** İskonto sonrası ara toplam */
   afterDiscount: number;
   /** Seçilen taksit seçeneği */
   selectedInstallment: InstallmentOption | null;
-  /** Vade farkı yüzdesi (0 = vade farkı yok) */
+  /** Vade farkı yüzdesi (0 komisyon kampanyası aktifse her zaman 0) */
   surchargePercentage: number;
   /** Vade farkı tutarı */
   surchargeAmount: number;
-  /** Nihai tutar (iskonto - vade farkı dahil) */
+  /** Nihai tutar */
   finalTotal: number;
+  /** Kart kampanyası: baraj geçilince taksit komisyonu sıfırlandı */
+  zeroCommissionApplied: boolean;
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -115,17 +117,31 @@ export function getCartPaymentSummary(
   const roundedSubtotal = roundCurrencyAmount(subtotal);
 
   const threshold = discountConfig?.threshold ?? 0;
-  const discountActive =
-    !!(discountConfig?.isActive) && threshold > 0 && (discountConfig?.percentage ?? 0) > 0;
-  const isQualified = discountActive && roundedSubtotal >= threshold;
-  const discountPercentage = isQualified ? (discountConfig?.percentage ?? 0) : 0;
-  const discountAmount = isQualified
-    ? roundCurrencyAmount((roundedSubtotal * discountPercentage) / 100)
-    : 0;
+  const campaignActive = !!(discountConfig?.isActive) && threshold > 0;
+
+  // Nakit: % > 0 şartı var | Kart: sadece threshold yeterli (0 komisyon için)
+  const isQualified =
+    campaignActive &&
+    (paymentMethod === "cash"
+      ? (discountConfig?.percentage ?? 0) > 0 && roundedSubtotal >= threshold
+      : roundedSubtotal >= threshold);
+
+  // Nakit: fiyat indirimi | Kart: fiyat indirimi yok
+  const discountPercentage =
+    paymentMethod === "cash" && isQualified ? (discountConfig?.percentage ?? 0) : 0;
+  const discountAmount =
+    discountPercentage > 0
+      ? roundCurrencyAmount((roundedSubtotal * discountPercentage) / 100)
+      : 0;
   const afterDiscount = roundCurrencyAmount(roundedSubtotal - discountAmount);
 
-  const surchargePercentage =
-    paymentMethod === "card" ? (selectedInstallment?.surchargePercentage ?? 0) : 0;
+  // Kart: baraj geçildiyse taksit komisyonu sıfırlanır
+  const zeroCommissionApplied = paymentMethod === "card" && isQualified;
+  const surchargePercentage = zeroCommissionApplied
+    ? 0
+    : paymentMethod === "card"
+      ? (selectedInstallment?.surchargePercentage ?? 0)
+      : 0;
   const surchargeAmount =
     surchargePercentage > 0
       ? roundCurrencyAmount((afterDiscount * surchargePercentage) / 100)
@@ -146,6 +162,39 @@ export function getCartPaymentSummary(
     surchargePercentage,
     surchargeAmount,
     finalTotal,
+    zeroCommissionApplied,
+  };
+}
+
+/** Kart kampanyası upsell bar için — ödeme yöntemi seçilmeden önce de gösterilir */
+export interface CartCardCampaignStatus {
+  currency: CurrencyCode;
+  threshold: number;
+  subtotal: number;
+  isQualified: boolean;
+  remainingAmount: number;
+}
+
+export function getCartCardCampaignStatus(
+  items: CartItem[],
+  config: { threshold: number; isActive: boolean },
+): CartCardCampaignStatus | null {
+  if (!items.length || !config.isActive || config.threshold <= 0) return null;
+
+  const totalsByCurrency = getCartTotalsByCurrency(items);
+  const currencies = Object.entries(totalsByCurrency).filter(
+    (entry): entry is [CurrencyCode, number] => typeof entry[1] === "number",
+  );
+  if (currencies.length !== 1) return null;
+
+  const [currency, subtotal] = currencies[0];
+  const rounded = roundCurrencyAmount(subtotal);
+  return {
+    currency,
+    threshold: config.threshold,
+    subtotal: rounded,
+    isQualified: rounded >= config.threshold,
+    remainingAmount: roundCurrencyAmount(Math.max(config.threshold - rounded, 0)),
   };
 }
 
@@ -215,22 +264,6 @@ export function buildWhatsAppMessage(params: {
 
   const paymentMethod = params.paymentMethod ?? null;
 
-  let paymentLine: string | null = null;
-  if (paymentMethod === "cash") {
-    paymentLine = "Ödeme Yöntemi: Nakit";
-  } else if (paymentMethod === "card") {
-    const inst = params.selectedInstallment;
-    if (inst) {
-      const surchargeStr =
-        inst.surchargePercentage > 0
-          ? ` - %${formatDiscountPercentage(inst.surchargePercentage)} Vade Farkı`
-          : "";
-      paymentLine = `Ödeme Yöntemi: Kredi Kartı - ${inst.label}${surchargeStr}`;
-    } else {
-      paymentLine = "Ödeme Yöntemi: Kredi Kartı";
-    }
-  }
-
   const summary =
     paymentMethod
       ? getCartPaymentSummary(
@@ -240,6 +273,24 @@ export function buildWhatsAppMessage(params: {
           params.selectedInstallment ?? null,
         )
       : null;
+
+  let paymentLine: string | null = null;
+  if (paymentMethod === "cash") {
+    paymentLine = "Ödeme Yöntemi: Nakit";
+  } else if (paymentMethod === "card") {
+    const inst = params.selectedInstallment;
+    if (inst) {
+      const commissionStr =
+        summary?.zeroCommissionApplied
+          ? " - 0 Komisyon Kampanyası"
+          : inst.surchargePercentage > 0
+            ? ` - %${formatDiscountPercentage(inst.surchargePercentage)} Vade Farkı`
+            : "";
+      paymentLine = `Ödeme Yöntemi: Kredi Kartı - ${inst.label}${commissionStr}`;
+    } else {
+      paymentLine = "Ödeme Yöntemi: Kredi Kartı";
+    }
+  }
 
   const totalsByCurrency = getCartTotalsByCurrency(params.items);
   const totalLines = supportedCurrencyCodes
@@ -255,8 +306,9 @@ export function buildWhatsAppMessage(params: {
     const hasDiscount = summary.isQualified && summary.discountAmount > 0;
     const hasSurcharge = summary.surchargeAmount > 0;
     const showBreakdown = hasDiscount || hasSurcharge;
+    const showZeroCommission = summary.zeroCommissionApplied && summary.selectedInstallment;
 
-    if (showBreakdown) {
+    if (showBreakdown || showZeroCommission) {
       totalSection = [
         "----------------------------",
         `Ara Toplam: ${formatWhatsAppMoney(summary.subtotal, summary.currency)}`,
@@ -265,11 +317,13 @@ export function buildWhatsAppMessage(params: {
               `İskonto (%${formatDiscountPercentage(summary.discountPercentage)}): -${formatWhatsAppMoney(summary.discountAmount, summary.currency)}`,
             ]
           : []),
-        ...(hasSurcharge
-          ? [
-              `Vade Farkı (%${formatDiscountPercentage(summary.surchargePercentage)}): +${formatWhatsAppMoney(summary.surchargeAmount, summary.currency)}`,
-            ]
-          : []),
+        ...(showZeroCommission
+          ? [`Vade Farkı: 0 ${summary.currency} (0 Komisyon Kampanyası)`]
+          : hasSurcharge
+            ? [
+                `Vade Farkı (%${formatDiscountPercentage(summary.surchargePercentage)}): +${formatWhatsAppMoney(summary.surchargeAmount, summary.currency)}`,
+              ]
+            : []),
         `Genel Toplam: ${formatWhatsAppMoney(summary.finalTotal, summary.currency)}`,
         "----------------------------",
       ];
