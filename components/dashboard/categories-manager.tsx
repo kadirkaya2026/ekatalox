@@ -137,7 +137,7 @@ function SortableCategoryRow(props: RowProps) {
               {"— ".repeat(props.category.depth)}
               {props.category.name}
             </p>
-            <p className="mt-0.5 text-xs text-slate-400">{props.category.id}</p>
+
           </div>
         </div>
 
