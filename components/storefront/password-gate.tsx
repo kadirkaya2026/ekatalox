@@ -46,18 +46,18 @@ export function PasswordGate({
         </p>
         <h1 className="mt-3 text-2xl font-semibold text-slate-900">{companyName}</h1>
         <p className="mt-2 text-sm leading-6 text-slate-600">
-          Fiyat katmanınızı görmek için size özel erişim kodunu girin.
+          Fiyatları Görüntüleyebilmek İçin Size Özel Verilen Şifrenizi Giriniz.
         </p>
 
         <form onSubmit={submit} className="mt-6 space-y-4">
           <Input
             inputMode="numeric"
-            placeholder="Şifre kodu"
+            placeholder="Şifrenizi Giriniz"
             value={code}
             onChange={(event) => setCode(event.target.value)}
           />
           <Button type="submit" className="w-full" disabled={pending}>
-            {pending ? "Doğrulanıyor..." : "Vitrine gir"}
+            {pending ? "Doğrulanıyor..." : "Mağaza'ya Gir"}
           </Button>
           {error ? <p className="text-sm text-slate-600">{error}</p> : null}
         </form>
