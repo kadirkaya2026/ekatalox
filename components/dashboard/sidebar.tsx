@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   Building2,
+  CreditCard,
   FolderTree,
   KeyRound,
   LayoutDashboard,
@@ -46,6 +47,7 @@ const tenantLinks: SidebarLink[] = [
       { href: "/settings/theme", label: "Tema" },
       { href: "/settings/banner", label: "Banner" },
       { href: "/settings/site", label: "Site Kimliği" },
+      { href: "/settings/payment", label: "Ödeme Ayarları" },
     ],
   },
 ];

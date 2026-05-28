@@ -23,12 +23,17 @@ export function getCartCurrency(items: CartItem[]) {
 // ─── Installment defaults ─────────────────────────────────────────────────────
 
 export const DEFAULT_INSTALLMENT_OPTIONS: InstallmentOption[] = [
-  { count: 1, label: "Peşin", isActive: true, surchargePercentage: 0 },
-  { count: 2, label: "2 Taksit", isActive: false, surchargePercentage: 0 },
-  { count: 3, label: "3 Taksit", isActive: false, surchargePercentage: 0 },
-  { count: 4, label: "4 Taksit", isActive: false, surchargePercentage: 0 },
-  { count: 6, label: "6 Taksit", isActive: false, surchargePercentage: 0 },
-  { count: 9, label: "9 Taksit", isActive: false, surchargePercentage: 0 },
+  { count: 1,  label: "Peşin",     isActive: true,  surchargePercentage: 0 },
+  { count: 2,  label: "2 Taksit",  isActive: false, surchargePercentage: 0 },
+  { count: 3,  label: "3 Taksit",  isActive: false, surchargePercentage: 0 },
+  { count: 4,  label: "4 Taksit",  isActive: false, surchargePercentage: 0 },
+  { count: 5,  label: "5 Taksit",  isActive: false, surchargePercentage: 0 },
+  { count: 6,  label: "6 Taksit",  isActive: false, surchargePercentage: 0 },
+  { count: 7,  label: "7 Taksit",  isActive: false, surchargePercentage: 0 },
+  { count: 8,  label: "8 Taksit",  isActive: false, surchargePercentage: 0 },
+  { count: 9,  label: "9 Taksit",  isActive: false, surchargePercentage: 0 },
+  { count: 10, label: "10 Taksit", isActive: false, surchargePercentage: 0 },
+  { count: 11, label: "11 Taksit", isActive: false, surchargePercentage: 0 },
   { count: 12, label: "12 Taksit", isActive: false, surchargePercentage: 0 },
 ];
 
