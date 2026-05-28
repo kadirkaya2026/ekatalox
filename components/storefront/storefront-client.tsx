@@ -861,7 +861,7 @@ export function StorefrontClient({
           <div className="container-shell">
             <nav
               className={cn(
-                "relative hidden md:flex md:flex-wrap md:items-start md:gap-2 md:py-3",
+                "relative hidden md:flex md:flex-wrap md:items-center md:justify-center md:gap-2 md:py-3",
                 mobileMenuOpen && "md:flex",
               )}
               aria-label="Ana kategoriler"
