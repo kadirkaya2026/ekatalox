@@ -142,11 +142,11 @@ export function getCartPaymentSummary(
     : paymentMethod === "card"
       ? (selectedInstallment?.surchargePercentage ?? 0)
       : 0;
-  const surchargeAmount =
+  const finalTotal =
     surchargePercentage > 0
-      ? roundCurrencyAmount((afterDiscount * surchargePercentage) / 100)
-      : 0;
-  const finalTotal = roundCurrencyAmount(afterDiscount + surchargeAmount);
+      ? roundCurrencyAmount(afterDiscount / (1 - surchargePercentage / 100))
+      : afterDiscount;
+  const surchargeAmount = roundCurrencyAmount(finalTotal - afterDiscount);
 
   return {
     currency,
