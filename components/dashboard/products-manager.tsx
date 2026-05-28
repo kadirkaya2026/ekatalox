@@ -449,7 +449,10 @@ export function ProductsManager({
       const result = await response.json();
 
       if (!response.ok) {
-        setVariantMessage(result.error ?? "Varyantlar kaydedilemedi.");
+        setVariantMessage(
+          result.error ??
+            "Varyantlar kaydedilemedi. Migration uygulanmamış olabilir.",
+        );
         return;
       }
 

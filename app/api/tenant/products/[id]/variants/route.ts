@@ -6,6 +6,40 @@ import { getSessionContext } from "@/lib/auth/session";
 import { ensureTenantAdminResponse } from "@/lib/tenancy/guards";
 import { productVariantBulkUpdateSchema } from "@/lib/validators/product";
 
+function isMissingVariantsTableError(message: string | undefined) {
+  return (
+    message?.includes("public.product_variants") ||
+    message?.includes("product_variants") ||
+    message?.includes("schema cache")
+  );
+}
+
+async function fetchProductWithOptionalVariants(
+  supabase: NonNullable<ReturnType<typeof createSupabaseAdminClient>>,
+  productId: string,
+  tenantId: string,
+) {
+  const withVariants = await supabase
+    .from("products")
+    .select("*, variants:product_variants(*)")
+    .eq("id", productId)
+    .eq("tenant_id", tenantId)
+    .single();
+
+  if (!withVariants.error && withVariants.data) {
+    return withVariants.data;
+  }
+
+  const fallback = await supabase
+    .from("products")
+    .select("*")
+    .eq("id", productId)
+    .eq("tenant_id", tenantId)
+    .single();
+
+  return fallback.data;
+}
+
 export async function GET(
   _request: Request,
   ctx: RouteContext<"/api/tenant/products/[id]/variants">,
@@ -27,14 +61,9 @@ export async function GET(
     );
   }
 
-  const { data, error } = await supabase
-    .from("products")
-    .select("*, variants:product_variants(*)")
-    .eq("id", id)
-    .eq("tenant_id", tenant.id)
-    .single();
+  const data = await fetchProductWithOptionalVariants(supabase, id, tenant.id);
 
-  if (error || !data) {
+  if (!data) {
     return NextResponse.json({ error: "Ürün bulunamadı." }, { status: 404 });
   }
 
@@ -105,6 +134,15 @@ export async function POST(
     .eq("tenant_id", tenant.id);
 
   if (existingError) {
+    if (isMissingVariantsTableError(existingError.message)) {
+      return NextResponse.json(
+        {
+          error:
+            "Varyant tablosu henüz veritabanında oluşturulmamış. Migration uygulanınca bu ekran aktif olacak.",
+        },
+        { status: 503 },
+      );
+    }
     return NextResponse.json({ error: existingError.message }, { status: 400 });
   }
 
@@ -159,19 +197,23 @@ export async function POST(
     .upsert(payload);
 
   if (upsertError) {
+    if (isMissingVariantsTableError(upsertError.message)) {
+      return NextResponse.json(
+        {
+          error:
+            "Varyant tablosu henüz veritabanında oluşturulmamış. Migration uygulanınca kaydetme aktif olacak.",
+        },
+        { status: 503 },
+      );
+    }
     return NextResponse.json({ error: upsertError.message }, { status: 400 });
   }
 
-  const { data, error } = await supabase
-    .from("products")
-    .select("*, variants:product_variants(*)")
-    .eq("id", id)
-    .eq("tenant_id", tenant.id)
-    .single();
+  const data = await fetchProductWithOptionalVariants(supabase, id, tenant.id);
 
-  if (error || !data) {
+  if (!data) {
     return NextResponse.json(
-      { error: error?.message ?? "Ürün tekrar okunamadı." },
+      { error: "Ürün tekrar okunamadı." },
       { status: 400 },
     );
   }

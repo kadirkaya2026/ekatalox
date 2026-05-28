@@ -14,6 +14,14 @@ type VariantRow = {
   is_available_for_sale: boolean;
 };
 
+function isMissingVariantsTableError(message: string | undefined) {
+  return (
+    message?.includes("public.product_variants") ||
+    message?.includes("product_variants") ||
+    message?.includes("schema cache")
+  );
+}
+
 export async function POST(request: Request) {
   const body = await request.json();
   const parsed = storefrontVariantAvailabilitySchema.safeParse(body);
@@ -64,6 +72,12 @@ export async function POST(request: Request) {
     .in("id", variantIds);
 
   if (variantError) {
+    if (isMissingVariantsTableError(variantError.message)) {
+      return NextResponse.json(
+        { error: "Varyant stoğu henüz aktif değil." },
+        { status: 503 },
+      );
+    }
     return NextResponse.json({ error: variantError.message }, { status: 400 });
   }
 
