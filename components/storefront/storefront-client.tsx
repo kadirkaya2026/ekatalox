@@ -263,7 +263,6 @@ export function StorefrontClient({
   const [visibleCount, setVisibleCount] = useState(24);
   const [hoveredCategoryId, setHoveredCategoryId] = useState<string | null>(null);
   const [activeBannerIndex, setActiveBannerIndex] = useState(0);
-  const [isMobileOrderNoteOpen, setIsMobileOrderNoteOpen] = useState(false);
   const isMounted = useSyncExternalStore(
     subscribeToMountState,
     getClientMountedState,
@@ -775,22 +774,14 @@ export function StorefrontClient({
             </div>
 
             <div className="border-b border-slate-100 px-4 pb-3 pt-3 sm:px-5 lg:px-6 lg:pb-4 lg:pt-5">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-400">
-                    Sipariş Özeti
-                  </p>
-                  <h2 className="mt-1 text-2xl font-bold tracking-tight text-slate-950">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex min-w-0 items-baseline gap-2.5">
+                  <h2 className="truncate text-xl font-bold tracking-tight text-slate-950 sm:text-2xl">
                     Sepetim
                   </h2>
-                  <div className="mt-3 flex flex-wrap items-center gap-2">
-                    <span className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600">
-                      {cartDistinctCount} kalem, {cartItemCount} ürün
-                    </span>
-                    <span className="hidden rounded-full border border-slate-200/80 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-500 sm:inline-flex">
-                      Hızlı sipariş özeti
-                    </span>
-                  </div>
+                  <p className="truncate text-xs font-medium text-slate-500 sm:text-sm">
+                    {cartDistinctCount} kalem, {cartItemCount} ürün
+                  </p>
                 </div>
                 <div className="flex items-center">
                   <button
@@ -947,92 +938,38 @@ export function StorefrontClient({
               )}
             </div>
 
-            <div className="shrink-0 border-t border-slate-100 bg-[linear-gradient(180deg,#ffffff_0%,#f8fafc_100%)] px-4 py-4 sm:px-5 lg:px-6 lg:py-5">
+            <div className="shrink-0 border-t border-slate-100 bg-[linear-gradient(180deg,#ffffff_0%,#f8fafc_100%)] px-4 py-3.5 sm:px-5 lg:px-6 lg:py-4">
               <div className="rounded-[1.5rem] border border-slate-200/80 bg-white p-2.5 sm:p-3 lg:p-4 shadow-[0_14px_40px_rgba(15,23,42,0.06)] sm:rounded-[1.75rem]">
-                <div className="flex items-center justify-between gap-3">
-                  <div>
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">
-                      Sipariş Notu
-                    </p>
-                    <p className="mt-1 hidden text-sm text-slate-500 md:block">
-                      İsterseniz teslimat veya sipariş detayını ekleyin.
-                    </p>
-                  </div>
-                  <span className="rounded-full bg-slate-100 px-3 py-1 text-[11px] font-semibold text-slate-500">
-                    Opsiyonel
-                  </span>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => setIsMobileOrderNoteOpen((current) => !current)}
-                  className="mt-2 flex w-full items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2 sm:py-3 text-left md:hidden"
-                >
-                  <span className="text-sm font-semibold text-slate-700">
-                    Sipariş notu ekle
-                  </span>
-                  <ChevronDown
-                    className={cn(
-                      "size-4 text-slate-500 transition-transform",
-                      isMobileOrderNoteOpen && "rotate-180",
-                    )}
-                  />
-                </button>
-
-                <Textarea
-                  placeholder="Sipariş notu (opsiyonel)"
-                  value={note}
-                  onChange={(event) => setNote(event.target.value)}
-                  className={cn(
-                    "mt-2 sm:mt-4 rounded-[1.25rem] border-slate-200 bg-slate-50/70 text-sm",
-                    isMobileOrderNoteOpen ? "block min-h-[3.25rem] sm:min-h-20" : "hidden md:block md:min-h-24",
-                  )}
-                />
-
-                <div className="mt-3 rounded-[1.45rem] bg-slate-950 p-3.5 text-white shadow-[0_18px_48px_rgba(15,23,42,0.24)] sm:mt-4 sm:rounded-[1.5rem] sm:p-4">
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <p className="text-[11px] font-medium uppercase tracking-[0.22em] text-slate-400">
-                        Toplamlar
-                      </p>
-                      <p className="mt-1 text-xs text-slate-300 sm:text-sm">
-                        {cartDistinctCount} kalem, {cartItemCount} ürün için sipariş özeti
-                      </p>
-                    </div>
-                    <span className="shrink-0 rounded-full bg-white/10 px-3 py-1 text-[11px] font-semibold text-white/80">
-                      Hazır
-                    </span>
-                  </div>
-
-                  <div className="mt-3 sm:mt-4 space-y-2">
-                    {cartTotalEntries.length ? (
-                      cartTotalEntries.map(({ currency, total }) => (
+                <div className="rounded-[1.4rem] bg-slate-950 px-4 py-3 text-white shadow-[0_18px_48px_rgba(15,23,42,0.24)]">
+                  {cartTotalEntries.length ? (
+                    <div className="space-y-2">
+                      {cartTotalEntries.map(({ currency, total }) => (
                         <div
                           key={currency}
-                          className="flex items-center justify-between gap-2 sm:gap-3 rounded-full bg-white/5 px-3 sm:px-4 py-2 sm:py-3"
+                          className="flex items-center justify-between gap-3"
                         >
-                          <p className="text-sm font-semibold text-slate-300">{currency}</p>
-                          <p className="text-lg font-bold tracking-tight text-white">
-                            {formatCurrency(total, currency)}
+                          <p className="text-sm font-medium text-slate-300">Toplam</p>
+                          <p className="text-base font-bold tracking-tight text-white sm:text-lg">
+                            {currency}: {formatCurrency(total, currency)}
                           </p>
                         </div>
-                      ))
-                    ) : (
-                      <div className="flex items-center justify-between gap-2 sm:gap-3 rounded-full bg-white/5 px-3 sm:px-4 py-2 sm:py-3">
-                        <p className="text-sm font-semibold text-slate-300">{cartCurrency}</p>
-                        <p className="text-lg font-bold tracking-tight text-white">
-                          {formatCurrency(cartTotal, cartCurrency)}
-                        </p>
-                      </div>
-                    )}
-                  </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="text-sm font-medium text-slate-300">Toplam</p>
+                      <p className="text-base font-bold tracking-tight text-white sm:text-lg">
+                        {formatCurrency(cartTotal, cartCurrency)}
+                      </p>
+                    </div>
+                  )}
                 </div>
 
                 <Button
                   asChild
                   href={whatsappHref}
                   className={cn(
-                    "mt-3 h-11 w-full rounded-full px-5 text-base font-bold shadow-none sm:mt-4 sm:h-12",
+                    "mt-3 h-11 w-full rounded-full px-5 text-base font-bold shadow-none sm:h-12",
                     theme.stickyCartButton,
                     !cart.length && "pointer-events-none opacity-50",
                   )}
@@ -1048,6 +985,21 @@ export function StorefrontClient({
                     Sepeti Boşalt
                   </button>
                 )}
+
+                <div className="mt-3 border-t border-slate-200 pt-3">
+                  <div className="mb-2 flex items-center justify-between gap-3">
+                    <p className="text-sm font-semibold text-slate-900">Sipariş Notu</p>
+                    <span className="rounded-full bg-slate-100 px-3 py-1 text-[11px] font-semibold text-slate-500">
+                      Opsiyonel
+                    </span>
+                  </div>
+                  <Textarea
+                    placeholder="Sipariş notu (opsiyonel)"
+                    value={note}
+                    onChange={(event) => setNote(event.target.value)}
+                    className="min-h-[84px] rounded-[1.1rem] border-slate-200 bg-slate-50/80 text-sm"
+                  />
+                </div>
               </div>
             </div>
           </div>
@@ -1194,9 +1146,9 @@ export function StorefrontClient({
                       type="button"
                       onClick={() => handleCategoryChange(category.id)}
                       className={cn(
-                        "inline-flex items-center gap-2 rounded-full px-4 py-2.5 text-[13px] font-semibold transition",
+                        "inline-flex items-center gap-2 rounded-full px-4 py-2.5 text-[13px] font-semibold transition duration-200",
                         isActive
-                          ? "bg-slate-900 text-white"
+                          ? "scale-[1.03] bg-slate-900 text-white font-bold shadow-sm"
                           : "text-slate-700 hover:bg-slate-100",
                       )}
                     >
@@ -1257,9 +1209,9 @@ export function StorefrontClient({
                     type="button"
                     onClick={() => handleCategoryChange(category.id)}
                     className={cn(
-                      "shrink-0 border-b-2 px-1 pb-3 text-sm font-semibold transition",
+                      "shrink-0 border-b-2 px-1 pb-3 text-sm font-semibold transition duration-200",
                       selectedTopCategoryId === category.id
-                        ? "border-emerald-600 text-slate-950"
+                        ? "scale-[1.03] border-emerald-600 text-slate-950 font-bold"
                         : "border-transparent text-slate-500",
                     )}
                   >
