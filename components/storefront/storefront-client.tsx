@@ -16,6 +16,7 @@ import {
   Plus,
   Search,
   ShoppingCart,
+  Sparkles,
   Store,
   Trash2,
   X,
@@ -34,7 +35,9 @@ import {
 import { supportedCurrencyCodes } from "@/lib/products/constants";
 import {
   buildWhatsAppMessage,
+  formatDiscountPercentage,
   getCartCurrency,
+  getCartDiscountSummary,
   getCartTotal,
   getCartTotalsByCurrency,
   getCartVariantCount,
@@ -635,6 +638,20 @@ export function StorefrontClient({
   const cartTotal = useMemo(() => getCartTotal(cart), [cart]);
   const cartCurrency = useMemo(() => getCartCurrency(cart), [cart]);
   const cartTotalsByCurrency = useMemo(() => getCartTotalsByCurrency(cart), [cart]);
+  const cartDiscountSummary = useMemo(
+    () =>
+      getCartDiscountSummary(cart, {
+        threshold: storefrontSettings.discount_threshold,
+        percentage: storefrontSettings.discount_percentage,
+        isActive: storefrontSettings.is_discount_active,
+      }),
+    [
+      cart,
+      storefrontSettings.discount_percentage,
+      storefrontSettings.discount_threshold,
+      storefrontSettings.is_discount_active,
+    ],
+  );
   const cartQuantityByProductId = useMemo(
     () => new Map(cart.map((item) => [item.id, item.quantity])),
     [cart],
@@ -710,10 +727,23 @@ export function StorefrontClient({
       tenantName: tenant.company_name,
       items: cart,
       note,
+      discountConfig: {
+        threshold: storefrontSettings.discount_threshold,
+        percentage: storefrontSettings.discount_percentage,
+        isActive: storefrontSettings.is_discount_active,
+      },
     });
 
     return `https://wa.me/${tenant.whatsapp_number}?text=${encodeURIComponent(message)}`;
-  }, [cart, note, tenant.company_name, tenant.whatsapp_number]);
+  }, [
+    cart,
+    note,
+    storefrontSettings.discount_percentage,
+    storefrontSettings.discount_threshold,
+    storefrontSettings.is_discount_active,
+    tenant.company_name,
+    tenant.whatsapp_number,
+  ]);
   const cartItemCount = useMemo(
     () => cart.reduce((total, item) => total + item.quantity, 0),
     [cart],
@@ -1113,6 +1143,85 @@ export function StorefrontClient({
     }
   }
 
+  function renderCartDiscountStatus(compact = false) {
+    if (!cartDiscountSummary) {
+      return null;
+    }
+
+    const percentageLabel = formatDiscountPercentage(cartDiscountSummary.percentage);
+
+    return (
+      <div
+        className={cn(
+          "overflow-hidden rounded-[1.55rem] border p-4 shadow-[0_18px_42px_rgba(15,23,42,0.08)]",
+          cartDiscountSummary.isQualified
+            ? "border-emerald-200 bg-[radial-gradient(circle_at_top_right,rgba(16,185,129,0.2),transparent_42%),linear-gradient(135deg,#ecfdf5_0%,#ffffff_50%,#f0fdf4_100%)]"
+            : "border-amber-200 bg-[radial-gradient(circle_at_top_right,rgba(14,165,233,0.18),transparent_42%),linear-gradient(135deg,#fff7ed_0%,#ffffff_48%,#eff6ff_100%)]",
+        )}
+      >
+        <div className="flex items-start gap-3">
+          <div
+            className={cn(
+              "flex shrink-0 items-center justify-center rounded-2xl",
+              compact ? "size-10" : "size-12",
+              cartDiscountSummary.isQualified
+                ? "bg-emerald-100 text-emerald-700"
+                : "bg-amber-100 text-amber-700",
+            )}
+          >
+            <Sparkles className={compact ? "size-4.5" : "size-5"} />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p
+              className={cn(
+                "font-semibold uppercase tracking-[0.2em]",
+                compact ? "text-[10px]" : "text-[11px]",
+                cartDiscountSummary.isQualified ? "text-emerald-700" : "text-amber-700",
+              )}
+            >
+              {cartDiscountSummary.isQualified ? "İskonto aktif" : "Barajlı fırsat"}
+            </p>
+            <p
+              className={cn(
+                "mt-1 font-bold tracking-tight text-slate-950",
+                compact ? "text-sm leading-5" : "text-base leading-6",
+              )}
+            >
+              {cartDiscountSummary.isQualified
+                ? `Tebrikler! %${percentageLabel} İskonto Kazandınız! 🎉`
+                : `${formatCurrency(
+                    cartDiscountSummary.remainingAmount,
+                    cartDiscountSummary.currency,
+                  )} daha mal ekle, %${percentageLabel} İskonto Kazan! 🚀`}
+            </p>
+            <p
+              className={cn(
+                "mt-1 text-slate-600",
+                compact ? "text-[11px] leading-4" : "text-sm leading-5",
+              )}
+            >
+              {cartDiscountSummary.isQualified
+                ? `Ara toplam ${formatCurrency(
+                    cartDiscountSummary.subtotal,
+                    cartDiscountSummary.currency,
+                  )} oldu. Net toplamın artık ${formatCurrency(
+                    cartDiscountSummary.totalAfterDiscount,
+                    cartDiscountSummary.currency,
+                  )}.`
+                : `Baraj ${formatCurrency(
+                    cartDiscountSummary.threshold,
+                    cartDiscountSummary.currency,
+                  )} · Sepetin şu an ${formatCurrency(
+                    cartDiscountSummary.subtotal,
+                    cartDiscountSummary.currency,
+                  )}.`}
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   function renderFloatingCartAction(product: StorefrontProduct, compact = false) {
     const cartQuantity = product.has_variants
       ? cartVariantCountByProductId.get(product.id) ?? 0
@@ -1502,6 +1611,8 @@ export function StorefrontClient({
             <div className="safe-bottom-padding flex-1 overflow-y-auto px-4 py-4 sm:px-5 lg:px-6">
               {cart.length ? (
                 <div className="space-y-4">
+                  {renderCartDiscountStatus()}
+
                   {cart.map((item) => (
                     <div
                       key={item.id}
@@ -1665,7 +1776,40 @@ export function StorefrontClient({
             <div className="shrink-0 border-t border-slate-100 bg-[linear-gradient(180deg,#ffffff_0%,#f8fafc_100%)] px-4 py-3.5 sm:px-5 lg:px-6 lg:py-4">
               <div className="rounded-[1.5rem] border border-slate-200/80 bg-white p-2.5 sm:p-3 lg:p-4 shadow-[0_14px_40px_rgba(15,23,42,0.06)] sm:rounded-[1.75rem]">
                 <div className="rounded-[1.4rem] bg-slate-950 px-4 py-3 text-white shadow-[0_18px_48px_rgba(15,23,42,0.24)]">
-                  {cartTotalEntries.length ? (
+                  {cartDiscountSummary?.isQualified ? (
+                    <div className="space-y-2.5">
+                      <div className="flex items-center justify-between gap-3">
+                        <p className="text-sm font-medium text-slate-300">Ara Toplam</p>
+                        <p className="text-sm font-semibold tracking-tight text-slate-400 line-through">
+                          {formatCurrency(
+                            cartDiscountSummary.subtotal,
+                            cartDiscountSummary.currency,
+                          )}
+                        </p>
+                      </div>
+                      <div className="flex items-center justify-between gap-3">
+                        <p className="text-sm font-medium text-slate-300">
+                          İskonto (%{formatDiscountPercentage(cartDiscountSummary.percentage)})
+                        </p>
+                        <p className="text-base font-bold tracking-tight text-emerald-300">
+                          -
+                          {formatCurrency(
+                            cartDiscountSummary.discountAmount,
+                            cartDiscountSummary.currency,
+                          )}
+                        </p>
+                      </div>
+                      <div className="flex items-center justify-between gap-3 border-t border-white/10 pt-2">
+                        <p className="text-sm font-medium text-slate-200">Genel Toplam</p>
+                        <p className="text-base font-bold tracking-tight text-white sm:text-lg">
+                          {formatCurrency(
+                            cartDiscountSummary.totalAfterDiscount,
+                            cartDiscountSummary.currency,
+                          )}
+                        </p>
+                      </div>
+                    </div>
+                  ) : cartTotalEntries.length ? (
                     <div className="space-y-2">
                       {cartTotalEntries.map(({ currency, total }) => (
                         <div
@@ -2092,6 +2236,18 @@ export function StorefrontClient({
         </section>
       </main>
 
+      {isMounted && cart.length && cartDiscountSummary ? (
+        <motion.div
+          initial={{ opacity: 0, y: 14, scale: 0.97 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          transition={{ duration: 0.24, ease: "easeOut" }}
+          className="fixed left-4 right-4 z-40 xl:hidden"
+          style={{ bottom: "calc(env(safe-area-inset-bottom) + 6.5rem)" }}
+        >
+          {renderCartDiscountStatus(true)}
+        </motion.div>
+      ) : null}
+
       {isMounted && cart.length ? (
         <motion.button
           type="button"
@@ -2118,7 +2274,27 @@ export function StorefrontClient({
             </div>
             <div className="min-w-0 text-right">
               <div className="space-y-0.5">
-                {cartTotalEntries.length ? (
+                {cartDiscountSummary?.isQualified ? (
+                  <>
+                    <p className="truncate text-[11px] font-medium leading-tight text-slate-300 line-through">
+                      {formatCurrency(
+                        cartDiscountSummary.subtotal,
+                        cartDiscountSummary.currency,
+                      )}
+                    </p>
+                    <p
+                      className={cn(
+                        "truncate text-[13px] font-semibold leading-tight",
+                        theme.stickyCartText,
+                      )}
+                    >
+                      {formatCurrency(
+                        cartDiscountSummary.totalAfterDiscount,
+                        cartDiscountSummary.currency,
+                      )}
+                    </p>
+                  </>
+                ) : cartTotalEntries.length ? (
                   cartTotalEntries.map(({ currency, total }) => (
                     <p
                       key={currency}

@@ -1,0 +1,12 @@
+
+> proje-ad-ekatalox-multitenant@0.1.0 dev
+> next dev
+
+▲ Next.js 16.2.6 (Turbopack)
+- Local:         http://localhost:3000
+- Network:       http://192.168.1.103:3000
+- Environments: .env.local
+✓ Ready in 246ms
+
+○ Compiling /store/[subdomain] ...
+node(37660) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.

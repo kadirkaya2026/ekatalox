@@ -67,7 +67,7 @@ export async function PATCH(request: Request) {
     const { data } = await supabase
       .from("tenant_storefront_settings")
       .select(
-        "tenant_id, theme_key, logo_url, storefront_title, storefront_description, banner_items, site_tab_title, site_favicon_url, announcement_title, announcement_body, is_active, version, max_display_count",
+        "tenant_id, theme_key, logo_url, storefront_title, storefront_description, banner_items, site_tab_title, site_favicon_url, announcement_title, announcement_body, is_active, version, max_display_count, discount_threshold, discount_percentage, is_discount_active",
       )
       .eq("tenant_id", session.tenant!.id)
       .maybeSingle();
@@ -95,6 +95,12 @@ export async function PATCH(request: Request) {
     is_active: body.is_active ?? existingSettings.is_active,
     max_display_count:
       body.max_display_count ?? existingSettings.max_display_count,
+    discount_threshold:
+      body.discount_threshold ?? existingSettings.discount_threshold,
+    discount_percentage:
+      body.discount_percentage ?? existingSettings.discount_percentage,
+    is_discount_active:
+      body.is_discount_active ?? existingSettings.is_discount_active,
   });
 
   if (!parsed.success) {
@@ -149,6 +155,9 @@ export async function PATCH(request: Request) {
         is_active: parsed.data.is_active,
         version: nextAnnouncementVersion,
         max_display_count: parsed.data.max_display_count,
+        discount_threshold: parsed.data.discount_threshold,
+        discount_percentage: parsed.data.discount_percentage,
+        is_discount_active: parsed.data.is_discount_active,
       },
     });
   }
@@ -190,6 +199,9 @@ export async function PATCH(request: Request) {
     is_active: parsed.data.is_active,
     version: nextAnnouncementVersion,
     max_display_count: parsed.data.max_display_count,
+    discount_threshold: parsed.data.discount_threshold,
+    discount_percentage: parsed.data.discount_percentage,
+    is_discount_active: parsed.data.is_discount_active,
   };
 
   const { data: storefrontSettings, error: storefrontError } = await supabase

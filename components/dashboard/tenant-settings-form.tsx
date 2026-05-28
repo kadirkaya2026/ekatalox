@@ -1,27 +1,47 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { ShoppingCart, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import type { Profile, Tenant } from "@/lib/types";
+import type { Profile, Tenant, TenantStorefrontSettings } from "@/lib/types";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
 export function TenantSettingsForm({
   tenant,
   profile,
+  storefrontSettings,
   forcePasswordChange,
 }: {
   tenant: Tenant;
   profile: Profile;
+  storefrontSettings: TenantStorefrontSettings;
   forcePasswordChange?: boolean;
 }) {
   const [whatsapp, setWhatsapp] = useState(tenant.whatsapp_number);
+  const [discountThreshold, setDiscountThreshold] = useState(
+    String(storefrontSettings.discount_threshold ?? 0),
+  );
+  const [discountPercentage, setDiscountPercentage] = useState(
+    String(storefrontSettings.discount_percentage ?? 0),
+  );
+  const [isDiscountActive, setIsDiscountActive] = useState(
+    storefrontSettings.is_discount_active ?? false,
+  );
   const [password, setPassword] = useState("");
   const [passwordRepeat, setPasswordRepeat] = useState("");
   const [message, setMessage] = useState<string | null>(null);
+  const [discountMessage, setDiscountMessage] = useState<string | null>(null);
   const [passwordMessage, setPasswordMessage] = useState<string | null>(null);
+  const [discountThresholdError, setDiscountThresholdError] = useState<string | null>(
+    null,
+  );
+  const [discountPercentageError, setDiscountPercentageError] = useState<string | null>(
+    null,
+  );
   const [pending, startTransition] = useTransition();
+  const [discountPending, startDiscountTransition] = useTransition();
   const [passwordPending, startPasswordTransition] = useTransition();
   const supabase = createSupabaseBrowserClient();
 
@@ -44,6 +64,73 @@ export function TenantSettingsForm({
       }
 
       setMessage("WhatsApp yönlendirme numarası güncellendi.");
+    });
+  }
+
+  function saveDiscountSettings(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setDiscountMessage(null);
+    setDiscountThresholdError(null);
+    setDiscountPercentageError(null);
+
+    const parsedThreshold = Number(discountThreshold);
+    const parsedPercentage = Number(discountPercentage);
+
+    if (!Number.isFinite(parsedThreshold) || parsedThreshold < 0) {
+      setDiscountThresholdError("Baraj tutarı sıfırdan küçük olamaz.");
+      return;
+    }
+
+    if (
+      !Number.isFinite(parsedPercentage) ||
+      parsedPercentage < 0 ||
+      parsedPercentage > 100
+    ) {
+      setDiscountPercentageError("İskonto oranı 0 ile 100 arasında olmalıdır.");
+      return;
+    }
+
+    if (isDiscountActive && parsedThreshold <= 0) {
+      setDiscountThresholdError(
+        "Kampanyayı yayına almak için baraj tutarı 0'dan büyük olmalıdır.",
+      );
+      return;
+    }
+
+    if (isDiscountActive && parsedPercentage <= 0) {
+      setDiscountPercentageError(
+        "Kampanyayı yayına almak için iskonto oranı 0'dan büyük olmalıdır.",
+      );
+      return;
+    }
+
+    startDiscountTransition(async () => {
+      const response = await fetch("/api/tenant/settings", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          discount_threshold: parsedThreshold,
+          discount_percentage: parsedPercentage,
+          is_discount_active: isDiscountActive,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        setDiscountMessage(result.error ?? "İskonto ayarları kaydedilemedi.");
+        return;
+      }
+
+      if (result.storefrontSettings) {
+        setDiscountThreshold(String(result.storefrontSettings.discount_threshold ?? 0));
+        setDiscountPercentage(
+          String(result.storefrontSettings.discount_percentage ?? 0),
+        );
+        setIsDiscountActive(Boolean(result.storefrontSettings.is_discount_active));
+      }
+
+      setDiscountMessage("Sepet ve iskonto ayarları kaydedildi.");
     });
   }
 
@@ -95,10 +182,11 @@ export function TenantSettingsForm({
     });
   }
 
+  const now = new Date();
   const startDate = new Date(tenant.created_at);
   const expiryDate = new Date(startDate);
   expiryDate.setFullYear(expiryDate.getFullYear() + 1);
-  const daysLeft = Math.ceil((expiryDate.getTime() - Date.now()) / 86_400_000);
+  const daysLeft = Math.ceil((expiryDate.getTime() - now.getTime()) / 86_400_000);
   const nearExpiry = daysLeft <= 90 && daysLeft > 0;
 
   const dateFormatter = new Intl.DateTimeFormat("tr-TR", {
@@ -172,6 +260,127 @@ export function TenantSettingsForm({
               {pending ? "Kaydediliyor..." : "Kaydet"}
             </Button>
             {message ? <p className="text-sm text-emerald-700">{message}</p> : null}
+          </form>
+        </Card>
+
+        <Card className="overflow-hidden border-slate-200 p-0">
+          <div className="border-b border-slate-100 bg-[radial-gradient(circle_at_top_right,rgba(16,185,129,0.16),transparent_42%),linear-gradient(135deg,#f8fafc_0%,#ffffff_45%,#ecfeff_100%)] px-5 py-5">
+            <div className="flex items-start gap-4">
+              <div className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-700">
+                <ShoppingCart className="size-5" />
+              </div>
+              <div>
+                <div className="inline-flex items-center gap-2 rounded-full border border-emerald-100 bg-white/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-emerald-700">
+                  <Sparkles className="size-3.5" />
+                  Sepet & İskonto Ayarları
+                </div>
+                <h2 className="mt-3 text-lg font-semibold text-slate-900">
+                  Barajlı akıllı iskonto motoru
+                </h2>
+                <p className="mt-1 text-sm leading-6 text-slate-600">
+                  Esnafı sepette daha fazla ürün eklemeye teşvik eden barajı ve indirim
+                  oranını buradan yönetin. Sistem storefront ve WhatsApp sipariş
+                  metnine otomatik yansır.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <form onSubmit={saveDiscountSettings} className="space-y-5 p-5">
+            <div className="grid gap-4 md:grid-cols-2">
+              <div>
+                <label className="mb-2 block text-sm font-medium text-slate-700">
+                  Baraj tutarı
+                </label>
+                <Input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  inputMode="decimal"
+                  value={discountThreshold}
+                  onChange={(event) => {
+                    setDiscountThreshold(event.target.value);
+                    setDiscountMessage(null);
+                    setDiscountThresholdError(null);
+                  }}
+                  placeholder="1000"
+                />
+                {discountThresholdError ? (
+                  <p className="mt-2 text-sm text-amber-700">{discountThresholdError}</p>
+                ) : (
+                  <p className="mt-2 text-xs text-slate-400">
+                    Ham satış para birimiyle girin. Örn: 1000 USD.
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-medium text-slate-700">
+                  İskonto oranı (%)
+                </label>
+                <Input
+                  type="number"
+                  min="0"
+                  max="100"
+                  step="0.01"
+                  inputMode="decimal"
+                  value={discountPercentage}
+                  onChange={(event) => {
+                    setDiscountPercentage(event.target.value);
+                    setDiscountMessage(null);
+                    setDiscountPercentageError(null);
+                  }}
+                  placeholder="10"
+                />
+                {discountPercentageError ? (
+                  <p className="mt-2 text-sm text-amber-700">{discountPercentageError}</p>
+                ) : (
+                  <p className="mt-2 text-xs text-slate-400">
+                    Baraj geçildiğinde uygulanacak indirim yüzdesi.
+                  </p>
+                )}
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-sm font-semibold text-slate-900">Kampanyayı aktif et</p>
+                  <p className="mt-1 text-sm text-slate-500">
+                    Aktifken storefront’ta canlı baraj mesajı görünür ve uygun sepetlere
+                    otomatik iskonto uygulanır.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsDiscountActive((current) => !current);
+                    setDiscountMessage(null);
+                  }}
+                  aria-pressed={isDiscountActive}
+                  className={`relative inline-flex h-7 w-12 shrink-0 rounded-full transition ${
+                    isDiscountActive ? "bg-emerald-600" : "bg-slate-300"
+                  }`}
+                >
+                  <span
+                    className={`absolute top-1 size-5 rounded-full bg-white shadow-sm transition ${
+                      isDiscountActive ? "left-6" : "left-1"
+                    }`}
+                  />
+                </button>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="min-h-6">
+                {discountMessage ? (
+                  <p className="text-sm text-emerald-700">{discountMessage}</p>
+                ) : null}
+              </div>
+              <Button type="submit" disabled={discountPending}>
+                {discountPending ? "Kaydediliyor..." : "İskonto ayarlarını kaydet"}
+              </Button>
+            </div>
           </form>
         </Card>
 

@@ -109,6 +109,9 @@ export interface TenantStorefrontSettings {
   is_active: boolean;
   version: number;
   max_display_count: number;
+  discount_threshold: number;
+  discount_percentage: number;
+  is_discount_active: boolean;
   created_at: string;
   updated_at: string;
 }

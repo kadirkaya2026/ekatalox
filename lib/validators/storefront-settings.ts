@@ -102,25 +102,49 @@ export const storefrontSettingsSchema = z
       .number()
       .int("Maksimum gösterim sayısı tam sayı olmalıdır.")
       .min(1, "Maksimum gösterim sayısı en az 1 olmalıdır."),
+    discount_threshold: z.coerce
+      .number()
+      .min(0, "İskonto barajı negatif olamaz.")
+      .default(0),
+    discount_percentage: z.coerce
+      .number()
+      .min(0, "İskonto oranı negatif olamaz.")
+      .max(100, "İskonto oranı en fazla %100 olabilir.")
+      .default(0),
+    is_discount_active: z.boolean().default(false),
   })
   .superRefine((value, ctx) => {
-    if (!value.is_active) {
-      return;
+    if (value.is_active) {
+      if (!value.announcement_title) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["announcement_title"],
+          message: "Yayına almak için duyuru başlığı zorunludur.",
+        });
+      }
+
+      if (!value.announcement_body) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["announcement_body"],
+          message: "Yayına almak için duyuru metni zorunludur.",
+        });
+      }
     }
 
-    if (!value.announcement_title) {
+    if (value.is_discount_active && value.discount_threshold <= 0) {
       ctx.addIssue({
         code: "custom",
-        path: ["announcement_title"],
-        message: "Yayına almak için duyuru başlığı zorunludur.",
+        path: ["discount_threshold"],
+        message: "Kampanyayı yayına almak için baraj tutarı 0'dan büyük olmalıdır.",
       });
     }
 
-    if (!value.announcement_body) {
+    if (value.is_discount_active && value.discount_percentage <= 0) {
       ctx.addIssue({
         code: "custom",
-        path: ["announcement_body"],
-        message: "Yayına almak için duyuru metni zorunludur.",
+        path: ["discount_percentage"],
+        message: "Kampanyayı yayına almak için iskonto oranı 0'dan büyük olmalıdır.",
       });
     }
   });
