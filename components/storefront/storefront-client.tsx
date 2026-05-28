@@ -1303,7 +1303,7 @@ export function StorefrontClient({
                   s.isQualified ? "text-blue-700" : "text-amber-700",
                 )}
               >
-                {s.isQualified ? "0 Komisyon aktif" : "Kart fırsatı"}
+                {s.isQualified ? "Kart Kampanyası" : "Kart Kampanyası"}
               </p>
               <p
                 className={cn(
@@ -1365,7 +1365,7 @@ export function StorefrontClient({
                 cartDiscountSummary.isQualified ? "text-emerald-700" : "text-amber-700",
               )}
             >
-              {cartDiscountSummary.isQualified ? "İskonto aktif" : "Barajlı fırsat"}
+              {cartDiscountSummary.isQualified ? "Nakit Kampanyası" : "Nakit Kampanyası"}
             </p>
             <p
               className={cn(
@@ -1810,10 +1810,7 @@ export function StorefrontClient({
               {cart.length ? (
                 <div className="space-y-4">
                   {/* Upsell bar: nakit seçildi → nakit, kart seçildi → kart, seçilmedi → her ikisi */}
-                  {(!selectedPaymentMethod || selectedPaymentMethod === "cash") && renderCartDiscountStatus()}
-                  {(!selectedPaymentMethod || selectedPaymentMethod === "card") &&
-                    cartCardCampaignStatus &&
-                    renderCartDiscountStatus()}
+                  {renderCartDiscountStatus()}
 
                   {cart.map((item) => (
                     <div
