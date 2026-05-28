@@ -13,6 +13,9 @@ import type {
 } from "@/lib/types";
 import { DEFAULT_INSTALLMENT_OPTIONS } from "@/lib/storefront/cart";
 
+type CashTierRow = CashDiscountTier & { _id: string };
+type CardTierRow = CardCampaignTier & { _id: string };
+
 export function TenantPaymentSettingsForm({
   storefrontSettings,
 }: {
@@ -21,8 +24,11 @@ export function TenantPaymentSettingsForm({
   const [tab, setTab] = useState<"cash" | "card">("cash");
 
   // ── Nakit kampanyası state ─────────────────────────────────────────────────
-  const [cashTiers, setCashTiers] = useState<CashDiscountTier[]>(
-    storefrontSettings.cash_discount_tiers ?? [],
+  const [cashTiers, setCashTiers] = useState<CashTierRow[]>(() =>
+    (storefrontSettings.cash_discount_tiers ?? []).map((t) => ({
+      ...t,
+      _id: crypto.randomUUID(),
+    })),
   );
   const [isCashActive, setIsCashActive] = useState(
     storefrontSettings.is_cash_discount_active ?? false,
@@ -30,8 +36,11 @@ export function TenantPaymentSettingsForm({
   const [cashNote, setCashNote] = useState(storefrontSettings.cash_discount_note ?? "");
 
   // ── Kart kampanyası state ──────────────────────────────────────────────────
-  const [cardTiers, setCardTiers] = useState<CardCampaignTier[]>(
-    storefrontSettings.card_campaign_tiers ?? [],
+  const [cardTiers, setCardTiers] = useState<CardTierRow[]>(() =>
+    (storefrontSettings.card_campaign_tiers ?? []).map((t) => ({
+      ...t,
+      _id: crypto.randomUUID(),
+    })),
   );
   const [isCardActive, setIsCardActive] = useState(
     storefrontSettings.is_card_campaign_active ?? false,
@@ -51,36 +60,38 @@ export function TenantPaymentSettingsForm({
 
   // ── Tier helpers ─────────────────────────────────────────────────────────────
   function addCashTier() {
-    setCashTiers((prev) => [...prev, { threshold: 0, percentage: 0 }]);
+    setCashTiers((prev) => [
+      ...prev,
+      { threshold: 0, percentage: 0, _id: crypto.randomUUID() },
+    ]);
     setMessage(null);
   }
 
-  function updateCashTier(index: number, field: keyof CashDiscountTier, value: number) {
-    setCashTiers((prev) =>
-      prev.map((t, i) => (i === index ? { ...t, [field]: value } : t)),
-    );
+  function updateCashTier(id: string, field: keyof CashDiscountTier, value: number) {
+    setCashTiers((prev) => prev.map((t) => (t._id === id ? { ...t, [field]: value } : t)));
     setMessage(null);
   }
 
-  function removeCashTier(index: number) {
-    setCashTiers((prev) => prev.filter((_, i) => i !== index));
+  function removeCashTier(id: string) {
+    setCashTiers((prev) => prev.filter((t) => t._id !== id));
     setMessage(null);
   }
 
   function addCardTier() {
-    setCardTiers((prev) => [...prev, { threshold: 0, maxFreeInstallmentCount: 3 }]);
+    setCardTiers((prev) => [
+      ...prev,
+      { threshold: 0, maxFreeInstallmentCount: 3, _id: crypto.randomUUID() },
+    ]);
     setMessage(null);
   }
 
-  function updateCardTier(index: number, field: keyof CardCampaignTier, value: number) {
-    setCardTiers((prev) =>
-      prev.map((t, i) => (i === index ? { ...t, [field]: value } : t)),
-    );
+  function updateCardTier(id: string, field: keyof CardCampaignTier, value: number) {
+    setCardTiers((prev) => prev.map((t) => (t._id === id ? { ...t, [field]: value } : t)));
     setMessage(null);
   }
 
-  function removeCardTier(index: number) {
-    setCardTiers((prev) => prev.filter((_, i) => i !== index));
+  function removeCardTier(id: string) {
+    setCardTiers((prev) => prev.filter((t) => t._id !== id));
     setMessage(null);
   }
 
@@ -96,10 +107,16 @@ export function TenantPaymentSettingsForm({
         body: JSON.stringify({
           is_cash_discount_active: isCashActive,
           cash_discount_note: cashNote.trim() || null,
-          cash_discount_tiers: cashTiers,
+          cash_discount_tiers: cashTiers
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            .map(({ _id, ...t }) => t)
+            .sort((a, b) => a.threshold - b.threshold),
           is_card_campaign_active: isCardActive,
           card_campaign_note: cardNote.trim() || null,
-          card_campaign_tiers: cardTiers,
+          card_campaign_tiers: cardTiers
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            .map(({ _id, ...t }) => t)
+            .sort((a, b) => a.threshold - b.threshold),
           card_installment_options: cardInstallmentOptions,
         }),
       });
@@ -206,15 +223,11 @@ export function TenantPaymentSettingsForm({
                     <span className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">İskonto oranı (%)</span>
                     <span className="w-8" />
                   </div>
-                  {cashTiers
+                {cashTiers
                     .slice()
                     .sort((a, b) => a.threshold - b.threshold)
-                    .map((tier, idx) => {
-                      const realIdx = cashTiers.findIndex(
-                        (t) => t.threshold === tier.threshold && t.percentage === tier.percentage,
-                      );
-                      return (
-                        <div key={idx} className="grid grid-cols-[1fr_1fr_auto] items-center gap-3 rounded-xl border border-slate-200 bg-white p-3">
+                    .map((tier) => (
+                        <div key={tier._id} className="grid grid-cols-[1fr_1fr_auto] items-center gap-3 rounded-xl border border-slate-200 bg-white p-3">
                           <div>
                             <Input
                               type="number"
@@ -223,7 +236,7 @@ export function TenantPaymentSettingsForm({
                               inputMode="decimal"
                               value={tier.threshold}
                               onChange={(e) =>
-                                updateCashTier(realIdx, "threshold", Number(e.target.value))
+                                updateCashTier(tier._id, "threshold", Number(e.target.value))
                               }
                               placeholder="500"
                               className="h-9"
@@ -238,7 +251,7 @@ export function TenantPaymentSettingsForm({
                               inputMode="decimal"
                               value={tier.percentage}
                               onChange={(e) =>
-                                updateCashTier(realIdx, "percentage", Number(e.target.value))
+                                updateCashTier(tier._id, "percentage", Number(e.target.value))
                               }
                               placeholder="7.5"
                               className="h-9 pr-7"
@@ -249,14 +262,13 @@ export function TenantPaymentSettingsForm({
                           </div>
                           <button
                             type="button"
-                            onClick={() => removeCashTier(realIdx)}
+                            onClick={() => removeCashTier(tier._id)}
                             className="flex size-8 items-center justify-center rounded-lg text-slate-400 transition hover:bg-rose-50 hover:text-rose-600"
                           >
                             <Trash2 className="size-4" />
                           </button>
                         </div>
-                      );
-                    })}
+                      ))}
                 </div>
               )}
 
@@ -351,15 +363,9 @@ export function TenantPaymentSettingsForm({
                   {cardTiers
                     .slice()
                     .sort((a, b) => a.threshold - b.threshold)
-                    .map((tier, idx) => {
-                      const realIdx = cardTiers.findIndex(
-                        (t) =>
-                          t.threshold === tier.threshold &&
-                          t.maxFreeInstallmentCount === tier.maxFreeInstallmentCount,
-                      );
-                      return (
+                    .map((tier) => (
                         <div
-                          key={idx}
+                          key={tier._id}
                           className="grid grid-cols-[1fr_1fr_auto] items-center gap-3 rounded-xl border border-slate-200 bg-white p-3"
                         >
                           <Input
@@ -369,7 +375,7 @@ export function TenantPaymentSettingsForm({
                             inputMode="decimal"
                             value={tier.threshold}
                             onChange={(e) =>
-                              updateCardTier(realIdx, "threshold", Number(e.target.value))
+                              updateCardTier(tier._id, "threshold", Number(e.target.value))
                             }
                             placeholder="1000"
                             className="h-9"
@@ -378,7 +384,7 @@ export function TenantPaymentSettingsForm({
                             value={tier.maxFreeInstallmentCount}
                             onChange={(e) =>
                               updateCardTier(
-                                realIdx,
+                                tier._id,
                                 "maxFreeInstallmentCount",
                                 Number(e.target.value),
                               )
@@ -393,14 +399,13 @@ export function TenantPaymentSettingsForm({
                           </select>
                           <button
                             type="button"
-                            onClick={() => removeCardTier(realIdx)}
+                            onClick={() => removeCardTier(tier._id)}
                             className="flex size-8 items-center justify-center rounded-lg text-slate-400 transition hover:bg-rose-50 hover:text-rose-600"
                           >
                             <Trash2 className="size-4" />
                           </button>
                         </div>
-                      );
-                    })}
+                      ))}
                 </div>
               )}
               <p className="mt-2 text-xs text-slate-400">
