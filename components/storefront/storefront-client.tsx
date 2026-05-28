@@ -641,12 +641,12 @@ export function StorefrontClient({
             openAddToCartModal(product);
           }}
           className={cn(
-            "flex items-center justify-center rounded-full border border-emerald-500/90 bg-[linear-gradient(180deg,#10b981_0%,#059669_100%)] text-white shadow-[0_18px_34px_rgba(5,150,105,0.3)] transition-all duration-200 hover:bg-emerald-500",
-            compact ? "size-10" : "size-11 sm:size-12",
+            "flex items-center justify-center rounded-xl border border-emerald-500/80 bg-transparent text-emerald-600 shadow-[0_12px_24px_rgba(15,23,42,0.12)] backdrop-blur-sm transition-all duration-200 hover:border-emerald-600 hover:bg-emerald-50/70 hover:text-emerald-700",
+            compact ? "size-8" : "size-9 sm:size-10",
           )}
           aria-label="Ürün ekleme birimini seç"
         >
-          <Plus className={compact ? "size-4" : "size-5"} />
+          <Plus className={compact ? "size-3.5" : "size-4"} />
         </motion.button>
       </motion.div>
     );
