@@ -56,6 +56,11 @@ export function getDefaultTenantStorefrontSettings(
     banner_items: [],
     site_tab_title: null,
     site_favicon_url: null,
+    announcement_title: null,
+    announcement_body: null,
+    is_active: false,
+    version: 0,
+    max_display_count: 1,
     created_at: now,
     updated_at: now,
   };

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import Image from "next/image";
 import {
@@ -50,6 +50,51 @@ import { cn, formatCurrency } from "@/lib/utils";
 
 function getCartStorageKey(tenantId: string) {
   return `ekatalox_cart_${tenantId}`;
+}
+
+function getAnnouncementStorageKeys(tenantId: string) {
+  return {
+    version: `eKatalox_announcement_id_${tenantId}`,
+    views: `eKatalox_announcement_views_${tenantId}`,
+  };
+}
+
+const announcementStorageEventName = "ekatalox:announcement-storage";
+
+function subscribeToAnnouncementStorage(onStoreChange: () => void) {
+  if (typeof window === "undefined") {
+    return () => {};
+  }
+
+  const handleChange = () => onStoreChange();
+
+  window.addEventListener("storage", handleChange);
+  window.addEventListener(announcementStorageEventName, handleChange);
+
+  return () => {
+    window.removeEventListener("storage", handleChange);
+    window.removeEventListener(announcementStorageEventName, handleChange);
+  };
+}
+
+function notifyAnnouncementStorageChanged() {
+  window.dispatchEvent(new Event(announcementStorageEventName));
+}
+
+function readStoredCounterValue(storageKey: string) {
+  const rawValue = window.localStorage.getItem(storageKey);
+
+  if (!rawValue) {
+    return 0;
+  }
+
+  const parsedValue = Number(rawValue);
+
+  if (!Number.isInteger(parsedValue) || parsedValue < 0) {
+    return 0;
+  }
+
+  return parsedValue;
 }
 
 function isValidCartItem(item: unknown): item is CartItem {
@@ -353,6 +398,36 @@ interface VariantSelectionState {
   quantity: number;
 }
 
+interface ActiveAnnouncement {
+  title: string;
+  body: string;
+  version: number;
+  maxDisplayCount: number;
+}
+
+function getAnnouncementVisibility(params: {
+  activeAnnouncement: ActiveAnnouncement | null;
+  storageKeys: ReturnType<typeof getAnnouncementStorageKeys>;
+}) {
+  if (typeof window === "undefined") {
+    return false;
+  }
+
+  if (!params.activeAnnouncement) {
+    return false;
+  }
+
+  const storedVersion = readStoredCounterValue(params.storageKeys.version);
+
+  if (storedVersion !== params.activeAnnouncement.version) {
+    return true;
+  }
+
+  const storedViews = readStoredCounterValue(params.storageKeys.views);
+
+  return storedViews < params.activeAnnouncement.maxDisplayCount;
+}
+
 const salesUnits: Array<{ value: SalesUnit; label: string }> = [
   { value: "adet", label: "Adet" },
   { value: "paket", label: "Paket" },
@@ -409,6 +484,10 @@ export function StorefrontClient({
 
   const theme = storefrontThemes[storefrontSettings.theme_key] ?? storefrontThemes.minimal;
   const cartStorageKey = useMemo(() => getCartStorageKey(tenant.id), [tenant.id]);
+  const announcementStorageKeys = useMemo(
+    () => getAnnouncementStorageKeys(tenant.id),
+    [tenant.id],
+  );
   const categoryTree = useMemo(() => buildCategoryTree(categories), [categories]);
   const categoryNameMap = useMemo(
     () => new Map(categories.map((category) => [category.id, category.name])),
@@ -567,6 +646,48 @@ export function StorefrontClient({
     );
   }, [selectedProduct, variantSearchTerm]);
   const storefrontTitle = storefrontSettings.storefront_title || tenant.company_name;
+  const activeAnnouncement = useMemo<ActiveAnnouncement | null>(() => {
+    if (homeHref || !storefrontSettings.is_active) {
+      return null;
+    }
+
+    const title = storefrontSettings.announcement_title?.trim() ?? "";
+    const body = storefrontSettings.announcement_body?.trim() ?? "";
+
+    if (!title || !body) {
+      return null;
+    }
+
+    return {
+      title,
+      body,
+      version:
+        Number.isInteger(storefrontSettings.version) && storefrontSettings.version > 0
+          ? storefrontSettings.version
+          : 0,
+      maxDisplayCount:
+        Number.isInteger(storefrontSettings.max_display_count) &&
+        storefrontSettings.max_display_count > 0
+          ? storefrontSettings.max_display_count
+          : 1,
+    };
+  }, [
+    homeHref,
+    storefrontSettings.announcement_body,
+    storefrontSettings.announcement_title,
+    storefrontSettings.is_active,
+    storefrontSettings.max_display_count,
+    storefrontSettings.version,
+  ]);
+  const isAnnouncementOpen = useSyncExternalStore(
+    subscribeToAnnouncementStorage,
+    () =>
+      getAnnouncementVisibility({
+        activeAnnouncement,
+        storageKeys: announcementStorageKeys,
+      }),
+    () => false,
+  );
 
   useEffect(() => {
     if (!isMounted) {
@@ -592,6 +713,69 @@ export function StorefrontClient({
 
     return () => window.clearInterval(interval);
   }, [bannerItems.length]);
+
+  useEffect(() => {
+    if (!isMounted || !activeAnnouncement) {
+      return;
+    }
+
+    const storedVersion = readStoredCounterValue(announcementStorageKeys.version);
+
+    if (storedVersion === activeAnnouncement.version) {
+      return;
+    }
+
+    window.localStorage.setItem(
+      announcementStorageKeys.version,
+      String(activeAnnouncement.version),
+    );
+    window.localStorage.setItem(announcementStorageKeys.views, "0");
+    notifyAnnouncementStorageChanged();
+  }, [activeAnnouncement, announcementStorageKeys, isMounted]);
+
+  useEffect(() => {
+    if (!activeAnnouncement) {
+      notifyAnnouncementStorageChanged();
+    }
+  }, [activeAnnouncement]);
+
+  const closeAnnouncementModal = useCallback(() => {
+    if (!activeAnnouncement) {
+      return;
+    }
+
+    const storedVersion = readStoredCounterValue(announcementStorageKeys.version);
+    const currentViews =
+      storedVersion === activeAnnouncement.version
+        ? readStoredCounterValue(announcementStorageKeys.views)
+        : 0;
+
+    window.localStorage.setItem(
+      announcementStorageKeys.version,
+      String(activeAnnouncement.version),
+    );
+    window.localStorage.setItem(
+      announcementStorageKeys.views,
+      String(currentViews + 1),
+    );
+    notifyAnnouncementStorageChanged();
+  }, [activeAnnouncement, announcementStorageKeys]);
+
+  useEffect(() => {
+    if (!isAnnouncementOpen) {
+      return;
+    }
+
+    function handleEscape(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        closeAnnouncementModal();
+      }
+    }
+
+    window.addEventListener("keydown", handleEscape);
+
+    return () => window.removeEventListener("keydown", handleEscape);
+  }, [closeAnnouncementModal, isAnnouncementOpen]);
 
   function handleCategoryChange(categoryId: string) {
     setSelectedCategoryId(categoryId);
@@ -1858,6 +2042,86 @@ export function StorefrontClient({
 
       {renderCartDrawer()}
       {renderProductPreviewModal()}
+
+      <AnimatePresence>
+        {isAnnouncementOpen && activeAnnouncement ? (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[70] flex items-center justify-center p-4"
+          >
+            <button
+              type="button"
+              aria-label="Duyuru modalını kapat"
+              className="absolute inset-0 bg-slate-950/45 backdrop-blur-md"
+              onClick={closeAnnouncementModal}
+            />
+
+            <motion.div
+              initial={{ opacity: 0, y: 24, scale: 0.96 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 18, scale: 0.98 }}
+              transition={{ duration: 0.24, ease: "easeOut" }}
+              className="relative z-10 w-full max-w-xl overflow-hidden rounded-[2rem] border border-white/40 bg-white/92 shadow-[0_32px_110px_rgba(15,23,42,0.28)] backdrop-blur-xl"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="announcement-modal-title"
+              aria-describedby="announcement-modal-body"
+            >
+              <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-emerald-500 via-cyan-500 to-sky-500" />
+
+              <div className="p-6 sm:p-7">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="space-y-3">
+                    <span className="inline-flex rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700">
+                      Duyuru
+                    </span>
+                    <h2
+                      id="announcement-modal-title"
+                      className="text-2xl font-bold tracking-tight text-slate-950 sm:text-[2rem]"
+                    >
+                      {activeAnnouncement.title}
+                    </h2>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={closeAnnouncementModal}
+                    className="rounded-full border border-slate-200 bg-white p-2 text-slate-500 transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900"
+                    aria-label="Kapat"
+                  >
+                    <X className="size-5" />
+                  </button>
+                </div>
+
+                <div className="mt-5 rounded-[1.5rem] border border-slate-200/80 bg-slate-50/85 p-5">
+                  <p
+                    id="announcement-modal-body"
+                    className="whitespace-pre-line text-sm leading-7 text-slate-600 sm:text-[15px]"
+                  >
+                    {activeAnnouncement.body}
+                  </p>
+                </div>
+
+                <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <p className="text-xs text-slate-400">
+                    Bu duyuru kullanıcı başına en fazla{" "}
+                    {activeAnnouncement.maxDisplayCount} kez gösterilir.
+                  </p>
+                  <Button
+                    type="button"
+                    onClick={closeAnnouncementModal}
+                    className="rounded-full px-6"
+                  >
+                    Anladım
+                  </Button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
 
       <Modal
         open={Boolean(selectedProduct)}

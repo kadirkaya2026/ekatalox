@@ -25,6 +25,11 @@ const optionalColorSchema = z
     },
   );
 
+const optionalAnnouncementTextSchema = (maxLength: number, message: string) =>
+  z
+    .union([z.string().trim().max(maxLength, message), z.literal(""), z.null(), z.undefined()])
+    .transform((value) => (typeof value === "string" ? value.trim() || null : null));
+
 export const bannerItemSchema = z
   .object({
     id: z.string().min(1, "Banner kimliği zorunludur."),
@@ -54,36 +59,71 @@ export const bannerItemSchema = z
     },
   );
 
-export const storefrontSettingsSchema = z.object({
-  whatsapp_number: z.string().min(10, "WhatsApp numarası zorunludur."),
-  storefront_title: z
-    .string()
-    .trim()
-    .max(80, "Mağaza başlığı en fazla 80 karakter olabilir.")
-    .nullable()
-    .optional()
-    .transform((value) => value || null),
-  storefront_description: z
-    .string()
-    .trim()
-    .max(220, "Açıklama en fazla 220 karakter olabilir.")
-    .nullable()
-    .optional()
-    .transform((value) => value || null),
-  banner_items: z
-    .array(bannerItemSchema)
-    .max(6, "En fazla 6 banner ekleyebilirsiniz.")
-    .default([]),
-  theme_key: storefrontThemeKeySchema,
-  site_tab_title: z
-    .string()
-    .trim()
-    .max(80, "Sekme başlığı en fazla 80 karakter olabilir.")
-    .nullable()
-    .optional()
-    .transform((value) => value || null),
-  site_favicon_url: optionalUrlSchema,
-});
+export const storefrontSettingsSchema = z
+  .object({
+    whatsapp_number: z.string().min(10, "WhatsApp numarası zorunludur."),
+    storefront_title: z
+      .string()
+      .trim()
+      .max(80, "Mağaza başlığı en fazla 80 karakter olabilir.")
+      .nullable()
+      .optional()
+      .transform((value) => value || null),
+    storefront_description: z
+      .string()
+      .trim()
+      .max(220, "Açıklama en fazla 220 karakter olabilir.")
+      .nullable()
+      .optional()
+      .transform((value) => value || null),
+    banner_items: z
+      .array(bannerItemSchema)
+      .max(6, "En fazla 6 banner ekleyebilirsiniz.")
+      .default([]),
+    theme_key: storefrontThemeKeySchema,
+    site_tab_title: z
+      .string()
+      .trim()
+      .max(80, "Sekme başlığı en fazla 80 karakter olabilir.")
+      .nullable()
+      .optional()
+      .transform((value) => value || null),
+    site_favicon_url: optionalUrlSchema,
+    announcement_title: optionalAnnouncementTextSchema(
+      120,
+      "Duyuru başlığı en fazla 120 karakter olabilir.",
+    ),
+    announcement_body: optionalAnnouncementTextSchema(
+      1200,
+      "Duyuru metni en fazla 1200 karakter olabilir.",
+    ),
+    is_active: z.boolean().default(false),
+    max_display_count: z.coerce
+      .number()
+      .int("Maksimum gösterim sayısı tam sayı olmalıdır.")
+      .min(1, "Maksimum gösterim sayısı en az 1 olmalıdır."),
+  })
+  .superRefine((value, ctx) => {
+    if (!value.is_active) {
+      return;
+    }
+
+    if (!value.announcement_title) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["announcement_title"],
+        message: "Yayına almak için duyuru başlığı zorunludur.",
+      });
+    }
+
+    if (!value.announcement_body) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["announcement_body"],
+        message: "Yayına almak için duyuru metni zorunludur.",
+      });
+    }
+  });
 
 export const allowedLogoMimeTypes = [
   "image/png",

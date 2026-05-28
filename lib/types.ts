@@ -104,6 +104,11 @@ export interface TenantStorefrontSettings {
   banner_items: BannerItem[];
   site_tab_title: string | null;
   site_favicon_url: string | null;
+  announcement_title: string | null;
+  announcement_body: string | null;
+  is_active: boolean;
+  version: number;
+  max_display_count: number;
   created_at: string;
   updated_at: string;
 }

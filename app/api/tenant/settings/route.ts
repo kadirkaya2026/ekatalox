@@ -11,6 +11,46 @@ import {
 import { ensureTenantAdminResponse } from "@/lib/tenancy/guards";
 import { storefrontSettingsSchema } from "@/lib/validators/storefront-settings";
 
+function hasAnnouncementChanged(
+  existingSettings: {
+    announcement_title: string | null;
+    announcement_body: string | null;
+    max_display_count: number;
+  },
+  nextSettings: {
+    announcement_title: string | null;
+    announcement_body: string | null;
+    max_display_count: number;
+  },
+) {
+  return (
+    existingSettings.announcement_title !== nextSettings.announcement_title ||
+    existingSettings.announcement_body !== nextSettings.announcement_body ||
+    existingSettings.max_display_count !== nextSettings.max_display_count
+  );
+}
+
+function getNextAnnouncementVersion(params: {
+  previousVersion: number;
+  wasActive: boolean;
+  willBeActive: boolean;
+  announcementChanged: boolean;
+}) {
+  if (!params.willBeActive) {
+    return params.previousVersion;
+  }
+
+  if (params.previousVersion <= 0) {
+    return 1;
+  }
+
+  if (!params.wasActive || params.announcementChanged) {
+    return params.previousVersion + 1;
+  }
+
+  return params.previousVersion;
+}
+
 export async function PATCH(request: Request) {
   const guard = await ensureTenantAdminResponse();
   if (guard) {
@@ -27,7 +67,7 @@ export async function PATCH(request: Request) {
     const { data } = await supabase
       .from("tenant_storefront_settings")
       .select(
-        "tenant_id, theme_key, logo_url, storefront_title, storefront_description, banner_items, site_tab_title, site_favicon_url",
+        "tenant_id, theme_key, logo_url, storefront_title, storefront_description, banner_items, site_tab_title, site_favicon_url, announcement_title, announcement_body, is_active, version, max_display_count",
       )
       .eq("tenant_id", session.tenant!.id)
       .maybeSingle();
@@ -49,6 +89,12 @@ export async function PATCH(request: Request) {
     theme_key: body.theme_key ?? existingSettings.theme_key,
     site_tab_title: body.site_tab_title ?? existingSettings.site_tab_title,
     site_favicon_url: body.site_favicon_url ?? existingSettings.site_favicon_url,
+    announcement_title:
+      body.announcement_title ?? existingSettings.announcement_title,
+    announcement_body: body.announcement_body ?? existingSettings.announcement_body,
+    is_active: body.is_active ?? existingSettings.is_active,
+    max_display_count:
+      body.max_display_count ?? existingSettings.max_display_count,
   });
 
   if (!parsed.success) {
@@ -57,6 +103,24 @@ export async function PATCH(request: Request) {
       { status: 400 },
     );
   }
+
+  const nextAnnouncementVersion = getNextAnnouncementVersion({
+    previousVersion: existingSettings.version,
+    wasActive: existingSettings.is_active,
+    willBeActive: parsed.data.is_active,
+    announcementChanged: hasAnnouncementChanged(
+      {
+        announcement_title: existingSettings.announcement_title,
+        announcement_body: existingSettings.announcement_body,
+        max_display_count: existingSettings.max_display_count,
+      },
+      {
+        announcement_title: parsed.data.announcement_title,
+        announcement_body: parsed.data.announcement_body,
+        max_display_count: parsed.data.max_display_count,
+      },
+    ),
+  });
 
   if (!supabase) {
     if (!shouldAllowDemoFallback()) {
@@ -80,6 +144,11 @@ export async function PATCH(request: Request) {
         banner_items: parsed.data.banner_items,
         site_tab_title: parsed.data.site_tab_title,
         site_favicon_url: parsed.data.site_favicon_url,
+        announcement_title: parsed.data.announcement_title,
+        announcement_body: parsed.data.announcement_body,
+        is_active: parsed.data.is_active,
+        version: nextAnnouncementVersion,
+        max_display_count: parsed.data.max_display_count,
       },
     });
   }
@@ -116,6 +185,11 @@ export async function PATCH(request: Request) {
     banner_items: parsed.data.banner_items,
     site_tab_title: parsed.data.site_tab_title,
     site_favicon_url: parsed.data.site_favicon_url,
+    announcement_title: parsed.data.announcement_title,
+    announcement_body: parsed.data.announcement_body,
+    is_active: parsed.data.is_active,
+    version: nextAnnouncementVersion,
+    max_display_count: parsed.data.max_display_count,
   };
 
   const { data: storefrontSettings, error: storefrontError } = await supabase
