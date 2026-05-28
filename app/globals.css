@@ -73,6 +73,28 @@ button:focus-visible {
   padding-bottom: calc(env(safe-area-inset-bottom) + 6rem);
 }
 
+.safe-bottom-offset {
+  bottom: calc(env(safe-area-inset-bottom) + 4.25rem);
+}
+
+.safe-bottom-padding {
+  padding-bottom: calc(env(safe-area-inset-bottom) + 1rem);
+}
+
+.surface-premium {
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
 section[id] {
   scroll-margin-top: 6rem;
 }
