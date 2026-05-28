@@ -151,7 +151,7 @@ function normalizeVariantRows(rows: VariantMatrixRow[]) {
   return rows.map((row, index) => {
     const stockQuantity = Number(row.stock_quantity || "0");
     return {
-      id: row.id,
+      id: row.id ?? "",
       model_name: row.model_name.trim(),
       stock_quantity: stockQuantity,
       package_quantity: row.package_quantity.trim() ? Number(row.package_quantity) : null,

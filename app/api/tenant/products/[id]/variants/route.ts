@@ -61,7 +61,15 @@ export async function POST(
 
   if (!parsed.success) {
     return NextResponse.json(
-      { error: parsed.error.issues[0]?.message ?? "Varyant verisi hatalı." },
+      {
+        error:
+          parsed.error.issues
+            .map((issue) => {
+              const path = issue.path.length ? `${issue.path.join(".")}: ` : "";
+              return `${path}${issue.message}`;
+            })
+            .join(" | ") || "Varyant verisi hatalı.",
+      },
       { status: 400 },
     );
   }

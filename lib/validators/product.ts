@@ -110,7 +110,10 @@ export const productVariantBulkUpdateSchema = z.object({
   variants: z.array(
     z.object({
       id: z
-        .union([z.string().uuid(), z.literal(""), z.undefined()])
+        .string()
+        .uuid("Geçerli bir varyant seçin.")
+        .or(z.literal(""))
+        .optional()
         .transform((value) => (value ? value : undefined)),
       model_name: z
         .string()
@@ -119,7 +122,7 @@ export const productVariantBulkUpdateSchema = z.object({
       stock_quantity: nonNegativeIntegerSchema,
       package_quantity: optionalPositiveIntegerSchema,
       carton_quantity: optionalPositiveIntegerSchema,
-      is_available_for_sale: booleanSchema,
+      is_available_for_sale: booleanSchema.optional().default(true),
       display_order: z.coerce.number().int().min(1).optional(),
     }),
   ).min(1, "En az bir varyant girin."),
