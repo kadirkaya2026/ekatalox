@@ -10,6 +10,7 @@ import {
   useSensor,
   useSensors,
   type DragEndEvent,
+  type DragMoveEvent,
   type DragOverEvent,
   type DragStartEvent,
 } from "@dnd-kit/core";
@@ -397,9 +398,31 @@ export function CategoriesManager({
 
   // ── DnD Handlers ──────────────────────────────────────────────────────────
 
+  function computePosition(active: DragMoveEvent["active"], over: NonNullable<DragMoveEvent["over"]>): OverPosition {
+    const translatedRect = active.rect.current.translated;
+    if (!translatedRect) return "on";
+
+    const activeMidY = translatedRect.top + translatedRect.height / 2;
+    const { top, height } = over.rect;
+    const relY = activeMidY - top;
+
+    // Üst/alt %20 → reorder; orta %60 → reparent
+    if (relY < height * 0.2) return "above";
+    if (relY > height * 0.8) return "below";
+    return "on";
+  }
+
   function handleDragStart({ active }: DragStartEvent) {
     setActiveId(active.id as string);
     closeAllInline();
+  }
+
+  function handleDragMove({ active, over }: DragMoveEvent) {
+    if (!over || over.id === active.id) return;
+
+    const pos = computePosition(active, over);
+    setOverPosition(pos);
+    overPositionRef.current = pos;
   }
 
   function handleDragOver({ active, over }: DragOverEvent) {
@@ -407,28 +430,7 @@ export function CategoriesManager({
 
     setOverId(over.id as string);
 
-    // active.rect.current.translated = sürüklenen öğenin GÜNCEL konumu
-    const translatedRect = active.rect.current.translated;
-    if (!translatedRect) {
-      setOverPosition("on");
-      overPositionRef.current = "on";
-      return;
-    }
-
-    const activeMidY = translatedRect.top + translatedRect.height / 2;
-    const { top, height } = over.rect;
-    const relY = activeMidY - top;
-    const threshold = height * 0.25;
-
-    let pos: OverPosition;
-    if (relY < threshold) {
-      pos = "above";
-    } else if (relY > height - threshold) {
-      pos = "below";
-    } else {
-      pos = "on";
-    }
-
+    const pos = computePosition(active, over);
     setOverPosition(pos);
     overPositionRef.current = pos;
   }
@@ -472,7 +474,7 @@ export function CategoriesManager({
       const overIndex = flat.findIndex((c) => c.id === over.id);
       if (oldIndex === -1 || overIndex === -1) return;
 
-      const targetIndex = overPosition === "below" ? overIndex + 1 : overIndex;
+      const targetIndex = overPositionRef.current === "below" ? overIndex + 1 : overIndex;
       const reordered = arrayMove(flat, oldIndex, targetIndex > oldIndex ? targetIndex - 1 : targetIndex);
 
       updated = categories.map((cat) => {
@@ -567,6 +569,7 @@ export function CategoriesManager({
             sensors={sensors}
             collisionDetection={closestCenter}
             onDragStart={handleDragStart}
+            onDragMove={handleDragMove}
             onDragOver={handleDragOver}
             onDragEnd={handleDragEnd}
           >
