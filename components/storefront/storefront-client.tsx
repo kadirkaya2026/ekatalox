@@ -630,7 +630,10 @@ export function StorefrontClient({
       <motion.div
         layout
         onClick={(event) => event.stopPropagation()}
-        className="absolute -right-1 -top-1 z-20 origin-top-right sm:right-0 sm:top-0"
+        className={cn(
+          "absolute z-30 origin-top-right",
+          compact ? "-right-2 -top-2" : "-right-2.5 -top-2.5 sm:-right-2 sm:-top-2",
+        )}
       >
         <motion.button
           type="button"
@@ -641,7 +644,7 @@ export function StorefrontClient({
             openAddToCartModal(product);
           }}
           className={cn(
-            "flex items-center justify-center rounded-xl border border-emerald-500/80 bg-transparent text-emerald-600 shadow-[0_12px_24px_rgba(15,23,42,0.12)] backdrop-blur-sm transition-all duration-200 hover:border-emerald-600 hover:bg-emerald-50/70 hover:text-emerald-700",
+            "flex items-center justify-center rounded-xl border border-emerald-600 bg-emerald-500 text-white shadow-[0_14px_30px_rgba(16,185,129,0.32)] transition-all duration-200 hover:border-emerald-500 hover:bg-emerald-400",
             compact ? "size-8" : "size-9 sm:size-10",
           )}
           aria-label="Ürün ekleme birimini seç"
