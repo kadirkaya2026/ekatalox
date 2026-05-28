@@ -16,6 +16,8 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Modal } from "@/components/ui/modal";
 import { Textarea } from "@/components/ui/textarea";
 import {
   buildCategoryTree,
@@ -115,52 +117,20 @@ function getUnitSummary(product: StorefrontProduct) {
   return parts.join("  ");
 }
 
-type PurchaseUnitOption = {
-  key: "quantity" | "package" | "carton";
-  label: string;
-  quantity: number;
-  description: string;
-};
-
-function getPurchaseUnitOptions(product: StorefrontProduct): PurchaseUnitOption[] {
-  const options: PurchaseUnitOption[] = [
-    {
-      key: "quantity",
-      label: "Adet",
-      quantity: 1,
-      description: "1 Adet",
-    },
-  ];
-
-  if (product.package_quantity) {
-    options.push({
-      key: "package",
-      label: "Paket",
-      quantity: product.package_quantity,
-      description: `1 Paket = ${product.package_quantity} Adet`,
-    });
-  }
-
-  if (product.carton_quantity) {
-    options.push({
-      key: "carton",
-      label: "Koli",
-      quantity: product.carton_quantity,
-      description: `1 Koli = ${product.carton_quantity} Adet`,
-    });
-  }
-
-  return options;
-}
-
-function getCategoryMonogram(name: string) {
-  const normalized = name.trim();
+function parseUnitCount(value: string) {
+  const normalized = value.trim();
 
   if (!normalized) {
-    return "KT";
+    return 0;
   }
 
-  return normalized.slice(0, 2).toLocaleUpperCase("tr-TR");
+  const parsedValue = Number(normalized);
+
+  if (!Number.isInteger(parsedValue) || parsedValue < 0) {
+    return null;
+  }
+
+  return parsedValue;
 }
 
 function dedupeProducts(items: StorefrontProduct[]) {
@@ -196,20 +166,6 @@ function getClientMountedState() {
 
 function getServerMountedState() {
   return false;
-}
-
-function buildCategoryProductCount(
-  categories: Category[],
-  products: StorefrontProduct[],
-) {
-  return new Map(
-    categories.map((category) => [
-      category.id,
-      products.filter((product) =>
-        getDescendantCategoryIds(categories, category.id).includes(product.category_id),
-      ).length,
-    ]),
-  );
 }
 
 function renderBannerItem(
@@ -299,7 +255,11 @@ export function StorefrontClient({
   const [note, setNote] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>("all");
-  const [openUnitPickerProductId, setOpenUnitPickerProductId] = useState<string | null>(null);
+  const [selectedProduct, setSelectedProduct] = useState<StorefrontProduct | null>(null);
+  const [selectedQuantity, setSelectedQuantity] = useState("0");
+  const [selectedPackageCount, setSelectedPackageCount] = useState("0");
+  const [selectedCartonCount, setSelectedCartonCount] = useState("0");
+  const [quantityError, setQuantityError] = useState<string | null>(null);
   const [visibleCount, setVisibleCount] = useState(24);
   const [hoveredCategoryId, setHoveredCategoryId] = useState<string | null>(null);
   const [activeBannerIndex, setActiveBannerIndex] = useState(0);
@@ -316,10 +276,6 @@ export function StorefrontClient({
   const categoryNameMap = useMemo(
     () => new Map(categories.map((category) => [category.id, category.name])),
     [categories],
-  );
-  const categoryCounts = useMemo(
-    () => buildCategoryProductCount(categories, products),
-    [categories, products],
   );
   const topCategories = categoryTree;
   const selectedCategoryIds = useMemo(() => {
@@ -344,21 +300,11 @@ export function StorefrontClient({
       return [];
     }
 
-    return [
-      {
-        id: selectedTopCategory.id,
-        name: "Tümü",
-        count: categoryCounts.get(selectedTopCategory.id) ?? 0,
-        monogram: getCategoryMonogram(selectedTopCategory.name),
-      },
-      ...selectedTopCategory.children.map((child) => ({
-        id: child.id,
-        name: child.name,
-        count: categoryCounts.get(child.id) ?? 0,
-        monogram: getCategoryMonogram(child.name),
-      })),
-    ];
-  }, [categoryCounts, selectedTopCategory]);
+    return selectedTopCategory.children.map((child) => ({
+      id: child.id,
+      name: child.name,
+    }));
+  }, [selectedTopCategory]);
 
   const cartTotal = useMemo(() => getCartTotal(cart), [cart]);
   const cartCurrency = useMemo(() => getCartCurrency(cart), [cart]);
@@ -385,6 +331,9 @@ export function StorefrontClient({
     [cartTotalsByCurrency],
   );
   const cartDistinctCount = cart.length;
+  const selectedQuantityValue = parseUnitCount(selectedQuantity);
+  const selectedPackageCountValue = parseUnitCount(selectedPackageCount);
+  const selectedCartonCountValue = parseUnitCount(selectedCartonCount);
 
   const filteredProducts = useMemo(() => {
     const normalizedSearch = searchTerm.trim().toLocaleLowerCase("tr-TR");
@@ -410,6 +359,8 @@ export function StorefrontClient({
   const visibleProducts = filteredProducts.slice(0, visibleCount);
   const bannerItems = storefrontSettings.banner_items ?? [];
   const currentBanner = bannerItems[activeBannerIndex] ?? null;
+  const showBannerSection = !homeHref && selectedCategoryId === "all" && !searchTerm;
+  const showSections = showBannerSection && sections.length > 0;
   const recommendedProducts = useMemo(() => {
     const cartIds = new Set(cart.map((item) => item.id));
 
@@ -434,6 +385,34 @@ export function StorefrontClient({
     () => cart.reduce((total, item) => total + item.quantity, 0),
     [cart],
   );
+  const selectedTotalQuantity = useMemo(() => {
+    if (!selectedProduct) {
+      return 0;
+    }
+
+    if (
+      selectedQuantityValue === null ||
+      selectedPackageCountValue === null ||
+      selectedCartonCountValue === null
+    ) {
+      return 0;
+    }
+
+    return (
+      selectedQuantityValue +
+      selectedPackageCountValue * (selectedProduct.package_quantity ?? 0) +
+      selectedCartonCountValue * (selectedProduct.carton_quantity ?? 0)
+    );
+  }, [
+    selectedCartonCountValue,
+    selectedPackageCountValue,
+    selectedProduct,
+    selectedQuantityValue,
+  ]);
+  const selectedLineTotal =
+    selectedProduct && selectedTotalQuantity > 0
+      ? selectedProduct.price * selectedTotalQuantity
+      : 0;
   const storefrontTitle = storefrontSettings.storefront_title || tenant.company_name;
 
   useEffect(() => {
@@ -461,55 +440,64 @@ export function StorefrontClient({
     return () => window.clearInterval(interval);
   }, [bannerItems.length]);
 
-  useEffect(() => {
-    if (!openUnitPickerProductId) {
-      return;
-    }
-
-    const handlePointerDown = (event: PointerEvent) => {
-      const target = event.target as HTMLElement | null;
-
-      if (target?.closest('[data-unit-picker-root="true"]')) {
-        return;
-      }
-
-      setOpenUnitPickerProductId(null);
-    };
-
-    document.addEventListener("pointerdown", handlePointerDown);
-
-    return () => document.removeEventListener("pointerdown", handlePointerDown);
-  }, [openUnitPickerProductId]);
-
   function handleCategoryChange(categoryId: string) {
     setSelectedCategoryId(categoryId);
     setHoveredCategoryId(null);
-    setOpenUnitPickerProductId(null);
     setVisibleCount(24);
   }
 
   function handleSearchChange(value: string) {
     setSearchTerm(value);
-    setOpenUnitPickerProductId(null);
     setVisibleCount(24);
   }
 
   function openCartDrawer() {
-    setOpenUnitPickerProductId(null);
     setIsCartOpen(true);
   }
 
-  function toggleUnitPicker(productId: string) {
-    setOpenUnitPickerProductId((current) => (current === productId ? null : productId));
-  }
-
-  function addProductWithUnit(product: StorefrontProduct, quantity: number) {
-    if (!product.is_in_stock || quantity <= 0) {
+  function openAddToCartModal(product: StorefrontProduct) {
+    if (!product.is_in_stock) {
       return;
     }
 
-    setCart((current) => addToCart(current, product, quantity));
-    setOpenUnitPickerProductId(null);
+    setSelectedProduct(product);
+    setSelectedQuantity("0");
+    setSelectedPackageCount("0");
+    setSelectedCartonCount("0");
+    setQuantityError(null);
+  }
+
+  function closeAddToCartModal() {
+    setSelectedProduct(null);
+    setSelectedQuantity("0");
+    setSelectedPackageCount("0");
+    setSelectedCartonCount("0");
+    setQuantityError(null);
+  }
+
+  function confirmAddToCart(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!selectedProduct || !selectedProduct.is_in_stock) {
+      return;
+    }
+
+    if (
+      selectedQuantityValue === null ||
+      selectedPackageCountValue === null ||
+      selectedCartonCountValue === null
+    ) {
+      setQuantityError("Lütfen geçerli tam sayı değerleri girin.");
+      return;
+    }
+
+    if (selectedTotalQuantity <= 0) {
+      setQuantityError("Sepete eklemek için en az bir değer girin.");
+      return;
+    }
+
+    setCart((current) => addToCart(current, selectedProduct, selectedTotalQuantity));
+    closeAddToCartModal();
   }
 
   function updateCartItemQuantity(productId: string, value: string) {
@@ -552,7 +540,6 @@ export function StorefrontClient({
 
   function renderFloatingCartAction(product: StorefrontProduct, compact = false) {
     const cartQuantity = cartQuantityByProductId.get(product.id) ?? 0;
-    const unitOptions = getPurchaseUnitOptions(product);
 
     if (!product.is_in_stock) {
       return null;
@@ -615,59 +602,16 @@ export function StorefrontClient({
       );
     }
 
-    if (openUnitPickerProductId === product.id) {
-      return (
-        <AnimatePresence mode="popLayout" initial={false}>
-          <motion.div
-            key={`picker-${product.id}`}
-            data-unit-picker-root="true"
-            initial={{ opacity: 0, scale: 0.9, y: -8 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.94, y: -5 }}
-            transition={floatingActionTransition}
-            className={cn(
-              "absolute right-3 top-3 z-20 w-44 origin-top-right overflow-hidden rounded-[1.45rem] border border-white/80 bg-white/92 p-2 shadow-[0_20px_48px_rgba(15,23,42,0.16)] ring-1 ring-slate-900/5 backdrop-blur-xl",
-              compact && "w-40",
-            )}
-          >
-            <p className="px-2 pb-1 pt-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-emerald-700">
-              Birim Seç
-            </p>
-            <div className="space-y-1">
-              {unitOptions.map((option, index) => (
-                <motion.button
-                  key={option.key}
-                  type="button"
-                  initial={{ opacity: 0, y: 4 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.03, duration: 0.16, ease: "easeOut" }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={() => addProductWithUnit(product, option.quantity)}
-                  className="flex w-full flex-col rounded-2xl border border-transparent bg-slate-50/90 px-3 py-2.5 text-left transition hover:border-emerald-100 hover:bg-emerald-50"
-                >
-                  <span className="text-sm font-semibold text-slate-900">{option.label}</span>
-                  <span className="mt-0.5 text-[11px] leading-4 text-slate-500">
-                    {option.description}
-                  </span>
-                </motion.button>
-              ))}
-            </div>
-          </motion.div>
-        </AnimatePresence>
-      );
-    }
-
     return (
       <motion.div
         layout
-        data-unit-picker-root="true"
         className="absolute right-3 top-3 z-20 origin-top-right"
       >
         <motion.button
           type="button"
           whileTap={{ scale: 0.9 }}
           whileHover={{ scale: 1.03 }}
-          onClick={() => toggleUnitPicker(product.id)}
+          onClick={() => openAddToCartModal(product)}
           className={cn(
             "flex items-center justify-center rounded-full border border-emerald-500/90 bg-[linear-gradient(180deg,#10b981_0%,#059669_100%)] text-white shadow-[0_18px_34px_rgba(5,150,105,0.3)] transition-all duration-200 hover:bg-emerald-500",
             compact ? "size-10" : "size-11 sm:size-12",
@@ -1324,15 +1268,10 @@ export function StorefrontClient({
                 ))}
               </div>
 
-              {selectedTopCategory ? (
+              {selectedTopCategory && mobileSubcategories.length ? (
                 <div className="scrollbar-hide -mx-4 mt-3 flex gap-3 overflow-x-auto px-4 pb-1">
                   {mobileSubcategories.map((subcategory) => {
-                    const isActive =
-                      selectedCategoryId === subcategory.id ||
-                      (subcategory.id === selectedTopCategory.id &&
-                        !selectedTopCategory.children.some(
-                          (child) => child.id === selectedCategoryId,
-                        ));
+                    const isActive = selectedCategoryId === subcategory.id;
 
                     return (
                       <button
@@ -1340,28 +1279,13 @@ export function StorefrontClient({
                         type="button"
                         onClick={() => handleCategoryChange(subcategory.id)}
                         className={cn(
-                          "flex shrink-0 flex-col items-center gap-2 rounded-[1.35rem] border px-4 py-3 text-center transition duration-200",
+                          "shrink-0 rounded-full border px-4 py-2.5 text-sm font-semibold transition duration-200",
                           isActive
-                            ? "border-emerald-200 bg-emerald-50 text-emerald-900 shadow-sm"
+                            ? "border-emerald-600 bg-emerald-600 text-white shadow-sm"
                             : "border-slate-200 bg-white text-slate-700",
                         )}
                       >
-                        <span
-                          className={cn(
-                            "flex size-11 items-center justify-center rounded-2xl text-xs font-bold",
-                            isActive
-                              ? "bg-emerald-600 text-white"
-                              : "bg-slate-100 text-slate-500",
-                          )}
-                        >
-                          {subcategory.monogram}
-                        </span>
-                        <span className="max-w-20 text-xs font-semibold leading-4">
-                          {subcategory.name}
-                        </span>
-                        <span className="text-[11px] text-slate-500">
-                          {subcategory.count} ürün
-                        </span>
+                        {subcategory.name}
                       </button>
                     );
                   })}
@@ -1373,46 +1297,48 @@ export function StorefrontClient({
       </header>
 
       <main className="container-shell sticky-safe-bottom py-5 sm:py-6">
-        <section className="mb-10 w-full">
-          {bannerItems.length ? (
-            <div className="w-full space-y-4">
-              {currentBanner
-                ? renderBannerItem(
-                    currentBanner,
-                    activeBannerIndex,
-                    storefrontTitle,
-                  )
-                : null}
-              {bannerItems.length > 1 ? (
-                <div className="flex items-center justify-center gap-2">
-                  {bannerItems.map((banner, index) => (
-                    <button
-                      key={banner.id}
-                      type="button"
-                      onClick={() => setActiveBannerIndex(index)}
-                      className={cn(
-                        "h-2.5 rounded-full transition",
-                        index === activeBannerIndex
-                          ? "w-8 bg-slate-900"
-                          : "w-2.5 bg-slate-300 hover:bg-slate-400",
-                      )}
-                      aria-label={`Banner ${index + 1}`}
-                    />
-                  ))}
-                </div>
-              ) : null}
-            </div>
-          ) : (
-            <div className="flex min-h-[240px] w-full flex-col justify-center rounded-[2.5rem] border border-dashed border-slate-200 bg-slate-50/80 px-6 py-10 text-center md:min-h-[320px] lg:min-h-[400px]">
-              <p className="text-sm font-semibold text-slate-900">Banner alanı şu an boş</p>
-              <p className="mt-2 text-sm text-slate-500">
-                Admin panelindeki vitrin ayarlarından kampanya banner’ları ekleyebilirsiniz.
-              </p>
-            </div>
-          )}
-        </section>
+        {showBannerSection ? (
+          <section className="mb-10 w-full">
+            {bannerItems.length ? (
+              <div className="w-full space-y-4">
+                {currentBanner
+                  ? renderBannerItem(
+                      currentBanner,
+                      activeBannerIndex,
+                      storefrontTitle,
+                    )
+                  : null}
+                {bannerItems.length > 1 ? (
+                  <div className="flex items-center justify-center gap-2">
+                    {bannerItems.map((banner, index) => (
+                      <button
+                        key={banner.id}
+                        type="button"
+                        onClick={() => setActiveBannerIndex(index)}
+                        className={cn(
+                          "h-2.5 rounded-full transition",
+                          index === activeBannerIndex
+                            ? "w-8 bg-slate-900"
+                            : "w-2.5 bg-slate-300 hover:bg-slate-400",
+                        )}
+                        aria-label={`Banner ${index + 1}`}
+                      />
+                    ))}
+                  </div>
+                ) : null}
+              </div>
+            ) : (
+              <div className="flex min-h-[240px] w-full flex-col justify-center rounded-[2.5rem] border border-dashed border-slate-200 bg-slate-50/80 px-6 py-10 text-center md:min-h-[320px] lg:min-h-[400px]">
+                <p className="text-sm font-semibold text-slate-900">Banner alanı şu an boş</p>
+                <p className="mt-2 text-sm text-slate-500">
+                  Admin panelindeki vitrin ayarlarından kampanya banner’ları ekleyebilirsiniz.
+                </p>
+              </div>
+            )}
+          </section>
+        ) : null}
 
-        {sections.length > 0 && selectedCategoryId === "all" && !searchTerm ? (
+        {showSections ? (
           <div className="mb-10 space-y-10">
             {sections.map((section) => {
               const visibleSectionProducts = section.products.slice(0, 8);
@@ -1514,7 +1440,7 @@ export function StorefrontClient({
           transition={{ duration: 0.24, ease: "easeOut" }}
           className={cn(
             theme.stickyCart,
-            "safe-bottom-offset left-4 right-4 rounded-[1.8rem] border border-emerald-400/10 px-4 py-3.5 text-left shadow-[0_18px_44px_rgba(15,23,42,0.22)] xl:hidden",
+            "safe-bottom-offset left-4 right-4 rounded-[1.8rem] border border-emerald-400/10 px-4 py-3 text-left shadow-[0_18px_44px_rgba(15,23,42,0.22)] xl:hidden",
           )}
         >
           <div className="flex items-center gap-3.5">
@@ -1560,6 +1486,116 @@ export function StorefrontClient({
       ) : null}
 
       {renderCartDrawer()}
+
+      <Modal
+        open={Boolean(selectedProduct)}
+        onClose={closeAddToCartModal}
+        title="Sepete Ekle"
+      >
+        {selectedProduct ? (
+          <form onSubmit={confirmAddToCart} className="grid gap-4">
+            <div className="rounded-xl border border-slate-100 bg-slate-50 p-4">
+              <p className="font-semibold text-slate-900">{selectedProduct.product_name}</p>
+              <p className="mt-1 text-sm text-slate-500">
+                {selectedProduct.sku_code || "SKU bilgisi yok"}
+              </p>
+              {getUnitSummary(selectedProduct) ? (
+                <p className="mt-1 text-sm text-slate-500">
+                  {getUnitSummary(selectedProduct)}
+                </p>
+              ) : null}
+              <p className="mt-3 text-lg font-bold text-slate-900">
+                {formatCurrency(selectedProduct.price, selectedProduct.currency)}
+              </p>
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-3">
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-slate-900">ADET</label>
+                <Input
+                  type="number"
+                  min="0"
+                  step="1"
+                  inputMode="numeric"
+                  value={selectedQuantity}
+                  onChange={(event) => {
+                    setSelectedQuantity(event.target.value);
+                    if (quantityError) {
+                      setQuantityError(null);
+                    }
+                  }}
+                  placeholder="0"
+                />
+              </div>
+
+              {selectedProduct.package_quantity ? (
+                <div className="space-y-2">
+                  <label className="text-sm font-semibold text-slate-900">
+                    PAKET
+                  </label>
+                  <Input
+                    type="number"
+                    min="0"
+                    step="1"
+                    inputMode="numeric"
+                    value={selectedPackageCount}
+                    onChange={(event) => {
+                      setSelectedPackageCount(event.target.value);
+                      if (quantityError) {
+                        setQuantityError(null);
+                      }
+                    }}
+                    placeholder="0"
+                  />
+                  <p className="text-xs text-slate-500">
+                    1 Paket = {selectedProduct.package_quantity} adet
+                  </p>
+                </div>
+              ) : null}
+
+              {selectedProduct.carton_quantity ? (
+                <div className="space-y-2">
+                  <label className="text-sm font-semibold text-slate-900">KOLİ</label>
+                  <Input
+                    type="number"
+                    min="0"
+                    step="1"
+                    inputMode="numeric"
+                    value={selectedCartonCount}
+                    onChange={(event) => {
+                      setSelectedCartonCount(event.target.value);
+                      if (quantityError) {
+                        setQuantityError(null);
+                      }
+                    }}
+                    placeholder="0"
+                  />
+                  <p className="text-xs text-slate-500">
+                    1 Koli = {selectedProduct.carton_quantity} adet
+                  </p>
+                </div>
+              ) : null}
+            </div>
+
+            {quantityError ? <p className="text-sm text-amber-700">{quantityError}</p> : null}
+
+            <div className="rounded-xl bg-slate-900 p-4 text-white">
+              <p className="text-sm text-slate-300">Toplam</p>
+              <p className="mt-1 text-sm text-slate-300">{selectedTotalQuantity} adet</p>
+              <p className="mt-1 text-2xl font-bold">
+                {formatCurrency(selectedLineTotal, selectedProduct.currency)}
+              </p>
+            </div>
+
+            <div className="flex justify-end gap-2">
+              <Button variant="secondary" onClick={closeAddToCartModal}>
+                Vazgeç
+              </Button>
+              <Button type="submit">Sepete Ekle</Button>
+            </div>
+          </form>
+        ) : null}
+      </Modal>
     </div>
   );
 }

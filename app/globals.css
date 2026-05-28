@@ -70,11 +70,11 @@ button:focus-visible {
 }
 
 .sticky-safe-bottom {
-  padding-bottom: calc(env(safe-area-inset-bottom) + 6rem);
+  padding-bottom: calc(env(safe-area-inset-bottom) + 5rem);
 }
 
 .safe-bottom-offset {
-  bottom: calc(env(safe-area-inset-bottom) + 4.25rem);
+  bottom: calc(env(safe-area-inset-bottom) + 0.9rem);
 }
 
 .safe-bottom-padding {
