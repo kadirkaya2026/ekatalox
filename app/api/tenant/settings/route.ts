@@ -67,7 +67,7 @@ export async function PATCH(request: Request) {
     const { data } = await supabase
       .from("tenant_storefront_settings")
       .select(
-        "tenant_id, theme_key, logo_url, storefront_title, storefront_description, banner_items, site_tab_title, site_favicon_url, announcement_title, announcement_body, is_active, version, max_display_count, discount_threshold, discount_percentage, is_discount_active, discount_condition_note",
+        "tenant_id, theme_key, logo_url, storefront_title, storefront_description, banner_items, site_tab_title, site_favicon_url, announcement_title, announcement_body, is_active, version, max_display_count, discount_threshold, discount_percentage, is_discount_active, discount_condition_note, discount_payment_method, card_installment_options",
       )
       .eq("tenant_id", session.tenant!.id)
       .maybeSingle();
@@ -103,6 +103,10 @@ export async function PATCH(request: Request) {
       body.is_discount_active ?? existingSettings.is_discount_active,
     discount_condition_note:
       body.discount_condition_note ?? existingSettings.discount_condition_note,
+    discount_payment_method:
+      body.discount_payment_method ?? existingSettings.discount_payment_method,
+    card_installment_options:
+      body.card_installment_options ?? existingSettings.card_installment_options,
   });
 
   if (!parsed.success) {
@@ -161,6 +165,8 @@ export async function PATCH(request: Request) {
         discount_percentage: parsed.data.discount_percentage,
         is_discount_active: parsed.data.is_discount_active,
         discount_condition_note: parsed.data.discount_condition_note,
+        discount_payment_method: parsed.data.discount_payment_method,
+        card_installment_options: parsed.data.card_installment_options,
       },
     });
   }
@@ -206,6 +212,8 @@ export async function PATCH(request: Request) {
     discount_percentage: parsed.data.discount_percentage,
     is_discount_active: parsed.data.is_discount_active,
     discount_condition_note: parsed.data.discount_condition_note,
+    discount_payment_method: parsed.data.discount_payment_method,
+    card_installment_options: parsed.data.card_installment_options,
   };
 
   const { data: storefrontSettings, error: storefrontError } = await supabase

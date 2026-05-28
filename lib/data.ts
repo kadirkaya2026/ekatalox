@@ -1,4 +1,5 @@
 import { unstable_cache } from "next/cache";
+import { DEFAULT_INSTALLMENT_OPTIONS } from "@/lib/storefront/cart";
 import {
   demoAccessCodes,
   demoCategories,
@@ -66,6 +67,8 @@ export function getDefaultTenantStorefrontSettings(
     is_discount_active: false,
     discount_condition_note: null,
     created_at: now,
+    discount_payment_method: "cash" as const,
+    card_installment_options: DEFAULT_INSTALLMENT_OPTIONS,
     updated_at: now,
   };
 }

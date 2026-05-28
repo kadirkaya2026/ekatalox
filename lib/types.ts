@@ -92,6 +92,15 @@ export interface TenantMembership {
   created_at: string;
 }
 
+export type DiscountPaymentMethod = "cash" | "card";
+
+export interface InstallmentOption {
+  count: number;
+  label: string;
+  isActive: boolean;
+  surchargePercentage: number;
+}
+
 export interface TenantStorefrontSettings {
   id: string;
   tenant_id: string;
@@ -113,6 +122,8 @@ export interface TenantStorefrontSettings {
   discount_percentage: number;
   is_discount_active: boolean;
   discount_condition_note: string | null;
+  discount_payment_method: DiscountPaymentMethod;
+  card_installment_options: InstallmentOption[];
   created_at: string;
   updated_at: string;
 }

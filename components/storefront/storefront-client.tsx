@@ -10,7 +10,9 @@ import {
 import { AnimatePresence, motion } from "framer-motion";
 import Image from "next/image";
 import {
+  Banknote,
   ChevronDown,
+  CreditCard,
   Megaphone,
   Minus,
   Plus,
@@ -35,9 +37,11 @@ import {
 import { supportedCurrencyCodes } from "@/lib/products/constants";
 import {
   buildWhatsAppMessage,
+  CartDiscountConfig,
   formatDiscountPercentage,
   getCartCurrency,
   getCartDiscountSummary,
+  getCartPaymentSummary,
   getCartTotal,
   getCartTotalsByCurrency,
   getCartVariantCount,
@@ -51,6 +55,7 @@ import type {
   BannerItem,
   CartItem,
   Category,
+  InstallmentOption,
   StorefrontProduct,
   StorefrontSectionWithProducts,
   Tenant,
@@ -589,6 +594,9 @@ export function StorefrontClient({
   const [visibleCount, setVisibleCount] = useState(24);
   const [hoveredCategoryId, setHoveredCategoryId] = useState<string | null>(null);
   const [activeBannerIndex, setActiveBannerIndex] = useState(0);
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<"cash" | "card" | null>(null);
+  const [selectedInstallmentCount, setSelectedInstallmentCount] = useState<number | null>(null);
+  const [paymentMethodError, setPaymentMethodError] = useState<string | null>(null);
   const isMounted = useSyncExternalStore(
     subscribeToMountState,
     getClientMountedState,
@@ -652,6 +660,37 @@ export function StorefrontClient({
       storefrontSettings.is_discount_active,
     ],
   );
+  const cartPaymentSummary = useMemo(() => {
+    if (!selectedPaymentMethod || !cart.length) return null;
+    const discountApplies =
+      storefrontSettings.discount_payment_method === selectedPaymentMethod &&
+      storefrontSettings.is_discount_active;
+    const discountConfig: CartDiscountConfig | null = discountApplies
+      ? {
+          threshold: storefrontSettings.discount_threshold,
+          percentage: storefrontSettings.discount_percentage,
+          isActive: true,
+        }
+      : null;
+    const activeOptions =
+      (storefrontSettings.card_installment_options ?? []).filter(
+        (o: InstallmentOption) => o.isActive,
+      );
+    const selectedInstallment =
+      selectedPaymentMethod === "card" && selectedInstallmentCount !== null
+        ? (activeOptions.find((o: InstallmentOption) => o.count === selectedInstallmentCount) ?? null)
+        : null;
+    return getCartPaymentSummary(cart, selectedPaymentMethod, discountConfig, selectedInstallment);
+  }, [
+    cart,
+    selectedPaymentMethod,
+    selectedInstallmentCount,
+    storefrontSettings.discount_payment_method,
+    storefrontSettings.is_discount_active,
+    storefrontSettings.discount_threshold,
+    storefrontSettings.discount_percentage,
+    storefrontSettings.card_installment_options,
+  ]);
   const cartQuantityByProductId = useMemo(
     () => new Map(cart.map((item) => [item.id, item.quantity])),
     [cart],
@@ -723,15 +762,32 @@ export function StorefrontClient({
       return "#";
     }
 
+    const discountApplies =
+      !!selectedPaymentMethod &&
+      storefrontSettings.discount_payment_method === selectedPaymentMethod &&
+      storefrontSettings.is_discount_active;
+    const activeOptions =
+      (storefrontSettings.card_installment_options ?? []).filter(
+        (o: InstallmentOption) => o.isActive,
+      );
+    const selectedInstallment =
+      selectedPaymentMethod === "card" && selectedInstallmentCount !== null
+        ? (activeOptions.find((o: InstallmentOption) => o.count === selectedInstallmentCount) ?? null)
+        : null;
+
     const message = buildWhatsAppMessage({
       tenantName: tenant.company_name,
       items: cart,
       note,
-      discountConfig: {
-        threshold: storefrontSettings.discount_threshold,
-        percentage: storefrontSettings.discount_percentage,
-        isActive: storefrontSettings.is_discount_active,
-      },
+      paymentMethod: selectedPaymentMethod,
+      selectedInstallment,
+      discountConfig: discountApplies
+        ? {
+            threshold: storefrontSettings.discount_threshold,
+            percentage: storefrontSettings.discount_percentage,
+            isActive: true,
+          }
+        : null,
       discountConditionNote: storefrontSettings.discount_condition_note,
     });
 
@@ -739,11 +795,15 @@ export function StorefrontClient({
   }, [
     cart,
     note,
+    selectedPaymentMethod,
+    selectedInstallmentCount,
+    storefrontSettings.discount_payment_method,
     storefrontSettings.discount_percentage,
     storefrontSettings.discount_threshold,
     storefrontSettings.is_discount_active,
-    tenant.company_name,
     storefrontSettings.discount_condition_note,
+    storefrontSettings.card_installment_options,
+    tenant.company_name,
     tenant.whatsapp_number,
   ]);
   const cartItemCount = useMemo(
@@ -1143,6 +1203,16 @@ export function StorefrontClient({
     if (typeof window !== "undefined") {
       window.localStorage.removeItem(cartStorageKey);
     }
+  }
+
+  function handleWhatsAppOrder() {
+    if (!cart.length) return;
+    if (!selectedPaymentMethod) {
+      setPaymentMethodError("Lütfen ödeme yönteminizi seçin.");
+      return;
+    }
+    setPaymentMethodError(null);
+    window.open(whatsappHref, "_blank", "noopener,noreferrer");
   }
 
   function renderCartDiscountStatus(compact = false) {
@@ -1625,7 +1695,7 @@ export function StorefrontClient({
             <div className="safe-bottom-padding flex-1 overflow-y-auto px-4 py-4 sm:px-5 lg:px-6">
               {cart.length ? (
                 <div className="space-y-4">
-                  {renderCartDiscountStatus()}
+                  {(!selectedPaymentMethod || selectedPaymentMethod === storefrontSettings.discount_payment_method) && renderCartDiscountStatus()}
 
                   {cart.map((item) => (
                     <div
@@ -1739,6 +1809,89 @@ export function StorefrontClient({
                     </div>
                   ))}
 
+                  {/* ─── Ödeme Yöntemi ─── */}
+                  <div className="rounded-[1.5rem] border border-slate-200/80 bg-white p-3 sm:p-4 shadow-[0_14px_40px_rgba(15,23,42,0.06)]">
+                    <div className="mb-3 flex items-center justify-between gap-3">
+                      <p className="text-sm font-semibold text-slate-900">Ödeme Yöntemi</p>
+                      <span className="rounded-full bg-rose-50 px-2.5 py-1 text-[10px] font-semibold text-rose-600">
+                        Zorunlu
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedPaymentMethod("cash");
+                          setSelectedInstallmentCount(null);
+                          setPaymentMethodError(null);
+                        }}
+                        className={cn(
+                          "flex items-center justify-center gap-2 rounded-2xl border py-3 text-sm font-semibold transition",
+                          selectedPaymentMethod === "cash"
+                            ? "border-emerald-500 bg-emerald-50 text-emerald-700"
+                            : "border-slate-200 bg-white text-slate-600 hover:border-slate-300",
+                        )}
+                      >
+                        <Banknote className="size-4" />
+                        Nakit
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedPaymentMethod("card");
+                          setPaymentMethodError(null);
+                        }}
+                        className={cn(
+                          "flex items-center justify-center gap-2 rounded-2xl border py-3 text-sm font-semibold transition",
+                          selectedPaymentMethod === "card"
+                            ? "border-blue-500 bg-blue-50 text-blue-700"
+                            : "border-slate-200 bg-white text-slate-600 hover:border-slate-300",
+                        )}
+                      >
+                        <CreditCard className="size-4" />
+                        Kredi Kartı
+                      </button>
+                    </div>
+                    {paymentMethodError ? (
+                      <p className="mt-2 text-xs font-medium text-rose-600">{paymentMethodError}</p>
+                    ) : null}
+                    {selectedPaymentMethod === "card" && (() => {
+                      const activeInstallments = (storefrontSettings.card_installment_options ?? []).filter(
+                        (o: InstallmentOption) => o.isActive,
+                      );
+                      if (!activeInstallments.length) return null;
+                      return (
+                        <div className="mt-3">
+                          <p className="mb-2 text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                            Taksit Seçeneği
+                          </p>
+                          <div className="flex flex-wrap gap-2">
+                            {activeInstallments.map((option: InstallmentOption) => (
+                              <button
+                                key={option.count}
+                                type="button"
+                                onClick={() => setSelectedInstallmentCount(option.count)}
+                                className={cn(
+                                  "rounded-xl border px-3 py-2 text-xs font-semibold transition",
+                                  selectedInstallmentCount === option.count
+                                    ? "border-blue-500 bg-blue-50 text-blue-700"
+                                    : "border-slate-200 bg-white text-slate-600 hover:border-slate-300",
+                                )}
+                              >
+                                {option.label}
+                                {option.surchargePercentage > 0 && (
+                                  <span className="ml-1 text-amber-600">
+                                    +%{option.surchargePercentage}
+                                  </span>
+                                )}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })()}
+                  </div>
+
                   <div className="rounded-[1.5rem] border border-slate-200/80 bg-white p-3 sm:p-4 shadow-[0_14px_40px_rgba(15,23,42,0.06)]">
                     <div className="mb-2 flex items-center justify-between gap-3">
                       <p className="text-sm font-semibold text-slate-900">Sipariş Notu</p>
@@ -1790,7 +1943,64 @@ export function StorefrontClient({
             <div className="shrink-0 border-t border-slate-100 bg-[linear-gradient(180deg,#ffffff_0%,#f8fafc_100%)] px-4 py-3.5 sm:px-5 lg:px-6 lg:py-4">
               <div className="rounded-[1.5rem] border border-slate-200/80 bg-white p-2.5 sm:p-3 lg:p-4 shadow-[0_14px_40px_rgba(15,23,42,0.06)] sm:rounded-[1.75rem]">
                 <div className="rounded-[1.4rem] bg-slate-950 px-4 py-3 text-white shadow-[0_18px_48px_rgba(15,23,42,0.24)]">
-                  {cartDiscountSummary?.isQualified ? (
+                  {cartPaymentSummary ? (
+                    <div className="space-y-2.5">
+                      {(cartPaymentSummary.isQualified && cartPaymentSummary.discountAmount > 0) ||
+                      cartPaymentSummary.surchargeAmount > 0 ? (
+                        <>
+                          <div className="flex items-center justify-between gap-3">
+                            <p className="text-sm font-medium text-slate-300">Ara Toplam</p>
+                            <p
+                              className={cn(
+                                "text-sm font-semibold tracking-tight",
+                                cartPaymentSummary.isQualified && cartPaymentSummary.discountAmount > 0
+                                  ? "text-slate-400 line-through"
+                                  : "text-white",
+                              )}
+                            >
+                              {formatCurrency(
+                                cartPaymentSummary.subtotal,
+                                cartPaymentSummary.currency,
+                              )}
+                            </p>
+                          </div>
+                          {cartPaymentSummary.isQualified && cartPaymentSummary.discountAmount > 0 ? (
+                            <div className="flex items-center justify-between gap-3">
+                              <p className="text-sm font-medium text-slate-300">
+                                İskonto (%{formatDiscountPercentage(cartPaymentSummary.discountPercentage)})
+                              </p>
+                              <p className="text-base font-bold tracking-tight text-emerald-300">
+                                -{formatCurrency(cartPaymentSummary.discountAmount, cartPaymentSummary.currency)}
+                              </p>
+                            </div>
+                          ) : null}
+                          {cartPaymentSummary.surchargeAmount > 0 ? (
+                            <div className="flex items-center justify-between gap-3">
+                              <p className="text-sm font-medium text-slate-300">
+                                Vade Farkı (%{formatDiscountPercentage(cartPaymentSummary.surchargePercentage)})
+                              </p>
+                              <p className="text-base font-bold tracking-tight text-amber-300">
+                                +{formatCurrency(cartPaymentSummary.surchargeAmount, cartPaymentSummary.currency)}
+                              </p>
+                            </div>
+                          ) : null}
+                          <div className="flex items-center justify-between gap-3 border-t border-white/10 pt-2">
+                            <p className="text-sm font-medium text-slate-200">Genel Toplam</p>
+                            <p className="text-base font-bold tracking-tight text-white sm:text-lg">
+                              {formatCurrency(cartPaymentSummary.finalTotal, cartPaymentSummary.currency)}
+                            </p>
+                          </div>
+                        </>
+                      ) : (
+                        <div className="flex items-center justify-between gap-3">
+                          <p className="text-sm font-medium text-slate-300">Genel Toplam</p>
+                          <p className="text-base font-bold tracking-tight text-white sm:text-lg">
+                            {formatCurrency(cartPaymentSummary.finalTotal, cartPaymentSummary.currency)}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  ) : cartDiscountSummary?.isQualified ? (
                     <div className="space-y-2.5">
                       <div className="flex items-center justify-between gap-3">
                         <p className="text-sm font-medium text-slate-300">Ara Toplam</p>
@@ -1848,15 +2058,15 @@ export function StorefrontClient({
                 </div>
 
                 <Button
-                  asChild
-                  href={whatsappHref}
+                  type="button"
+                  onClick={handleWhatsAppOrder}
                   className={cn(
                     "mt-3 h-11 w-full rounded-full px-5 text-base font-bold shadow-none sm:h-12",
                     theme.stickyCartButton,
                     !cart.length && "pointer-events-none opacity-50",
                   )}
                 >
-                  <span>WhatsApp ile Siparişi Tamamla</span>
+                  WhatsApp ile Siparişi Tamamla
                 </Button>
                 {cart.length > 0 && (
                   <button
@@ -2250,7 +2460,7 @@ export function StorefrontClient({
         </section>
       </main>
 
-      {isMounted && cart.length && cartDiscountSummary ? (
+      {isMounted && cart.length && cartDiscountSummary && (!selectedPaymentMethod || selectedPaymentMethod === storefrontSettings.discount_payment_method) ? (
         <motion.div
           initial={{ opacity: 0, y: 14, scale: 0.97 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -2288,7 +2498,16 @@ export function StorefrontClient({
             </div>
             <div className="min-w-0 text-right">
               <div className="space-y-0.5">
-                {cartDiscountSummary?.isQualified ? (
+                {cartPaymentSummary && cartPaymentSummary.finalTotal !== cartPaymentSummary.subtotal ? (
+                  <>
+                    <p className="truncate text-[11px] font-medium leading-tight text-slate-300 line-through">
+                      {formatCurrency(cartPaymentSummary.subtotal, cartPaymentSummary.currency)}
+                    </p>
+                    <p className={cn("truncate text-[13px] font-semibold leading-tight", theme.stickyCartText)}>
+                      {formatCurrency(cartPaymentSummary.finalTotal, cartPaymentSummary.currency)}
+                    </p>
+                  </>
+                ) : cartDiscountSummary?.isQualified ? (
                   <>
                     <p className="truncate text-[11px] font-medium leading-tight text-slate-300 line-through">
                       {formatCurrency(

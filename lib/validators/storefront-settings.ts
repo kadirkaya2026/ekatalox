@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { DEFAULT_INSTALLMENT_OPTIONS } from "@/lib/storefront/cart";
 
 export const storefrontThemeKeySchema = z.enum([
   "minimal",
@@ -118,6 +119,20 @@ export const storefrontSettingsSchema = z
       .nullable()
       .optional()
       .default(null),
+    discount_payment_method: z.enum(["cash", "card"]).default("cash"),
+    card_installment_options: z
+      .array(
+        z.object({
+          count: z.number().int().positive(),
+          label: z.string().min(1),
+          isActive: z.boolean(),
+          surchargePercentage: z.coerce
+            .number()
+            .min(0, "Vade farkı negatif olamaz.")
+            .max(100, "Vade farkı en fazla %100 olabilir."),
+        }),
+      )
+      .default(DEFAULT_INSTALLMENT_OPTIONS),
   })
   .superRefine((value, ctx) => {
     if (value.is_active) {
