@@ -802,16 +802,16 @@ export function StorefrontClient({
                   {cart.map((item) => (
                     <div
                       key={item.id}
-                      className="rounded-[1.75rem] border border-slate-200/80 bg-[linear-gradient(180deg,#ffffff_0%,#f8fafc_100%)] p-4 shadow-[0_14px_36px_rgba(15,23,42,0.06)]"
+                      className="rounded-[1.55rem] border border-slate-200/80 bg-[linear-gradient(180deg,#ffffff_0%,#f8fafc_100%)] p-3.5 shadow-[0_14px_36px_rgba(15,23,42,0.06)]"
                     >
-                      <div className="flex gap-4">
-                        <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-[1.35rem] border border-slate-200 bg-white">
+                      <div className="flex gap-3">
+                        <div className="relative h-[4.5rem] w-[4.5rem] shrink-0 overflow-hidden rounded-[1.15rem] border border-slate-200 bg-white sm:h-20 sm:w-20 sm:rounded-[1.35rem]">
                           {item.image_url ? (
                             <Image
                               src={item.image_url}
                               alt={item.product_name}
                               fill
-                              className="object-contain p-3"
+                              className="object-contain p-2.5 sm:p-3"
                               unoptimized
                             />
                           ) : (
@@ -824,10 +824,10 @@ export function StorefrontClient({
                         <div className="min-w-0 flex-1">
                           <div className="flex items-start justify-between gap-3">
                             <div className="min-w-0">
-                              <p className="line-clamp-2 text-sm font-semibold leading-6 text-slate-900">
+                              <p className="line-clamp-2 text-sm font-semibold leading-5 text-slate-900">
                                 {item.product_name}
                               </p>
-                              <p className="mt-1 text-xs text-slate-500">
+                              <p className="mt-0.5 text-xs text-slate-500">
                                 {item.sku_code ? `SKU: ${item.sku_code}` : "SKU bilgisi yok"}
                               </p>
                             </div>
@@ -842,19 +842,10 @@ export function StorefrontClient({
                               <Trash2 className="size-4" />
                             </button>
                           </div>
-
-                          <div className="mt-3 flex flex-wrap items-center gap-2">
-                            <span className="rounded-full bg-slate-100 px-3 py-1 text-[11px] font-semibold text-slate-600">
-                              Birim fiyat: {formatCurrency(item.price, item.currency)}
-                            </span>
-                            <span className="rounded-full bg-emerald-50 px-3 py-1 text-[11px] font-semibold text-emerald-700">
-                              {item.is_in_stock ? "Stokta" : "Tükendi"}
-                            </span>
-                          </div>
                         </div>
                       </div>
 
-                      <div className="mt-4 flex items-center justify-between gap-3 border-t border-slate-200/80 pt-4">
+                      <div className="mt-3 flex items-end justify-between gap-3 border-t border-slate-200/80 pt-3">
                         <div className="flex items-center rounded-full border border-slate-200 bg-white p-0.5 sm:p-1 shadow-sm">
                           <button
                             type="button"
@@ -893,13 +884,23 @@ export function StorefrontClient({
                           </button>
                         </div>
 
-                        <div className="shrink-0 text-right">
-                          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">
-                            Ara Toplam
-                          </p>
-                          <p className="mt-1 text-base font-bold tracking-tight text-slate-950">
-                            {formatCurrency(item.price * item.quantity, item.currency)}
-                          </p>
+                        <div className="flex shrink-0 items-end gap-4 text-right">
+                          <div>
+                            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">
+                              Birim Fiyat
+                            </p>
+                            <p className="mt-1 text-sm font-semibold text-slate-700">
+                              {formatCurrency(item.price, item.currency)}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">
+                              Ara Toplam
+                            </p>
+                            <p className="mt-1 text-base font-bold tracking-tight text-slate-950">
+                              {formatCurrency(item.price * item.quantity, item.currency)}
+                            </p>
+                          </div>
                         </div>
                       </div>
                     </div>
