@@ -370,6 +370,7 @@ export function StorefrontClient({
   const [selectedCartonCount, setSelectedCartonCount] = useState("0");
   const [quantityError, setQuantityError] = useState<string | null>(null);
   const [variantSelections, setVariantSelections] = useState<VariantSelectionState[]>([]);
+  const [variantSearchTerm, setVariantSearchTerm] = useState("");
   const [visibleCount, setVisibleCount] = useState(24);
   const [hoveredCategoryId, setHoveredCategoryId] = useState<string | null>(null);
   const [activeBannerIndex, setActiveBannerIndex] = useState(0);
@@ -529,6 +530,21 @@ export function StorefrontClient({
     selectedProduct && selectedTotalQuantity > 0
       ? selectedProduct.price * selectedTotalQuantity
       : 0;
+  const filteredSelectedVariants = useMemo(() => {
+    if (!selectedProduct?.has_variants) {
+      return [];
+    }
+
+    const normalizedVariantSearch = variantSearchTerm.trim().toLocaleLowerCase("tr-TR");
+
+    return selectedProduct.variants.filter((variant) => {
+      if (!normalizedVariantSearch) {
+        return true;
+      }
+
+      return variant.model_name.toLocaleLowerCase("tr-TR").includes(normalizedVariantSearch);
+    });
+  }, [selectedProduct, variantSearchTerm]);
   const storefrontTitle = storefrontSettings.storefront_title || tenant.company_name;
 
   useEffect(() => {
@@ -591,6 +607,7 @@ export function StorefrontClient({
     setSelectedPackageCount("0");
     setSelectedCartonCount("0");
     setVariantSelections([]);
+    setVariantSearchTerm("");
     setQuantityError(null);
   }
 
@@ -605,6 +622,7 @@ export function StorefrontClient({
     setSelectedPackageCount("0");
     setSelectedCartonCount("0");
     setVariantSelections([]);
+    setVariantSearchTerm("");
     setQuantityError(null);
   }
 
@@ -1824,24 +1842,42 @@ export function StorefrontClient({
       >
         {selectedProduct ? (
           <form onSubmit={confirmAddToCart} className="grid gap-4">
-            <div className="rounded-xl border border-slate-100 bg-slate-50 p-4">
-              <p className="font-semibold text-slate-900">{selectedProduct.product_name}</p>
-              <p className="mt-1 text-sm text-slate-500">
-                {selectedProduct.sku_code || "SKU bilgisi yok"}
-              </p>
-              {!selectedProduct.has_variants && getUnitSummary(selectedProduct) ? (
-                <p className="mt-1 text-sm text-slate-500">
-                  {getUnitSummary(selectedProduct)}
+            <div className="rounded-xl border border-slate-100 bg-slate-50 px-4 py-3">
+              <div className="flex items-start justify-between gap-4">
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-semibold text-slate-900">
+                    {selectedProduct.product_name}
+                  </p>
+                  <p className="mt-1 text-xs text-slate-500">
+                    {selectedProduct.sku_code || "SKU bilgisi yok"}
+                  </p>
+                  {!selectedProduct.has_variants && getUnitSummary(selectedProduct) ? (
+                    <p className="mt-1 text-xs text-slate-500">
+                      {getUnitSummary(selectedProduct)}
+                    </p>
+                  ) : null}
+                </div>
+                <p className="shrink-0 text-base font-bold text-slate-900">
+                  {formatCurrency(selectedProduct.price, selectedProduct.currency)}
                 </p>
-              ) : null}
-              <p className="mt-3 text-lg font-bold text-slate-900">
-                {formatCurrency(selectedProduct.price, selectedProduct.currency)}
-              </p>
+              </div>
             </div>
 
             {selectedProduct.has_variants ? (
-              <div className="max-h-[28rem] space-y-3 overflow-y-auto pr-1">
-                {selectedProduct.variants.map((variant) => {
+              <div className="space-y-3">
+                <div className="relative">
+                  <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
+                  <Input
+                    value={variantSearchTerm}
+                    onChange={(event) => setVariantSearchTerm(event.target.value)}
+                    placeholder="Model ara"
+                    className="h-10 rounded-xl pl-10 pr-3"
+                  />
+                </div>
+
+                <div className="max-h-[28rem] space-y-2 overflow-y-auto pr-1">
+                  {filteredSelectedVariants.length ? (
+                    filteredSelectedVariants.map((variant) => {
                   const selection = getVariantSelection(variant.id);
                   const unitChoices = salesUnits.filter((unitOption) => {
                     if (unitOption.value === "paket") {
@@ -1861,7 +1897,7 @@ export function StorefrontClient({
                     <div
                       key={variant.id}
                       className={cn(
-                        "rounded-2xl border px-4 py-4 transition",
+                        "rounded-xl border px-3 py-3 transition",
                         isUnavailable
                           ? "border-slate-200 bg-slate-50 opacity-40"
                           : "border-slate-200 bg-white",
@@ -1869,9 +1905,8 @@ export function StorefrontClient({
                     >
                       <div className="flex items-start justify-between gap-3">
                         <div>
-                          <p className="font-semibold text-slate-900">{variant.model_name}</p>
-                          <p className="mt-1 text-xs text-slate-500">
-                            Stok: {variant.stock_quantity} adet
+                          <p className="text-sm font-semibold text-slate-900">
+                            {variant.model_name}
                           </p>
                         </div>
                         {isUnavailable ? (
@@ -1879,7 +1914,7 @@ export function StorefrontClient({
                         ) : null}
                       </div>
 
-                      <div className="mt-4 grid gap-3 sm:grid-cols-[minmax(0,1fr)_9rem]">
+                      <div className="mt-3 grid gap-2 sm:grid-cols-[minmax(0,1fr)_6.5rem]">
                         <select
                           value={selection.unit}
                           disabled={isUnavailable}
@@ -1893,7 +1928,7 @@ export function StorefrontClient({
                               setQuantityError(null);
                             }
                           }}
-                          className="rounded-lg border border-slate-200 bg-white px-3 py-3 text-sm text-slate-900 disabled:bg-slate-100"
+                          className="h-10 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 disabled:bg-slate-100"
                         >
                           {unitChoices.map((unitOption) => (
                             <option key={unitOption.value} value={unitOption.value}>
@@ -1920,10 +1955,11 @@ export function StorefrontClient({
                             }
                           }}
                           placeholder="0"
+                          className="h-10 px-3 py-2"
                         />
                       </div>
 
-                      <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-slate-500">
+                      <div className="mt-2 flex flex-wrap items-center gap-2 text-[11px] text-slate-500">
                         {variant.package_quantity ? (
                           <span>1 Paket = {variant.package_quantity} adet</span>
                         ) : null}
@@ -1945,7 +1981,13 @@ export function StorefrontClient({
                       </div>
                     </div>
                   );
-                })}
+                    })
+                  ) : (
+                    <div className="rounded-xl border border-dashed border-slate-200 px-4 py-6 text-center text-sm text-slate-500">
+                      Aramana uygun model bulunamadı.
+                    </div>
+                  )}
+                </div>
               </div>
             ) : (
               <div className="grid gap-3 sm:grid-cols-3">

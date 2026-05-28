@@ -129,7 +129,7 @@ export async function POST(
 
   const { data: existingVariants, error: existingError } = await supabase
     .from("product_variants")
-    .select("id")
+    .select("id, stock_quantity")
     .eq("product_id", id)
     .eq("tenant_id", tenant.id);
 
@@ -146,8 +146,13 @@ export async function POST(
     return NextResponse.json({ error: existingError.message }, { status: 400 });
   }
 
+  const existingVariantRows =
+    (existingVariants as Array<{ id: string; stock_quantity: number | null }> | null) ?? [];
   const existingVariantIds = new Set(
-    ((existingVariants as Array<{ id: string }> | null) ?? []).map((variant) => variant.id),
+    existingVariantRows.map((variant) => variant.id),
+  );
+  const existingVariantMap = new Map(
+    existingVariantRows.map((variant) => [variant.id, variant]),
   );
 
   const invalidVariant = parsed.data.variants.find(
@@ -162,19 +167,39 @@ export async function POST(
   }
 
   const now = new Date().toISOString();
-  const payload = parsed.data.variants.map((variant, index) => ({
-    id: variant.id ?? randomUUID(),
-    tenant_id: tenant.id,
-    product_id: id,
-    model_name: variant.model_name,
-    stock_quantity: variant.stock_quantity,
-    package_quantity: variant.package_quantity,
-    carton_quantity: variant.carton_quantity,
-    is_available_for_sale:
-      variant.stock_quantity === 0 ? false : variant.is_available_for_sale,
-    display_order: variant.display_order ?? index + 1,
-    updated_at: now,
-  }));
+  const payload = parsed.data.variants.map((variant, index) => {
+    const existingVariant = variant.id ? existingVariantMap.get(variant.id) : undefined;
+    const existingStockQuantity =
+      typeof existingVariant?.stock_quantity === "number"
+        ? existingVariant.stock_quantity
+        : 0;
+    const fallbackStockQuantity = Math.max(
+      variant.package_quantity ?? 0,
+      variant.carton_quantity ?? 0,
+      1,
+    );
+    const nextStockQuantity =
+      typeof variant.stock_quantity === "number"
+        ? variant.stock_quantity
+        : variant.is_available_for_sale
+          ? Math.max(existingStockQuantity, fallbackStockQuantity)
+          : existingStockQuantity > 0
+            ? existingStockQuantity
+            : fallbackStockQuantity;
+
+    return {
+      id: variant.id ?? randomUUID(),
+      tenant_id: tenant.id,
+      product_id: id,
+      model_name: variant.model_name,
+      stock_quantity: nextStockQuantity,
+      package_quantity: variant.package_quantity,
+      carton_quantity: variant.carton_quantity,
+      is_available_for_sale: variant.is_available_for_sale,
+      display_order: variant.display_order ?? index + 1,
+      updated_at: now,
+    };
+  });
 
   const nextVariantIds = new Set(payload.map((variant) => variant.id));
   const deletedVariantIds = [...existingVariantIds].filter((variantId) => !nextVariantIds.has(variantId));

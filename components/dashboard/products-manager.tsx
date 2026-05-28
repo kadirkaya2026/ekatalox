@@ -51,7 +51,6 @@ interface ProductFormState {
 interface VariantMatrixRow {
   id?: string;
   model_name: string;
-  stock_quantity: string;
   package_quantity: string;
   carton_quantity: string;
   is_available_for_sale: boolean;
@@ -74,7 +73,6 @@ const emptyForm: ProductFormState = {
 
 const emptyVariantRow = (display_order: number): VariantMatrixRow => ({
   model_name: "",
-  stock_quantity: "0",
   package_quantity: "",
   carton_quantity: "",
   is_available_for_sale: true,
@@ -139,7 +137,6 @@ function variantToMatrixRow(variant: ProductVariant, index: number): VariantMatr
   return {
     id: variant.id,
     model_name: variant.model_name,
-    stock_quantity: String(variant.stock_quantity),
     package_quantity: variant.package_quantity ? String(variant.package_quantity) : "",
     carton_quantity: variant.carton_quantity ? String(variant.carton_quantity) : "",
     is_available_for_sale: variant.is_available_for_sale,
@@ -149,14 +146,12 @@ function variantToMatrixRow(variant: ProductVariant, index: number): VariantMatr
 
 function normalizeVariantRows(rows: VariantMatrixRow[]) {
   return rows.map((row, index) => {
-    const stockQuantity = Number(row.stock_quantity || "0");
     return {
       id: row.id ?? "",
       model_name: row.model_name.trim(),
-      stock_quantity: stockQuantity,
       package_quantity: row.package_quantity.trim() ? Number(row.package_quantity) : null,
       carton_quantity: row.carton_quantity.trim() ? Number(row.carton_quantity) : null,
-      is_available_for_sale: stockQuantity === 0 ? false : row.is_available_for_sale,
+      is_available_for_sale: row.is_available_for_sale,
       display_order: index + 1,
     };
   });
@@ -384,17 +379,6 @@ export function ProductsManager({
       current.map((row, rowIndex) => {
         if (rowIndex !== index) {
           return row;
-        }
-
-        if (key === "stock_quantity") {
-          const stockQuantity = String(value);
-          const numeric = Number(stockQuantity || "0");
-          return {
-            ...row,
-            stock_quantity: stockQuantity,
-            is_available_for_sale:
-              Number.isInteger(numeric) && numeric === 0 ? false : row.is_available_for_sale,
-          };
         }
 
         return {
@@ -1404,7 +1388,7 @@ export function ProductsManager({
                 Hızlı varyant düzenleyici
               </p>
               <p className="mt-1 text-sm text-slate-500">
-                Model adı, stok, paket içi, koli içi ve satış durumunu tek ekranda yönetin.
+                Model adı, paket içi, koli içi ve satış durumunu tek ekranda yönetin.
               </p>
             </div>
             <Button variant="secondary" onClick={addVariantRow}>
@@ -1424,7 +1408,6 @@ export function ProductsManager({
               <thead className="bg-slate-50 text-left text-xs uppercase tracking-[0.14em] text-slate-500">
                 <tr>
                   <th className="px-3 py-3">Model Adı</th>
-                  <th className="px-3 py-3">Stok Adedi</th>
                   <th className="px-3 py-3">Paket İçi</th>
                   <th className="px-3 py-3">Koli İçi</th>
                   <th className="px-3 py-3">Satış Durumu</th>
@@ -1433,9 +1416,6 @@ export function ProductsManager({
               </thead>
               <tbody>
                 {variantRows.map((row, index) => {
-                  const stockQuantity = Number(row.stock_quantity || "0");
-                  const soldOut = Number.isInteger(stockQuantity) && stockQuantity === 0;
-
                   return (
                     <tr key={row.id ?? `variant-row-${index}`} className="border-t border-slate-100">
                       <td className="px-3 py-3">
@@ -1445,17 +1425,6 @@ export function ProductsManager({
                             updateVariantRow(index, "model_name", event.target.value)
                           }
                           placeholder="Örn: Siyah"
-                        />
-                      </td>
-                      <td className="px-3 py-3">
-                        <Input
-                          type="number"
-                          min="0"
-                          step="1"
-                          value={row.stock_quantity}
-                          onChange={(event) =>
-                            updateVariantRow(index, "stock_quantity", event.target.value)
-                          }
                         />
                       </td>
                       <td className="px-3 py-3">
@@ -1486,8 +1455,7 @@ export function ProductsManager({
                         <label className="flex items-center gap-3 text-sm text-slate-700">
                           <input
                             type="checkbox"
-                            checked={soldOut ? false : row.is_available_for_sale}
-                            disabled={soldOut}
+                            checked={row.is_available_for_sale}
                             onChange={(event) =>
                               updateVariantRow(
                                 index,
@@ -1496,7 +1464,7 @@ export function ProductsManager({
                               )
                             }
                           />
-                          <span>{soldOut ? "Stok Yok" : row.is_available_for_sale ? "Satışta" : "Stok Yok"}</span>
+                          <span>{row.is_available_for_sale ? "Satışta" : "Kapalı"}</span>
                         </label>
                       </td>
                       <td className="px-3 py-3 text-right">

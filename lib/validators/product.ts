@@ -119,7 +119,7 @@ export const productVariantBulkUpdateSchema = z.object({
         .string()
         .trim()
         .min(1, "Model adı zorunludur."),
-      stock_quantity: nonNegativeIntegerSchema,
+      stock_quantity: nonNegativeIntegerSchema.optional(),
       package_quantity: optionalPositiveIntegerSchema,
       carton_quantity: optionalPositiveIntegerSchema,
       is_available_for_sale: booleanSchema.optional().default(true),
