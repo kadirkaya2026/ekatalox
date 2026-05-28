@@ -266,6 +266,7 @@ export function CategoriesManager({
   const [activeId, setActiveId] = useState<string | null>(null);
   const [overId, setOverId] = useState<string | null>(null);
   const [overPosition, setOverPosition] = useState<OverPosition>("on");
+  const overPositionRef = useRef<OverPosition>("on");
 
   const [pending, startTransition] = useTransition();
 
@@ -401,27 +402,35 @@ export function CategoriesManager({
     closeAllInline();
   }
 
-  function handleDragOver({ active, over, activatorEvent }: DragOverEvent) {
+  function handleDragOver({ active, over }: DragOverEvent) {
     if (!over || over.id === active.id) { setOverId(null); return; }
 
     setOverId(over.id as string);
 
-    // Detect position within the target element
-    const overElement = (over.rect as DOMRect | null);
-    if (!overElement) { setOverPosition("on"); return; }
+    // active.rect.current.translated = sürüklenen öğenin GÜNCEL konumu
+    const translatedRect = active.rect.current.translated;
+    if (!translatedRect) {
+      setOverPosition("on");
+      overPositionRef.current = "on";
+      return;
+    }
 
-    const pointerY = (activatorEvent as PointerEvent).clientY ?? 0;
+    const activeMidY = translatedRect.top + translatedRect.height / 2;
     const { top, height } = over.rect;
-    const relY = pointerY - top;
+    const relY = activeMidY - top;
     const threshold = height * 0.25;
 
+    let pos: OverPosition;
     if (relY < threshold) {
-      setOverPosition("above");
+      pos = "above";
     } else if (relY > height - threshold) {
-      setOverPosition("below");
+      pos = "below";
     } else {
-      setOverPosition("on");
+      pos = "on";
     }
+
+    setOverPosition(pos);
+    overPositionRef.current = pos;
   }
 
   function handleDragEnd({ active, over }: DragEndEvent) {
@@ -436,7 +445,7 @@ export function CategoriesManager({
 
     let updated: Category[];
 
-    if (overPosition === "on") {
+    if (overPositionRef.current === "on") {
       // Reparent: make active a child of over
       if (activeCategory.id === overCategory.id) return;
       // Prevent making a parent a child of its own descendant
