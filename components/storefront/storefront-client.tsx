@@ -2117,7 +2117,7 @@ export function StorefrontClient({
 
       <main className="container-shell sticky-safe-bottom py-5 sm:py-6">
         {showBannerSection ? (
-          <section className="mb-10 w-full">
+          <section className="mb-5 sm:mb-10 w-full">
             {bannerItems.length ? (
               <div className="w-full space-y-4">
                 {currentBanner
