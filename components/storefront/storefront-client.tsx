@@ -905,6 +905,21 @@ export function StorefrontClient({
                     </div>
                   ))}
 
+                  <div className="rounded-[1.5rem] border border-slate-200/80 bg-white p-3 sm:p-4 shadow-[0_14px_40px_rgba(15,23,42,0.06)]">
+                    <div className="mb-2 flex items-center justify-between gap-3">
+                      <p className="text-sm font-semibold text-slate-900">Sipariş Notu</p>
+                      <span className="rounded-full bg-slate-100 px-3 py-1 text-[11px] font-semibold text-slate-500">
+                        Opsiyonel
+                      </span>
+                    </div>
+                    <Textarea
+                      placeholder="Sipariş notu (opsiyonel)"
+                      value={note}
+                      onChange={(event) => setNote(event.target.value)}
+                      className="min-h-[84px] rounded-[1.1rem] border-slate-200 bg-slate-50/80 text-sm"
+                    />
+                  </div>
+
                   {recommendedProducts.length ? (
                     <section className="rounded-[1.75rem] border border-slate-200/80 bg-[linear-gradient(180deg,#ffffff_0%,#f8fafc_100%)] p-4 shadow-[0_14px_36px_rgba(15,23,42,0.06)]">
                       <div className="mb-3">
@@ -985,21 +1000,6 @@ export function StorefrontClient({
                     Sepeti Boşalt
                   </button>
                 )}
-
-                <div className="mt-3 border-t border-slate-200 pt-3">
-                  <div className="mb-2 flex items-center justify-between gap-3">
-                    <p className="text-sm font-semibold text-slate-900">Sipariş Notu</p>
-                    <span className="rounded-full bg-slate-100 px-3 py-1 text-[11px] font-semibold text-slate-500">
-                      Opsiyonel
-                    </span>
-                  </div>
-                  <Textarea
-                    placeholder="Sipariş notu (opsiyonel)"
-                    value={note}
-                    onChange={(event) => setNote(event.target.value)}
-                    className="min-h-[84px] rounded-[1.1rem] border-slate-200 bg-slate-50/80 text-sm"
-                  />
-                </div>
               </div>
             </div>
           </div>
