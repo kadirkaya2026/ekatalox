@@ -677,6 +677,7 @@ export function StorefrontClient({
         className={cn(
           theme.productCard,
           "relative overflow-visible cursor-pointer rounded-[1.2rem] border-slate-200/70 shadow-[0_10px_24px_rgba(15,23,42,0.06)]",
+          !product.is_in_stock && "opacity-60 saturate-50",
         )}
       >
         {renderFloatingCartAction(product, true)}
@@ -694,6 +695,13 @@ export function StorefrontClient({
               <Store className="size-7 text-slate-300 sm:size-9" />
             </div>
           )}
+          {!product.is_in_stock ? (
+            <div className="absolute inset-x-0 bottom-0 z-10 bg-slate-950/72 px-2 py-1.5 text-center backdrop-blur-sm">
+              <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-white sm:text-[11px]">
+                Tükendi
+              </span>
+            </div>
+          ) : null}
         </div>
 
         <div className="flex flex-1 flex-col gap-1 p-2.5 sm:p-3.5">
