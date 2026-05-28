@@ -630,7 +630,7 @@ export function StorefrontClient({
       <motion.div
         layout
         onClick={(event) => event.stopPropagation()}
-        className="absolute right-3 top-3 z-20 origin-top-right"
+        className="absolute -right-1 -top-1 z-20 origin-top-right sm:right-0 sm:top-0"
       >
         <motion.button
           type="button"
@@ -646,7 +646,10 @@ export function StorefrontClient({
           )}
           aria-label="Ürün ekleme birimini seç"
         >
-          <Plus className={compact ? "size-3.5" : "size-4"} />
+          <Plus
+            className={compact ? "size-3.5" : "size-4"}
+            strokeWidth={2.8}
+          />
         </motion.button>
       </motion.div>
     );
