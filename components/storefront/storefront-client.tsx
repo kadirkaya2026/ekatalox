@@ -368,13 +368,13 @@ function renderBannerItem(
         aria-hidden="true"
         className="absolute inset-0 hidden bg-[linear-gradient(135deg,rgba(255,255,255,0.05),transparent_60%)] md:block"
       />
-      <div className="relative aspect-[16/7] bg-slate-950 sm:aspect-[3/1] md:min-h-[340px] md:aspect-auto md:bg-transparent lg:min-h-[400px]">
+      <div className="relative aspect-[3/1] bg-transparent md:min-h-[340px] md:aspect-auto lg:min-h-[400px]">
         {banner.image_url ? (
           <Image
             src={banner.image_url}
             alt={banner.title ?? `${title} banner`}
             fill
-            className="object-contain object-center p-2 sm:p-3 md:object-cover md:p-0"
+            className="object-cover object-center"
             sizes="100vw"
             unoptimized
           />
