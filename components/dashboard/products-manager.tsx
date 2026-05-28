@@ -881,29 +881,42 @@ export function ProductsManager({
                     {formatCurrency(Number(product.price_tier_3), product.currency)}
                   </td>
                   <td className="px-4 py-4 align-top">
-                    <div className="ml-auto flex max-w-[15rem] flex-wrap justify-end gap-2">
+                    <div className="ml-auto flex max-w-[11rem] flex-wrap justify-end gap-2">
                       <Button
                         variant="secondary"
-                        className="whitespace-nowrap"
+                        className="h-9 px-3"
                         onClick={() => toggleStock(product)}
+                        title={product.is_in_stock ? "Stoğu kapat" : "Stoğu aç"}
+                        aria-label={product.is_in_stock ? "Stoğu kapat" : "Stoğu aç"}
                       >
-                        {product.is_in_stock ? "Stoğu kapat" : "Stoğu aç"}
+                        <Badge
+                          className={cn(
+                            "pointer-events-none px-1.5 py-0 text-[10px]",
+                            product.is_in_stock
+                              ? "bg-slate-100 text-slate-600"
+                              : "bg-emerald-50 text-emerald-700",
+                          )}
+                        >
+                          {product.is_in_stock ? "Kapat" : "Aç"}
+                        </Badge>
                       </Button>
                       <Button
                         variant="secondary"
-                        className="whitespace-nowrap"
+                        className="h-9 px-3"
                         onClick={() => openEdit(product)}
+                        title="Düzenle"
+                        aria-label="Düzenle"
                       >
                         <PencilLine className="size-4" />
-                        Düzenle
                       </Button>
                       <Button
                         variant="secondary"
-                        className="whitespace-nowrap border-red-200 text-red-700 hover:bg-red-50"
+                        className="h-9 border-red-200 px-3 text-red-700 hover:bg-red-50"
                         onClick={() => setDeleteTarget(product)}
+                        title="Sil"
+                        aria-label="Sil"
                       >
                         <Trash2 className="size-4" />
-                        Sil
                       </Button>
                     </div>
                   </td>
