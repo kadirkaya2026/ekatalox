@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { normalizeProductRecord } from "@/lib/products/records";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { getSessionContext } from "@/lib/auth/session";
 import { ensureTenantAdminResponse } from "@/lib/tenancy/guards";
@@ -33,12 +34,12 @@ export async function POST(request: Request) {
     .update({ is_in_stock })
     .eq("id", productId)
     .eq("tenant_id", tenant.id)
-    .select("id, is_in_stock")
+    .select("*, variants:product_variants(*)")
     .single();
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 400 });
   }
 
-  return NextResponse.json({ product: data });
+  return NextResponse.json({ product: normalizeProductRecord(data) });
 }

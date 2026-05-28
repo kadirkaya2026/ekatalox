@@ -7,6 +7,7 @@ import {
 } from "@/lib/demo-data";
 import { shouldAllowDemoFallback } from "@/lib/env";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { normalizeProductRecord } from "@/lib/products/records";
 import { toStorefrontProduct } from "@/lib/storefront/pricing";
 import type {
   AccessCode,
@@ -107,12 +108,14 @@ export async function getTenantProducts(tenantId: string): Promise<Product[]> {
 
   const { data } = await supabase
     .from("products")
-    .select("*")
+    .select("*, variants:product_variants(*)")
     .eq("tenant_id", tenantId)
     .order("display_order", { ascending: true })
     .order("created_at", { ascending: false });
 
-  return (data as Product[] | null) ?? [];
+  return ((data as Array<Record<string, unknown>> | null) ?? []).map((product) =>
+    normalizeProductRecord(product),
+  );
 }
 
 export async function getTenantCategories(tenantId: string): Promise<Category[]> {
@@ -288,12 +291,14 @@ export async function getStorefrontProducts(params: {
   } else {
     const { data } = await supabaseAdmin
       .from("products")
-      .select("*")
+      .select("*, variants:product_variants(*)")
       .eq("tenant_id", params.tenantId)
       .order("display_order", { ascending: true })
       .order("created_at", { ascending: false });
 
-    products = (data as Product[] | null) ?? [];
+    products = ((data as Array<Record<string, unknown>> | null) ?? []).map((product) =>
+      normalizeProductRecord(product),
+    );
   }
 
   return products.map((product) => toStorefrontProduct(product, params.tierLevel));
@@ -327,7 +332,7 @@ export async function getTenantSectionProducts(sectionId: string): Promise<Produ
 
   const { data } = await supabase
     .from("storefront_section_products")
-    .select("product_id, display_order, products(*)")
+    .select("product_id, display_order, products(*, variants:product_variants(*))")
     .eq("section_id", sectionId)
     .order("display_order", { ascending: true });
 
@@ -337,7 +342,8 @@ export async function getTenantSectionProducts(sectionId: string): Promise<Produ
 
   return data
     .map((row: { products: unknown }) => row.products)
-    .filter((p): p is Product => Boolean(p));
+    .filter((p): p is Record<string, unknown> => Boolean(p))
+    .map((product) => normalizeProductRecord(product));
 }
 
 export async function getStorefrontSections(
@@ -365,7 +371,7 @@ export async function getStorefrontSections(
 
   const { data: sectionProductRows } = await supabase
     .from("storefront_section_products")
-    .select("section_id, display_order, products(*)")
+    .select("section_id, display_order, products(*, variants:product_variants(*))")
     .in("section_id", sectionIds)
     .order("display_order", { ascending: true });
 
@@ -379,7 +385,7 @@ export async function getStorefrontSections(
     if (!row.products) {
       continue;
     }
-    const product = row.products as Product;
+    const product = normalizeProductRecord(row.products as Record<string, unknown>);
     const storefrontProduct = toStorefrontProduct(product, tierLevel);
     const existing = productsBySectionId.get(row.section_id) ?? [];
     existing.push(storefrontProduct);

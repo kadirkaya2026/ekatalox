@@ -1,3 +1,4 @@
+import { toStorefrontVariant } from "@/lib/products/records";
 import type { PriceTierLevel, Product, StorefrontProduct } from "@/lib/types";
 
 export function pickPriceByTier(product: Product, tierLevel: PriceTierLevel) {
@@ -13,6 +14,10 @@ export function pickPriceByTier(product: Product, tierLevel: PriceTierLevel) {
 }
 
 export function toStorefrontProduct(product: Product, tierLevel: PriceTierLevel): StorefrontProduct {
+  const variants = (product.variants ?? []).map((variant) =>
+    toStorefrontVariant(variant, product.is_in_stock),
+  );
+
   return {
     id: product.id,
     category_id: product.category_id,
@@ -25,5 +30,8 @@ export function toStorefrontProduct(product: Product, tierLevel: PriceTierLevel)
     price: pickPriceByTier(product, tierLevel),
     package_quantity: product.package_quantity,
     carton_quantity: product.carton_quantity,
+    stock_quantity: null,
+    has_variants: variants.length > 0,
+    variants,
   };
 }

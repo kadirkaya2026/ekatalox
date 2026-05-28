@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { normalizeProductRecord } from "@/lib/products/records";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import {
   PRODUCT_IMAGES_BUCKET,
@@ -73,14 +74,14 @@ export async function PATCH(
     .update(payload)
     .eq("id", id)
     .eq("tenant_id", tenant.id)
-    .select("*")
+    .select("*, variants:product_variants(*)")
     .single();
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 400 });
   }
 
-  return NextResponse.json({ product: data });
+  return NextResponse.json({ product: normalizeProductRecord(data) });
 }
 
 export async function DELETE(

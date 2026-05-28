@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
+import { normalizeProductRecord } from "@/lib/products/records";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { uploadProductImage } from "@/lib/storage/product-images";
 import { getSessionContext } from "@/lib/auth/session";
@@ -88,12 +89,12 @@ export async function POST(request: Request) {
   const { data, error } = await supabase
     .from("products")
     .insert(payload)
-    .select("*")
+    .select("*, variants:product_variants(*)")
     .single();
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 400 });
   }
 
-  return NextResponse.json({ product: data });
+  return NextResponse.json({ product: normalizeProductRecord(data) });
 }

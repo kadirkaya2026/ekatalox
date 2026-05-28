@@ -2,10 +2,40 @@ import type {
   AccessCode,
   Category,
   Product,
+  ProductVariant,
   Profile,
   Tenant,
   TenantMembership,
 } from "@/lib/types";
+
+const demoProductVariants: ProductVariant[] = [
+  {
+    id: "var-1-black",
+    tenant_id: "tenant-lucatech",
+    product_id: "prd-1",
+    model_name: "Siyah",
+    stock_quantity: 48,
+    package_quantity: 12,
+    carton_quantity: 48,
+    is_available_for_sale: true,
+    display_order: 1,
+    created_at: new Date("2026-01-10T09:00:00").toISOString(),
+    updated_at: new Date("2026-01-10T09:00:00").toISOString(),
+  },
+  {
+    id: "var-1-blue",
+    tenant_id: "tenant-lucatech",
+    product_id: "prd-1",
+    model_name: "Mavi",
+    stock_quantity: 0,
+    package_quantity: 12,
+    carton_quantity: 48,
+    is_available_for_sale: false,
+    display_order: 2,
+    created_at: new Date("2026-01-10T09:10:00").toISOString(),
+    updated_at: new Date("2026-01-10T09:10:00").toISOString(),
+  },
+];
 
 export const demoTenants: Tenant[] = [
   {
@@ -73,6 +103,7 @@ export const demoProducts: Product[] = [
     package_quantity: 20,
     carton_quantity: 200,
     created_at: new Date("2026-01-10").toISOString(),
+    variants: demoProductVariants.filter((variant) => variant.product_id === "prd-1"),
   },
   {
     id: "prd-2",

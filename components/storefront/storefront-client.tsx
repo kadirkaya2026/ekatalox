@@ -14,6 +14,7 @@ import {
   X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Modal } from "@/components/ui/modal";
@@ -29,8 +30,15 @@ import {
   getCartCurrency,
   getCartTotal,
   getCartTotalsByCurrency,
+  getCartVariantCount,
 } from "@/lib/storefront/cart";
 import { storefrontThemes } from "@/lib/storefront/themes";
+import {
+  canSelectVariantUnit,
+  getMaxUnitCount,
+  getRequestedUnitQuantity,
+  type SalesUnit,
+} from "@/lib/storefront/variants";
 import type {
   BannerItem,
   CartItem,
@@ -80,7 +88,15 @@ function readStoredCart(storageKey: string) {
       return [];
     }
 
-    return parsedValue.filter(isValidCartItem);
+    return parsedValue
+      .filter(isValidCartItem)
+      .map((item) => ({
+        ...item,
+        product_id: typeof item.product_id === "string" ? item.product_id : item.id,
+        variant_id: typeof item.variant_id === "string" ? item.variant_id : null,
+        variant_name: typeof item.variant_name === "string" ? item.variant_name : null,
+        stock_quantity: typeof item.stock_quantity === "number" ? item.stock_quantity : null,
+      }));
   } catch {
     return [];
   }
@@ -94,12 +110,90 @@ function addToCart(items: CartItem[], product: StorefrontProduct, quantity: numb
   const existing = items.find((item) => item.id === product.id);
 
   if (!existing) {
-    return [...items, { ...product, quantity }];
+    return [
+      ...items,
+      {
+        id: product.id,
+        product_id: product.id,
+        variant_id: null,
+        variant_name: null,
+        category_id: product.category_id,
+        sku_code: product.sku_code,
+        product_name: product.product_name,
+        description: product.description ?? null,
+        image_url: product.image_url,
+        is_in_stock: product.is_in_stock,
+        currency: product.currency,
+        price: product.price,
+        package_quantity: product.package_quantity,
+        carton_quantity: product.carton_quantity,
+        stock_quantity: product.stock_quantity,
+        quantity,
+      },
+    ];
   }
 
   return items.map((item) =>
     item.id === product.id ? { ...item, quantity: item.quantity + quantity } : item,
   );
+}
+
+function addVariantSelectionsToCart(
+  items: CartItem[],
+  product: StorefrontProduct,
+  selections: VariantSelectionState[],
+) {
+  return selections.reduce((currentItems, selection) => {
+    const variant = product.variants.find((item) => item.id === selection.variantId);
+
+    if (!variant || !variant.is_purchasable) {
+      return currentItems;
+    }
+
+    const requestedUnits = getRequestedUnitQuantity({
+      unit: selection.unit,
+      quantity: selection.quantity,
+      variant,
+    });
+
+    if (requestedUnits <= 0) {
+      return currentItems;
+    }
+
+    const existing = currentItems.find(
+      (item) => item.product_id === product.id && item.variant_id === variant.id,
+    );
+
+    if (!existing) {
+      return [
+        ...currentItems,
+        {
+          id: `${product.id}:${variant.id}`,
+          product_id: product.id,
+          variant_id: variant.id,
+          variant_name: variant.model_name,
+          category_id: product.category_id,
+          sku_code: product.sku_code,
+          product_name: product.product_name,
+          description: product.description ?? null,
+          image_url: product.image_url,
+          is_in_stock: product.is_in_stock && variant.is_purchasable,
+          currency: product.currency,
+          price: product.price,
+          package_quantity: variant.package_quantity,
+          carton_quantity: variant.carton_quantity,
+          stock_quantity: variant.stock_quantity,
+          quantity: requestedUnits,
+        },
+      ];
+    }
+
+    return currentItems.map((item) =>
+      item.product_id === product.id && item.variant_id === variant.id
+        ? { ...item, quantity: item.quantity + requestedUnits }
+        : item,
+    );
+  }, items);
 }
 
 function getUnitSummary(product: StorefrontProduct) {
@@ -222,9 +316,21 @@ const floatingActionTransition = {
   stiffness: 420,
   damping: 28,
   mass: 0.9,
-};
+} as const;
 
 type ProductDetailTab = "details" | "package" | "carton";
+
+interface VariantSelectionState {
+  variantId: string;
+  unit: SalesUnit;
+  quantity: number;
+}
+
+const salesUnits: Array<{ value: SalesUnit; label: string }> = [
+  { value: "adet", label: "Adet" },
+  { value: "paket", label: "Paket" },
+  { value: "koli", label: "Koli" },
+];
 
 export function StorefrontClient({
   tenant,
@@ -263,6 +369,7 @@ export function StorefrontClient({
   const [selectedPackageCount, setSelectedPackageCount] = useState("0");
   const [selectedCartonCount, setSelectedCartonCount] = useState("0");
   const [quantityError, setQuantityError] = useState<string | null>(null);
+  const [variantSelections, setVariantSelections] = useState<VariantSelectionState[]>([]);
   const [visibleCount, setVisibleCount] = useState(24);
   const [hoveredCategoryId, setHoveredCategoryId] = useState<string | null>(null);
   const [activeBannerIndex, setActiveBannerIndex] = useState(0);
@@ -315,6 +422,13 @@ export function StorefrontClient({
     () => new Map(cart.map((item) => [item.id, item.quantity])),
     [cart],
   );
+  const cartVariantCountByProductId = useMemo(
+    () =>
+      new Map(
+        products.map((product) => [product.id, getCartVariantCount(cart, product.id)]),
+      ),
+    [cart, products],
+  );
   const cartTotalEntries = useMemo(
     () =>
       supportedCurrencyCodes
@@ -364,7 +478,7 @@ export function StorefrontClient({
   const showBannerSection = !homeHref && selectedCategoryId === "all" && !searchTerm;
   const showSections = showBannerSection && sections.length > 0;
   const recommendedProducts = useMemo(() => {
-    const cartIds = new Set(cart.map((item) => item.id));
+    const cartIds = new Set(cart.map((item) => item.product_id));
 
     return dedupeProducts([...sections.flatMap((section) => section.products), ...products])
       .filter((product) => product.is_in_stock && !cartIds.has(product.id))
@@ -476,6 +590,7 @@ export function StorefrontClient({
     setSelectedQuantity("0");
     setSelectedPackageCount("0");
     setSelectedCartonCount("0");
+    setVariantSelections([]);
     setQuantityError(null);
   }
 
@@ -489,13 +604,129 @@ export function StorefrontClient({
     setSelectedQuantity("0");
     setSelectedPackageCount("0");
     setSelectedCartonCount("0");
+    setVariantSelections([]);
     setQuantityError(null);
+  }
+
+  function updateVariantSelection(
+    variantId: string,
+    nextSelection: Partial<VariantSelectionState> & Pick<VariantSelectionState, "variantId">,
+  ) {
+    setVariantSelections((current) => {
+      const existing = current.find((item) => item.variantId === variantId);
+
+      if (!existing) {
+        return [
+          ...current,
+          {
+            variantId,
+            unit: nextSelection.unit ?? "adet",
+            quantity: nextSelection.quantity ?? 0,
+          },
+        ];
+      }
+
+      return current.map((item) =>
+        item.variantId === variantId
+          ? {
+              ...item,
+              ...nextSelection,
+            }
+          : item,
+      );
+    });
+  }
+
+  function getVariantSelection(variantId: string) {
+    return (
+      variantSelections.find((item) => item.variantId === variantId) ?? {
+        variantId,
+        unit: "adet" as SalesUnit,
+        quantity: 0,
+      }
+    );
+  }
+
+  async function validateVariantSelections(
+    product: StorefrontProduct,
+    selections: VariantSelectionState[],
+  ) {
+    if (!subdomain) {
+      return { ok: true as const };
+    }
+
+    const response = await fetch("/api/storefront/variant-availability", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        subdomain,
+        productId: product.id,
+        selections: selections.map((selection) => ({
+          variantId: selection.variantId,
+          unit: selection.unit,
+          quantity: selection.quantity,
+        })),
+      }),
+    });
+
+    if (response.ok) {
+      return { ok: true as const };
+    }
+
+    const result = await response.json();
+    return {
+      ok: false as const,
+      error: result.error ?? "Seçilen modeller için stok doğrulaması başarısız oldu.",
+    };
   }
 
   function confirmAddToCart(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     if (!selectedProduct || !selectedProduct.is_in_stock) {
+      return;
+    }
+
+    if (selectedProduct.has_variants) {
+      const selections = variantSelections.filter((selection) => selection.quantity > 0);
+
+      if (!selections.length) {
+        setQuantityError("Sepete eklemek için en az bir model seçin.");
+        return;
+      }
+
+      const invalidSelection = selections.find((selection) => {
+        const variant = selectedProduct.variants.find((item) => item.id === selection.variantId);
+
+        if (!variant || !variant.is_purchasable) {
+          return true;
+        }
+
+        return !canSelectVariantUnit({
+          unit: selection.unit,
+          quantity: selection.quantity,
+          variant,
+        });
+      });
+
+      if (invalidSelection) {
+        setQuantityError("Bazı model seçimleri için stok yetersiz.");
+        return;
+      }
+
+      setQuantityError(null);
+
+      void (async () => {
+        const validation = await validateVariantSelections(selectedProduct, selections);
+
+        if (!validation.ok) {
+          setQuantityError(validation.error);
+          return;
+        }
+
+        setCart((current) => addVariantSelectionsToCart(current, selectedProduct, selections));
+        closeAddToCartModal();
+      })();
       return;
     }
 
@@ -552,11 +783,12 @@ export function StorefrontClient({
     if (typeof window !== "undefined") {
       window.localStorage.removeItem(cartStorageKey);
     }
-    setIsMobileOrderNoteOpen(false);
   }
 
   function renderFloatingCartAction(product: StorefrontProduct, compact = false) {
-    const cartQuantity = cartQuantityByProductId.get(product.id) ?? 0;
+    const cartQuantity = product.has_variants
+      ? cartVariantCountByProductId.get(product.id) ?? 0
+      : cartQuantityByProductId.get(product.id) ?? 0;
 
     if (!product.is_in_stock) {
       return null;
@@ -584,7 +816,11 @@ export function StorefrontClient({
               whileTap={{ scale: 0.92 }}
               onClick={(event) => {
                 event.stopPropagation();
-                increaseCartItem(product);
+                if (!product.has_variants) {
+                  increaseCartItem(product);
+                } else {
+                  openAddToCartModal(product);
+                }
               }}
               className={cn(
                 "flex items-center justify-center rounded-full text-white transition hover:bg-white/15",
@@ -601,22 +837,26 @@ export function StorefrontClient({
                 compact ? "px-1 text-[11px]" : "px-1 text-sm",
               )}
             >
-              {cartQuantity}
+              {product.has_variants ? `${cartQuantity}M` : cartQuantity}
             </motion.span>
             <motion.button
               type="button"
               whileTap={{ scale: 0.92 }}
               onClick={(event) => {
                 event.stopPropagation();
-                decreaseCartItem(product);
+                if (!product.has_variants) {
+                  decreaseCartItem(product);
+                } else {
+                  openAddToCartModal(product);
+                }
               }}
               className={cn(
                 "flex items-center justify-center rounded-full text-white transition hover:bg-white/15",
                 compact ? "size-8" : "size-9 sm:size-10",
               )}
-              aria-label={cartQuantity === 1 ? "Ürünü sepetten çıkar" : "Adedi azalt"}
+              aria-label={product.has_variants ? "Model seçimini aç" : cartQuantity === 1 ? "Ürünü sepetten çıkar" : "Adedi azalt"}
             >
-              {cartQuantity === 1 ? (
+              {!product.has_variants && cartQuantity === 1 ? (
                 <Trash2 className={compact ? "size-4" : "size-4 sm:size-5"} />
               ) : (
                 <Minus className={compact ? "size-4" : "size-4 sm:size-5"} />
@@ -661,6 +901,7 @@ export function StorefrontClient({
 
   function renderProductCard(product: StorefrontProduct) {
     const handleOpenDetail = () => openProductDetail(product);
+    const addedVariantCount = cartVariantCountByProductId.get(product.id) ?? 0;
 
     return (
       <article
@@ -714,6 +955,18 @@ export function StorefrontClient({
           <p className="truncate text-[10px] leading-4 text-slate-400 sm:text-[11px]">
             {product.sku_code ? `SKU: ${product.sku_code}` : "SKU bilgisi yok"}
           </p>
+          {product.has_variants ? (
+            <div className="flex flex-wrap gap-1 pt-1">
+              <Badge className="bg-blue-50 px-2 py-1 text-[10px] text-blue-700">
+                {product.variants.length} model
+              </Badge>
+              {addedVariantCount > 0 ? (
+                <Badge className="bg-emerald-50 px-2 py-1 text-[10px] text-emerald-700">
+                  {addedVariantCount} Model Eklendi
+                </Badge>
+              ) : null}
+            </div>
+          ) : null}
         </div>
       </article>
     );
@@ -945,6 +1198,11 @@ export function StorefrontClient({
                               <p className="line-clamp-2 text-sm font-semibold leading-5 text-slate-900">
                                 {item.product_name}
                               </p>
+                              {item.variant_name ? (
+                                <p className="mt-0.5 text-xs font-medium text-emerald-700">
+                                  Model: {item.variant_name}
+                                </p>
+                              ) : null}
                               <p className="mt-0.5 text-xs text-slate-500">
                                 {item.sku_code ? `SKU: ${item.sku_code}` : "SKU bilgisi yok"}
                               </p>
@@ -1562,7 +1820,7 @@ export function StorefrontClient({
       <Modal
         open={Boolean(selectedProduct)}
         onClose={closeAddToCartModal}
-        title="Sepete Ekle"
+        title={selectedProduct?.has_variants ? "Model Seçimi" : "Sepete Ekle"}
       >
         {selectedProduct ? (
           <form onSubmit={confirmAddToCart} className="grid gap-4">
@@ -1571,7 +1829,7 @@ export function StorefrontClient({
               <p className="mt-1 text-sm text-slate-500">
                 {selectedProduct.sku_code || "SKU bilgisi yok"}
               </p>
-              {getUnitSummary(selectedProduct) ? (
+              {!selectedProduct.has_variants && getUnitSummary(selectedProduct) ? (
                 <p className="mt-1 text-sm text-slate-500">
                   {getUnitSummary(selectedProduct)}
                 </p>
@@ -1581,82 +1839,230 @@ export function StorefrontClient({
               </p>
             </div>
 
-            <div className="grid gap-3 sm:grid-cols-3">
-              <div className="space-y-2">
-                <label className="text-sm font-semibold text-slate-900">ADET</label>
-                <Input
-                  type="number"
-                  min="0"
-                  step="1"
-                  inputMode="numeric"
-                  value={selectedQuantity}
-                  onChange={(event) => {
-                    setSelectedQuantity(event.target.value);
-                    if (quantityError) {
-                      setQuantityError(null);
+            {selectedProduct.has_variants ? (
+              <div className="max-h-[28rem] space-y-3 overflow-y-auto pr-1">
+                {selectedProduct.variants.map((variant) => {
+                  const selection = getVariantSelection(variant.id);
+                  const unitChoices = salesUnits.filter((unitOption) => {
+                    if (unitOption.value === "paket") {
+                      return Boolean(variant.package_quantity);
                     }
-                  }}
-                  placeholder="0"
-                />
+
+                    if (unitOption.value === "koli") {
+                      return Boolean(variant.carton_quantity);
+                    }
+
+                    return true;
+                  });
+                  const maxUnitCount = getMaxUnitCount(selection.unit, variant);
+                  const isUnavailable = !variant.is_purchasable;
+
+                  return (
+                    <div
+                      key={variant.id}
+                      className={cn(
+                        "rounded-2xl border px-4 py-4 transition",
+                        isUnavailable
+                          ? "border-slate-200 bg-slate-50 opacity-40"
+                          : "border-slate-200 bg-white",
+                      )}
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="font-semibold text-slate-900">{variant.model_name}</p>
+                          <p className="mt-1 text-xs text-slate-500">
+                            Stok: {variant.stock_quantity} adet
+                          </p>
+                        </div>
+                        {isUnavailable ? (
+                          <Badge className="bg-slate-200 text-slate-600">Tükendi</Badge>
+                        ) : null}
+                      </div>
+
+                      <div className="mt-4 grid gap-3 sm:grid-cols-[minmax(0,1fr)_9rem]">
+                        <select
+                          value={selection.unit}
+                          disabled={isUnavailable}
+                          onChange={(event) => {
+                            updateVariantSelection(variant.id, {
+                              variantId: variant.id,
+                              unit: event.target.value as SalesUnit,
+                              quantity: 0,
+                            });
+                            if (quantityError) {
+                              setQuantityError(null);
+                            }
+                          }}
+                          className="rounded-lg border border-slate-200 bg-white px-3 py-3 text-sm text-slate-900 disabled:bg-slate-100"
+                        >
+                          {unitChoices.map((unitOption) => (
+                            <option key={unitOption.value} value={unitOption.value}>
+                              {unitOption.label}
+                            </option>
+                          ))}
+                        </select>
+                        <Input
+                          type="number"
+                          min="0"
+                          max={maxUnitCount}
+                          step="1"
+                          inputMode="numeric"
+                          disabled={isUnavailable}
+                          value={selection.quantity ? String(selection.quantity) : "0"}
+                          onChange={(event) => {
+                            const nextQuantity = parseUnitCount(event.target.value);
+                            updateVariantSelection(variant.id, {
+                              variantId: variant.id,
+                              quantity: nextQuantity && nextQuantity > 0 ? nextQuantity : 0,
+                            });
+                            if (quantityError) {
+                              setQuantityError(null);
+                            }
+                          }}
+                          placeholder="0"
+                        />
+                      </div>
+
+                      <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-slate-500">
+                        {variant.package_quantity ? (
+                          <span>1 Paket = {variant.package_quantity} adet</span>
+                        ) : null}
+                        {variant.carton_quantity ? (
+                          <span>1 Koli = {variant.carton_quantity} adet</span>
+                        ) : null}
+                        {!isUnavailable && maxUnitCount <= 0 ? (
+                          <span className="font-semibold text-amber-700">Yetersiz Stok</span>
+                        ) : null}
+                        {!isUnavailable &&
+                        selection.quantity > 0 &&
+                        !canSelectVariantUnit({
+                          unit: selection.unit,
+                          quantity: selection.quantity,
+                          variant,
+                        }) ? (
+                          <span className="font-semibold text-amber-700">Yetersiz Stok</span>
+                        ) : null}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
-
-              {selectedProduct.package_quantity ? (
+            ) : (
+              <div className="grid gap-3 sm:grid-cols-3">
                 <div className="space-y-2">
-                  <label className="text-sm font-semibold text-slate-900">
-                    PAKET
-                  </label>
+                  <label className="text-sm font-semibold text-slate-900">ADET</label>
                   <Input
                     type="number"
                     min="0"
                     step="1"
                     inputMode="numeric"
-                    value={selectedPackageCount}
+                    value={selectedQuantity}
                     onChange={(event) => {
-                      setSelectedPackageCount(event.target.value);
+                      setSelectedQuantity(event.target.value);
                       if (quantityError) {
                         setQuantityError(null);
                       }
                     }}
                     placeholder="0"
                   />
-                  <p className="text-xs text-slate-500">
-                    1 Paket = {selectedProduct.package_quantity} adet
-                  </p>
                 </div>
-              ) : null}
 
-              {selectedProduct.carton_quantity ? (
-                <div className="space-y-2">
-                  <label className="text-sm font-semibold text-slate-900">KOLİ</label>
-                  <Input
-                    type="number"
-                    min="0"
-                    step="1"
-                    inputMode="numeric"
-                    value={selectedCartonCount}
-                    onChange={(event) => {
-                      setSelectedCartonCount(event.target.value);
-                      if (quantityError) {
-                        setQuantityError(null);
-                      }
-                    }}
-                    placeholder="0"
-                  />
-                  <p className="text-xs text-slate-500">
-                    1 Koli = {selectedProduct.carton_quantity} adet
-                  </p>
-                </div>
-              ) : null}
-            </div>
+                {selectedProduct.package_quantity ? (
+                  <div className="space-y-2">
+                    <label className="text-sm font-semibold text-slate-900">
+                      PAKET
+                    </label>
+                    <Input
+                      type="number"
+                      min="0"
+                      step="1"
+                      inputMode="numeric"
+                      value={selectedPackageCount}
+                      onChange={(event) => {
+                        setSelectedPackageCount(event.target.value);
+                        if (quantityError) {
+                          setQuantityError(null);
+                        }
+                      }}
+                      placeholder="0"
+                    />
+                    <p className="text-xs text-slate-500">
+                      1 Paket = {selectedProduct.package_quantity} adet
+                    </p>
+                  </div>
+                ) : null}
+
+                {selectedProduct.carton_quantity ? (
+                  <div className="space-y-2">
+                    <label className="text-sm font-semibold text-slate-900">KOLİ</label>
+                    <Input
+                      type="number"
+                      min="0"
+                      step="1"
+                      inputMode="numeric"
+                      value={selectedCartonCount}
+                      onChange={(event) => {
+                        setSelectedCartonCount(event.target.value);
+                        if (quantityError) {
+                          setQuantityError(null);
+                        }
+                      }}
+                      placeholder="0"
+                    />
+                    <p className="text-xs text-slate-500">
+                      1 Koli = {selectedProduct.carton_quantity} adet
+                    </p>
+                  </div>
+                ) : null}
+              </div>
+            )}
 
             {quantityError ? <p className="text-sm text-amber-700">{quantityError}</p> : null}
 
             <div className="rounded-xl bg-slate-900 p-4 text-white">
-              <p className="text-sm text-slate-300">Toplam</p>
-              <p className="mt-1 text-sm text-slate-300">{selectedTotalQuantity} adet</p>
-              <p className="mt-1 text-2xl font-bold">
-                {formatCurrency(selectedLineTotal, selectedProduct.currency)}
-              </p>
+              {selectedProduct.has_variants ? (
+                <>
+                  <p className="text-sm text-slate-300">Seçilen Modeller</p>
+                  <p className="mt-1 text-sm text-slate-300">
+                    {
+                      variantSelections.filter((selection) => selection.quantity > 0).length
+                    }{" "}
+                    model
+                  </p>
+                  <p className="mt-1 text-2xl font-bold">
+                    {formatCurrency(
+                      variantSelections.reduce((total, selection) => {
+                        const variant = selectedProduct.variants.find(
+                          (item) => item.id === selection.variantId,
+                        );
+
+                        if (!variant) {
+                          return total;
+                        }
+
+                        return (
+                          total +
+                          getRequestedUnitQuantity({
+                            unit: selection.unit,
+                            quantity: selection.quantity,
+                            variant,
+                          }) *
+                            selectedProduct.price
+                        );
+                      }, 0),
+                      selectedProduct.currency,
+                    )}
+                  </p>
+                </>
+              ) : (
+                <>
+                  <p className="text-sm text-slate-300">Toplam</p>
+                  <p className="mt-1 text-sm text-slate-300">{selectedTotalQuantity} adet</p>
+                  <p className="mt-1 text-2xl font-bold">
+                    {formatCurrency(selectedLineTotal, selectedProduct.currency)}
+                  </p>
+                </>
+              )}
             </div>
 
             <div className="flex justify-end gap-2">

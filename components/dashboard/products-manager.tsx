@@ -13,6 +13,7 @@ import {
   ImagePlus,
   ListFilter,
   PencilLine,
+  Plus,
   Trash2,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -30,7 +31,7 @@ import {
   defaultCurrencyCode,
   supportedCurrencyCodes,
 } from "@/lib/products/constants";
-import type { Category, Product, Tenant } from "@/lib/types";
+import type { Category, Product, ProductVariant, Tenant } from "@/lib/types";
 import { cn, formatCurrency } from "@/lib/utils";
 
 interface ProductFormState {
@@ -47,6 +48,16 @@ interface ProductFormState {
   image: File | null;
 }
 
+interface VariantMatrixRow {
+  id?: string;
+  model_name: string;
+  stock_quantity: string;
+  package_quantity: string;
+  carton_quantity: string;
+  is_available_for_sale: boolean;
+  display_order: number;
+}
+
 const emptyForm: ProductFormState = {
   category_id: "",
   sku_code: "",
@@ -60,6 +71,15 @@ const emptyForm: ProductFormState = {
   carton_quantity: "",
   image: null,
 };
+
+const emptyVariantRow = (display_order: number): VariantMatrixRow => ({
+  model_name: "",
+  stock_quantity: "0",
+  package_quantity: "",
+  carton_quantity: "",
+  is_available_for_sale: true,
+  display_order,
+});
 
 const PACKAGE_UPGRADE_PHONE = "905354172510";
 
@@ -115,6 +135,33 @@ function reorderProducts(products: Product[], fromIndex: number, toIndex: number
   }));
 }
 
+function variantToMatrixRow(variant: ProductVariant, index: number): VariantMatrixRow {
+  return {
+    id: variant.id,
+    model_name: variant.model_name,
+    stock_quantity: String(variant.stock_quantity),
+    package_quantity: variant.package_quantity ? String(variant.package_quantity) : "",
+    carton_quantity: variant.carton_quantity ? String(variant.carton_quantity) : "",
+    is_available_for_sale: variant.is_available_for_sale,
+    display_order: variant.display_order || index + 1,
+  };
+}
+
+function normalizeVariantRows(rows: VariantMatrixRow[]) {
+  return rows.map((row, index) => {
+    const stockQuantity = Number(row.stock_quantity || "0");
+    return {
+      id: row.id,
+      model_name: row.model_name.trim(),
+      stock_quantity: stockQuantity,
+      package_quantity: row.package_quantity.trim() ? Number(row.package_quantity) : null,
+      carton_quantity: row.carton_quantity.trim() ? Number(row.carton_quantity) : null,
+      is_available_for_sale: stockQuantity === 0 ? false : row.is_available_for_sale,
+      display_order: index + 1,
+    };
+  });
+}
+
 export function ProductsManager({
   tenant,
   products: controlledProducts,
@@ -132,6 +179,10 @@ export function ProductsManager({
   const [searchTerm, setSearchTerm] = useState("");
   const [editForm, setEditForm] = useState<ProductFormState>(emptyForm);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [variantMatrixOpen, setVariantMatrixOpen] = useState(false);
+  const [variantMatrixProduct, setVariantMatrixProduct] = useState<Product | null>(null);
+  const [variantRows, setVariantRows] = useState<VariantMatrixRow[]>([]);
+  const [variantMessage, setVariantMessage] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Product | null>(null);
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
   const [selectedProductIds, setSelectedProductIds] = useState<string[]>([]);
@@ -246,6 +297,24 @@ export function ProductsManager({
     setEditForm(productToForm(product));
   }
 
+  function openVariantMatrix(product: Product) {
+    setVariantMatrixProduct(product);
+    setVariantRows(
+      (product.variants ?? []).length
+        ? (product.variants ?? []).map(variantToMatrixRow)
+        : [emptyVariantRow(1)],
+    );
+    setVariantMessage(null);
+    setVariantMatrixOpen(true);
+  }
+
+  function closeVariantMatrix() {
+    setVariantMatrixOpen(false);
+    setVariantMatrixProduct(null);
+    setVariantRows([]);
+    setVariantMessage(null);
+  }
+
   function updateProduct(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!editingProduct) {
@@ -303,6 +372,94 @@ export function ProductsManager({
         ),
       );
       setMessage("Stok durumu güncellendi.");
+    });
+  }
+
+  function updateVariantRow(
+    index: number,
+    key: keyof VariantMatrixRow,
+    value: VariantMatrixRow[keyof VariantMatrixRow],
+  ) {
+    setVariantRows((current) =>
+      current.map((row, rowIndex) => {
+        if (rowIndex !== index) {
+          return row;
+        }
+
+        if (key === "stock_quantity") {
+          const stockQuantity = String(value);
+          const numeric = Number(stockQuantity || "0");
+          return {
+            ...row,
+            stock_quantity: stockQuantity,
+            is_available_for_sale:
+              Number.isInteger(numeric) && numeric === 0 ? false : row.is_available_for_sale,
+          };
+        }
+
+        return {
+          ...row,
+          [key]: value,
+        };
+      }),
+    );
+  }
+
+  function addVariantRow() {
+    setVariantRows((current) => [...current, emptyVariantRow(current.length + 1)]);
+  }
+
+  function removeVariantRow(index: number) {
+    setVariantRows((current) => {
+      if (current.length === 1) {
+        return current;
+      }
+
+      return current
+        .filter((_, rowIndex) => rowIndex !== index)
+        .map((row, rowIndex) => ({
+          ...row,
+          display_order: rowIndex + 1,
+        }));
+    });
+  }
+
+  function handleVariantMatrixSave() {
+    if (!variantMatrixProduct) {
+      return;
+    }
+
+    const hasEmptyModelName = variantRows.some((row) => !row.model_name.trim());
+
+    if (hasEmptyModelName) {
+      setVariantMessage("Her satır için model adı zorunludur.");
+      return;
+    }
+
+    setVariantMessage(null);
+    startTransition(async () => {
+      const response = await fetch(`/api/tenant/products/${variantMatrixProduct.id}/variants`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          variants: normalizeVariantRows(variantRows),
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        setVariantMessage(result.error ?? "Varyantlar kaydedilemedi.");
+        return;
+      }
+
+      syncProducts(
+        products.map((item) =>
+          item.id === variantMatrixProduct.id ? (result.product as Product) : item,
+        ),
+      );
+      setMessage("Varyant matrisi güncellendi.");
+      closeVariantMatrix();
     });
   }
 
@@ -527,6 +684,24 @@ export function ProductsManager({
       {product.is_in_stock ? "Stokta var" : "Stok kapalı"}
     </Badge>
   );
+
+  const renderVariantCountBadge = (product: Product) => {
+    const variantCount = product.variants?.length ?? 0;
+
+    if (!variantCount) {
+      return (
+        <Badge className="bg-slate-100 text-slate-600">
+          Tek ürün
+        </Badge>
+      );
+    }
+
+    return (
+      <Badge className="bg-blue-50 text-blue-700">
+        {variantCount} model
+      </Badge>
+    );
+  };
 
   return (
     <div className="space-y-6">
@@ -757,6 +932,7 @@ export function ProductsManager({
                 <th className="px-4 py-3">Ürün</th>
                 <th className="px-4 py-3">Kategori</th>
                 <th className="px-4 py-3">Stok</th>
+                <th className="px-4 py-3">Model</th>
                 <th className="px-4 py-3">Katman 1</th>
                 <th className="px-4 py-3">Katman 2</th>
                 <th className="px-4 py-3">Katman 3</th>
@@ -871,6 +1047,7 @@ export function ProductsManager({
                     )}
                   </td>
                   <td className="px-4 py-4">{renderStockBadge(product)}</td>
+                  <td className="px-4 py-4">{renderVariantCountBadge(product)}</td>
                   <td className="px-4 py-4 text-base font-semibold text-slate-900">
                     {formatCurrency(Number(product.price_tier_1), product.currency)}
                   </td>
@@ -882,6 +1059,17 @@ export function ProductsManager({
                   </td>
                   <td className="px-4 py-4 align-top">
                     <div className="ml-auto flex max-w-[11rem] flex-wrap justify-end gap-2">
+                      <Button
+                        variant="secondary"
+                        className="h-9 px-3"
+                        onClick={() => openVariantMatrix(product)}
+                        title="Model matrisi"
+                        aria-label="Model matrisi"
+                      >
+                        <span className="text-xs font-semibold">
+                          Model
+                        </span>
+                      </Button>
                       <Button
                         variant="secondary"
                         className="h-9 px-3"
@@ -1004,6 +1192,7 @@ export function ProductsManager({
                     )}
                   </div>
                   <div className="mt-2">{renderStockBadge(product)}</div>
+                  <div className="mt-2">{renderVariantCountBadge(product)}</div>
                 </div>
               </div>
 
@@ -1048,6 +1237,13 @@ export function ProductsManager({
               </div>
 
               <div className="mt-4 flex gap-2">
+                <Button
+                  variant="secondary"
+                  className="flex-1"
+                  onClick={() => openVariantMatrix(product)}
+                >
+                  Model
+                </Button>
                 <Button
                   variant="secondary"
                   className="flex-1"
@@ -1187,6 +1383,145 @@ export function ProductsManager({
             </Button>
           </div>
         </form>
+      </Modal>
+
+      <Modal
+        open={variantMatrixOpen}
+        onClose={closeVariantMatrix}
+        title={
+          variantMatrixProduct
+            ? `${variantMatrixProduct.product_name} • Model Matrisi`
+            : "Model Matrisi"
+        }
+      >
+        <div className="space-y-4">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="text-sm font-semibold text-slate-900">
+                Hızlı varyant düzenleyici
+              </p>
+              <p className="mt-1 text-sm text-slate-500">
+                Model adı, stok, paket içi, koli içi ve satış durumunu tek ekranda yönetin.
+              </p>
+            </div>
+            <Button variant="secondary" onClick={addVariantRow}>
+              <Plus className="size-4" />
+              Satır Ekle
+            </Button>
+          </div>
+
+          {variantMessage ? (
+            <div className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-800">
+              {variantMessage}
+            </div>
+          ) : null}
+
+          <div className="overflow-x-auto rounded-xl border border-slate-200">
+            <table className="min-w-full border-collapse">
+              <thead className="bg-slate-50 text-left text-xs uppercase tracking-[0.14em] text-slate-500">
+                <tr>
+                  <th className="px-3 py-3">Model Adı</th>
+                  <th className="px-3 py-3">Stok Adedi</th>
+                  <th className="px-3 py-3">Paket İçi</th>
+                  <th className="px-3 py-3">Koli İçi</th>
+                  <th className="px-3 py-3">Satış Durumu</th>
+                  <th className="px-3 py-3 text-right">Sil</th>
+                </tr>
+              </thead>
+              <tbody>
+                {variantRows.map((row, index) => {
+                  const stockQuantity = Number(row.stock_quantity || "0");
+                  const soldOut = Number.isInteger(stockQuantity) && stockQuantity === 0;
+
+                  return (
+                    <tr key={row.id ?? `variant-row-${index}`} className="border-t border-slate-100">
+                      <td className="px-3 py-3">
+                        <Input
+                          value={row.model_name}
+                          onChange={(event) =>
+                            updateVariantRow(index, "model_name", event.target.value)
+                          }
+                          placeholder="Örn: Siyah"
+                        />
+                      </td>
+                      <td className="px-3 py-3">
+                        <Input
+                          type="number"
+                          min="0"
+                          step="1"
+                          value={row.stock_quantity}
+                          onChange={(event) =>
+                            updateVariantRow(index, "stock_quantity", event.target.value)
+                          }
+                        />
+                      </td>
+                      <td className="px-3 py-3">
+                        <Input
+                          type="number"
+                          min="1"
+                          step="1"
+                          value={row.package_quantity}
+                          onChange={(event) =>
+                            updateVariantRow(index, "package_quantity", event.target.value)
+                          }
+                          placeholder="Boş bırak"
+                        />
+                      </td>
+                      <td className="px-3 py-3">
+                        <Input
+                          type="number"
+                          min="1"
+                          step="1"
+                          value={row.carton_quantity}
+                          onChange={(event) =>
+                            updateVariantRow(index, "carton_quantity", event.target.value)
+                          }
+                          placeholder="Boş bırak"
+                        />
+                      </td>
+                      <td className="px-3 py-3">
+                        <label className="flex items-center gap-3 text-sm text-slate-700">
+                          <input
+                            type="checkbox"
+                            checked={soldOut ? false : row.is_available_for_sale}
+                            disabled={soldOut}
+                            onChange={(event) =>
+                              updateVariantRow(
+                                index,
+                                "is_available_for_sale",
+                                event.target.checked,
+                              )
+                            }
+                          />
+                          <span>{soldOut ? "Stok Yok" : row.is_available_for_sale ? "Satışta" : "Stok Yok"}</span>
+                        </label>
+                      </td>
+                      <td className="px-3 py-3 text-right">
+                        <Button
+                          variant="secondary"
+                          className="h-9 border-red-200 px-3 text-red-700 hover:bg-red-50"
+                          onClick={() => removeVariantRow(index)}
+                          disabled={variantRows.length <= 1}
+                        >
+                          <Trash2 className="size-4" />
+                        </Button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="flex justify-end gap-2">
+            <Button variant="secondary" onClick={closeVariantMatrix}>
+              İptal
+            </Button>
+            <Button onClick={handleVariantMatrixSave} disabled={pending}>
+              Toplu Kaydet
+            </Button>
+          </div>
+        </div>
       </Modal>
 
       <Modal

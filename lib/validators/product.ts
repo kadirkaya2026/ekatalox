@@ -38,6 +38,27 @@ const optionalPositiveIntegerSchema = z
     return parsedValue;
   });
 
+const nonNegativeIntegerSchema = z
+  .union([z.string(), z.number()])
+  .transform((value, ctx) => {
+    const normalized = String(value).trim();
+    const parsedValue = Number(normalized);
+
+    if (!normalized || !Number.isInteger(parsedValue) || parsedValue < 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Stok alanı sıfır veya pozitif tam sayı olmalıdır.",
+      });
+      return z.NEVER;
+    }
+
+    return parsedValue;
+  });
+
+const booleanSchema = z
+  .union([z.boolean(), z.string()])
+  .transform((value) => (typeof value === "boolean" ? value : value === "true"));
+
 export const productBaseSchema = z.object({
   category_id: z.string().min(1, "Kategori seçimi zorunludur."),
   sku_code: z.string().min(1, "Stok kodu zorunludur."),
@@ -46,9 +67,7 @@ export const productBaseSchema = z.object({
   price_tier_1: z.coerce.number().min(0),
   price_tier_2: z.coerce.number().min(0),
   price_tier_3: z.coerce.number().min(0),
-  is_in_stock: z
-    .union([z.boolean(), z.string()])
-    .transform((value) => (typeof value === "boolean" ? value : value === "true")),
+  is_in_stock: booleanSchema,
   package_quantity: optionalPositiveIntegerSchema,
   carton_quantity: optionalPositiveIntegerSchema,
 });
@@ -65,9 +84,7 @@ export const productImportRowSchema = z.object({
   price_tier_1: z.coerce.number().min(0),
   price_tier_2: z.coerce.number().min(0),
   price_tier_3: z.coerce.number().min(0),
-  is_in_stock: z
-    .union([z.boolean(), z.string()])
-    .transform((value) => (typeof value === "boolean" ? value : value === "true")),
+  is_in_stock: booleanSchema,
   image_url: imageUrlSchema,
   package_quantity: optionalPositiveIntegerSchema,
   carton_quantity: optionalPositiveIntegerSchema,
@@ -86,4 +103,36 @@ export const productReorderSchema = z.object({
 export const productBulkCategoryUpdateSchema = z.object({
   productIds: z.array(z.string().uuid()).min(1, "En az bir ürün seçin."),
   category_id: z.string().uuid("Geçerli bir kategori seçin."),
+});
+
+export const productVariantBulkUpdateSchema = z.object({
+  productId: z.string().uuid("Geçerli bir ürün seçin."),
+  variants: z.array(
+    z.object({
+      id: z
+        .union([z.string().uuid(), z.literal(""), z.undefined()])
+        .transform((value) => (value ? value : undefined)),
+      model_name: z
+        .string()
+        .trim()
+        .min(1, "Model adı zorunludur."),
+      stock_quantity: nonNegativeIntegerSchema,
+      package_quantity: optionalPositiveIntegerSchema,
+      carton_quantity: optionalPositiveIntegerSchema,
+      is_available_for_sale: booleanSchema,
+      display_order: z.coerce.number().int().min(1).optional(),
+    }),
+  ).min(1, "En az bir varyant girin."),
+});
+
+export const storefrontVariantAvailabilitySchema = z.object({
+  subdomain: z.string().trim().min(1, "Subdomain gereklidir."),
+  productId: z.string().uuid("Geçerli bir ürün seçin."),
+  selections: z.array(
+    z.object({
+      variantId: z.string().uuid("Geçerli bir model seçin."),
+      unit: z.enum(["adet", "paket", "koli"]),
+      quantity: z.coerce.number().int().min(1, "Adet en az 1 olmalıdır."),
+    }),
+  ).min(1, "En az bir model seçin."),
 });

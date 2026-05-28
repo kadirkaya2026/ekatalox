@@ -28,7 +28,10 @@ export function buildWhatsAppMessage(params: {
 }) {
   const lines = params.items.map((item) => {
     const lineTotal = item.price * item.quantity;
-    return `• ${item.product_name} x ${item.quantity} adet = ${formatCurrency(lineTotal, item.currency)}`;
+    const productLabel = item.variant_name
+      ? `${item.product_name} / ${item.variant_name}`
+      : item.product_name;
+    return `• ${productLabel} x ${item.quantity} adet = ${formatCurrency(lineTotal, item.currency)}`;
   });
   const totalsByCurrency = getCartTotalsByCurrency(params.items);
   const totalLines = supportedCurrencyCodes
@@ -59,4 +62,12 @@ export function buildWhatsAppMessage(params: {
   ]
     .filter(Boolean)
     .join("\n");
+}
+
+export function getCartVariantCount(items: CartItem[], productId: string) {
+  return new Set(
+    items
+      .filter((item) => item.product_id === productId && item.variant_id)
+      .map((item) => item.variant_id),
+  ).size;
 }

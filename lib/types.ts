@@ -33,6 +33,21 @@ export interface Product {
   package_quantity: number | null;
   carton_quantity: number | null;
   created_at: string;
+  variants?: ProductVariant[];
+}
+
+export interface ProductVariant {
+  id: string;
+  tenant_id: string;
+  product_id: string;
+  model_name: string;
+  stock_quantity: number;
+  package_quantity: number | null;
+  carton_quantity: number | null;
+  is_available_for_sale: boolean;
+  display_order: number;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface AccessCode {
@@ -116,9 +131,28 @@ export interface StorefrontProduct {
   price: number;
   package_quantity: number | null;
   carton_quantity: number | null;
+  stock_quantity: number | null;
+  has_variants: boolean;
+  variants: StorefrontProductVariant[];
 }
 
-export interface CartItem extends StorefrontProduct {
+export interface StorefrontProductVariant {
+  id: string;
+  product_id: string;
+  model_name: string;
+  stock_quantity: number;
+  package_quantity: number | null;
+  carton_quantity: number | null;
+  is_available_for_sale: boolean;
+  is_purchasable: boolean;
+  display_order: number;
+}
+
+export interface CartItem extends Omit<StorefrontProduct, "id" | "has_variants" | "variants"> {
+  id: string;
+  product_id: string;
+  variant_id: string | null;
+  variant_name: string | null;
   quantity: number;
 }
 
