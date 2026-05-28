@@ -23,6 +23,13 @@ import type {
   TenantWithRelations,
 } from "@/lib/types";
 
+type AdminClient = NonNullable<ReturnType<typeof createSupabaseAdminClient>>;
+
+const productWithVariantsSelect = "*, variants:product_variants(*)";
+const sectionProductsWithVariantsSelect =
+  "product_id, display_order, products(*, variants:product_variants(*))";
+const sectionProductsFallbackSelect = "product_id, display_order, products(*)";
+
 function groupCountByTenant(
   items: Array<{ tenant_id: string }>,
 ): Record<string, number> {
@@ -52,6 +59,93 @@ export function getDefaultTenantStorefrontSettings(
     created_at: now,
     updated_at: now,
   };
+}
+
+function normalizeProductRows(rows: Array<Record<string, unknown>> | null | undefined) {
+  return (rows ?? []).map((product) => normalizeProductRecord(product));
+}
+
+async function fetchTenantProductsWithOptionalVariants(
+  supabase: AdminClient,
+  tenantId: string,
+) {
+  const withVariants = await supabase
+    .from("products")
+    .select(productWithVariantsSelect)
+    .eq("tenant_id", tenantId)
+    .order("display_order", { ascending: true })
+    .order("created_at", { ascending: false });
+
+  if (!withVariants.error) {
+    return normalizeProductRows(withVariants.data as Array<Record<string, unknown>> | null);
+  }
+
+  const fallback = await supabase
+    .from("products")
+    .select("*")
+    .eq("tenant_id", tenantId)
+    .order("display_order", { ascending: true })
+    .order("created_at", { ascending: false });
+
+  if (fallback.error) {
+    return [];
+  }
+
+  return normalizeProductRows(fallback.data as Array<Record<string, unknown>> | null);
+}
+
+async function fetchSectionProductsWithOptionalVariants(
+  supabase: AdminClient,
+  sectionId: string,
+) {
+  const withVariants = await supabase
+    .from("storefront_section_products")
+    .select(sectionProductsWithVariantsSelect)
+    .eq("section_id", sectionId)
+    .order("display_order", { ascending: true });
+
+  if (!withVariants.error && withVariants.data) {
+    return withVariants.data;
+  }
+
+  const fallback = await supabase
+    .from("storefront_section_products")
+    .select(sectionProductsFallbackSelect)
+    .eq("section_id", sectionId)
+    .order("display_order", { ascending: true });
+
+  if (fallback.error || !fallback.data) {
+    return [];
+  }
+
+  return fallback.data;
+}
+
+async function fetchSectionRowsWithOptionalVariants(
+  supabase: AdminClient,
+  sectionIds: string[],
+) {
+  const withVariants = await supabase
+    .from("storefront_section_products")
+    .select(sectionProductsWithVariantsSelect.replace("product_id, ", "section_id, "))
+    .in("section_id", sectionIds)
+    .order("display_order", { ascending: true });
+
+  if (!withVariants.error && withVariants.data) {
+    return withVariants.data;
+  }
+
+  const fallback = await supabase
+    .from("storefront_section_products")
+    .select("section_id, display_order, products(*)")
+    .in("section_id", sectionIds)
+    .order("display_order", { ascending: true });
+
+  if (fallback.error || !fallback.data) {
+    return [];
+  }
+
+  return fallback.data;
 }
 
 export async function getTenantsOverview(): Promise<TenantWithRelations[]> {
@@ -106,16 +200,7 @@ export async function getTenantProducts(tenantId: string): Promise<Product[]> {
     return demoProducts.filter((product) => product.tenant_id === tenantId);
   }
 
-  const { data } = await supabase
-    .from("products")
-    .select("*, variants:product_variants(*)")
-    .eq("tenant_id", tenantId)
-    .order("display_order", { ascending: true })
-    .order("created_at", { ascending: false });
-
-  return ((data as Array<Record<string, unknown>> | null) ?? []).map((product) =>
-    normalizeProductRecord(product),
-  );
+  return fetchTenantProductsWithOptionalVariants(supabase, tenantId);
 }
 
 export async function getTenantCategories(tenantId: string): Promise<Category[]> {
@@ -289,15 +374,9 @@ export async function getStorefrontProducts(params: {
 
     products = demoProducts.filter((product) => product.tenant_id === params.tenantId);
   } else {
-    const { data } = await supabaseAdmin
-      .from("products")
-      .select("*, variants:product_variants(*)")
-      .eq("tenant_id", params.tenantId)
-      .order("display_order", { ascending: true })
-      .order("created_at", { ascending: false });
-
-    products = ((data as Array<Record<string, unknown>> | null) ?? []).map((product) =>
-      normalizeProductRecord(product),
+    products = await fetchTenantProductsWithOptionalVariants(
+      supabaseAdmin,
+      params.tenantId,
     );
   }
 
@@ -330,13 +409,9 @@ export async function getTenantSectionProducts(sectionId: string): Promise<Produ
     return [];
   }
 
-  const { data } = await supabase
-    .from("storefront_section_products")
-    .select("product_id, display_order, products(*, variants:product_variants(*))")
-    .eq("section_id", sectionId)
-    .order("display_order", { ascending: true });
+  const data = await fetchSectionProductsWithOptionalVariants(supabase, sectionId);
 
-  if (!data) {
+  if (!data.length) {
     return [];
   }
 
@@ -369,11 +444,10 @@ export async function getStorefrontSections(
 
   const sectionIds = (sections as StorefrontSection[]).map((s) => s.id);
 
-  const { data: sectionProductRows } = await supabase
-    .from("storefront_section_products")
-    .select("section_id, display_order, products(*, variants:product_variants(*))")
-    .in("section_id", sectionIds)
-    .order("display_order", { ascending: true });
+  const sectionProductRows = await fetchSectionRowsWithOptionalVariants(
+    supabase,
+    sectionIds,
+  );
 
   const productsBySectionId = new Map<string, StorefrontProduct[]>();
 

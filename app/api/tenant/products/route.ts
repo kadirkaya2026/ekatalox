@@ -7,6 +7,32 @@ import { getSessionContext } from "@/lib/auth/session";
 import { ensureTenantAdminResponse } from "@/lib/tenancy/guards";
 import { productCreateSchema } from "@/lib/validators/product";
 
+async function fetchCreatedProduct(
+  supabase: NonNullable<ReturnType<typeof createSupabaseAdminClient>>,
+  productId: string,
+  tenantId: string,
+) {
+  const withVariants = await supabase
+    .from("products")
+    .select("*, variants:product_variants(*)")
+    .eq("id", productId)
+    .eq("tenant_id", tenantId)
+    .single();
+
+  if (!withVariants.error && withVariants.data) {
+    return withVariants.data;
+  }
+
+  const fallback = await supabase
+    .from("products")
+    .select("*")
+    .eq("id", productId)
+    .eq("tenant_id", tenantId)
+    .single();
+
+  return fallback.data;
+}
+
 export async function POST(request: Request) {
   const guard = await ensureTenantAdminResponse();
   if (guard) {
@@ -86,15 +112,19 @@ export async function POST(request: Request) {
     image_url: imageUrl,
   };
 
-  const { data, error } = await supabase
+  const { error } = await supabase
     .from("products")
-    .insert(payload)
-    .select("*, variants:product_variants(*)")
-    .single();
+    .insert(payload);
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 400 });
   }
 
-  return NextResponse.json({ product: normalizeProductRecord(data) });
+  const product = await fetchCreatedProduct(supabase, productId, tenant.id);
+
+  if (!product) {
+    return NextResponse.json({ error: "Ürün kaydedildi ama okunamadı." }, { status: 400 });
+  }
+
+  return NextResponse.json({ product: normalizeProductRecord(product) });
 }

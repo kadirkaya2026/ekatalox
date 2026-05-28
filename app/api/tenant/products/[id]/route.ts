@@ -10,6 +10,32 @@ import { getSessionContext } from "@/lib/auth/session";
 import { ensureTenantAdminResponse } from "@/lib/tenancy/guards";
 import { productCreateSchema } from "@/lib/validators/product";
 
+async function fetchUpdatedProduct(
+  supabase: NonNullable<ReturnType<typeof createSupabaseAdminClient>>,
+  productId: string,
+  tenantId: string,
+) {
+  const withVariants = await supabase
+    .from("products")
+    .select("*, variants:product_variants(*)")
+    .eq("id", productId)
+    .eq("tenant_id", tenantId)
+    .single();
+
+  if (!withVariants.error && withVariants.data) {
+    return withVariants.data;
+  }
+
+  const fallback = await supabase
+    .from("products")
+    .select("*")
+    .eq("id", productId)
+    .eq("tenant_id", tenantId)
+    .single();
+
+  return fallback.data;
+}
+
 export async function PATCH(
   request: Request,
   ctx: RouteContext<"/api/tenant/products/[id]">,
@@ -69,19 +95,23 @@ export async function PATCH(
     ...(imageUrl ? { image_url: imageUrl } : {}),
   };
 
-  const { data, error } = await supabase
+  const { error } = await supabase
     .from("products")
     .update(payload)
     .eq("id", id)
-    .eq("tenant_id", tenant.id)
-    .select("*, variants:product_variants(*)")
-    .single();
+    .eq("tenant_id", tenant.id);
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 400 });
   }
 
-  return NextResponse.json({ product: normalizeProductRecord(data) });
+  const product = await fetchUpdatedProduct(supabase, id, tenant.id);
+
+  if (!product) {
+    return NextResponse.json({ error: "Ürün güncellendi ama okunamadı." }, { status: 400 });
+  }
+
+  return NextResponse.json({ product: normalizeProductRecord(product) });
 }
 
 export async function DELETE(

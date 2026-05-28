@@ -4,6 +4,32 @@ import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { getSessionContext } from "@/lib/auth/session";
 import { ensureTenantAdminResponse } from "@/lib/tenancy/guards";
 
+async function fetchToggledProduct(
+  supabase: NonNullable<ReturnType<typeof createSupabaseAdminClient>>,
+  productId: string,
+  tenantId: string,
+) {
+  const withVariants = await supabase
+    .from("products")
+    .select("*, variants:product_variants(*)")
+    .eq("id", productId)
+    .eq("tenant_id", tenantId)
+    .single();
+
+  if (!withVariants.error && withVariants.data) {
+    return withVariants.data;
+  }
+
+  const fallback = await supabase
+    .from("products")
+    .select("*")
+    .eq("id", productId)
+    .eq("tenant_id", tenantId)
+    .single();
+
+  return fallback.data;
+}
+
 export async function POST(request: Request) {
   const guard = await ensureTenantAdminResponse();
   if (guard) {
@@ -29,17 +55,21 @@ export async function POST(request: Request) {
     );
   }
 
-  const { data, error } = await supabase
+  const { error } = await supabase
     .from("products")
     .update({ is_in_stock })
     .eq("id", productId)
-    .eq("tenant_id", tenant.id)
-    .select("*, variants:product_variants(*)")
-    .single();
+    .eq("tenant_id", tenant.id);
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 400 });
   }
 
-  return NextResponse.json({ product: normalizeProductRecord(data) });
+  const product = await fetchToggledProduct(supabase, productId, tenant.id);
+
+  if (!product) {
+    return NextResponse.json({ error: "Stok güncellendi ama ürün okunamadı." }, { status: 400 });
+  }
+
+  return NextResponse.json({ product: normalizeProductRecord(product) });
 }
