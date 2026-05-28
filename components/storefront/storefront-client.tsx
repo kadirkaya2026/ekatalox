@@ -633,6 +633,10 @@ export function StorefrontClient({
   }
 
   function openAddToCartFromDetail(product: StorefrontProduct) {
+    if (!product.is_in_stock) {
+      return;
+    }
+
     closeProductDetail();
     openAddToCartModal(product);
   }
@@ -1150,9 +1154,13 @@ export function StorefrontClient({
           <Button
             type="button"
             onClick={() => openAddToCartFromDetail(previewProduct)}
-            className="h-12 w-full rounded-full text-base font-bold"
+            disabled={!previewProduct.is_in_stock}
+            className={cn(
+              "h-12 w-full rounded-full text-base font-bold",
+              !previewProduct.is_in_stock && "cursor-not-allowed opacity-50",
+            )}
           >
-            Sepete Ekle
+            {previewProduct.is_in_stock ? "Sepete Ekle" : "Satışa Kapalı"}
           </Button>
         </div>
       </Modal>
