@@ -34,8 +34,6 @@ import {
 } from "@/lib/storefront/cart";
 import { storefrontThemes } from "@/lib/storefront/themes";
 import {
-  canSelectVariantUnit,
-  getMaxUnitCount,
   getRequestedUnitQuantity,
   type SalesUnit,
 } from "@/lib/storefront/variants";
@@ -742,16 +740,11 @@ export function StorefrontClient({
         if (!variant || !variant.is_purchasable) {
           return true;
         }
-
-        return !canSelectVariantUnit({
-          unit: selection.unit,
-          quantity: selection.quantity,
-          variant,
-        });
+        return false;
       });
 
       if (invalidSelection) {
-        setQuantityError("Bazı model seçimleri için stok yetersiz.");
+        setQuantityError("Bazı model seçimleri şu anda satışa kapalı.");
         return;
       }
 
@@ -1913,17 +1906,7 @@ export function StorefrontClient({
 
                         return true;
                       });
-                      const maxUnitCount = getMaxUnitCount(selection.unit, variant);
                       const isUnavailable = !variant.is_purchasable;
-                      const hasInsufficientStock =
-                        !isUnavailable &&
-                        (maxUnitCount <= 0 ||
-                          (selection.quantity > 0 &&
-                            !canSelectVariantUnit({
-                              unit: selection.unit,
-                              quantity: selection.quantity,
-                              variant,
-                            })));
 
                       return (
                         <div
@@ -1971,7 +1954,6 @@ export function StorefrontClient({
                             <Input
                               type="number"
                               min="0"
-                              max={maxUnitCount}
                               step="1"
                               inputMode="numeric"
                               disabled={isUnavailable}
@@ -1997,9 +1979,6 @@ export function StorefrontClient({
                             ) : null}
                             {variant.carton_quantity ? (
                               <span>1 Koli = {variant.carton_quantity}</span>
-                            ) : null}
-                            {hasInsufficientStock ? (
-                              <span className="font-semibold text-amber-700">Yetersiz</span>
                             ) : null}
                           </div>
                         </div>

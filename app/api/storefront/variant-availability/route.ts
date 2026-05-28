@@ -1,14 +1,13 @@
 import { NextResponse } from "next/server";
 import { getStorefrontTenant } from "@/lib/data";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
-import { canSelectVariantUnit, isVariantPurchasable } from "@/lib/storefront/variants";
+import { isVariantPurchasable } from "@/lib/storefront/variants";
 import { storefrontVariantAvailabilitySchema } from "@/lib/validators/product";
 
 type VariantRow = {
   id: string;
   product_id: string;
   model_name: string;
-  stock_quantity: number;
   package_quantity: number | null;
   carton_quantity: number | null;
   is_available_for_sale: boolean;
@@ -66,7 +65,7 @@ export async function POST(request: Request) {
   const variantIds = parsed.data.selections.map((selection) => selection.variantId);
   const { data: variants, error: variantError } = await supabase
     .from("product_variants")
-    .select("id, product_id, model_name, stock_quantity, package_quantity, carton_quantity, is_available_for_sale")
+    .select("id, product_id, model_name, package_quantity, carton_quantity, is_available_for_sale")
     .eq("tenant_id", tenant.id)
     .eq("product_id", parsed.data.productId)
     .in("id", variantIds);
@@ -107,21 +106,6 @@ export async function POST(request: Request) {
         {
           variantId: selection.variantId,
           message: `${variant.model_name} şu anda tükenmiş.`,
-        },
-      ];
-    }
-
-    if (
-      !canSelectVariantUnit({
-        unit: selection.unit,
-        quantity: selection.quantity,
-        variant,
-      })
-    ) {
-      return [
-        {
-          variantId: selection.variantId,
-          message: `${variant.model_name} için yetersiz stok.`,
         },
       ];
     }
