@@ -22,6 +22,7 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import {
+  ArrowUpFromLine,
   ChevronRight,
   FolderTree,
   GripVertical,
@@ -65,6 +66,7 @@ interface RowProps {
   onStartDelete: (id: string) => void;
   onConfirmDelete: (id: string) => void;
   onCancelDelete: () => void;
+  onPromoteToRoot: (id: string) => void;
 }
 
 // ─── SortableCategoryRow ──────────────────────────────────────────────────────
@@ -157,6 +159,17 @@ function SortableCategoryRow(props: RowProps) {
             <Pencil className="size-3" />
             Düzenle
           </Button>
+          {props.category.depth > 0 ? (
+            <Button
+              variant="secondary"
+              className="h-8 gap-1.5 px-3 text-xs"
+              onClick={() => props.onPromoteToRoot(props.category.id)}
+              disabled={props.pending}
+            >
+              <ArrowUpFromLine className="size-3" />
+              Ana yap
+            </Button>
+          ) : null}
           <Button
             variant="secondary"
             className="h-8 gap-1.5 px-3 text-xs text-red-600 hover:bg-red-50 hover:text-red-700"
@@ -329,6 +342,39 @@ export function CategoriesManager({
       setEditingId(null);
       setEditingName("");
       showMessage("Kategori adı güncellendi.");
+    });
+  }
+
+  function promoteToRoot(id: string) {
+    const category = categories.find((c) => c.id === id);
+    if (!category) return;
+
+    const rootCategories = categories.filter((c) => !c.parent_id);
+    const maxOrder = rootCategories.reduce((max, c) => Math.max(max, c.display_order), -1);
+
+    const updated = categories.map((c) =>
+      c.id === id ? { ...c, parent_id: null, display_order: maxOrder + 1 } : c,
+    );
+    setCategories(updated);
+
+    startTransition(async () => {
+      const res = await fetch("/api/tenant/categories/reorder", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          items: updated.map((c) => ({
+            id: c.id,
+            parent_id: c.parent_id ?? null,
+            display_order: c.display_order,
+          })),
+        }),
+      });
+      const result = await res.json();
+      if (!res.ok) {
+        showMessage(result.error ?? "İşlem başarısız.", "error");
+      } else {
+        showMessage(`"${category.name}" ana kategori yapıldı.`);
+      }
     });
   }
 
@@ -547,6 +593,7 @@ export function CategoriesManager({
                     onStartDelete={(id) => { closeAllInline(); setDeleteConfirmId(id); }}
                     onConfirmDelete={deleteCategory}
                     onCancelDelete={() => setDeleteConfirmId(null)}
+                    onPromoteToRoot={promoteToRoot}
                   />
                 ))}
 

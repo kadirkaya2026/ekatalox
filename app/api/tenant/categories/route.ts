@@ -82,6 +82,12 @@ export async function POST(request: Request) {
     .single();
 
   if (error) {
+    if (error.code === "23505") {
+      return NextResponse.json(
+        { error: "Bu isimde bir kategori zaten mevcut. Farklı bir isim deneyin." },
+        { status: 400 },
+      );
+    }
     return NextResponse.json({ error: error.message }, { status: 400 });
   }
 
@@ -126,6 +132,12 @@ export async function PATCH(request: Request) {
     .single();
 
   if (error) {
+    if (error.code === "23505") {
+      return NextResponse.json(
+        { error: "Bu isimde bir kategori zaten mevcut. Farklı bir isim deneyin." },
+        { status: 400 },
+      );
+    }
     return NextResponse.json({ error: error.message }, { status: 400 });
   }
 
