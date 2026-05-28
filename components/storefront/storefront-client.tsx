@@ -574,7 +574,8 @@ export function StorefrontClient({
             exit={{ opacity: 0, scale: 0.92, y: -4 }}
             transition={floatingActionTransition}
             className={cn(
-              "absolute right-3 top-3 z-20 flex origin-top-right flex-col items-center rounded-[1.35rem] border border-emerald-400/30 bg-[linear-gradient(180deg,rgba(16,185,129,0.98)_0%,rgba(5,150,105,0.96)_100%)] p-1 text-white shadow-[0_18px_40px_rgba(5,150,105,0.34)] backdrop-blur",
+              "absolute z-30 flex origin-top-right flex-col items-center rounded-[1.35rem] border border-emerald-400/30 bg-[linear-gradient(180deg,rgba(16,185,129,0.98)_0%,rgba(5,150,105,0.96)_100%)] p-1 text-white shadow-[0_18px_40px_rgba(5,150,105,0.34)] backdrop-blur",
+              compact ? "-right-2 -top-2" : "-right-2.5 -top-2.5 sm:-right-2 sm:-top-2",
               compact ? "w-10" : "w-11 sm:w-12",
             )}
           >
@@ -675,11 +676,11 @@ export function StorefrontClient({
         }}
         className={cn(
           theme.productCard,
-          "cursor-pointer rounded-[1.2rem] border-slate-200/70 shadow-[0_10px_24px_rgba(15,23,42,0.06)]",
+          "relative overflow-visible cursor-pointer rounded-[1.2rem] border-slate-200/70 shadow-[0_10px_24px_rgba(15,23,42,0.06)]",
         )}
       >
-        <div className={cn(theme.productImageWrap, "p-2.5 sm:p-4")}>
-          {renderFloatingCartAction(product, true)}
+        {renderFloatingCartAction(product, true)}
+        <div className={cn(theme.productImageWrap, "overflow-hidden rounded-t-[1.2rem] p-2.5 sm:p-4")}>
           {product.image_url ? (
             <Image
               src={product.image_url}
@@ -716,7 +717,7 @@ export function StorefrontClient({
     return (
       <article
         key={product.id}
-        className="relative min-w-[182px] max-w-[182px] rounded-[1.5rem] border border-slate-200/80 bg-white p-3 shadow-[0_14px_34px_rgba(15,23,42,0.08)]"
+        className="relative overflow-visible min-w-[182px] max-w-[182px] rounded-[1.5rem] border border-slate-200/80 bg-white p-3 shadow-[0_14px_34px_rgba(15,23,42,0.08)]"
       >
         <div className="absolute left-3 right-14 top-3 z-10 flex">
           <span className="truncate rounded-full bg-white/90 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500 shadow-sm">
