@@ -226,6 +226,35 @@ function parseUnitCount(value: string) {
   return parsedValue;
 }
 
+function normalizeVariantSearchText(value: string) {
+  const normalized = value
+    .toLocaleLowerCase("tr-TR")
+    .normalize("NFKD")
+    .replace(/[^\p{L}\p{N}]+/gu, " ")
+    .trim()
+    .replace(/\s+/g, " ");
+
+  return {
+    spaced: normalized,
+    compact: normalized.replace(/\s+/g, ""),
+  };
+}
+
+function matchesVariantSearch(modelName: string, searchTerm: string) {
+  const normalizedSearch = normalizeVariantSearchText(searchTerm);
+
+  if (!normalizedSearch.spaced) {
+    return true;
+  }
+
+  const normalizedModelName = normalizeVariantSearchText(modelName);
+
+  return (
+    normalizedModelName.spaced.includes(normalizedSearch.spaced) ||
+    normalizedModelName.compact.includes(normalizedSearch.compact)
+  );
+}
+
 function dedupeProducts(items: StorefrontProduct[]) {
   const seen = new Set<string>();
 
@@ -535,15 +564,9 @@ export function StorefrontClient({
       return [];
     }
 
-    const normalizedVariantSearch = variantSearchTerm.trim().toLocaleLowerCase("tr-TR");
-
-    return selectedProduct.variants.filter((variant) => {
-      if (!normalizedVariantSearch) {
-        return true;
-      }
-
-      return variant.model_name.toLocaleLowerCase("tr-TR").includes(normalizedVariantSearch);
-    });
+    return selectedProduct.variants.filter((variant) =>
+      matchesVariantSearch(variant.model_name, variantSearchTerm),
+    );
   }, [selectedProduct, variantSearchTerm]);
   const storefrontTitle = storefrontSettings.storefront_title || tenant.company_name;
 
@@ -1841,150 +1864,152 @@ export function StorefrontClient({
         title={selectedProduct?.has_variants ? "Model Seçimi" : "Sepete Ekle"}
       >
         {selectedProduct ? (
-          <form onSubmit={confirmAddToCart} className="grid gap-4">
-            <div className="rounded-xl border border-slate-100 bg-slate-50 px-4 py-3">
-              <div className="flex items-start justify-between gap-4">
+          <form onSubmit={confirmAddToCart} className="grid gap-3">
+            <div className="rounded-xl border border-slate-100 bg-slate-50 px-3 py-2.5">
+              <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <p className="truncate text-sm font-semibold text-slate-900">
+                  <p className="truncate text-[13px] font-semibold leading-5 text-slate-900">
                     {selectedProduct.product_name}
                   </p>
-                  <p className="mt-1 text-xs text-slate-500">
+                  <p className="mt-0.5 text-[11px] text-slate-500">
                     {selectedProduct.sku_code || "SKU bilgisi yok"}
                   </p>
                   {!selectedProduct.has_variants && getUnitSummary(selectedProduct) ? (
-                    <p className="mt-1 text-xs text-slate-500">
+                    <p className="mt-0.5 text-[11px] text-slate-500">
                       {getUnitSummary(selectedProduct)}
                     </p>
                   ) : null}
                 </div>
-                <p className="shrink-0 text-base font-bold text-slate-900">
+                <p className="shrink-0 text-sm font-bold text-slate-900">
                   {formatCurrency(selectedProduct.price, selectedProduct.currency)}
                 </p>
               </div>
             </div>
 
             {selectedProduct.has_variants ? (
-              <div className="space-y-3">
+              <div className="space-y-2.5">
                 <div className="relative">
                   <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
                   <Input
                     value={variantSearchTerm}
                     onChange={(event) => setVariantSearchTerm(event.target.value)}
-                    placeholder="Model ara"
-                    className="h-10 rounded-xl pl-10 pr-3"
+                    placeholder="Model ara (14 Pro, 12/12 PF)"
+                    className="h-9 rounded-lg pl-9 pr-3 text-[13px]"
                   />
                 </div>
 
-                <div className="max-h-[28rem] space-y-2 overflow-y-auto pr-1">
+                <div className="max-h-[32rem] space-y-1.5 overflow-y-auto pr-1">
                   {filteredSelectedVariants.length ? (
                     filteredSelectedVariants.map((variant) => {
-                  const selection = getVariantSelection(variant.id);
-                  const unitChoices = salesUnits.filter((unitOption) => {
-                    if (unitOption.value === "paket") {
-                      return Boolean(variant.package_quantity);
-                    }
+                      const selection = getVariantSelection(variant.id);
+                      const unitChoices = salesUnits.filter((unitOption) => {
+                        if (unitOption.value === "paket") {
+                          return Boolean(variant.package_quantity);
+                        }
 
-                    if (unitOption.value === "koli") {
-                      return Boolean(variant.carton_quantity);
-                    }
+                        if (unitOption.value === "koli") {
+                          return Boolean(variant.carton_quantity);
+                        }
 
-                    return true;
-                  });
-                  const maxUnitCount = getMaxUnitCount(selection.unit, variant);
-                  const isUnavailable = !variant.is_purchasable;
+                        return true;
+                      });
+                      const maxUnitCount = getMaxUnitCount(selection.unit, variant);
+                      const isUnavailable = !variant.is_purchasable;
+                      const hasInsufficientStock =
+                        !isUnavailable &&
+                        (maxUnitCount <= 0 ||
+                          (selection.quantity > 0 &&
+                            !canSelectVariantUnit({
+                              unit: selection.unit,
+                              quantity: selection.quantity,
+                              variant,
+                            })));
 
-                  return (
-                    <div
-                      key={variant.id}
-                      className={cn(
-                        "rounded-xl border px-3 py-3 transition",
-                        isUnavailable
-                          ? "border-slate-200 bg-slate-50 opacity-40"
-                          : "border-slate-200 bg-white",
-                      )}
-                    >
-                      <div className="flex items-start justify-between gap-3">
-                        <div>
-                          <p className="text-sm font-semibold text-slate-900">
-                            {variant.model_name}
-                          </p>
-                        </div>
-                        {isUnavailable ? (
-                          <Badge className="bg-slate-200 text-slate-600">Tükendi</Badge>
-                        ) : null}
-                      </div>
-
-                      <div className="mt-3 grid gap-2 sm:grid-cols-[minmax(0,1fr)_6.5rem]">
-                        <select
-                          value={selection.unit}
-                          disabled={isUnavailable}
-                          onChange={(event) => {
-                            updateVariantSelection(variant.id, {
-                              variantId: variant.id,
-                              unit: event.target.value as SalesUnit,
-                              quantity: 0,
-                            });
-                            if (quantityError) {
-                              setQuantityError(null);
-                            }
-                          }}
-                          className="h-10 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 disabled:bg-slate-100"
+                      return (
+                        <div
+                          key={variant.id}
+                          className={cn(
+                            "rounded-lg border px-2.5 py-2 transition",
+                            isUnavailable
+                              ? "border-slate-200 bg-slate-50 opacity-40"
+                              : "border-slate-200 bg-white",
+                          )}
                         >
-                          {unitChoices.map((unitOption) => (
-                            <option key={unitOption.value} value={unitOption.value}>
-                              {unitOption.label}
-                            </option>
-                          ))}
-                        </select>
-                        <Input
-                          type="number"
-                          min="0"
-                          max={maxUnitCount}
-                          step="1"
-                          inputMode="numeric"
-                          disabled={isUnavailable}
-                          value={selection.quantity ? String(selection.quantity) : "0"}
-                          onChange={(event) => {
-                            const nextQuantity = parseUnitCount(event.target.value);
-                            updateVariantSelection(variant.id, {
-                              variantId: variant.id,
-                              quantity: nextQuantity && nextQuantity > 0 ? nextQuantity : 0,
-                            });
-                            if (quantityError) {
-                              setQuantityError(null);
-                            }
-                          }}
-                          placeholder="0"
-                          className="h-10 px-3 py-2"
-                        />
-                      </div>
+                          <div className="flex items-center justify-between gap-2">
+                            <p className="truncate pr-2 text-[13px] font-semibold leading-5 text-slate-900">
+                              {variant.model_name}
+                            </p>
+                            {isUnavailable ? (
+                              <Badge className="px-2 py-1 text-[10px] bg-slate-200 text-slate-600">
+                                Tükendi
+                              </Badge>
+                            ) : null}
+                          </div>
 
-                      <div className="mt-2 flex flex-wrap items-center gap-2 text-[11px] text-slate-500">
-                        {variant.package_quantity ? (
-                          <span>1 Paket = {variant.package_quantity} adet</span>
-                        ) : null}
-                        {variant.carton_quantity ? (
-                          <span>1 Koli = {variant.carton_quantity} adet</span>
-                        ) : null}
-                        {!isUnavailable && maxUnitCount <= 0 ? (
-                          <span className="font-semibold text-amber-700">Yetersiz Stok</span>
-                        ) : null}
-                        {!isUnavailable &&
-                        selection.quantity > 0 &&
-                        !canSelectVariantUnit({
-                          unit: selection.unit,
-                          quantity: selection.quantity,
-                          variant,
-                        }) ? (
-                          <span className="font-semibold text-amber-700">Yetersiz Stok</span>
-                        ) : null}
-                      </div>
-                    </div>
-                  );
+                          <div className="mt-2 grid gap-2 sm:grid-cols-[minmax(0,1fr)_5.5rem]">
+                            <select
+                              value={selection.unit}
+                              disabled={isUnavailable}
+                              onChange={(event) => {
+                                updateVariantSelection(variant.id, {
+                                  variantId: variant.id,
+                                  unit: event.target.value as SalesUnit,
+                                  quantity: 0,
+                                });
+                                if (quantityError) {
+                                  setQuantityError(null);
+                                }
+                              }}
+                              className="h-9 rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-[13px] text-slate-900 disabled:bg-slate-100"
+                            >
+                              {unitChoices.map((unitOption) => (
+                                <option key={unitOption.value} value={unitOption.value}>
+                                  {unitOption.label}
+                                </option>
+                              ))}
+                            </select>
+                            <Input
+                              type="number"
+                              min="0"
+                              max={maxUnitCount}
+                              step="1"
+                              inputMode="numeric"
+                              disabled={isUnavailable}
+                              value={selection.quantity ? String(selection.quantity) : "0"}
+                              onChange={(event) => {
+                                const nextQuantity = parseUnitCount(event.target.value);
+                                updateVariantSelection(variant.id, {
+                                  variantId: variant.id,
+                                  quantity: nextQuantity && nextQuantity > 0 ? nextQuantity : 0,
+                                });
+                                if (quantityError) {
+                                  setQuantityError(null);
+                                }
+                              }}
+                              placeholder="0"
+                              className="h-9 px-2.5 py-2 text-[13px]"
+                            />
+                          </div>
+
+                          <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[10px] text-slate-500">
+                            {variant.package_quantity ? (
+                              <span>1 Paket = {variant.package_quantity}</span>
+                            ) : null}
+                            {variant.carton_quantity ? (
+                              <span>1 Koli = {variant.carton_quantity}</span>
+                            ) : null}
+                            {hasInsufficientStock ? (
+                              <span className="font-semibold text-amber-700">Yetersiz</span>
+                            ) : null}
+                          </div>
+                        </div>
+                      );
                     })
                   ) : (
-                    <div className="rounded-xl border border-dashed border-slate-200 px-4 py-6 text-center text-sm text-slate-500">
-                      Aramana uygun model bulunamadı.
+                    <div className="rounded-lg border border-dashed border-slate-200 px-4 py-5 text-center text-sm text-slate-500">
+                      {variantSearchTerm.trim()
+                        ? `“${variantSearchTerm.trim()}” için model bulunamadı.`
+                        : "Gösterilecek model bulunamadı."}
                     </div>
                   )}
                 </div>
@@ -2059,19 +2084,19 @@ export function StorefrontClient({
               </div>
             )}
 
-            {quantityError ? <p className="text-sm text-amber-700">{quantityError}</p> : null}
+            {quantityError ? <p className="text-xs text-amber-700">{quantityError}</p> : null}
 
-            <div className="rounded-xl bg-slate-900 p-4 text-white">
+            <div className="rounded-xl bg-slate-900 p-3 text-white">
               {selectedProduct.has_variants ? (
                 <>
-                  <p className="text-sm text-slate-300">Seçilen Modeller</p>
-                  <p className="mt-1 text-sm text-slate-300">
+                  <p className="text-xs text-slate-300">Seçilen Modeller</p>
+                  <p className="mt-0.5 text-xs text-slate-300">
                     {
                       variantSelections.filter((selection) => selection.quantity > 0).length
                     }{" "}
                     model
                   </p>
-                  <p className="mt-1 text-2xl font-bold">
+                  <p className="mt-1 text-xl font-bold">
                     {formatCurrency(
                       variantSelections.reduce((total, selection) => {
                         const variant = selectedProduct.variants.find(
@@ -2098,9 +2123,9 @@ export function StorefrontClient({
                 </>
               ) : (
                 <>
-                  <p className="text-sm text-slate-300">Toplam</p>
-                  <p className="mt-1 text-sm text-slate-300">{selectedTotalQuantity} adet</p>
-                  <p className="mt-1 text-2xl font-bold">
+                  <p className="text-xs text-slate-300">Toplam</p>
+                  <p className="mt-0.5 text-xs text-slate-300">{selectedTotalQuantity} adet</p>
+                  <p className="mt-1 text-xl font-bold">
                     {formatCurrency(selectedLineTotal, selectedProduct.currency)}
                   </p>
                 </>
@@ -2108,10 +2133,10 @@ export function StorefrontClient({
             </div>
 
             <div className="flex justify-end gap-2">
-              <Button variant="secondary" onClick={closeAddToCartModal}>
+              <Button variant="secondary" onClick={closeAddToCartModal} className="px-4 py-2.5">
                 Vazgeç
               </Button>
-              <Button type="submit">Sepete Ekle</Button>
+              <Button type="submit" className="px-4 py-2.5">Sepete Ekle</Button>
             </div>
           </form>
         ) : null}
