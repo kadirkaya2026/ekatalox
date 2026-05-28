@@ -18,6 +18,7 @@ export function toStorefrontProduct(product: Product, tierLevel: PriceTierLevel)
     category_id: product.category_id,
     sku_code: product.sku_code,
     product_name: product.product_name,
+    description: product.description ?? null,
     image_url: product.image_url,
     is_in_stock: product.is_in_stock,
     currency: product.currency,

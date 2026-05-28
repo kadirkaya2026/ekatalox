@@ -23,6 +23,7 @@ export interface Product {
   display_order: number;
   sku_code: string;
   product_name: string;
+  description?: string | null;
   image_url: string | null;
   currency: CurrencyCode;
   price_tier_1: number;
@@ -108,6 +109,7 @@ export interface StorefrontProduct {
   category_id: string;
   sku_code: string;
   product_name: string;
+  description?: string | null;
   image_url: string | null;
   is_in_stock: boolean;
   currency: CurrencyCode;

@@ -6,7 +6,6 @@ import Image from "next/image";
 import {
   ChevronDown,
   Minus,
-  OctagonAlert,
   Plus,
   Search,
   ShoppingCart,
@@ -225,6 +224,8 @@ const floatingActionTransition = {
   mass: 0.9,
 };
 
+type ProductDetailTab = "details" | "package" | "carton";
+
 export function StorefrontClient({
   tenant,
   categories,
@@ -256,6 +257,8 @@ export function StorefrontClient({
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>("all");
   const [selectedProduct, setSelectedProduct] = useState<StorefrontProduct | null>(null);
+  const [previewProduct, setPreviewProduct] = useState<StorefrontProduct | null>(null);
+  const [activePreviewTab, setActivePreviewTab] = useState<ProductDetailTab>("details");
   const [selectedQuantity, setSelectedQuantity] = useState("0");
   const [selectedPackageCount, setSelectedPackageCount] = useState("0");
   const [selectedCartonCount, setSelectedCartonCount] = useState("0");
@@ -450,6 +453,16 @@ export function StorefrontClient({
     setVisibleCount(24);
   }
 
+  function openProductDetail(product: StorefrontProduct) {
+    setPreviewProduct(product);
+    setActivePreviewTab("details");
+  }
+
+  function closeProductDetail() {
+    setPreviewProduct(null);
+    setActivePreviewTab("details");
+  }
+
   function openCartDrawer() {
     setIsCartOpen(true);
   }
@@ -464,6 +477,11 @@ export function StorefrontClient({
     setSelectedPackageCount("0");
     setSelectedCartonCount("0");
     setQuantityError(null);
+  }
+
+  function openAddToCartFromDetail(product: StorefrontProduct) {
+    closeProductDetail();
+    openAddToCartModal(product);
   }
 
   function closeAddToCartModal() {
@@ -550,6 +568,7 @@ export function StorefrontClient({
           <motion.div
             key={`stepper-${product.id}`}
             data-unit-picker-root="true"
+            onClick={(event) => event.stopPropagation()}
             initial={{ opacity: 0, scale: 0.88, y: -6 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.92, y: -4 }}
@@ -562,7 +581,10 @@ export function StorefrontClient({
             <motion.button
               type="button"
               whileTap={{ scale: 0.92 }}
-              onClick={() => increaseCartItem(product)}
+              onClick={(event) => {
+                event.stopPropagation();
+                increaseCartItem(product);
+              }}
               className={cn(
                 "flex items-center justify-center rounded-full text-white transition hover:bg-white/15",
                 compact ? "size-8" : "size-9 sm:size-10",
@@ -583,7 +605,10 @@ export function StorefrontClient({
             <motion.button
               type="button"
               whileTap={{ scale: 0.92 }}
-              onClick={() => decreaseCartItem(product)}
+              onClick={(event) => {
+                event.stopPropagation();
+                decreaseCartItem(product);
+              }}
               className={cn(
                 "flex items-center justify-center rounded-full text-white transition hover:bg-white/15",
                 compact ? "size-8" : "size-9 sm:size-10",
@@ -604,13 +629,17 @@ export function StorefrontClient({
     return (
       <motion.div
         layout
+        onClick={(event) => event.stopPropagation()}
         className="absolute right-3 top-3 z-20 origin-top-right"
       >
         <motion.button
           type="button"
           whileTap={{ scale: 0.9 }}
           whileHover={{ scale: 1.03 }}
-          onClick={() => openAddToCartModal(product)}
+          onClick={(event) => {
+            event.stopPropagation();
+            openAddToCartModal(product);
+          }}
           className={cn(
             "flex items-center justify-center rounded-full border border-emerald-500/90 bg-[linear-gradient(180deg,#10b981_0%,#059669_100%)] text-white shadow-[0_18px_34px_rgba(5,150,105,0.3)] transition-all duration-200 hover:bg-emerald-500",
             compact ? "size-10" : "size-11 sm:size-12",
@@ -624,72 +653,52 @@ export function StorefrontClient({
   }
 
   function renderProductCard(product: StorefrontProduct) {
-    const cartQuantity = cartQuantityByProductId.get(product.id) ?? 0;
+    const handleOpenDetail = () => openProductDetail(product);
 
     return (
-      <article key={product.id} className={cn(theme.productCard, "rounded-[1.55rem]")}>
-        <div className={cn(theme.productImageWrap, "p-4 sm:p-5")}>
-          <div className="absolute left-3 right-14 top-3 z-10 flex flex-wrap items-center gap-2 sm:left-4 sm:right-16 sm:top-4">
-            <span className="max-w-full truncate rounded-full border border-white/70 bg-white/85 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500 backdrop-blur">
-              {categoryNameMap.get(product.category_id) || "Genel"}
-            </span>
-          </div>
-          {renderFloatingCartAction(product)}
+      <article
+        key={product.id}
+        role="button"
+        tabIndex={0}
+        onClick={handleOpenDetail}
+        onKeyDown={(event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            handleOpenDetail();
+          }
+        }}
+        className={cn(
+          theme.productCard,
+          "cursor-pointer rounded-[1.2rem] border-slate-200/70 shadow-[0_10px_24px_rgba(15,23,42,0.06)]",
+        )}
+      >
+        <div className={cn(theme.productImageWrap, "p-2.5 sm:p-4")}>
+          {renderFloatingCartAction(product, true)}
           {product.image_url ? (
             <Image
               src={product.image_url}
               alt={product.product_name}
               fill
-              className="object-contain p-6 transition duration-500 group-hover:scale-[1.06]"
+              className="object-contain p-3 transition duration-500 group-hover:scale-[1.04] sm:p-5"
               unoptimized
             />
           ) : (
-            <div className="flex h-full w-full items-center justify-center rounded-[1.4rem] border border-dashed border-slate-200/80 bg-white/70">
-              <Store className="size-9 text-slate-300" />
+            <div className="flex h-full w-full items-center justify-center rounded-[1rem] border border-dashed border-slate-200/80 bg-white/70">
+              <Store className="size-7 text-slate-300 sm:size-9" />
             </div>
           )}
         </div>
 
-        <div className="flex flex-1 flex-col gap-3 p-3.5 sm:p-5">
-          <div className="space-y-2">
-            <div className="flex flex-wrap items-center gap-2">
-              {product.is_in_stock ? (
-                <span className={theme.stockBadgeIn}>Stokta</span>
-              ) : (
-                <span className={theme.stockBadgeOut}>
-                  <OctagonAlert className="mr-1 size-3.5" />
-                  Tükendi
-                </span>
-              )}
-              {product.carton_quantity ? (
-                <span className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-500">
-                  Koli {product.carton_quantity}
-                </span>
-              ) : null}
-            </div>
-            <p className={cn(theme.productTitle, "text-[13px] leading-5 sm:text-[14px]")}>
-              {product.product_name}
-            </p>
-            <p className={theme.productMeta}>
-              {product.sku_code ? `SKU: ${product.sku_code}` : "SKU bilgisi tanımlanmadı"}
-            </p>
-            {getUnitSummary(product) ? (
-              <p className="line-clamp-2 text-[11px] leading-5 text-slate-500">
-                {getUnitSummary(product)}
-              </p>
-            ) : null}
-          </div>
-
-          <div className="mt-auto flex items-end justify-between gap-3 border-t border-slate-100/80 pt-3.5">
-            <p className={cn(theme.productPrice, "text-[15px] sm:text-lg")}>
-              {formatCurrency(product.price, product.currency)}
-            </p>
-            {cartQuantity > 0 ? (
-              <span className="shrink-0 rounded-full bg-emerald-50 px-3 py-1 text-[11px] font-semibold text-emerald-700">
-                {cartQuantity} adet
-              </span>
-            ) : null}
-          </div>
+        <div className="flex flex-1 flex-col gap-1 p-2.5 sm:p-3.5">
+          <p className={cn(theme.productPrice, "text-[11px] leading-4 sm:text-sm")}>
+            {formatCurrency(product.price, product.currency)}
+          </p>
+          <p className="line-clamp-2 text-[11px] font-semibold leading-4 text-slate-900 sm:text-[13px] sm:leading-5">
+            {product.product_name}
+          </p>
+          <p className="truncate text-[10px] leading-4 text-slate-400 sm:text-[11px]">
+            {product.sku_code ? `SKU: ${product.sku_code}` : "SKU bilgisi yok"}
+          </p>
         </div>
       </article>
     );
@@ -751,6 +760,100 @@ export function StorefrontClient({
           ) : null}
         </div>
       </article>
+    );
+  }
+
+  function renderProductPreviewModal() {
+    if (!previewProduct) {
+      return null;
+    }
+
+    const tabItems: Array<{ key: ProductDetailTab; label: string }> = [
+      { key: "details", label: "Detaylar" },
+      { key: "package", label: "Paket" },
+      { key: "carton", label: "Koli" },
+    ];
+
+    const detailContent =
+      previewProduct.description?.trim() ||
+      "Bu ürün için detay bilgisi eklenmedi.";
+    const packageContent = previewProduct.package_quantity
+      ? `1 Paket = ${previewProduct.package_quantity} adet`
+      : "Paket bilgisi eklenmedi.";
+    const cartonContent = previewProduct.carton_quantity
+      ? `1 Koli = ${previewProduct.carton_quantity} adet`
+      : "Koli bilgisi eklenmedi.";
+
+    const tabContent =
+      activePreviewTab === "details"
+        ? detailContent
+        : activePreviewTab === "package"
+          ? packageContent
+          : cartonContent;
+
+    return (
+      <Modal
+        open={Boolean(previewProduct)}
+        onClose={closeProductDetail}
+        title="Ürün Detayı"
+      >
+        <div className="grid gap-4">
+          <div className="relative aspect-square overflow-hidden rounded-[1.75rem] bg-[linear-gradient(180deg,#f8fafc_0%,#eef2ff_100%)]">
+            {previewProduct.image_url ? (
+              <Image
+                src={previewProduct.image_url}
+                alt={previewProduct.product_name}
+                fill
+                className="object-contain p-6"
+                unoptimized
+              />
+            ) : (
+              <div className="flex h-full w-full items-center justify-center">
+                <Store className="size-12 text-slate-300" />
+              </div>
+            )}
+          </div>
+
+          <div className="space-y-1">
+            <p className="text-2xl font-bold tracking-tight text-slate-950">
+              {formatCurrency(previewProduct.price, previewProduct.currency)}
+            </p>
+            <h3 className="text-lg font-semibold leading-6 text-slate-900">
+              {previewProduct.product_name}
+            </h3>
+          </div>
+
+          <div className="scrollbar-hide -mx-1 flex gap-2 overflow-x-auto px-1">
+            {tabItems.map((tab) => (
+              <button
+                key={tab.key}
+                type="button"
+                onClick={() => setActivePreviewTab(tab.key)}
+                className={cn(
+                  "shrink-0 rounded-full border px-4 py-2 text-sm font-semibold transition",
+                  activePreviewTab === tab.key
+                    ? "border-slate-900 bg-slate-900 text-white"
+                    : "border-slate-200 bg-white text-slate-600",
+                )}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+
+          <div className="min-h-[120px] rounded-[1.35rem] border border-slate-200 bg-slate-50/80 p-4">
+            <p className="text-sm leading-6 text-slate-600">{tabContent}</p>
+          </div>
+
+          <Button
+            type="button"
+            onClick={() => openAddToCartFromDetail(previewProduct)}
+            className="h-12 w-full rounded-full text-base font-bold"
+          >
+            Sepete Ekle
+          </Button>
+        </div>
+      </Modal>
     );
   }
 
@@ -1316,7 +1419,7 @@ export function StorefrontClient({
                     ) : null}
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4 sm:gap-5 md:grid-cols-3 xl:grid-cols-4">
+                  <div className="grid grid-cols-3 gap-2 sm:gap-3 lg:grid-cols-4 xl:grid-cols-5">
                     {visibleSectionProducts.map((product) => renderProductCard(product))}
                   </div>
 
@@ -1358,7 +1461,7 @@ export function StorefrontClient({
           </div>
 
           {filteredProducts.length ? (
-            <div className="grid grid-cols-2 gap-4 sm:gap-5 md:grid-cols-3 xl:grid-cols-4">
+            <div className="grid grid-cols-3 gap-2 sm:gap-3 lg:grid-cols-4 xl:grid-cols-5">
               {visibleProducts.map((product) => renderProductCard(product))}
             </div>
           ) : (
@@ -1439,6 +1542,7 @@ export function StorefrontClient({
       ) : null}
 
       {renderCartDrawer()}
+      {renderProductPreviewModal()}
 
       <Modal
         open={Boolean(selectedProduct)}
