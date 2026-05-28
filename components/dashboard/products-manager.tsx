@@ -582,12 +582,93 @@ export function ProductsManager({
                 Masaüstünde tablo, mobilde kart düzeni ile hızlı yönetim.
               </p>
             </div>
-            <div className="w-full lg:max-w-md">
+            <div className="flex w-full flex-col gap-3 sm:flex-row lg:max-w-2xl lg:justify-end">
+              <div className="w-full lg:max-w-md">
                 <Input
                   placeholder="Ürün adı veya SKU ara"
                   value={searchTerm}
                   onChange={(event) => setSearchTerm(event.target.value)}
                 />
+              </div>
+              <div className="relative w-full sm:w-auto" ref={categoryFilterRef}>
+                <Button
+                  variant="secondary"
+                  className="h-11 w-full justify-between gap-2 px-4 text-sm sm:h-10 sm:w-auto"
+                  onClick={() => setCategoryFilterOpen((current) => !current)}
+                >
+                  <span className="inline-flex items-center gap-2">
+                    <ListFilter className="size-4" />
+                    {selectedCategoryIds.length
+                      ? `Kategori (${selectedCategoryIds.length})`
+                      : "Kategori filtrele"}
+                  </span>
+                  <ChevronDown
+                    className={cn(
+                      "size-4 transition-transform",
+                      categoryFilterOpen && "rotate-180",
+                    )}
+                  />
+                </Button>
+
+                {categoryFilterOpen ? (
+                  <div className="absolute right-0 top-full z-20 mt-2 w-full min-w-[18rem] rounded-xl border border-slate-200 bg-white p-3 shadow-lg sm:w-80">
+                    <div className="flex items-center justify-between gap-3 border-b border-slate-100 pb-3">
+                      <div>
+                        <p className="text-sm font-semibold text-slate-900">
+                          Kategorilere göre filtrele
+                        </p>
+                        <p className="mt-1 text-xs text-slate-500">
+                          İşaretli kategorilerdeki ürünler listelenir.
+                        </p>
+                      </div>
+                      {selectedCategoryIds.length ? (
+                        <button
+                          type="button"
+                          onClick={clearCategoryFilters}
+                          className="text-xs font-semibold text-emerald-700 transition hover:text-emerald-800"
+                        >
+                          Temizle
+                        </button>
+                      ) : null}
+                    </div>
+
+                    {flatCategories.length ? (
+                      <div className="mt-3 max-h-72 space-y-1 overflow-y-auto pr-1">
+                        {flatCategories.map((category) => {
+                          const checked = selectedCategoryIds.includes(category.id);
+
+                          return (
+                            <label
+                              key={category.id}
+                              className="flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2 transition hover:bg-slate-50"
+                            >
+                              <input
+                                type="checkbox"
+                                checked={checked}
+                                onChange={() => toggleCategoryFilter(category.id)}
+                                className="size-4 rounded border-slate-300 text-emerald-600"
+                              />
+                              <span
+                                className="min-w-0 text-sm text-slate-700"
+                                style={{ paddingLeft: `${category.depth * 12}px` }}
+                              >
+                                {category.name}
+                              </span>
+                              {checked ? (
+                                <Check className="ml-auto size-4 text-emerald-600" />
+                              ) : null}
+                            </label>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <p className="mt-3 text-sm text-slate-500">
+                        Henüz kategori bulunmuyor.
+                      </p>
+                    )}
+                  </div>
+                ) : null}
+              </div>
             </div>
           </div>
 
@@ -678,86 +759,7 @@ export function ProductsManager({
                 <th className="px-4 py-3">Stok</th>
                 <th className="px-4 py-3">Katman 1</th>
                 <th className="px-4 py-3">Katman 2</th>
-                <th className="px-4 py-3">
-                  <div className="relative inline-flex items-center gap-2" ref={categoryFilterRef}>
-                    <span>Katman 3</span>
-                    <Button
-                      variant="secondary"
-                      className="h-9 gap-2 px-3 py-2 text-xs"
-                      onClick={() => setCategoryFilterOpen((current) => !current)}
-                    >
-                      <ListFilter className="size-3.5" />
-                      {selectedCategoryIds.length
-                        ? `Kategori (${selectedCategoryIds.length})`
-                        : "Kategori"}
-                      <ChevronDown
-                        className={cn(
-                          "size-3.5 transition-transform",
-                          categoryFilterOpen && "rotate-180",
-                        )}
-                      />
-                    </Button>
-
-                    {categoryFilterOpen ? (
-                      <div className="absolute left-full top-1/2 z-20 ml-3 w-80 -translate-y-1/2 rounded-xl border border-slate-200 bg-white p-3 shadow-lg">
-                        <div className="flex items-center justify-between gap-3 border-b border-slate-100 pb-3">
-                          <div>
-                            <p className="text-sm font-semibold normal-case tracking-normal text-slate-900">
-                              Kategorilere göre filtrele
-                            </p>
-                            <p className="mt-1 text-xs normal-case tracking-normal text-slate-500">
-                              İşaretli kategorilerdeki ürünler listelenir.
-                            </p>
-                          </div>
-                          {selectedCategoryIds.length ? (
-                            <button
-                              type="button"
-                              onClick={clearCategoryFilters}
-                              className="text-xs font-semibold normal-case tracking-normal text-emerald-700 transition hover:text-emerald-800"
-                            >
-                              Temizle
-                            </button>
-                          ) : null}
-                        </div>
-
-                        {flatCategories.length ? (
-                          <div className="mt-3 max-h-72 space-y-1 overflow-y-auto pr-1">
-                            {flatCategories.map((category) => {
-                              const checked = selectedCategoryIds.includes(category.id);
-
-                              return (
-                                <label
-                                  key={category.id}
-                                  className="flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2 normal-case tracking-normal transition hover:bg-slate-50"
-                                >
-                                  <input
-                                    type="checkbox"
-                                    checked={checked}
-                                    onChange={() => toggleCategoryFilter(category.id)}
-                                    className="size-4 rounded border-slate-300 text-emerald-600"
-                                  />
-                                  <span
-                                    className="min-w-0 text-sm text-slate-700"
-                                    style={{ paddingLeft: `${category.depth * 12}px` }}
-                                  >
-                                    {category.name}
-                                  </span>
-                                  {checked ? (
-                                    <Check className="ml-auto size-4 text-emerald-600" />
-                                  ) : null}
-                                </label>
-                              );
-                            })}
-                          </div>
-                        ) : (
-                          <p className="mt-3 text-sm normal-case tracking-normal text-slate-500">
-                            Henüz kategori bulunmuyor.
-                          </p>
-                        )}
-                      </div>
-                    ) : null}
-                  </div>
-                </th>
+                <th className="px-4 py-3">Katman 3</th>
                 <th className="px-4 py-3 text-right">Aksiyon</th>
               </tr>
             </thead>
@@ -878,18 +880,26 @@ export function ProductsManager({
                   <td className="px-4 py-4 text-base font-semibold text-slate-900">
                     {formatCurrency(Number(product.price_tier_3), product.currency)}
                   </td>
-                  <td className="px-4 py-4">
-                    <div className="flex justify-end gap-2">
-                      <Button variant="secondary" onClick={() => toggleStock(product)}>
+                  <td className="px-4 py-4 align-top">
+                    <div className="ml-auto flex max-w-[15rem] flex-wrap justify-end gap-2">
+                      <Button
+                        variant="secondary"
+                        className="whitespace-nowrap"
+                        onClick={() => toggleStock(product)}
+                      >
                         {product.is_in_stock ? "Stoğu kapat" : "Stoğu aç"}
                       </Button>
-                      <Button variant="secondary" onClick={() => openEdit(product)}>
+                      <Button
+                        variant="secondary"
+                        className="whitespace-nowrap"
+                        onClick={() => openEdit(product)}
+                      >
                         <PencilLine className="size-4" />
                         Düzenle
                       </Button>
                       <Button
                         variant="secondary"
-                        className="border-red-200 text-red-700 hover:bg-red-50"
+                        className="whitespace-nowrap border-red-200 text-red-700 hover:bg-red-50"
                         onClick={() => setDeleteTarget(product)}
                       >
                         <Trash2 className="size-4" />
