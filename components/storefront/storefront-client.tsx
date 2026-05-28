@@ -1219,6 +1219,9 @@ export function StorefrontClient({
 
   function clearCart() {
     setCart([]);
+    setSelectedPaymentMethod(null);
+    setSelectedInstallmentCount(null);
+    setPaymentMethodError(null);
     if (typeof window !== "undefined") {
       window.localStorage.removeItem(cartStorageKey);
     }
@@ -2151,10 +2154,11 @@ export function StorefrontClient({
                 <Button
                   type="button"
                   onClick={handleWhatsAppOrder}
+                  disabled={!selectedPaymentMethod}
                   className={cn(
                     "mt-3 h-11 w-full rounded-full px-5 text-base font-bold shadow-none sm:h-12",
                     theme.stickyCartButton,
-                    !cart.length && "pointer-events-none opacity-50",
+                    (!cart.length || !selectedPaymentMethod) && "pointer-events-none opacity-50",
                   )}
                 >
                   WhatsApp ile Siparişi Tamamla
