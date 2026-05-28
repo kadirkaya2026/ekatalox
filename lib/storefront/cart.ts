@@ -437,20 +437,15 @@ export function buildWhatsAppMessage(params: {
     ];
   }
 
-  const conditionLine =
-    params.discountConditionNote?.trim()
-      ? `⚠️ İskonto Şartı: ${params.discountConditionNote.trim()}`
-      : null;
   const noteLine = params.note?.trim() ? `Not: ${params.note.trim()}` : null;
 
   return [
     `Merhaba, ${params.tenantName} için sipariş oluşturmak istiyorum.`,
     "",
-    ...(paymentLine ? [paymentLine, ""] : []),
     ...lines,
     "",
     ...totalSection,
-    ...(conditionLine ? ["", conditionLine] : []),
+    ...(paymentLine ? ["", paymentLine] : []),
     ...(noteLine ? ["", noteLine] : []),
   ]
     .filter((line, i, arr) => {

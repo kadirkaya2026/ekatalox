@@ -799,13 +799,6 @@ export function StorefrontClient({
         ? { tiers: storefrontSettings.card_campaign_tiers ?? [], isActive: storefrontSettings.is_card_campaign_active }
         : null;
 
-    const discountConditionNote =
-      selectedPaymentMethod === "cash"
-        ? (storefrontSettings.cash_discount_note ?? null)
-        : selectedPaymentMethod === "card"
-          ? (storefrontSettings.card_campaign_note ?? null)
-          : null;
-
     const message = buildWhatsAppMessage({
       tenantName: tenant.company_name,
       items: cart,
@@ -814,7 +807,6 @@ export function StorefrontClient({
       selectedInstallment,
       cashConfig: discountConfig,
       cardConfig: cardCfg,
-      discountConditionNote,
     });
 
     return `https://wa.me/${tenant.whatsapp_number}?text=${encodeURIComponent(message)}`;
