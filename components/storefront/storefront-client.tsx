@@ -1,10 +1,17 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  useSyncExternalStore,
+} from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import Image from "next/image";
 import {
   ChevronDown,
+  Megaphone,
   Minus,
   Plus,
   Search,
@@ -405,6 +412,109 @@ interface ActiveAnnouncement {
   maxDisplayCount: number;
 }
 
+function AnnouncementModal({
+  announcement,
+  onDismiss,
+}: {
+  announcement: ActiveAnnouncement;
+  onDismiss: () => void;
+}) {
+  const [isOpen, setIsOpen] = useState(true);
+
+  function handleDismiss() {
+    setIsOpen(false);
+    onDismiss();
+  }
+
+  return (
+    <AnimatePresence>
+      {isOpen ? (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 z-[70] flex items-center justify-center p-4"
+        >
+          <button
+            type="button"
+            aria-label="Duyuru modalını kapat"
+            className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(16,185,129,0.14),transparent_30%),radial-gradient(circle_at_bottom,rgba(14,165,233,0.16),transparent_34%),rgba(2,6,23,0.60)] backdrop-blur-md"
+            onClick={handleDismiss}
+          />
+
+          <motion.div
+            initial={{ opacity: 0, y: 28, scale: 0.94 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 18, scale: 0.98 }}
+            transition={{ duration: 0.28, ease: "easeOut" }}
+            className="relative z-10 w-full max-w-2xl overflow-hidden rounded-[2rem] border border-white/50 bg-white/95 shadow-[0_36px_120px_rgba(15,23,42,0.30)] backdrop-blur-2xl"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="announcement-modal-title"
+            aria-describedby="announcement-modal-body"
+          >
+            <div className="absolute inset-0 overflow-hidden">
+              <div className="absolute inset-x-0 top-0 h-32 bg-gradient-to-r from-emerald-500/18 via-cyan-500/18 to-sky-500/18" />
+              <div className="absolute -right-16 top-8 h-44 w-44 rounded-full bg-emerald-400/14 blur-3xl" />
+              <div className="absolute -left-10 bottom-0 h-36 w-36 rounded-full bg-sky-400/14 blur-3xl" />
+            </div>
+
+            <div className="relative p-6 sm:p-8">
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex items-center gap-4">
+                  <div className="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-[linear-gradient(135deg,rgba(16,185,129,0.14),rgba(14,165,233,0.16))] text-emerald-700 ring-1 ring-emerald-100">
+                    <Megaphone className="size-6" />
+                  </div>
+                  <div className="space-y-2">
+                    <span className="inline-flex rounded-full border border-emerald-100 bg-white/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-emerald-700">
+                      Yeni Duyuru
+                    </span>
+                    <h2
+                      id="announcement-modal-title"
+                      className="text-2xl font-black tracking-tight text-slate-950 sm:text-[2.2rem]"
+                    >
+                      {announcement.title}
+                    </h2>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleDismiss}
+                  className="rounded-full border border-slate-200/80 bg-white/90 p-2.5 text-slate-500 transition hover:border-slate-300 hover:bg-white hover:text-slate-900"
+                  aria-label="Kapat"
+                >
+                  <X className="size-5" />
+                </button>
+              </div>
+
+              <div className="mt-6 rounded-[1.75rem] border border-white/70 bg-white/80 p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)] sm:p-6">
+                <div className="mb-4 h-px w-full bg-gradient-to-r from-emerald-200 via-sky-200 to-transparent" />
+                <p
+                  id="announcement-modal-body"
+                  className="whitespace-pre-line text-[15px] leading-8 text-slate-600 sm:text-base"
+                >
+                  {announcement.body}
+                </p>
+              </div>
+
+              <div className="mt-6 flex justify-end">
+                <Button
+                  type="button"
+                  onClick={handleDismiss}
+                  className="h-12 rounded-full bg-[linear-gradient(135deg,#0f172a_0%,#111827_45%,#0f766e_100%)] px-7 text-sm font-semibold text-white shadow-[0_18px_40px_rgba(15,23,42,0.22)] transition hover:scale-[1.01] hover:shadow-[0_22px_48px_rgba(15,23,42,0.28)]"
+                >
+                  Anladım
+                </Button>
+              </div>
+            </div>
+          </motion.div>
+        </motion.div>
+      ) : null}
+    </AnimatePresence>
+  );
+}
+
 function getAnnouncementVisibility(params: {
   activeAnnouncement: ActiveAnnouncement | null;
   storageKeys: ReturnType<typeof getAnnouncementStorageKeys>;
@@ -679,7 +789,7 @@ export function StorefrontClient({
     storefrontSettings.max_display_count,
     storefrontSettings.version,
   ]);
-  const isAnnouncementOpen = useSyncExternalStore(
+  const isAnnouncementEligible = useSyncExternalStore(
     subscribeToAnnouncementStorage,
     () =>
       getAnnouncementVisibility({
@@ -688,7 +798,9 @@ export function StorefrontClient({
       }),
     () => false,
   );
-
+  const announcementRenderKey = activeAnnouncement
+    ? `${activeAnnouncement.version}-${readStoredCounterValue(announcementStorageKeys.views)}`
+    : null;
   useEffect(() => {
     if (!isMounted) {
       return;
@@ -733,12 +845,6 @@ export function StorefrontClient({
     notifyAnnouncementStorageChanged();
   }, [activeAnnouncement, announcementStorageKeys, isMounted]);
 
-  useEffect(() => {
-    if (!activeAnnouncement) {
-      notifyAnnouncementStorageChanged();
-    }
-  }, [activeAnnouncement]);
-
   const closeAnnouncementModal = useCallback(() => {
     if (!activeAnnouncement) {
       return;
@@ -762,7 +868,7 @@ export function StorefrontClient({
   }, [activeAnnouncement, announcementStorageKeys]);
 
   useEffect(() => {
-    if (!isAnnouncementOpen) {
+    if (!isAnnouncementEligible || !activeAnnouncement) {
       return;
     }
 
@@ -775,7 +881,7 @@ export function StorefrontClient({
     window.addEventListener("keydown", handleEscape);
 
     return () => window.removeEventListener("keydown", handleEscape);
-  }, [closeAnnouncementModal, isAnnouncementOpen]);
+  }, [activeAnnouncement, closeAnnouncementModal, isAnnouncementEligible]);
 
   function handleCategoryChange(categoryId: string) {
     setSelectedCategoryId(categoryId);
@@ -2043,85 +2149,13 @@ export function StorefrontClient({
       {renderCartDrawer()}
       {renderProductPreviewModal()}
 
-      <AnimatePresence>
-        {isAnnouncementOpen && activeAnnouncement ? (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[70] flex items-center justify-center p-4"
-          >
-            <button
-              type="button"
-              aria-label="Duyuru modalını kapat"
-              className="absolute inset-0 bg-slate-950/45 backdrop-blur-md"
-              onClick={closeAnnouncementModal}
-            />
-
-            <motion.div
-              initial={{ opacity: 0, y: 24, scale: 0.96 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 18, scale: 0.98 }}
-              transition={{ duration: 0.24, ease: "easeOut" }}
-              className="relative z-10 w-full max-w-xl overflow-hidden rounded-[2rem] border border-white/40 bg-white/92 shadow-[0_32px_110px_rgba(15,23,42,0.28)] backdrop-blur-xl"
-              role="dialog"
-              aria-modal="true"
-              aria-labelledby="announcement-modal-title"
-              aria-describedby="announcement-modal-body"
-            >
-              <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-emerald-500 via-cyan-500 to-sky-500" />
-
-              <div className="p-6 sm:p-7">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="space-y-3">
-                    <span className="inline-flex rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700">
-                      Duyuru
-                    </span>
-                    <h2
-                      id="announcement-modal-title"
-                      className="text-2xl font-bold tracking-tight text-slate-950 sm:text-[2rem]"
-                    >
-                      {activeAnnouncement.title}
-                    </h2>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={closeAnnouncementModal}
-                    className="rounded-full border border-slate-200 bg-white p-2 text-slate-500 transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900"
-                    aria-label="Kapat"
-                  >
-                    <X className="size-5" />
-                  </button>
-                </div>
-
-                <div className="mt-5 rounded-[1.5rem] border border-slate-200/80 bg-slate-50/85 p-5">
-                  <p
-                    id="announcement-modal-body"
-                    className="whitespace-pre-line text-sm leading-7 text-slate-600 sm:text-[15px]"
-                  >
-                    {activeAnnouncement.body}
-                  </p>
-                </div>
-
-                <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <p className="text-xs text-slate-400">
-                    Bu duyuru kullanıcı başına en fazla{" "}
-                    {activeAnnouncement.maxDisplayCount} kez gösterilir.
-                  </p>
-                  <Button
-                    type="button"
-                    onClick={closeAnnouncementModal}
-                    className="rounded-full px-6"
-                  >
-                    Anladım
-                  </Button>
-                </div>
-              </div>
-            </motion.div>
-          </motion.div>
-        ) : null}
-      </AnimatePresence>
+      {isAnnouncementEligible && activeAnnouncement ? (
+        <AnnouncementModal
+          key={announcementRenderKey ?? activeAnnouncement.version}
+          announcement={activeAnnouncement}
+          onDismiss={closeAnnouncementModal}
+        />
+      ) : null}
 
       <Modal
         open={Boolean(selectedProduct)}
