@@ -650,61 +650,73 @@ export function StorefrontClient({
   const cartDiscountSummary = useMemo(
     () =>
       getCartDiscountSummary(cart, {
-        threshold: storefrontSettings.discount_threshold,
-        percentage: storefrontSettings.discount_percentage,
-        isActive: storefrontSettings.is_discount_active,
+        threshold: storefrontSettings.cash_discount_threshold,
+        percentage: storefrontSettings.cash_discount_percentage,
+        isActive: storefrontSettings.is_cash_discount_active,
       }),
     [
       cart,
-      storefrontSettings.discount_percentage,
-      storefrontSettings.discount_threshold,
-      storefrontSettings.is_discount_active,
+      storefrontSettings.cash_discount_percentage,
+      storefrontSettings.cash_discount_threshold,
+      storefrontSettings.is_cash_discount_active,
     ],
   );
   const cartCardCampaignStatus = useMemo(
     () =>
-      storefrontSettings.discount_payment_method === "card"
-        ? getCartCardCampaignStatus(cart, {
-            threshold: storefrontSettings.discount_threshold,
-            isActive: storefrontSettings.is_discount_active,
-          })
-        : null,
+      getCartCardCampaignStatus(cart, {
+        threshold: storefrontSettings.card_campaign_threshold,
+        isActive: storefrontSettings.is_card_campaign_active,
+      }),
     [
       cart,
-      storefrontSettings.discount_payment_method,
-      storefrontSettings.discount_threshold,
-      storefrontSettings.is_discount_active,
+      storefrontSettings.card_campaign_threshold,
+      storefrontSettings.is_card_campaign_active,
     ],
   );
   const cartPaymentSummary = useMemo(() => {
     if (!selectedPaymentMethod || !cart.length) return null;
-    const discountApplies =
-      storefrontSettings.discount_payment_method === selectedPaymentMethod &&
-      storefrontSettings.is_discount_active;
-    const discountConfig: CartDiscountConfig | null = discountApplies
-      ? {
-          threshold: storefrontSettings.discount_threshold,
-          percentage: storefrontSettings.discount_percentage,
-          isActive: true,
-        }
-      : null;
+
+    if (selectedPaymentMethod === "cash") {
+      return getCartPaymentSummary(
+        cart,
+        "cash",
+        {
+          threshold: storefrontSettings.cash_discount_threshold,
+          percentage: storefrontSettings.cash_discount_percentage,
+          isActive: storefrontSettings.is_cash_discount_active,
+        },
+        null,
+      );
+    }
+
+    // card
     const activeOptions =
       (storefrontSettings.card_installment_options ?? []).filter(
         (o: InstallmentOption) => o.isActive,
       );
     const selectedInstallment =
-      selectedPaymentMethod === "card" && selectedInstallmentCount !== null
+      selectedInstallmentCount !== null
         ? (activeOptions.find((o: InstallmentOption) => o.count === selectedInstallmentCount) ?? null)
         : null;
-    return getCartPaymentSummary(cart, selectedPaymentMethod, discountConfig, selectedInstallment);
+    return getCartPaymentSummary(
+      cart,
+      "card",
+      {
+        threshold: storefrontSettings.card_campaign_threshold,
+        percentage: 0,
+        isActive: storefrontSettings.is_card_campaign_active,
+      },
+      selectedInstallment,
+    );
   }, [
     cart,
     selectedPaymentMethod,
     selectedInstallmentCount,
-    storefrontSettings.discount_payment_method,
-    storefrontSettings.is_discount_active,
-    storefrontSettings.discount_threshold,
-    storefrontSettings.discount_percentage,
+    storefrontSettings.cash_discount_threshold,
+    storefrontSettings.cash_discount_percentage,
+    storefrontSettings.is_cash_discount_active,
+    storefrontSettings.card_campaign_threshold,
+    storefrontSettings.is_card_campaign_active,
     storefrontSettings.card_installment_options,
   ]);
   const cartQuantityByProductId = useMemo(
@@ -774,14 +786,8 @@ export function StorefrontClient({
       .slice(0, 10);
   }, [cart, products, sections]);
   const whatsappHref = useMemo(() => {
-    if (!cart.length) {
-      return "#";
-    }
+    if (!cart.length) return "#";
 
-    const discountApplies =
-      !!selectedPaymentMethod &&
-      storefrontSettings.discount_payment_method === selectedPaymentMethod &&
-      storefrontSettings.is_discount_active;
     const activeOptions =
       (storefrontSettings.card_installment_options ?? []).filter(
         (o: InstallmentOption) => o.isActive,
@@ -791,20 +797,36 @@ export function StorefrontClient({
         ? (activeOptions.find((o: InstallmentOption) => o.count === selectedInstallmentCount) ?? null)
         : null;
 
+    let discountConfig = null;
+    if (selectedPaymentMethod === "cash") {
+      discountConfig = {
+        threshold: storefrontSettings.cash_discount_threshold,
+        percentage: storefrontSettings.cash_discount_percentage,
+        isActive: storefrontSettings.is_cash_discount_active,
+      };
+    } else if (selectedPaymentMethod === "card") {
+      discountConfig = {
+        threshold: storefrontSettings.card_campaign_threshold,
+        percentage: 0,
+        isActive: storefrontSettings.is_card_campaign_active,
+      };
+    }
+
+    const discountConditionNote =
+      selectedPaymentMethod === "cash"
+        ? (storefrontSettings.cash_discount_note ?? null)
+        : selectedPaymentMethod === "card"
+          ? (storefrontSettings.card_campaign_note ?? null)
+          : null;
+
     const message = buildWhatsAppMessage({
       tenantName: tenant.company_name,
       items: cart,
       note,
       paymentMethod: selectedPaymentMethod,
       selectedInstallment,
-      discountConfig: discountApplies
-        ? {
-            threshold: storefrontSettings.discount_threshold,
-            percentage: storefrontSettings.discount_percentage,
-            isActive: true,
-          }
-        : null,
-      discountConditionNote: storefrontSettings.discount_condition_note,
+      discountConfig,
+      discountConditionNote,
     });
 
     return `https://wa.me/${tenant.whatsapp_number}?text=${encodeURIComponent(message)}`;
@@ -813,11 +835,13 @@ export function StorefrontClient({
     note,
     selectedPaymentMethod,
     selectedInstallmentCount,
-    storefrontSettings.discount_payment_method,
-    storefrontSettings.discount_percentage,
-    storefrontSettings.discount_threshold,
-    storefrontSettings.is_discount_active,
-    storefrontSettings.discount_condition_note,
+    storefrontSettings.cash_discount_threshold,
+    storefrontSettings.cash_discount_percentage,
+    storefrontSettings.is_cash_discount_active,
+    storefrontSettings.cash_discount_note,
+    storefrontSettings.card_campaign_threshold,
+    storefrontSettings.is_card_campaign_active,
+    storefrontSettings.card_campaign_note,
     storefrontSettings.card_installment_options,
     tenant.company_name,
     tenant.whatsapp_number,
@@ -1232,10 +1256,27 @@ export function StorefrontClient({
   }
 
   function renderCartDiscountStatus(compact = false) {
-    // Kart kampanyası (0 komisyon)
-    if (cartCardCampaignStatus && (!selectedPaymentMethod || selectedPaymentMethod === "card")) {
-      const s = cartCardCampaignStatus;
-      return (
+    // Nakit seçiliyse → sadece nakit barı
+    if (selectedPaymentMethod === "cash") {
+      return renderCashDiscountBar(compact);
+    }
+    // Kart seçiliyse → sadece kart barı
+    if (selectedPaymentMethod === "card") {
+      return renderCardCampaignBar(compact);
+    }
+    // Hiçbiri seçilmemişse → her ikisini göster (aktifse)
+    return (
+      <>
+        {renderCashDiscountBar(compact)}
+        {renderCardCampaignBar(compact)}
+      </>
+    );
+  }
+
+  function renderCardCampaignBar(compact = false) {
+    if (!cartCardCampaignStatus) return null;
+    const s = cartCardCampaignStatus;
+    return (
         <div
           className={cn(
             "overflow-hidden rounded-[1.55rem] border p-4 shadow-[0_18px_42px_rgba(15,23,42,0.08)]",
@@ -1287,13 +1328,11 @@ export function StorefrontClient({
             </div>
           </div>
         </div>
-      );
-    }
+    );
+  }
 
-    // Nakit kampanyası (iskonto)
-    if (!cartDiscountSummary) {
-      return null;
-    }
+  function renderCashDiscountBar(compact = false) {
+    if (!cartDiscountSummary) return null;
 
     const percentageLabel = formatDiscountPercentage(cartDiscountSummary.percentage);
 
@@ -1363,7 +1402,7 @@ export function StorefrontClient({
                     cartDiscountSummary.currency,
                   )}.`}
             </p>
-            {storefrontSettings.discount_condition_note?.trim() && !compact ? (
+            {storefrontSettings.cash_discount_note?.trim() && !compact ? (
               <p
                 className={cn(
                   "mt-2 rounded-xl border px-3 py-2 text-xs font-medium leading-5",
@@ -1372,7 +1411,7 @@ export function StorefrontClient({
                     : "border-amber-200 bg-amber-50 text-amber-800",
                 )}
               >
-                ⚠️ Şart: {storefrontSettings.discount_condition_note}
+                ⚠️ Şart: {storefrontSettings.cash_discount_note}
               </p>
             ) : null}
           </div>
@@ -1770,7 +1809,11 @@ export function StorefrontClient({
             <div className="safe-bottom-padding flex-1 overflow-y-auto px-4 py-4 sm:px-5 lg:px-6">
               {cart.length ? (
                 <div className="space-y-4">
-                  {(!selectedPaymentMethod || selectedPaymentMethod === storefrontSettings.discount_payment_method) && renderCartDiscountStatus()}
+                  {/* Upsell bar: nakit seçildi → nakit, kart seçildi → kart, seçilmedi → her ikisi */}
+                  {(!selectedPaymentMethod || selectedPaymentMethod === "cash") && renderCartDiscountStatus()}
+                  {(!selectedPaymentMethod || selectedPaymentMethod === "card") &&
+                    cartCardCampaignStatus &&
+                    renderCartDiscountStatus()}
 
                   {cart.map((item) => (
                     <div
@@ -2535,7 +2578,7 @@ export function StorefrontClient({
         </section>
       </main>
 
-      {isMounted && cart.length && (cartDiscountSummary || cartCardCampaignStatus) && (!selectedPaymentMethod || selectedPaymentMethod === storefrontSettings.discount_payment_method) ? (
+      {isMounted && cart.length && (cartDiscountSummary || cartCardCampaignStatus) ? (
         <motion.div
           initial={{ opacity: 0, y: 14, scale: 0.97 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}

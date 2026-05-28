@@ -67,7 +67,7 @@ export async function PATCH(request: Request) {
     const { data } = await supabase
       .from("tenant_storefront_settings")
       .select(
-        "tenant_id, theme_key, logo_url, storefront_title, storefront_description, banner_items, site_tab_title, site_favicon_url, announcement_title, announcement_body, is_active, version, max_display_count, discount_threshold, discount_percentage, is_discount_active, discount_condition_note, discount_payment_method, card_installment_options",
+        "tenant_id, theme_key, logo_url, storefront_title, storefront_description, banner_items, site_tab_title, site_favicon_url, announcement_title, announcement_body, is_active, version, max_display_count, discount_threshold, discount_percentage, is_discount_active, discount_condition_note, discount_payment_method, card_installment_options, cash_discount_threshold, cash_discount_percentage, is_cash_discount_active, cash_discount_note, card_campaign_threshold, is_card_campaign_active, card_campaign_note",
       )
       .eq("tenant_id", session.tenant!.id)
       .maybeSingle();
@@ -107,6 +107,20 @@ export async function PATCH(request: Request) {
       body.discount_payment_method ?? existingSettings.discount_payment_method,
     card_installment_options:
       body.card_installment_options ?? existingSettings.card_installment_options,
+    cash_discount_threshold:
+      body.cash_discount_threshold ?? existingSettings.cash_discount_threshold,
+    cash_discount_percentage:
+      body.cash_discount_percentage ?? existingSettings.cash_discount_percentage,
+    is_cash_discount_active:
+      body.is_cash_discount_active ?? existingSettings.is_cash_discount_active,
+    cash_discount_note:
+      body.cash_discount_note ?? existingSettings.cash_discount_note,
+    card_campaign_threshold:
+      body.card_campaign_threshold ?? existingSettings.card_campaign_threshold,
+    is_card_campaign_active:
+      body.is_card_campaign_active ?? existingSettings.is_card_campaign_active,
+    card_campaign_note:
+      body.card_campaign_note ?? existingSettings.card_campaign_note,
   });
 
   if (!parsed.success) {
@@ -167,6 +181,13 @@ export async function PATCH(request: Request) {
         discount_condition_note: parsed.data.discount_condition_note,
         discount_payment_method: parsed.data.discount_payment_method,
         card_installment_options: parsed.data.card_installment_options,
+        cash_discount_threshold: parsed.data.cash_discount_threshold,
+        cash_discount_percentage: parsed.data.cash_discount_percentage,
+        is_cash_discount_active: parsed.data.is_cash_discount_active,
+        cash_discount_note: parsed.data.cash_discount_note,
+        card_campaign_threshold: parsed.data.card_campaign_threshold,
+        is_card_campaign_active: parsed.data.is_card_campaign_active,
+        card_campaign_note: parsed.data.card_campaign_note,
       },
     });
   }
@@ -214,6 +235,13 @@ export async function PATCH(request: Request) {
     discount_condition_note: parsed.data.discount_condition_note,
     discount_payment_method: parsed.data.discount_payment_method,
     card_installment_options: parsed.data.card_installment_options,
+    cash_discount_threshold: parsed.data.cash_discount_threshold,
+    cash_discount_percentage: parsed.data.cash_discount_percentage,
+    is_cash_discount_active: parsed.data.is_cash_discount_active,
+    cash_discount_note: parsed.data.cash_discount_note ?? null,
+    card_campaign_threshold: parsed.data.card_campaign_threshold,
+    is_card_campaign_active: parsed.data.is_card_campaign_active,
+    card_campaign_note: parsed.data.card_campaign_note ?? null,
   };
 
   const { data: storefrontSettings, error: storefrontError } = await supabase

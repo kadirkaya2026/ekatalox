@@ -69,6 +69,13 @@ export function getDefaultTenantStorefrontSettings(
     created_at: now,
     discount_payment_method: "cash" as const,
     card_installment_options: DEFAULT_INSTALLMENT_OPTIONS,
+    cash_discount_threshold: 0,
+    cash_discount_percentage: 0,
+    is_cash_discount_active: false,
+    cash_discount_note: null,
+    card_campaign_threshold: 0,
+    is_card_campaign_active: false,
+    card_campaign_note: null,
     updated_at: now,
   };
 }
