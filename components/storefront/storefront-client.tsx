@@ -17,6 +17,7 @@ import {
   Minus,
   Plus,
   Search,
+  ShieldCheck,
   ShoppingCart,
   Sparkles,
   Store,
@@ -2311,6 +2312,12 @@ export function StorefrontClient({
                   <p className="truncate text-lg font-semibold tracking-tight text-slate-950 sm:text-xl lg:text-[1.65rem]">
                     {storefrontTitle}
                   </p>
+                  {tenant?.id ? (
+                    <Badge className="mt-1 inline-flex items-center gap-1 bg-emerald-50 px-2 py-0.5 text-[10px] font-medium text-emerald-700">
+                      <ShieldCheck className="size-3 shrink-0" />
+                      eKatalox Güvenceli Mağaza
+                    </Badge>
+                  ) : null}
                 </div>
               </a>
             </div>
