@@ -2414,7 +2414,7 @@ export function StorefrontClient({
                     value={variantSearchTerm}
                     onChange={(event) => setVariantSearchTerm(event.target.value)}
                     placeholder="Model ara (14 Pro, 12/12 PF)"
-                    className="h-9 rounded-lg pl-9 pr-3 text-[13px]"
+                    className="h-9 rounded-lg pl-9 pr-3 text-[16px]"
                   />
                 </div>
 
@@ -2470,7 +2470,8 @@ export function StorefrontClient({
                                   setQuantityError(null);
                                 }
                               }}
-                              className="h-9 rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-[13px] text-slate-900 disabled:bg-slate-100"
+                              className="h-9 rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-[16px] text-slate-900 disabled:bg-slate-100"
+                              style={{ fontSize: "16px" }}
                             >
                               {unitChoices.map((unitOption) => (
                                 <option key={unitOption.value} value={unitOption.value}>
@@ -2479,10 +2480,9 @@ export function StorefrontClient({
                               ))}
                             </select>
                             <Input
-                              type="number"
-                              min="0"
-                              step="1"
+                              type="text"
                               inputMode="numeric"
+                              pattern="[0-9]*"
                               disabled={isUnavailable}
                               value={selection.quantity ? String(selection.quantity) : "0"}
                               onChange={(event) => {
@@ -2496,7 +2496,8 @@ export function StorefrontClient({
                                 }
                               }}
                               placeholder="0"
-                              className="h-9 px-2.5 py-2 text-[13px]"
+                              className="h-9 px-2.5 py-2 text-[16px]"
+                              style={{ fontSize: "16px" }}
                             />
                           </div>
 
@@ -2525,10 +2526,9 @@ export function StorefrontClient({
                 <div className="min-w-0 space-y-2">
                   <label className="text-sm font-semibold text-slate-900">ADET</label>
                   <Input
-                    type="number"
-                    min="0"
-                    step="1"
+                    type="text"
                     inputMode="numeric"
+                    pattern="[0-9]*"
                     value={selectedQuantity}
                     onChange={(event) => {
                       setSelectedQuantity(event.target.value);
@@ -2537,6 +2537,7 @@ export function StorefrontClient({
                       }
                     }}
                     placeholder="0"
+                    style={{ fontSize: "16px" }}
                   />
                 </div>
 
@@ -2546,10 +2547,9 @@ export function StorefrontClient({
                       PAKET
                     </label>
                     <Input
-                      type="number"
-                      min="0"
-                      step="1"
+                      type="text"
                       inputMode="numeric"
+                      pattern="[0-9]*"
                       value={selectedPackageCount}
                       onChange={(event) => {
                         setSelectedPackageCount(event.target.value);
@@ -2558,6 +2558,7 @@ export function StorefrontClient({
                         }
                       }}
                       placeholder="0"
+                      style={{ fontSize: "16px" }}
                     />
                     <p className="text-xs text-slate-500">
                       1 Paket = {selectedProduct.package_quantity} adet
@@ -2569,10 +2570,9 @@ export function StorefrontClient({
                   <div className="min-w-0 space-y-2">
                     <label className="text-sm font-semibold text-slate-900">KOLİ</label>
                     <Input
-                      type="number"
-                      min="0"
-                      step="1"
+                      type="text"
                       inputMode="numeric"
+                      pattern="[0-9]*"
                       value={selectedCartonCount}
                       onChange={(event) => {
                         setSelectedCartonCount(event.target.value);
@@ -2581,6 +2581,7 @@ export function StorefrontClient({
                         }
                       }}
                       placeholder="0"
+                      style={{ fontSize: "16px" }}
                     />
                     <p className="text-xs text-slate-500">
                       1 Koli = {selectedProduct.carton_quantity} adet
