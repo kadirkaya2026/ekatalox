@@ -75,18 +75,32 @@ function getAnnouncementStorageKeys(tenantId: string) {
   };
 }
 
-function getCampaignDismissStorageKey(tenantId: string) {
-  return `ekatalox_campaign_dismiss_${tenantId}`;
+function getCashCampaignDismissKey(tenantId: string) {
+  return `ekatalox_campaign_dismiss_cash_${tenantId}`;
 }
 
-function isCampaignDismissed(tenantId: string): boolean {
+function getCardCampaignDismissKey(tenantId: string) {
+  return `ekatalox_campaign_dismiss_card_${tenantId}`;
+}
+
+function isCashCampaignDismissed(tenantId: string): boolean {
   if (typeof window === "undefined") return false;
-  return window.localStorage.getItem(getCampaignDismissStorageKey(tenantId)) === "1";
+  return window.localStorage.getItem(getCashCampaignDismissKey(tenantId)) === "1";
 }
 
-function dismissCampaign(tenantId: string) {
+function isCardCampaignDismissed(tenantId: string): boolean {
+  if (typeof window === "undefined") return false;
+  return window.localStorage.getItem(getCardCampaignDismissKey(tenantId)) === "1";
+}
+
+function dismissCashCampaign(tenantId: string) {
   if (typeof window === "undefined") return;
-  window.localStorage.setItem(getCampaignDismissStorageKey(tenantId), "1");
+  window.localStorage.setItem(getCashCampaignDismissKey(tenantId), "1");
+}
+
+function dismissCardCampaign(tenantId: string) {
+  if (typeof window === "undefined") return;
+  window.localStorage.setItem(getCardCampaignDismissKey(tenantId), "1");
 }
 
 const announcementStorageEventName = "ekatalox:announcement-storage";
@@ -612,9 +626,13 @@ export function StorefrontClient({
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<"cash" | "card" | null>(null);
   const [selectedInstallmentCount, setSelectedInstallmentCount] = useState<number | null>(null);
   const [paymentMethodError, setPaymentMethodError] = useState<string | null>(null);
-  const [isCampaignDismissedState, setIsCampaignDismissedState] = useState(() => {
+  const [isCashCampaignDismissedState, setIsCashCampaignDismissedState] = useState(() => {
     if (typeof window === "undefined") return false;
-    return isCampaignDismissed(tenant.id);
+    return isCashCampaignDismissed(tenant.id);
+  });
+  const [isCardCampaignDismissedState, setIsCardCampaignDismissedState] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return isCardCampaignDismissed(tenant.id);
   });
   const isMounted = useSyncExternalStore(
     subscribeToMountState,
@@ -1256,20 +1274,19 @@ export function StorefrontClient({
   }
 
   function renderCartDiscountStatus(compact = false) {
-    if (isCampaignDismissedState) return null;
-    // Nakit seçiliyse → sadece nakit barı
+    // Nakit seçiliyse → sadece nakit barı (eğer kapatılmamışsa)
     if (selectedPaymentMethod === "cash") {
-      return renderCashDiscountBar(compact);
+      return isCashCampaignDismissedState ? null : renderCashDiscountBar(compact);
     }
-    // Kart seçiliyse → sadece kart barı
+    // Kart seçiliyse → sadece kart barı (eğer kapatılmamışsa)
     if (selectedPaymentMethod === "card") {
-      return renderCardCampaignBar(compact);
+      return isCardCampaignDismissedState ? null : renderCardCampaignBar(compact);
     }
-    // Hiçbiri seçilmemişse → her ikisini göster (aktifse)
+    // Hiçbiri seçilmemişse → her ikisini göster (kapatılmamış olanları)
     return (
       <>
-        {renderCashDiscountBar(compact)}
-        {renderCardCampaignBar(compact)}
+        {!isCashCampaignDismissedState && renderCashDiscountBar(compact)}
+        {!isCardCampaignDismissedState && renderCardCampaignBar(compact)}
       </>
     );
   }
@@ -1289,8 +1306,8 @@ export function StorefrontClient({
           <button
             type="button"
             onClick={() => {
-              dismissCampaign(tenant.id);
-              setIsCampaignDismissedState(true);
+              dismissCardCampaign(tenant.id);
+              setIsCardCampaignDismissedState(true);
             }}
             className="absolute right-2 top-2 rounded-full p-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
             aria-label="Kapat"
@@ -1366,8 +1383,8 @@ export function StorefrontClient({
         <button
           type="button"
           onClick={() => {
-            dismissCampaign(tenant.id);
-            setIsCampaignDismissedState(true);
+            dismissCashCampaign(tenant.id);
+            setIsCashCampaignDismissedState(true);
           }}
           className="absolute right-2 top-2 rounded-full p-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
           aria-label="Kapat"
@@ -2596,7 +2613,10 @@ export function StorefrontClient({
         </section>
       </main>
 
-      {isMounted && cart.length && !isCampaignDismissedState && (cartDiscountSummary || cartCardCampaignStatus) ? (
+      {isMounted && cart.length && (
+        (!isCashCampaignDismissedState && cartDiscountSummary) ||
+        (!isCardCampaignDismissedState && cartCardCampaignStatus)
+      ) ? (
         <motion.div
           initial={{ opacity: 0, y: 14, scale: 0.97 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
