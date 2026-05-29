@@ -49,7 +49,7 @@ export function Modal({
           </button>
         </div>
 
-        <div className="flex-1 overflow-x-hidden overflow-y-auto px-4 py-4 sm:p-5">
+        <div className="min-w-0 max-w-full flex-1 overflow-x-hidden overflow-y-auto px-4 py-4 sm:p-5">
           {children}
         </div>
 

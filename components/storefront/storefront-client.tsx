@@ -2364,14 +2364,14 @@ export function StorefrontClient({
         }
       >
         {selectedProduct ? (
-          <form id="add-to-cart-form" onSubmit={confirmAddToCart} className="grid min-w-0 gap-4">
-            <div className="rounded-xl border border-slate-100 bg-slate-50 px-3 py-2.5">
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <p className="truncate text-[13px] font-semibold leading-5 text-slate-900">
+          <form id="add-to-cart-form" onSubmit={confirmAddToCart} className="grid w-full min-w-0 max-w-full gap-4">
+            <div className="w-full min-w-0 max-w-full rounded-xl border border-slate-100 bg-slate-50 px-3 py-2.5">
+              <div className="flex w-full min-w-0 items-start justify-between gap-3">
+                <div className="min-w-0 flex-1">
+                  <p className="line-clamp-3 break-words text-pretty text-[13px] font-semibold leading-5 text-slate-900">
                     {selectedProduct.product_name}
                   </p>
-                  <p className="mt-0.5 text-[11px] text-slate-500">
+                  <p className="mt-0.5 truncate text-[11px] text-slate-500">
                     {selectedProduct.sku_code || "SKU bilgisi yok"}
                   </p>
                   {!selectedProduct.has_variants && getUnitSummary(selectedProduct) ? (
@@ -2501,8 +2501,8 @@ export function StorefrontClient({
                 </div>
               </div>
             ) : (
-              <div className="grid gap-3 sm:grid-cols-3">
-                <div className="space-y-2">
+              <div className="grid w-full min-w-0 max-w-full gap-3 sm:grid-cols-3">
+                <div className="min-w-0 space-y-2">
                   <label className="text-sm font-semibold text-slate-900">ADET</label>
                   <Input
                     type="number"
@@ -2521,7 +2521,7 @@ export function StorefrontClient({
                 </div>
 
                 {selectedProduct.package_quantity ? (
-                  <div className="space-y-2">
+                  <div className="min-w-0 space-y-2">
                     <label className="text-sm font-semibold text-slate-900">
                       PAKET
                     </label>
@@ -2546,7 +2546,7 @@ export function StorefrontClient({
                 ) : null}
 
                 {selectedProduct.carton_quantity ? (
-                  <div className="space-y-2">
+                  <div className="min-w-0 space-y-2">
                     <label className="text-sm font-semibold text-slate-900">KOLİ</label>
                     <Input
                       type="number"
@@ -2572,7 +2572,7 @@ export function StorefrontClient({
 
             {quantityError ? <p className="text-xs text-amber-700">{quantityError}</p> : null}
 
-            <div className="rounded-xl bg-slate-900 p-3 text-white">
+            <div className="w-full min-w-0 max-w-full rounded-xl bg-slate-900 p-3 text-white">
               {selectedProduct.has_variants ? (
                 <>
                   <p className="text-xs text-slate-300">Seçilen Modeller</p>
@@ -2611,7 +2611,7 @@ export function StorefrontClient({
                 <>
                   <p className="text-xs text-slate-300">Toplam</p>
                   <p className="mt-0.5 text-xs text-slate-300">{selectedTotalQuantity} adet</p>
-                  <p className="mt-1 text-xl font-bold">
+                  <p className="mt-1 break-words text-xl font-bold">
                     {formatCurrency(selectedLineTotal, selectedProduct.currency)}
                   </p>
                 </>
