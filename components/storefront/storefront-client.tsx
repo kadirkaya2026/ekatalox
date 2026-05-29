@@ -1052,12 +1052,30 @@ export function StorefrontClient({
     }
 
     setSelectedProduct(product);
-    setSelectedQuantity("0");
+    setVariantSearchTerm("");
+    setQuantityError(null);
+
+    if (product.has_variants) {
+      setVariantSelections(
+        cart
+          .filter((item) => item.product_id === product.id && item.variant_id)
+          .map((item) => ({
+            variantId: item.variant_id!,
+            unit: "adet" as SalesUnit,
+            quantity: item.quantity,
+          })),
+      );
+      setSelectedQuantity("0");
+      setSelectedPackageCount("0");
+      setSelectedCartonCount("0");
+      return;
+    }
+
+    const existingItem = cart.find((item) => item.id === product.id);
+    setSelectedQuantity(String(existingItem?.quantity ?? 0));
     setSelectedPackageCount("0");
     setSelectedCartonCount("0");
     setVariantSelections([]);
-    setVariantSearchTerm("");
-    setQuantityError(null);
   }
 
   function openAddToCartFromDetail(product: StorefrontProduct) {
@@ -1190,7 +1208,12 @@ export function StorefrontClient({
           return;
         }
 
-        setCart((current) => addVariantSelectionsToCart(current, selectedProduct, selections));
+        setCart((current) => {
+          const withoutProduct = current.filter(
+            (item) => item.product_id !== selectedProduct.id,
+          );
+          return addVariantSelectionsToCart(withoutProduct, selectedProduct, selections);
+        });
         closeAddToCartModal();
       })();
       return;
@@ -1210,7 +1233,13 @@ export function StorefrontClient({
       return;
     }
 
-    setCart((current) => addToCart(current, selectedProduct, selectedTotalQuantity));
+    setCart((current) => {
+      const existing = current.find((item) => item.id === selectedProduct.id);
+      if (existing) {
+        return updateCartLineQuantity(current, selectedProduct.id, selectedTotalQuantity);
+      }
+      return addToCart(current, selectedProduct, selectedTotalQuantity);
+    });
     closeAddToCartModal();
   }
 
@@ -2316,7 +2345,7 @@ export function StorefrontClient({
         title={selectedProduct?.has_variants ? "Model Seçimi" : "Sepete Ekle"}
       >
         {selectedProduct ? (
-          <form onSubmit={confirmAddToCart} className="grid gap-3">
+          <form onSubmit={confirmAddToCart} className="grid min-w-0 gap-3">
             <div className="rounded-xl border border-slate-100 bg-slate-50 px-3 py-2.5">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
@@ -2570,11 +2599,18 @@ export function StorefrontClient({
               )}
             </div>
 
-            <div className="flex justify-end gap-2">
-              <Button variant="secondary" onClick={closeAddToCartModal} className="px-4 py-2.5">
+            <div className="grid grid-cols-2 gap-2">
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={closeAddToCartModal}
+                className="w-full min-w-0 px-3 py-2.5 text-sm"
+              >
                 Vazgeç
               </Button>
-              <Button type="submit" className="px-4 py-2.5">Sepete Ekle</Button>
+              <Button type="submit" className="w-full min-w-0 px-3 py-2.5 text-sm">
+                Sepete Ekle
+              </Button>
             </div>
           </form>
         ) : null}

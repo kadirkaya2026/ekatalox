@@ -20,7 +20,7 @@ export function Modal({
 
   return (
     <div className="fixed inset-0 z-[60] flex items-end justify-center bg-slate-900/40 p-4 sm:items-center">
-      <div className="w-full max-w-2xl mx-auto rounded-2xl bg-white shadow-soft">
+      <div className="mx-auto w-full min-w-0 max-w-2xl rounded-2xl bg-white shadow-soft">
         <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
           <h3 className="text-lg font-semibold text-slate-900">{title}</h3>
           <button
@@ -33,7 +33,7 @@ export function Modal({
             <X className="size-5" />
           </button>
         </div>
-        <div className="max-h-[80vh] overflow-y-auto p-5">{children}</div>
+        <div className="max-h-[80vh] overflow-x-hidden overflow-y-auto p-5">{children}</div>
       </div>
     </div>
   );
