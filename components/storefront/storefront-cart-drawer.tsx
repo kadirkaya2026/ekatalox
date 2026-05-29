@@ -200,7 +200,7 @@ export function StorefrontCartDrawer({
                 {cart.map((item) => (
                   <div
                     key={item.id}
-                    className="rounded-[1.55rem] border border-slate-200/80 bg-[linear-gradient(180deg,#ffffff_0%,#f8fafc_100%)] p-3.5 shadow-[0_14px_36px_rgba(15,23,42,0.06)]"
+                    className="min-w-0 rounded-[1.55rem] border border-slate-200/80 bg-[linear-gradient(180deg,#ffffff_0%,#f8fafc_100%)] p-3.5 shadow-[0_14px_36px_rgba(15,23,42,0.06)]"
                   >
                     <div className="flex gap-3">
                       <div className="relative h-[4.5rem] w-[4.5rem] shrink-0 overflow-hidden rounded-[1.15rem] border border-slate-200 bg-white sm:h-20 sm:w-20 sm:rounded-[1.35rem]">
@@ -248,8 +248,8 @@ export function StorefrontCartDrawer({
                       </div>
                     </div>
 
-                    <div className="mt-3 flex items-end justify-between gap-3 border-t border-slate-200/80 pt-3">
-                      <div className="flex items-center rounded-full border border-slate-200 bg-white p-0.5 sm:p-1 shadow-sm">
+                    <div className="mt-3 flex min-w-0 items-end justify-between gap-2 border-t border-slate-200/80 pt-3 sm:gap-3">
+                      <div className="flex shrink-0 items-center rounded-full border border-slate-200 bg-white p-0.5 sm:p-1 shadow-sm">
                         <button
                           type="button"
                           onClick={() =>
@@ -287,20 +287,20 @@ export function StorefrontCartDrawer({
                         </button>
                       </div>
 
-                      <div className="flex shrink-0 items-end gap-4 text-right">
-                        <div>
-                          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">
+                      <div className="ml-auto flex min-w-0 max-w-[58%] flex-1 items-end justify-end gap-2 text-right sm:max-w-none sm:gap-4">
+                        <div className="min-w-0 max-w-[48%] sm:max-w-none">
+                          <p className="truncate text-[10px] font-semibold uppercase tracking-wide text-slate-400 sm:text-[11px] sm:tracking-[0.18em]">
                             Birim Fiyat
                           </p>
-                          <p className="mt-1 text-sm font-semibold text-slate-700">
+                          <p className="mt-1 truncate text-sm font-semibold tabular-nums text-slate-700">
                             {formatCurrency(item.price, item.currency)}
                           </p>
                         </div>
-                        <div>
-                          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">
+                        <div className="min-w-0 max-w-[52%] sm:max-w-none">
+                          <p className="truncate text-[10px] font-semibold uppercase tracking-wide text-slate-400 sm:text-[11px] sm:tracking-[0.18em]">
                             Ara Toplam
                           </p>
-                          <p className="mt-1 text-base font-bold tracking-tight text-slate-950">
+                          <p className="mt-1 truncate text-sm font-bold tabular-nums tracking-tight text-slate-950 sm:text-base">
                             {formatCurrency(item.price * item.quantity, item.currency)}
                           </p>
                         </div>
