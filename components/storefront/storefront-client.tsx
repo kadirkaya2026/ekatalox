@@ -1225,13 +1225,20 @@ export function StorefrontClient({
 
   function updateCartItemQuantity(productId: string, value: string) {
     if (value === "") {
-      setCart((current) => updateQuantity(current, productId, 0));
+      // Boş input — henüz silme, kullanıcı tamamlayamamış bir sayı girebilir
       return;
     }
 
     const quantity = Number.parseInt(value, 10);
 
-    if (!Number.isFinite(quantity) || quantity <= 0) {
+    if (!Number.isFinite(quantity) || quantity < 0) {
+      // Negatif veya geçersiz değer — sil
+      setCart((current) => updateQuantity(current, productId, 0));
+      return;
+    }
+
+    if (quantity === 0) {
+      // Kullanıcı açıkça 0 yazdı — ürünü sepetten kaldır
       setCart((current) => updateQuantity(current, productId, 0));
       return;
     }
@@ -1276,22 +1283,34 @@ export function StorefrontClient({
   function renderCartDiscountStatus(compact = false) {
     // Nakit seçiliyse → sadece nakit barı (eğer kapatılmamışsa)
     if (selectedPaymentMethod === "cash") {
-      return isCashCampaignDismissedState ? null : renderCashDiscountBar(compact);
+      return isCashCampaignDismissedState ? null : renderCashDiscountBar(compact, () => {
+        dismissCashCampaign(tenant.id);
+        setIsCashCampaignDismissedState(true);
+      });
     }
     // Kart seçiliyse → sadece kart barı (eğer kapatılmamışsa)
     if (selectedPaymentMethod === "card") {
-      return isCardCampaignDismissedState ? null : renderCardCampaignBar(compact);
+      return isCardCampaignDismissedState ? null : renderCardCampaignBar(compact, () => {
+        dismissCardCampaign(tenant.id);
+        setIsCardCampaignDismissedState(true);
+      });
     }
     // Hiçbiri seçilmemişse → her ikisini göster (kapatılmamış olanları)
     return (
       <>
-        {!isCashCampaignDismissedState && renderCashDiscountBar(compact)}
-        {!isCardCampaignDismissedState && renderCardCampaignBar(compact)}
+        {!isCashCampaignDismissedState && renderCashDiscountBar(compact, () => {
+          dismissCashCampaign(tenant.id);
+          setIsCashCampaignDismissedState(true);
+        })}
+        {!isCardCampaignDismissedState && renderCardCampaignBar(compact, () => {
+          dismissCardCampaign(tenant.id);
+          setIsCardCampaignDismissedState(true);
+        })}
       </>
     );
   }
 
-  function renderCardCampaignBar(compact = false) {
+  function renderCardCampaignBar(compact = false, onDismiss?: () => void) {
     if (!cartCardCampaignStatus) return null;
     const s = cartCardCampaignStatus;
     return (
@@ -1303,17 +1322,16 @@ export function StorefrontClient({
               : "border-amber-200 bg-[radial-gradient(circle_at_top_right,rgba(14,165,233,0.18),transparent_42%),linear-gradient(135deg,#fff7ed_0%,#ffffff_48%,#eff6ff_100%)]",
           )}
         >
-          <button
-            type="button"
-            onClick={() => {
-              dismissCardCampaign(tenant.id);
-              setIsCardCampaignDismissedState(true);
-            }}
-            className="absolute right-2 top-2 rounded-full p-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
-            aria-label="Kapat"
-          >
-            <X className="size-4" />
-          </button>
+          {onDismiss && (
+            <button
+              type="button"
+              onClick={onDismiss}
+              className="absolute right-2 top-2 rounded-full p-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
+              aria-label="Kapat"
+            >
+              <X className="size-4" />
+            </button>
+          )}
           <div className="flex items-start gap-3">
             <div
               className={cn(
@@ -1366,7 +1384,7 @@ export function StorefrontClient({
     );
   }
 
-  function renderCashDiscountBar(compact = false) {
+  function renderCashDiscountBar(compact = false, onDismiss?: () => void) {
     if (!cartDiscountSummary) return null;
 
     const percentageLabel = formatDiscountPercentage(cartDiscountSummary.percentage);
@@ -1380,17 +1398,16 @@ export function StorefrontClient({
             : "border-amber-200 bg-[radial-gradient(circle_at_top_right,rgba(14,165,233,0.18),transparent_42%),linear-gradient(135deg,#fff7ed_0%,#ffffff_48%,#eff6ff_100%)]",
         )}
       >
-        <button
-          type="button"
-          onClick={() => {
-            dismissCashCampaign(tenant.id);
-            setIsCashCampaignDismissedState(true);
-          }}
-          className="absolute right-2 top-2 rounded-full p-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
-          aria-label="Kapat"
-        >
-          <X className="size-4" />
-        </button>
+        {onDismiss && (
+          <button
+            type="button"
+            onClick={onDismiss}
+            className="absolute right-2 top-2 rounded-full p-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
+            aria-label="Kapat"
+          >
+            <X className="size-4" />
+          </button>
+        )}
         <div className="flex items-start gap-3">
           <div
             className={cn(
@@ -1847,7 +1864,28 @@ export function StorefrontClient({
               {cart.length ? (
                 <div className="space-y-4">
                   {/* Upsell bar: nakit seçildi → nakit, kart seçildi → kart, seçilmedi → her ikisi */}
-                  {renderCartDiscountStatus()}
+                  {selectedPaymentMethod === "cash"
+                    ? renderCashDiscountBar(false, () => {
+                        dismissCashCampaign(tenant.id);
+                        setIsCashCampaignDismissedState(true);
+                      })
+                    : selectedPaymentMethod === "card"
+                      ? renderCardCampaignBar(false, () => {
+                          dismissCardCampaign(tenant.id);
+                          setIsCardCampaignDismissedState(true);
+                        })
+                      : (
+                        <>
+                          {renderCashDiscountBar(false, () => {
+                            dismissCashCampaign(tenant.id);
+                            setIsCashCampaignDismissedState(true);
+                          })}
+                          {renderCardCampaignBar(false, () => {
+                            dismissCardCampaign(tenant.id);
+                            setIsCardCampaignDismissedState(true);
+                          })}
+                        </>
+                      )}
 
                   {cart.map((item) => (
                     <div
@@ -2624,7 +2662,28 @@ export function StorefrontClient({
           className="fixed left-4 right-4 z-40 xl:hidden"
           style={{ bottom: "calc(env(safe-area-inset-bottom) + 6.5rem)" }}
         >
-          {renderCartDiscountStatus(true)}
+          {selectedPaymentMethod === "cash"
+            ? renderCashDiscountBar(true, () => {
+                dismissCashCampaign(tenant.id);
+                setIsCashCampaignDismissedState(true);
+              })
+            : selectedPaymentMethod === "card"
+              ? renderCardCampaignBar(true, () => {
+                  dismissCardCampaign(tenant.id);
+                  setIsCardCampaignDismissedState(true);
+                })
+              : (
+                <>
+                  {renderCashDiscountBar(true, () => {
+                    dismissCashCampaign(tenant.id);
+                    setIsCashCampaignDismissedState(true);
+                  })}
+                  {renderCardCampaignBar(true, () => {
+                    dismissCardCampaign(tenant.id);
+                    setIsCardCampaignDismissedState(true);
+                  })}
+                </>
+              )}
         </motion.div>
       ) : null}
 
