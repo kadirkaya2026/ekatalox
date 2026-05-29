@@ -270,7 +270,7 @@ export function StorefrontCartDrawer({
                           onChange={(event) =>
                             updateCartItemQuantity(item.id, event.target.value)
                           }
-                          className="h-8 sm:h-9 w-10 sm:w-14 bg-transparent text-center text-sm font-bold text-slate-900 outline-none"
+                          className="h-8 w-11 bg-transparent py-0 text-center text-base font-bold leading-none text-slate-900 outline-none sm:h-9 sm:w-14"
                           aria-label="Ürün adedi"
                         />
                         <button
