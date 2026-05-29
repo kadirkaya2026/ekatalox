@@ -263,14 +263,15 @@ export function StorefrontCartDrawer({
                           <Minus className="size-4" />
                         </button>
                         <input
-                          type="number"
-                          min="0"
+                          type="text"
                           inputMode="numeric"
+                          pattern="[0-9]*"
                           value={item.quantity}
                           onChange={(event) =>
                             updateCartItemQuantity(item.id, event.target.value)
                           }
-                          className="h-8 w-11 bg-transparent py-0 text-center text-base font-bold leading-none text-slate-900 outline-none sm:h-9 sm:w-14"
+                          className="h-8 w-11 bg-transparent py-0 text-center text-[16px] font-bold leading-none text-slate-900 outline-none sm:h-9 sm:w-14"
+                          style={{ fontSize: "16px" }}
                           aria-label="Ürün adedi"
                         />
                         <button
@@ -402,7 +403,7 @@ export function StorefrontCartDrawer({
                     placeholder="Sipariş notu (opsiyonel)"
                     value={note}
                     onChange={(event) => setNote(event.target.value)}
-                    className="min-h-[84px] rounded-[1.1rem] border-slate-200 bg-slate-50/80 text-sm"
+                    className="min-h-[84px] rounded-[1.1rem] border-slate-200 bg-slate-50/80 text-[16px]"
                   />
                 </div>
 

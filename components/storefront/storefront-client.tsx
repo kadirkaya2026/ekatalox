@@ -1892,7 +1892,7 @@ export function StorefrontClient({
                 onChange={(event) => handleSearchChange(event.target.value)}
                 className={cn(
                   theme.searchInput,
-                  "h-10 rounded-full border-0 bg-transparent py-2 pl-10 pr-4 text-sm placeholder:text-slate-400 focus-visible:ring-0 focus:ring-0 lg:h-11",
+                  "h-10 rounded-full border-0 bg-transparent py-2 pl-10 pr-4 text-[16px] placeholder:text-slate-400 focus-visible:ring-0 focus:ring-0 lg:h-11",
                 )}
               />
             </div>
