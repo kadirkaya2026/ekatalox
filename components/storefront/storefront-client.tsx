@@ -75,6 +75,20 @@ function getAnnouncementStorageKeys(tenantId: string) {
   };
 }
 
+function getCampaignDismissStorageKey(tenantId: string) {
+  return `ekatalox_campaign_dismiss_${tenantId}`;
+}
+
+function isCampaignDismissed(tenantId: string): boolean {
+  if (typeof window === "undefined") return false;
+  return window.localStorage.getItem(getCampaignDismissStorageKey(tenantId)) === "1";
+}
+
+function dismissCampaign(tenantId: string) {
+  if (typeof window === "undefined") return;
+  window.localStorage.setItem(getCampaignDismissStorageKey(tenantId), "1");
+}
+
 const announcementStorageEventName = "ekatalox:announcement-storage";
 
 function subscribeToAnnouncementStorage(onStoreChange: () => void) {
@@ -598,6 +612,10 @@ export function StorefrontClient({
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<"cash" | "card" | null>(null);
   const [selectedInstallmentCount, setSelectedInstallmentCount] = useState<number | null>(null);
   const [paymentMethodError, setPaymentMethodError] = useState<string | null>(null);
+  const [isCampaignDismissedState, setIsCampaignDismissedState] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return isCampaignDismissed(tenant.id);
+  });
   const isMounted = useSyncExternalStore(
     subscribeToMountState,
     getClientMountedState,
@@ -1238,6 +1256,7 @@ export function StorefrontClient({
   }
 
   function renderCartDiscountStatus(compact = false) {
+    if (isCampaignDismissedState) return null;
     // Nakit seçiliyse → sadece nakit barı
     if (selectedPaymentMethod === "cash") {
       return renderCashDiscountBar(compact);
@@ -1261,12 +1280,23 @@ export function StorefrontClient({
     return (
         <div
           className={cn(
-            "overflow-hidden rounded-[1.55rem] border p-4 shadow-[0_18px_42px_rgba(15,23,42,0.08)]",
+            "relative overflow-hidden rounded-[1.55rem] border p-4 shadow-[0_18px_42px_rgba(15,23,42,0.08)]",
             s.isQualified
               ? "border-blue-200 bg-[radial-gradient(circle_at_top_right,rgba(59,130,246,0.18),transparent_42%),linear-gradient(135deg,#eff6ff_0%,#ffffff_50%,#f0f9ff_100%)]"
               : "border-amber-200 bg-[radial-gradient(circle_at_top_right,rgba(14,165,233,0.18),transparent_42%),linear-gradient(135deg,#fff7ed_0%,#ffffff_48%,#eff6ff_100%)]",
           )}
         >
+          <button
+            type="button"
+            onClick={() => {
+              dismissCampaign(tenant.id);
+              setIsCampaignDismissedState(true);
+            }}
+            className="absolute right-2 top-2 rounded-full p-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
+            aria-label="Kapat"
+          >
+            <X className="size-4" />
+          </button>
           <div className="flex items-start gap-3">
             <div
               className={cn(
@@ -1327,12 +1357,23 @@ export function StorefrontClient({
     return (
       <div
         className={cn(
-          "overflow-hidden rounded-[1.55rem] border p-4 shadow-[0_18px_42px_rgba(15,23,42,0.08)]",
+          "relative overflow-hidden rounded-[1.55rem] border p-4 shadow-[0_18px_42px_rgba(15,23,42,0.08)]",
           cartDiscountSummary.isQualified
             ? "border-emerald-200 bg-[radial-gradient(circle_at_top_right,rgba(16,185,129,0.2),transparent_42%),linear-gradient(135deg,#ecfdf5_0%,#ffffff_50%,#f0fdf4_100%)]"
             : "border-amber-200 bg-[radial-gradient(circle_at_top_right,rgba(14,165,233,0.18),transparent_42%),linear-gradient(135deg,#fff7ed_0%,#ffffff_48%,#eff6ff_100%)]",
         )}
       >
+        <button
+          type="button"
+          onClick={() => {
+            dismissCampaign(tenant.id);
+            setIsCampaignDismissedState(true);
+          }}
+          className="absolute right-2 top-2 rounded-full p-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
+          aria-label="Kapat"
+        >
+          <X className="size-4" />
+        </button>
         <div className="flex items-start gap-3">
           <div
             className={cn(
@@ -2555,7 +2596,7 @@ export function StorefrontClient({
         </section>
       </main>
 
-      {isMounted && cart.length && (cartDiscountSummary || cartCardCampaignStatus) ? (
+      {isMounted && cart.length && !isCampaignDismissedState && (cartDiscountSummary || cartCardCampaignStatus) ? (
         <motion.div
           initial={{ opacity: 0, y: 14, scale: 0.97 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
