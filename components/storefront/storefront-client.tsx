@@ -2343,9 +2343,28 @@ export function StorefrontClient({
         open={Boolean(selectedProduct)}
         onClose={closeAddToCartModal}
         title={selectedProduct?.has_variants ? "Model Seçimi" : "Sepete Ekle"}
+        footer={
+          <div className="flex flex-col gap-2 sm:flex-row sm:justify-end sm:gap-2">
+            <Button
+              type="submit"
+              form="add-to-cart-form"
+              className="flex h-11 w-full rounded-full text-sm font-bold sm:h-auto sm:w-auto sm:rounded-lg sm:px-4 sm:py-2.5"
+            >
+              Sepete Ekle
+            </Button>
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={closeAddToCartModal}
+              className="flex h-10 w-full rounded-full text-sm sm:h-auto sm:w-auto sm:rounded-lg sm:px-4 sm:py-2.5"
+            >
+              Vazgeç
+            </Button>
+          </div>
+        }
       >
         {selectedProduct ? (
-          <form onSubmit={confirmAddToCart} className="grid min-w-0 gap-3">
+          <form id="add-to-cart-form" onSubmit={confirmAddToCart} className="grid min-w-0 gap-3">
             <div className="rounded-xl border border-slate-100 bg-slate-50 px-3 py-2.5">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
@@ -2597,20 +2616,6 @@ export function StorefrontClient({
                   </p>
                 </>
               )}
-            </div>
-
-            <div className="grid grid-cols-2 gap-2">
-              <Button
-                type="button"
-                variant="secondary"
-                onClick={closeAddToCartModal}
-                className="w-full min-w-0 px-3 py-2.5 text-sm"
-              >
-                Vazgeç
-              </Button>
-              <Button type="submit" className="w-full min-w-0 px-3 py-2.5 text-sm">
-                Sepete Ekle
-              </Button>
             </div>
           </form>
         ) : null}
