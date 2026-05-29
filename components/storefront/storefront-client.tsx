@@ -1274,7 +1274,7 @@ export function StorefrontClient({
             <button
               type="button"
               onClick={onDismiss}
-              className="absolute right-2 top-2 rounded-full p-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
+              className="absolute right-2 top-2 z-10 rounded-full p-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
               aria-label="Kapat"
             >
               <X className="size-4" />
@@ -1350,7 +1350,7 @@ export function StorefrontClient({
           <button
             type="button"
             onClick={onDismiss}
-            className="absolute right-2 top-2 rounded-full p-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
+            className="absolute right-2 top-2 z-10 rounded-full p-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
             aria-label="Kapat"
           >
             <X className="size-4" />
@@ -2286,6 +2286,8 @@ export function StorefrontClient({
         whatsappHref={whatsappHref}
         cartStorageKey={cartStorageKey}
         stickyCartButtonClassName={theme.stickyCartButton}
+        isCashCampaignDismissed={isCashCampaignDismissedState}
+        isCardCampaignDismissed={isCardCampaignDismissedState}
         onDismissCashCampaign={() => {
           dismissCashCampaign(tenant.id);
           setIsCashCampaignDismissedState(true);

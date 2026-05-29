@@ -53,6 +53,8 @@ export type StorefrontCartDrawerProps = {
   whatsappHref: string;
   cartStorageKey: string;
   stickyCartButtonClassName: string;
+  isCashCampaignDismissed: boolean;
+  isCardCampaignDismissed: boolean;
   onDismissCashCampaign: () => void;
   onDismissCardCampaign: () => void;
   renderCashDiscountBar: (compact: boolean, onDismiss?: () => void) => ReactNode;
@@ -85,6 +87,8 @@ export function StorefrontCartDrawer({
   whatsappHref,
   cartStorageKey,
   stickyCartButtonClassName,
+  isCashCampaignDismissed,
+  isCardCampaignDismissed,
   onDismissCashCampaign,
   onDismissCardCampaign,
   renderCashDiscountBar,
@@ -146,7 +150,7 @@ export function StorefrontCartDrawer({
         className="absolute inset-0 h-full w-full"
         onClick={onClose}
       />
-      <div className="absolute inset-x-0 bottom-0 max-h-[94dvh] rounded-t-[2rem] bg-white shadow-[0_-24px_80px_rgba(15,23,42,0.22)] lg:inset-y-0 lg:left-auto lg:right-0 lg:h-full lg:max-h-none lg:w-[460px] lg:rounded-l-[2rem] lg:rounded-tr-none">
+      <div className="absolute inset-x-0 bottom-0 z-10 max-h-[94dvh] rounded-t-[2rem] bg-white shadow-[0_-24px_80px_rgba(15,23,42,0.22)] lg:inset-y-0 lg:left-auto lg:right-0 lg:h-full lg:max-h-none lg:w-[460px] lg:rounded-l-[2rem] lg:rounded-tr-none">
         <div className="flex h-full max-h-[94dvh] flex-col lg:max-h-none">
           <div className="flex justify-center pt-3 lg:hidden">
             <span className="h-1.5 w-14 rounded-full bg-slate-200" />
@@ -179,13 +183,17 @@ export function StorefrontCartDrawer({
             {cart.length ? (
               <div className="space-y-4">
                 {selectedPaymentMethod === "cash"
-                  ? renderCashDiscountBar(false, onDismissCashCampaign)
+                  ? !isCashCampaignDismissed &&
+                    renderCashDiscountBar(false, onDismissCashCampaign)
                   : selectedPaymentMethod === "card"
-                    ? renderCardCampaignBar(false, onDismissCardCampaign)
+                    ? !isCardCampaignDismissed &&
+                      renderCardCampaignBar(false, onDismissCardCampaign)
                     : (
                       <>
-                        {renderCashDiscountBar(false, onDismissCashCampaign)}
-                        {renderCardCampaignBar(false, onDismissCardCampaign)}
+                        {!isCashCampaignDismissed &&
+                          renderCashDiscountBar(false, onDismissCashCampaign)}
+                        {!isCardCampaignDismissed &&
+                          renderCardCampaignBar(false, onDismissCardCampaign)}
                       </>
                     )}
 

@@ -19,8 +19,8 @@ export function Modal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end bg-slate-900/40 p-4 md:items-center md:justify-center">
-      <div className="w-full max-w-2xl rounded-2xl bg-white shadow-soft">
+    <div className="fixed inset-0 z-[60] flex items-end justify-center bg-slate-900/40 p-4 sm:items-center">
+      <div className="w-full max-w-2xl mx-auto rounded-2xl bg-white shadow-soft">
         <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
           <h3 className="text-lg font-semibold text-slate-900">{title}</h3>
           <button
