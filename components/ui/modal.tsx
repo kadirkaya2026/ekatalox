@@ -21,9 +21,22 @@ export function Modal({
   }
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-end justify-center bg-slate-900/40 p-0 sm:items-center sm:p-4">
-      <div className="mx-auto flex max-h-[85dvh] w-full min-w-0 max-w-2xl flex-col rounded-t-[1.75rem] bg-white shadow-soft sm:max-h-[min(85dvh,100%)] sm:rounded-2xl">
-        <div className="flex shrink-0 items-center justify-between border-b border-slate-100 px-4 py-4 sm:px-5">
+    <div className="fixed inset-0 z-[60] flex items-end justify-center bg-black/40 p-4 backdrop-blur-sm sm:items-center">
+      <div
+        className={cn(
+          "mx-auto flex max-h-[85dvh] w-full min-w-0 max-w-2xl flex-col overflow-hidden",
+          "rounded-t-2xl bg-white shadow-[0_-12px_48px_rgba(15,23,42,0.2)]",
+          "sm:max-h-[min(85dvh,100%)] sm:rounded-2xl sm:shadow-soft",
+        )}
+      >
+        <div className="flex shrink-0 justify-center pt-3 sm:hidden">
+          <span
+            className="mx-auto my-0.5 h-1.5 w-12 rounded-full bg-gray-300"
+            aria-hidden="true"
+          />
+        </div>
+
+        <div className="flex shrink-0 items-center justify-between border-b border-slate-100 px-4 pb-2 pt-1 sm:px-5 sm:py-4 sm:pt-4">
           <h3 className="text-lg font-semibold text-slate-900">{title}</h3>
           <button
             type="button"
@@ -35,9 +48,13 @@ export function Modal({
             <X className="size-5" />
           </button>
         </div>
-        <div className="flex-1 overflow-x-hidden overflow-y-auto p-4 sm:p-5">{children}</div>
+
+        <div className="flex-1 overflow-x-hidden overflow-y-auto px-4 py-4 sm:p-5">
+          {children}
+        </div>
+
         {footer ? (
-          <div className="shrink-0 border-t border-slate-100 px-4 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:px-5">
+          <div className="shrink-0 space-y-4 border-t border-slate-100 px-4 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:px-5">
             {footer}
           </div>
         ) : null}
