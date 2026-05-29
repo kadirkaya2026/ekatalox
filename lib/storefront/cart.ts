@@ -462,3 +462,17 @@ export function getCartVariantCount(items: CartItem[], productId: string) {
       .map((item) => item.variant_id),
   ).size;
 }
+
+export function updateCartLineQuantity(
+  items: CartItem[],
+  lineId: string,
+  nextQuantity: number,
+) {
+  if (nextQuantity <= 0) {
+    return items.filter((item) => item.id !== lineId);
+  }
+
+  return items.map((item) =>
+    item.id === lineId ? { ...item, quantity: nextQuantity } : item,
+  );
+}
