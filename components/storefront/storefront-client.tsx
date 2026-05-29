@@ -75,32 +75,66 @@ function getAnnouncementStorageKeys(tenantId: string) {
   };
 }
 
-function getCashCampaignDismissKey(tenantId: string) {
-  return `ekatalox_campaign_dismiss_cash_${tenantId}`;
+type CampaignKind = "cash" | "card";
+type CampaignSurface = "home" | "cart";
+
+type CampaignDismissBySurface = {
+  cash: { home: boolean; cart: boolean };
+  card: { home: boolean; cart: boolean };
+};
+
+function getLegacyCampaignDismissKey(tenantId: string, kind: CampaignKind) {
+  return `ekatalox_campaign_dismiss_${kind}_${tenantId}`;
 }
 
-function getCardCampaignDismissKey(tenantId: string) {
-  return `ekatalox_campaign_dismiss_card_${tenantId}`;
+function getCampaignDismissKey(
+  tenantId: string,
+  kind: CampaignKind,
+  surface: CampaignSurface,
+) {
+  return `ekatalox_campaign_dismiss_${kind}_${tenantId}_${surface}`;
 }
 
-function isCashCampaignDismissed(tenantId: string): boolean {
+function isLegacyCampaignDismissed(tenantId: string, kind: CampaignKind): boolean {
   if (typeof window === "undefined") return false;
-  return window.localStorage.getItem(getCashCampaignDismissKey(tenantId)) === "1";
+  return window.localStorage.getItem(getLegacyCampaignDismissKey(tenantId, kind)) === "1";
 }
 
-function isCardCampaignDismissed(tenantId: string): boolean {
+function isCampaignDismissed(
+  tenantId: string,
+  kind: CampaignKind,
+  surface: CampaignSurface,
+): boolean {
   if (typeof window === "undefined") return false;
-  return window.localStorage.getItem(getCardCampaignDismissKey(tenantId)) === "1";
+  if (window.localStorage.getItem(getCampaignDismissKey(tenantId, kind, surface)) === "1") {
+    return true;
+  }
+  return isLegacyCampaignDismissed(tenantId, kind);
 }
 
-function dismissCashCampaign(tenantId: string) {
+function dismissCampaign(tenantId: string, kind: CampaignKind, surface: CampaignSurface) {
   if (typeof window === "undefined") return;
-  window.localStorage.setItem(getCashCampaignDismissKey(tenantId), "1");
+  window.localStorage.setItem(getCampaignDismissKey(tenantId, kind, surface), "1");
 }
 
-function dismissCardCampaign(tenantId: string) {
-  if (typeof window === "undefined") return;
-  window.localStorage.setItem(getCardCampaignDismissKey(tenantId), "1");
+function readInitialCampaignDismissState(tenantId: string): CampaignDismissBySurface {
+  if (typeof window === "undefined") {
+    return {
+      cash: { home: false, cart: false },
+      card: { home: false, cart: false },
+    };
+  }
+
+  return {
+    cash: {
+      home: isCampaignDismissed(tenantId, "cash", "home"),
+      cart: isCampaignDismissed(tenantId, "cash", "cart"),
+    },
+    card: {
+      home: isCampaignDismissed(tenantId, "card", "home"),
+      cart: isCampaignDismissed(tenantId, "card", "cart"),
+    },
+  };
 }
 
 const announcementStorageEventName = "ekatalox:announcement-storage";
@@ -617,14 +651,9 @@ export function StorefrontClient({
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<"cash" | "card" | null>(null);
   const [selectedInstallmentCount, setSelectedInstallmentCount] = useState<number | null>(null);
   const [paymentMethodError, setPaymentMethodError] = useState<string | null>(null);
-  const [isCashCampaignDismissedState, setIsCashCampaignDismissedState] = useState(() => {
-    if (typeof window === "undefined") return false;
-    return isCashCampaignDismissed(tenant.id);
-  });
-  const [isCardCampaignDismissedState, setIsCardCampaignDismissedState] = useState(() => {
-    if (typeof window === "undefined") return false;
-    return isCardCampaignDismissed(tenant.id);
-  });
+  const [campaignDismissState, setCampaignDismissState] = useState<CampaignDismissBySurface>(
+    () => readInitialCampaignDismissState(tenant.id),
+  );
   const isMounted = useSyncExternalStore(
     subscribeToMountState,
     getClientMountedState,
@@ -1257,35 +1286,50 @@ export function StorefrontClient({
     });
   }
 
-  function renderCartDiscountStatus(compact = false) {
-    // Nakit seçiliyse → sadece nakit barı (eğer kapatılmamışsa)
+  function dismissCampaignOnSurface(kind: CampaignKind, surface: CampaignSurface) {
+    dismissCampaign(tenant.id, kind, surface);
+    setCampaignDismissState((current) => ({
+      ...current,
+      [kind]: {
+        ...current[kind],
+        [surface]: true,
+      },
+    }));
+  }
+
+  function isCampaignDismissedOnSurface(kind: CampaignKind, surface: CampaignSurface) {
+    return campaignDismissState[kind][surface];
+  }
+
+  function renderCampaignBarsForSurface(surface: CampaignSurface, compact = false) {
+    const isCashDismissed = isCampaignDismissedOnSurface("cash", surface);
+    const isCardDismissed = isCampaignDismissedOnSurface("card", surface);
+
     if (selectedPaymentMethod === "cash") {
-      return isCashCampaignDismissedState ? null : renderCashDiscountBar(compact, () => {
-        dismissCashCampaign(tenant.id);
-        setIsCashCampaignDismissedState(true);
-      });
+      return isCashDismissed
+        ? null
+        : renderCashDiscountBar(compact, () => dismissCampaignOnSurface("cash", surface));
     }
-    // Kart seçiliyse → sadece kart barı (eğer kapatılmamışsa)
     if (selectedPaymentMethod === "card") {
-      return isCardCampaignDismissedState ? null : renderCardCampaignBar(compact, () => {
-        dismissCardCampaign(tenant.id);
-        setIsCardCampaignDismissedState(true);
-      });
+      return isCardDismissed
+        ? null
+        : renderCardCampaignBar(compact, () => dismissCampaignOnSurface("card", surface));
     }
-    // Hiçbiri seçilmemişse → her ikisini göster (kapatılmamış olanları)
     return (
       <>
-        {!isCashCampaignDismissedState && renderCashDiscountBar(compact, () => {
-          dismissCashCampaign(tenant.id);
-          setIsCashCampaignDismissedState(true);
-        })}
-        {!isCardCampaignDismissedState && renderCardCampaignBar(compact, () => {
-          dismissCardCampaign(tenant.id);
-          setIsCardCampaignDismissedState(true);
-        })}
+        {!isCashDismissed &&
+          renderCashDiscountBar(compact, () => dismissCampaignOnSurface("cash", surface))}
+        {!isCardDismissed &&
+          renderCardCampaignBar(compact, () => dismissCampaignOnSurface("card", surface))}
       </>
     );
   }
+
+  const hasVisibleHomeCampaignBars =
+    isMounted &&
+    cart.length > 0 &&
+    ((!isCampaignDismissedOnSurface("cash", "home") && cartDiscountSummary) ||
+      (!isCampaignDismissedOnSurface("card", "home") && cartCardCampaignStatus));
 
   function renderCardCampaignBar(compact = false, onDismiss?: () => void) {
     if (!cartCardCampaignStatus) return null;
@@ -2078,6 +2122,12 @@ export function StorefrontClient({
           </section>
         ) : null}
 
+        {hasVisibleHomeCampaignBars ? (
+          <section className="mb-5 hidden space-y-3 sm:mb-6 xl:block">
+            {renderCampaignBarsForSurface("home", false)}
+          </section>
+        ) : null}
+
         {showSections ? (
           <div className="mb-10 space-y-10">
             {sections.map((section) => {
@@ -2171,39 +2221,15 @@ export function StorefrontClient({
         </section>
       </main>
 
-      {isMounted && cart.length && (
-        (!isCashCampaignDismissedState && cartDiscountSummary) ||
-        (!isCardCampaignDismissedState && cartCardCampaignStatus)
-      ) ? (
+      {hasVisibleHomeCampaignBars ? (
         <motion.div
           initial={{ opacity: 0, y: 14, scale: 0.97 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           transition={{ duration: 0.24, ease: "easeOut" }}
-          className="fixed left-4 right-4 z-40 xl:hidden"
+          className="fixed left-4 right-4 z-40 space-y-2 xl:hidden"
           style={{ bottom: "calc(env(safe-area-inset-bottom) + 6.5rem)" }}
         >
-          {selectedPaymentMethod === "cash"
-            ? renderCashDiscountBar(true, () => {
-                dismissCashCampaign(tenant.id);
-                setIsCashCampaignDismissedState(true);
-              })
-            : selectedPaymentMethod === "card"
-              ? renderCardCampaignBar(true, () => {
-                  dismissCardCampaign(tenant.id);
-                  setIsCardCampaignDismissedState(true);
-                })
-              : (
-                <>
-                  {renderCashDiscountBar(true, () => {
-                    dismissCashCampaign(tenant.id);
-                    setIsCashCampaignDismissedState(true);
-                  })}
-                  {renderCardCampaignBar(true, () => {
-                    dismissCardCampaign(tenant.id);
-                    setIsCardCampaignDismissedState(true);
-                  })}
-                </>
-              )}
+          {renderCampaignBarsForSurface("home", true)}
         </motion.div>
       ) : null}
 
@@ -2315,16 +2341,10 @@ export function StorefrontClient({
         whatsappHref={whatsappHref}
         cartStorageKey={cartStorageKey}
         stickyCartButtonClassName={theme.stickyCartButton}
-        isCashCampaignDismissed={isCashCampaignDismissedState}
-        isCardCampaignDismissed={isCardCampaignDismissedState}
-        onDismissCashCampaign={() => {
-          dismissCashCampaign(tenant.id);
-          setIsCashCampaignDismissedState(true);
-        }}
-        onDismissCardCampaign={() => {
-          dismissCardCampaign(tenant.id);
-          setIsCardCampaignDismissedState(true);
-        }}
+        isCashCampaignDismissedOnCart={isCampaignDismissedOnSurface("cash", "cart")}
+        isCardCampaignDismissedOnCart={isCampaignDismissedOnSurface("card", "cart")}
+        onDismissCashCampaignOnCart={() => dismissCampaignOnSurface("cash", "cart")}
+        onDismissCardCampaignOnCart={() => dismissCampaignOnSurface("card", "cart")}
         renderCashDiscountBar={renderCashDiscountBar}
         renderCardCampaignBar={renderCardCampaignBar}
         renderCrossSellCard={renderCrossSellCard}

@@ -53,10 +53,10 @@ export type StorefrontCartDrawerProps = {
   whatsappHref: string;
   cartStorageKey: string;
   stickyCartButtonClassName: string;
-  isCashCampaignDismissed: boolean;
-  isCardCampaignDismissed: boolean;
-  onDismissCashCampaign: () => void;
-  onDismissCardCampaign: () => void;
+  isCashCampaignDismissedOnCart: boolean;
+  isCardCampaignDismissedOnCart: boolean;
+  onDismissCashCampaignOnCart: () => void;
+  onDismissCardCampaignOnCart: () => void;
   renderCashDiscountBar: (compact: boolean, onDismiss?: () => void) => ReactNode;
   renderCardCampaignBar: (compact: boolean, onDismiss?: () => void) => ReactNode;
   renderCrossSellCard: (product: StorefrontProduct) => ReactNode;
@@ -87,10 +87,10 @@ export function StorefrontCartDrawer({
   whatsappHref,
   cartStorageKey,
   stickyCartButtonClassName,
-  isCashCampaignDismissed,
-  isCardCampaignDismissed,
-  onDismissCashCampaign,
-  onDismissCardCampaign,
+  isCashCampaignDismissedOnCart,
+  isCardCampaignDismissedOnCart,
+  onDismissCashCampaignOnCart,
+  onDismissCardCampaignOnCart,
   renderCashDiscountBar,
   renderCardCampaignBar,
   renderCrossSellCard,
@@ -183,17 +183,17 @@ export function StorefrontCartDrawer({
             {cart.length ? (
               <div className="space-y-4">
                 {selectedPaymentMethod === "cash"
-                  ? !isCashCampaignDismissed &&
-                    renderCashDiscountBar(false, onDismissCashCampaign)
+                  ? !isCashCampaignDismissedOnCart &&
+                    renderCashDiscountBar(false, onDismissCashCampaignOnCart)
                   : selectedPaymentMethod === "card"
-                    ? !isCardCampaignDismissed &&
-                      renderCardCampaignBar(false, onDismissCardCampaign)
+                    ? !isCardCampaignDismissedOnCart &&
+                      renderCardCampaignBar(false, onDismissCardCampaignOnCart)
                     : (
                       <>
-                        {!isCashCampaignDismissed &&
-                          renderCashDiscountBar(false, onDismissCashCampaign)}
-                        {!isCardCampaignDismissed &&
-                          renderCardCampaignBar(false, onDismissCardCampaign)}
+                        {!isCashCampaignDismissedOnCart &&
+                          renderCashDiscountBar(false, onDismissCashCampaignOnCart)}
+                        {!isCardCampaignDismissedOnCart &&
+                          renderCardCampaignBar(false, onDismissCardCampaignOnCart)}
                       </>
                     )}
 
