@@ -100,12 +100,8 @@ export async function generateOrderReceiptPdf(
   doc.text(`Saat: ${formatOrderTime(params.orderDate)}`, headerRightX, cursorY + 11, {
     align: "right",
   });
-  setRobotoFont(doc, "bold");
-  doc.text(`Sipariş No: ${params.orderNumber}`, headerRightX, cursorY + 19, {
-    align: "right",
-  });
 
-  cursorY += params.logoUrl ? 36 : 24;
+  cursorY += params.logoUrl ? 32 : 20;
 
   doc.setDrawColor(...SOFT_BORDER);
   doc.line(margin, cursorY, pageWidth - margin, cursorY);
