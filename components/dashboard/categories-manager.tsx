@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import {
   DndContext,
   DragOverlay,
@@ -47,6 +47,8 @@ type OverPosition = "above" | "below" | "on";
 
 interface RowProps {
   category: Category & { depth: number };
+  displayOrder: number;
+  maxOrder: number;
   isDragging: boolean;
   isOver: boolean;
   overPosition: OverPosition;
@@ -68,6 +70,79 @@ interface RowProps {
   onConfirmDelete: (id: string) => void;
   onCancelDelete: () => void;
   onPromoteToRoot: (id: string) => void;
+  onOrderCommit: (targetOrder: number) => void;
+}
+
+function CategoryOrderInput({
+  displayOrder,
+  maxOrder,
+  disabled,
+  categoryName,
+  onCommit,
+}: {
+  displayOrder: number;
+  maxOrder: number;
+  disabled?: boolean;
+  categoryName: string;
+  onCommit: (targetOrder: number) => void;
+}) {
+  const [draft, setDraft] = useState(String(displayOrder));
+  const [isEditing, setIsEditing] = useState(false);
+
+  useEffect(() => {
+    if (!isEditing) {
+      setDraft(String(displayOrder));
+    }
+  }, [displayOrder, isEditing]);
+
+  function commit() {
+    const parsed = Number.parseInt(draft, 10);
+
+    if (!Number.isFinite(parsed) || parsed < 1 || parsed > maxOrder) {
+      setDraft(String(displayOrder));
+      setIsEditing(false);
+      return;
+    }
+
+    onCommit(parsed);
+    setIsEditing(false);
+  }
+
+  function cancel() {
+    setDraft(String(displayOrder));
+    setIsEditing(false);
+  }
+
+  return (
+    <input
+      type="number"
+      min={1}
+      max={maxOrder}
+      inputMode="numeric"
+      value={draft}
+      disabled={disabled}
+      aria-label={`${categoryName} sırası`}
+      onChange={(event) => setDraft(event.target.value)}
+      onFocus={() => setIsEditing(true)}
+      onBlur={commit}
+      onKeyDown={(event) => {
+        event.stopPropagation();
+
+        if (event.key === "Enter") {
+          event.preventDefault();
+          commit();
+        }
+
+        if (event.key === "Escape") {
+          event.preventDefault();
+          cancel();
+        }
+      }}
+      onMouseDown={(event) => event.stopPropagation()}
+      onClick={(event) => event.stopPropagation()}
+      className="w-14 shrink-0 rounded-md border border-slate-200 bg-white px-2 py-1 text-center text-sm font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-400 disabled:cursor-not-allowed disabled:opacity-40"
+    />
+  );
 }
 
 // ─── SortableCategoryRow ──────────────────────────────────────────────────────
@@ -108,6 +183,14 @@ function SortableCategoryRow(props: RowProps) {
         }`}
       >
         <div className="flex min-w-0 items-start gap-2">
+          <CategoryOrderInput
+            displayOrder={props.displayOrder}
+            maxOrder={props.maxOrder}
+            disabled={props.pending}
+            categoryName={props.category.name}
+            onCommit={props.onOrderCommit}
+          />
+
           {/* Drag handle */}
           <button
             {...listeners}
@@ -396,6 +479,62 @@ export function CategoriesManager({
     });
   }
 
+  function applyFlatListOrder(
+    reordered: (Category & { depth: number })[],
+    options?: { showSuccessMessage?: boolean },
+  ) {
+    const updated = categories.map((cat) => {
+      const newOrder = reordered.findIndex((c) => c.id === cat.id);
+      return newOrder !== -1 ? { ...cat, display_order: newOrder } : cat;
+    });
+
+    setCategories(updated);
+    persistCategories(updated, options);
+  }
+
+  function persistCategories(
+    updated: Category[],
+    options?: { showSuccessMessage?: boolean },
+  ) {
+    startTransition(async () => {
+      const items = updated.map((c) => ({
+        id: c.id,
+        parent_id: c.parent_id ?? null,
+        display_order: c.display_order,
+      }));
+      const res = await fetch("/api/tenant/categories/reorder", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ items }),
+      });
+      const result = await res.json();
+      if (!res.ok) {
+        showMessage(result.error ?? "Sıra kaydedilemedi.", "error");
+      } else if (options?.showSuccessMessage) {
+        showMessage("Kategori sırası güncellendi.");
+      }
+    });
+  }
+
+  function handleSetCategoryOrder(categoryId: string, targetOrder: number) {
+    const flat = flatCategories;
+    const sourceIndex = flat.findIndex((c) => c.id === categoryId);
+
+    if (sourceIndex < 0) {
+      return;
+    }
+
+    const targetIndex =
+      Math.min(Math.max(1, Math.floor(targetOrder)), flat.length) - 1;
+
+    if (targetIndex === sourceIndex) {
+      return;
+    }
+
+    const reordered = arrayMove(flat, sourceIndex, targetIndex);
+    applyFlatListOrder(reordered, { showSuccessMessage: true });
+  }
+
   // ── DnD Handlers ──────────────────────────────────────────────────────────
 
   function computePosition(active: DragMoveEvent["active"], over: NonNullable<DragMoveEvent["over"]>): OverPosition {
@@ -477,31 +616,12 @@ export function CategoriesManager({
       const targetIndex = overPositionRef.current === "below" ? overIndex + 1 : overIndex;
       const reordered = arrayMove(flat, oldIndex, targetIndex > oldIndex ? targetIndex - 1 : targetIndex);
 
-      updated = categories.map((cat) => {
-        const newOrder = reordered.findIndex((c) => c.id === cat.id);
-        return newOrder !== -1 ? { ...cat, display_order: newOrder } : cat;
-      });
+      applyFlatListOrder(reordered);
+      return;
     }
 
     setCategories(updated);
-
-    // Persist
-    startTransition(async () => {
-      const items = updated.map((c) => ({
-        id: c.id,
-        parent_id: c.parent_id ?? null,
-        display_order: c.display_order,
-      }));
-      const res = await fetch("/api/tenant/categories/reorder", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ items }),
-      });
-      const result = await res.json();
-      if (!res.ok) {
-        showMessage(result.error ?? "Sıra kaydedilemedi.", "error");
-      }
-    });
+    persistCategories(updated);
   }
 
   const activeCategory = activeId ? flatCategories.find((c) => c.id === activeId) : null;
@@ -533,6 +653,7 @@ export function CategoriesManager({
           <p className="font-medium text-slate-700">Sürükle &amp; bırak</p>
           <ul className="mt-2 space-y-1 text-xs text-slate-500">
             <li>• Satırı <strong>sürükleyip bırakın</strong> → sırayı değiştirin</li>
+            <li>• Sol taraftaki <strong>sıra kutucuğuna numara yazarak</strong> da sıralayın</li>
             <li>• Bir kategorinin <strong>ortasına bırakın</strong> → alt kategori yapın</li>
           </ul>
         </div>
@@ -578,10 +699,12 @@ export function CategoriesManager({
               strategy={verticalListSortingStrategy}
             >
               <div className="space-y-2">
-                {flatCategories.map((category) => (
+                {flatCategories.map((category, index) => (
                   <SortableCategoryRow
                     key={category.id}
                     category={category}
+                    displayOrder={index + 1}
+                    maxOrder={flatCategories.length}
                     isDragging={activeId === category.id}
                     isOver={overId === category.id}
                     overPosition={overPosition}
@@ -606,6 +729,9 @@ export function CategoriesManager({
                     onConfirmDelete={deleteCategory}
                     onCancelDelete={() => setDeleteConfirmId(null)}
                     onPromoteToRoot={promoteToRoot}
+                    onOrderCommit={(targetOrder) =>
+                      handleSetCategoryOrder(category.id, targetOrder)
+                    }
                   />
                 ))}
 
