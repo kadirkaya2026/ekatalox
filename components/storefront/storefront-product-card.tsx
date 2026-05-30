@@ -103,7 +103,7 @@ export const StorefrontFloatingCartAction = memo(function StorefrontFloatingCart
 
   if (cartQuantity > 0) {
     return (
-      <AnimatePresence mode="popLayout" initial={false}>
+      <AnimatePresence initial={false}>
         <motion.div
           key={`stepper-${product.id}`}
           data-unit-picker-root="true"
@@ -137,15 +137,14 @@ export const StorefrontFloatingCartAction = memo(function StorefrontFloatingCart
           >
             <Plus className={compact ? "size-4" : "size-4 sm:size-5"} />
           </motion.button>
-          <motion.span
-            layout
+          <span
             className={cn(
               "flex min-h-7 items-center justify-center text-center font-bold leading-none",
               compact ? "px-1 text-[11px]" : "px-1 text-sm",
             )}
           >
             {product.has_variants ? `${cartQuantity}M` : cartQuantity}
-          </motion.span>
+          </span>
           <motion.button
             type="button"
             whileTap={{ scale: 0.92 }}
@@ -182,7 +181,6 @@ export const StorefrontFloatingCartAction = memo(function StorefrontFloatingCart
 
   return (
     <motion.div
-      layout
       onClick={(event) => event.stopPropagation()}
       className={cn(
         "absolute z-30 origin-top-right",
