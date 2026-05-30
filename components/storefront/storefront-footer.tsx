@@ -106,7 +106,8 @@ function MobileSection({
     <div
       className={cn(
         "w-full",
-        showDivider && "border-t border-zinc-100 pt-4",
+        showDivider &&
+          "border-t border-zinc-200/80 pt-4 md:border-t-0 md:pt-0",
         className,
       )}
     >
@@ -148,8 +149,8 @@ export function StorefrontFooter({
   let mobileDividerIndex = 0;
 
   return (
-    <footer className="relative z-0 border-t border-zinc-200 bg-zinc-50">
-      <div className="mx-auto max-w-7xl px-4 py-6 md:py-7">
+    <footer className="relative z-0 border-t border-zinc-300 bg-zinc-100">
+      <div className="mx-auto max-w-7xl px-4 pt-5 pb-1 md:py-7">
         {hasFooterMainContent ? (
           <div className="flex flex-col gap-4 md:grid md:grid-cols-2 md:items-start md:gap-x-10 lg:gap-x-16">
             {hasContactColumn ? (
@@ -194,7 +195,7 @@ export function StorefrontFooter({
                   !hasContactColumn && "md:col-start-2",
                 )}
               >
-                <div className="flex flex-col items-center md:items-end">
+                <div className="flex w-full flex-col items-center md:items-end">
                   <FooterSectionHeading>Sosyal Medya</FooterSectionHeading>
                   <div className="flex flex-wrap items-center justify-center gap-1.5 md:justify-end">
                     {socialLinks.map((link) => (
@@ -219,8 +220,8 @@ export function StorefrontFooter({
 
         <div
           className={cn(
-            "border-t border-zinc-200 bg-zinc-50/80 py-2.5 text-center text-[11px] text-zinc-500",
-            hasFooterMainContent ? "mt-5 md:mt-6" : "mt-0",
+            "border-t border-zinc-300/80 py-2 text-center text-[11px] text-zinc-500",
+            hasFooterMainContent ? "mt-4 md:mt-6" : "mt-0",
           )}
         >
           ©{FOOTER_COPYRIGHT_YEAR}{" "}
