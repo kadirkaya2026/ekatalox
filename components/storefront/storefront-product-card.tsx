@@ -2,11 +2,12 @@
 
 import { memo } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import Image from "next/image";
 import { Minus, Plus, Store, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import type { StorefrontProduct } from "@/lib/types";
+import { STOREFRONT_PRODUCT_GRID_SIZES } from "@/lib/storefront/image-sizes";
 import { cn, formatCurrency } from "@/lib/utils";
+import { StorefrontImage } from "@/components/storefront/storefront-image";
 
 const floatingActionTransition = {
   type: "spring",
@@ -264,12 +265,11 @@ export const StorefrontProductCard = memo(function StorefrontProductCard({
       >
         <DiscountSticker product={product} />
         {product.image_url ? (
-          <Image
+          <StorefrontImage
             src={product.image_url}
             alt={product.product_name}
-            fill
             className="object-contain p-3 transition duration-500 group-hover:scale-[1.04] sm:p-5"
-            unoptimized
+            sizes={STOREFRONT_PRODUCT_GRID_SIZES}
           />
         ) : (
           <div className="flex h-full w-full items-center justify-center rounded-[1rem] border border-dashed border-slate-200/80 bg-white/70">

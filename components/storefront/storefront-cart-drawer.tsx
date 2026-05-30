@@ -1,7 +1,6 @@
 "use client";
 
 import type { Dispatch, ReactNode, SetStateAction } from "react";
-import Image from "next/image";
 import {
   Banknote,
   CreditCard,
@@ -28,6 +27,8 @@ import type {
   TenantStorefrontSettings,
 } from "@/lib/types";
 import { cn, formatCurrency } from "@/lib/utils";
+import { STOREFRONT_CART_THUMB_SIZES } from "@/lib/storefront/image-sizes";
+import { StorefrontImage } from "@/components/storefront/storefront-image";
 
 export type StorefrontCartDrawerProps = {
   isOpen: boolean;
@@ -224,12 +225,11 @@ export function StorefrontCartDrawer({
                     <div className="flex gap-3">
                       <div className="relative h-[4.5rem] w-[4.5rem] shrink-0 overflow-hidden rounded-[1.15rem] border border-slate-200 bg-white sm:h-20 sm:w-20 sm:rounded-[1.35rem]">
                         {item.image_url ? (
-                          <Image
+                          <StorefrontImage
                             src={item.image_url}
                             alt={item.product_name}
-                            fill
                             className="object-contain p-2.5 sm:p-3"
-                            unoptimized
+                            sizes={STOREFRONT_CART_THUMB_SIZES}
                           />
                         ) : (
                           <div className="flex h-full w-full items-center justify-center bg-slate-50">

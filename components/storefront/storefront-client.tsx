@@ -9,7 +9,6 @@ import {
   useSyncExternalStore,
 } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import Image from "next/image";
 import {
   ChevronDown,
   CreditCard,
@@ -47,6 +46,12 @@ import {
 } from "@/lib/storefront/cart";
 import { storefrontThemes } from "@/lib/storefront/themes";
 import {
+  STOREFRONT_BANNER_SIZES,
+  STOREFRONT_CROSS_SELL_SIZES,
+  STOREFRONT_LOGO_SIZES,
+  STOREFRONT_MODAL_PRODUCT_SIZES,
+} from "@/lib/storefront/image-sizes";
+import {
   getRequestedUnitQuantity,
   type SalesUnit,
 } from "@/lib/storefront/variants";
@@ -67,6 +72,7 @@ import {
   trackStorefrontVisit,
 } from "@/lib/storefront/analytics";
 import { StorefrontCartDrawer } from "@/components/storefront/storefront-cart-drawer";
+import { StorefrontImage } from "@/components/storefront/storefront-image";
 import { ProductDescriptionContent } from "@/components/storefront/product-description-content";
 import {
   DiscountSticker,
@@ -454,13 +460,12 @@ function renderBannerItem(
       />
       <div className="relative aspect-[3/1] bg-transparent md:min-h-[340px] md:aspect-auto lg:min-h-[400px]">
         {banner.image_url ? (
-          <Image
+          <StorefrontImage
             src={banner.image_url}
             alt={banner.title ?? `${title} banner`}
-            fill
             className="object-cover object-center"
-            sizes="100vw"
-            unoptimized
+            sizes={STOREFRONT_BANNER_SIZES}
+            priority
           />
         ) : (
           <div className="flex h-full min-h-[180px] items-center justify-center p-8 text-center text-white/70 sm:min-h-[220px] md:min-h-[340px] lg:min-h-[400px]">
@@ -1720,12 +1725,11 @@ export function StorefrontClient({
         <div className="relative h-28 overflow-hidden rounded-[1.15rem] bg-[linear-gradient(180deg,#f8fafc_0%,#eef2ff_100%)]">
           <DiscountSticker product={product} />
           {product.image_url ? (
-            <Image
+            <StorefrontImage
               src={product.image_url}
               alt={product.product_name}
-              fill
               className="object-contain p-4"
-              unoptimized
+              sizes={STOREFRONT_CROSS_SELL_SIZES}
             />
           ) : (
             <div className="flex h-full w-full items-center justify-center">
@@ -1804,12 +1808,11 @@ export function StorefrontClient({
           <div className="relative aspect-square overflow-hidden rounded-[1.75rem] bg-[linear-gradient(180deg,#f8fafc_0%,#eef2ff_100%)]">
             <DiscountSticker product={previewProduct} />
             {previewProduct.image_url ? (
-              <Image
+              <StorefrontImage
                 src={previewProduct.image_url}
                 alt={previewProduct.product_name}
-                fill
                 className="object-contain p-6"
-                unoptimized
+                sizes={STOREFRONT_MODAL_PRODUCT_SIZES}
               />
             ) : (
               <div className="flex h-full w-full items-center justify-center">
@@ -1884,12 +1887,11 @@ export function StorefrontClient({
               >
                 <div className="relative flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-[1.4rem] border border-slate-200 bg-white shadow-sm sm:h-16 sm:w-16 lg:h-20 lg:w-20 lg:rounded-[1.75rem]">
                   {storefrontSettings.logo_url ? (
-                    <Image
+                    <StorefrontImage
                       src={storefrontSettings.logo_url}
                       alt={`${storefrontTitle} logo`}
-                      fill
                       className="object-contain"
-                      unoptimized
+                      sizes={STOREFRONT_LOGO_SIZES}
                     />
                   ) : (
                     <Store className="size-5 text-slate-400" />
