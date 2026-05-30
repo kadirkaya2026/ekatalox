@@ -640,6 +640,7 @@ export function StorefrontClient({
   subdomain,
   pageTitle,
   homeHref,
+  hasPageFooter = false,
 }: {
   tenant: Tenant;
   categories: Category[];
@@ -649,6 +650,7 @@ export function StorefrontClient({
   subdomain?: string;
   pageTitle?: string;
   homeHref?: string;
+  hasPageFooter?: boolean;
 }) {
   const [cart, setCart] = useState<CartItem[]>(() => {
     if (typeof window === "undefined") {
@@ -2145,7 +2147,12 @@ export function StorefrontClient({
         </div>
       </header>
 
-      <main className="container-shell sticky-safe-bottom py-5 sm:py-6">
+      <main
+        className={cn(
+          "container-shell py-5 sm:py-6",
+          hasPageFooter ? "pb-4" : "sticky-safe-bottom",
+        )}
+      >
         {showBannerSection ? (
           <section className="mb-5 sm:mb-10 w-full">
             {bannerItems.length ? (

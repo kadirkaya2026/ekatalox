@@ -100,16 +100,15 @@ export default async function StorefrontPage(props: PageProps<"/store/[subdomain
 
   return (
     <div className={cn(theme.page, footerVisible && "pb-0")}>
-      <div className={footerVisible ? "pb-28 xl:pb-6" : undefined}>
-        <StorefrontClient
-          tenant={tenant}
-          categories={categories}
-          products={products}
-          storefrontSettings={storefrontSettings}
-          sections={sections}
-          subdomain={subdomain}
-        />
-      </div>
+      <StorefrontClient
+        tenant={tenant}
+        categories={categories}
+        products={products}
+        storefrontSettings={storefrontSettings}
+        sections={sections}
+        subdomain={subdomain}
+        hasPageFooter={footerVisible}
+      />
       {footerVisible ? (
         <StorefrontFooter settings={storefrontSettings} />
       ) : null}

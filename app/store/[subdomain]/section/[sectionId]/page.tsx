@@ -88,31 +88,30 @@ export default async function SectionDetailPage(props: {
 
   return (
     <div className={cn(theme.page, footerVisible && "pb-0")}>
-      <div className={footerVisible ? "pb-28 xl:pb-6" : undefined}>
-        <div className="container-shell py-4">
-          <nav className="flex items-center gap-2 text-sm text-slate-500">
-            <a
-              href={`/store/${subdomain}`}
-              className="font-medium transition hover:text-slate-900"
-            >
-              Anasayfa
-            </a>
-            <span>/</span>
-            <span className="font-semibold text-slate-900">{section.title}</span>
-          </nav>
-        </div>
-
-        <StorefrontClient
-          tenant={tenant}
-          categories={categories}
-          products={section.products}
-          storefrontSettings={storefrontSettings}
-          sections={[]}
-          subdomain={subdomain}
-          pageTitle={section.title}
-          homeHref={`/store/${subdomain}`}
-        />
+      <div className="container-shell py-4">
+        <nav className="flex items-center gap-2 text-sm text-slate-500">
+          <a
+            href={`/store/${subdomain}`}
+            className="font-medium transition hover:text-slate-900"
+          >
+            Anasayfa
+          </a>
+          <span>/</span>
+          <span className="font-semibold text-slate-900">{section.title}</span>
+        </nav>
       </div>
+
+      <StorefrontClient
+        tenant={tenant}
+        categories={categories}
+        products={section.products}
+        storefrontSettings={storefrontSettings}
+        sections={[]}
+        subdomain={subdomain}
+        pageTitle={section.title}
+        homeHref={`/store/${subdomain}`}
+        hasPageFooter={footerVisible}
+      />
       {footerVisible ? (
         <StorefrontFooter settings={storefrontSettings} />
       ) : null}
