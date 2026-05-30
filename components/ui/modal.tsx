@@ -9,12 +9,16 @@ export function Modal({
   title,
   children,
   footer,
+  contentScroll = true,
+  bodyClassName,
 }: {
   open: boolean;
   onClose: () => void;
   title: string;
   children: React.ReactNode;
   footer?: React.ReactNode;
+  contentScroll?: boolean;
+  bodyClassName?: string;
 }) {
   if (!open) {
     return null;
@@ -49,7 +53,15 @@ export function Modal({
           </button>
         </div>
 
-        <div className="min-w-0 max-w-full flex-1 overflow-x-hidden overflow-y-auto px-4 py-4 sm:p-5">
+        <div
+          className={cn(
+            "min-w-0 max-w-full flex-1 overflow-x-hidden px-4 py-4 sm:p-5",
+            contentScroll
+              ? "overflow-y-auto"
+              : "flex min-h-0 flex-col overflow-hidden",
+            bodyClassName,
+          )}
+        >
           {children}
         </div>
 

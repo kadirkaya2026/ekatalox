@@ -2601,6 +2601,7 @@ export function StorefrontClient({
         open={Boolean(selectedProduct)}
         onClose={closeAddToCartModal}
         title={selectedProduct?.has_variants ? "Model Seçimi" : "Sepete Ekle"}
+        contentScroll={!selectedProduct?.has_variants}
         footer={
           <div className="flex flex-col gap-3 sm:flex-row sm:justify-end sm:gap-2">
             <Button
@@ -2622,8 +2623,17 @@ export function StorefrontClient({
         }
       >
         {selectedProduct ? (
-          <form id="add-to-cart-form" onSubmit={confirmAddToCart} className="grid w-full min-w-0 max-w-full gap-4">
-            <div className="w-full min-w-0 max-w-full rounded-xl border border-slate-100 bg-slate-50 px-3 py-2.5">
+          <form
+            id="add-to-cart-form"
+            onSubmit={confirmAddToCart}
+            className={cn(
+              "w-full min-w-0 max-w-full gap-4",
+              selectedProduct.has_variants
+                ? "flex min-h-0 flex-1 flex-col"
+                : "grid",
+            )}
+          >
+            <div className="w-full min-w-0 max-w-full shrink-0 rounded-xl border border-slate-100 bg-slate-50 px-3 py-2.5">
               <div className="flex w-full min-w-0 items-start justify-between gap-3">
                 <div className="min-w-0 flex-1">
                   <p className="line-clamp-3 break-words text-pretty text-[13px] font-semibold leading-5 text-slate-900">
@@ -2643,8 +2653,8 @@ export function StorefrontClient({
             </div>
 
             {selectedProduct.has_variants ? (
-              <div className="space-y-2.5">
-                <div className="relative">
+              <div className="flex min-h-0 flex-1 flex-col gap-2.5">
+                <div className="relative shrink-0">
                   <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
                   <Input
                     value={variantSearchTerm}
@@ -2654,7 +2664,7 @@ export function StorefrontClient({
                   />
                 </div>
 
-                <div className="max-h-[32rem] space-y-1.5 overflow-y-auto pr-1">
+                <div className="min-h-0 flex-1 space-y-1.5 overflow-y-auto pr-1">
                   {filteredSelectedVariants.length ? (
                     filteredSelectedVariants.map((variant) => {
                       const selection = getVariantSelection(variant.id);
@@ -2827,9 +2837,11 @@ export function StorefrontClient({
               </div>
             )}
 
-            {quantityError ? <p className="text-xs text-amber-700">{quantityError}</p> : null}
+            {quantityError ? (
+              <p className="shrink-0 text-xs text-amber-700">{quantityError}</p>
+            ) : null}
 
-            <div className="w-full min-w-0 max-w-full rounded-xl bg-slate-900 p-3 text-white">
+            <div className="w-full min-w-0 max-w-full shrink-0 rounded-xl bg-slate-900 p-3 text-white">
               {selectedProduct.has_variants ? (
                 <>
                   <p className="text-xs text-slate-300">Seçilen Modeller</p>
