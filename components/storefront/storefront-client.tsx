@@ -2545,7 +2545,7 @@ export function StorefrontClient({
                   />
                 </div>
 
-                <div className="min-h-0 flex-1 space-y-1 overflow-y-auto overscroll-y-contain py-2 pr-1">
+                <div className="min-h-0 flex-1 space-y-2.5 overflow-y-auto overscroll-y-contain py-2 pr-1">
                   {filteredSelectedVariants.length ? (
                     filteredSelectedVariants.map((variant) => {
                       const selection = getVariantSelection(variant.id);
@@ -2566,14 +2566,14 @@ export function StorefrontClient({
                         <div
                           key={variant.id}
                           className={cn(
-                            "rounded-lg border px-2 py-1.5 transition sm:px-2.5 sm:py-2",
+                            "rounded-xl border-2 px-2.5 py-2 transition",
                             isUnavailable
                               ? "border-slate-200 bg-slate-50 opacity-40"
-                              : "border-slate-200 bg-white",
+                              : "border-slate-300/90 bg-white shadow-[0_1px_0_rgba(15,23,42,0.04)]",
                           )}
                         >
                           <div className="flex items-center justify-between gap-2">
-                            <p className="truncate pr-2 text-[13px] font-semibold leading-5 text-slate-900">
+                            <p className="truncate pr-2 text-sm font-bold leading-5 tracking-tight text-slate-950">
                               {variant.model_name}
                             </p>
                             {isUnavailable ? (
