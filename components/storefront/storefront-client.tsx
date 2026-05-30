@@ -4,6 +4,7 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
   useSyncExternalStore,
 } from "react";
@@ -242,7 +243,6 @@ function addToCart(items: CartItem[], product: StorefrontProduct, quantity: numb
         category_id: product.category_id,
         sku_code: product.sku_code,
         product_name: product.product_name,
-        description: product.description ?? null,
         image_url: product.image_url,
         is_in_stock: product.is_in_stock,
         currency: product.currency,
@@ -297,7 +297,6 @@ function addVariantSelectionsToCart(
           category_id: product.category_id,
           sku_code: product.sku_code,
           product_name: product.product_name,
-          description: product.description ?? null,
           image_url: product.image_url,
           is_in_stock: product.is_in_stock && variant.is_purchasable,
           currency: product.currency,
@@ -703,6 +702,13 @@ export function StorefrontClient({
   const [selectedProduct, setSelectedProduct] = useState<StorefrontProduct | null>(null);
   const [previewProduct, setPreviewProduct] = useState<StorefrontProduct | null>(null);
   const [activePreviewTab, setActivePreviewTab] = useState<ProductDetailTab>("details");
+  const [previewDescription, setPreviewDescription] = useState<string | null | undefined>(
+    undefined,
+  );
+  const [previewDescriptionLoading, setPreviewDescriptionLoading] = useState(false);
+  const [previewDescriptionError, setPreviewDescriptionError] = useState<string | null>(null);
+  const descriptionCacheRef = useRef(new Map<string, string | null>());
+  const descriptionAbortRef = useRef<AbortController | null>(null);
   const [selectedQuantity, setSelectedQuantity] = useState("0");
   const [selectedPackageCount, setSelectedPackageCount] = useState("0");
   const [selectedCartonCount, setSelectedCartonCount] = useState("0");
@@ -1131,9 +1137,103 @@ export function StorefrontClient({
   }
 
   function closeProductDetail() {
+    descriptionAbortRef.current?.abort();
+    descriptionAbortRef.current = null;
     setPreviewProduct(null);
     setActivePreviewTab("details");
+    setPreviewDescription(undefined);
+    setPreviewDescriptionLoading(false);
+    setPreviewDescriptionError(null);
   }
+
+  useEffect(() => {
+    if (!previewProduct) {
+      return;
+    }
+
+    const cachedDescription = descriptionCacheRef.current.get(previewProduct.id);
+
+    if (cachedDescription !== undefined) {
+      setPreviewDescription(cachedDescription);
+      setPreviewDescriptionLoading(false);
+      setPreviewDescriptionError(null);
+      return;
+    }
+
+    if (!subdomain) {
+      setPreviewDescription(null);
+      setPreviewDescriptionLoading(false);
+      setPreviewDescriptionError("Detay bilgisi yüklenemedi.");
+      return;
+    }
+
+    descriptionAbortRef.current?.abort();
+    const abortController = new AbortController();
+    descriptionAbortRef.current = abortController;
+
+    setPreviewDescription(undefined);
+    setPreviewDescriptionLoading(true);
+    setPreviewDescriptionError(null);
+
+    void (async () => {
+      try {
+        const response = await fetch("/api/storefront/product-description", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            subdomain,
+            productId: previewProduct.id,
+          }),
+          signal: abortController.signal,
+        });
+
+        if (!response.ok) {
+          let errorMessage = "Detay bilgisi yüklenemedi.";
+
+          try {
+            const result = await response.json();
+            if (typeof result.error === "string" && result.error.trim()) {
+              errorMessage = result.error;
+            }
+          } catch {
+            // ignore non-JSON error bodies
+          }
+
+          if (!abortController.signal.aborted) {
+            setPreviewDescriptionError(errorMessage);
+            setPreviewDescriptionLoading(false);
+          }
+
+          return;
+        }
+
+        const result = await response.json();
+        const description =
+          typeof result.description === "string" ? result.description : null;
+
+        descriptionCacheRef.current.set(previewProduct.id, description);
+
+        if (!abortController.signal.aborted) {
+          setPreviewDescription(description);
+          setPreviewDescriptionLoading(false);
+          setPreviewDescriptionError(null);
+        }
+      } catch (error) {
+        if (error instanceof DOMException && error.name === "AbortError") {
+          return;
+        }
+
+        if (!abortController.signal.aborted) {
+          setPreviewDescriptionError("Detay bilgisi yüklenemedi.");
+          setPreviewDescriptionLoading(false);
+        }
+      }
+    })();
+
+    return () => {
+      abortController.abort();
+    };
+  }, [previewProduct, subdomain]);
 
   function openCartDrawer() {
     setIsCartOpen(true);
@@ -1814,7 +1914,7 @@ export function StorefrontClient({
       { key: "carton", label: "Koli" },
     ];
 
-    const detailContent = previewProduct.description;
+    const detailContent = previewDescription;
     const packageContent = previewProduct.package_quantity
       ? `1 Paket = ${previewProduct.package_quantity} adet`
       : "Paket bilgisi eklenmedi.";
@@ -1824,7 +1924,13 @@ export function StorefrontClient({
 
     const tabContent =
       activePreviewTab === "details" ? (
-        <ProductDescriptionContent content={detailContent} />
+        previewDescriptionLoading ? (
+          <p className="text-sm leading-6 text-slate-400">Detay yükleniyor…</p>
+        ) : previewDescriptionError ? (
+          <p className="text-sm leading-6 text-amber-700">{previewDescriptionError}</p>
+        ) : (
+          <ProductDescriptionContent content={detailContent ?? null} />
+        )
       ) : activePreviewTab === "package" ? (
         <p className="text-sm leading-6 text-slate-600">{packageContent}</p>
       ) : (

@@ -8,6 +8,7 @@ import {
 } from "@/lib/demo-data";
 import { shouldAllowDemoFallback } from "@/lib/env";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { normalizeProductDescription } from "@/lib/products/description-html";
 import { normalizeProductRecord } from "@/lib/products/records";
 import { toStorefrontProduct } from "@/lib/storefront/pricing";
 import type {
@@ -30,6 +31,15 @@ const productWithVariantsSelect = "*, variants:product_variants(*)";
 const sectionProductsWithVariantsSelect =
   "product_id, display_order, products(*, variants:product_variants(*))";
 const sectionProductsFallbackSelect = "product_id, display_order, products(*)";
+
+const storefrontProductListColumns =
+  "id, tenant_id, category_id, display_order, sku_code, product_name, image_url, currency, price_tier_1, price_tier_2, price_tier_3, is_in_stock, is_discount_active, discount_price, package_quantity, carton_quantity, created_at";
+const storefrontProductWithVariantsSelect =
+  `${storefrontProductListColumns}, variants:product_variants(*)`;
+const storefrontSectionProductsWithVariantsSelect =
+  `section_id, product_id, display_order, products(${storefrontProductWithVariantsSelect})`;
+const storefrontSectionProductsFallbackSelect =
+  `section_id, product_id, display_order, products(${storefrontProductListColumns})`;
 
 function groupCountByTenant(
   items: Array<{ tenant_id: string }>,
@@ -113,6 +123,62 @@ async function fetchTenantProductsWithOptionalVariants(
   }
 
   return normalizeProductRows(fallback.data as Array<Record<string, unknown>> | null);
+}
+
+async function fetchStorefrontTenantProductsWithOptionalVariants(
+  supabase: AdminClient,
+  tenantId: string,
+) {
+  const withVariants = await supabase
+    .from("products")
+    .select(storefrontProductWithVariantsSelect)
+    .eq("tenant_id", tenantId)
+    .order("display_order", { ascending: true })
+    .order("created_at", { ascending: false });
+
+  if (!withVariants.error) {
+    return normalizeProductRows(withVariants.data as Array<Record<string, unknown>> | null);
+  }
+
+  const fallback = await supabase
+    .from("products")
+    .select(storefrontProductListColumns)
+    .eq("tenant_id", tenantId)
+    .order("display_order", { ascending: true })
+    .order("created_at", { ascending: false });
+
+  if (fallback.error) {
+    return [];
+  }
+
+  return normalizeProductRows(fallback.data as Array<Record<string, unknown>> | null);
+}
+
+async function fetchStorefrontSectionRowsWithOptionalVariants(
+  supabase: AdminClient,
+  sectionIds: string[],
+) {
+  const withVariants = await supabase
+    .from("storefront_section_products")
+    .select(storefrontSectionProductsWithVariantsSelect)
+    .in("section_id", sectionIds)
+    .order("display_order", { ascending: true });
+
+  if (!withVariants.error && withVariants.data) {
+    return withVariants.data;
+  }
+
+  const fallback = await supabase
+    .from("storefront_section_products")
+    .select(storefrontSectionProductsFallbackSelect)
+    .in("section_id", sectionIds)
+    .order("display_order", { ascending: true });
+
+  if (fallback.error || !fallback.data) {
+    return [];
+  }
+
+  return fallback.data;
 }
 
 async function fetchSectionProductsWithOptionalVariants(
@@ -393,15 +459,70 @@ export async function getStorefrontProducts(params: {
       return [];
     }
 
-    products = demoProducts.filter((product) => product.tenant_id === params.tenantId);
+    products = demoProducts
+      .filter((product) => product.tenant_id === params.tenantId)
+      .map(({ description: _description, ...product }) => product);
   } else {
-    products = await fetchTenantProductsWithOptionalVariants(
+    products = await fetchStorefrontTenantProductsWithOptionalVariants(
       supabaseAdmin,
       params.tenantId,
     );
   }
 
   return products.map((product) => toStorefrontProduct(product, params.tierLevel));
+}
+
+export async function getStorefrontProductDescription(
+  tenantId: string,
+  productId: string,
+): Promise<{ found: false } | { found: true; description: string | null }> {
+  const supabase = createSupabaseAdminClient();
+
+  if (!supabase) {
+    if (!shouldAllowDemoFallback()) {
+      return { found: false };
+    }
+
+    const demoProduct = demoProducts.find(
+      (product) => product.tenant_id === tenantId && product.id === productId,
+    );
+
+    if (!demoProduct) {
+      return { found: false };
+    }
+
+    if (!demoProduct.description) {
+      return { found: true, description: null };
+    }
+
+    return {
+      found: true,
+      description: normalizeProductDescription(demoProduct.description),
+    };
+  }
+
+  const { data, error } = await supabase
+    .from("products")
+    .select("description")
+    .eq("tenant_id", tenantId)
+    .eq("id", productId)
+    .maybeSingle();
+
+  if (error || !data) {
+    return { found: false };
+  }
+
+  const description =
+    typeof data.description === "string" ? data.description : null;
+
+  if (!description) {
+    return { found: true, description: null };
+  }
+
+  return {
+    found: true,
+    description: normalizeProductDescription(description),
+  };
 }
 
 export async function getTenantStorefrontSections(
@@ -465,7 +586,7 @@ export async function getStorefrontSections(
 
   const sectionIds = (sections as StorefrontSection[]).map((s) => s.id);
 
-  const sectionProductRows = await fetchSectionRowsWithOptionalVariants(
+  const sectionProductRows = await fetchStorefrontSectionRowsWithOptionalVariants(
     supabase,
     sectionIds,
   );

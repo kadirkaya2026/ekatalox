@@ -236,3 +236,8 @@ export const storefrontVariantAvailabilitySchema = z.object({
     }),
   ).min(1, "En az bir model seçin."),
 });
+
+export const storefrontProductDescriptionSchema = z.object({
+  subdomain: z.string().trim().min(1, "Subdomain gereklidir."),
+  productId: z.string().uuid("Geçerli bir ürün seçin."),
+});
