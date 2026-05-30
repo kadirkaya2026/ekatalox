@@ -39,6 +39,7 @@ export async function POST(request: Request) {
     return guard;
   }
 
+  try {
   const session = await getSessionContext();
   const tenant = session.tenant!;
   const formData = await request.formData();
@@ -130,4 +131,7 @@ export async function POST(request: Request) {
   }
 
   return NextResponse.json({ product: normalizeProductRecord(product) });
+  } catch {
+    return NextResponse.json({ error: "Ürün kaydedilemedi." }, { status: 500 });
+  }
 }

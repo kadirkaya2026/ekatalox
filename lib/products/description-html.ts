@@ -1,4 +1,4 @@
-import DOMPurify from "isomorphic-dompurify";
+import sanitizeHtml from "sanitize-html";
 
 const ALLOWED_TAGS = [
   "p",
@@ -19,6 +19,12 @@ const ALLOWED_TAGS = [
   "blockquote",
 ];
 
+const SANITIZE_OPTIONS: sanitizeHtml.IOptions = {
+  allowedTags: ALLOWED_TAGS,
+  allowedAttributes: {},
+  disallowedTagsMode: "discard",
+};
+
 export function isHtmlDescription(value: string) {
   return /<\/?[a-z][\s\S]*>/i.test(value.trim());
 }
@@ -28,7 +34,7 @@ export function getDescriptionPlainText(value: string) {
     return "";
   }
 
-  return DOMPurify.sanitize(value, { ALLOWED_TAGS: [] })
+  return sanitizeHtml(value, { allowedTags: [], allowedAttributes: {} })
     .replace(/\u00a0/g, " ")
     .replace(/\s+/g, " ")
     .trim();
@@ -49,10 +55,7 @@ export function sanitizeProductDescription(html: string): string | null {
     return null;
   }
 
-  const sanitized = DOMPurify.sanitize(trimmed, {
-    ALLOWED_TAGS,
-    ALLOWED_ATTR: [],
-  }).trim();
+  const sanitized = sanitizeHtml(trimmed, SANITIZE_OPTIONS).trim();
 
   if (!sanitized || isEmptyDescription(sanitized)) {
     return null;

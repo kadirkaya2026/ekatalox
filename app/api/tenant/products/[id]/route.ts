@@ -45,6 +45,7 @@ export async function PATCH(
     return guard;
   }
 
+  try {
   const session = await getSessionContext();
   const tenant = session.tenant!;
   const { id } = await ctx.params;
@@ -115,6 +116,9 @@ export async function PATCH(
   }
 
   return NextResponse.json({ product: normalizeProductRecord(product) });
+  } catch {
+    return NextResponse.json({ error: "Ürün kaydedilemedi." }, { status: 500 });
+  }
 }
 
 export async function DELETE(

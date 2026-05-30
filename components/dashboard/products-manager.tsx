@@ -360,7 +360,13 @@ export function ProductsManager({
         body: toFormData(editForm),
       });
 
-      const result = await response.json();
+      let result: { error?: string; product?: Product } = {};
+      try {
+        result = await response.json();
+      } catch {
+        setMessage("Sunucu yanıtı okunamadı. Lütfen tekrar deneyin.");
+        return;
+      }
 
       if (!response.ok) {
         setMessage(result.error ?? "Ürün güncellenemedi.");

@@ -132,7 +132,13 @@ export function ProductAddForm({
         body: toFormData(form),
       });
 
-      const result = await response.json();
+      let result: { error?: string } = {};
+      try {
+        result = await response.json();
+      } catch {
+        setMessage("Sunucu yanıtı okunamadı. Lütfen tekrar deneyin.");
+        return;
+      }
 
       if (!response.ok) {
         setMessage(result.error ?? "Ürün eklenemedi.");
