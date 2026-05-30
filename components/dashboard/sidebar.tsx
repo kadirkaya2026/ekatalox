@@ -49,6 +49,7 @@ const tenantLinks: SidebarLink[] = [
       { href: "/settings/theme", label: "Tema" },
       { href: "/settings/banner", label: "Banner" },
       { href: "/settings/site", label: "Site Kimliği" },
+      { href: "/settings/storefront", label: "Vitrin" },
       { href: "/settings/payment", label: "Ödeme Ayarları" },
     ],
   },

@@ -88,6 +88,8 @@ export function getDefaultTenantStorefrontSettings(
     card_campaign_note: null,
     cash_discount_tiers: [],
     card_campaign_tiers: [],
+    price_update_date: null,
+    is_price_update_date_visible: false,
     updated_at: now,
   };
 }

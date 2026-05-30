@@ -148,6 +148,8 @@ export interface TenantStorefrontSettings {
   // Tier (basamaklı) kampanya dizileri
   cash_discount_tiers: CashDiscountTier[];
   card_campaign_tiers: CardCampaignTier[];
+  price_update_date: string | null;
+  is_price_update_date_visible: boolean;
   created_at: string;
   updated_at: string;
 }

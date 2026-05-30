@@ -65,7 +65,7 @@ import type {
   Tenant,
   TenantStorefrontSettings,
 } from "@/lib/types";
-import { cn, formatCurrency } from "@/lib/utils";
+import { cn, formatCurrency, formatDateSlashTr } from "@/lib/utils";
 import {
   trackStorefrontCartAdd,
   trackStorefrontProductView,
@@ -1931,6 +1931,13 @@ export function StorefrontClient({
                   <p className="truncate text-lg font-semibold tracking-tight text-slate-950 sm:text-xl lg:text-[1.65rem]">
                     {storefrontTitle}
                   </p>
+                  {storefrontSettings.is_price_update_date_visible &&
+                  storefrontSettings.price_update_date ? (
+                    <p className="mt-0.5 truncate text-xs text-slate-500 sm:text-sm">
+                      Fiyat Güncelleme Tarihi :{" "}
+                      {formatDateSlashTr(storefrontSettings.price_update_date)}
+                    </p>
+                  ) : null}
                 </div>
               </a>
             </div>

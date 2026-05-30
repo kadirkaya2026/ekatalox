@@ -29,6 +29,16 @@ export function formatDate(value: string) {
   }).format(new Date(value));
 }
 
+export function formatDateSlashTr(value: string) {
+  const [year, month, day] = value.split("-");
+
+  if (!year || !month || !day) {
+    return value;
+  }
+
+  return `${day}/${month}/${year}`;
+}
+
 export function toSlug(value: string) {
   return value
     .toLowerCase()

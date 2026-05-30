@@ -159,6 +159,18 @@ export const storefrontSettingsSchema = z
         }),
       )
       .default([]),
+    price_update_date: z
+      .union([
+        z
+          .string()
+          .trim()
+          .regex(/^\d{4}-\d{2}-\d{2}$/, "Geçerli bir tarih girin."),
+        z.literal(""),
+        z.null(),
+        z.undefined(),
+      ])
+      .transform((value) => (typeof value === "string" && value ? value : null)),
+    is_price_update_date_visible: z.boolean().default(false),
   })
   .superRefine((value, ctx) => {
     if (value.is_active) {
@@ -216,6 +228,14 @@ export const storefrontSettingsSchema = z
         code: "custom",
         path: ["card_campaign_tiers"],
         message: "Kart kampanyasını aktif etmek için en az bir baraj tanımlanmalıdır.",
+      });
+    }
+
+    if (value.is_price_update_date_visible && !value.price_update_date) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["price_update_date"],
+        message: "Vitrinde göstermek için fiyat güncelleme tarihi zorunludur.",
       });
     }
   });

@@ -67,7 +67,7 @@ export async function PATCH(request: Request) {
     const { data } = await supabase
       .from("tenant_storefront_settings")
       .select(
-        "tenant_id, theme_key, logo_url, storefront_title, storefront_description, banner_items, site_tab_title, site_favicon_url, announcement_title, announcement_body, is_active, version, max_display_count, discount_threshold, discount_percentage, is_discount_active, discount_condition_note, discount_payment_method, card_installment_options, cash_discount_threshold, cash_discount_percentage, is_cash_discount_active, cash_discount_note, card_campaign_threshold, is_card_campaign_active, card_campaign_note, cash_discount_tiers, card_campaign_tiers",
+        "tenant_id, theme_key, logo_url, storefront_title, storefront_description, banner_items, site_tab_title, site_favicon_url, announcement_title, announcement_body, is_active, version, max_display_count, discount_threshold, discount_percentage, is_discount_active, discount_condition_note, discount_payment_method, card_installment_options, cash_discount_threshold, cash_discount_percentage, is_cash_discount_active, cash_discount_note, card_campaign_threshold, is_card_campaign_active, card_campaign_note, cash_discount_tiers, card_campaign_tiers, price_update_date, is_price_update_date_visible",
       )
       .eq("tenant_id", session.tenant!.id)
       .maybeSingle();
@@ -125,6 +125,11 @@ export async function PATCH(request: Request) {
       body.cash_discount_tiers ?? existingSettings.cash_discount_tiers,
     card_campaign_tiers:
       body.card_campaign_tiers ?? existingSettings.card_campaign_tiers,
+    price_update_date:
+      body.price_update_date ?? existingSettings.price_update_date,
+    is_price_update_date_visible:
+      body.is_price_update_date_visible ??
+      existingSettings.is_price_update_date_visible,
   });
 
   if (!parsed.success) {
@@ -194,6 +199,8 @@ export async function PATCH(request: Request) {
         card_campaign_note: parsed.data.card_campaign_note,
         cash_discount_tiers: parsed.data.cash_discount_tiers,
         card_campaign_tiers: parsed.data.card_campaign_tiers,
+        price_update_date: parsed.data.price_update_date,
+        is_price_update_date_visible: parsed.data.is_price_update_date_visible,
       },
     });
   }
@@ -250,6 +257,8 @@ export async function PATCH(request: Request) {
     card_campaign_note: parsed.data.card_campaign_note ?? null,
     cash_discount_tiers: parsed.data.cash_discount_tiers,
     card_campaign_tiers: parsed.data.card_campaign_tiers,
+    price_update_date: parsed.data.price_update_date,
+    is_price_update_date_visible: parsed.data.is_price_update_date_visible,
   };
 
   const { data: storefrontSettings, error: storefrontError } = await supabase
