@@ -169,6 +169,88 @@ function reorderProducts(products: Product[], fromIndex: number, toIndex: number
   }));
 }
 
+function sortProductsByDisplayOrder(productList: Product[]) {
+  return [...productList].sort((left, right) => {
+    if (left.display_order !== right.display_order) {
+      return left.display_order - right.display_order;
+    }
+
+    return left.product_name.localeCompare(right.product_name, "tr-TR");
+  });
+}
+
+function ProductOrderInput({
+  displayOrder,
+  maxOrder,
+  disabled,
+  productName,
+  onCommit,
+}: {
+  displayOrder: number;
+  maxOrder: number;
+  disabled?: boolean;
+  productName: string;
+  onCommit: (targetOrder: number) => void;
+}) {
+  const [draft, setDraft] = useState(String(displayOrder));
+  const [isEditing, setIsEditing] = useState(false);
+
+  useEffect(() => {
+    if (!isEditing) {
+      setDraft(String(displayOrder));
+    }
+  }, [displayOrder, isEditing]);
+
+  function commit() {
+    const parsed = Number.parseInt(draft, 10);
+
+    if (!Number.isFinite(parsed) || parsed < 1 || parsed > maxOrder) {
+      setDraft(String(displayOrder));
+      setIsEditing(false);
+      return;
+    }
+
+    onCommit(parsed);
+    setIsEditing(false);
+  }
+
+  function cancel() {
+    setDraft(String(displayOrder));
+    setIsEditing(false);
+  }
+
+  return (
+    <input
+      type="number"
+      min={1}
+      max={maxOrder}
+      inputMode="numeric"
+      value={draft}
+      disabled={disabled}
+      aria-label={`${productName} vitrin sırası`}
+      onChange={(event) => setDraft(event.target.value)}
+      onFocus={() => setIsEditing(true)}
+      onBlur={commit}
+      onKeyDown={(event) => {
+        event.stopPropagation();
+
+        if (event.key === "Enter") {
+          event.preventDefault();
+          commit();
+        }
+
+        if (event.key === "Escape") {
+          event.preventDefault();
+          cancel();
+        }
+      }}
+      onMouseDown={(event) => event.stopPropagation()}
+      onClick={(event) => event.stopPropagation()}
+      className="w-14 rounded-md border border-slate-200 bg-white px-2 py-1 text-center text-sm font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-400 disabled:cursor-not-allowed disabled:opacity-40"
+    />
+  );
+}
+
 function variantToMatrixRow(variant: ProductVariant, index: number): VariantMatrixRow {
   return {
     id: variant.id,
@@ -597,6 +679,26 @@ export function ProductsManager({
     });
   }
 
+  function handleSetProductOrder(productId: string, targetOrder: number) {
+    const sorted = sortProductsByDisplayOrder(products);
+    const sourceIndex = sorted.findIndex((product) => product.id === productId);
+
+    if (sourceIndex < 0) {
+      return;
+    }
+
+    const targetIndex =
+      Math.min(Math.max(1, Math.floor(targetOrder)), sorted.length) - 1;
+
+    if (targetIndex === sourceIndex) {
+      return;
+    }
+
+    const nextProducts = reorderProducts(sorted, sourceIndex, targetIndex);
+    syncProducts(nextProducts);
+    persistProductOrder(nextProducts);
+  }
+
   function handleMoveProduct(productId: string, direction: "up" | "down") {
     const visibleIndex = filteredProducts.findIndex((product) => product.id === productId);
 
@@ -885,8 +987,9 @@ export function ProductsManager({
               <div>
                 <p className="text-sm font-semibold text-slate-900">Vitrin sıralaması</p>
                 <p className="mt-1 text-sm text-slate-600">
-                  Ürünleri sürükleyip bırakın veya yukarı/aşağı butonlarıyla sıralayın.
-                  Bu sıra müşteri vitrininde doğrudan kullanılır.
+                  Ürünleri sürükleyip bırakın, yukarı/aşağı butonlarıyla veya sıra
+                  numarasını yazarak sıralayın. Bu global sıra anasayfa ve kategori
+                  listelerinde aynı şekilde kullanılır.
                 </p>
               </div>
             </div>
@@ -997,9 +1100,15 @@ export function ProductsManager({
                         <GripVertical className="size-4" />
                       </div>
                       <div>
-                        <p className="text-sm font-semibold text-slate-900">
-                          {index + 1}
-                        </p>
+                        <ProductOrderInput
+                          displayOrder={product.display_order}
+                          maxOrder={products.length}
+                          disabled={pending}
+                          productName={product.product_name}
+                          onCommit={(targetOrder) =>
+                            handleSetProductOrder(product.id, targetOrder)
+                          }
+                        />
                         <div className="mt-1 flex gap-1">
                           <button
                             type="button"
@@ -1169,7 +1278,16 @@ export function ProductsManager({
                 </label>
                 <div className="flex items-center gap-2 text-sm text-slate-500">
                   <GripVertical className="size-4" />
-                  <span>Sıra {index + 1}</span>
+                  <span className="shrink-0">Sıra</span>
+                  <ProductOrderInput
+                    displayOrder={product.display_order}
+                    maxOrder={products.length}
+                    disabled={pending}
+                    productName={product.product_name}
+                    onCommit={(targetOrder) =>
+                      handleSetProductOrder(product.id, targetOrder)
+                    }
+                  />
                 </div>
               </div>
 
