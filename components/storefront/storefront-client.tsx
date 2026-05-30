@@ -25,6 +25,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Modal } from "@/components/ui/modal";
+import { useDebouncedValue } from "@/lib/hooks/use-debounced-value";
 import {
   buildCategoryTree,
   getCategoryLineage,
@@ -657,7 +658,8 @@ export function StorefrontClient({
   const [customerReferenceNameError, setCustomerReferenceNameError] = useState<string | null>(
     null,
   );
-  const [searchTerm, setSearchTerm] = useState("");
+  const [searchInput, setSearchInput] = useState("");
+  const debouncedSearchTerm = useDebouncedValue(searchInput, 250);
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>("all");
   const [selectedProduct, setSelectedProduct] = useState<StorefrontProduct | null>(null);
   const [previewProduct, setPreviewProduct] = useState<StorefrontProduct | null>(null);
@@ -830,26 +832,36 @@ export function StorefrontClient({
   const selectedPackageCountValue = parseUnitCount(selectedPackageCount);
   const selectedCartonCountValue = parseUnitCount(selectedCartonCount);
 
+  const productSearchIndex = useMemo(
+    () =>
+      products.map((product) => ({
+        product,
+        normalizedName: product.product_name.toLocaleLowerCase("tr-TR"),
+        normalizedSku: product.sku_code?.toLocaleLowerCase("tr-TR") ?? "",
+        normalizedLineage: getCategoryLineage(categories, product.category_id)
+          .map((item) => item.name.toLocaleLowerCase("tr-TR"))
+          .join(" "),
+      })),
+    [categories, products],
+  );
+
   const filteredProducts = useMemo(() => {
-    const normalizedSearch = searchTerm.trim().toLocaleLowerCase("tr-TR");
+    const normalizedSearch = debouncedSearchTerm.trim().toLocaleLowerCase("tr-TR");
 
-    return products.filter((product) => {
-      const matchesCategory =
-        !selectedCategoryIds || selectedCategoryIds.has(product.category_id);
-      const productName = product.product_name.toLocaleLowerCase("tr-TR");
-      const skuCode = product.sku_code?.toLocaleLowerCase("tr-TR") ?? "";
-      const lineage = getCategoryLineage(categories, product.category_id)
-        .map((item) => item.name.toLocaleLowerCase("tr-TR"))
-        .join(" ");
-      const matchesSearch =
-        !normalizedSearch ||
-        productName.includes(normalizedSearch) ||
-        skuCode.includes(normalizedSearch) ||
-        lineage.includes(normalizedSearch);
+    return productSearchIndex
+      .filter(({ product, normalizedName, normalizedSku, normalizedLineage }) => {
+        const matchesCategory =
+          !selectedCategoryIds || selectedCategoryIds.has(product.category_id);
+        const matchesSearch =
+          !normalizedSearch ||
+          normalizedName.includes(normalizedSearch) ||
+          normalizedSku.includes(normalizedSearch) ||
+          normalizedLineage.includes(normalizedSearch);
 
-      return matchesCategory && matchesSearch;
-    });
-  }, [categories, products, searchTerm, selectedCategoryIds]);
+        return matchesCategory && matchesSearch;
+      })
+      .map(({ product }) => product);
+  }, [debouncedSearchTerm, productSearchIndex, selectedCategoryIds]);
 
   const productsById = useMemo(
     () => new Map(products.map((product) => [product.id, product])),
@@ -930,7 +942,7 @@ export function StorefrontClient({
   const visibleProducts = filteredProducts.slice(0, visibleCount);
   const bannerItems = storefrontSettings.banner_items ?? [];
   const currentBanner = bannerItems[activeBannerIndex] ?? null;
-  const showBannerSection = !homeHref && selectedCategoryId === "all" && !searchTerm;
+  const showBannerSection = !homeHref && selectedCategoryId === "all" && !searchInput.trim();
   const showSections = showBannerSection && sections.length > 0;
   const recommendedProducts = useMemo(() => {
     const cartIds = new Set(cart.map((item) => item.product_id));
@@ -1194,7 +1206,7 @@ export function StorefrontClient({
   }
 
   function handleSearchChange(value: string) {
-    setSearchTerm(value);
+    setSearchInput(value);
     setVisibleCount(24);
   }
 
@@ -1900,7 +1912,7 @@ export function StorefrontClient({
               <Search className={cn(theme.searchIcon, "left-4 size-4 text-slate-400")} />
               <input
                 placeholder="Ürün adı, SKU veya kategoriye göre arayın..."
-                value={searchTerm}
+                value={searchInput}
                 onChange={(event) => handleSearchChange(event.target.value)}
                 className={cn(
                   theme.searchInput,
