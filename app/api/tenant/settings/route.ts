@@ -67,7 +67,7 @@ export async function PATCH(request: Request) {
     const { data } = await supabase
       .from("tenant_storefront_settings")
       .select(
-        "tenant_id, theme_key, logo_url, storefront_title, storefront_description, banner_items, site_tab_title, site_favicon_url, announcement_title, announcement_body, is_active, version, max_display_count, discount_threshold, discount_percentage, is_discount_active, discount_condition_note, discount_payment_method, card_installment_options, cash_discount_threshold, cash_discount_percentage, is_cash_discount_active, cash_discount_note, card_campaign_threshold, is_card_campaign_active, card_campaign_note, cash_discount_tiers, card_campaign_tiers, price_update_date, is_price_update_date_visible",
+        "tenant_id, theme_key, logo_url, storefront_title, storefront_description, banner_items, site_tab_title, site_favicon_url, announcement_title, announcement_body, is_active, version, max_display_count, discount_threshold, discount_percentage, is_discount_active, discount_condition_note, discount_payment_method, card_installment_options, cash_discount_threshold, cash_discount_percentage, is_cash_discount_active, cash_discount_note, card_campaign_threshold, is_card_campaign_active, card_campaign_note, cash_discount_tiers, card_campaign_tiers, price_update_date, is_price_update_date_visible, is_footer_visible, is_footer_logo_visible, is_footer_social_visible, is_footer_location_visible, is_footer_copyright_visible, footer_location, footer_copyright, footer_instagram_url, footer_youtube_url, footer_x_url, footer_facebook_url, footer_whatsapp, is_footer_instagram_visible, is_footer_youtube_visible, is_footer_x_visible, is_footer_facebook_visible, is_footer_whatsapp_visible",
       )
       .eq("tenant_id", session.tenant!.id)
       .maybeSingle();
@@ -130,6 +130,33 @@ export async function PATCH(request: Request) {
     is_price_update_date_visible:
       body.is_price_update_date_visible ??
       existingSettings.is_price_update_date_visible,
+    is_footer_visible: body.is_footer_visible ?? existingSettings.is_footer_visible,
+    is_footer_logo_visible:
+      body.is_footer_logo_visible ?? existingSettings.is_footer_logo_visible,
+    is_footer_social_visible:
+      body.is_footer_social_visible ?? existingSettings.is_footer_social_visible,
+    is_footer_location_visible:
+      body.is_footer_location_visible ?? existingSettings.is_footer_location_visible,
+    is_footer_copyright_visible:
+      body.is_footer_copyright_visible ?? existingSettings.is_footer_copyright_visible,
+    footer_location: body.footer_location ?? existingSettings.footer_location,
+    footer_copyright: body.footer_copyright ?? existingSettings.footer_copyright,
+    footer_instagram_url:
+      body.footer_instagram_url ?? existingSettings.footer_instagram_url,
+    footer_youtube_url: body.footer_youtube_url ?? existingSettings.footer_youtube_url,
+    footer_x_url: body.footer_x_url ?? existingSettings.footer_x_url,
+    footer_facebook_url:
+      body.footer_facebook_url ?? existingSettings.footer_facebook_url,
+    footer_whatsapp: body.footer_whatsapp ?? existingSettings.footer_whatsapp,
+    is_footer_instagram_visible:
+      body.is_footer_instagram_visible ?? existingSettings.is_footer_instagram_visible,
+    is_footer_youtube_visible:
+      body.is_footer_youtube_visible ?? existingSettings.is_footer_youtube_visible,
+    is_footer_x_visible: body.is_footer_x_visible ?? existingSettings.is_footer_x_visible,
+    is_footer_facebook_visible:
+      body.is_footer_facebook_visible ?? existingSettings.is_footer_facebook_visible,
+    is_footer_whatsapp_visible:
+      body.is_footer_whatsapp_visible ?? existingSettings.is_footer_whatsapp_visible,
   });
 
   if (!parsed.success) {
@@ -201,6 +228,23 @@ export async function PATCH(request: Request) {
         card_campaign_tiers: parsed.data.card_campaign_tiers,
         price_update_date: parsed.data.price_update_date,
         is_price_update_date_visible: parsed.data.is_price_update_date_visible,
+        is_footer_visible: parsed.data.is_footer_visible,
+        is_footer_logo_visible: parsed.data.is_footer_logo_visible,
+        is_footer_social_visible: parsed.data.is_footer_social_visible,
+        is_footer_location_visible: parsed.data.is_footer_location_visible,
+        is_footer_copyright_visible: parsed.data.is_footer_copyright_visible,
+        footer_location: parsed.data.footer_location,
+        footer_copyright: parsed.data.footer_copyright,
+        footer_instagram_url: parsed.data.footer_instagram_url,
+        footer_youtube_url: parsed.data.footer_youtube_url,
+        footer_x_url: parsed.data.footer_x_url,
+        footer_facebook_url: parsed.data.footer_facebook_url,
+        footer_whatsapp: parsed.data.footer_whatsapp,
+        is_footer_instagram_visible: parsed.data.is_footer_instagram_visible,
+        is_footer_youtube_visible: parsed.data.is_footer_youtube_visible,
+        is_footer_x_visible: parsed.data.is_footer_x_visible,
+        is_footer_facebook_visible: parsed.data.is_footer_facebook_visible,
+        is_footer_whatsapp_visible: parsed.data.is_footer_whatsapp_visible,
       },
     });
   }
@@ -259,6 +303,23 @@ export async function PATCH(request: Request) {
     card_campaign_tiers: parsed.data.card_campaign_tiers,
     price_update_date: parsed.data.price_update_date,
     is_price_update_date_visible: parsed.data.is_price_update_date_visible,
+    is_footer_visible: parsed.data.is_footer_visible,
+    is_footer_logo_visible: parsed.data.is_footer_logo_visible,
+    is_footer_social_visible: parsed.data.is_footer_social_visible,
+    is_footer_location_visible: parsed.data.is_footer_location_visible,
+    is_footer_copyright_visible: parsed.data.is_footer_copyright_visible,
+    footer_location: parsed.data.footer_location,
+    footer_copyright: parsed.data.footer_copyright,
+    footer_instagram_url: parsed.data.footer_instagram_url,
+    footer_youtube_url: parsed.data.footer_youtube_url,
+    footer_x_url: parsed.data.footer_x_url,
+    footer_facebook_url: parsed.data.footer_facebook_url,
+    footer_whatsapp: parsed.data.footer_whatsapp,
+    is_footer_instagram_visible: parsed.data.is_footer_instagram_visible,
+    is_footer_youtube_visible: parsed.data.is_footer_youtube_visible,
+    is_footer_x_visible: parsed.data.is_footer_x_visible,
+    is_footer_facebook_visible: parsed.data.is_footer_facebook_visible,
+    is_footer_whatsapp_visible: parsed.data.is_footer_whatsapp_visible,
   };
 
   const { data: storefrontSettings, error: storefrontError } = await supabase

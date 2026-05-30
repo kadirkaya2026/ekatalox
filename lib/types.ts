@@ -150,6 +150,23 @@ export interface TenantStorefrontSettings {
   card_campaign_tiers: CardCampaignTier[];
   price_update_date: string | null;
   is_price_update_date_visible: boolean;
+  is_footer_visible: boolean;
+  is_footer_logo_visible: boolean;
+  is_footer_social_visible: boolean;
+  is_footer_location_visible: boolean;
+  is_footer_copyright_visible: boolean;
+  footer_location: string | null;
+  footer_copyright: string | null;
+  footer_instagram_url: string | null;
+  footer_youtube_url: string | null;
+  footer_x_url: string | null;
+  footer_facebook_url: string | null;
+  footer_whatsapp: string | null;
+  is_footer_instagram_visible: boolean;
+  is_footer_youtube_visible: boolean;
+  is_footer_x_visible: boolean;
+  is_footer_facebook_visible: boolean;
+  is_footer_whatsapp_visible: boolean;
   created_at: string;
   updated_at: string;
 }

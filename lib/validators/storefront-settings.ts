@@ -31,6 +31,20 @@ const optionalAnnouncementTextSchema = (maxLength: number, message: string) =>
     .union([z.string().trim().max(maxLength, message), z.literal(""), z.null(), z.undefined()])
     .transform((value) => (typeof value === "string" ? value.trim() || null : null));
 
+const optionalFooterTextSchema = (maxLength: number, message: string) =>
+  z
+    .union([z.string().trim().max(maxLength, message), z.literal(""), z.null(), z.undefined()])
+    .transform((value) => (typeof value === "string" ? value.trim() || null : null));
+
+const optionalWhatsappFooterSchema = z
+  .union([
+    z.string().trim().max(120, "WhatsApp alanı en fazla 120 karakter olabilir."),
+    z.literal(""),
+    z.null(),
+    z.undefined(),
+  ])
+  .transform((value) => (typeof value === "string" ? value.trim() || null : null));
+
 export const bannerItemSchema = z
   .object({
     id: z.string().min(1, "Banner kimliği zorunludur."),
@@ -171,6 +185,29 @@ export const storefrontSettingsSchema = z
       ])
       .transform((value) => (typeof value === "string" && value ? value : null)),
     is_price_update_date_visible: z.boolean().default(false),
+    is_footer_visible: z.boolean().default(false),
+    is_footer_logo_visible: z.boolean().default(true),
+    is_footer_social_visible: z.boolean().default(false),
+    is_footer_location_visible: z.boolean().default(false),
+    is_footer_copyright_visible: z.boolean().default(false),
+    footer_location: optionalFooterTextSchema(
+      120,
+      "Footer konumu en fazla 120 karakter olabilir.",
+    ),
+    footer_copyright: optionalFooterTextSchema(
+      200,
+      "Telif yazısı en fazla 200 karakter olabilir.",
+    ),
+    footer_instagram_url: optionalUrlSchema,
+    footer_youtube_url: optionalUrlSchema,
+    footer_x_url: optionalUrlSchema,
+    footer_facebook_url: optionalUrlSchema,
+    footer_whatsapp: optionalWhatsappFooterSchema,
+    is_footer_instagram_visible: z.boolean().default(false),
+    is_footer_youtube_visible: z.boolean().default(false),
+    is_footer_x_visible: z.boolean().default(false),
+    is_footer_facebook_visible: z.boolean().default(false),
+    is_footer_whatsapp_visible: z.boolean().default(false),
   })
   .superRefine((value, ctx) => {
     if (value.is_active) {

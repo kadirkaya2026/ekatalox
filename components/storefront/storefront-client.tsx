@@ -19,7 +19,7 @@ import {
   Store,
   X,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { StorefrontFooter } from "@/components/storefront/storefront-footer";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -623,6 +623,8 @@ function getAnnouncementVisibility(params: {
   return storedViews < params.activeAnnouncement.maxDisplayCount;
 }
 
+const STOREFRONT_PAGE_SIZE = 24;
+
 const salesUnits: Array<{ value: SalesUnit; label: string }> = [
   { value: "adet", label: "Adet" },
   { value: "paket", label: "Paket" },
@@ -682,7 +684,7 @@ export function StorefrontClient({
   const [quantityError, setQuantityError] = useState<string | null>(null);
   const [variantSelections, setVariantSelections] = useState<VariantSelectionState[]>([]);
   const [variantSearchTerm, setVariantSearchTerm] = useState("");
-  const [visibleCount, setVisibleCount] = useState(24);
+  const [visibleCount, setVisibleCount] = useState(STOREFRONT_PAGE_SIZE);
   const [hoveredCategoryId, setHoveredCategoryId] = useState<string | null>(null);
   const [activeBannerIndex, setActiveBannerIndex] = useState(0);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<"cash" | "card" | null>(null);
@@ -1237,12 +1239,12 @@ export function StorefrontClient({
   function handleCategoryChange(categoryId: string) {
     setSelectedCategoryId(categoryId);
     setHoveredCategoryId(null);
-    setVisibleCount(24);
+    setVisibleCount(STOREFRONT_PAGE_SIZE);
   }
 
   function handleSearchChange(value: string) {
     setSearchInput(value);
-    setVisibleCount(24);
+    setVisibleCount(STOREFRONT_PAGE_SIZE);
   }
 
   function openAddToCartFromDetail(product: StorefrontProduct) {
@@ -2304,11 +2306,14 @@ export function StorefrontClient({
             </Card>
           )}
 
+          {/* Ürün listesi yalnızca buton ile genişler; otomatik infinite scroll eklenmemeli. */}
           {filteredProducts.length > visibleCount ? (
             <div className="mt-8 flex justify-center">
               <button
                 type="button"
-                onClick={() => setVisibleCount((prev) => prev + 24)}
+                onClick={() =>
+                  setVisibleCount((prev) => prev + STOREFRONT_PAGE_SIZE)
+                }
                 className="rounded-full border border-slate-200 bg-white px-8 py-3 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 hover:shadow"
               >
                 Daha Fazla Ürün Göster ({filteredProducts.length - visibleCount} ürün kaldı)
@@ -2317,6 +2322,10 @@ export function StorefrontClient({
           ) : null}
         </section>
       </main>
+
+      {storefrontSettings.is_footer_visible ? (
+        <StorefrontFooter settings={storefrontSettings} />
+      ) : null}
 
       {hasVisibleHomeCampaignBars ? (
         <motion.div

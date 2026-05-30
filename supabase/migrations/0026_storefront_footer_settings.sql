@@ -1,0 +1,18 @@
+alter table public.tenant_storefront_settings
+  add column if not exists is_footer_visible boolean not null default false,
+  add column if not exists is_footer_logo_visible boolean not null default true,
+  add column if not exists is_footer_social_visible boolean not null default false,
+  add column if not exists is_footer_location_visible boolean not null default false,
+  add column if not exists is_footer_copyright_visible boolean not null default false,
+  add column if not exists footer_location text,
+  add column if not exists footer_copyright text,
+  add column if not exists footer_instagram_url text,
+  add column if not exists footer_youtube_url text,
+  add column if not exists footer_x_url text,
+  add column if not exists footer_facebook_url text,
+  add column if not exists footer_whatsapp text,
+  add column if not exists is_footer_instagram_visible boolean not null default false,
+  add column if not exists is_footer_youtube_visible boolean not null default false,
+  add column if not exists is_footer_x_visible boolean not null default false,
+  add column if not exists is_footer_facebook_visible boolean not null default false,
+  add column if not exists is_footer_whatsapp_visible boolean not null default false;
