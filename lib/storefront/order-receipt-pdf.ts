@@ -6,12 +6,11 @@ import { formatDiscountPercentage } from "@/lib/storefront/cart";
 import {
   formatReceiptMoney,
   getOrderReceiptTableRows,
-  toPdfAsciiText,
 } from "@/lib/storefront/order-receipt-display";
+import { registerRobotoFonts } from "@/lib/storefront/pdf-fonts";
 
 export interface GenerateOrderReceiptPdfParams {
   tenantName: string;
-  logoUrl?: string | null;
   orderNumber: string;
   orderDate: Date;
   items: CartItem[];
@@ -20,31 +19,8 @@ export interface GenerateOrderReceiptPdfParams {
   note?: string | null;
 }
 
-const PDF_FONT = "helvetica";
+const PDF_FONT = "Roboto";
 const SOFT_BORDER = [229, 231, 235] as [number, number, number];
-
-async function fetchLogoAsDataUrl(logoUrl: string) {
-  const response = await fetch(logoUrl);
-
-  if (!response.ok) {
-    return null;
-  }
-
-  const contentType = response.headers.get("content-type") ?? "image/png";
-
-  if (!contentType.startsWith("image/")) {
-    return null;
-  }
-
-  const buffer = await response.arrayBuffer();
-  const base64 = Buffer.from(buffer).toString("base64");
-  const format = contentType.includes("jpeg") || contentType.includes("jpg") ? "JPEG" : "PNG";
-
-  return {
-    dataUrl: `data:${contentType};base64,${base64}`,
-    format: format as "JPEG" | "PNG",
-  };
-}
 
 function formatOrderDate(date: Date) {
   return new Intl.DateTimeFormat("tr-TR", {
@@ -65,35 +41,20 @@ function setPdfFont(doc: jsPDF, style: "normal" | "bold" = "normal") {
   doc.setFont(PDF_FONT, style);
 }
 
-function pdfText(value: string) {
-  return toPdfAsciiText(value);
-}
-
 export async function generateOrderReceiptPdf(
   params: GenerateOrderReceiptPdfParams,
 ): Promise<Uint8Array> {
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+  registerRobotoFonts(doc);
   setPdfFont(doc, "normal");
 
   const pageWidth = doc.internal.pageSize.getWidth();
   const margin = 16;
   let cursorY = margin;
 
-  if (params.logoUrl) {
-    try {
-      const logo = await fetchLogoAsDataUrl(params.logoUrl);
-
-      if (logo) {
-        doc.addImage(logo.dataUrl, logo.format, margin, cursorY, 28, 14);
-      }
-    } catch {
-      // Logo yuklenemezse metin header ile devam et
-    }
-  }
-
   setPdfFont(doc, "bold");
   doc.setFontSize(17);
-  doc.text(pdfText(params.tenantName), margin, cursorY + (params.logoUrl ? 20 : 8));
+  doc.text(params.tenantName, margin, cursorY + 8);
 
   setPdfFont(doc, "normal");
   doc.setFontSize(10);
@@ -105,7 +66,7 @@ export async function generateOrderReceiptPdf(
     align: "right",
   });
 
-  cursorY += params.logoUrl ? 32 : 20;
+  cursorY += 20;
 
   doc.setDrawColor(...SOFT_BORDER);
   doc.line(margin, cursorY, pageWidth - margin, cursorY);
@@ -113,20 +74,12 @@ export async function generateOrderReceiptPdf(
 
   setPdfFont(doc, "bold");
   doc.setFontSize(14);
-  doc.text(pdfText("Sipariş Fişi"), margin, cursorY);
+  doc.text("Sipariş Fişi", margin, cursorY);
   cursorY += 8;
 
   autoTable(doc, {
     startY: cursorY,
-    head: [
-      [
-        pdfText("Ürün / Model"),
-        pdfText("Birim"),
-        pdfText("Miktar"),
-        pdfText("Birim Fiyat"),
-        pdfText("Toplam"),
-      ],
-    ],
+    head: [["Ürün / Model", "Birim", "Miktar", "Birim Fiyat", "Toplam"]],
     body: getOrderReceiptTableRows(params.items),
     theme: "striped",
     styles: {
@@ -209,20 +162,20 @@ export async function generateOrderReceiptPdf(
       doc.setFontSize(10);
     }
 
-    doc.text(pdfText(line.label), summaryX - 52, cursorY, { align: "right" });
-    doc.text(pdfText(line.value), summaryX, cursorY, { align: "right" });
+    doc.text(line.label, summaryX - 52, cursorY, { align: "right" });
+    doc.text(line.value, summaryX, cursorY, { align: "right" });
     cursorY += 7.5;
   }
 
   cursorY += 4;
   setPdfFont(doc, "normal");
   doc.setFontSize(10);
-  doc.text(pdfText(`Ödeme: ${params.paymentMethodLabel}`), margin, cursorY);
+  doc.text(`Ödeme: ${params.paymentMethodLabel}`, margin, cursorY);
   cursorY += 7;
 
   const trimmedNote = params.note?.trim();
   if (trimmedNote) {
-    doc.text(pdfText(`Not: ${trimmedNote}`), margin, cursorY, {
+    doc.text(`Not: ${trimmedNote}`, margin, cursorY, {
       maxWidth: pageWidth - margin * 2,
       lineHeightFactor: 1.35,
     });

@@ -108,7 +108,6 @@ export async function POST(request: Request) {
   try {
     const pdfBytes = await generateOrderReceiptPdf({
       tenantName: tenantDisplayName,
-      logoUrl: storefrontSettings.logo_url,
       orderNumber,
       orderDate,
       items,
