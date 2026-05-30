@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useEffect, useRef, useState } from "react";
 import { EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import { TableKit } from "@tiptap/extension-table";
@@ -37,6 +37,49 @@ function toEditorContent(value: string) {
     .split(/\n{2,}/)
     .map((paragraph) => `<p>${paragraph.replace(/\n/g, "<br>")}</p>`)
     .join("");
+}
+
+function normalizeEditorHtml(html: string) {
+  return html === "<p></p>" ? "" : html;
+}
+
+function toEditorHtml(value: string) {
+  const content = toEditorContent(value);
+  return content || "<p></p>";
+}
+
+function formatCharacterCount(value: number) {
+  return new Intl.NumberFormat("tr-TR").format(value);
+}
+
+function getPlainTextLengthFromClipboard(text: string) {
+  const trimmed = text.trim();
+
+  if (!trimmed) {
+    return 0;
+  }
+
+  return getDescriptionPlainTextLength(
+    trimmed
+      .split(/\n{2,}/)
+      .map((paragraph) => `<p>${paragraph.replace(/\n/g, "<br>")}</p>`)
+      .join(""),
+  );
+}
+
+function isAllowedAtCharacterLimit(event: KeyboardEvent) {
+  return (
+    event.key === "Backspace" ||
+    event.key === "Delete" ||
+    event.key.startsWith("Arrow") ||
+    event.key === "Home" ||
+    event.key === "End" ||
+    event.key === "Tab" ||
+    event.key === "Escape" ||
+    event.metaKey ||
+    event.ctrlKey ||
+    event.altKey
+  );
 }
 
 function ToolbarButton({
@@ -83,6 +126,22 @@ export function ProductDescriptionEditor({
   placeholder?: string;
   maxPlainTextLength?: number;
 }) {
+  const onChangeRef = useRef(onChange);
+  const maxLengthRef = useRef(maxPlainTextLength);
+  const lastValidHtmlRef = useRef(toEditorHtml(value));
+  const plainTextLengthRef = useRef(getDescriptionPlainTextLength(value));
+  const [plainTextLength, setPlainTextLength] = useState(() =>
+    getDescriptionPlainTextLength(value),
+  );
+
+  useEffect(() => {
+    onChangeRef.current = onChange;
+  }, [onChange]);
+
+  useEffect(() => {
+    maxLengthRef.current = maxPlainTextLength;
+  }, [maxPlainTextLength]);
+
   const editor = useEditor({
     immediatelyRender: false,
     extensions: [
@@ -103,23 +162,56 @@ export function ProductDescriptionEditor({
         class:
           "min-h-[280px] px-4 py-3 text-[16px] leading-6 text-slate-900 outline-none",
       },
+      handleKeyDown: (_view, event) => {
+        if (plainTextLengthRef.current < maxLengthRef.current) {
+          return false;
+        }
+
+        if (isAllowedAtCharacterLimit(event)) {
+          return false;
+        }
+
+        if (event.key === "Enter" || event.key.length === 1) {
+          event.preventDefault();
+          return true;
+        }
+
+        return false;
+      },
+      handlePaste: (_view, event) => {
+        const clipboardText = event.clipboardData?.getData("text/plain") ?? "";
+
+        if (!clipboardText.trim()) {
+          return false;
+        }
+
+        const pastedLength = getPlainTextLengthFromClipboard(clipboardText);
+        const nextLength = plainTextLengthRef.current + pastedLength;
+
+        if (nextLength > maxLengthRef.current) {
+          event.preventDefault();
+          return true;
+        }
+
+        return false;
+      },
     },
     onUpdate: ({ editor: currentEditor }) => {
       const html = currentEditor.getHTML();
       const plainLength = getDescriptionPlainTextLength(html);
 
-      if (plainLength > maxPlainTextLength) {
+      if (plainLength > maxLengthRef.current) {
+        currentEditor.commands.setContent(lastValidHtmlRef.current, { emitUpdate: false });
         return;
       }
 
-      onChange(html === "<p></p>" ? "" : html);
+      const normalized = normalizeEditorHtml(html);
+      lastValidHtmlRef.current = normalized || "<p></p>";
+      plainTextLengthRef.current = plainLength;
+      setPlainTextLength(plainLength);
+      onChangeRef.current(normalized);
     },
   });
-
-  const plainTextLength = useMemo(
-    () => getDescriptionPlainTextLength(value),
-    [value],
-  );
 
   useEffect(() => {
     if (!editor) {
@@ -128,14 +220,20 @@ export function ProductDescriptionEditor({
 
     const nextContent = toEditorContent(value);
     const currentHtml = editor.getHTML();
-    const normalizedCurrent =
-      currentHtml === "<p></p>" ? "" : currentHtml;
+    const normalizedCurrent = normalizeEditorHtml(currentHtml);
     const normalizedNext = nextContent === "<p></p>" ? "" : nextContent;
 
     if (normalizedCurrent !== normalizedNext) {
-      editor.commands.setContent(nextContent || "<p></p>", { emitUpdate: false });
+      const htmlToSet = nextContent || "<p></p>";
+      editor.commands.setContent(htmlToSet, { emitUpdate: false });
+      lastValidHtmlRef.current = htmlToSet;
+      const length = getDescriptionPlainTextLength(htmlToSet);
+      plainTextLengthRef.current = length;
+      setPlainTextLength(length);
     }
   }, [editor, value]);
+
+  const isLimitReached = plainTextLength >= maxPlainTextLength;
 
   if (!editor) {
     return (
@@ -180,6 +278,7 @@ export function ProductDescriptionEditor({
           <ToolbarButton
             label="Madde listesi"
             active={editor.isActive("bulletList")}
+            disabled={isLimitReached}
             onClick={() => editor.chain().focus().toggleBulletList().run()}
           >
             <List className="size-4" />
@@ -187,12 +286,14 @@ export function ProductDescriptionEditor({
           <ToolbarButton
             label="Numaralı liste"
             active={editor.isActive("orderedList")}
+            disabled={isLimitReached}
             onClick={() => editor.chain().focus().toggleOrderedList().run()}
           >
             <ListOrdered className="size-4" />
           </ToolbarButton>
           <ToolbarButton
             label="Tablo ekle"
+            disabled={isLimitReached}
             onClick={() =>
               editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()
             }
@@ -221,15 +322,17 @@ export function ProductDescriptionEditor({
         />
       </div>
 
-      <div className="flex items-center justify-between gap-3 text-xs text-slate-500">
+      <div className="flex flex-col gap-1 text-xs text-slate-500 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
         <span>{placeholder}</span>
-        <span
-          className={cn(
-            plainTextLength > maxPlainTextLength && "font-medium text-amber-700",
-          )}
-        >
-          {plainTextLength} / {maxPlainTextLength}
-        </span>
+        <div className="flex flex-col items-start gap-0.5 sm:items-end">
+          <span className={cn(isLimitReached && "font-medium text-amber-700")}>
+            {formatCharacterCount(plainTextLength)} /{" "}
+            {formatCharacterCount(maxPlainTextLength)} karakter
+          </span>
+          {isLimitReached ? (
+            <span className="font-medium text-amber-700">Karakter limitine ulaşıldı</span>
+          ) : null}
+        </div>
       </div>
     </div>
   );
