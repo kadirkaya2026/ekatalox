@@ -110,6 +110,7 @@ export async function POST(request: Request) {
   try {
     const pdfBytes = await generateOrderReceiptPdf({
       tenantName: tenantDisplayName,
+      customerReferenceName: parsed.data.customer_reference_name,
       orderNumber,
       orderDate,
       items,

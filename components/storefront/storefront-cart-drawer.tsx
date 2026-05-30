@@ -13,6 +13,7 @@ import {
   X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
   formatDiscountPercentage,
@@ -44,6 +45,10 @@ export type StorefrontCartDrawerProps = {
   storefrontSettings: TenantStorefrontSettings;
   note: string;
   setNote: Dispatch<SetStateAction<string>>;
+  customerReferenceName: string;
+  setCustomerReferenceName: Dispatch<SetStateAction<string>>;
+  customerReferenceNameError: string | null;
+  setCustomerReferenceNameError: Dispatch<SetStateAction<string | null>>;
   recommendedProducts: StorefrontProduct[];
   cartPaymentSummary: CartPaymentSummary | null;
   cartDiscountSummary: CartDiscountSummary | null;
@@ -79,6 +84,10 @@ export function StorefrontCartDrawer({
   storefrontSettings,
   note,
   setNote,
+  customerReferenceName,
+  setCustomerReferenceName,
+  customerReferenceNameError,
+  setCustomerReferenceNameError,
   recommendedProducts,
   cartPaymentSummary,
   cartDiscountSummary,
@@ -137,6 +146,14 @@ export function StorefrontCartDrawer({
       return;
     }
     setPaymentMethodError(null);
+
+    const trimmedCustomerName = customerReferenceName.trim();
+    if (trimmedCustomerName.length < 2) {
+      setCustomerReferenceNameError("Lütfen Müşteri / Cari Adını giriniz!");
+      return;
+    }
+    setCustomerReferenceNameError(null);
+
     await onWhatsAppOrder();
   }
 
@@ -356,6 +373,28 @@ export function StorefrontCartDrawer({
                   </div>
                   {paymentMethodError ? (
                     <p className="mt-2 text-xs font-medium text-rose-600">{paymentMethodError}</p>
+                  ) : null}
+                  <label className="mt-3 block">
+                    <span className="text-sm font-semibold text-slate-900">
+                      Müşteri / Cari Adı <span className="text-rose-600">*</span>
+                    </span>
+                    <Input
+                      required
+                      value={customerReferenceName}
+                      onChange={(event) => {
+                        setCustomerReferenceName(event.target.value);
+                        if (customerReferenceNameError) {
+                          setCustomerReferenceNameError(null);
+                        }
+                      }}
+                      placeholder="Örn: Ahmet Ticaret Ltd. Şti."
+                      className="mt-2 rounded-[1.1rem] border-slate-200 bg-slate-50/80 text-[16px]"
+                    />
+                  </label>
+                  {customerReferenceNameError ? (
+                    <p className="mt-2 text-xs font-medium text-rose-600">
+                      {customerReferenceNameError}
+                    </p>
                   ) : null}
                   {selectedPaymentMethod === "card" && (() => {
                     const activeInstallments = (storefrontSettings.card_installment_options ?? []).filter(

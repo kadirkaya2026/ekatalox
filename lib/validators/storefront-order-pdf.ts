@@ -45,6 +45,10 @@ const installmentOptionSchema = z.object({
 export const storefrontOrderPdfSchema = z.object({
   subdomain: z.string().trim().min(1, "Mağaza bilgisi zorunludur."),
   items: z.array(storefrontOrderPdfCartItemSchema).min(1, "Sepet boş olamaz."),
+  customer_reference_name: z
+    .string()
+    .trim()
+    .min(2, "Müşteri adı zorunludur"),
   note: z.string().max(500).nullable().optional(),
   paymentMethod: z.enum(["cash", "card"]),
   selectedInstallmentCount: z.number().int().positive().nullable().optional(),

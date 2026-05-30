@@ -11,6 +11,7 @@ import { registerRobotoFonts } from "@/lib/storefront/pdf-fonts";
 
 export interface GenerateOrderReceiptPdfParams {
   tenantName: string;
+  customerReferenceName: string;
   orderNumber: string;
   orderDate: Date;
   items: CartItem[];
@@ -65,8 +66,13 @@ export async function generateOrderReceiptPdf(
   doc.text(`Saat: ${formatOrderTime(params.orderDate)}`, headerRightX, cursorY + 11, {
     align: "right",
   });
+  doc.text(
+    `Müşteri / Cari: ${params.customerReferenceName.trim()}`,
+    margin,
+    cursorY + 17,
+  );
 
-  cursorY += 20;
+  cursorY += 24;
 
   doc.setDrawColor(...SOFT_BORDER);
   doc.line(margin, cursorY, pageWidth - margin, cursorY);

@@ -718,6 +718,10 @@ export function StorefrontClient({
   });
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [note, setNote] = useState("");
+  const [customerReferenceName, setCustomerReferenceName] = useState("");
+  const [customerReferenceNameError, setCustomerReferenceNameError] = useState<string | null>(
+    null,
+  );
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>("all");
   const [selectedProduct, setSelectedProduct] = useState<StorefrontProduct | null>(null);
@@ -953,6 +957,7 @@ export function StorefrontClient({
 
       return buildWhatsAppMessage({
         tenantName: tenant.company_name,
+        customerReferenceName,
         items: cart,
         note,
         paymentMethod: selectedPaymentMethod,
@@ -964,6 +969,7 @@ export function StorefrontClient({
     },
     [
       cart,
+      customerReferenceName,
       note,
       selectedPaymentMethod,
       selectedInstallmentCount,
@@ -992,6 +998,7 @@ export function StorefrontClient({
           subdomain: analyticsSubdomain,
           items: cart,
           note,
+          customer_reference_name: customerReferenceName.trim(),
           paymentMethod: selectedPaymentMethod,
           selectedInstallmentCount,
           cashDiscountTiers: storefrontSettings.cash_discount_tiers ?? [],
@@ -1024,6 +1031,7 @@ export function StorefrontClient({
     analyticsSubdomain,
     buildWhatsAppOrderMessage,
     cart,
+    customerReferenceName,
     note,
     selectedInstallmentCount,
     selectedPaymentMethod,
@@ -2600,6 +2608,10 @@ export function StorefrontClient({
         storefrontSettings={storefrontSettings}
         note={note}
         setNote={setNote}
+        customerReferenceName={customerReferenceName}
+        setCustomerReferenceName={setCustomerReferenceName}
+        customerReferenceNameError={customerReferenceNameError}
+        setCustomerReferenceNameError={setCustomerReferenceNameError}
         recommendedProducts={recommendedProducts}
         cartPaymentSummary={cartPaymentSummary}
         cartDiscountSummary={cartDiscountSummary}

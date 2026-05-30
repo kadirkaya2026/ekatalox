@@ -333,6 +333,7 @@ export function getCartDiscountSummary(
 
 export function buildWhatsAppMessage(params: {
   tenantName: string;
+  customerReferenceName: string;
   items: CartItem[];
   note?: string;
   paymentMethod?: "cash" | "card" | null;
@@ -442,6 +443,7 @@ export function buildWhatsAppMessage(params: {
 
   return [
     `Merhaba, ${params.tenantName} için sipariş oluşturmak istiyorum.`,
+    `👤 Müşteri / Cari: ${params.customerReferenceName.trim()}`,
     "",
     ...lines,
     "",
