@@ -1068,6 +1068,36 @@ export function StorefrontClient({
       matchesVariantSearch(variant.model_name, variantSearchTerm),
     );
   }, [selectedProduct, variantSearchTerm]);
+  const selectedVariantSummary = useMemo(() => {
+    if (!selectedProduct?.has_variants) {
+      return { count: 0, total: 0 };
+    }
+
+    const activeSelections = variantSelections.filter((selection) => selection.quantity > 0);
+
+    return {
+      count: activeSelections.length,
+      total: activeSelections.reduce((total, selection) => {
+        const variant = selectedProduct.variants.find(
+          (item) => item.id === selection.variantId,
+        );
+
+        if (!variant) {
+          return total;
+        }
+
+        return (
+          total +
+          getRequestedUnitQuantity({
+            unit: selection.unit,
+            quantity: selection.quantity,
+            variant,
+          }) *
+            selectedProduct.price
+        );
+      }, 0),
+    };
+  }, [selectedProduct, variantSelections]);
   const storefrontTitle = storefrontSettings.storefront_title || tenant.company_name;
   const activeAnnouncement = useMemo<ActiveAnnouncement | null>(() => {
     if (homeHref || !storefrontSettings.is_active) {
@@ -2429,8 +2459,28 @@ export function StorefrontClient({
         onClose={closeAddToCartModal}
         title={selectedProduct?.has_variants ? "Model Seçimi" : "Sepete Ekle"}
         contentScroll={!selectedProduct?.has_variants}
+        sheet={Boolean(selectedProduct?.has_variants)}
         footer={
-          <div className="flex flex-col gap-3 sm:flex-row sm:justify-end sm:gap-2">
+          selectedProduct?.has_variants ? (
+            <div className="space-y-3">
+              <div className="rounded-xl bg-slate-900 p-3 text-white">
+                <p className="text-xs text-slate-300">Seçilen Modeller</p>
+                <p className="mt-0.5 text-xs text-slate-300">
+                  {selectedVariantSummary.count} model
+                </p>
+                <p className="mt-1 text-xl font-bold">
+                  {formatCurrency(selectedVariantSummary.total, selectedProduct.currency)}
+                </p>
+              </div>
+              <Button
+                type="submit"
+                form="add-to-cart-form"
+                className="flex h-11 w-full rounded-full text-sm font-bold sm:h-auto sm:w-auto sm:rounded-lg sm:px-4 sm:py-2.5"
+              >
+                Sepete Ekle
+              </Button>
+            </div>
+          ) : (
             <Button
               type="submit"
               form="add-to-cart-form"
@@ -2438,15 +2488,7 @@ export function StorefrontClient({
             >
               Sepete Ekle
             </Button>
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={closeAddToCartModal}
-              className="flex h-10 w-full rounded-full text-sm sm:h-auto sm:w-auto sm:rounded-lg sm:px-4 sm:py-2.5"
-            >
-              Vazgeç
-            </Button>
-          </div>
+          )
         }
       >
         {selectedProduct ? (
@@ -2454,16 +2496,28 @@ export function StorefrontClient({
             id="add-to-cart-form"
             onSubmit={confirmAddToCart}
             className={cn(
-              "w-full min-w-0 max-w-full gap-4",
+              "w-full min-w-0 max-w-full",
               selectedProduct.has_variants
-                ? "flex min-h-0 flex-1 flex-col"
-                : "grid",
+                ? "flex min-h-0 flex-1 flex-col gap-2"
+                : "grid gap-4",
             )}
           >
-            <div className="w-full min-w-0 max-w-full shrink-0 rounded-xl border border-slate-100 bg-slate-50 px-3 py-2.5">
+            <div
+              className={cn(
+                "w-full min-w-0 max-w-full shrink-0 rounded-xl border border-slate-100 bg-slate-50 px-3",
+                selectedProduct.has_variants ? "py-2" : "py-2.5",
+              )}
+            >
               <div className="flex w-full min-w-0 items-start justify-between gap-3">
                 <div className="min-w-0 flex-1">
-                  <p className="line-clamp-3 break-words text-pretty text-[13px] font-semibold leading-5 text-slate-900">
+                  <p
+                    className={cn(
+                      "break-words text-pretty font-semibold text-slate-900",
+                      selectedProduct.has_variants
+                        ? "line-clamp-2 text-[13px] leading-5"
+                        : "line-clamp-3 text-[13px] leading-5",
+                    )}
+                  >
                     {selectedProduct.product_name}
                   </p>
                   <p className="mt-0.5 truncate text-[11px] text-slate-500">
@@ -2480,8 +2534,8 @@ export function StorefrontClient({
             </div>
 
             {selectedProduct.has_variants ? (
-              <div className="flex min-h-0 flex-1 flex-col gap-2.5">
-                <div className="relative shrink-0">
+              <div className="flex min-h-0 flex-1 flex-col">
+                <div className="relative shrink-0 border-b border-slate-100 bg-white pb-2.5">
                   <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
                   <Input
                     value={variantSearchTerm}
@@ -2491,7 +2545,7 @@ export function StorefrontClient({
                   />
                 </div>
 
-                <div className="min-h-0 flex-1 space-y-1.5 overflow-y-auto pr-1">
+                <div className="min-h-0 flex-1 space-y-1 overflow-y-auto overscroll-y-contain py-2 pr-1">
                   {filteredSelectedVariants.length ? (
                     filteredSelectedVariants.map((variant) => {
                       const selection = getVariantSelection(variant.id);
@@ -2512,7 +2566,7 @@ export function StorefrontClient({
                         <div
                           key={variant.id}
                           className={cn(
-                            "rounded-lg border px-2.5 py-2 transition",
+                            "rounded-lg border px-2 py-1.5 transition sm:px-2.5 sm:py-2",
                             isUnavailable
                               ? "border-slate-200 bg-slate-50 opacity-40"
                               : "border-slate-200 bg-white",
@@ -2529,7 +2583,7 @@ export function StorefrontClient({
                             ) : null}
                           </div>
 
-                          <div className="mt-2 grid gap-2 sm:grid-cols-[minmax(0,1fr)_5.5rem]">
+                          <div className="mt-1.5 grid gap-2 sm:mt-2 sm:grid-cols-[minmax(0,1fr)_5.5rem]">
                             <select
                               value={selection.unit}
                               disabled={isUnavailable}
@@ -2543,7 +2597,7 @@ export function StorefrontClient({
                                   setQuantityError(null);
                                 }
                               }}
-                              className="h-9 rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-[16px] text-slate-900 disabled:bg-slate-100"
+                              className="h-8 rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-[16px] text-slate-900 disabled:bg-slate-100 sm:h-9"
                               style={{ fontSize: "16px" }}
                             >
                               {unitChoices.map((unitOption) => (
@@ -2569,17 +2623,17 @@ export function StorefrontClient({
                                 }
                               }}
                               placeholder="0"
-                              className="h-9 px-2.5 py-2 text-[16px]"
+                              className="h-8 px-2.5 py-2 text-[16px] sm:h-9"
                               style={{ fontSize: "16px" }}
                             />
                           </div>
 
-                          <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[10px] text-slate-500">
+                          <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[9px] leading-4 text-slate-500 sm:mt-1.5 sm:text-[10px]">
                             {variant.package_quantity ? (
-                              <span>1 Paket = {variant.package_quantity}</span>
+                              <span className="line-clamp-1">1 Paket = {variant.package_quantity}</span>
                             ) : null}
                             {variant.carton_quantity ? (
-                              <span>1 Koli = {variant.carton_quantity}</span>
+                              <span className="line-clamp-1">1 Koli = {variant.carton_quantity}</span>
                             ) : null}
                           </div>
                         </div>
@@ -2668,51 +2722,15 @@ export function StorefrontClient({
               <p className="shrink-0 text-xs text-amber-700">{quantityError}</p>
             ) : null}
 
-            <div className="w-full min-w-0 max-w-full shrink-0 rounded-xl bg-slate-900 p-3 text-white">
-              {selectedProduct.has_variants ? (
-                <>
-                  <p className="text-xs text-slate-300">Seçilen Modeller</p>
-                  <p className="mt-0.5 text-xs text-slate-300">
-                    {
-                      variantSelections.filter((selection) => selection.quantity > 0).length
-                    }{" "}
-                    model
-                  </p>
-                  <p className="mt-1 text-xl font-bold">
-                    {formatCurrency(
-                      variantSelections.reduce((total, selection) => {
-                        const variant = selectedProduct.variants.find(
-                          (item) => item.id === selection.variantId,
-                        );
-
-                        if (!variant) {
-                          return total;
-                        }
-
-                        return (
-                          total +
-                          getRequestedUnitQuantity({
-                            unit: selection.unit,
-                            quantity: selection.quantity,
-                            variant,
-                          }) *
-                            selectedProduct.price
-                        );
-                      }, 0),
-                      selectedProduct.currency,
-                    )}
-                  </p>
-                </>
-              ) : (
-                <>
-                  <p className="text-xs text-slate-300">Toplam</p>
-                  <p className="mt-0.5 text-xs text-slate-300">{selectedTotalQuantity} adet</p>
-                  <p className="mt-1 break-words text-xl font-bold">
-                    {formatCurrency(selectedLineTotal, selectedProduct.currency)}
-                  </p>
-                </>
-              )}
-            </div>
+            {!selectedProduct.has_variants ? (
+              <div className="w-full min-w-0 max-w-full shrink-0 rounded-xl bg-slate-900 p-3 text-white">
+                <p className="text-xs text-slate-300">Toplam</p>
+                <p className="mt-0.5 text-xs text-slate-300">{selectedTotalQuantity} adet</p>
+                <p className="mt-1 break-words text-xl font-bold">
+                  {formatCurrency(selectedLineTotal, selectedProduct.currency)}
+                </p>
+              </div>
+            ) : null}
           </form>
         ) : null}
       </Modal>
