@@ -1,5 +1,10 @@
 import { z } from "zod";
 import { isCurrencyCode, normalizeCurrencyCode } from "@/lib/products/constants";
+import {
+  getDescriptionPlainTextLength,
+  normalizeProductDescription,
+  PRODUCT_DESCRIPTION_MAX_PLAIN_TEXT_LENGTH,
+} from "@/lib/products/description-html";
 
 export const currencyCodeSchema = z
   .string()
@@ -98,12 +103,28 @@ export const productBaseSchema = z.object({
   carton_quantity: optionalPositiveIntegerSchema,
   description: z
     .union([z.string(), z.null(), z.undefined()])
-    .transform((value) => (typeof value === "string" ? value.trim() : ""))
+    .transform((value) => (typeof value === "string" ? value : ""))
     .pipe(
       z
         .string()
-        .max(2000, "Ürün detayı en fazla 2000 karakter olabilir.")
-        .transform((value) => value || null),
+        .superRefine((value, ctx) => {
+          const trimmed = value.trim();
+
+          if (!trimmed) {
+            return;
+          }
+
+          if (
+            getDescriptionPlainTextLength(trimmed) >
+            PRODUCT_DESCRIPTION_MAX_PLAIN_TEXT_LENGTH
+          ) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              message: "Ürün detayı en fazla 2000 karakter olabilir.",
+            });
+          }
+        })
+        .transform((value) => normalizeProductDescription(value)),
     ),
   is_discount_active: z.preprocess(
     (value) => (value === null || value === undefined ? "false" : value),

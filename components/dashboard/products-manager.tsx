@@ -21,7 +21,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Modal } from "@/components/ui/modal";
-import { Textarea } from "@/components/ui/textarea";
+import { ProductDescriptionEditor } from "@/components/dashboard/product-description-editor";
 import { Table, TableWrapper } from "@/components/ui/table";
 import {
   buildCategoryTree,
@@ -1327,11 +1327,9 @@ export function ProductsManager({
             />
           </div>
 
-          <Textarea
-            placeholder="Ürün detayı (vitrinde Detaylar sekmesinde görünür)"
+          <ProductDescriptionEditor
             value={editForm.description}
-            onChange={(event) => updateEditField("description", event.target.value)}
-            maxLength={2000}
+            onChange={(value) => updateEditField("description", value)}
           />
 
           <div className="grid gap-3 md:grid-cols-4">

@@ -6,7 +6,7 @@ import { AlertTriangle, ImagePlus, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+import { ProductDescriptionEditor } from "@/components/dashboard/product-description-editor";
 import { buildCategoryTree, flattenCategoryTree } from "@/lib/categories/tree";
 import {
   defaultCurrencyCode,
@@ -213,11 +213,9 @@ export function ProductAddForm({
             />
           </div>
 
-          <Textarea
-            placeholder="Ürün detayı (vitrinde Detaylar sekmesinde görünür)"
+          <ProductDescriptionEditor
             value={form.description}
-            onChange={(event) => updateField("description", event.target.value)}
-            maxLength={2000}
+            onChange={(value) => updateField("description", value)}
           />
 
           <div className="grid gap-3 md:grid-cols-4">

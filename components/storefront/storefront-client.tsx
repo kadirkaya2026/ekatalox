@@ -63,6 +63,7 @@ import type {
 } from "@/lib/types";
 import { cn, formatCurrency } from "@/lib/utils";
 import { StorefrontCartDrawer } from "@/components/storefront/storefront-cart-drawer";
+import { ProductDescriptionContent } from "@/components/storefront/product-description-content";
 
 function getCartStorageKey(tenantId: string) {
   return `ekatalox_cart_${tenantId}`;
@@ -1813,9 +1814,7 @@ export function StorefrontClient({
       { key: "carton", label: "Koli" },
     ];
 
-    const detailContent =
-      previewProduct.description?.trim() ||
-      "Bu ürün için detay bilgisi eklenmedi.";
+    const detailContent = previewProduct.description;
     const packageContent = previewProduct.package_quantity
       ? `1 Paket = ${previewProduct.package_quantity} adet`
       : "Paket bilgisi eklenmedi.";
@@ -1824,11 +1823,13 @@ export function StorefrontClient({
       : "Koli bilgisi eklenmedi.";
 
     const tabContent =
-      activePreviewTab === "details"
-        ? detailContent
-        : activePreviewTab === "package"
-          ? packageContent
-          : cartonContent;
+      activePreviewTab === "details" ? (
+        <ProductDescriptionContent content={detailContent} />
+      ) : activePreviewTab === "package" ? (
+        <p className="text-sm leading-6 text-slate-600">{packageContent}</p>
+      ) : (
+        <p className="text-sm leading-6 text-slate-600">{cartonContent}</p>
+      );
 
     return (
       <Modal
@@ -1879,8 +1880,8 @@ export function StorefrontClient({
             ))}
           </div>
 
-          <div className="min-h-[120px] rounded-[1.35rem] border border-slate-200 bg-slate-50/80 p-4">
-            <p className="text-sm leading-6 text-slate-600">{tabContent}</p>
+          <div className="min-h-[160px] max-h-[40vh] overflow-y-auto rounded-[1.35rem] border border-slate-200 bg-slate-50/80 p-4">
+            {tabContent}
           </div>
 
           <Button
