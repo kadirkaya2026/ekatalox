@@ -8,6 +8,30 @@ const currencySymbols: Record<CurrencyCode, string> = {
   EUR: "€",
 };
 
+const TR_CHAR_MAP: Record<string, string> = {
+  ş: "s",
+  Ş: "S",
+  ç: "c",
+  Ç: "C",
+  ğ: "g",
+  Ğ: "G",
+  ı: "i",
+  İ: "I",
+  ö: "o",
+  Ö: "O",
+  ü: "u",
+  Ü: "U",
+};
+
+export function toPdfAsciiText(value: string) {
+  return value
+    .split("")
+    .map((char) => TR_CHAR_MAP[char] ?? char)
+    .join("")
+    .replace(/₺/g, " TL")
+    .replace(/€/g, " EUR");
+}
+
 function roundCurrencyAmount(value: number) {
   return Math.round((value + Number.EPSILON) * 100) / 100;
 }
@@ -68,6 +92,6 @@ export function getOrderReceiptTableRows(items: CartItem[]) {
       line.quantityLabel,
       line.unitPriceLabel,
       line.lineTotalLabel,
-    ];
+    ].map((cell) => toPdfAsciiText(cell));
   });
 }
