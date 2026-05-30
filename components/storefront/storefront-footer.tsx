@@ -150,7 +150,7 @@ export function StorefrontFooter({
 
   return (
     <footer className="relative z-0 border-t border-zinc-300 bg-zinc-100">
-      <div className="mx-auto max-w-7xl px-4 pt-5 pb-1 md:py-7">
+      <div className="mx-auto max-w-7xl px-4 pt-5 pb-0 md:py-7">
         {hasFooterMainContent ? (
           <div className="flex flex-col gap-4 md:grid md:grid-cols-2 md:items-start md:gap-x-10 lg:gap-x-16">
             {hasContactColumn ? (
@@ -220,7 +220,7 @@ export function StorefrontFooter({
 
         <div
           className={cn(
-            "border-t border-zinc-300/80 py-2 text-center text-[11px] text-zinc-500",
+            "border-t border-zinc-300/80 py-1.5 text-center text-[11px] leading-tight text-zinc-500",
             hasFooterMainContent ? "mt-4 md:mt-6" : "mt-0",
           )}
         >

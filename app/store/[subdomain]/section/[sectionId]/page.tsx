@@ -13,6 +13,7 @@ import {
   getTenantStorefrontSettings,
 } from "@/lib/data";
 import { storefrontThemes } from "@/lib/storefront/themes";
+import { cn } from "@/lib/utils";
 import {
   isStorefrontTierStateValid,
   readStorefrontTier,
@@ -83,33 +84,36 @@ export default async function SectionDetailPage(props: {
   }
 
   const theme = storefrontThemes[storefrontSettings.theme_key] ?? storefrontThemes.minimal;
+  const footerVisible = storefrontSettings.is_footer_visible;
 
   return (
-    <div className={theme.page}>
-      <div className="container-shell py-4">
-        <nav className="flex items-center gap-2 text-sm text-slate-500">
-          <a
-            href={`/store/${subdomain}`}
-            className="font-medium transition hover:text-slate-900"
-          >
-            Anasayfa
-          </a>
-          <span>/</span>
-          <span className="font-semibold text-slate-900">{section.title}</span>
-        </nav>
-      </div>
+    <div className={cn(theme.page, footerVisible && "pb-0")}>
+      <div className={footerVisible ? "pb-28 xl:pb-6" : undefined}>
+        <div className="container-shell py-4">
+          <nav className="flex items-center gap-2 text-sm text-slate-500">
+            <a
+              href={`/store/${subdomain}`}
+              className="font-medium transition hover:text-slate-900"
+            >
+              Anasayfa
+            </a>
+            <span>/</span>
+            <span className="font-semibold text-slate-900">{section.title}</span>
+          </nav>
+        </div>
 
-      <StorefrontClient
-        tenant={tenant}
-        categories={categories}
-        products={section.products}
-        storefrontSettings={storefrontSettings}
-        sections={[]}
-        subdomain={subdomain}
-        pageTitle={section.title}
-        homeHref={`/store/${subdomain}`}
-      />
-      {storefrontSettings.is_footer_visible ? (
+        <StorefrontClient
+          tenant={tenant}
+          categories={categories}
+          products={section.products}
+          storefrontSettings={storefrontSettings}
+          sections={[]}
+          subdomain={subdomain}
+          pageTitle={section.title}
+          homeHref={`/store/${subdomain}`}
+        />
+      </div>
+      {footerVisible ? (
         <StorefrontFooter settings={storefrontSettings} />
       ) : null}
     </div>

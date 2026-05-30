@@ -14,6 +14,7 @@ import {
   getTenantStorefrontSettings,
 } from "@/lib/data";
 import { storefrontThemes } from "@/lib/storefront/themes";
+import { cn } from "@/lib/utils";
 import {
   isStorefrontTierStateValid,
   readStorefrontTier,
@@ -95,18 +96,21 @@ export default async function StorefrontPage(props: PageProps<"/store/[subdomain
   ]);
   const theme =
     storefrontThemes[storefrontSettings.theme_key] ?? storefrontThemes.minimal;
+  const footerVisible = storefrontSettings.is_footer_visible;
 
   return (
-    <div className={theme.page}>
-      <StorefrontClient
-        tenant={tenant}
-        categories={categories}
-        products={products}
-        storefrontSettings={storefrontSettings}
-        sections={sections}
-        subdomain={subdomain}
-      />
-      {storefrontSettings.is_footer_visible ? (
+    <div className={cn(theme.page, footerVisible && "pb-0")}>
+      <div className={footerVisible ? "pb-28 xl:pb-6" : undefined}>
+        <StorefrontClient
+          tenant={tenant}
+          categories={categories}
+          products={products}
+          storefrontSettings={storefrontSettings}
+          sections={sections}
+          subdomain={subdomain}
+        />
+      </div>
+      {footerVisible ? (
         <StorefrontFooter settings={storefrontSettings} />
       ) : null}
     </div>
