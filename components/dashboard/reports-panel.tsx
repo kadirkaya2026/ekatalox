@@ -125,11 +125,14 @@ export function ReportsPanel({
       </div>
 
       <Card className="p-5">
-        <p className="text-sm text-slate-500">Siteye giren tekil kişi</p>
+        <p className="text-sm text-slate-500">Siteye giren tekil ziyaretçi</p>
         <p className="mt-2 text-3xl font-bold text-slate-900">
           {report.uniqueVisitors}
-          <span className="ml-2 text-base font-medium text-slate-500">Tekil Kişi</span>
+          <span className="ml-2 text-base font-medium text-slate-500">
+            Tekil Ziyaretçi (cihaz)
+          </span>
         </p>
+        <p className="mt-2 text-xs text-slate-500">Her cihaz ve tarayıcı ayrı sayılır.</p>
       </Card>
 
       <div className="grid gap-4 xl:grid-cols-2">

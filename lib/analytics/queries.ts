@@ -106,12 +106,15 @@ export async function getTenantAnalyticsReport(
 
   const { data: products } = await supabase
     .from("products")
-    .select("id, name")
+    .select("id, product_name")
     .eq("tenant_id", tenantId)
     .in("id", productIds);
 
   const productNames = new Map(
-    (products ?? []).map((product) => [product.id as string, product.name as string]),
+    (products ?? []).map((product) => [
+      product.id as string,
+      product.product_name as string,
+    ]),
   );
 
   const topViewedProducts = [...aggregated.entries()]
