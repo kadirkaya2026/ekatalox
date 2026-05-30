@@ -63,6 +63,11 @@ import type {
   TenantStorefrontSettings,
 } from "@/lib/types";
 import { cn, formatCurrency } from "@/lib/utils";
+import {
+  trackStorefrontCartAdd,
+  trackStorefrontProductView,
+  trackStorefrontVisit,
+} from "@/lib/storefront/analytics";
 import { StorefrontCartDrawer } from "@/components/storefront/storefront-cart-drawer";
 import { ProductDescriptionContent } from "@/components/storefront/product-description-content";
 
@@ -729,6 +734,7 @@ export function StorefrontClient({
     getClientMountedState,
     getServerMountedState,
   );
+  const analyticsSubdomain = subdomain ?? tenant.subdomain;
 
   const theme = storefrontThemes[storefrontSettings.theme_key] ?? storefrontThemes.minimal;
   const cartStorageKey = useMemo(() => getCartStorageKey(tenant.id), [tenant.id]);
@@ -1039,6 +1045,14 @@ export function StorefrontClient({
     ? `${activeAnnouncement.version}-${readStoredCounterValue(announcementStorageKeys.views)}`
     : null;
   useEffect(() => {
+    if (!isMounted || !analyticsSubdomain) {
+      return;
+    }
+
+    trackStorefrontVisit(tenant.id, analyticsSubdomain);
+  }, [analyticsSubdomain, isMounted, tenant.id]);
+
+  useEffect(() => {
     if (!isMounted) {
       return;
     }
@@ -1134,6 +1148,10 @@ export function StorefrontClient({
   function openProductDetail(product: StorefrontProduct) {
     setPreviewProduct(product);
     setActivePreviewTab("details");
+
+    if (analyticsSubdomain) {
+      trackStorefrontProductView(tenant.id, analyticsSubdomain, product.id);
+    }
   }
 
   function closeProductDetail() {
@@ -1407,6 +1425,9 @@ export function StorefrontClient({
           );
           return addVariantSelectionsToCart(withoutProduct, selectedProduct, selections);
         });
+        if (analyticsSubdomain) {
+          trackStorefrontCartAdd(analyticsSubdomain, selectedProduct.id);
+        }
         closeAddToCartModal();
       })();
       return;
@@ -1433,6 +1454,9 @@ export function StorefrontClient({
       }
       return addToCart(current, selectedProduct, selectedTotalQuantity);
     });
+    if (analyticsSubdomain) {
+      trackStorefrontCartAdd(analyticsSubdomain, selectedProduct.id);
+    }
     closeAddToCartModal();
   }
 

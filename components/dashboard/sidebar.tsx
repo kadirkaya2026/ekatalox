@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
+  BarChart3,
   Building2,
   CreditCard,
   FolderTree,
@@ -39,6 +40,7 @@ const tenantLinks: SidebarLink[] = [
   },
   { href: "/categories", label: "Kategoriler", icon: FolderTree },
   { href: "/access-codes", label: "Şifreler", icon: KeyRound },
+  { href: "/reports", label: "Raporlar", icon: BarChart3 },
   {
     href: "/settings",
     label: "Ayarlar",
