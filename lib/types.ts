@@ -194,12 +194,16 @@ export interface StorefrontProductVariant {
   display_order: number;
 }
 
+export type SalesUnit = "adet" | "paket" | "koli";
+
 export interface CartItem extends Omit<StorefrontProduct, "id" | "has_variants" | "variants"> {
   id: string;
   product_id: string;
   variant_id: string | null;
   variant_name: string | null;
   quantity: number;
+  sales_unit?: SalesUnit | null;
+  unit_quantity?: number | null;
 }
 
 export interface StorefrontSection {

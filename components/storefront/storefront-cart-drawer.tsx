@@ -50,7 +50,8 @@ export type StorefrontCartDrawerProps = {
   cartTotalEntries: Array<{ currency: string; total: number }>;
   cartTotal: number;
   cartCurrency: string;
-  whatsappHref: string;
+  onWhatsAppOrder: () => void | Promise<void>;
+  isGeneratingOrderPdf: boolean;
   cartStorageKey: string;
   stickyCartButtonClassName: string;
   isCashCampaignDismissedOnCart: boolean;
@@ -84,7 +85,8 @@ export function StorefrontCartDrawer({
   cartTotalEntries,
   cartTotal,
   cartCurrency,
-  whatsappHref,
+  onWhatsAppOrder,
+  isGeneratingOrderPdf,
   cartStorageKey,
   stickyCartButtonClassName,
   isCashCampaignDismissedOnCart,
@@ -128,14 +130,14 @@ export function StorefrontCartDrawer({
     }
   }
 
-  function handleWhatsAppOrder() {
+  async function handleWhatsAppOrder() {
     if (!cart.length) return;
     if (!selectedPaymentMethod) {
       setPaymentMethodError("Lütfen ödeme yönteminizi seçin.");
       return;
     }
     setPaymentMethodError(null);
-    window.open(whatsappHref, "_blank", "noopener,noreferrer");
+    await onWhatsAppOrder();
   }
 
   if (!isOpen) {
@@ -560,14 +562,17 @@ export function StorefrontCartDrawer({
               <Button
                 type="button"
                 onClick={handleWhatsAppOrder}
-                disabled={!selectedPaymentMethod}
+                disabled={!selectedPaymentMethod || isGeneratingOrderPdf}
                 className={cn(
                   "mt-3 h-11 w-full rounded-full px-5 text-base font-bold shadow-none sm:h-12",
                   stickyCartButtonClassName,
-                  (!cart.length || !selectedPaymentMethod) && "pointer-events-none opacity-50",
+                  (!cart.length || !selectedPaymentMethod || isGeneratingOrderPdf) &&
+                    "pointer-events-none opacity-50",
                 )}
               >
-                WhatsApp ile Siparişi Tamamla
+                {isGeneratingOrderPdf
+                  ? "PDF hazırlanıyor..."
+                  : "WhatsApp ile Siparişi Tamamla"}
               </Button>
               {cart.length > 0 && (
                 <button

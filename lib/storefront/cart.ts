@@ -340,6 +340,7 @@ export function buildWhatsAppMessage(params: {
   cashConfig?: CashTieredConfig | null;
   cardConfig?: CardTieredConfig | null;
   discountConditionNote?: string | null;
+  pdfUrl?: string | null;
 }) {
   const lines = params.items.map((item) => {
     const lineTotal = item.price * item.quantity;
@@ -447,6 +448,9 @@ export function buildWhatsAppMessage(params: {
     ...totalSection,
     ...(paymentLine ? ["", paymentLine] : []),
     ...(noteLine ? ["", noteLine] : []),
+    ...(params.pdfUrl?.trim()
+      ? ["", `📄 Sipariş Fişiniz (PDF): ${params.pdfUrl.trim()}`]
+      : []),
   ]
     .filter((line, i, arr) => {
       if (line === "" && arr[i - 1] === "") return false;
@@ -473,6 +477,13 @@ export function updateCartLineQuantity(
   }
 
   return items.map((item) =>
-    item.id === lineId ? { ...item, quantity: nextQuantity } : item,
+    item.id === lineId
+      ? {
+          ...item,
+          quantity: nextQuantity,
+          sales_unit: "adet" as const,
+          unit_quantity: nextQuantity,
+        }
+      : item,
   );
 }

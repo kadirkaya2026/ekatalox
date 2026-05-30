@@ -256,12 +256,21 @@ function addToCart(items: CartItem[], product: StorefrontProduct, quantity: numb
         carton_quantity: product.carton_quantity,
         stock_quantity: product.stock_quantity,
         quantity,
+        sales_unit: "adet" as const,
+        unit_quantity: quantity,
       },
     ];
   }
 
   return items.map((item) =>
-    item.id === product.id ? { ...item, quantity: item.quantity + quantity } : item,
+    item.id === product.id
+      ? {
+          ...item,
+          quantity: item.quantity + quantity,
+          sales_unit: "adet" as const,
+          unit_quantity: item.quantity + quantity,
+        }
+      : item,
   );
 }
 
@@ -310,13 +319,20 @@ function addVariantSelectionsToCart(
           carton_quantity: variant.carton_quantity,
           stock_quantity: variant.stock_quantity,
           quantity: requestedUnits,
+          sales_unit: selection.unit,
+          unit_quantity: selection.quantity,
         },
       ];
     }
 
     return currentItems.map((item) =>
       item.product_id === product.id && item.variant_id === variant.id
-        ? { ...item, quantity: item.quantity + requestedUnits }
+        ? {
+            ...item,
+            quantity: item.quantity + requestedUnits,
+            sales_unit: "adet" as const,
+            unit_quantity: item.quantity + requestedUnits,
+          }
         : item,
     );
   }, items);
@@ -726,6 +742,7 @@ export function StorefrontClient({
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<"cash" | "card" | null>(null);
   const [selectedInstallmentCount, setSelectedInstallmentCount] = useState<number | null>(null);
   const [paymentMethodError, setPaymentMethodError] = useState<string | null>(null);
+  const [isGeneratingOrderPdf, setIsGeneratingOrderPdf] = useState(false);
   const [campaignDismissState, setCampaignDismissState] = useState<CampaignDismissBySurface>(
     () => readInitialCampaignDismissState(tenant.id),
   );
@@ -907,54 +924,114 @@ export function StorefrontClient({
       .filter((product) => product.is_in_stock && !cartIds.has(product.id))
       .slice(0, 10);
   }, [cart, products, sections]);
-  const whatsappHref = useMemo(() => {
-    if (!cart.length) return "#";
-
-    const activeOptions =
-      (storefrontSettings.card_installment_options ?? []).filter(
-        (o: InstallmentOption) => o.isActive,
+  const buildWhatsAppOrderMessage = useCallback(
+    (pdfUrl?: string | null) => {
+      const activeOptions = (storefrontSettings.card_installment_options ?? []).filter(
+        (option: InstallmentOption) => option.isActive,
       );
-    const selectedInstallment =
-      selectedPaymentMethod === "card" && selectedInstallmentCount !== null
-        ? (activeOptions.find((o: InstallmentOption) => o.count === selectedInstallmentCount) ?? null)
-        : null;
+      const selectedInstallment =
+        selectedPaymentMethod === "card" && selectedInstallmentCount !== null
+          ? (activeOptions.find(
+              (option: InstallmentOption) => option.count === selectedInstallmentCount,
+            ) ?? null)
+          : null;
 
-    let discountConfig = null;
-    if (selectedPaymentMethod === "cash") {
-      discountConfig = {
-        tiers: storefrontSettings.cash_discount_tiers ?? [],
-        isActive: storefrontSettings.is_cash_discount_active,
-      };
-    }
-    const cardCfg =
-      selectedPaymentMethod === "card"
-        ? { tiers: storefrontSettings.card_campaign_tiers ?? [], isActive: storefrontSettings.is_card_campaign_active }
-        : null;
+      let discountConfig = null;
+      if (selectedPaymentMethod === "cash") {
+        discountConfig = {
+          tiers: storefrontSettings.cash_discount_tiers ?? [],
+          isActive: storefrontSettings.is_cash_discount_active,
+        };
+      }
+      const cardCfg =
+        selectedPaymentMethod === "card"
+          ? {
+              tiers: storefrontSettings.card_campaign_tiers ?? [],
+              isActive: storefrontSettings.is_card_campaign_active,
+            }
+          : null;
 
-    const message = buildWhatsAppMessage({
-      tenantName: tenant.company_name,
-      items: cart,
+      return buildWhatsAppMessage({
+        tenantName: tenant.company_name,
+        items: cart,
+        note,
+        paymentMethod: selectedPaymentMethod,
+        selectedInstallment,
+        cashConfig: discountConfig,
+        cardConfig: cardCfg,
+        pdfUrl,
+      });
+    },
+    [
+      cart,
       note,
-      paymentMethod: selectedPaymentMethod,
-      selectedInstallment,
-      cashConfig: discountConfig,
-      cardConfig: cardCfg,
-    });
+      selectedPaymentMethod,
+      selectedInstallmentCount,
+      storefrontSettings.cash_discount_tiers,
+      storefrontSettings.is_cash_discount_active,
+      storefrontSettings.card_campaign_tiers,
+      storefrontSettings.is_card_campaign_active,
+      storefrontSettings.card_installment_options,
+      tenant.company_name,
+    ],
+  );
 
-    return `https://wa.me/${tenant.whatsapp_number}?text=${encodeURIComponent(message)}`;
+  const handleWhatsAppOrder = useCallback(async () => {
+    if (!cart.length || !selectedPaymentMethod) {
+      return;
+    }
+
+    setIsGeneratingOrderPdf(true);
+    let pdfUrl: string | null = null;
+
+    try {
+      const response = await fetch("/api/storefront/generate-pdf", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          subdomain: analyticsSubdomain,
+          items: cart,
+          note,
+          paymentMethod: selectedPaymentMethod,
+          selectedInstallmentCount,
+          cashDiscountTiers: storefrontSettings.cash_discount_tiers ?? [],
+          isCashDiscountActive: storefrontSettings.is_cash_discount_active,
+          cardCampaignTiers: storefrontSettings.card_campaign_tiers ?? [],
+          isCardCampaignActive: storefrontSettings.is_card_campaign_active,
+          cardInstallmentOptions: storefrontSettings.card_installment_options ?? [],
+        }),
+      });
+
+      if (response.ok) {
+        const data = (await response.json()) as { pdfUrl?: string };
+        pdfUrl = data.pdfUrl ?? null;
+      } else {
+        console.error("[whatsapp-order] PDF API hatası:", await response.text());
+      }
+    } catch (error) {
+      console.error("[whatsapp-order] PDF üretimi başarısız:", error);
+    } finally {
+      setIsGeneratingOrderPdf(false);
+    }
+
+    const message = buildWhatsAppOrderMessage(pdfUrl);
+    window.open(
+      `https://wa.me/${tenant.whatsapp_number}?text=${encodeURIComponent(message)}`,
+      "_blank",
+      "noopener,noreferrer",
+    );
   }, [
+    analyticsSubdomain,
+    buildWhatsAppOrderMessage,
     cart,
     note,
-    selectedPaymentMethod,
     selectedInstallmentCount,
-    storefrontSettings.cash_discount_tiers,
-    storefrontSettings.is_cash_discount_active,
-    storefrontSettings.cash_discount_note,
+    selectedPaymentMethod,
     storefrontSettings.card_campaign_tiers,
-    storefrontSettings.is_card_campaign_active,
-    storefrontSettings.card_campaign_note,
     storefrontSettings.card_installment_options,
-    tenant.company_name,
+    storefrontSettings.cash_discount_tiers,
+    storefrontSettings.is_card_campaign_active,
+    storefrontSettings.is_cash_discount_active,
     tenant.whatsapp_number,
   ]);
   const cartItemCount = useMemo(
@@ -2529,7 +2606,8 @@ export function StorefrontClient({
         cartTotalEntries={cartTotalEntries}
         cartTotal={cartTotal}
         cartCurrency={cartCurrency}
-        whatsappHref={whatsappHref}
+        onWhatsAppOrder={handleWhatsAppOrder}
+        isGeneratingOrderPdf={isGeneratingOrderPdf}
         cartStorageKey={cartStorageKey}
         stickyCartButtonClassName={theme.stickyCartButton}
         isCashCampaignDismissedOnCart={isCampaignDismissedOnSurface("cash", "cart")}

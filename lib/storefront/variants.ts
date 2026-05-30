@@ -1,6 +1,6 @@
-import type { ProductVariant, StorefrontProductVariant } from "@/lib/types";
+import type { ProductVariant, SalesUnit, StorefrontProductVariant } from "@/lib/types";
 
-export type SalesUnit = "adet" | "paket" | "koli";
+export type { SalesUnit };
 
 type VariantUnits = Pick<
   ProductVariant | StorefrontProductVariant,
