@@ -930,56 +930,13 @@ export function StorefrontClient({
   }, [cart, products, sections]);
   const buildWhatsAppOrderMessage = useCallback(
     (pdfUrl?: string | null) => {
-      const activeOptions = (storefrontSettings.card_installment_options ?? []).filter(
-        (option: InstallmentOption) => option.isActive,
-      );
-      const selectedInstallment =
-        selectedPaymentMethod === "card" && selectedInstallmentCount !== null
-          ? (activeOptions.find(
-              (option: InstallmentOption) => option.count === selectedInstallmentCount,
-            ) ?? null)
-          : null;
-
-      let discountConfig = null;
-      if (selectedPaymentMethod === "cash") {
-        discountConfig = {
-          tiers: storefrontSettings.cash_discount_tiers ?? [],
-          isActive: storefrontSettings.is_cash_discount_active,
-        };
-      }
-      const cardCfg =
-        selectedPaymentMethod === "card"
-          ? {
-              tiers: storefrontSettings.card_campaign_tiers ?? [],
-              isActive: storefrontSettings.is_card_campaign_active,
-            }
-          : null;
-
       return buildWhatsAppMessage({
         tenantName: tenant.company_name,
         customerReferenceName,
-        items: cart,
-        note,
-        paymentMethod: selectedPaymentMethod,
-        selectedInstallment,
-        cashConfig: discountConfig,
-        cardConfig: cardCfg,
         pdfUrl,
       });
     },
-    [
-      cart,
-      customerReferenceName,
-      note,
-      selectedPaymentMethod,
-      selectedInstallmentCount,
-      storefrontSettings.cash_discount_tiers,
-      storefrontSettings.is_cash_discount_active,
-      storefrontSettings.card_campaign_tiers,
-      storefrontSettings.is_card_campaign_active,
-      storefrontSettings.card_installment_options,
-      tenant.company_name,
-    ],
+    [customerReferenceName, tenant.company_name],
   );
 
   const handleWhatsAppOrder = useCallback(async () => {

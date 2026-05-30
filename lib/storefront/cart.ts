@@ -131,16 +131,6 @@ export function formatDiscountPercentage(value: number) {
   return value.toFixed(2).replace(/\.00$/, "").replace(/(\.\d)0$/, "$1");
 }
 
-const whatsappCurrencySymbols: Record<CurrencyCode, string> = {
-  TRY: "₺",
-  USD: "$",
-  EUR: "€",
-};
-
-function formatWhatsAppMoney(value: number, currency: CurrencyCode) {
-  return `${roundCurrencyAmount(value).toFixed(2)} ${whatsappCurrencySymbols[currency]}`;
-}
-
 // ─── Core calculation ─────────────────────────────────────────────────────────
 
 export function getCartPaymentSummary(
@@ -334,131 +324,18 @@ export function getCartDiscountSummary(
 export function buildWhatsAppMessage(params: {
   tenantName: string;
   customerReferenceName: string;
-  items: CartItem[];
-  note?: string;
-  paymentMethod?: "cash" | "card" | null;
-  selectedInstallment?: InstallmentOption | null;
-  cashConfig?: CashTieredConfig | null;
-  cardConfig?: CardTieredConfig | null;
-  discountConditionNote?: string | null;
   pdfUrl?: string | null;
 }) {
-  const lines = params.items.map((item) => {
-    const lineTotal = item.price * item.quantity;
-    const productLabel = item.variant_name
-      ? `${item.product_name} / ${item.variant_name}`
-      : item.product_name;
-    return `• ${productLabel} x ${item.quantity} adet = ${formatWhatsAppMoney(lineTotal, item.currency)}`;
-  });
+  const lines = [
+    `Merhaba, ${params.tenantName} için sipariş oluşturmak istiyorum`,
+    `Müşteri/cari : ${params.customerReferenceName.trim()}`,
+  ];
 
-  const paymentMethod = params.paymentMethod ?? null;
-
-  const summary =
-    paymentMethod
-      ? getCartPaymentSummary(
-          params.items,
-          paymentMethod,
-          params.cashConfig ?? null,
-          params.cardConfig ?? null,
-          params.selectedInstallment ?? null,
-        )
-      : null;
-
-  let paymentLine: string | null = null;
-  if (paymentMethod === "cash") {
-    paymentLine = "Ödeme Yöntemi: Nakit";
-  } else if (paymentMethod === "card") {
-    const inst = params.selectedInstallment;
-    if (inst) {
-      const commissionStr =
-        summary?.zeroCommissionApplied
-          ? " - 0 Komisyon Kampanyası"
-          : inst.surchargePercentage > 0
-            ? ` - %${formatDiscountPercentage(inst.surchargePercentage)} Vade Farkı`
-            : "";
-      paymentLine = `Ödeme Yöntemi: Kredi Kartı - ${inst.label}${commissionStr}`;
-    } else {
-      paymentLine = "Ödeme Yöntemi: Kredi Kartı";
-    }
+  if (params.pdfUrl?.trim()) {
+    lines.push(`Sipariş Fişi : ${params.pdfUrl.trim()}`);
   }
 
-  const totalsByCurrency = getCartTotalsByCurrency(params.items);
-  const totalLines = supportedCurrencyCodes
-    .map((currency) => ({ currency, total: totalsByCurrency[currency] }))
-    .filter(
-      (item): item is { currency: CurrencyCode; total: number } =>
-        typeof item.total === "number",
-    );
-
-  let totalSection: string[];
-
-  if (summary) {
-    const hasDiscount = summary.isQualified && summary.discountAmount > 0;
-    const hasSurcharge = summary.surchargeAmount > 0;
-    const showBreakdown = hasDiscount || hasSurcharge;
-    const showZeroCommission = summary.zeroCommissionApplied && summary.selectedInstallment;
-
-    if (showBreakdown || showZeroCommission) {
-      totalSection = [
-        "----------------------------",
-        `Ara Toplam: ${formatWhatsAppMoney(summary.subtotal, summary.currency)}`,
-        ...(hasDiscount
-          ? [
-              `İskonto (%${formatDiscountPercentage(summary.discountPercentage)}): -${formatWhatsAppMoney(summary.discountAmount, summary.currency)}`,
-            ]
-          : []),
-        ...(showZeroCommission
-          ? [`Vade Farkı: 0 ${summary.currency} (0 Komisyon Kampanyası)`]
-          : hasSurcharge
-            ? [
-                `Vade Farkı (%${formatDiscountPercentage(summary.surchargePercentage)}): +${formatWhatsAppMoney(summary.surchargeAmount, summary.currency)}`,
-              ]
-            : []),
-        `Genel Toplam: ${formatWhatsAppMoney(summary.finalTotal, summary.currency)}`,
-        "----------------------------",
-      ];
-    } else {
-      totalSection = [
-        "----------------------------",
-        `Genel Toplam: ${formatWhatsAppMoney(summary.finalTotal, summary.currency)}`,
-        "----------------------------",
-      ];
-    }
-  } else if (totalLines.length === 1) {
-    totalSection = [
-      "----------------------------",
-      `Genel Toplam: ${formatWhatsAppMoney(totalLines[0].total, totalLines[0].currency)}`,
-      "----------------------------",
-    ];
-  } else {
-    totalSection = [
-      "Toplamlar:",
-      ...totalLines.map(
-        ({ currency, total }) => `${currency}: ${formatWhatsAppMoney(total, currency)}`,
-      ),
-    ];
-  }
-
-  const noteLine = params.note?.trim() ? `Not: ${params.note.trim()}` : null;
-
-  return [
-    `Merhaba, ${params.tenantName} için sipariş oluşturmak istiyorum.`,
-    `👤 Müşteri / Cari: ${params.customerReferenceName.trim()}`,
-    "",
-    ...lines,
-    "",
-    ...totalSection,
-    ...(paymentLine ? ["", paymentLine] : []),
-    ...(noteLine ? ["", noteLine] : []),
-    ...(params.pdfUrl?.trim()
-      ? ["", `📄 Sipariş Fişi (PDF): ${params.pdfUrl.trim()}`]
-      : []),
-  ]
-    .filter((line, i, arr) => {
-      if (line === "" && arr[i - 1] === "") return false;
-      return true;
-    })
-    .join("\n");
+  return lines.join("\n");
 }
 
 export function getCartVariantCount(items: CartItem[], productId: string) {
