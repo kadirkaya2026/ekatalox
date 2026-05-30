@@ -88,7 +88,6 @@ function SocialMediaRow({
 function getInitialFooterState(settings: TenantStorefrontSettings) {
   return {
     isFooterVisible: settings.is_footer_visible ?? false,
-    isFooterLogoVisible: settings.is_footer_logo_visible ?? true,
     isFooterSocialVisible: settings.is_footer_social_visible ?? false,
     isFooterLocationVisible: settings.is_footer_location_visible ?? false,
     footerLocation: settings.footer_location ?? "",
@@ -141,7 +140,6 @@ export function TenantFooterSettingsForm({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           is_footer_visible: state.isFooterVisible,
-          is_footer_logo_visible: state.isFooterLogoVisible,
           is_footer_social_visible: state.isFooterSocialVisible,
           is_footer_location_visible: state.isFooterLocationVisible,
           footer_location: state.footerLocation || null,
@@ -211,24 +209,6 @@ export function TenantFooterSettingsForm({
         </div>
 
         <div className={cn("space-y-4", footerFieldsDisabled && "opacity-60")}>
-          <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3">
-            <div className="flex items-center justify-between gap-4">
-              <div>
-                <p className="text-sm font-semibold text-slate-900">
-                  eKatalox logosunu göster
-                </p>
-              </div>
-              <SettingsToggle
-                label="eKatalox logosunu göster"
-                pressed={state.isFooterLogoVisible}
-                disabled={footerFieldsDisabled}
-                onToggle={() =>
-                  updateState("isFooterLogoVisible", !state.isFooterLogoVisible)
-                }
-              />
-            </div>
-          </div>
-
           <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3">
             <div className="mb-3 flex items-center justify-between gap-4">
               <p className="text-sm font-semibold text-slate-900">Adresimiz</p>

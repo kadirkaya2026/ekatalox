@@ -120,7 +120,6 @@ export function StorefrontFooter({
 }: {
   settings: TenantStorefrontSettings;
 }) {
-  const showLogo = Boolean(settings.is_footer_logo_visible);
   const showLocation = Boolean(settings.is_footer_location_visible);
   const showWebsite = Boolean(settings.is_footer_website_visible);
   const showContact = Boolean(settings.is_footer_contact_visible);
@@ -144,8 +143,7 @@ export function StorefrontFooter({
   );
   const hasContactColumn = Boolean(locationText || hasWebsite || hasContactInfo);
   const hasSocialColumn = socialLinks.length > 0;
-  const hasFooterMainContent =
-    showLogo || hasSocialColumn || hasContactColumn;
+  const hasFooterMainContent = hasContactColumn || hasSocialColumn;
 
   let mobileDividerIndex = 0;
 
@@ -153,57 +151,9 @@ export function StorefrontFooter({
     <footer className="relative z-0 border-t border-zinc-200 bg-zinc-50">
       <div className="mx-auto max-w-7xl px-4 py-6 md:py-7">
         {hasFooterMainContent ? (
-          <div className="flex flex-col gap-4 md:grid md:grid-cols-12 md:items-start md:gap-x-10 md:gap-y-0 lg:gap-x-14">
-            {showLogo ? (
-              <MobileSection
-                showDivider={mobileDividerIndex++ > 0}
-                className="md:col-span-3"
-              >
-                <div className="flex flex-col items-center gap-1 md:items-start">
-                  <img
-                    src="/ekatalox-logo.png"
-                    alt="eKatalox"
-                    className="h-5 w-auto opacity-90"
-                    loading="lazy"
-                  />
-                  <p className="hidden text-[11px] leading-relaxed text-zinc-400 md:block">
-                    Dijital vitrin altyapısı
-                  </p>
-                </div>
-              </MobileSection>
-            ) : null}
-
-            {hasSocialColumn ? (
-              <MobileSection
-                showDivider={mobileDividerIndex++ > 0}
-                className="md:col-span-4 lg:col-span-3"
-              >
-                <div className="flex flex-col items-center md:items-start">
-                  <FooterSectionHeading>Sosyal Medya</FooterSectionHeading>
-                  <div className="flex flex-wrap items-center justify-center gap-1.5 md:justify-start">
-                    {socialLinks.map((link) => (
-                      <a
-                        key={link.platform}
-                        href={link.href}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        aria-label={link.label}
-                        title={link.label}
-                        className="inline-flex size-7 items-center justify-center rounded-full border border-zinc-200 bg-white text-zinc-400 shadow-sm transition hover:border-zinc-300 hover:text-zinc-700"
-                      >
-                        <SocialIcon platform={link.platform} />
-                      </a>
-                    ))}
-                  </div>
-                </div>
-              </MobileSection>
-            ) : null}
-
+          <div className="flex flex-col gap-4 md:grid md:grid-cols-2 md:items-start md:gap-x-10 lg:gap-x-16">
             {hasContactColumn ? (
-              <MobileSection
-                showDivider={mobileDividerIndex++ > 0}
-                className="md:col-span-5 lg:col-span-6"
-              >
+              <MobileSection showDivider={mobileDividerIndex++ > 0}>
                 <div className="flex flex-col items-center text-center md:items-start md:text-left">
                   <FooterSectionHeading>İletişim &amp; Adres</FooterSectionHeading>
                   <div className="space-y-1">
@@ -231,6 +181,35 @@ export function StorefrontFooter({
                         </FooterDetailLink>
                       </p>
                     ) : null}
+                  </div>
+                </div>
+              </MobileSection>
+            ) : null}
+
+            {hasSocialColumn ? (
+              <MobileSection
+                showDivider={mobileDividerIndex++ > 0}
+                className={cn(
+                  "md:justify-self-end",
+                  !hasContactColumn && "md:col-start-2",
+                )}
+              >
+                <div className="flex flex-col items-center md:items-end">
+                  <FooterSectionHeading>Sosyal Medya</FooterSectionHeading>
+                  <div className="flex flex-wrap items-center justify-center gap-1.5 md:justify-end">
+                    {socialLinks.map((link) => (
+                      <a
+                        key={link.platform}
+                        href={link.href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        aria-label={link.label}
+                        title={link.label}
+                        className="inline-flex size-7 items-center justify-center rounded-full border border-zinc-200 bg-white text-zinc-400 shadow-sm transition hover:border-zinc-300 hover:text-zinc-700"
+                      >
+                        <SocialIcon platform={link.platform} />
+                      </a>
+                    ))}
                   </div>
                 </div>
               </MobileSection>
