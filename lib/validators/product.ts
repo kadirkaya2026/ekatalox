@@ -197,6 +197,16 @@ export const productReorderSchema = z.object({
   productIds: z.array(z.string().min(1)).min(1, "Sıralanacak ürün bulunamadı."),
 });
 
+export const productMoveOrderSchema = z.object({
+  productId: z.string().min(1, "Geçerli bir ürün seçin."),
+  targetOrder: z.coerce.number().int().min(1, "Sıra numarası en az 1 olmalıdır."),
+});
+
+export const productReorderRequestSchema = z.union([
+  productMoveOrderSchema,
+  productReorderSchema,
+]);
+
 export const productBulkCategoryUpdateSchema = z.object({
   productIds: z.array(z.string().uuid()).min(1, "En az bir ürün seçin."),
   category_id: z.string().uuid("Geçerli bir kategori seçin."),

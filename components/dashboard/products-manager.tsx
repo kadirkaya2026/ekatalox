@@ -305,6 +305,7 @@ export function ProductsManager({
   const [inlineCategoryProductId, setInlineCategoryProductId] = useState<string | null>(null);
   const [bulkCategoryId, setBulkCategoryId] = useState<string>("");
   const [message, setMessage] = useState<string | null>(null);
+  const [isOrderSaving, setIsOrderSaving] = useState(false);
   const [pending, startTransition] = useTransition();
   const categoryFilterRef = useRef<HTMLDivElement | null>(null);
   const products = controlledProducts ?? internalProducts;
@@ -654,29 +655,39 @@ export function ProductsManager({
     });
   }
 
-  function persistProductOrder(nextProducts: Product[]) {
+  async function saveProductOrder(
+    nextProducts: Product[],
+    payload:
+      | { productId: string; targetOrder: number }
+      | { productIds: string[] },
+  ) {
+    const previousProducts = products;
+
+    syncProducts(nextProducts);
     setMessage(null);
-    startTransition(async () => {
+    setIsOrderSaving(true);
+
+    try {
       const response = await fetch("/api/tenant/products/reorder", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          productIds: nextProducts.map((product) => product.id),
-        }),
+        body: JSON.stringify(payload),
       });
       const result = await response.json();
 
       if (!response.ok) {
+        syncProducts(previousProducts);
         setMessage(result.error ?? "Ürün sıralaması kaydedilemedi.");
         return;
       }
 
-      if (result.products) {
-        syncProducts(result.products as Product[]);
-      }
-
       setMessage("Ürün vitrin sırası güncellendi.");
-    });
+    } catch {
+      syncProducts(previousProducts);
+      setMessage("Ürün sıralaması kaydedilemedi.");
+    } finally {
+      setIsOrderSaving(false);
+    }
   }
 
   function handleSetProductOrder(productId: string, targetOrder: number) {
@@ -695,8 +706,10 @@ export function ProductsManager({
     }
 
     const nextProducts = reorderProducts(sorted, sourceIndex, targetIndex);
-    syncProducts(nextProducts);
-    persistProductOrder(nextProducts);
+    void saveProductOrder(nextProducts, {
+      productId,
+      targetOrder: targetIndex + 1,
+    });
   }
 
   function handleMoveProduct(productId: string, direction: "up" | "down") {
@@ -721,8 +734,9 @@ export function ProductsManager({
     }
 
     const nextProducts = reorderProducts(products, sourceIndex, targetIndex);
-    syncProducts(nextProducts);
-    persistProductOrder(nextProducts);
+    void saveProductOrder(nextProducts, {
+      productIds: nextProducts.map((product) => product.id),
+    });
   }
 
   function handleProductDrop(targetProductId: string) {
@@ -740,9 +754,10 @@ export function ProductsManager({
     }
 
     const nextProducts = reorderProducts(products, sourceIndex, targetIndex);
-    syncProducts(nextProducts);
     setDraggedProductId(null);
-    persistProductOrder(nextProducts);
+    void saveProductOrder(nextProducts, {
+      productIds: nextProducts.map((product) => product.id),
+    });
   }
 
   function handleInlineCategoryChange(product: Product, newCategoryId: string) {
@@ -1103,7 +1118,7 @@ export function ProductsManager({
                         <ProductOrderInput
                           displayOrder={product.display_order}
                           maxOrder={products.length}
-                          disabled={pending}
+                          disabled={isOrderSaving}
                           productName={product.product_name}
                           onCommit={(targetOrder) =>
                             handleSetProductOrder(product.id, targetOrder)
@@ -1113,7 +1128,7 @@ export function ProductsManager({
                           <button
                             type="button"
                             onClick={() => handleMoveProduct(product.id, "up")}
-                            disabled={index === 0 || pending}
+                            disabled={index === 0 || isOrderSaving}
                             className="rounded-md border border-slate-200 px-2 py-1 text-slate-600 transition hover:bg-slate-50 disabled:opacity-40"
                             aria-label={`${product.product_name} yukarı taşı`}
                           >
@@ -1122,7 +1137,7 @@ export function ProductsManager({
                           <button
                             type="button"
                             onClick={() => handleMoveProduct(product.id, "down")}
-                            disabled={index === filteredProducts.length - 1 || pending}
+                            disabled={index === filteredProducts.length - 1 || isOrderSaving}
                             className="rounded-md border border-slate-200 px-2 py-1 text-slate-600 transition hover:bg-slate-50 disabled:opacity-40"
                             aria-label={`${product.product_name} aşağı taşı`}
                           >
@@ -1282,7 +1297,7 @@ export function ProductsManager({
                   <ProductOrderInput
                     displayOrder={product.display_order}
                     maxOrder={products.length}
-                    disabled={pending}
+                    disabled={isOrderSaving}
                     productName={product.product_name}
                     onCommit={(targetOrder) =>
                       handleSetProductOrder(product.id, targetOrder)
@@ -1348,7 +1363,7 @@ export function ProductsManager({
                 <button
                   type="button"
                   onClick={() => handleMoveProduct(product.id, "up")}
-                  disabled={index === 0 || pending}
+                  disabled={index === 0 || isOrderSaving}
                   className="flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 disabled:opacity-40"
                 >
                   Yukarı taşı
@@ -1356,7 +1371,7 @@ export function ProductsManager({
                 <button
                   type="button"
                   onClick={() => handleMoveProduct(product.id, "down")}
-                  disabled={index === filteredProducts.length - 1 || pending}
+                  disabled={index === filteredProducts.length - 1 || isOrderSaving}
                   className="flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 disabled:opacity-40"
                 >
                   Aşağı taşı
