@@ -2597,7 +2597,7 @@ export function StorefrontClient({
                                   setQuantityError(null);
                                 }
                               }}
-                              className="h-8 rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-[16px] text-slate-900 disabled:bg-slate-100 sm:h-9"
+                              className="h-9 rounded-lg border border-slate-200 bg-white px-2.5 py-0 text-[16px] leading-9 text-slate-900 disabled:bg-slate-100"
                               style={{ fontSize: "16px" }}
                             >
                               {unitChoices.map((unitOption) => (
@@ -2623,7 +2623,7 @@ export function StorefrontClient({
                                 }
                               }}
                               placeholder="0"
-                              className="h-8 px-2.5 py-2 text-[16px] sm:h-9"
+                              className="h-9 px-2.5 py-0 text-center text-[16px] leading-9"
                               style={{ fontSize: "16px" }}
                             />
                           </div>
