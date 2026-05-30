@@ -135,15 +135,16 @@ export async function generateOrderReceiptPdf(
     });
   }
 
-  if (summary.surchargeAmount > 0) {
+  if (summary.paymentMethod === "card") {
     summaryLines.push({
-      label: `Vade Farkı (%${formatDiscountPercentage(summary.surchargePercentage)})`,
-      value: `+${formatReceiptMoney(summary.surchargeAmount, currency)}`,
-    });
-  } else if (summary.zeroCommissionApplied && summary.selectedInstallment) {
-    summaryLines.push({
-      label: "Vade Farkı",
-      value: `0 ${currency} (0 Komisyon Kampanyası)`,
+      label:
+        summary.surchargeAmount > 0
+          ? `Vade Farkı (%${formatDiscountPercentage(summary.surchargePercentage)})`
+          : "Vade Farkı",
+      value:
+        summary.surchargeAmount > 0
+          ? `+${formatReceiptMoney(summary.surchargeAmount, currency)}`
+          : formatReceiptMoney(0, currency),
     });
   }
 
@@ -175,11 +176,25 @@ export async function generateOrderReceiptPdf(
 
   const trimmedNote = params.note?.trim();
   if (trimmedNote) {
-    doc.text(`Not: ${trimmedNote}`, margin, cursorY, {
-      maxWidth: pageWidth - margin * 2,
-      lineHeightFactor: 1.35,
-    });
+    const noteLines = doc.splitTextToSize(`Not: ${trimmedNote}`, pageWidth - margin * 2);
+    doc.text(noteLines, margin, cursorY, { lineHeightFactor: 1.35 });
+    cursorY += noteLines.length * 5.5;
   }
+
+  const pageHeight = doc.internal.pageSize.getHeight();
+  const footerWarning =
+    "Bu Fiş 24 Saat Sonra Sistemden Silinecektir. Kaydetmeyi Unutmayın!";
+  const footerY = pageHeight - margin;
+
+  if (cursorY > footerY - 8) {
+    doc.addPage();
+  }
+
+  doc.setTextColor(220, 38, 38);
+  setPdfFont(doc, "normal");
+  doc.setFontSize(9);
+  doc.text(footerWarning, pageWidth / 2, footerY, { align: "center" });
+  doc.setTextColor(15, 23, 42);
 
   const pdfOutput = doc.output("arraybuffer");
   return new Uint8Array(pdfOutput);
