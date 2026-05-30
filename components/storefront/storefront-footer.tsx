@@ -19,7 +19,7 @@ function SocialIcon({
   platform: FooterSocialPlatform;
   className?: string;
 }) {
-  const iconClass = cn("size-4", className);
+  const iconClass = cn("size-3.5", className);
 
   switch (platform) {
     case "instagram":
@@ -59,9 +59,59 @@ function SocialIcon({
 
 function FooterSectionHeading({ children }: { children: React.ReactNode }) {
   return (
-    <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+    <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.1em] text-zinc-800">
       {children}
     </p>
+  );
+}
+
+function FooterDetailLink({
+  href,
+  children,
+  external,
+}: {
+  href: string;
+  children: React.ReactNode;
+  external?: boolean;
+}) {
+  return (
+    <a
+      href={href}
+      {...(external
+        ? { target: "_blank", rel: "noopener noreferrer" }
+        : {})}
+      className="text-[11px] leading-relaxed text-zinc-500 transition hover:text-zinc-800 hover:underline"
+    >
+      {children}
+    </a>
+  );
+}
+
+function FooterDetailText({ children }: { children: React.ReactNode }) {
+  return (
+    <p className="text-[11px] leading-relaxed text-zinc-500">{children}</p>
+  );
+}
+
+function MobileSection({
+  children,
+  className,
+  showDivider,
+}: {
+  children: React.ReactNode;
+  className?: string;
+  showDivider?: boolean;
+}) {
+  return (
+    <div
+      className={cn(
+        "w-full",
+        showDivider && "border-t border-zinc-100 pt-4",
+        className,
+      )}
+    >
+      {children}
+    </div>
   );
 }
 
@@ -89,39 +139,48 @@ export function StorefrontFooter({
   const emailDisplay = showContact ? settings.footer_email?.trim() : null;
 
   const hasWebsite = Boolean(websiteHref && websiteDisplay);
-  const hasContact = Boolean(
+  const hasContactInfo = Boolean(
     (phoneHref && phoneDisplay) || (emailHref && emailDisplay),
   );
+  const hasContactColumn = Boolean(locationText || hasWebsite || hasContactInfo);
+  const hasSocialColumn = socialLinks.length > 0;
   const hasFooterMainContent =
-    showLogo ||
-    socialLinks.length > 0 ||
-    Boolean(locationText) ||
-    hasWebsite ||
-    hasContact;
+    showLogo || hasSocialColumn || hasContactColumn;
+
+  let mobileDividerIndex = 0;
 
   return (
-    <footer className="relative z-0 border-t border-slate-200 bg-slate-100 px-4 py-6 text-xs text-muted-foreground">
-      <div className="mx-auto max-w-7xl">
+    <footer className="relative z-0 border-t border-zinc-200 bg-zinc-50">
+      <div className="mx-auto max-w-7xl px-4 py-6 md:py-7">
         {hasFooterMainContent ? (
-          <div className="flex flex-col items-center gap-6 md:grid md:grid-cols-3 md:items-start md:gap-8">
-            <div className="flex justify-center md:justify-start">
-              {showLogo ? (
-                <img
-                  src="/ekatalox-logo.png"
-                  alt="eKatalox"
-                  className="h-6 w-auto"
-                  loading="lazy"
-                />
-              ) : (
-                <span aria-hidden="true" />
-              )}
-            </div>
+          <div className="flex flex-col gap-4 md:grid md:grid-cols-12 md:items-start md:gap-x-10 md:gap-y-0 lg:gap-x-14">
+            {showLogo ? (
+              <MobileSection
+                showDivider={mobileDividerIndex++ > 0}
+                className="md:col-span-3"
+              >
+                <div className="flex flex-col items-center gap-1 md:items-start">
+                  <img
+                    src="/ekatalox-logo.png"
+                    alt="eKatalox"
+                    className="h-5 w-auto opacity-90"
+                    loading="lazy"
+                  />
+                  <p className="hidden text-[11px] leading-relaxed text-zinc-400 md:block">
+                    Dijital vitrin altyapısı
+                  </p>
+                </div>
+              </MobileSection>
+            ) : null}
 
-            <div className="flex flex-col items-center gap-2">
-              {socialLinks.length ? (
-                <>
+            {hasSocialColumn ? (
+              <MobileSection
+                showDivider={mobileDividerIndex++ > 0}
+                className="md:col-span-4 lg:col-span-3"
+              >
+                <div className="flex flex-col items-center md:items-start">
                   <FooterSectionHeading>Sosyal Medya</FooterSectionHeading>
-                  <div className="flex flex-wrap items-center justify-center gap-2">
+                  <div className="flex flex-wrap items-center justify-center gap-1.5 md:justify-start">
                     {socialLinks.map((link) => (
                       <a
                         key={link.platform}
@@ -130,72 +189,59 @@ export function StorefrontFooter({
                         rel="noopener noreferrer"
                         aria-label={link.label}
                         title={link.label}
-                        className="inline-flex size-8 items-center justify-center rounded-full border border-slate-200/80 bg-white text-slate-500 transition hover:border-slate-300 hover:text-slate-700"
+                        className="inline-flex size-7 items-center justify-center rounded-full border border-zinc-200 bg-white text-zinc-400 shadow-sm transition hover:border-zinc-300 hover:text-zinc-700"
                       >
                         <SocialIcon platform={link.platform} />
                       </a>
                     ))}
                   </div>
-                </>
-              ) : null}
-            </div>
-
-            <div className="flex w-full flex-col items-center gap-4 text-center md:items-end md:text-right">
-              {locationText ? (
-                <div className="space-y-1">
-                  <FooterSectionHeading>Adresimiz</FooterSectionHeading>
-                  <p className="leading-5 text-slate-600">{locationText}</p>
                 </div>
-              ) : null}
+              </MobileSection>
+            ) : null}
 
-              {hasWebsite ? (
-                <div className="space-y-1">
-                  <a
-                    href={websiteHref!}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-sm text-slate-700 transition hover:text-slate-900 hover:underline"
-                  >
-                    {websiteDisplay}
-                  </a>
-                </div>
-              ) : null}
-
-              {hasContact ? (
-                <div className="space-y-1">
-                  <FooterSectionHeading>İletişim</FooterSectionHeading>
-                  <div className="space-y-0.5 text-sm text-slate-600">
+            {hasContactColumn ? (
+              <MobileSection
+                showDivider={mobileDividerIndex++ > 0}
+                className="md:col-span-5 lg:col-span-6"
+              >
+                <div className="flex flex-col items-center text-center md:items-start md:text-left">
+                  <FooterSectionHeading>İletişim &amp; Adres</FooterSectionHeading>
+                  <div className="space-y-1">
+                    {locationText ? (
+                      <FooterDetailText>{locationText}</FooterDetailText>
+                    ) : null}
                     {phoneHref && phoneDisplay ? (
                       <p>
-                        <a
-                          href={phoneHref}
-                          className="transition hover:text-slate-900 hover:underline"
-                        >
+                        <FooterDetailLink href={phoneHref}>
                           {phoneDisplay}
-                        </a>
+                        </FooterDetailLink>
                       </p>
                     ) : null}
                     {emailHref && emailDisplay ? (
                       <p>
-                        <a
-                          href={emailHref}
-                          className="transition hover:text-slate-900 hover:underline"
-                        >
+                        <FooterDetailLink href={emailHref}>
                           {emailDisplay}
-                        </a>
+                        </FooterDetailLink>
+                      </p>
+                    ) : null}
+                    {hasWebsite ? (
+                      <p>
+                        <FooterDetailLink href={websiteHref!} external>
+                          {websiteDisplay}
+                        </FooterDetailLink>
                       </p>
                     ) : null}
                   </div>
                 </div>
-              ) : null}
-            </div>
+              </MobileSection>
+            ) : null}
           </div>
         ) : null}
 
         <div
           className={cn(
-            "border-t border-slate-200/80 pt-4 text-center text-xs text-slate-500",
-            hasFooterMainContent && "mt-6",
+            "border-t border-zinc-200 bg-zinc-50/80 py-2.5 text-center text-[11px] text-zinc-500",
+            hasFooterMainContent ? "mt-5 md:mt-6" : "mt-0",
           )}
         >
           ©{FOOTER_COPYRIGHT_YEAR}{" "}
@@ -203,7 +249,7 @@ export function StorefrontFooter({
             href={FOOTER_EKATALOX_URL}
             target="_blank"
             rel="noopener noreferrer"
-            className="font-semibold text-slate-800 transition hover:text-slate-950 hover:underline"
+            className="font-semibold text-zinc-800 transition hover:text-zinc-950 hover:underline"
           >
             eKatalox
           </a>{" "}
