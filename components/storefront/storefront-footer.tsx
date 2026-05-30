@@ -1,6 +1,11 @@
 import {
-  getFooterCopyright,
+  FOOTER_COPYRIGHT_YEAR,
+  FOOTER_EKATALOX_URL,
+  getFooterEmailHref,
   getFooterLocation,
+  getFooterPhoneHref,
+  getFooterWebsiteDisplay,
+  getFooterWebsiteHref,
   getVisibleFooterSocialLinks,
   type FooterSocialPlatform,
 } from "@/lib/storefront/footer-links";
@@ -52,6 +57,14 @@ function SocialIcon({
   }
 }
 
+function FooterSectionHeading({ children }: { children: React.ReactNode }) {
+  return (
+    <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+      {children}
+    </p>
+  );
+}
+
 export function StorefrontFooter({
   settings,
 }: {
@@ -59,64 +72,142 @@ export function StorefrontFooter({
 }) {
   const showLogo = Boolean(settings.is_footer_logo_visible);
   const showLocation = Boolean(settings.is_footer_location_visible);
-  const showCopyright = Boolean(settings.is_footer_copyright_visible);
+  const showWebsite = Boolean(settings.is_footer_website_visible);
+  const showContact = Boolean(settings.is_footer_contact_visible);
   const socialLinks = getVisibleFooterSocialLinks(settings);
 
   const locationText = showLocation ? getFooterLocation(settings) : null;
-  const copyrightText = showCopyright ? getFooterCopyright(settings) : null;
-  const metaParts = [locationText, copyrightText].filter(Boolean);
+  const websiteHref = showWebsite
+    ? getFooterWebsiteHref(settings.footer_website_url)
+    : null;
+  const websiteDisplay = showWebsite
+    ? getFooterWebsiteDisplay(settings.footer_website_url)
+    : null;
+  const phoneHref = showContact ? getFooterPhoneHref(settings.footer_phone) : null;
+  const phoneDisplay = showContact ? settings.footer_phone?.trim() : null;
+  const emailHref = showContact ? getFooterEmailHref(settings.footer_email) : null;
+  const emailDisplay = showContact ? settings.footer_email?.trim() : null;
 
-  if (!showLogo && !socialLinks.length && !metaParts.length) {
-    return null;
-  }
+  const hasWebsite = Boolean(websiteHref && websiteDisplay);
+  const hasContact = Boolean(
+    (phoneHref && phoneDisplay) || (emailHref && emailDisplay),
+  );
+  const hasFooterMainContent =
+    showLogo ||
+    socialLinks.length > 0 ||
+    Boolean(locationText) ||
+    hasWebsite ||
+    hasContact;
 
   return (
-    <footer className="relative z-0 border-t border-slate-200/60 bg-zinc-50 px-4 py-6 text-xs text-muted-foreground">
-      <div className="mx-auto flex max-w-7xl flex-col items-center gap-4 md:grid md:grid-cols-3 md:items-center md:gap-6">
-        <div className="flex justify-center md:justify-start">
-          {showLogo ? (
-            <img
-              src="/ekatalox-logo.png"
-              alt="eKatalox"
-              className="h-6 w-auto"
-              loading="lazy"
-            />
-          ) : (
-            <span aria-hidden="true" />
-          )}
-        </div>
+    <footer className="relative z-0 border-t border-slate-200 bg-slate-100 px-4 py-6 text-xs text-muted-foreground">
+      <div className="mx-auto max-w-7xl">
+        {hasFooterMainContent ? (
+          <div className="flex flex-col items-center gap-6 md:grid md:grid-cols-3 md:items-start md:gap-8">
+            <div className="flex justify-center md:justify-start">
+              {showLogo ? (
+                <img
+                  src="/ekatalox-logo.png"
+                  alt="eKatalox"
+                  className="h-6 w-auto"
+                  loading="lazy"
+                />
+              ) : (
+                <span aria-hidden="true" />
+              )}
+            </div>
 
-        <div className="flex flex-col items-center gap-2">
-          {socialLinks.length ? (
-            <>
-              <p className="text-[11px] font-medium uppercase tracking-wide text-slate-400">
-                Sosyal Medya
-              </p>
-              <div className="flex flex-wrap items-center justify-center gap-2">
-                {socialLinks.map((link) => (
+            <div className="flex flex-col items-center gap-2">
+              {socialLinks.length ? (
+                <>
+                  <FooterSectionHeading>Sosyal Medya</FooterSectionHeading>
+                  <div className="flex flex-wrap items-center justify-center gap-2">
+                    {socialLinks.map((link) => (
+                      <a
+                        key={link.platform}
+                        href={link.href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        aria-label={link.label}
+                        title={link.label}
+                        className="inline-flex size-8 items-center justify-center rounded-full border border-slate-200/80 bg-white text-slate-500 transition hover:border-slate-300 hover:text-slate-700"
+                      >
+                        <SocialIcon platform={link.platform} />
+                      </a>
+                    ))}
+                  </div>
+                </>
+              ) : null}
+            </div>
+
+            <div className="flex w-full flex-col items-center gap-4 text-center md:items-end md:text-right">
+              {locationText ? (
+                <div className="space-y-1">
+                  <FooterSectionHeading>Adresimiz</FooterSectionHeading>
+                  <p className="leading-5 text-slate-600">{locationText}</p>
+                </div>
+              ) : null}
+
+              {hasWebsite ? (
+                <div className="space-y-1">
                   <a
-                    key={link.platform}
-                    href={link.href}
+                    href={websiteHref!}
                     target="_blank"
                     rel="noopener noreferrer"
-                    aria-label={link.label}
-                    title={link.label}
-                    className="inline-flex size-8 items-center justify-center rounded-full border border-slate-200/80 bg-white text-slate-500 transition hover:border-slate-300 hover:text-slate-700"
+                    className="text-sm text-slate-700 transition hover:text-slate-900 hover:underline"
                   >
-                    <SocialIcon platform={link.platform} />
+                    {websiteDisplay}
                   </a>
-                ))}
-              </div>
-            </>
-          ) : null}
-        </div>
+                </div>
+              ) : null}
 
-        <div className="text-center md:text-right">
-          {metaParts.length ? (
-            <p className="leading-5 text-slate-500">
-              {metaParts.join(" | ")}
-            </p>
-          ) : null}
+              {hasContact ? (
+                <div className="space-y-1">
+                  <FooterSectionHeading>İletişim</FooterSectionHeading>
+                  <div className="space-y-0.5 text-sm text-slate-600">
+                    {phoneHref && phoneDisplay ? (
+                      <p>
+                        <a
+                          href={phoneHref}
+                          className="transition hover:text-slate-900 hover:underline"
+                        >
+                          {phoneDisplay}
+                        </a>
+                      </p>
+                    ) : null}
+                    {emailHref && emailDisplay ? (
+                      <p>
+                        <a
+                          href={emailHref}
+                          className="transition hover:text-slate-900 hover:underline"
+                        >
+                          {emailDisplay}
+                        </a>
+                      </p>
+                    ) : null}
+                  </div>
+                </div>
+              ) : null}
+            </div>
+          </div>
+        ) : null}
+
+        <div
+          className={cn(
+            "border-t border-slate-200/80 pt-4 text-center text-xs text-slate-500",
+            hasFooterMainContent && "mt-6",
+          )}
+        >
+          ©{FOOTER_COPYRIGHT_YEAR}{" "}
+          <a
+            href={FOOTER_EKATALOX_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-semibold text-slate-800 transition hover:text-slate-950 hover:underline"
+          >
+            eKatalox
+          </a>{" "}
+          Tüm Hakları Saklıdır.
         </div>
       </div>
     </footer>

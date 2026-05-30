@@ -208,6 +208,21 @@ export const storefrontSettingsSchema = z
     is_footer_x_visible: z.boolean().default(false),
     is_footer_facebook_visible: z.boolean().default(false),
     is_footer_whatsapp_visible: z.boolean().default(false),
+    footer_website_url: optionalUrlSchema,
+    is_footer_website_visible: z.boolean().default(false),
+    footer_phone: optionalFooterTextSchema(
+      30,
+      "Telefon numarası en fazla 30 karakter olabilir.",
+    ),
+    footer_email: z
+      .union([
+        z.string().trim().email("Geçerli bir e-posta adresi girin."),
+        z.literal(""),
+        z.null(),
+        z.undefined(),
+      ])
+      .transform((value) => (typeof value === "string" ? value.trim() || null : null)),
+    is_footer_contact_visible: z.boolean().default(false),
   })
   .superRefine((value, ctx) => {
     if (value.is_active) {

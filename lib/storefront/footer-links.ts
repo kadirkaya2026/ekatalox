@@ -8,7 +8,8 @@ export type FooterSocialPlatform =
   | "whatsapp";
 
 export const DEFAULT_FOOTER_LOCATION = "Beykent, İstanbul";
-export const DEFAULT_FOOTER_COPYRIGHT = "© 2026 eKatalox. Tüm Hakları Saklıdır.";
+export const FOOTER_COPYRIGHT_YEAR = 2026;
+export const FOOTER_EKATALOX_URL = "https://ekatalox.com";
 
 export interface FooterSocialLink {
   platform: FooterSocialPlatform;
@@ -89,6 +90,22 @@ function normalizeSocialUrl(
   }
 }
 
+function normalizeWebsiteUrl(value: string | null | undefined): string | null {
+  const trimmed = value?.trim();
+
+  if (!trimmed) {
+    return null;
+  }
+
+  const withProtocol = /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+
+  try {
+    return new URL(withProtocol).toString();
+  } catch {
+    return null;
+  }
+}
+
 const PLATFORM_LABELS: Record<FooterSocialPlatform, string> = {
   instagram: "Instagram",
   youtube: "YouTube",
@@ -101,8 +118,49 @@ export function getFooterLocation(settings: TenantStorefrontSettings): string {
   return settings.footer_location?.trim() || DEFAULT_FOOTER_LOCATION;
 }
 
-export function getFooterCopyright(settings: TenantStorefrontSettings): string {
-  return settings.footer_copyright?.trim() || DEFAULT_FOOTER_COPYRIGHT;
+export function getFooterWebsiteHref(url: string | null | undefined): string | null {
+  return normalizeWebsiteUrl(url);
+}
+
+export function getFooterWebsiteDisplay(url: string | null | undefined): string | null {
+  const href = normalizeWebsiteUrl(url);
+
+  if (!href) {
+    return null;
+  }
+
+  try {
+    const hostname = new URL(href).hostname.replace(/^www\./i, "");
+    return hostname || null;
+  } catch {
+    return null;
+  }
+}
+
+export function getFooterPhoneHref(phone: string | null | undefined): string | null {
+  const trimmed = phone?.trim();
+
+  if (!trimmed) {
+    return null;
+  }
+
+  const digits = normalizeDigits(trimmed);
+
+  if (digits.length < 10) {
+    return null;
+  }
+
+  return `tel:+${digits}`;
+}
+
+export function getFooterEmailHref(email: string | null | undefined): string | null {
+  const trimmed = email?.trim();
+
+  if (!trimmed || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
+    return null;
+  }
+
+  return `mailto:${trimmed}`;
 }
 
 export function getVisibleFooterSocialLinks(

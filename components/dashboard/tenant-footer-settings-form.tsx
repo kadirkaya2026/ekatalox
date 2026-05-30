@@ -5,10 +5,7 @@ import { LayoutTemplate } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import {
-  DEFAULT_FOOTER_COPYRIGHT,
-  DEFAULT_FOOTER_LOCATION,
-} from "@/lib/storefront/footer-links";
+import { DEFAULT_FOOTER_LOCATION } from "@/lib/storefront/footer-links";
 import type { TenantStorefrontSettings } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -94,9 +91,12 @@ function getInitialFooterState(settings: TenantStorefrontSettings) {
     isFooterLogoVisible: settings.is_footer_logo_visible ?? true,
     isFooterSocialVisible: settings.is_footer_social_visible ?? false,
     isFooterLocationVisible: settings.is_footer_location_visible ?? false,
-    isFooterCopyrightVisible: settings.is_footer_copyright_visible ?? false,
     footerLocation: settings.footer_location ?? "",
-    footerCopyright: settings.footer_copyright ?? "",
+    footerWebsiteUrl: settings.footer_website_url ?? "",
+    isFooterWebsiteVisible: settings.is_footer_website_visible ?? false,
+    footerPhone: settings.footer_phone ?? "",
+    footerEmail: settings.footer_email ?? "",
+    isFooterContactVisible: settings.is_footer_contact_visible ?? false,
     footerInstagramUrl: settings.footer_instagram_url ?? "",
     footerYoutubeUrl: settings.footer_youtube_url ?? "",
     footerXUrl: settings.footer_x_url ?? "",
@@ -144,9 +144,12 @@ export function TenantFooterSettingsForm({
           is_footer_logo_visible: state.isFooterLogoVisible,
           is_footer_social_visible: state.isFooterSocialVisible,
           is_footer_location_visible: state.isFooterLocationVisible,
-          is_footer_copyright_visible: state.isFooterCopyrightVisible,
           footer_location: state.footerLocation || null,
-          footer_copyright: state.footerCopyright || null,
+          footer_website_url: state.footerWebsiteUrl || null,
+          is_footer_website_visible: state.isFooterWebsiteVisible,
+          footer_phone: state.footerPhone || null,
+          footer_email: state.footerEmail || null,
+          is_footer_contact_visible: state.isFooterContactVisible,
           footer_instagram_url: state.footerInstagramUrl || null,
           footer_youtube_url: state.footerYoutubeUrl || null,
           footer_x_url: state.footerXUrl || null,
@@ -182,8 +185,8 @@ export function TenantFooterSettingsForm({
         <span>Sayfa Altı Footer</span>
       </div>
       <p className="mb-4 text-sm text-slate-500">
-        Vitrin sayfasının en altında görünecek footer alanını, konum/telif metinlerini
-        ve sosyal medya bağlantılarını yönetin.
+        Vitrin sayfasının en altında görünecek footer alanını, adres, iletişim,
+        web sitesi ve sosyal medya bağlantılarını yönetin.
       </p>
 
       <form onSubmit={save} className="space-y-5">
@@ -228,9 +231,9 @@ export function TenantFooterSettingsForm({
 
           <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3">
             <div className="mb-3 flex items-center justify-between gap-4">
-              <p className="text-sm font-semibold text-slate-900">Konum metni</p>
+              <p className="text-sm font-semibold text-slate-900">Adresimiz</p>
               <SettingsToggle
-                label="Konum metnini göster"
+                label="Adresimizi göster"
                 pressed={state.isFooterLocationVisible}
                 disabled={footerFieldsDisabled}
                 onToggle={() =>
@@ -251,25 +254,69 @@ export function TenantFooterSettingsForm({
 
           <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3">
             <div className="mb-3 flex items-center justify-between gap-4">
-              <p className="text-sm font-semibold text-slate-900">Telif yazısı</p>
+              <div>
+                <p className="text-sm font-semibold text-slate-900">Web sitemiz</p>
+                <p className="mt-1 text-sm text-slate-500">
+                  Vitrinde domain adı olarak görünür.
+                </p>
+              </div>
               <SettingsToggle
-                label="Telif yazısını göster"
-                pressed={state.isFooterCopyrightVisible}
+                label="Web sitesini göster"
+                pressed={state.isFooterWebsiteVisible}
                 disabled={footerFieldsDisabled}
                 onToggle={() =>
                   updateState(
-                    "isFooterCopyrightVisible",
-                    !state.isFooterCopyrightVisible,
+                    "isFooterWebsiteVisible",
+                    !state.isFooterWebsiteVisible,
                   )
                 }
               />
             </div>
             <Input
-              value={state.footerCopyright}
+              type="url"
+              value={state.footerWebsiteUrl}
               disabled={footerFieldsDisabled}
-              placeholder={DEFAULT_FOOTER_COPYRIGHT}
-              onChange={(event) => updateState("footerCopyright", event.target.value)}
+              placeholder="https://ornek.com"
+              onChange={(event) => updateState("footerWebsiteUrl", event.target.value)}
             />
+          </div>
+
+          <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3">
+            <div className="mb-3 flex items-center justify-between gap-4">
+              <div>
+                <p className="text-sm font-semibold text-slate-900">İletişim</p>
+                <p className="mt-1 text-sm text-slate-500">
+                  Telefon ve e-posta vitrin footer&apos;ında gösterilir.
+                </p>
+              </div>
+              <SettingsToggle
+                label="İletişim bilgilerini göster"
+                pressed={state.isFooterContactVisible}
+                disabled={footerFieldsDisabled}
+                onToggle={() =>
+                  updateState(
+                    "isFooterContactVisible",
+                    !state.isFooterContactVisible,
+                  )
+                }
+              />
+            </div>
+            <div className="space-y-3">
+              <Input
+                type="tel"
+                value={state.footerPhone}
+                disabled={footerFieldsDisabled}
+                placeholder="Telefon numarası"
+                onChange={(event) => updateState("footerPhone", event.target.value)}
+              />
+              <Input
+                type="email"
+                value={state.footerEmail}
+                disabled={footerFieldsDisabled}
+                placeholder="E-posta adresi"
+                onChange={(event) => updateState("footerEmail", event.target.value)}
+              />
+            </div>
           </div>
 
           <div className="space-y-3">

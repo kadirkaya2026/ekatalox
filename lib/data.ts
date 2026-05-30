@@ -107,6 +107,11 @@ export function getDefaultTenantStorefrontSettings(
     is_footer_x_visible: false,
     is_footer_facebook_visible: false,
     is_footer_whatsapp_visible: false,
+    footer_website_url: null,
+    is_footer_website_visible: false,
+    footer_phone: null,
+    footer_email: null,
+    is_footer_contact_visible: false,
     updated_at: now,
   };
 }

@@ -167,6 +167,11 @@ export interface TenantStorefrontSettings {
   is_footer_x_visible: boolean;
   is_footer_facebook_visible: boolean;
   is_footer_whatsapp_visible: boolean;
+  footer_website_url: string | null;
+  is_footer_website_visible: boolean;
+  footer_phone: string | null;
+  footer_email: string | null;
+  is_footer_contact_visible: boolean;
   created_at: string;
   updated_at: string;
 }
