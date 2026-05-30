@@ -22,6 +22,16 @@ export interface GenerateOrderReceiptPdfParams {
 
 const PDF_FONT = "Roboto";
 const SOFT_BORDER = [229, 231, 235] as [number, number, number];
+const PRODUCT_COLUMN_WIDTH_MM = 82;
+const PRODUCT_CELL_HORIZONTAL_PADDING_MM = 5;
+
+function wrapReceiptProductCellText(doc: jsPDF, rawText: string, fontSize: number) {
+  doc.setFont(PDF_FONT, "normal");
+  doc.setFontSize(fontSize);
+  const textWidth = PRODUCT_COLUMN_WIDTH_MM - PRODUCT_CELL_HORIZONTAL_PADDING_MM;
+
+  return rawText.split("\n").flatMap((segment) => doc.splitTextToSize(segment, textWidth));
+}
 
 function formatOrderDate(date: Date) {
   return new Intl.DateTimeFormat("tr-TR", {
@@ -94,10 +104,11 @@ export async function generateOrderReceiptPdf(
       fontSize: 8.5,
       cellPadding: { top: 3, right: 2.5, bottom: 3, left: 2.5 },
       overflow: "linebreak",
+      minCellHeight: 8,
       lineColor: SOFT_BORDER,
       lineWidth: 0.15,
       textColor: [15, 23, 42],
-      valign: "middle",
+      valign: "top",
     },
     headStyles: {
       font: PDF_FONT,
@@ -110,13 +121,31 @@ export async function generateOrderReceiptPdf(
       fillColor: [252, 252, 253],
     },
     columnStyles: {
-      0: { cellWidth: 82, overflow: "linebreak" },
+      0: { cellWidth: PRODUCT_COLUMN_WIDTH_MM, overflow: "linebreak" },
       1: { cellWidth: 18, halign: "center" },
       2: { cellWidth: 16, halign: "right" },
       3: { cellWidth: 31, halign: "right" },
       4: { cellWidth: 31, halign: "right" },
     },
     margin: { left: margin, right: margin },
+    didParseCell: (data) => {
+      if (data.section !== "body" || data.column.index !== 0) {
+        return;
+      }
+
+      const rawText =
+        typeof data.cell.raw === "string"
+          ? data.cell.raw
+          : Array.isArray(data.cell.raw)
+            ? data.cell.raw.join("\n")
+            : String(data.cell.text ?? "");
+
+      data.cell.text = wrapReceiptProductCellText(
+        doc,
+        rawText,
+        data.cell.styles.fontSize ?? 8.5,
+      );
+    },
   });
 
   const tableEndY =

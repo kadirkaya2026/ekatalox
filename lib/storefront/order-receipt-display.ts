@@ -38,6 +38,27 @@ export interface OrderReceiptLineDisplay {
   lineTotalLabel: string;
 }
 
+/** PDF tabloda | karakteri satır kırılımını bozabildiği için yalnızca fiş metninde dönüştürülür. */
+export function sanitizePdfLabelText(value: string) {
+  return value.replace(/\|/g, "-").replace(/\s+/g, " ").trim();
+}
+
+export function buildReceiptProductLabel(item: CartItem) {
+  const productName = sanitizePdfLabelText(item.product_name);
+  const variantName = item.variant_name?.trim();
+
+  if (!variantName) {
+    return productName;
+  }
+
+  const sanitizedVariant = sanitizePdfLabelText(variantName);
+  if (productName.includes(sanitizedVariant)) {
+    return productName;
+  }
+
+  return `${productName}\nModel: ${sanitizedVariant}`;
+}
+
 export function getOrderReceiptLineDisplay(item: CartItem): OrderReceiptLineDisplay {
   const salesUnit = resolveSalesUnit(item);
   const unitQuantity = resolveUnitQuantity(item);
@@ -46,9 +67,7 @@ export function getOrderReceiptLineDisplay(item: CartItem): OrderReceiptLineDisp
     salesUnit === "adet" ? item.price : item.price * (multiplier ?? 1);
   const lineTotal = item.price * item.quantity;
 
-  const productLabel = item.variant_name
-    ? `${item.product_name} / ${item.variant_name}`
-    : item.product_name;
+  const productLabel = buildReceiptProductLabel(item);
 
   return {
     productLabel,
