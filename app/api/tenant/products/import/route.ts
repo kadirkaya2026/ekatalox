@@ -85,6 +85,8 @@ export async function POST(request: Request) {
       price_tier_2: row.price_tier_2,
       price_tier_3: row.price_tier_3,
       is_in_stock: row.is_in_stock,
+      is_discount_active: false,
+      discount_price: null,
       package_quantity: row.package_quantity,
       carton_quantity: row.carton_quantity,
     }));

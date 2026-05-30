@@ -30,6 +30,8 @@ export interface Product {
   price_tier_2: number;
   price_tier_3: number;
   is_in_stock: boolean;
+  is_discount_active: boolean;
+  discount_price: number | null;
   package_quantity: number | null;
   carton_quantity: number | null;
   created_at: string;
@@ -171,6 +173,8 @@ export interface StorefrontProduct {
   is_in_stock: boolean;
   currency: CurrencyCode;
   price: number;
+  original_price?: number | null;
+  discount_percentage?: number | null;
   package_quantity: number | null;
   carton_quantity: number | null;
   stock_quantity: number | null;

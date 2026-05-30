@@ -60,6 +60,9 @@ export async function PATCH(
     is_in_stock: formData.get("is_in_stock"),
     package_quantity: formData.get("package_quantity"),
     carton_quantity: formData.get("carton_quantity"),
+    description: formData.get("description"),
+    is_discount_active: formData.get("is_discount_active"),
+    discount_price: formData.get("discount_price"),
   });
 
   if (!parsed.success) {

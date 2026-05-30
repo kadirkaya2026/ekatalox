@@ -69,6 +69,9 @@ export function normalizeProductRecord(record: RawProductRecord): Product {
     price_tier_2: Number(record.price_tier_2 ?? 0),
     price_tier_3: Number(record.price_tier_3 ?? 0),
     is_in_stock: Boolean(record.is_in_stock),
+    is_discount_active: Boolean(record.is_discount_active),
+    discount_price:
+      typeof record.discount_price === "number" ? record.discount_price : null,
     package_quantity:
       typeof record.package_quantity === "number" ? record.package_quantity : null,
     carton_quantity:

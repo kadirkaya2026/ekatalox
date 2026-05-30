@@ -21,6 +21,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Modal } from "@/components/ui/modal";
+import { Textarea } from "@/components/ui/textarea";
 import { Table, TableWrapper } from "@/components/ui/table";
 import {
   buildCategoryTree,
@@ -31,6 +32,7 @@ import {
   defaultCurrencyCode,
   supportedCurrencyCodes,
 } from "@/lib/products/constants";
+import { computeDiscountPercentage, getMinTierPrice } from "@/lib/storefront/pricing";
 import type { Category, Product, ProductVariant, Tenant } from "@/lib/types";
 import { cn, formatCurrency } from "@/lib/utils";
 
@@ -43,8 +45,11 @@ interface ProductFormState {
   price_tier_2: string;
   price_tier_3: string;
   is_in_stock: boolean;
+  is_discount_active: boolean;
+  discount_price: string;
   package_quantity: string;
   carton_quantity: string;
+  description: string;
   image: File | null;
 }
 
@@ -66,8 +71,11 @@ const emptyForm: ProductFormState = {
   price_tier_2: "",
   price_tier_3: "",
   is_in_stock: true,
+  is_discount_active: false,
+  discount_price: "",
   package_quantity: "",
   carton_quantity: "",
+  description: "",
   image: null,
 };
 
@@ -96,8 +104,11 @@ function toFormData(form: ProductFormState) {
   formData.set("price_tier_2", form.price_tier_2 || "0");
   formData.set("price_tier_3", form.price_tier_3 || "0");
   formData.set("is_in_stock", String(form.is_in_stock));
+  formData.set("is_discount_active", String(form.is_discount_active));
+  formData.set("discount_price", form.is_discount_active ? form.discount_price.trim() : "");
   formData.set("package_quantity", form.package_quantity.trim());
   formData.set("carton_quantity", form.carton_quantity.trim());
+  formData.set("description", form.description.trim());
 
   if (form.image) {
     formData.set("image", form.image);
@@ -116,10 +127,35 @@ function productToForm(product: Product): ProductFormState {
     price_tier_2: String(product.price_tier_2),
     price_tier_3: String(product.price_tier_3),
     is_in_stock: product.is_in_stock,
+    is_discount_active: product.is_discount_active,
+    discount_price:
+      product.discount_price !== null && product.discount_price !== undefined
+        ? String(product.discount_price)
+        : "",
     package_quantity: product.package_quantity ? String(product.package_quantity) : "",
     carton_quantity: product.carton_quantity ? String(product.carton_quantity) : "",
+    description: product.description ?? "",
     image: null,
   };
+}
+
+function getDiscountPreview(form: ProductFormState) {
+  if (!form.is_discount_active || !form.discount_price.trim()) {
+    return null;
+  }
+
+  const minTierPrice = getMinTierPrice({
+    price_tier_1: Number(form.price_tier_1 || 0),
+    price_tier_2: Number(form.price_tier_2 || 0),
+    price_tier_3: Number(form.price_tier_3 || 0),
+  });
+  const salePrice = Number(form.discount_price);
+
+  if (Number.isNaN(salePrice)) {
+    return null;
+  }
+
+  return computeDiscountPercentage(minTierPrice, salePrice);
 }
 
 function reorderProducts(products: Product[], fromIndex: number, toIndex: number) {
@@ -194,6 +230,7 @@ export function ProductsManager({
   const categories = initialCategories;
   const categoryTree = useMemo(() => buildCategoryTree(categories), [categories]);
   const flatCategories = useMemo(() => flattenCategoryTree(categoryTree), [categoryTree]);
+  const editDiscountPreview = useMemo(() => getDiscountPreview(editForm), [editForm]);
   const selectedCategoryProductIds = useMemo(() => {
     if (!selectedCategoryIds.length) {
       return null;
@@ -1290,6 +1327,13 @@ export function ProductsManager({
             />
           </div>
 
+          <Textarea
+            placeholder="Ürün detayı (vitrinde Detaylar sekmesinde görünür)"
+            value={editForm.description}
+            onChange={(event) => updateEditField("description", event.target.value)}
+            maxLength={2000}
+          />
+
           <div className="grid gap-3 md:grid-cols-4">
             <select
               value={editForm.currency}
@@ -1320,6 +1364,38 @@ export function ProductsManager({
               value={editForm.price_tier_3}
               onChange={(event) => updateEditField("price_tier_3", event.target.value)}
             />
+          </div>
+
+          <div className="rounded-xl border border-slate-100 bg-slate-50 px-4 py-3">
+            <label className="flex items-center gap-3 text-sm text-slate-700">
+              <input
+                type="checkbox"
+                checked={editForm.is_discount_active}
+                onChange={(event) => updateEditField("is_discount_active", event.target.checked)}
+              />
+              İndirim uygula
+            </label>
+            {editForm.is_discount_active ? (
+              <div className="mt-3 grid gap-2">
+                <Input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  placeholder="İndirimli satış fiyatı"
+                  value={editForm.discount_price}
+                  onChange={(event) => updateEditField("discount_price", event.target.value)}
+                />
+                {editDiscountPreview !== null ? (
+                  <p className="text-sm font-medium text-emerald-700">
+                    Vitrinde yaklaşık %{editDiscountPreview} indirim görünecek
+                  </p>
+                ) : (
+                  <p className="text-sm text-slate-500">
+                    İndirimli fiyat, liste fiyatlarından düşük olmalıdır.
+                  </p>
+                )}
+              </div>
+            ) : null}
           </div>
 
           <div className="grid gap-3 md:grid-cols-2">

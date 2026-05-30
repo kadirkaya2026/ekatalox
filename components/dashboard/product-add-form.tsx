@@ -6,12 +6,14 @@ import { AlertTriangle, ImagePlus, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { buildCategoryTree, flattenCategoryTree } from "@/lib/categories/tree";
 import {
   defaultCurrencyCode,
   supportedCurrencyCodes,
 } from "@/lib/products/constants";
-import type { Category, Product, Tenant } from "@/lib/types";
+import { computeDiscountPercentage, getMinTierPrice } from "@/lib/storefront/pricing";
+import type { Category, Tenant } from "@/lib/types";
 
 interface ProductFormState {
   category_id: string;
@@ -22,8 +24,11 @@ interface ProductFormState {
   price_tier_2: string;
   price_tier_3: string;
   is_in_stock: boolean;
+  is_discount_active: boolean;
+  discount_price: string;
   package_quantity: string;
   carton_quantity: string;
+  description: string;
   image: File | null;
 }
 
@@ -36,10 +41,32 @@ const emptyForm: ProductFormState = {
   price_tier_2: "",
   price_tier_3: "",
   is_in_stock: true,
+  is_discount_active: false,
+  discount_price: "",
   package_quantity: "",
   carton_quantity: "",
+  description: "",
   image: null,
 };
+
+function getDiscountPreview(form: ProductFormState) {
+  if (!form.is_discount_active || !form.discount_price.trim()) {
+    return null;
+  }
+
+  const minTierPrice = getMinTierPrice({
+    price_tier_1: Number(form.price_tier_1 || 0),
+    price_tier_2: Number(form.price_tier_2 || 0),
+    price_tier_3: Number(form.price_tier_3 || 0),
+  });
+  const salePrice = Number(form.discount_price);
+
+  if (Number.isNaN(salePrice)) {
+    return null;
+  }
+
+  return computeDiscountPercentage(minTierPrice, salePrice);
+}
 
 const PACKAGE_UPGRADE_PHONE = "905354172510";
 
@@ -58,8 +85,11 @@ function toFormData(form: ProductFormState) {
   formData.set("price_tier_2", form.price_tier_2 || "0");
   formData.set("price_tier_3", form.price_tier_3 || "0");
   formData.set("is_in_stock", String(form.is_in_stock));
+  formData.set("is_discount_active", String(form.is_discount_active));
+  formData.set("discount_price", form.is_discount_active ? form.discount_price.trim() : "");
   formData.set("package_quantity", form.package_quantity.trim());
   formData.set("carton_quantity", form.carton_quantity.trim());
+  formData.set("description", form.description.trim());
   if (form.image) {
     formData.set("image", form.image);
   }
@@ -80,6 +110,7 @@ export function ProductAddForm({
 
   const categoryTree = useMemo(() => buildCategoryTree(initialCategories), [initialCategories]);
   const flatCategories = useMemo(() => flattenCategoryTree(categoryTree), [categoryTree]);
+  const discountPreview = useMemo(() => getDiscountPreview(form), [form]);
 
   const productCount = 0;
   const isLimitFull = tenant.max_product_limit <= productCount;
@@ -182,6 +213,13 @@ export function ProductAddForm({
             />
           </div>
 
+          <Textarea
+            placeholder="Ürün detayı (vitrinde Detaylar sekmesinde görünür)"
+            value={form.description}
+            onChange={(event) => updateField("description", event.target.value)}
+            maxLength={2000}
+          />
+
           <div className="grid gap-3 md:grid-cols-4">
             <select
               value={form.currency}
@@ -215,6 +253,38 @@ export function ProductAddForm({
               value={form.price_tier_3}
               onChange={(event) => updateField("price_tier_3", event.target.value)}
             />
+          </div>
+
+          <div className="rounded-xl border border-slate-100 bg-slate-50 px-4 py-3">
+            <label className="flex items-center gap-3 text-sm text-slate-700">
+              <input
+                type="checkbox"
+                checked={form.is_discount_active}
+                onChange={(event) => updateField("is_discount_active", event.target.checked)}
+              />
+              İndirim uygula
+            </label>
+            {form.is_discount_active ? (
+              <div className="mt-3 grid gap-2">
+                <Input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  placeholder="İndirimli satış fiyatı"
+                  value={form.discount_price}
+                  onChange={(event) => updateField("discount_price", event.target.value)}
+                />
+                {discountPreview !== null ? (
+                  <p className="text-sm font-medium text-emerald-700">
+                    Vitrinde yaklaşık %{discountPreview} indirim görünecek
+                  </p>
+                ) : (
+                  <p className="text-sm text-slate-500">
+                    İndirimli fiyat, liste fiyatlarından düşük olmalıdır.
+                  </p>
+                )}
+              </div>
+            ) : null}
           </div>
 
           <div className="grid gap-3 md:grid-cols-2">

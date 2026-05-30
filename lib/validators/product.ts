@@ -59,6 +59,32 @@ const booleanSchema = z
   .union([z.boolean(), z.string()])
   .transform((value) => (typeof value === "boolean" ? value : value === "true"));
 
+const optionalDiscountPriceSchema = z
+  .union([z.string(), z.number(), z.null(), z.undefined()])
+  .transform((value, ctx) => {
+    if (value === null || value === undefined) {
+      return null;
+    }
+
+    const normalized = String(value).trim();
+
+    if (!normalized) {
+      return null;
+    }
+
+    const parsedValue = Number(normalized);
+
+    if (Number.isNaN(parsedValue) || parsedValue < 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "İndirimli fiyat sıfır veya pozitif olmalıdır.",
+      });
+      return z.NEVER;
+    }
+
+    return parsedValue;
+  });
+
 export const productBaseSchema = z.object({
   category_id: z.string().min(1, "Kategori seçimi zorunludur."),
   sku_code: z.string().min(1, "Stok kodu zorunludur."),
@@ -70,6 +96,56 @@ export const productBaseSchema = z.object({
   is_in_stock: booleanSchema,
   package_quantity: optionalPositiveIntegerSchema,
   carton_quantity: optionalPositiveIntegerSchema,
+  description: z
+    .union([z.string(), z.null(), z.undefined()])
+    .transform((value) => (typeof value === "string" ? value.trim() : ""))
+    .pipe(
+      z
+        .string()
+        .max(2000, "Ürün detayı en fazla 2000 karakter olabilir.")
+        .transform((value) => value || null),
+    ),
+  is_discount_active: z.preprocess(
+    (value) => (value === null || value === undefined ? "false" : value),
+    booleanSchema,
+  ),
+  discount_price: optionalDiscountPriceSchema,
+}).superRefine((value, ctx) => {
+  if (!value.is_discount_active) {
+    return;
+  }
+
+  if (value.discount_price === null) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "İndirim aktifken indirimli satış fiyatı zorunludur.",
+      path: ["discount_price"],
+    });
+    return;
+  }
+
+  const minTierPrice = Math.min(
+    value.price_tier_1,
+    value.price_tier_2,
+    value.price_tier_3,
+  );
+
+  if (minTierPrice <= 0) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "İndirim uygulamak için en az bir liste fiyatı sıfırdan büyük olmalıdır.",
+      path: ["discount_price"],
+    });
+    return;
+  }
+
+  if (value.discount_price >= minTierPrice) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "İndirimli fiyat, liste fiyatından düşük olmalıdır.",
+      path: ["discount_price"],
+    });
+  }
 });
 
 export const productCreateSchema = productBaseSchema.extend({

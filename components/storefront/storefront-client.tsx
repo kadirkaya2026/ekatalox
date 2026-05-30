@@ -331,6 +331,69 @@ function getUnitSummary(product: StorefrontProduct) {
   return parts.join("  ");
 }
 
+type ProductPriceSize = "card" | "modal" | "crossSell" | "compact";
+
+function renderProductPrice(
+  product: Pick<StorefrontProduct, "price" | "original_price" | "currency">,
+  size: ProductPriceSize = "card",
+) {
+  const sizeClasses = {
+    card: {
+      current: "text-sm font-extrabold text-emerald-600 sm:text-base",
+      original: "text-[10px] font-medium text-slate-400 line-through sm:text-xs",
+    },
+    crossSell: {
+      current: "text-base font-extrabold text-emerald-600",
+      original: "text-[11px] font-medium text-slate-400 line-through",
+    },
+    modal: {
+      current: "text-2xl font-extrabold tracking-tight text-emerald-600",
+      original: "text-sm font-medium text-slate-400 line-through",
+    },
+    compact: {
+      current: "text-sm font-extrabold text-emerald-600",
+      original: "text-[11px] font-medium text-slate-400 line-through",
+    },
+  }[size];
+
+  const hasDiscount =
+    typeof product.original_price === "number" && product.original_price > product.price;
+
+  if (!hasDiscount) {
+    return (
+      <p className={sizeClasses.current}>
+        {formatCurrency(product.price, product.currency)}
+      </p>
+    );
+  }
+
+  return (
+    <div className="space-y-0.5">
+      <p className={sizeClasses.original}>
+        {formatCurrency(product.original_price!, product.currency)}
+      </p>
+      <p className={sizeClasses.current}>
+        {formatCurrency(product.price, product.currency)}
+      </p>
+    </div>
+  );
+}
+
+function renderDiscountSticker(product: StorefrontProduct) {
+  if (
+    typeof product.discount_percentage !== "number" ||
+    product.discount_percentage <= 0
+  ) {
+    return null;
+  }
+
+  return (
+    <span className="absolute left-2 top-2 z-10 rounded-full bg-rose-500 px-2 py-0.5 text-[10px] font-bold text-white shadow-sm">
+      %{product.discount_percentage} İndirim
+    </span>
+  );
+}
+
 function parseUnitCount(value: string) {
   const normalized = value.trim();
 
@@ -1633,6 +1696,7 @@ export function StorefrontClient({
       >
         {renderFloatingCartAction(product, true)}
         <div className={cn(theme.productImageWrap, "overflow-hidden rounded-t-[1.2rem] p-2.5 sm:p-4")}>
+          {renderDiscountSticker(product)}
           {product.image_url ? (
             <Image
               src={product.image_url}
@@ -1656,9 +1720,7 @@ export function StorefrontClient({
         </div>
 
         <div className="flex flex-1 flex-col gap-1 p-2.5 sm:p-3.5">
-          <p className={cn(theme.productPrice, "text-[11px] leading-4 sm:text-sm")}>
-            {formatCurrency(product.price, product.currency)}
-          </p>
+          {renderProductPrice(product, "card")}
           <p className="line-clamp-2 text-[11px] font-semibold leading-4 text-slate-900 sm:text-[13px] sm:leading-5">
             {product.product_name}
           </p>
@@ -1698,6 +1760,7 @@ export function StorefrontClient({
         {renderFloatingCartAction(product, true)}
 
         <div className="relative h-28 overflow-hidden rounded-[1.15rem] bg-[linear-gradient(180deg,#f8fafc_0%,#eef2ff_100%)]">
+          {renderDiscountSticker(product)}
           {product.image_url ? (
             <Image
               src={product.image_url}
@@ -1728,9 +1791,7 @@ export function StorefrontClient({
         </div>
 
         <div className="mt-3 flex items-end justify-between gap-2">
-          <p className="text-sm font-bold text-slate-950">
-            {formatCurrency(product.price, product.currency)}
-          </p>
+          {renderProductPrice(product, "crossSell")}
           {cartQuantity > 0 ? (
             <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-semibold text-emerald-700">
               {cartQuantity} adet
@@ -1777,6 +1838,7 @@ export function StorefrontClient({
       >
         <div className="grid gap-4">
           <div className="relative aspect-square overflow-hidden rounded-[1.75rem] bg-[linear-gradient(180deg,#f8fafc_0%,#eef2ff_100%)]">
+            {renderDiscountSticker(previewProduct)}
             {previewProduct.image_url ? (
               <Image
                 src={previewProduct.image_url}
@@ -1793,9 +1855,7 @@ export function StorefrontClient({
           </div>
 
           <div className="space-y-1">
-            <p className="text-2xl font-bold tracking-tight text-slate-950">
-              {formatCurrency(previewProduct.price, previewProduct.currency)}
-            </p>
+            {renderProductPrice(previewProduct, "modal")}
             <h3 className="text-lg font-semibold leading-6 text-slate-900">
               {previewProduct.product_name}
             </h3>
@@ -2400,9 +2460,7 @@ export function StorefrontClient({
                     </p>
                   ) : null}
                 </div>
-                <p className="shrink-0 text-sm font-bold text-slate-900">
-                  {formatCurrency(selectedProduct.price, selectedProduct.currency)}
-                </p>
+                {renderProductPrice(selectedProduct, "compact")}
               </div>
             </div>
 
