@@ -2,7 +2,7 @@ import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 import type { CartItem } from "@/lib/types";
 import type { CartPaymentSummary } from "@/lib/storefront/cart";
-import { formatDiscountPercentage } from "@/lib/storefront/cart";
+import { formatDiscountPercentage, buildAppliedCampaignBenefitNotes } from "@/lib/storefront/cart";
 import {
   formatReceiptMoney,
   getOrderReceiptTableRows,
@@ -179,6 +179,12 @@ export async function generateOrderReceiptPdf(
   doc.setFontSize(10);
   doc.text(`Ödeme: ${params.paymentMethodLabel}`, margin, cursorY);
   cursorY += 7;
+
+  for (const campaignNote of buildAppliedCampaignBenefitNotes(summary)) {
+    const campaignNoteLines = doc.splitTextToSize(campaignNote, pageWidth - margin * 2);
+    doc.text(campaignNoteLines, margin, cursorY, { lineHeightFactor: 1.35 });
+    cursorY += campaignNoteLines.length * 5.5 + 2;
+  }
 
   const trimmedNote = params.note?.trim();
   if (trimmedNote) {

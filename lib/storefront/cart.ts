@@ -319,6 +319,29 @@ export function getCartDiscountSummary(
   };
 }
 
+export function buildAppliedCampaignBenefitNotes(summary: CartPaymentSummary): string[] {
+  const notes: string[] = [];
+  const thresholdLabel = `${summary.discountThreshold} ${summary.currency}`;
+
+  if (summary.paymentMethod === "cash" && summary.appliedCashTier && summary.discountAmount > 0) {
+    notes.push(
+      `${thresholdLabel} ve üzerine nakit alıma %${formatDiscountPercentage(summary.discountPercentage)} iskonto kampanyasından faydalanılmıştır.`,
+    );
+  }
+
+  if (
+    summary.paymentMethod === "card" &&
+    summary.zeroCommissionApplied &&
+    summary.appliedCardTier
+  ) {
+    notes.push(
+      `${summary.appliedCardTier.threshold} ${summary.currency} ve üzerine kart ile ${summary.appliedCardTier.maxFreeInstallmentCount} taksite kadar 0 komisyon kampanyasından faydalanılmıştır.`,
+    );
+  }
+
+  return notes;
+}
+
 // ─── WhatsApp message builder ─────────────────────────────────────────────────
 
 export function buildWhatsAppMessage(params: {
@@ -328,11 +351,11 @@ export function buildWhatsAppMessage(params: {
 }) {
   const lines = [
     `Merhaba, ${params.tenantName} için sipariş oluşturmak istiyorum`,
-    `Müşteri/cari : ${params.customerReferenceName.trim()}`,
+    `👤 Müşteri/cari : ${params.customerReferenceName.trim()}`,
   ];
 
   if (params.pdfUrl?.trim()) {
-    lines.push(`Sipariş Fişi : ${params.pdfUrl.trim()}`);
+    lines.push(`📄 Sipariş Fişi : ${params.pdfUrl.trim()}`);
   }
 
   return lines.join("\n");
