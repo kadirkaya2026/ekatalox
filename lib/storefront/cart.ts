@@ -449,7 +449,7 @@ export function buildWhatsAppMessage(params: {
     ...(paymentLine ? ["", paymentLine] : []),
     ...(noteLine ? ["", noteLine] : []),
     ...(params.pdfUrl?.trim()
-      ? ["", `📄 Sipariş Fişiniz (PDF): ${params.pdfUrl.trim()}`]
+      ? ["", `📄 Sipariş Fişi (PDF): ${params.pdfUrl.trim()}`]
       : []),
   ]
     .filter((line, i, arr) => {

@@ -4,6 +4,8 @@ import { getCartPaymentSummary } from "@/lib/storefront/cart";
 import { generateOrderReceiptPdf } from "@/lib/storefront/order-receipt-pdf";
 import {
   buildOrderReceiptOrderNumber,
+  buildSecureOrderReceiptUrl,
+  insertOrderReceiptRecord,
   uploadOrderReceiptPdf,
 } from "@/lib/storage/order-receipts";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
@@ -120,14 +122,26 @@ export async function POST(request: Request) {
       note: parsed.data.note,
     });
 
-    const pdfUrl = await uploadOrderReceiptPdf({
+    const securePdfId = crypto.randomUUID();
+    const { storagePath, publicUrl: pdfPublicUrl } = await uploadOrderReceiptPdf({
       supabase,
       tenantId: tenant.id,
       orderNumber,
       pdfBytes,
     });
 
-    return NextResponse.json({ pdfUrl, orderNumber });
+    await insertOrderReceiptRecord({
+      supabase,
+      securePdfId,
+      tenantId: tenant.id,
+      orderNumber,
+      storagePath,
+      pdfPublicUrl,
+    });
+
+    const pdfUrl = buildSecureOrderReceiptUrl(securePdfId);
+
+    return NextResponse.json({ pdfUrl, orderNumber, securePdfId });
   } catch (error) {
     console.error("[generate-pdf] PDF üretimi veya yükleme hatası:", error);
     return NextResponse.json(
