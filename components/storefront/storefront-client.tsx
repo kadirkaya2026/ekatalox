@@ -2360,86 +2360,88 @@ export function StorefrontClient({
       ) : null}
 
       {isMounted && cart.length && !isStickyCartBarDismissed && !isCartOpen ? (
-        <motion.div
-          initial={{ opacity: 0, y: 18, scale: 0.96 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          transition={{ duration: 0.24, ease: "easeOut" }}
-          className={cn(
-            theme.stickyCart,
-            "safe-bottom-offset left-4 right-4 rounded-[1.8rem] border border-emerald-400/10 px-4 py-3 text-left shadow-[0_18px_44px_rgba(15,23,42,0.22)] xl:hidden",
-          )}
-        >
+        <div className="fixed safe-bottom-offset left-4 right-4 z-40 mx-auto max-w-lg xl:hidden">
           <div className="relative">
-            <button type="button" onClick={openCartDrawer} className="w-full text-left">
-              <div className="flex items-center gap-3.5">
-                <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-white/10 ring-1 ring-white/10">
-                  <ShoppingCart className="size-5" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-[13px] font-semibold tracking-tight text-white">
-                    Sipariş Özeti
-                  </p>
-                  <p className="mt-0.5 text-[11px] text-slate-300">
-                    {cartDistinctCount} kalem, {cartItemCount} ürün
-                  </p>
-                </div>
-                <div className="min-w-0 text-right">
-                  <div className="space-y-0.5">
-                    {cartPaymentSummary && cartPaymentSummary.finalTotal !== cartPaymentSummary.subtotal ? (
-                      <>
-                        <p className="truncate text-[11px] font-medium leading-tight text-slate-300 line-through">
-                          {formatCurrency(cartPaymentSummary.subtotal, cartPaymentSummary.currency)}
-                        </p>
-                        <p className={cn("truncate text-[13px] font-semibold leading-tight", theme.stickyCartText)}>
-                          {formatCurrency(cartPaymentSummary.finalTotal, cartPaymentSummary.currency)}
-                        </p>
-                      </>
-                    ) : cartDiscountSummary?.isQualified ? (
-                      <>
-                        <p className="truncate text-[11px] font-medium leading-tight text-slate-300 line-through">
-                          {formatCurrency(
-                            cartDiscountSummary.subtotal,
-                            cartDiscountSummary.currency,
-                          )}
-                        </p>
-                        <p
-                          className={cn(
-                            "truncate text-[13px] font-semibold leading-tight",
-                            theme.stickyCartText,
-                          )}
-                        >
-                          {formatCurrency(
-                            cartDiscountSummary.totalAfterDiscount,
-                            cartDiscountSummary.currency,
-                          )}
-                        </p>
-                      </>
-                    ) : cartTotalEntries.length ? (
-                      cartTotalEntries.map(({ currency, total }) => (
-                        <p
-                          key={currency}
-                          className={cn("truncate text-[13px] font-semibold leading-tight", theme.stickyCartText)}
-                        >
-                          {currency}: {formatCurrency(total, currency)}
-                        </p>
-                      ))
-                    ) : (
-                      <p className={cn("truncate text-[13px] font-semibold leading-tight", theme.stickyCartText)}>
-                        {formatCurrency(cartTotal, cartCurrency)}
-                      </p>
-                    )}
+            <motion.div
+              initial={{ opacity: 0, y: 18, scale: 0.96 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ duration: 0.24, ease: "easeOut" }}
+              className={cn(
+                theme.stickyCart,
+                "!static w-full rounded-[1.8rem] border border-emerald-400/10 px-4 py-3 text-left shadow-[0_18px_44px_rgba(15,23,42,0.22)]",
+              )}
+            >
+              <button type="button" onClick={openCartDrawer} className="w-full text-left">
+                <div className="flex items-center gap-3.5">
+                  <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-white/10 ring-1 ring-white/10">
+                    <ShoppingCart className="size-5" />
                   </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[13px] font-semibold tracking-tight text-white">
+                      Sipariş Özeti
+                    </p>
+                    <p className="mt-0.5 text-[11px] text-slate-300">
+                      {cartDistinctCount} kalem, {cartItemCount} ürün
+                    </p>
+                  </div>
+                  <div className="min-w-0 text-right">
+                    <div className="space-y-0.5">
+                      {cartPaymentSummary && cartPaymentSummary.finalTotal !== cartPaymentSummary.subtotal ? (
+                        <>
+                          <p className="truncate text-[11px] font-medium leading-tight text-slate-300 line-through">
+                            {formatCurrency(cartPaymentSummary.subtotal, cartPaymentSummary.currency)}
+                          </p>
+                          <p className={cn("truncate text-[13px] font-semibold leading-tight", theme.stickyCartText)}>
+                            {formatCurrency(cartPaymentSummary.finalTotal, cartPaymentSummary.currency)}
+                          </p>
+                        </>
+                      ) : cartDiscountSummary?.isQualified ? (
+                        <>
+                          <p className="truncate text-[11px] font-medium leading-tight text-slate-300 line-through">
+                            {formatCurrency(
+                              cartDiscountSummary.subtotal,
+                              cartDiscountSummary.currency,
+                            )}
+                          </p>
+                          <p
+                            className={cn(
+                              "truncate text-[13px] font-semibold leading-tight",
+                              theme.stickyCartText,
+                            )}
+                          >
+                            {formatCurrency(
+                              cartDiscountSummary.totalAfterDiscount,
+                              cartDiscountSummary.currency,
+                            )}
+                          </p>
+                        </>
+                      ) : cartTotalEntries.length ? (
+                        cartTotalEntries.map(({ currency, total }) => (
+                          <p
+                            key={currency}
+                            className={cn("truncate text-[13px] font-semibold leading-tight", theme.stickyCartText)}
+                          >
+                            {currency}: {formatCurrency(total, currency)}
+                          </p>
+                        ))
+                      ) : (
+                        <p className={cn("truncate text-[13px] font-semibold leading-tight", theme.stickyCartText)}>
+                          {formatCurrency(cartTotal, cartCurrency)}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  <span
+                    className={cn(
+                      theme.stickyCartButton,
+                      "shrink-0 rounded-full px-4 py-2 text-sm font-semibold shadow-[0_8px_24px_rgba(16,185,129,0.22)]",
+                    )}
+                  >
+                    Devam &gt;
+                  </span>
                 </div>
-                <span
-                  className={cn(
-                    theme.stickyCartButton,
-                    "shrink-0 rounded-full px-4 py-2 text-sm font-semibold shadow-[0_8px_24px_rgba(16,185,129,0.22)]",
-                  )}
-                >
-                  Devam &gt;
-                </span>
-              </div>
-            </button>
+              </button>
+            </motion.div>
             <button
               type="button"
               aria-label="Sipariş özetini kapat"
@@ -2447,12 +2449,12 @@ export function StorefrontClient({
                 event.stopPropagation();
                 setIsStickyCartBarDismissed(true);
               }}
-              className="absolute right-0 top-0 flex size-7 items-center justify-center rounded-full text-slate-300 transition hover:bg-white/10 hover:text-white"
+              className="absolute -right-2 -top-2.5 z-10 flex size-8 items-center justify-center rounded-full border border-white/20 bg-slate-900 text-slate-300 shadow-md transition hover:bg-slate-800 hover:text-white"
             >
               <X className="size-4" />
             </button>
           </div>
-        </motion.div>
+        </div>
       ) : null}
 
       <StorefrontCartDrawer
