@@ -108,7 +108,7 @@ export function getFooterCopyright(settings: TenantStorefrontSettings): string {
 export function getVisibleFooterSocialLinks(
   settings: TenantStorefrontSettings,
 ): FooterSocialLink[] {
-  if (!settings.is_footer_social_visible) {
+  if (!Boolean(settings.is_footer_social_visible)) {
     return [];
   }
 
@@ -119,27 +119,27 @@ export function getVisibleFooterSocialLinks(
   }> = [
     {
       platform: "instagram",
-      visible: settings.is_footer_instagram_visible,
+      visible: Boolean(settings.is_footer_instagram_visible),
       href: normalizeSocialUrl(settings.footer_instagram_url, "instagram"),
     },
     {
       platform: "youtube",
-      visible: settings.is_footer_youtube_visible,
+      visible: Boolean(settings.is_footer_youtube_visible),
       href: normalizeSocialUrl(settings.footer_youtube_url, "youtube"),
     },
     {
       platform: "x",
-      visible: settings.is_footer_x_visible,
+      visible: Boolean(settings.is_footer_x_visible),
       href: normalizeSocialUrl(settings.footer_x_url, "x"),
     },
     {
       platform: "facebook",
-      visible: settings.is_footer_facebook_visible,
+      visible: Boolean(settings.is_footer_facebook_visible),
       href: normalizeSocialUrl(settings.footer_facebook_url, "facebook"),
     },
     {
       platform: "whatsapp",
-      visible: settings.is_footer_whatsapp_visible,
+      visible: Boolean(settings.is_footer_whatsapp_visible),
       href: normalizeWhatsappHref(settings.footer_whatsapp),
     },
   ];

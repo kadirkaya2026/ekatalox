@@ -5,6 +5,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { PasswordGate } from "@/components/storefront/password-gate";
 import { StorefrontClient } from "@/components/storefront/storefront-client";
+import { StorefrontFooter } from "@/components/storefront/storefront-footer";
 import {
   getStorefrontSections,
   getStorefrontTenant,
@@ -108,6 +109,9 @@ export default async function SectionDetailPage(props: {
         pageTitle={section.title}
         homeHref={`/store/${subdomain}`}
       />
+      {storefrontSettings.is_footer_visible ? (
+        <StorefrontFooter settings={storefrontSettings} />
+      ) : null}
     </div>
   );
 }

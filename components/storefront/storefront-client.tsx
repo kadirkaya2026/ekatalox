@@ -19,7 +19,6 @@ import {
   Store,
   X,
 } from "lucide-react";
-import { StorefrontFooter } from "@/components/storefront/storefront-footer";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -2322,10 +2321,6 @@ export function StorefrontClient({
           ) : null}
         </section>
       </main>
-
-      {storefrontSettings.is_footer_visible ? (
-        <StorefrontFooter settings={storefrontSettings} />
-      ) : null}
 
       {hasVisibleHomeCampaignBars ? (
         <motion.div

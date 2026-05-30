@@ -340,10 +340,14 @@ export async function PATCH(request: Request) {
     await supabase.storage.from(STOREFRONT_BANNERS_BUCKET).remove(staleBannerPaths);
   }
 
-  revalidateStorefrontCache({
-    tenantId: session.tenant!.id,
-    subdomain: session.tenant!.subdomain,
-  });
+  try {
+    revalidateStorefrontCache({
+      tenantId: session.tenant!.id,
+      subdomain: session.tenant!.subdomain,
+    });
+  } catch {
+    // Kayıt başarılı; cache revalidation hatası yanıtı bozmasın.
+  }
 
   return NextResponse.json({ tenant, storefrontSettings });
 }

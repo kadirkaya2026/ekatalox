@@ -111,6 +111,16 @@ export function getDefaultTenantStorefrontSettings(
   };
 }
 
+function normalizeStorefrontSettings(
+  tenantId: string,
+  data: Partial<TenantStorefrontSettings> | null,
+): TenantStorefrontSettings {
+  return {
+    ...getDefaultTenantStorefrontSettings(tenantId),
+    ...(data ?? {}),
+  };
+}
+
 function normalizeProductRows(rows: Array<Record<string, unknown>> | null | undefined) {
   return (rows ?? []).map((product) => normalizeProductRecord(product));
 }
@@ -347,9 +357,9 @@ export async function getTenantStorefrontSettings(
         .eq("tenant_id", resolvedTenantId)
         .maybeSingle();
 
-      return (
-        (data as TenantStorefrontSettings | null) ??
-        getDefaultTenantStorefrontSettings(resolvedTenantId)
+      return normalizeStorefrontSettings(
+        resolvedTenantId,
+        data as Partial<TenantStorefrontSettings> | null,
       );
     },
     [tenantId],

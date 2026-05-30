@@ -1,4 +1,3 @@
-import { EkataloxLogo } from "@/components/brand/ekatalox-logo";
 import {
   getFooterCopyright,
   getFooterLocation,
@@ -58,9 +57,9 @@ export function StorefrontFooter({
 }: {
   settings: TenantStorefrontSettings;
 }) {
-  const showLogo = settings.is_footer_logo_visible;
-  const showLocation = settings.is_footer_location_visible;
-  const showCopyright = settings.is_footer_copyright_visible;
+  const showLogo = Boolean(settings.is_footer_logo_visible);
+  const showLocation = Boolean(settings.is_footer_location_visible);
+  const showCopyright = Boolean(settings.is_footer_copyright_visible);
   const socialLinks = getVisibleFooterSocialLinks(settings);
 
   const locationText = showLocation ? getFooterLocation(settings) : null;
@@ -72,11 +71,16 @@ export function StorefrontFooter({
   }
 
   return (
-    <footer className="border-t border-slate-200/60 bg-zinc-50 px-4 py-6 text-xs text-muted-foreground">
+    <footer className="relative z-0 border-t border-slate-200/60 bg-zinc-50 px-4 py-6 text-xs text-muted-foreground">
       <div className="mx-auto flex max-w-7xl flex-col items-center gap-4 md:grid md:grid-cols-3 md:items-center md:gap-6">
         <div className="flex justify-center md:justify-start">
           {showLogo ? (
-            <EkataloxLogo className="h-6 w-[92px]" sizes="92px" />
+            <img
+              src="/ekatalox-logo.png"
+              alt="eKatalox"
+              className="h-6 w-auto"
+              loading="lazy"
+            />
           ) : (
             <span aria-hidden="true" />
           )}
