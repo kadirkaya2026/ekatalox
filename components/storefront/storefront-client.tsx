@@ -1933,7 +1933,7 @@ export function StorefrontClient({
                   </p>
                   {storefrontSettings.is_price_update_date_visible &&
                   storefrontSettings.price_update_date ? (
-                    <p className="mt-0.5 truncate text-xs text-slate-500 sm:text-sm">
+                    <p className="mt-0.5 truncate text-[10px] leading-4 text-slate-400 sm:text-[11px]">
                       Fiyat Güncelleme Tarihi :{" "}
                       {formatDateSlashTr(storefrontSettings.price_update_date)}
                     </p>
