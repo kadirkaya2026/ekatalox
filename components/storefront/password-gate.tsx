@@ -1,20 +1,35 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useMemo, useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 
+const PASSWORD_REQUEST_MESSAGE =
+  "Merhaba, Fiyat Listenizi Görüntüleyebilmek İçin Şifre Almak İstiyorum.";
+
 export function PasswordGate({
   subdomain,
   companyName,
+  whatsappNumber,
 }: {
   subdomain: string;
   companyName: string;
+  whatsappNumber: string;
 }) {
   const [code, setCode] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+
+  const whatsappHref = useMemo(() => {
+    const normalizedNumber = whatsappNumber.trim();
+
+    if (normalizedNumber.length < 10) {
+      return null;
+    }
+
+    return `https://wa.me/${normalizedNumber}?text=${encodeURIComponent(PASSWORD_REQUEST_MESSAGE)}`;
+  }, [whatsappNumber]);
 
   function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -59,6 +74,18 @@ export function PasswordGate({
           <Button type="submit" className="w-full" disabled={pending}>
             {pending ? "Doğrulanıyor..." : "Mağaza'ya Gir"}
           </Button>
+          {whatsappHref ? (
+            <Button
+              type="button"
+              variant="secondary"
+              className="w-full"
+              onClick={() =>
+                window.open(whatsappHref, "_blank", "noopener,noreferrer")
+              }
+            >
+              Şifre Al
+            </Button>
+          ) : null}
           {error ? <p className="text-sm text-slate-600">{error}</p> : null}
         </form>
       </Card>

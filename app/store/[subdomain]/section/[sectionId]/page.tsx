@@ -60,7 +60,13 @@ export default async function SectionDetailPage(props: {
   const tierState = await readStorefrontTier(subdomain);
 
   if (!tierState || !isStorefrontTierStateValid({ cookieState: tierState, tenant })) {
-    return <PasswordGate subdomain={subdomain} companyName={tenant.company_name} />;
+    return (
+      <PasswordGate
+        subdomain={subdomain}
+        companyName={tenant.company_name}
+        whatsappNumber={tenant.whatsapp_number}
+      />
+    );
   }
 
   const [sections, categories, storefrontSettings] = await Promise.all([
