@@ -14,13 +14,10 @@ import {
   ChevronDown,
   CreditCard,
   Megaphone,
-  Minus,
-  Plus,
   Search,
   ShoppingCart,
   Sparkles,
   Store,
-  Trash2,
   X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -70,6 +67,12 @@ import {
 } from "@/lib/storefront/analytics";
 import { StorefrontCartDrawer } from "@/components/storefront/storefront-cart-drawer";
 import { ProductDescriptionContent } from "@/components/storefront/product-description-content";
+import {
+  DiscountSticker,
+  ProductPrice,
+  StorefrontFloatingCartAction,
+  StorefrontProductCard,
+} from "@/components/storefront/storefront-product-card";
 
 function getCartStorageKey(tenantId: string) {
   return `ekatalox_cart_${tenantId}`;
@@ -352,69 +355,6 @@ function getUnitSummary(product: StorefrontProduct) {
   return parts.join("  ");
 }
 
-type ProductPriceSize = "card" | "modal" | "crossSell" | "compact";
-
-function renderProductPrice(
-  product: Pick<StorefrontProduct, "price" | "original_price" | "currency">,
-  size: ProductPriceSize = "card",
-) {
-  const sizeClasses = {
-    card: {
-      current: "text-sm font-extrabold text-emerald-600 sm:text-base",
-      original: "text-[10px] font-medium text-slate-400 line-through sm:text-xs",
-    },
-    crossSell: {
-      current: "text-base font-extrabold text-emerald-600",
-      original: "text-[11px] font-medium text-slate-400 line-through",
-    },
-    modal: {
-      current: "text-2xl font-extrabold tracking-tight text-emerald-600",
-      original: "text-sm font-medium text-slate-400 line-through",
-    },
-    compact: {
-      current: "text-sm font-extrabold text-emerald-600",
-      original: "text-[11px] font-medium text-slate-400 line-through",
-    },
-  }[size];
-
-  const hasDiscount =
-    typeof product.original_price === "number" && product.original_price > product.price;
-
-  if (!hasDiscount) {
-    return (
-      <p className={sizeClasses.current}>
-        {formatCurrency(product.price, product.currency)}
-      </p>
-    );
-  }
-
-  return (
-    <div className="space-y-0.5">
-      <p className={sizeClasses.original}>
-        {formatCurrency(product.original_price!, product.currency)}
-      </p>
-      <p className={sizeClasses.current}>
-        {formatCurrency(product.price, product.currency)}
-      </p>
-    </div>
-  );
-}
-
-function renderDiscountSticker(product: StorefrontProduct) {
-  if (
-    typeof product.discount_percentage !== "number" ||
-    product.discount_percentage <= 0
-  ) {
-    return null;
-  }
-
-  return (
-    <span className="absolute left-2 top-2 z-10 rounded-full bg-rose-500 px-2 py-0.5 text-[10px] font-bold text-white shadow-sm">
-      %{product.discount_percentage} İndirim
-    </span>
-  );
-}
-
 function parseUnitCount(value: string) {
   const normalized = value.trim();
 
@@ -535,13 +475,6 @@ function renderBannerItem(
     </div>
   );
 }
-
-const floatingActionTransition = {
-  type: "spring",
-  stiffness: 420,
-  damping: 28,
-  mass: 0.9,
-} as const;
 
 type ProductDetailTab = "details" | "package" | "carton";
 
@@ -716,6 +649,8 @@ export function StorefrontClient({
 
     return readStoredCart(getCartStorageKey(tenant.id));
   });
+  const cartRef = useRef(cart);
+  cartRef.current = cart;
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [note, setNote] = useState("");
   const [customerReferenceName, setCustomerReferenceName] = useState("");
@@ -915,6 +850,82 @@ export function StorefrontClient({
       return matchesCategory && matchesSearch;
     });
   }, [categories, products, searchTerm, selectedCategoryIds]);
+
+  const productsById = useMemo(
+    () => new Map(products.map((product) => [product.id, product])),
+    [products],
+  );
+
+  const handleOpenProductDetail = useCallback(
+    (productId: string) => {
+      const product = productsById.get(productId);
+
+      if (!product) {
+        return;
+      }
+
+      setPreviewProduct(product);
+      setActivePreviewTab("details");
+
+      if (analyticsSubdomain) {
+        trackStorefrontProductView(tenant.id, analyticsSubdomain, product.id);
+      }
+    },
+    [analyticsSubdomain, productsById, tenant.id],
+  );
+
+  const handleIncreaseCartItem = useCallback((productId: string) => {
+    setCart((current) => {
+      const currentQuantity = current.find((item) => item.id === productId)?.quantity ?? 0;
+      return updateCartLineQuantity(current, productId, currentQuantity + 1);
+    });
+  }, []);
+
+  const handleDecreaseCartItem = useCallback((productId: string) => {
+    setCart((current) => {
+      const currentQuantity = current.find((item) => item.id === productId)?.quantity ?? 0;
+      return updateCartLineQuantity(current, productId, currentQuantity - 1);
+    });
+  }, []);
+
+  const handleOpenAddToCartModal = useCallback(
+    (productId: string) => {
+      const product = productsById.get(productId);
+
+      if (!product || !product.is_in_stock) {
+        return;
+      }
+
+      setSelectedProduct(product);
+      setVariantSearchTerm("");
+      setQuantityError(null);
+
+      const currentCart = cartRef.current;
+
+      if (product.has_variants) {
+        setVariantSelections(
+          currentCart
+            .filter((item) => item.product_id === product.id && item.variant_id)
+            .map((item) => ({
+              variantId: item.variant_id!,
+              unit: "adet" as SalesUnit,
+              quantity: item.quantity,
+            })),
+        );
+        setSelectedQuantity("0");
+        setSelectedPackageCount("0");
+        setSelectedCartonCount("0");
+        return;
+      }
+
+      const existingItem = currentCart.find((item) => item.id === product.id);
+      setSelectedQuantity(String(existingItem?.quantity ?? 0));
+      setSelectedPackageCount("0");
+      setSelectedCartonCount("0");
+      setVariantSelections([]);
+    },
+    [productsById],
+  );
 
   const visibleProducts = filteredProducts.slice(0, visibleCount);
   const bannerItems = storefrontSettings.banner_items ?? [];
@@ -1187,13 +1198,13 @@ export function StorefrontClient({
     setVisibleCount(24);
   }
 
-  function openProductDetail(product: StorefrontProduct) {
-    setPreviewProduct(product);
-    setActivePreviewTab("details");
-
-    if (analyticsSubdomain) {
-      trackStorefrontProductView(tenant.id, analyticsSubdomain, product.id);
+  function openAddToCartFromDetail(product: StorefrontProduct) {
+    if (!product.is_in_stock) {
+      return;
     }
+
+    closeProductDetail();
+    handleOpenAddToCartModal(product.id);
   }
 
   function closeProductDetail() {
@@ -1297,47 +1308,6 @@ export function StorefrontClient({
 
   function openCartDrawer() {
     setIsCartOpen(true);
-  }
-
-  function openAddToCartModal(product: StorefrontProduct) {
-    if (!product.is_in_stock) {
-      return;
-    }
-
-    setSelectedProduct(product);
-    setVariantSearchTerm("");
-    setQuantityError(null);
-
-    if (product.has_variants) {
-      setVariantSelections(
-        cart
-          .filter((item) => item.product_id === product.id && item.variant_id)
-          .map((item) => ({
-            variantId: item.variant_id!,
-            unit: "adet" as SalesUnit,
-            quantity: item.quantity,
-          })),
-      );
-      setSelectedQuantity("0");
-      setSelectedPackageCount("0");
-      setSelectedCartonCount("0");
-      return;
-    }
-
-    const existingItem = cart.find((item) => item.id === product.id);
-    setSelectedQuantity(String(existingItem?.quantity ?? 0));
-    setSelectedPackageCount("0");
-    setSelectedCartonCount("0");
-    setVariantSelections([]);
-  }
-
-  function openAddToCartFromDetail(product: StorefrontProduct) {
-    if (!product.is_in_stock) {
-      return;
-    }
-
-    closeProductDetail();
-    openAddToCartModal(product);
   }
 
   function closeAddToCartModal() {
@@ -1500,20 +1470,6 @@ export function StorefrontClient({
       trackStorefrontCartAdd(analyticsSubdomain, selectedProduct.id);
     }
     closeAddToCartModal();
-  }
-
-  function increaseCartItem(product: StorefrontProduct) {
-    setCart((current) => {
-      const currentQuantity = current.find((item) => item.id === product.id)?.quantity ?? 0;
-      return updateCartLineQuantity(current, product.id, currentQuantity + 1);
-    });
-  }
-
-  function decreaseCartItem(product: StorefrontProduct) {
-    setCart((current) => {
-      const currentQuantity = current.find((item) => item.id === product.id)?.quantity ?? 0;
-      return updateCartLineQuantity(current, product.id, currentQuantity - 1);
-    });
   }
 
   function dismissCampaignOnSurface(kind: CampaignKind, surface: CampaignSurface) {
@@ -1725,194 +1681,10 @@ export function StorefrontClient({
     );
   }
 
-  function renderFloatingCartAction(product: StorefrontProduct, compact = false) {
+  function renderCrossSellCard(product: StorefrontProduct) {
     const cartQuantity = product.has_variants
       ? cartVariantCountByProductId.get(product.id) ?? 0
       : cartQuantityByProductId.get(product.id) ?? 0;
-
-    if (!product.is_in_stock) {
-      return null;
-    }
-
-    if (cartQuantity > 0) {
-      return (
-        <AnimatePresence mode="popLayout" initial={false}>
-          <motion.div
-            key={`stepper-${product.id}`}
-            data-unit-picker-root="true"
-            onClick={(event) => event.stopPropagation()}
-            initial={{ opacity: 0, scale: 0.88, y: -6 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.92, y: -4 }}
-            transition={floatingActionTransition}
-            className={cn(
-              "absolute z-30 flex origin-top-right flex-col items-center rounded-[1.35rem] border border-emerald-400/30 bg-[linear-gradient(180deg,rgba(16,185,129,0.98)_0%,rgba(5,150,105,0.96)_100%)] p-1 text-white shadow-[0_18px_40px_rgba(5,150,105,0.34)] backdrop-blur",
-              compact ? "-right-2 -top-2" : "-right-2.5 -top-2.5 sm:-right-2 sm:-top-2",
-              compact ? "w-10" : "w-11 sm:w-12",
-            )}
-          >
-            <motion.button
-              type="button"
-              whileTap={{ scale: 0.92 }}
-              onClick={(event) => {
-                event.stopPropagation();
-                if (!product.has_variants) {
-                  increaseCartItem(product);
-                } else {
-                  openAddToCartModal(product);
-                }
-              }}
-              className={cn(
-                "flex items-center justify-center rounded-full text-white transition hover:bg-white/15",
-                compact ? "size-8" : "size-9 sm:size-10",
-              )}
-              aria-label="Adedi artır"
-            >
-              <Plus className={compact ? "size-4" : "size-4 sm:size-5"} />
-            </motion.button>
-            <motion.span
-              layout
-              className={cn(
-                "flex min-h-7 items-center justify-center text-center font-bold leading-none",
-                compact ? "px-1 text-[11px]" : "px-1 text-sm",
-              )}
-            >
-              {product.has_variants ? `${cartQuantity}M` : cartQuantity}
-            </motion.span>
-            <motion.button
-              type="button"
-              whileTap={{ scale: 0.92 }}
-              onClick={(event) => {
-                event.stopPropagation();
-                if (!product.has_variants) {
-                  decreaseCartItem(product);
-                } else {
-                  openAddToCartModal(product);
-                }
-              }}
-              className={cn(
-                "flex items-center justify-center rounded-full text-white transition hover:bg-white/15",
-                compact ? "size-8" : "size-9 sm:size-10",
-              )}
-              aria-label={product.has_variants ? "Model seçimini aç" : cartQuantity === 1 ? "Ürünü sepetten çıkar" : "Adedi azalt"}
-            >
-              {!product.has_variants && cartQuantity === 1 ? (
-                <Trash2 className={compact ? "size-4" : "size-4 sm:size-5"} />
-              ) : (
-                <Minus className={compact ? "size-4" : "size-4 sm:size-5"} />
-              )}
-            </motion.button>
-          </motion.div>
-        </AnimatePresence>
-      );
-    }
-
-    return (
-      <motion.div
-        layout
-        onClick={(event) => event.stopPropagation()}
-        className={cn(
-          "absolute z-30 origin-top-right",
-          compact ? "-right-2 -top-2" : "-right-2.5 -top-2.5 sm:-right-2 sm:-top-2",
-        )}
-      >
-        <motion.button
-          type="button"
-          whileTap={{ scale: 0.9 }}
-          whileHover={{ scale: 1.03 }}
-          onClick={(event) => {
-            event.stopPropagation();
-            openAddToCartModal(product);
-          }}
-          className={cn(
-            "flex items-center justify-center rounded-xl border border-emerald-600 bg-emerald-500 text-white shadow-[0_14px_30px_rgba(16,185,129,0.32)] transition-all duration-200 hover:border-emerald-500 hover:bg-emerald-400",
-            compact ? "size-8" : "size-9 sm:size-10",
-          )}
-          aria-label="Ürün ekleme birimini seç"
-        >
-          <Plus
-            className={compact ? "size-3.5" : "size-4"}
-            strokeWidth={2.8}
-          />
-        </motion.button>
-      </motion.div>
-    );
-  }
-
-  function renderProductCard(product: StorefrontProduct) {
-    const handleOpenDetail = () => openProductDetail(product);
-    const addedVariantCount = cartVariantCountByProductId.get(product.id) ?? 0;
-
-    return (
-      <article
-        key={product.id}
-        role="button"
-        tabIndex={0}
-        onClick={handleOpenDetail}
-        onKeyDown={(event) => {
-          if (event.key === "Enter" || event.key === " ") {
-            event.preventDefault();
-            handleOpenDetail();
-          }
-        }}
-        className={cn(
-          theme.productCard,
-          "relative overflow-visible cursor-pointer rounded-[1.2rem] border-slate-200/70 shadow-[0_10px_24px_rgba(15,23,42,0.06)]",
-          !product.is_in_stock && "opacity-60 saturate-50",
-        )}
-      >
-        {renderFloatingCartAction(product, true)}
-        <div className={cn(theme.productImageWrap, "overflow-hidden rounded-t-[1.2rem] p-2.5 sm:p-4")}>
-          {renderDiscountSticker(product)}
-          {product.image_url ? (
-            <Image
-              src={product.image_url}
-              alt={product.product_name}
-              fill
-              className="object-contain p-3 transition duration-500 group-hover:scale-[1.04] sm:p-5"
-              unoptimized
-            />
-          ) : (
-            <div className="flex h-full w-full items-center justify-center rounded-[1rem] border border-dashed border-slate-200/80 bg-white/70">
-              <Store className="size-7 text-slate-300 sm:size-9" />
-            </div>
-          )}
-          {!product.is_in_stock ? (
-            <div className="absolute inset-x-0 bottom-0 z-10 bg-slate-950/72 px-2 py-1.5 text-center backdrop-blur-sm">
-              <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-white sm:text-[11px]">
-                Tükendi
-              </span>
-            </div>
-          ) : null}
-        </div>
-
-        <div className="flex flex-1 flex-col gap-1 p-2.5 sm:p-3.5">
-          {renderProductPrice(product, "card")}
-          <p className="line-clamp-2 text-[11px] font-semibold leading-4 text-slate-900 sm:text-[13px] sm:leading-5">
-            {product.product_name}
-          </p>
-          <p className="truncate text-[10px] leading-4 text-slate-400 sm:text-[11px]">
-            {product.sku_code ? `SKU: ${product.sku_code}` : "SKU bilgisi yok"}
-          </p>
-          {product.has_variants ? (
-            <div className="flex flex-wrap gap-1 pt-1">
-              <Badge className="bg-blue-50 px-2 py-1 text-[10px] text-blue-700">
-                {product.variants.length} model
-              </Badge>
-              {addedVariantCount > 0 ? (
-                <Badge className="bg-emerald-50 px-2 py-1 text-[10px] text-emerald-700">
-                  {addedVariantCount} Model Eklendi
-                </Badge>
-              ) : null}
-            </div>
-          ) : null}
-        </div>
-      </article>
-    );
-  }
-
-  function renderCrossSellCard(product: StorefrontProduct) {
-    const cartQuantity = cartQuantityByProductId.get(product.id) ?? 0;
 
     return (
       <article
@@ -1924,10 +1696,17 @@ export function StorefrontClient({
             {categoryNameMap.get(product.category_id) || "Genel"}
           </span>
         </div>
-        {renderFloatingCartAction(product, true)}
+        <StorefrontFloatingCartAction
+          product={product}
+          cartQuantity={cartQuantity}
+          compact
+          onIncrease={handleIncreaseCartItem}
+          onDecrease={handleDecreaseCartItem}
+          onOpenAddToCart={handleOpenAddToCartModal}
+        />
 
         <div className="relative h-28 overflow-hidden rounded-[1.15rem] bg-[linear-gradient(180deg,#f8fafc_0%,#eef2ff_100%)]">
-          {renderDiscountSticker(product)}
+          <DiscountSticker product={product} />
           {product.image_url ? (
             <Image
               src={product.image_url}
@@ -1958,7 +1737,7 @@ export function StorefrontClient({
         </div>
 
         <div className="mt-3 flex items-end justify-between gap-2">
-          {renderProductPrice(product, "crossSell")}
+          <ProductPrice product={product} size="crossSell" />
           {cartQuantity > 0 ? (
             <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-semibold text-emerald-700">
               {cartQuantity} adet
@@ -2011,7 +1790,7 @@ export function StorefrontClient({
       >
         <div className="grid gap-4">
           <div className="relative aspect-square overflow-hidden rounded-[1.75rem] bg-[linear-gradient(180deg,#f8fafc_0%,#eef2ff_100%)]">
-            {renderDiscountSticker(previewProduct)}
+            <DiscountSticker product={previewProduct} />
             {previewProduct.image_url ? (
               <Image
                 src={previewProduct.image_url}
@@ -2028,7 +1807,7 @@ export function StorefrontClient({
           </div>
 
           <div className="space-y-1">
-            {renderProductPrice(previewProduct, "modal")}
+            <ProductPrice product={previewProduct} size="modal" />
             <h3 className="text-lg font-semibold leading-6 text-slate-900">
               {previewProduct.product_name}
             </h3>
@@ -2387,7 +2166,24 @@ export function StorefrontClient({
                   </div>
 
                   <div className="grid grid-cols-3 gap-2 sm:gap-3 lg:grid-cols-4 xl:grid-cols-5">
-                    {visibleSectionProducts.map((product) => renderProductCard(product))}
+                    {visibleSectionProducts.map((product) => (
+                      <StorefrontProductCard
+                        key={product.id}
+                        product={product}
+                        cartQuantity={
+                          product.has_variants
+                            ? cartVariantCountByProductId.get(product.id) ?? 0
+                            : cartQuantityByProductId.get(product.id) ?? 0
+                        }
+                        addedVariantCount={cartVariantCountByProductId.get(product.id) ?? 0}
+                        productCardClassName={theme.productCard}
+                        productImageWrapClassName={theme.productImageWrap}
+                        onOpenDetail={handleOpenProductDetail}
+                        onIncrease={handleIncreaseCartItem}
+                        onDecrease={handleDecreaseCartItem}
+                        onOpenAddToCart={handleOpenAddToCartModal}
+                      />
+                    ))}
                   </div>
 
                   {hasMore && sectionHref ? (
@@ -2429,7 +2225,24 @@ export function StorefrontClient({
 
           {filteredProducts.length ? (
             <div className="grid grid-cols-3 gap-2 sm:gap-3 lg:grid-cols-4 xl:grid-cols-5">
-              {visibleProducts.map((product) => renderProductCard(product))}
+              {visibleProducts.map((product) => (
+                <StorefrontProductCard
+                  key={product.id}
+                  product={product}
+                  cartQuantity={
+                    product.has_variants
+                      ? cartVariantCountByProductId.get(product.id) ?? 0
+                      : cartQuantityByProductId.get(product.id) ?? 0
+                  }
+                  addedVariantCount={cartVariantCountByProductId.get(product.id) ?? 0}
+                  productCardClassName={theme.productCard}
+                  productImageWrapClassName={theme.productImageWrap}
+                  onOpenDetail={handleOpenProductDetail}
+                  onIncrease={handleIncreaseCartItem}
+                  onDecrease={handleDecreaseCartItem}
+                  onOpenAddToCart={handleOpenAddToCartModal}
+                />
+              ))}
             </div>
           ) : (
             <Card className="rounded-[2rem] border-dashed bg-transparent p-10 text-center">
@@ -2648,7 +2461,7 @@ export function StorefrontClient({
                     </p>
                   ) : null}
                 </div>
-                {renderProductPrice(selectedProduct, "compact")}
+                <ProductPrice product={selectedProduct} size="compact" />
               </div>
             </div>
 
