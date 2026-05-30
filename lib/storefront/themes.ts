@@ -79,7 +79,7 @@ export const storefrontThemes: Record<StorefrontThemeKey, StorefrontThemeClasses
     stockBadgeOut:
       "inline-flex items-center rounded-full border border-rose-200 bg-rose-50 px-3 py-1 text-[11px] font-semibold text-rose-700 shadow-sm",
     primaryButton: "bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white rounded-xl shadow-sm transition",
-    stickyCart: "fixed bottom-4 inset-x-4 z-30 rounded-2xl bg-slate-900 text-white p-4 shadow-[0_16px_40px_rgba(15,23,42,0.16)] md:bottom-6 max-w-lg mx-auto border border-white/10",
+    stickyCart: "fixed bottom-4 inset-x-4 z-40 rounded-2xl bg-slate-900 text-white p-4 shadow-[0_16px_40px_rgba(15,23,42,0.16)] md:bottom-6 max-w-lg mx-auto border border-white/10",
     stickyCartText: "text-white font-bold",
     stickyCartButton: "bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl transition px-5 py-3",
     desktopCartPanel: "sticky top-6 rounded-2xl border border-slate-100 bg-white p-5 shadow-sm",
@@ -131,7 +131,7 @@ export const storefrontThemes: Record<StorefrontThemeKey, StorefrontThemeClasses
     stockBadgeOut:
       "inline-flex items-center rounded-full border border-rose-500/30 bg-rose-500/10 px-3 py-1 text-[11px] font-semibold text-rose-300 shadow-sm",
     primaryButton: "bg-emerald-500 hover:bg-emerald-400 active:bg-emerald-600 text-slate-950 rounded-xl shadow-sm transition font-bold",
-    stickyCart: "fixed bottom-4 inset-x-4 z-30 rounded-2xl bg-slate-900 text-white p-4 shadow-[0_16px_40px_rgba(0,0,0,0.4)] md:bottom-6 max-w-lg mx-auto border border-emerald-500/20",
+    stickyCart: "fixed bottom-4 inset-x-4 z-40 rounded-2xl bg-slate-900 text-white p-4 shadow-[0_16px_40px_rgba(0,0,0,0.4)] md:bottom-6 max-w-lg mx-auto border border-emerald-500/20",
     stickyCartText: "text-emerald-400 font-bold",
     stickyCartButton: "bg-emerald-500 hover:bg-emerald-400 text-slate-950 rounded-xl transition px-5 py-3 font-bold",
     desktopCartPanel: "sticky top-6 rounded-2xl border border-slate-900 bg-slate-900/60 p-5 shadow-sm",
@@ -183,7 +183,7 @@ export const storefrontThemes: Record<StorefrontThemeKey, StorefrontThemeClasses
     stockBadgeOut:
       "inline-flex items-center rounded-full border border-rose-200 bg-rose-50 px-3 py-1 text-[11px] font-semibold text-rose-700 shadow-sm",
     primaryButton: "bg-rose-700 hover:bg-rose-800 active:bg-rose-900 text-white rounded-xl shadow-sm transition",
-    stickyCart: "fixed bottom-4 inset-x-4 z-30 rounded-2xl bg-rose-950 text-white p-4 shadow-[0_16px_40px_rgba(76,5,25,0.16)] md:bottom-6 max-w-lg mx-auto border border-rose-800/10",
+    stickyCart: "fixed bottom-4 inset-x-4 z-40 rounded-2xl bg-rose-950 text-white p-4 shadow-[0_16px_40px_rgba(76,5,25,0.16)] md:bottom-6 max-w-lg mx-auto border border-rose-800/10",
     stickyCartText: "text-rose-100 font-bold",
     stickyCartButton: "bg-rose-700 hover:bg-rose-600 text-white rounded-xl transition px-5 py-3",
     desktopCartPanel: "sticky top-6 rounded-2xl border border-rose-100/60 bg-white p-5 shadow-sm",
