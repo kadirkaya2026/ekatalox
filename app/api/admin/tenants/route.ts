@@ -84,6 +84,7 @@ export async function POST(request: Request) {
       subdomain: parsed.data.subdomain.toLowerCase(),
       max_product_limit: parsed.data.max_product_limit,
       whatsapp_number: parsed.data.whatsapp_number,
+      is_whatsapp_order_direct: true,
     };
     const profile: Profile = {
       id: crypto.randomUUID(),

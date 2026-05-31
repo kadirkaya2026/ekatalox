@@ -77,6 +77,7 @@ export const bannerItemSchema = z
 export const storefrontSettingsSchema = z
   .object({
     whatsapp_number: z.string().min(10, "WhatsApp numarası zorunludur."),
+    is_whatsapp_order_direct: z.boolean().default(true),
     storefront_title: z
       .string()
       .trim()

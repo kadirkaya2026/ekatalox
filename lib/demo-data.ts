@@ -45,6 +45,7 @@ export const demoTenants: Tenant[] = [
     status: "active",
     max_product_limit: 300,
     whatsapp_number: "905354172510",
+    is_whatsapp_order_direct: true,
     created_at: new Date("2026-01-01").toISOString(),
   },
   {
@@ -54,6 +55,7 @@ export const demoTenants: Tenant[] = [
     status: "suspended",
     max_product_limit: 500,
     whatsapp_number: "905441112233",
+    is_whatsapp_order_direct: true,
     created_at: new Date("2026-01-05").toISOString(),
   },
 ];

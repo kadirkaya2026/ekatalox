@@ -13,6 +13,7 @@ export interface Tenant {
   status: TenantStatus;
   max_product_limit: MaxProductLimit;
   whatsapp_number: string;
+  is_whatsapp_order_direct: boolean;
   created_at: string;
 }
 

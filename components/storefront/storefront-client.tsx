@@ -31,6 +31,7 @@ import {
   getDescendantCategoryIds,
 } from "@/lib/categories/tree";
 import { supportedCurrencyCodes } from "@/lib/products/constants";
+import { buildWhatsAppOrderHref } from "@/lib/storefront/whatsapp-order";
 import {
   buildWhatsAppMessage,
   CartDiscountConfig,
@@ -1013,7 +1014,11 @@ export function StorefrontClient({
 
     const message = buildWhatsAppOrderMessage(pdfUrl);
     window.open(
-      `https://wa.me/${tenant.whatsapp_number}?text=${encodeURIComponent(message)}`,
+      buildWhatsAppOrderHref({
+        phone: tenant.whatsapp_number,
+        message,
+        directToRegisteredNumber: tenant.is_whatsapp_order_direct ?? true,
+      }),
       "_blank",
       "noopener,noreferrer",
     );
@@ -1030,6 +1035,7 @@ export function StorefrontClient({
     storefrontSettings.cash_discount_tiers,
     storefrontSettings.is_card_campaign_active,
     storefrontSettings.is_cash_discount_active,
+    tenant.is_whatsapp_order_direct,
     tenant.whatsapp_number,
   ]);
   const cartItemCount = useMemo(

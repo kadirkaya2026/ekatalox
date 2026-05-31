@@ -82,6 +82,10 @@ export async function PATCH(request: Request) {
 
   const parsed = storefrontSettingsSchema.safeParse({
     whatsapp_number: body.whatsapp_number ?? session.tenant!.whatsapp_number,
+    is_whatsapp_order_direct:
+      body.is_whatsapp_order_direct ??
+      session.tenant!.is_whatsapp_order_direct ??
+      true,
     storefront_title: body.storefront_title ?? existingSettings.storefront_title,
     storefront_description:
       body.storefront_description ?? existingSettings.storefront_description,
@@ -204,6 +208,7 @@ export async function PATCH(request: Request) {
       tenant: {
         ...session.tenant,
         whatsapp_number: parsed.data.whatsapp_number,
+        is_whatsapp_order_direct: parsed.data.is_whatsapp_order_direct,
       },
       storefrontSettings: {
         tenant_id: session.tenant!.id,
@@ -264,7 +269,10 @@ export async function PATCH(request: Request) {
 
   const { data: tenant, error: tenantError } = await supabase
     .from("tenants")
-    .update({ whatsapp_number: parsed.data.whatsapp_number })
+    .update({
+      whatsapp_number: parsed.data.whatsapp_number,
+      is_whatsapp_order_direct: parsed.data.is_whatsapp_order_direct,
+    })
     .eq("id", session.tenant!.id)
     .select("*")
     .single();

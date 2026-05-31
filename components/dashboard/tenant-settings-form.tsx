@@ -6,6 +6,41 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import type { Profile, Tenant } from "@/lib/types";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { cn } from "@/lib/utils";
+
+function SettingsToggle({
+  pressed,
+  disabled,
+  onToggle,
+  label,
+}: {
+  pressed: boolean;
+  disabled?: boolean;
+  onToggle: () => void;
+  label: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      disabled={disabled}
+      aria-pressed={pressed}
+      aria-label={label}
+      className={cn(
+        "relative inline-flex h-7 w-12 shrink-0 rounded-full transition",
+        pressed ? "bg-emerald-600" : "bg-slate-300",
+        disabled && "cursor-not-allowed opacity-50",
+      )}
+    >
+      <span
+        className={cn(
+          "absolute top-0.5 size-6 rounded-full bg-white shadow transition",
+          pressed ? "left-5" : "left-0.5",
+        )}
+      />
+    </button>
+  );
+}
 
 export function TenantSettingsForm({
   tenant,
@@ -17,6 +52,9 @@ export function TenantSettingsForm({
   forcePasswordChange?: boolean;
 }) {
   const [whatsapp, setWhatsapp] = useState(tenant.whatsapp_number);
+  const [isWhatsappOrderDirect, setIsWhatsappOrderDirect] = useState(
+    tenant.is_whatsapp_order_direct ?? true,
+  );
   const [password, setPassword] = useState("");
   const [passwordRepeat, setPasswordRepeat] = useState("");
   const [message, setMessage] = useState<string | null>(null);
@@ -32,14 +70,17 @@ export function TenantSettingsForm({
       const response = await fetch("/api/tenant/settings", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ whatsapp_number: whatsapp }),
+        body: JSON.stringify({
+          whatsapp_number: whatsapp,
+          is_whatsapp_order_direct: isWhatsappOrderDirect,
+        }),
       });
       const result = await response.json();
       if (!response.ok) {
         setMessage(result.error ?? "Ayar kaydedilemedi.");
         return;
       }
-      setMessage("WhatsApp yönlendirme numarası güncellendi.");
+      setMessage("Sipariş yönlendirme ayarları güncellendi.");
     });
   }
 
@@ -152,9 +193,26 @@ export function TenantSettingsForm({
         <Card className="p-5">
           <h2 className="text-lg font-semibold text-slate-900">Sipariş yönlendirme</h2>
           <p className="mt-1 text-sm text-slate-600">
-            Müşterilerinizin sepetindeki ürünleri WhatsApp ile bu numaraya yönlendirilir.
+            Müşteriler sepetten siparişi WhatsApp ile iletir. Numara ve yönlendirme modunu buradan
+            yönetin.
           </p>
           <form onSubmit={save} className="mt-5 space-y-4">
+            <div className="flex items-center justify-between gap-4 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+              <div className="min-w-0">
+                <p className="text-sm font-medium text-slate-900">
+                  Siparişler kayıtlı WhatsApp numarasına yönlendirilsin
+                </p>
+                <p className="mt-1 text-xs text-slate-600">
+                  Kapalıyken müşteri WhatsApp&apos;ta alıcıyı kendisi seçer; mesaj önceden doldurulur.
+                </p>
+              </div>
+              <SettingsToggle
+                label="Siparişler kayıtlı WhatsApp numarasına yönlendirilsin"
+                pressed={isWhatsappOrderDirect}
+                disabled={pending}
+                onToggle={() => setIsWhatsappOrderDirect((current) => !current)}
+              />
+            </div>
             <Input value={whatsapp} onChange={(e) => setWhatsapp(e.target.value)} />
             <Button type="submit" disabled={pending}>
               {pending ? "Kaydediliyor..." : "Kaydet"}
