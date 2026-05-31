@@ -63,11 +63,7 @@ export default async function SectionDetailPage(props: {
 
   if (!tierState || !isStorefrontTierStateValid({ cookieState: tierState, tenant })) {
     return (
-      <PasswordGate
-        subdomain={subdomain}
-        companyName={tenant.company_name}
-        whatsappNumber={tenant.whatsapp_number}
-      />
+      <PasswordGate subdomain={subdomain} companyName={tenant.company_name} />
     );
   }
 
