@@ -39,3 +39,11 @@ export function normalizeCurrencyCode(value: unknown) {
 export function isCurrencyCode(value: string): value is CurrencyCode {
   return supportedCurrencyCodes.includes(value as CurrencyCode);
 }
+
+export const PRODUCT_MODEL_NO_LABEL = "Model No";
+
+export function formatProductModelNo(skuCode: string | null | undefined) {
+  return skuCode?.trim()
+    ? `${PRODUCT_MODEL_NO_LABEL}: ${skuCode.trim()}`
+    : `${PRODUCT_MODEL_NO_LABEL} bilgisi yok`;
+}

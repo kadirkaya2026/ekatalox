@@ -208,7 +208,7 @@ export function ProductAddForm({
               ))}
             </select>
             <Input
-              placeholder="SKU kodu"
+              placeholder="Model No"
               value={form.sku_code}
               onChange={(event) => updateField("sku_code", event.target.value)}
             />

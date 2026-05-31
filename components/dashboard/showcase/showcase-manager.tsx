@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Modal } from "@/components/ui/modal";
 import type { Category, Product, StorefrontSection } from "@/lib/types";
+import { formatProductModelNo } from "@/lib/products/constants";
 
 const MAX_SECTIONS = 3;
 
@@ -373,7 +374,7 @@ export function ShowcaseManager({
           <div className="relative">
             <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
             <Input
-              placeholder="Ürün adı veya SKU ile ara…"
+              placeholder="Ürün adı veya model no ile ara…"
               value={productSearch}
               onChange={(e) => setProductSearch(e.target.value)}
               className="pl-9"
@@ -413,7 +414,7 @@ export function ShowcaseManager({
                         {product.product_name}
                       </p>
                       <p className="mt-0.5 text-xs text-slate-500">
-                        {product.sku_code ? `SKU: ${product.sku_code}` : "SKU yok"}
+                        {product.sku_code ? formatProductModelNo(product.sku_code) : "Model No yok"}
                         {" · "}
                         {categoryNameMap.get(product.category_id) ?? "Genel"}
                       </p>

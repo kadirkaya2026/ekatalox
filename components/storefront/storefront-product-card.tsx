@@ -6,6 +6,7 @@ import { Minus, Plus, Store, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import type { StorefrontProduct } from "@/lib/types";
 import { STOREFRONT_PRODUCT_GRID_SIZES } from "@/lib/storefront/image-sizes";
+import { formatProductModelNo } from "@/lib/products/constants";
 import { cn, formatCurrency } from "@/lib/utils";
 import { StorefrontImage } from "@/components/storefront/storefront-image";
 
@@ -289,7 +290,7 @@ export const StorefrontProductCard = memo(function StorefrontProductCard({
           {product.product_name}
         </p>
         <p className="truncate text-[10px] leading-4 text-slate-400 sm:text-[11px]">
-          {product.sku_code ? `SKU: ${product.sku_code}` : "SKU bilgisi yok"}
+          {formatProductModelNo(product.sku_code)}
         </p>
         {product.has_variants ? (
           <div className="flex flex-wrap gap-1 pt-1">

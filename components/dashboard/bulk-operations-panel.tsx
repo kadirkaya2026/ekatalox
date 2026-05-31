@@ -44,6 +44,7 @@ const COMPRESSION_OPTIONS = {
 // Türkçe kolon başlıkları → teknik alan adı eşlemesi
 const TURKISH_COLUMN_MAP: Record<string, string> = {
   "Kategori Adı": "category_name",
+  "Model No": "sku_code",
   "Stok Kodu (SKU)": "sku_code",
   "Ürün Adı": "product_name",
   "Para Birimi": "currency",
@@ -57,7 +58,7 @@ const TURKISH_COLUMN_MAP: Record<string, string> = {
 
 const TURKISH_TEMPLATE_HEADERS = [
   "Kategori Adı",
-  "Stok Kodu (SKU)",
+  "Model No",
   "Ürün Adı",
   "Para Birimi",
   "1. Liste Fiyatı",
@@ -573,7 +574,7 @@ function ProductImportTab({
           number={2}
           icon={FileSpreadsheet}
           title="Şablonu doldurun"
-          description='Ürün bilgilerinizi şablondaki sütunlara girin: "Kategori Adı", "Stok Kodu (SKU)", "Ürün Adı", "Para Birimi", "1. Liste Fiyatı", "2. Liste Fiyatı", "3. Liste Fiyatı", "Stok Durumu", "Paket Adedi", "Koli Adedi". Stok Durumu için "Var" veya "Yok" yazın. Paket/Koli adedi boş bırakılabilir. Sütun adlarını değiştirmeyin.'
+          description='Ürün bilgilerinizi şablondaki sütunlara girin: "Kategori Adı", "Model No", "Ürün Adı", "Para Birimi", "1. Liste Fiyatı", "2. Liste Fiyatı", "3. Liste Fiyatı", "Stok Durumu", "Paket Adedi", "Koli Adedi". Stok Durumu için "Var" veya "Yok" yazın. Paket/Koli adedi boş bırakılabilir. Sütun adlarını değiştirmeyin.'
         />
         <div className="flex gap-4">
           <div className="flex flex-col items-center">
@@ -971,8 +972,8 @@ function ImageImportTab({ tenant }: { tenant: Tenant }) {
         <Step
           number={1}
           icon={FileSpreadsheet}
-          title="Resim dosyalarını SKU koduna göre adlandırın"
-          description="Her ürün fotoğrafını, o ürünün SKU/Barkod koduyla aynı isimde kaydedin. Örnek: SKU kodu 'A1001' olan ürünün resmi 'A1001.jpg' olmalıdır."
+          title="Resim dosyalarını model noya göre adlandırın"
+          description="Her ürün fotoğrafını, o ürünün model no/barkod koduyla aynı isimde kaydedin. Örnek: model no 'A1001' olan ürünün resmi 'A1001.jpg' olmalıdır."
         />
         <Step
           number={2}

@@ -26,6 +26,7 @@ import type {
   StorefrontProduct,
   TenantStorefrontSettings,
 } from "@/lib/types";
+import { formatProductModelNo } from "@/lib/products/constants";
 import { cn, formatCurrency } from "@/lib/utils";
 import { STOREFRONT_CART_THUMB_SIZES } from "@/lib/storefront/image-sizes";
 import { StorefrontImage } from "@/components/storefront/storefront-image";
@@ -250,7 +251,7 @@ export function StorefrontCartDrawer({
                               </p>
                             ) : null}
                             <p className="mt-0.5 text-xs text-slate-500">
-                              {item.sku_code ? `SKU: ${item.sku_code}` : "SKU bilgisi yok"}
+                              {formatProductModelNo(item.sku_code)}
                             </p>
                           </div>
                           <button

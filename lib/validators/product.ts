@@ -92,7 +92,7 @@ const optionalDiscountPriceSchema = z
 
 export const productBaseSchema = z.object({
   category_id: z.string().min(1, "Kategori seçimi zorunludur."),
-  sku_code: z.string().min(1, "Stok kodu zorunludur."),
+  sku_code: z.string().min(1, "Model No zorunludur."),
   product_name: z.string().min(2, "Ürün adı zorunludur."),
   currency: currencyCodeSchema,
   price_tier_1: z.coerce.number().min(0),
@@ -175,7 +175,7 @@ export const productCreateSchema = productBaseSchema.extend({
 
 export const productImportRowSchema = z.object({
   category_name: z.string().min(1, "Kategori adı zorunludur."),
-  sku_code: z.string().min(1, "Stok kodu zorunludur."),
+  sku_code: z.string().min(1, "Model No zorunludur."),
   product_name: z.string().min(2, "Ürün adı zorunludur."),
   currency: currencyCodeSchema,
   price_tier_1: z.coerce.number().min(0),

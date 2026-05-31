@@ -30,7 +30,7 @@ import {
   getCategoryLineage,
   getDescendantCategoryIds,
 } from "@/lib/categories/tree";
-import { supportedCurrencyCodes } from "@/lib/products/constants";
+import { supportedCurrencyCodes, formatProductModelNo } from "@/lib/products/constants";
 import { buildWhatsAppOrderHref } from "@/lib/storefront/whatsapp-order";
 import {
   buildWhatsAppMessage,
@@ -1800,7 +1800,7 @@ export function StorefrontClient({
             {product.product_name}
           </p>
           <p className="text-[11px] text-slate-500">
-            {product.sku_code ? `SKU: ${product.sku_code}` : "SKU bilgisi yok"}
+            {formatProductModelNo(product.sku_code)}
           </p>
           {getUnitSummary(product) ? (
             <p className="line-clamp-2 text-[11px] leading-4 text-slate-500">
@@ -1977,7 +1977,7 @@ export function StorefrontClient({
             >
               <Search className={cn(theme.searchIcon, "left-4 size-4 text-slate-400")} />
               <input
-                placeholder="Ürün adı, SKU veya kategoriye göre arayın..."
+                placeholder="Ürün adı, model no veya kategoriye göre arayın..."
                 value={searchInput}
                 onChange={(event) => handleSearchChange(event.target.value)}
                 className={cn(
@@ -2578,7 +2578,7 @@ export function StorefrontClient({
                     {selectedProduct.product_name}
                   </p>
                   <p className="mt-0.5 truncate text-[11px] text-slate-500">
-                    {selectedProduct.sku_code || "SKU bilgisi yok"}
+                    {formatProductModelNo(selectedProduct.sku_code)}
                   </p>
                   {!selectedProduct.has_variants && getUnitSummary(selectedProduct) ? (
                     <p className="mt-0.5 text-[11px] text-slate-500">

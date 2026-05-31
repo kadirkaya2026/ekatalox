@@ -907,7 +907,7 @@ export function ProductsManager({
             <div className="flex w-full flex-col gap-3 sm:flex-row lg:max-w-2xl lg:justify-end">
               <div className="w-full lg:max-w-md">
                 <Input
-                  placeholder="Ürün adı veya SKU ara"
+                  placeholder="Ürün adı veya model no ara"
                   value={searchTerm}
                   onChange={(event) => setSearchTerm(event.target.value)}
                 />
@@ -1274,7 +1274,7 @@ export function ProductsManager({
               Filtrelerinize uygun ürün bulunamadı.
             </p>
             <p className="mt-1 text-sm text-slate-500">
-              Kategori seçimini temizleyin veya ürün adı, SKU ya da para birimi ile tekrar deneyin.
+              Kategori seçimini temizleyin veya ürün adı, model no ya da para birimi ile tekrar deneyin.
             </p>
           </div>
         ) : null}
@@ -1455,7 +1455,7 @@ export function ProductsManager({
               ))}
             </select>
             <Input
-              placeholder="SKU kodu"
+              placeholder="Model No"
               value={editForm.sku_code}
               onChange={(event) => updateEditField("sku_code", event.target.value)}
             />
@@ -1719,7 +1719,7 @@ export function ProductsManager({
               <p className="text-sm font-semibold text-red-900">
                 {deleteTarget.product_name}
               </p>
-              <p className="mt-1 text-sm text-red-800">SKU: {deleteTarget.sku_code}</p>
+              <p className="mt-1 text-sm text-red-800">Model No: {deleteTarget.sku_code}</p>
               <p className="mt-3 text-sm text-red-800">
                 Bu işlem geri alınamaz. Ürün kaydı ve bağlı görsel kalıcı olarak
                 silinecektir.
