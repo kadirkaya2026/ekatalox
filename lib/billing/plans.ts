@@ -7,7 +7,8 @@ export type PlanFeature =
   | "payment_settings"
   | "banner_settings"
   | "product_discount"
-  | "showcase_products";
+  | "showcase_products"
+  | "online_payment";
 
 export interface PlanOption {
   id: TenantPlan;
@@ -27,18 +28,23 @@ const PROFESSIONAL_FEATURES: Record<PlanFeature, boolean> = {
   banner_settings: true,
   product_discount: true,
   showcase_products: true,
+  online_payment: false,
 };
 
 export const PLAN_FEATURES: Record<TenantPlan, Record<PlanFeature, boolean>> = {
   baslangic: {
     reports: false,
-    payment_settings: false,
+    payment_settings: true,
     banner_settings: true,
     product_discount: false,
     showcase_products: false,
+    online_payment: false,
   },
   profesyonel: PROFESSIONAL_FEATURES,
-  kurumsal: PROFESSIONAL_FEATURES,
+  kurumsal: {
+    ...PROFESSIONAL_FEATURES,
+    online_payment: true,
+  },
 };
 
 const PLAN_FEATURE_LABELS: Record<PlanFeature, string> = {
@@ -47,6 +53,12 @@ const PLAN_FEATURE_LABELS: Record<PlanFeature, string> = {
   banner_settings: "Banner yönetimi",
   product_discount: "Ürün indirimi",
   showcase_products: "Vitrin ürünleri",
+  online_payment: "Online sanal POS ödemesi",
+};
+
+const PLAN_FEATURE_UPGRADE_MESSAGES: Partial<Record<PlanFeature, string>> = {
+  online_payment:
+    "iyzico, Paynet gibi sanal POS firmalarından siteniz üzerinden ödeme alabilmek için paketinizi yükseltmeniz gerekmektedir.",
 };
 
 export const PAYMENT_SETTING_BODY_KEYS = [
@@ -66,6 +78,9 @@ export const PAYMENT_SETTING_BODY_KEYS = [
   "cash_discount_tiers",
   "card_campaign_tiers",
 ] as const;
+
+/** Future sanal POS settings fields — guard when integration is added. */
+export const ONLINE_PAYMENT_BODY_KEYS = [] as const;
 
 const PACKAGE_UPGRADE_PHONE = "905354172510";
 
@@ -114,7 +129,11 @@ export function getMinimumPlanForFeature(feature: PlanFeature): TenantPlan {
     return "baslangic";
   }
 
-  return "profesyonel";
+  if (PLAN_FEATURES.profesyonel[feature]) {
+    return "profesyonel";
+  }
+
+  return "kurumsal";
 }
 
 export function getPlanFeatureLabel(feature: PlanFeature): string {
@@ -122,8 +141,17 @@ export function getPlanFeatureLabel(feature: PlanFeature): string {
 }
 
 export function getPlanFeatureUpgradeMessage(feature: PlanFeature): string {
+  const customMessage = PLAN_FEATURE_UPGRADE_MESSAGES[feature];
+  if (customMessage) {
+    return customMessage;
+  }
+
   const minimumPlan = getMinimumPlanForFeature(feature);
   return `${getPlanFeatureLabel(feature)} özelliği ${getPlanLabel(minimumPlan)} paketinde kullanılabilir.`;
+}
+
+export function requestTouchesOnlinePaymentSettings(body: Record<string, unknown>): boolean {
+  return ONLINE_PAYMENT_BODY_KEYS.some((key) => key in body);
 }
 
 export function requestTouchesPaymentSettings(body: Record<string, unknown>): boolean {

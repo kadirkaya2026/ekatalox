@@ -1,10 +1,12 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Banknote, CreditCard, Plus, Trash2, ShoppingCart, Sparkles } from "lucide-react";
+import { Banknote, CreditCard, Globe, Plus, Trash2, ShoppingCart, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { PlanFeatureGate } from "@/components/dashboard/plan-feature-gate";
+import type { TenantPlan } from "@/lib/billing/plans";
 import type {
   CashDiscountTier,
   CardCampaignTier,
@@ -18,8 +20,12 @@ type CardTierRow = CardCampaignTier & { _id: string };
 
 export function TenantPaymentSettingsForm({
   storefrontSettings,
+  plan,
+  companyName,
 }: {
   storefrontSettings: TenantStorefrontSettings;
+  plan: TenantPlan;
+  companyName: string;
 }) {
   const [tab, setTab] = useState<"cash" | "card">("cash");
 
@@ -131,6 +137,7 @@ export function TenantPaymentSettingsForm({
   }
 
   return (
+    <div className="space-y-6">
     <Card className="overflow-hidden border-slate-200 p-0">
       {/* Header */}
       <div className="border-b border-slate-100 bg-[radial-gradient(circle_at_top_right,rgba(16,185,129,0.16),transparent_42%),linear-gradient(135deg,#f8fafc_0%,#ffffff_45%,#ecfeff_100%)] px-5 py-5">
@@ -547,5 +554,37 @@ export function TenantPaymentSettingsForm({
         </div>
       </form>
     </Card>
+
+    <PlanFeatureGate feature="online_payment" plan={plan} companyName={companyName}>
+      <Card className="overflow-hidden border-slate-200 p-0">
+        <div className="border-b border-slate-100 bg-[radial-gradient(circle_at_top_right,rgba(59,130,246,0.14),transparent_42%),linear-gradient(135deg,#f8fafc_0%,#ffffff_45%,#eff6ff_100%)] px-5 py-5">
+          <div className="flex items-start gap-4">
+            <div className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-blue-100 text-blue-700">
+              <Globe className="size-5" />
+            </div>
+            <div>
+              <div className="inline-flex items-center gap-2 rounded-full border border-blue-100 bg-white/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-blue-700">
+                <CreditCard className="size-3.5" />
+                Online Sanal POS Ödemesi
+              </div>
+              <h2 className="mt-3 text-lg font-semibold text-slate-900">
+                Vitrin üzerinden kredi kartı tahsilatı
+              </h2>
+              <p className="mt-1 text-sm leading-6 text-slate-600">
+                iyzico, Paynet ve benzeri sanal POS sağlayıcıları ile müşterilerinizin
+                sitenizden doğrudan ödeme yapmasını sağlayın.
+              </p>
+            </div>
+          </div>
+        </div>
+        <div className="p-5">
+          <p className="text-sm leading-6 text-slate-600">
+            Sanal POS entegrasyon ayarları yakında eklenecek. Kurumsal paketinizle bu
+            özelliği kullanmaya hazırsınız.
+          </p>
+        </div>
+      </Card>
+    </PlanFeatureGate>
+    </div>
   );
 }
