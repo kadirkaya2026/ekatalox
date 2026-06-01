@@ -58,6 +58,10 @@ export function AdminTenantsManager({
   const [form, setForm] = useState<NewTenantForm>(defaultForm);
   const [codeDrafts, setCodeDrafts] = useState<Record<string, string>>({});
   const [tierDrafts, setTierDrafts] = useState<Record<string, 1 | 2 | 3>>({});
+  const [editingAccessCodeId, setEditingAccessCodeId] = useState<string | null>(null);
+  const [editDrafts, setEditDrafts] = useState<
+    Record<string, { password_code: string; price_tier_level: 1 | 2 | 3 }>
+  >({});
   const [message, setMessage] = useState<string | null>(null);
   const [createdCredentials, setCreatedCredentials] = useState<{
     email: string;
@@ -245,6 +249,68 @@ export function AdminTenantsManager({
     });
   }
 
+  function startEditingAccessCode(accessCode: AccessCode) {
+    setEditingAccessCodeId(accessCode.id);
+    setEditDrafts((current) => ({
+      ...current,
+      [accessCode.id]: {
+        password_code: accessCode.password_code,
+        price_tier_level: accessCode.price_tier_level,
+      },
+    }));
+  }
+
+  function cancelEditingAccessCode() {
+    setEditingAccessCodeId(null);
+  }
+
+  function updateAccessCode(tenantId: string, accessCodeId: string) {
+    const draft = editDrafts[accessCodeId];
+    const password_code = draft?.password_code.trim();
+
+    if (!password_code) {
+      setMessage("Şifre kodu giriniz.");
+      return;
+    }
+
+    setMessage(null);
+    startTransition(async () => {
+      const response = await fetch("/api/admin/access-codes", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: accessCodeId,
+          password_code,
+          price_tier_level: draft.price_tier_level,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        setMessage(result.error ?? "Şifre güncellenemedi.");
+        return;
+      }
+
+      setTenants((current) =>
+        current.map((tenant) =>
+          tenant.id === tenantId
+            ? {
+                ...tenant,
+                access_codes: (tenant.access_codes ?? []).map((accessCode) =>
+                  accessCode.id === accessCodeId
+                    ? (result.accessCode as AccessCode)
+                    : accessCode,
+                ),
+              }
+            : tenant,
+        ),
+      );
+      setEditingAccessCodeId(null);
+      setMessage("Şifre güncellendi.");
+    });
+  }
+
   return (
     <div className="space-y-6">
       <div className="grid gap-4 md:grid-cols-3">
@@ -404,24 +470,96 @@ export function AdminTenantsManager({
               <div className="rounded-xl border border-slate-100 bg-slate-50 p-4">
                 <p className="text-sm font-semibold text-slate-900">Şifre yönetimi</p>
                 <div className="mt-4 flex flex-wrap gap-2">
-                  {(tenant.access_codes ?? []).map((accessCode) => (
-                    <div
-                      key={accessCode.id}
-                      className="flex items-center gap-2 rounded-full bg-white px-3 py-2 text-sm shadow-sm"
-                    >
-                      <span className="font-semibold text-slate-900">
-                        {accessCode.password_code}
-                      </span>
-                      <span className="text-slate-500">Katman {accessCode.price_tier_level}</span>
-                      <button
-                        type="button"
-                        onClick={() => deleteAccessCode(tenant.id, accessCode.id)}
-                        className="text-slate-400 transition hover:text-slate-900"
+                  {(tenant.access_codes ?? []).map((accessCode) => {
+                    const isEditing = editingAccessCodeId === accessCode.id;
+                    const draft = editDrafts[accessCode.id];
+
+                    if (isEditing && draft) {
+                      return (
+                        <div
+                          key={accessCode.id}
+                          className="flex w-full flex-col gap-2 rounded-xl border border-slate-200 bg-white p-3 sm:flex-row sm:items-center"
+                        >
+                          <Input
+                            placeholder="1111"
+                            value={draft.password_code}
+                            onChange={(event) =>
+                              setEditDrafts((current) => ({
+                                ...current,
+                                [accessCode.id]: {
+                                  ...current[accessCode.id],
+                                  password_code: event.target.value,
+                                },
+                              }))
+                            }
+                            className="sm:max-w-[140px]"
+                          />
+                          <select
+                            value={draft.price_tier_level}
+                            onChange={(event) =>
+                              setEditDrafts((current) => ({
+                                ...current,
+                                [accessCode.id]: {
+                                  ...current[accessCode.id],
+                                  price_tier_level: Number(event.target.value) as 1 | 2 | 3,
+                                },
+                              }))
+                            }
+                            className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900"
+                          >
+                            <option value={1}>Katman 1 • Toptancı</option>
+                            <option value={2}>Katman 2 • Bayi</option>
+                            <option value={3}>Katman 3 • Telefoncu</option>
+                          </select>
+                          <div className="flex gap-2">
+                            <Button
+                              className="px-3 py-2"
+                              onClick={() => updateAccessCode(tenant.id, accessCode.id)}
+                              disabled={pending}
+                            >
+                              Kaydet
+                            </Button>
+                            <Button
+                              className="px-3 py-2"
+                              variant="secondary"
+                              onClick={cancelEditingAccessCode}
+                              disabled={pending}
+                            >
+                              İptal
+                            </Button>
+                          </div>
+                        </div>
+                      );
+                    }
+
+                    return (
+                      <div
+                        key={accessCode.id}
+                        className="flex items-center gap-2 rounded-full bg-white px-3 py-2 text-sm shadow-sm"
                       >
-                        Sil
-                      </button>
-                    </div>
-                  ))}
+                        <span className="font-semibold text-slate-900">
+                          {accessCode.password_code}
+                        </span>
+                        <span className="text-slate-500">
+                          Katman {accessCode.price_tier_level}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => startEditingAccessCode(accessCode)}
+                          className="text-slate-400 transition hover:text-slate-900"
+                        >
+                          Düzenle
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => deleteAccessCode(tenant.id, accessCode.id)}
+                          className="text-slate-400 transition hover:text-slate-900"
+                        >
+                          Sil
+                        </button>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
 

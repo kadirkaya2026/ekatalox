@@ -76,7 +76,9 @@ export function AccessCodesManager({
       <Card className="p-5">
         <h2 className="text-lg font-semibold text-slate-900">Yeni erişim kodu</h2>
         <p className="mt-1 text-sm text-slate-600">
-          Müşteri vitrini açıldığında girilen şifreye göre yalnız tek fiyat katmanı gösterilir.
+          Müşteri vitrini için yeni şifre kodu buradan oluşturabilirsiniz. Girilen şifreye göre
+          yalnız tek fiyat katmanı gösterilir. Mevcut bir şifreyi değiştirmek için merkezi yönetim
+          ile iletişime geçin.
         </p>
 
         <form onSubmit={addCode} className="mt-5 grid gap-3">
