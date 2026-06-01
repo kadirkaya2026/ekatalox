@@ -23,6 +23,9 @@ export function TenantSiteIdentityForm({
   const [storefrontTitle, setStorefrontTitle] = useState(
     initialStorefrontSettings.storefront_title ?? "",
   );
+  const [storefrontDescription, setStorefrontDescription] = useState(
+    initialStorefrontSettings.storefront_description ?? "",
+  );
   const [logoUrl, setLogoUrl] = useState(initialStorefrontSettings.logo_url ?? null);
   const [siteTabTitle, setSiteTabTitle] = useState(
     initialStorefrontSettings.site_tab_title ?? "",
@@ -43,6 +46,9 @@ export function TenantSiteIdentityForm({
   const [logoError, setLogoError] = useState<string | null>(null);
   const [faviconError, setFaviconError] = useState<string | null>(null);
   const [storefrontTitleError, setStorefrontTitleError] = useState<string | null>(null);
+  const [storefrontDescriptionError, setStorefrontDescriptionError] = useState<string | null>(
+    null,
+  );
   const [titleError, setTitleError] = useState<string | null>(null);
   const [announcementTitle, setAnnouncementTitle] = useState(
     initialStorefrontSettings.announcement_title ?? "",
@@ -120,9 +126,15 @@ export function TenantSiteIdentityForm({
     event.preventDefault();
     setStorefrontSaveMessage(null);
     setStorefrontTitleError(null);
+    setStorefrontDescriptionError(null);
 
     if (storefrontTitle.length > 80) {
       setStorefrontTitleError("Mağaza başlığı en fazla 80 karakter olabilir.");
+      return;
+    }
+
+    if (storefrontDescription.length > 220) {
+      setStorefrontDescriptionError("Açıklama en fazla 220 karakter olabilir.");
       return;
     }
 
@@ -130,7 +142,10 @@ export function TenantSiteIdentityForm({
       const response = await fetch("/api/tenant/settings", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ storefront_title: storefrontTitle }),
+        body: JSON.stringify({
+          storefront_title: storefrontTitle,
+          storefront_description: storefrontDescription,
+        }),
       });
 
       const result = await response.json();
@@ -142,6 +157,7 @@ export function TenantSiteIdentityForm({
 
       if (result.storefrontSettings) {
         setStorefrontTitle(result.storefrontSettings.storefront_title ?? "");
+        setStorefrontDescription(result.storefrontSettings.storefront_description ?? "");
         if (result.storefrontSettings.logo_url) {
           setLogoUrl(result.storefrontSettings.logo_url);
         }
@@ -306,11 +322,11 @@ export function TenantSiteIdentityForm({
       <Card className="p-5">
         <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-slate-900">
           <Store className="size-4 text-emerald-700" />
-          <span>Mağaza logosu ve başlığı</span>
+          <span>Mağaza logosu, başlık ve açıklama</span>
         </div>
         <p className="mb-4 text-sm text-slate-500">
-          Vitrin header&apos;ında görünecek logo ve mağaza adı. Tema önizlemelerinde de bu
-          bilgiler kullanılır.
+          Vitrin header&apos;ında görünecek logo, mağaza adı ve kısa tanıtım metni. Tema
+          önizlemelerinde de bu bilgiler kullanılır.
         </p>
 
         <form onSubmit={saveStorefrontIdentity} className="space-y-4">
@@ -380,6 +396,28 @@ export function TenantSiteIdentityForm({
               <p className="mt-2 text-sm text-amber-700">{storefrontTitleError}</p>
             ) : null}
             <p className="mt-1 text-xs text-slate-400">{storefrontTitle.length}/80 karakter</p>
+          </div>
+
+          <div>
+            <label className="mb-2 block text-sm font-semibold text-slate-900">
+              Kısa açıklama
+            </label>
+            <Textarea
+              value={storefrontDescription}
+              onChange={(event) => {
+                setStorefrontDescription(event.target.value);
+                setStorefrontSaveMessage(null);
+                setStorefrontDescriptionError(null);
+              }}
+              placeholder="Mağazanızı 1-2 cümle ile anlatın."
+              maxLength={220}
+            />
+            {storefrontDescriptionError ? (
+              <p className="mt-2 text-sm text-amber-700">{storefrontDescriptionError}</p>
+            ) : null}
+            <p className="mt-1 text-xs text-slate-400">
+              {storefrontDescription.length}/220 karakter
+            </p>
           </div>
 
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">

@@ -1,24 +1,21 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { LayoutGrid, LoaderCircle, Palette } from "lucide-react";
+import { LayoutGrid, Palette } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Textarea } from "@/components/ui/textarea";
 import { StorefrontThemePreview } from "@/components/dashboard/storefront-theme-preview";
 import type { StorefrontLayoutKey, StorefrontThemeKey, TenantStorefrontSettings } from "@/lib/types";
 import { THEME_OPTIONS } from "@/lib/storefront/theme-catalog";
 import { LAYOUT_OPTIONS } from "@/lib/storefront/layout-catalog";
 
 interface ThemeFormState {
-  storefront_description: string;
   theme_key: StorefrontThemeKey;
   layout_key: StorefrontLayoutKey;
 }
 
 function toThemeFormState(settings: TenantStorefrontSettings): ThemeFormState {
   return {
-    storefront_description: settings.storefront_description ?? "",
     theme_key: settings.theme_key,
     layout_key: settings.layout_key ?? "classic-grid",
   };
@@ -34,7 +31,6 @@ export function TenantThemeForm({
   );
   const [savePending, startSaveTransition] = useTransition();
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
-  const [errors, setErrors] = useState<Partial<Record<keyof ThemeFormState, string>>>({});
 
   const previewTitle = initialStorefrontSettings.storefront_title ?? "";
   const previewLogoUrl = initialStorefrontSettings.logo_url;
@@ -42,7 +38,6 @@ export function TenantThemeForm({
   function updateField<K extends keyof ThemeFormState>(key: K, value: ThemeFormState[K]) {
     setForm((current) => ({ ...current, [key]: value }));
     setSaveMessage(null);
-    setErrors((current) => ({ ...current, [key]: undefined }));
   }
 
   function save(event: React.FormEvent<HTMLFormElement>) {
@@ -56,7 +51,6 @@ export function TenantThemeForm({
         body: JSON.stringify({
           theme_key: form.theme_key,
           layout_key: form.layout_key,
-          storefront_description: form.storefront_description,
         }),
       });
 
@@ -145,20 +139,6 @@ export function TenantThemeForm({
                 );
               })}
             </div>
-          </div>
-
-          <div>
-            <label className="mb-2 block text-sm font-semibold text-slate-900">
-              Kısa açıklama
-            </label>
-            <Textarea
-              value={form.storefront_description}
-              onChange={(event) => updateField("storefront_description", event.target.value)}
-              placeholder="Mağazanızı 1-2 cümle ile anlatın."
-            />
-            {errors.storefront_description ? (
-              <p className="mt-2 text-sm text-amber-700">{errors.storefront_description}</p>
-            ) : null}
           </div>
         </div>
 

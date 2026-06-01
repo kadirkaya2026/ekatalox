@@ -12,7 +12,7 @@ export default async function TenantSiteIdentityPage() {
       <Header
         eyebrow="Ayarlar / Site Kimliği"
         title="Site Kimliği"
-        description="Mağaza logosu, vitrin başlığı, tarayıcı sekmesi, favicon ve duyuru modalını yönetin."
+        description="Mağaza logosu, vitrin başlığı, kısa açıklama, tarayıcı sekmesi, favicon ve duyuru modalını yönetin."
       />
 
       <TenantSiteIdentityForm initialStorefrontSettings={storefrontSettings} />
