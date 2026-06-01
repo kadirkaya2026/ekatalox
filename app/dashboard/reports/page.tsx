@@ -12,7 +12,7 @@ export default async function ReportsPage() {
       <Header
         eyebrow="Raporlar"
         title="Mağaza Raporları"
-        description="Vitrin ziyaretçileri, en çok tıklanan ürünler ve sepete eklenen ürünleri günlük, haftalık veya aylık görüntüleyin."
+        description="Tekil ziyaretçi, en çok tıklanan ve sepete eklenen ürünleri günlük, haftalık veya aylık döneme göre görüntüleyin."
       />
 
       <ReportsPanel initialReport={report} />

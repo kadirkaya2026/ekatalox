@@ -9,6 +9,8 @@ export interface AnalyticsProductRow {
 
 export interface TenantAnalyticsReport {
   period: AnalyticsPeriod;
+  startDate: string;
+  endDate: string;
   uniqueVisitors: number;
   topViewedProducts: AnalyticsProductRow[];
   topCartProducts: AnalyticsProductRow[];
@@ -16,6 +18,26 @@ export interface TenantAnalyticsReport {
 
 function formatIstanbulDate(date: Date) {
   return date.toLocaleDateString("en-CA", { timeZone: "Europe/Istanbul" });
+}
+
+export function formatReportDate(isoDate: string) {
+  const [year, month, day] = isoDate.split("-").map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day));
+
+  return date.toLocaleDateString("tr-TR", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    timeZone: "UTC",
+  });
+}
+
+export function formatReportDateRange(startDate: string, endDate: string) {
+  if (startDate === endDate) {
+    return formatReportDate(startDate);
+  }
+
+  return `${formatReportDate(startDate)} – ${formatReportDate(endDate)}`;
 }
 
 function getIstanbulToday() {
@@ -45,8 +67,12 @@ export async function getTenantAnalyticsReport(
   tenantId: string,
   period: AnalyticsPeriod,
 ): Promise<TenantAnalyticsReport> {
+  const { startDate, endDate } = getDateRange(period);
+
   const emptyReport: TenantAnalyticsReport = {
     period,
+    startDate,
+    endDate,
     uniqueVisitors: 0,
     topViewedProducts: [],
     topCartProducts: [],
@@ -57,8 +83,6 @@ export async function getTenantAnalyticsReport(
   if (!supabase) {
     return emptyReport;
   }
-
-  const { startDate, endDate } = getDateRange(period);
 
   const { count: uniqueVisitors, error: visitorsError } = await supabase
     .from("storefront_analytics_visitors")
@@ -139,6 +163,8 @@ export async function getTenantAnalyticsReport(
 
   return {
     period,
+    startDate,
+    endDate,
     uniqueVisitors: uniqueVisitors ?? 0,
     topViewedProducts,
     topCartProducts,

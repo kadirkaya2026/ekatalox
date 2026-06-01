@@ -3,7 +3,10 @@
 import { useCallback, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Table, TableWrapper } from "@/components/ui/table";
-import type { TenantAnalyticsReport } from "@/lib/analytics/queries";
+import {
+  formatReportDateRange,
+  type TenantAnalyticsReport,
+} from "@/lib/analytics/queries";
 import type { AnalyticsPeriod } from "@/lib/validators/analytics";
 import { cn } from "@/lib/utils";
 
@@ -12,6 +15,16 @@ const periodOptions: { value: AnalyticsPeriod; label: string }[] = [
   { value: "weekly", label: "Haftalık" },
   { value: "monthly", label: "Aylık" },
 ];
+
+function getVisitorCardTitle(report: TenantAnalyticsReport) {
+  const dateLabel = formatReportDateRange(report.startDate, report.endDate);
+
+  if (report.period === "daily") {
+    return `${dateLabel} tarihinde siteye giren tekil ziyaretçi`;
+  }
+
+  return `${dateLabel} arasında siteye giren tekil ziyaretçi (toplam)`;
+}
 
 function ProductRankingTable({
   title,
@@ -125,14 +138,19 @@ export function ReportsPanel({
       </div>
 
       <Card className="p-5">
-        <p className="text-sm text-slate-500">Siteye giren tekil ziyaretçi</p>
+        <p className="text-sm text-slate-500">{getVisitorCardTitle(report)}</p>
         <p className="mt-2 text-3xl font-bold text-slate-900">
           {report.uniqueVisitors}
           <span className="ml-2 text-base font-medium text-slate-500">
             Tekil Ziyaretçi (cihaz)
           </span>
         </p>
-        <p className="mt-2 text-xs text-slate-500">Her cihaz ve tarayıcı ayrı sayılır.</p>
+        <p className="mt-2 text-xs text-slate-500">
+          Türkiye saatiyle; tüm konumlardan girişler dahildir. Her cihaz ve tarayıcı ayrı
+          sayılır.
+          {report.period !== "daily" &&
+            " Haftalık ve aylık dönemde aynı cihaz farklı günlerde tekrar sayılır."}
+        </p>
       </Card>
 
       <div className="grid gap-4 xl:grid-cols-2">
