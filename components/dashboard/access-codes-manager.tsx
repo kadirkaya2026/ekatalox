@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { getAccessCodePriceListLabel } from "@/lib/price-lists/constants";
 import type { AccessCode, PriceList, Tenant } from "@/lib/types";
 
 export function AccessCodesManager({
@@ -45,8 +46,14 @@ export function AccessCodesManager({
       }
 
       const created = result.accessCode as AccessCode;
-      const listName = priceLists.find((list) => list.id === created.price_list_id)?.name;
-      setCodes((current) => [{ ...created, price_list_name: listName }, ...current]);
+      const list = priceLists.find((entry) => entry.id === created.price_list_id);
+      setCodes((current) => [
+        {
+          ...created,
+          price_list_name: list ? getAccessCodePriceListLabel(list) : created.price_list_name,
+        },
+        ...current,
+      ]);
       setPasswordCode("");
       setMessage("Yeni erişim şifresi eklendi.");
     });
@@ -96,8 +103,7 @@ export function AccessCodesManager({
           >
             {priceLists.map((list) => (
               <option key={list.id} value={list.id}>
-                {list.name}
-                {list.is_catalog_only ? " • Fiyatsız" : ""}
+                {getAccessCodePriceListLabel(list)}
               </option>
             ))}
           </select>
@@ -125,16 +131,20 @@ export function AccessCodesManager({
         ) : null}
 
         <div className="mt-5 space-y-3">
-          {codes.map((code) => (
+          {codes.map((code) => {
+            const linkedList = priceLists.find((entry) => entry.id === code.price_list_id);
+            const listLabel = linkedList
+              ? getAccessCodePriceListLabel(linkedList)
+              : (code.price_list_name ?? "Fiyat listesi");
+
+            return (
             <div
               key={code.id}
               className="flex flex-col gap-3 rounded-xl border border-slate-100 bg-slate-50 p-4 md:flex-row md:items-center md:justify-between"
             >
               <div>
                 <p className="text-base font-semibold text-slate-900">{code.password_code}</p>
-                <p className="mt-1 text-sm text-slate-500">
-                  {code.price_list_name ?? "Fiyat listesi"}
-                </p>
+                <p className="mt-1 text-sm text-slate-500">{listLabel}</p>
               </div>
               <Button
                 variant="secondary"
@@ -144,7 +154,8 @@ export function AccessCodesManager({
                 Kaldır
               </Button>
             </div>
-          ))}
+            );
+          })}
         </div>
       </Card>
     </div>
