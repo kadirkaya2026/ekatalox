@@ -236,6 +236,8 @@ function readStoredCart(storageKey: string) {
         variant_id: typeof item.variant_id === "string" ? item.variant_id : null,
         variant_name: typeof item.variant_name === "string" ? item.variant_name : null,
         stock_quantity: typeof item.stock_quantity === "number" ? item.stock_quantity : null,
+        sales_unit: "adet" as const,
+        unit_quantity: item.quantity,
       }));
   } catch {
     return [];
@@ -331,8 +333,8 @@ function addVariantSelectionsToCart(
           carton_quantity: variant.carton_quantity,
           stock_quantity: variant.stock_quantity,
           quantity: requestedUnits,
-          sales_unit: selection.unit,
-          unit_quantity: selection.quantity,
+          sales_unit: "adet" as const,
+          unit_quantity: requestedUnits,
         },
       ];
     }

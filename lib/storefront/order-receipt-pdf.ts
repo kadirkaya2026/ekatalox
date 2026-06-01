@@ -24,6 +24,25 @@ const PDF_FONT = "Roboto";
 const SOFT_BORDER = [229, 231, 235] as [number, number, number];
 const PRODUCT_COLUMN_WIDTH_MM = 82;
 const PRODUCT_CELL_HORIZONTAL_PADDING_MM = 5;
+const PDF_FONT_SIZE = {
+  tenantTitle: 19,
+  headerMeta: 12,
+  sectionTitle: 16,
+  tableBody: 10.5,
+  tableHead: 11,
+  summary: 12,
+  summaryBold: 13,
+  body: 12,
+  footer: 11,
+} as const;
+const PDF_SPACING = {
+  headerBlock: 26,
+  summaryLine: 8.5,
+  wrappedLine: 6.5,
+  tableMinCellHeight: 9.5,
+  tableCellPaddingVertical: 3.5,
+} as const;
+const RECEIPT_TIMEZONE = "Europe/Istanbul";
 
 function wrapReceiptProductCellText(doc: jsPDF, rawText: string, fontSize: number) {
   doc.setFont(PDF_FONT, "normal");
@@ -38,6 +57,7 @@ function formatOrderDate(date: Date) {
     day: "2-digit",
     month: "2-digit",
     year: "numeric",
+    timeZone: RECEIPT_TIMEZONE,
   }).format(date);
 }
 
@@ -45,6 +65,7 @@ function formatOrderTime(date: Date) {
   return new Intl.DateTimeFormat("tr-TR", {
     hour: "2-digit",
     minute: "2-digit",
+    timeZone: RECEIPT_TIMEZONE,
   }).format(date);
 }
 
@@ -64,11 +85,11 @@ export async function generateOrderReceiptPdf(
   let cursorY = margin;
 
   setPdfFont(doc, "bold");
-  doc.setFontSize(17);
+  doc.setFontSize(PDF_FONT_SIZE.tenantTitle);
   doc.text(params.tenantName, margin, cursorY + 8);
 
   setPdfFont(doc, "normal");
-  doc.setFontSize(10);
+  doc.setFontSize(PDF_FONT_SIZE.headerMeta);
   const headerRightX = pageWidth - margin;
   doc.text(`Tarih: ${formatOrderDate(params.orderDate)}`, headerRightX, cursorY + 4, {
     align: "right",
@@ -82,14 +103,14 @@ export async function generateOrderReceiptPdf(
     cursorY + 17,
   );
 
-  cursorY += 24;
+  cursorY += PDF_SPACING.headerBlock;
 
   doc.setDrawColor(...SOFT_BORDER);
   doc.line(margin, cursorY, pageWidth - margin, cursorY);
   cursorY += 10;
 
   setPdfFont(doc, "bold");
-  doc.setFontSize(14);
+  doc.setFontSize(PDF_FONT_SIZE.sectionTitle);
   doc.text("Sipariş Fişi", margin, cursorY);
   cursorY += 8;
 
@@ -101,10 +122,15 @@ export async function generateOrderReceiptPdf(
     styles: {
       font: PDF_FONT,
       fontStyle: "normal",
-      fontSize: 8.5,
-      cellPadding: { top: 3, right: 2.5, bottom: 3, left: 2.5 },
+      fontSize: PDF_FONT_SIZE.tableBody,
+      cellPadding: {
+        top: PDF_SPACING.tableCellPaddingVertical,
+        right: 2.5,
+        bottom: PDF_SPACING.tableCellPaddingVertical,
+        left: 2.5,
+      },
       overflow: "linebreak",
-      minCellHeight: 8,
+      minCellHeight: PDF_SPACING.tableMinCellHeight,
       lineColor: SOFT_BORDER,
       lineWidth: 0.15,
       textColor: [15, 23, 42],
@@ -113,7 +139,7 @@ export async function generateOrderReceiptPdf(
     headStyles: {
       font: PDF_FONT,
       fontStyle: "bold",
-      fontSize: 9,
+      fontSize: PDF_FONT_SIZE.tableHead,
       fillColor: [248, 250, 252],
       textColor: [30, 41, 59],
     },
@@ -143,7 +169,7 @@ export async function generateOrderReceiptPdf(
       data.cell.text = wrapReceiptProductCellText(
         doc,
         rawText,
-        data.cell.styles.fontSize ?? 8.5,
+        data.cell.styles.fontSize ?? PDF_FONT_SIZE.tableBody,
       );
     },
   });
@@ -192,34 +218,34 @@ export async function generateOrderReceiptPdf(
   for (const line of summaryLines) {
     if (line.bold) {
       setPdfFont(doc, "bold");
-      doc.setFontSize(11);
+      doc.setFontSize(PDF_FONT_SIZE.summaryBold);
     } else {
       setPdfFont(doc, "normal");
-      doc.setFontSize(10);
+      doc.setFontSize(PDF_FONT_SIZE.summary);
     }
 
     doc.text(line.label, summaryX - 52, cursorY, { align: "right" });
     doc.text(line.value, summaryX, cursorY, { align: "right" });
-    cursorY += 7.5;
+    cursorY += PDF_SPACING.summaryLine;
   }
 
   cursorY += 4;
   setPdfFont(doc, "normal");
-  doc.setFontSize(10);
+  doc.setFontSize(PDF_FONT_SIZE.body);
   doc.text(`Ödeme: ${params.paymentMethodLabel}`, margin, cursorY);
   cursorY += 7;
 
   for (const campaignNote of buildAppliedCampaignBenefitNotes(summary)) {
     const campaignNoteLines = doc.splitTextToSize(campaignNote, pageWidth - margin * 2);
     doc.text(campaignNoteLines, margin, cursorY, { lineHeightFactor: 1.35 });
-    cursorY += campaignNoteLines.length * 5.5 + 2;
+    cursorY += campaignNoteLines.length * PDF_SPACING.wrappedLine + 2;
   }
 
   const trimmedNote = params.note?.trim();
   if (trimmedNote) {
     const noteLines = doc.splitTextToSize(`Not: ${trimmedNote}`, pageWidth - margin * 2);
     doc.text(noteLines, margin, cursorY, { lineHeightFactor: 1.35 });
-    cursorY += noteLines.length * 5.5;
+    cursorY += noteLines.length * PDF_SPACING.wrappedLine;
   }
 
   const pageHeight = doc.internal.pageSize.getHeight();
@@ -233,7 +259,7 @@ export async function generateOrderReceiptPdf(
 
   doc.setTextColor(220, 38, 38);
   setPdfFont(doc, "normal");
-  doc.setFontSize(9);
+  doc.setFontSize(PDF_FONT_SIZE.footer);
   doc.text(footerWarning, pageWidth / 2, footerY, { align: "center" });
   doc.setTextColor(15, 23, 42);
 

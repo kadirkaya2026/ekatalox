@@ -1,6 +1,5 @@
 import type { CurrencyCode } from "@/lib/products/constants";
 import type { CartItem } from "@/lib/types";
-import { getUnitMultiplier, type SalesUnit } from "@/lib/storefront/variants";
 
 const currencySymbols: Record<CurrencyCode, string> = {
   TRY: "₺",
@@ -14,20 +13,6 @@ function roundCurrencyAmount(value: number) {
 
 export function formatReceiptMoney(value: number, currency: CurrencyCode) {
   return `${roundCurrencyAmount(value).toFixed(2)} ${currencySymbols[currency]}`;
-}
-
-const salesUnitLabels: Record<SalesUnit, string> = {
-  adet: "Adet",
-  paket: "Paket",
-  koli: "Koli",
-};
-
-function resolveSalesUnit(item: CartItem): SalesUnit {
-  return item.sales_unit ?? "adet";
-}
-
-function resolveUnitQuantity(item: CartItem) {
-  return item.unit_quantity ?? item.quantity;
 }
 
 export interface OrderReceiptLineDisplay {
@@ -60,20 +45,14 @@ export function buildReceiptProductLabel(item: CartItem) {
 }
 
 export function getOrderReceiptLineDisplay(item: CartItem): OrderReceiptLineDisplay {
-  const salesUnit = resolveSalesUnit(item);
-  const unitQuantity = resolveUnitQuantity(item);
-  const multiplier = getUnitMultiplier(salesUnit, item);
-  const unitPrice =
-    salesUnit === "adet" ? item.price : item.price * (multiplier ?? 1);
   const lineTotal = item.price * item.quantity;
-
   const productLabel = buildReceiptProductLabel(item);
 
   return {
     productLabel,
-    unitLabel: salesUnitLabels[salesUnit],
-    quantityLabel: String(unitQuantity),
-    unitPriceLabel: formatReceiptMoney(unitPrice, item.currency),
+    unitLabel: "Adet",
+    quantityLabel: String(item.quantity),
+    unitPriceLabel: formatReceiptMoney(item.price, item.currency),
     lineTotalLabel: formatReceiptMoney(lineTotal, item.currency),
   };
 }
