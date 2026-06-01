@@ -12,6 +12,7 @@ import {
   Settings,
 } from "lucide-react";
 import { EkataloxLogo } from "@/components/brand/ekatalox-logo";
+import { SidebarLogoutButton } from "@/components/dashboard/sidebar-logout-button";
 import { cn } from "@/lib/utils";
 
 interface SubLink {
@@ -144,6 +145,10 @@ export function Sidebar({
           );
         })}
       </nav>
+
+      <div className="mt-auto border-t border-slate-800 p-4">
+        <SidebarLogoutButton mode={mode} />
+      </div>
     </aside>
   );
 }
