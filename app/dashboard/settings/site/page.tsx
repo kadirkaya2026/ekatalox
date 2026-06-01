@@ -11,8 +11,8 @@ export default async function TenantSiteIdentityPage() {
     <div className="space-y-6">
       <Header
         eyebrow="Ayarlar / Site Kimliği"
-        title="Site ve Duyuru Ayarları"
-        description="Tarayıcı sekmesi, favicon ve anasayfa duyuru modalını yönetin."
+        title="Site Kimliği"
+        description="Mağaza logosu, vitrin başlığı, tarayıcı sekmesi, favicon ve duyuru modalını yönetin."
       />
 
       <TenantSiteIdentityForm initialStorefrontSettings={storefrontSettings} />

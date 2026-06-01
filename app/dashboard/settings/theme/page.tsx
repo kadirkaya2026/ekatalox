@@ -12,7 +12,7 @@ export default async function TenantThemeSettingsPage() {
       <Header
         eyebrow="Ayarlar / Tema"
         title="Tema Ayarları"
-        description="Mağaza logosunu yükleyin, hazır tema seçin ve vitrin metinlerini düzenleyin."
+        description="Hazır tema seçin, vitrin düzenini belirleyin ve kısa açıklamayı düzenleyin."
       />
 
       <TenantThemeForm initialStorefrontSettings={storefrontSettings} />
