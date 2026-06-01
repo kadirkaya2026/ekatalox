@@ -117,6 +117,64 @@ export async function POST(request: Request) {
   }
 
   const items = parsed.data.items as CartItem[];
+  const catalogMode = parsed.data.catalog_mode;
+
+  if (catalogMode) {
+    const storefrontSettings = await getTenantStorefrontSettings(tenant.id);
+    const tenantDisplayName =
+      storefrontSettings.storefront_title?.trim() || tenant.company_name;
+    const orderNumber = buildOrderReceiptOrderNumber(tenant.id);
+    const orderDate = new Date();
+
+    try {
+      const pdfBytes = await generateOrderReceiptPdf({
+        tenantName: tenantDisplayName,
+        customerReferenceName: parsed.data.customer_reference_name,
+        orderNumber,
+        orderDate,
+        items,
+        paymentSummary: null,
+        paymentMethodLabel: null,
+        note: parsed.data.note,
+        catalogMode: true,
+      });
+
+      const securePdfId = crypto.randomUUID();
+      const { storagePath, publicUrl: pdfPublicUrl } = await uploadOrderReceiptPdf({
+        supabase,
+        tenantId: tenant.id,
+        orderNumber,
+        pdfBytes,
+      });
+
+      await insertOrderReceiptRecord({
+        supabase,
+        securePdfId,
+        tenantId: tenant.id,
+        orderNumber,
+        storagePath,
+        pdfPublicUrl,
+      });
+
+      const pdfUrl = buildSecureOrderReceiptUrl(securePdfId, getPublicOrigin(request));
+      return NextResponse.json({ pdfUrl, orderNumber, securePdfId, requestId });
+    } catch (error) {
+      logOrderPdfServerEvent("error", "request_failed", {
+        requestId,
+        tenantId: tenant.id,
+        orderNumber,
+        durationMs: Date.now() - startedAt,
+        error: serializeOrderPdfError(error),
+      });
+
+      return errorResponse(requestId, "PDF oluşturulamadı.", 500, {
+        reason: "pdf_pipeline_failed",
+        tenantId: tenant.id,
+        orderNumber,
+      });
+    }
+  }
+
   const activeInstallmentOptions = parsed.data.cardInstallmentOptions.filter(
     (option) => option.isActive,
   );
@@ -144,7 +202,7 @@ export async function POST(request: Request) {
 
   const paymentSummary = getCartPaymentSummary(
     items,
-    parsed.data.paymentMethod,
+    parsed.data.paymentMethod!,
     cashConfig,
     cardConfig,
     selectedInstallment,

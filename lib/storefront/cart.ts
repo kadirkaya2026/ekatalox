@@ -6,12 +6,12 @@ import {
 import type { CartItem, CashDiscountTier, CardCampaignTier, InstallmentOption } from "@/lib/types";
 
 export function getCartTotal(items: CartItem[]) {
-  return items.reduce((total, item) => total + item.price * item.quantity, 0);
+  return items.reduce((total, item) => total + (item.price ?? 0) * item.quantity, 0);
 }
 
 export function getCartTotalsByCurrency(items: CartItem[]) {
   return items.reduce<Partial<Record<CurrencyCode, number>>>((totals, item) => {
-    totals[item.currency] = (totals[item.currency] ?? 0) + item.price * item.quantity;
+    totals[item.currency] = (totals[item.currency] ?? 0) + (item.price ?? 0) * item.quantity;
     return totals;
   }, {});
 }

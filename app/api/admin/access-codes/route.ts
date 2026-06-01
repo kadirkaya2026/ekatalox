@@ -12,10 +12,7 @@ export async function POST(request: Request) {
   }
 
   const body = await request.json();
-  const parsed = accessCodeSchema.safeParse({
-    ...body,
-    price_tier_level: Number(body.price_tier_level),
-  });
+  const parsed = accessCodeSchema.safeParse(body);
 
   if (!parsed.success) {
     return NextResponse.json(
@@ -63,13 +60,7 @@ export async function PATCH(request: Request) {
   }
 
   const body = await request.json();
-  const parsed = accessCodeUpdateSchema.safeParse({
-    ...body,
-    price_tier_level:
-      body.price_tier_level !== undefined
-        ? Number(body.price_tier_level)
-        : undefined,
-  });
+  const parsed = accessCodeUpdateSchema.safeParse(body);
 
   if (!parsed.success) {
     return NextResponse.json(
@@ -95,7 +86,7 @@ export async function PATCH(request: Request) {
         created_at: new Date().toISOString(),
         tenant_id: "",
         password_code: updates.password_code ?? "",
-        price_tier_level: updates.price_tier_level ?? 1,
+        price_list_id: updates.price_list_id ?? "",
       },
     });
   }

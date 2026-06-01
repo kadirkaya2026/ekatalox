@@ -742,6 +742,7 @@ export function StorefrontClient({
   pageTitle,
   homeHref,
   hasPageFooter = false,
+  isCatalogOnly = false,
 }: {
   tenant: Tenant;
   categories: Category[];
@@ -752,6 +753,7 @@ export function StorefrontClient({
   pageTitle?: string;
   homeHref?: string;
   hasPageFooter?: boolean;
+  isCatalogOnly?: boolean;
 }) {
   const [cart, setCart] = useState<CartItem[]>(() => {
     if (typeof window === "undefined") {
@@ -1088,7 +1090,11 @@ export function StorefrontClient({
   }, [cart, customerReferenceName, note, selectedInstallmentCount, selectedPaymentMethod]);
 
   const handleWhatsAppOrder = useCallback(async () => {
-    if (!cart.length || !selectedPaymentMethod) {
+    if (!cart.length) {
+      return;
+    }
+
+    if (!isCatalogOnly && !selectedPaymentMethod) {
       return;
     }
 
@@ -1104,11 +1110,12 @@ export function StorefrontClient({
         requestId,
         body: {
           subdomain: analyticsSubdomain,
+          catalog_mode: isCatalogOnly,
           items: cart,
           note,
           customer_reference_name: customerReferenceName.trim(),
-          paymentMethod: selectedPaymentMethod,
-          selectedInstallmentCount,
+          paymentMethod: isCatalogOnly ? null : selectedPaymentMethod,
+          selectedInstallmentCount: isCatalogOnly ? null : selectedInstallmentCount,
           cashDiscountTiers: storefrontSettings.cash_discount_tiers ?? [],
           isCashDiscountActive: storefrontSettings.is_cash_discount_active,
           cardCampaignTiers: storefrontSettings.card_campaign_tiers ?? [],
@@ -1148,6 +1155,7 @@ export function StorefrontClient({
     storefrontSettings.is_cash_discount_active,
     tenant.is_whatsapp_order_direct,
     tenant.whatsapp_number,
+    isCatalogOnly,
   ]);
   const cartItemCount = useMemo(
     () => cart.reduce((total, item) => total + item.quantity, 0),
@@ -2623,6 +2631,7 @@ export function StorefrontClient({
         renderCashDiscountBar={renderCashDiscountBar}
         renderCardCampaignBar={renderCardCampaignBar}
         renderCrossSellCard={renderCrossSellCard}
+        isCatalogOnly={isCatalogOnly}
       />
       {renderProductPreviewModal()}
 

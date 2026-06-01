@@ -2,7 +2,15 @@ import { NextResponse } from "next/server";
 import { shouldAllowDemoFallback } from "@/lib/env";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { getSessionContext } from "@/lib/auth/session";
-import { getTenantCategories, getTenantProducts } from "@/lib/data";
+import { getTenantCategories, getTenantProducts, getTenantPriceLists } from "@/lib/data";
+import {
+  buildImportPricesFromLegacyTiers,
+  resolveImportPricesForTenant,
+} from "@/lib/price-lists/import";
+import {
+  ensureDefaultPriceListsForTenant,
+  upsertProductPrices,
+} from "@/lib/price-lists/data";
 import { ensureTenantAdminResponse } from "@/lib/tenancy/guards";
 import { productImportRowsSchema } from "@/lib/validators/product";
 
@@ -71,6 +79,8 @@ export async function POST(request: Request) {
       );
     }
 
+    const demoPriceLists = await getTenantPriceLists(tenant.id);
+
     const mappedProducts = rows.map((row, index) => ({
       id: `demo-import-${index}-${row.sku_code}`,
       tenant_id: tenant.id,
@@ -81,9 +91,14 @@ export async function POST(request: Request) {
       product_name: row.product_name,
       image_url: row.image_url,
       currency: row.currency,
-      price_tier_1: row.price_tier_1,
-      price_tier_2: row.price_tier_2,
-      price_tier_3: row.price_tier_3,
+      prices: resolveImportPricesForTenant(
+        row.prices ?? buildImportPricesFromLegacyTiers(row),
+        demoPriceLists,
+      ).map((entry) => ({
+        product_id: `demo-import-${index}-${row.sku_code}`,
+        price_list_id: entry.price_list_id,
+        price: entry.price,
+      })),
       is_in_stock: row.is_in_stock,
       is_discount_active: false,
       discount_price: null,
@@ -203,6 +218,8 @@ export async function POST(request: Request) {
       0,
     ) + 1;
 
+  const priceLists = await ensureDefaultPriceListsForTenant(supabase, tenant.id);
+
   // 5. Build upsert payload — every category_id is now guaranteed to exist
   const payload = rows.map((row) => {
     const existingDisplayOrder = existingDisplayOrderMap.get(row.sku_code);
@@ -219,9 +236,6 @@ export async function POST(request: Request) {
       product_name: row.product_name,
       image_url: row.image_url,
       currency: row.currency,
-      price_tier_1: row.price_tier_1,
-      price_tier_2: row.price_tier_2,
-      price_tier_3: row.price_tier_3,
       is_in_stock: row.is_in_stock,
       ...(hasPackageQuantityColumn ? { package_quantity: row.package_quantity } : {}),
       ...(hasCartonQuantityColumn ? { carton_quantity: row.carton_quantity } : {}),
@@ -235,6 +249,37 @@ export async function POST(request: Request) {
 
   if (upsertError) {
     return NextResponse.json({ error: upsertError.message }, { status: 400 });
+  }
+
+  const { data: productRows } = await supabase
+    .from("products")
+    .select("id, sku_code")
+    .eq("tenant_id", tenant.id)
+    .in(
+      "sku_code",
+      rows.map((row) => row.sku_code),
+    );
+
+  const productIdBySku = new Map(
+    ((productRows as Array<{ id: string; sku_code: string }> | null) ?? []).map((row) => [
+      row.sku_code,
+      row.id,
+    ]),
+  );
+
+  for (const row of rows) {
+    const productId = productIdBySku.get(row.sku_code);
+
+    if (!productId) {
+      continue;
+    }
+
+    const resolvedPrices = resolveImportPricesForTenant(
+      row.prices ?? buildImportPricesFromLegacyTiers(row),
+      priceLists,
+    );
+
+    await upsertProductPrices(supabase, productId, resolvedPrices);
   }
 
   const [{ data: products }, { data: categories }] = await Promise.all([

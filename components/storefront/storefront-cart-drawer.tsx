@@ -72,6 +72,7 @@ export type StorefrontCartDrawerProps = {
   renderCashDiscountBar: (compact: boolean, onDismiss?: () => void) => ReactNode;
   renderCardCampaignBar: (compact: boolean, onDismiss?: () => void) => ReactNode;
   renderCrossSellCard: (product: StorefrontProduct) => ReactNode;
+  isCatalogOnly?: boolean;
 };
 
 export function StorefrontCartDrawer({
@@ -114,6 +115,7 @@ export function StorefrontCartDrawer({
   renderCashDiscountBar,
   renderCardCampaignBar,
   renderCrossSellCard,
+  isCatalogOnly = false,
 }: StorefrontCartDrawerProps) {
   const [copyFeedback, setCopyFeedback] = useState<string | null>(null);
 
@@ -166,7 +168,7 @@ export function StorefrontCartDrawer({
 
   async function handleWhatsAppOrder() {
     if (!cart.length) return;
-    if (!selectedPaymentMethod) {
+    if (!isCatalogOnly && !selectedPaymentMethod) {
       setPaymentMethodError("Lütfen ödeme yönteminizi seçin.");
       return;
     }
@@ -332,29 +334,37 @@ export function StorefrontCartDrawer({
                         </button>
                       </div>
 
-                      <div className="ml-auto flex min-w-0 max-w-[58%] flex-1 items-end justify-end gap-2 text-right sm:max-w-none sm:gap-4">
-                        <div className="min-w-0 max-w-[48%] sm:max-w-none">
-                          <p className="truncate text-[10px] font-semibold uppercase tracking-wide text-slate-400 sm:text-[11px] sm:tracking-[0.18em]">
-                            Birim Fiyat
-                          </p>
-                          <p className="mt-1 truncate text-sm font-semibold tabular-nums text-slate-700">
-                            {formatCurrency(item.price, item.currency)}
-                          </p>
+                      {!isCatalogOnly ? (
+                        <div className="ml-auto flex min-w-0 max-w-[58%] flex-1 items-end justify-end gap-2 text-right sm:max-w-none sm:gap-4">
+                          <div className="min-w-0 max-w-[48%] sm:max-w-none">
+                            <p className="truncate text-[10px] font-semibold uppercase tracking-wide text-slate-400 sm:text-[11px] sm:tracking-[0.18em]">
+                              Birim Fiyat
+                            </p>
+                            <p className="mt-1 truncate text-sm font-semibold tabular-nums text-slate-700">
+                              {item.price !== null
+                                ? formatCurrency(item.price, item.currency)
+                                : "—"}
+                            </p>
+                          </div>
+                          <div className="min-w-0 max-w-[52%] sm:max-w-none">
+                            <p className="truncate text-[10px] font-semibold uppercase tracking-wide text-slate-400 sm:text-[11px] sm:tracking-[0.18em]">
+                              Ara Toplam
+                            </p>
+                            <p className="mt-1 truncate text-sm font-bold tabular-nums tracking-tight text-slate-950 sm:text-base">
+                              {item.price !== null
+                                ? formatCurrency(item.price * item.quantity, item.currency)
+                                : "—"}
+                            </p>
+                          </div>
                         </div>
-                        <div className="min-w-0 max-w-[52%] sm:max-w-none">
-                          <p className="truncate text-[10px] font-semibold uppercase tracking-wide text-slate-400 sm:text-[11px] sm:tracking-[0.18em]">
-                            Ara Toplam
-                          </p>
-                          <p className="mt-1 truncate text-sm font-bold tabular-nums tracking-tight text-slate-950 sm:text-base">
-                            {formatCurrency(item.price * item.quantity, item.currency)}
-                          </p>
-                        </div>
-                      </div>
+                      ) : null}
                     </div>
                   </div>
                 ))}
 
                 <div className="rounded-[1.5rem] border border-slate-200/80 bg-white p-3 sm:p-4 shadow-[0_14px_40px_rgba(15,23,42,0.06)]">
+                  {!isCatalogOnly ? (
+                    <>
                   <div className="mb-3 flex items-center justify-between gap-3">
                     <p className="text-sm font-semibold text-slate-900">Ödeme Yöntemi</p>
                     <span className="rounded-full bg-rose-50 px-2.5 py-1 text-[10px] font-semibold text-rose-600">
@@ -399,6 +409,8 @@ export function StorefrontCartDrawer({
                   {paymentMethodError ? (
                     <p className="mt-2 text-xs font-medium text-rose-600">{paymentMethodError}</p>
                   ) : null}
+                    </>
+                  ) : null}
                   <label className="mt-3 block">
                     <span className="text-sm font-semibold text-slate-900">
                       Müşteri / Cari Adı <span className="text-rose-600">*</span>
@@ -421,7 +433,8 @@ export function StorefrontCartDrawer({
                       {customerReferenceNameError}
                     </p>
                   ) : null}
-                  {selectedPaymentMethod === "card" && (() => {
+                  {!isCatalogOnly
+                    ? selectedPaymentMethod === "card" && (() => {
                     const activeInstallments = (storefrontSettings.card_installment_options ?? []).filter(
                       (o: InstallmentOption) => o.isActive,
                     );
@@ -455,7 +468,8 @@ export function StorefrontCartDrawer({
                         </div>
                       </div>
                     );
-                  })()}
+                  })()
+                    : null}
                 </div>
 
                 <div className="rounded-[1.5rem] border border-slate-200/80 bg-white p-3 sm:p-4 shadow-[0_14px_40px_rgba(15,23,42,0.06)]">
@@ -509,7 +523,7 @@ export function StorefrontCartDrawer({
           <div className="shrink-0 border-t border-slate-100 bg-[linear-gradient(180deg,#ffffff_0%,#f8fafc_100%)] px-4 py-3.5 sm:px-5 lg:px-6 lg:py-4">
             <div className="rounded-[1.5rem] border border-slate-200/80 bg-white p-2.5 sm:p-3 lg:p-4 shadow-[0_14px_40px_rgba(15,23,42,0.06)] sm:rounded-[1.75rem]">
               <div className="rounded-[1.4rem] bg-slate-950 px-4 py-3 text-white shadow-[0_18px_48px_rgba(15,23,42,0.24)]">
-                {cartPaymentSummary ? (
+                {!isCatalogOnly && cartPaymentSummary ? (
                   <div className="space-y-2.5">
                     {(cartPaymentSummary.isQualified && cartPaymentSummary.discountAmount > 0) ||
                     cartPaymentSummary.surchargeAmount > 0 ? (
@@ -598,6 +612,13 @@ export function StorefrontCartDrawer({
                         )}
                       </p>
                     </div>
+                  </div>
+                ) : isCatalogOnly && cart.length ? (
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="text-sm font-medium text-slate-300">Sipariş Özeti</p>
+                    <p className="text-base font-bold tracking-tight text-white sm:text-lg">
+                      {cartItemCount} kalem
+                    </p>
                   </div>
                 ) : cart.length === 0 ? (
                   <div className="hidden items-center justify-between gap-3 sm:flex">

@@ -26,6 +26,10 @@ export function ProductPrice({
   product: Pick<StorefrontProduct, "price" | "original_price" | "currency">;
   size?: ProductPriceSize;
 }) {
+  if (product.price === null) {
+    return null;
+  }
+
   const sizeClasses = {
     card: {
       current: "text-sm font-extrabold text-emerald-600 sm:text-base",
@@ -70,6 +74,7 @@ export function ProductPrice({
 
 export function DiscountSticker({ product }: { product: StorefrontProduct }) {
   if (
+    product.price === null ||
     typeof product.discount_percentage !== "number" ||
     product.discount_percentage <= 0
   ) {

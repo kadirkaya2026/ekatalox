@@ -5,18 +5,20 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import type { AccessCode, Tenant } from "@/lib/types";
+import type { AccessCode, PriceList, Tenant } from "@/lib/types";
 
 export function AccessCodesManager({
   tenant,
   initialCodes,
+  priceLists,
 }: {
   tenant: Tenant;
   initialCodes: AccessCode[];
+  priceLists: PriceList[];
 }) {
   const [codes, setCodes] = useState(initialCodes);
   const [passwordCode, setPasswordCode] = useState("");
-  const [tierLevel, setTierLevel] = useState<1 | 2 | 3>(1);
+  const [priceListId, setPriceListId] = useState(priceLists[0]?.id ?? "");
   const [message, setMessage] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
@@ -31,7 +33,7 @@ export function AccessCodesManager({
         body: JSON.stringify({
           tenant_id: tenant.id,
           password_code: passwordCode,
-          price_tier_level: tierLevel,
+          price_list_id: priceListId,
         }),
       });
 
@@ -42,9 +44,10 @@ export function AccessCodesManager({
         return;
       }
 
-      setCodes((current) => [result.accessCode as AccessCode, ...current]);
+      const created = result.accessCode as AccessCode;
+      const listName = priceLists.find((list) => list.id === created.price_list_id)?.name;
+      setCodes((current) => [{ ...created, price_list_name: listName }, ...current]);
       setPasswordCode("");
-      setTierLevel(1);
       setMessage("Yeni erişim şifresi eklendi.");
     });
   }
@@ -76,9 +79,8 @@ export function AccessCodesManager({
       <Card className="p-5">
         <h2 className="text-lg font-semibold text-slate-900">Yeni erişim kodu</h2>
         <p className="mt-1 text-sm text-slate-600">
-          Müşteri vitrini için yeni şifre kodu buradan oluşturabilirsiniz. Girilen şifreye göre
-          yalnız tek fiyat katmanı gösterilir. Mevcut bir şifreyi değiştirmek için merkezi yönetim
-          ile iletişime geçin.
+          Müşteri vitrini için yeni şifre kodu buradan oluşturabilirsiniz. Seçilen fiyat
+          listesine göre vitrin davranışı belirlenir.
         </p>
 
         <form onSubmit={addCode} className="mt-5 grid gap-3">
@@ -88,15 +90,18 @@ export function AccessCodesManager({
             onChange={(event) => setPasswordCode(event.target.value)}
           />
           <select
-            value={tierLevel}
-            onChange={(event) => setTierLevel(Number(event.target.value) as 1 | 2 | 3)}
+            value={priceListId}
+            onChange={(event) => setPriceListId(event.target.value)}
             className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900"
           >
-            <option value={1}>Katman 1 • Toptancı</option>
-            <option value={2}>Katman 2 • Bayi</option>
-            <option value={3}>Katman 3 • Telefoncu</option>
+            {priceLists.map((list) => (
+              <option key={list.id} value={list.id}>
+                {list.name}
+                {list.is_catalog_only ? " • Fiyatsız" : ""}
+              </option>
+            ))}
           </select>
-          <Button type="submit" disabled={pending}>
+          <Button type="submit" disabled={pending || !priceListId}>
             {pending ? "Kaydediliyor..." : "Kodu ekle"}
           </Button>
         </form>
@@ -128,7 +133,7 @@ export function AccessCodesManager({
               <div>
                 <p className="text-base font-semibold text-slate-900">{code.password_code}</p>
                 <p className="mt-1 text-sm text-slate-500">
-                  Fiyat Katmanı {code.price_tier_level}
+                  {code.price_list_name ?? "Fiyat listesi"}
                 </p>
               </div>
               <Button

@@ -1,6 +1,7 @@
 import type {
   AccessCode,
   Category,
+  PriceList,
   Product,
   ProductVariant,
   Profile,
@@ -91,6 +92,41 @@ export const demoCategories: Category[] = [
   },
 ];
 
+export const demoPriceLists: PriceList[] = [
+  {
+    id: "pl-catalog-lucatech",
+    tenant_id: "tenant-lucatech",
+    name: "Fiyatsız Katalog",
+    is_catalog_only: true,
+    sort_order: 0,
+    created_at: new Date("2026-01-01").toISOString(),
+  },
+  {
+    id: "pl-1-lucatech",
+    tenant_id: "tenant-lucatech",
+    name: "Perakende",
+    is_catalog_only: false,
+    sort_order: 1,
+    created_at: new Date("2026-01-01").toISOString(),
+  },
+  {
+    id: "pl-2-lucatech",
+    tenant_id: "tenant-lucatech",
+    name: "Bayi 1",
+    is_catalog_only: false,
+    sort_order: 2,
+    created_at: new Date("2026-01-01").toISOString(),
+  },
+  {
+    id: "pl-3-lucatech",
+    tenant_id: "tenant-lucatech",
+    name: "Bayi 2",
+    is_catalog_only: false,
+    sort_order: 3,
+    created_at: new Date("2026-01-01").toISOString(),
+  },
+];
+
 export const demoProducts: Product[] = [
   {
     id: "prd-1",
@@ -102,9 +138,11 @@ export const demoProducts: Product[] = [
     image_url:
       "https://images.unsplash.com/photo-1695048133142-1a20484d2569?auto=format&fit=crop&w=900&q=80",
     currency: "TRY",
-    price_tier_1: 41250,
-    price_tier_2: 41890,
-    price_tier_3: 42390,
+    prices: [
+      { product_id: "prd-1", price_list_id: "pl-1-lucatech", price: 41250 },
+      { product_id: "prd-1", price_list_id: "pl-2-lucatech", price: 41890 },
+      { product_id: "prd-1", price_list_id: "pl-3-lucatech", price: 42390 },
+    ],
     is_in_stock: true,
     is_discount_active: false,
     discount_price: null,
@@ -123,9 +161,11 @@ export const demoProducts: Product[] = [
     image_url:
       "https://images.unsplash.com/photo-1610945415295-d9bbf067e59c?auto=format&fit=crop&w=900&q=80",
     currency: "TRY",
-    price_tier_1: 35890,
-    price_tier_2: 36490,
-    price_tier_3: 36990,
+    prices: [
+      { product_id: "prd-2", price_list_id: "pl-1-lucatech", price: 35890 },
+      { product_id: "prd-2", price_list_id: "pl-2-lucatech", price: 36490 },
+      { product_id: "prd-2", price_list_id: "pl-3-lucatech", price: 36990 },
+    ],
     is_in_stock: true,
     is_discount_active: false,
     discount_price: null,
@@ -143,9 +183,11 @@ export const demoProducts: Product[] = [
     image_url:
       "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=900&q=80",
     currency: "TRY",
-    price_tier_1: 10350,
-    price_tier_2: 10750,
-    price_tier_3: 10990,
+    prices: [
+      { product_id: "prd-3", price_list_id: "pl-1-lucatech", price: 10350 },
+      { product_id: "prd-3", price_list_id: "pl-2-lucatech", price: 10750 },
+      { product_id: "prd-3", price_list_id: "pl-3-lucatech", price: 10990 },
+    ],
     is_in_stock: false,
     is_discount_active: false,
     discount_price: null,
@@ -160,21 +202,32 @@ export const demoAccessCodes: AccessCode[] = [
     id: "acc-1",
     tenant_id: "tenant-lucatech",
     password_code: "1111",
-    price_tier_level: 1,
+    price_list_id: "pl-1-lucatech",
+    price_list_name: "Perakende",
     created_at: new Date("2026-01-10").toISOString(),
   },
   {
     id: "acc-2",
     tenant_id: "tenant-lucatech",
     password_code: "2222",
-    price_tier_level: 2,
+    price_list_id: "pl-2-lucatech",
+    price_list_name: "Bayi 1",
     created_at: new Date("2026-01-10").toISOString(),
   },
   {
     id: "acc-3",
     tenant_id: "tenant-lucatech",
     password_code: "3333",
-    price_tier_level: 3,
+    price_list_id: "pl-3-lucatech",
+    price_list_name: "Bayi 2",
+    created_at: new Date("2026-01-10").toISOString(),
+  },
+  {
+    id: "acc-4",
+    tenant_id: "tenant-lucatech",
+    password_code: "0000",
+    price_list_id: "pl-catalog-lucatech",
+    price_list_name: "Fiyatsız Katalog",
     created_at: new Date("2026-01-10").toISOString(),
   },
 ];

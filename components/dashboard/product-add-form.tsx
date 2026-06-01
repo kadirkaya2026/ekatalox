@@ -8,23 +8,27 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { PlanFeatureGate } from "@/components/dashboard/plan-feature-gate";
 import { ProductDescriptionEditor } from "@/components/dashboard/product-description-editor";
+import { ProductPriceFields } from "@/components/dashboard/product-price-fields";
 import { buildCategoryTree, flattenCategoryTree } from "@/lib/categories/tree";
 import { buildPackageUpgradeHref } from "@/lib/billing/plans";
 import {
   defaultCurrencyCode,
   supportedCurrencyCodes,
 } from "@/lib/products/constants";
-import { computeDiscountPercentage, getMinTierPrice } from "@/lib/storefront/pricing";
-import type { Category, Tenant } from "@/lib/types";
+import {
+  appendProductPricesToFormData,
+  buildListPriceFormState,
+  getMinPriceFromFormState,
+} from "@/lib/products/price-form";
+import { computeDiscountPercentage } from "@/lib/storefront/pricing";
+import type { Category, PriceList, Tenant } from "@/lib/types";
 
 interface ProductFormState {
   category_id: string;
   sku_code: string;
   product_name: string;
   currency: string;
-  price_tier_1: string;
-  price_tier_2: string;
-  price_tier_3: string;
+  listPrices: Record<string, string>;
   is_in_stock: boolean;
   is_discount_active: boolean;
   discount_price: string;
@@ -34,14 +38,12 @@ interface ProductFormState {
   image: File | null;
 }
 
-const emptyForm: ProductFormState = {
+const buildEmptyForm = (priceLists: PriceList[]): ProductFormState => ({
   category_id: "",
   sku_code: "",
   product_name: "",
   currency: defaultCurrencyCode,
-  price_tier_1: "",
-  price_tier_2: "",
-  price_tier_3: "",
+  listPrices: buildListPriceFormState(priceLists),
   is_in_stock: true,
   is_discount_active: false,
   discount_price: "",
@@ -49,25 +51,21 @@ const emptyForm: ProductFormState = {
   carton_quantity: "",
   description: "",
   image: null,
-};
+});
 
 function getDiscountPreview(form: ProductFormState) {
   if (!form.is_discount_active || !form.discount_price.trim()) {
     return null;
   }
 
-  const minTierPrice = getMinTierPrice({
-    price_tier_1: Number(form.price_tier_1 || 0),
-    price_tier_2: Number(form.price_tier_2 || 0),
-    price_tier_3: Number(form.price_tier_3 || 0),
-  });
+  const minListPrice = getMinPriceFromFormState(form.listPrices);
   const salePrice = Number(form.discount_price);
 
   if (Number.isNaN(salePrice)) {
     return null;
   }
 
-  return computeDiscountPercentage(minTierPrice, salePrice);
+  return computeDiscountPercentage(minListPrice, salePrice);
 }
 
 function toFormData(form: ProductFormState) {
@@ -76,9 +74,7 @@ function toFormData(form: ProductFormState) {
   formData.set("sku_code", form.sku_code);
   formData.set("product_name", form.product_name);
   formData.set("currency", form.currency);
-  formData.set("price_tier_1", form.price_tier_1 || "0");
-  formData.set("price_tier_2", form.price_tier_2 || "0");
-  formData.set("price_tier_3", form.price_tier_3 || "0");
+  appendProductPricesToFormData(formData, form.listPrices);
   formData.set("is_in_stock", String(form.is_in_stock));
   formData.set("is_discount_active", String(form.is_discount_active));
   formData.set("discount_price", form.is_discount_active ? form.discount_price.trim() : "");
@@ -94,12 +90,14 @@ function toFormData(form: ProductFormState) {
 export function ProductAddForm({
   tenant,
   initialCategories,
+  priceLists,
 }: {
   tenant: Tenant;
   initialCategories: Category[];
+  priceLists: PriceList[];
 }) {
   const router = useRouter();
-  const [form, setForm] = useState<ProductFormState>(emptyForm);
+  const [form, setForm] = useState<ProductFormState>(() => buildEmptyForm(priceLists));
   const [message, setMessage] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
@@ -109,6 +107,16 @@ export function ProductAddForm({
 
   const productCount = 0;
   const isLimitFull = tenant.max_product_limit <= productCount;
+
+  function updateListPrice(priceListId: string, value: string) {
+    setForm((current) => ({
+      ...current,
+      listPrices: {
+        ...current.listPrices,
+        [priceListId]: value,
+      },
+    }));
+  }
 
   function updateField<Key extends keyof ProductFormState>(
     key: Key,
@@ -182,7 +190,7 @@ export function ProductAddForm({
           <div>
             <h2 className="text-lg font-semibold text-slate-900">Yeni Ürün</h2>
             <p className="text-sm text-slate-600">
-              Tekil ürün ekleyin, fiyat katmanlarını ve stok durumunu tanımlayın.
+              Tekil ürün ekleyin, fiyat listelerini ve stok durumunu tanımlayın.
             </p>
           </div>
         </div>
@@ -231,28 +239,13 @@ export function ProductAddForm({
                 </option>
               ))}
             </select>
-            <Input
-              type="number"
-              step="0.01"
-              placeholder="Toptancı"
-              value={form.price_tier_1}
-              onChange={(event) => updateField("price_tier_1", event.target.value)}
-            />
-            <Input
-              type="number"
-              step="0.01"
-              placeholder="Bayi"
-              value={form.price_tier_2}
-              onChange={(event) => updateField("price_tier_2", event.target.value)}
-            />
-            <Input
-              type="number"
-              step="0.01"
-              placeholder="Telefoncu"
-              value={form.price_tier_3}
-              onChange={(event) => updateField("price_tier_3", event.target.value)}
-            />
           </div>
+
+          <ProductPriceFields
+            priceLists={priceLists}
+            values={form.listPrices}
+            onChange={updateListPrice}
+          />
 
           <PlanFeatureGate
             feature="product_discount"

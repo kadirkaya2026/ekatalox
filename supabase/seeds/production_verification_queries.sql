@@ -14,8 +14,9 @@ from public.tenant_memberships tm
 join public.tenants t on t.id = tm.tenant_id
 where t.subdomain = 'demo';
 
-select ac.password_code, ac.price_tier_level, t.subdomain
+select ac.password_code, pl.name as price_list_name, pl.is_catalog_only, t.subdomain
 from public.access_codes ac
 join public.tenants t on t.id = ac.tenant_id
+join public.price_lists pl on pl.id = ac.price_list_id
 where t.subdomain = 'demo'
-order by ac.price_tier_level asc;
+order by pl.sort_order asc;

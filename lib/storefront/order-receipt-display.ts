@@ -19,8 +19,8 @@ export interface OrderReceiptLineDisplay {
   productLabel: string;
   unitLabel: string;
   quantityLabel: string;
-  unitPriceLabel: string;
-  lineTotalLabel: string;
+  unitPriceLabel: string | null;
+  lineTotalLabel: string | null;
 }
 
 /** PDF tabloda | karakteri satır kırılımını bozabildiği için yalnızca fiş metninde dönüştürülür. */
@@ -44,9 +44,23 @@ export function buildReceiptProductLabel(item: CartItem) {
   return `${productName}\nModel: ${sanitizedVariant}`;
 }
 
-export function getOrderReceiptLineDisplay(item: CartItem): OrderReceiptLineDisplay {
-  const lineTotal = item.price * item.quantity;
+export function getOrderReceiptLineDisplay(
+  item: CartItem,
+  catalogMode = false,
+): OrderReceiptLineDisplay {
   const productLabel = buildReceiptProductLabel(item);
+
+  if (catalogMode || item.price === null) {
+    return {
+      productLabel,
+      unitLabel: "Adet",
+      quantityLabel: String(item.quantity),
+      unitPriceLabel: null,
+      lineTotalLabel: null,
+    };
+  }
+
+  const lineTotal = item.price * item.quantity;
 
   return {
     productLabel,
@@ -57,15 +71,28 @@ export function getOrderReceiptLineDisplay(item: CartItem): OrderReceiptLineDisp
   };
 }
 
-export function getOrderReceiptTableRows(items: CartItem[]) {
+export function getOrderReceiptTableRows(items: CartItem[], catalogMode = false) {
   return items.map((item) => {
-    const line = getOrderReceiptLineDisplay(item);
+    const line = getOrderReceiptLineDisplay(item, catalogMode);
+
+    if (catalogMode) {
+      return [line.productLabel, line.unitLabel, line.quantityLabel];
+    }
+
     return [
       line.productLabel,
       line.unitLabel,
       line.quantityLabel,
-      line.unitPriceLabel,
-      line.lineTotalLabel,
+      line.unitPriceLabel ?? "",
+      line.lineTotalLabel ?? "",
     ];
   });
+}
+
+export function getOrderReceiptTableHead(catalogMode = false) {
+  if (catalogMode) {
+    return ["Ürün", "Birim", "Adet"];
+  }
+
+  return ["Ürün", "Birim", "Adet", "Birim Fiyat", "Tutar"];
 }

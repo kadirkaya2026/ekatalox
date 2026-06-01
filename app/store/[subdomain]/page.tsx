@@ -21,8 +21,8 @@ import {
 } from "@/lib/tenancy/request-host";
 import { cn } from "@/lib/utils";
 import {
-  isStorefrontTierStateValid,
-  readStorefrontTier,
+  isStorefrontPriceListStateValid,
+  readStorefrontPriceList,
 } from "@/lib/storefront/session";
 
 export async function generateMetadata(
@@ -78,9 +78,12 @@ export default async function StorefrontPage(props: PageProps<"/store/[subdomain
     );
   }
 
-  const tierState = await readStorefrontTier(subdomain);
+  const priceListState = await readStorefrontPriceList(subdomain);
 
-  if (!tierState || !isStorefrontTierStateValid({ cookieState: tierState, tenant })) {
+  if (
+    !priceListState ||
+    !isStorefrontPriceListStateValid({ cookieState: priceListState, tenant })
+  ) {
     return (
       <PasswordGate subdomain={subdomain} companyName={tenant.company_name} />
     );
@@ -89,11 +92,16 @@ export default async function StorefrontPage(props: PageProps<"/store/[subdomain
   const [products, categories, storefrontSettings, sections] = await Promise.all([
     getStorefrontProducts({
       tenantId: tenant.id,
-      tierLevel: tierState.tierLevel,
+      priceListId: priceListState.priceListId,
+      isCatalogOnly: priceListState.isCatalogOnly,
     }),
     getTenantCategories(tenant.id),
     getTenantStorefrontSettings(tenant.id),
-    getStorefrontSections(tenant.id, tierState.tierLevel),
+    getStorefrontSections(
+      tenant.id,
+      priceListState.priceListId,
+      priceListState.isCatalogOnly,
+    ),
   ]);
   const theme =
     storefrontThemes[storefrontSettings.theme_key] ?? storefrontThemes.minimal;
@@ -114,6 +122,7 @@ export default async function StorefrontPage(props: PageProps<"/store/[subdomain
         sections={sections}
         subdomain={subdomain}
         hasPageFooter={footerVisible}
+        isCatalogOnly={priceListState.isCatalogOnly}
       />
       {footerVisible ? (
         <StorefrontFooter

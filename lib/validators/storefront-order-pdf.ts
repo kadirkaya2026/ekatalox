@@ -16,7 +16,7 @@ export const storefrontOrderPdfCartItemSchema = z.object({
   currency: z.string().refine((value) => isCurrencyCode(value), {
     message: "Geçersiz para birimi.",
   }),
-  price: z.number().finite().positive(),
+  price: z.number().finite().nonnegative().nullable(),
   package_quantity: z.number().int().positive().nullable().optional(),
   carton_quantity: z.number().int().positive().nullable().optional(),
   stock_quantity: z.number().int().nullable().optional(),
@@ -42,21 +42,46 @@ const installmentOptionSchema = z.object({
   surchargePercentage: z.number().min(0).max(100),
 });
 
-export const storefrontOrderPdfSchema = z.object({
-  subdomain: z.string().trim().min(1, "Mağaza bilgisi zorunludur."),
-  items: z.array(storefrontOrderPdfCartItemSchema).min(1, "Sepet boş olamaz."),
-  customer_reference_name: z
-    .string()
-    .trim()
-    .min(2, "Müşteri adı zorunludur"),
-  note: z.string().max(500).nullable().optional(),
-  paymentMethod: z.enum(["cash", "card"]),
-  selectedInstallmentCount: z.number().int().positive().nullable().optional(),
-  cashDiscountTiers: z.array(cashDiscountTierSchema).optional().default([]),
-  isCashDiscountActive: z.boolean().optional().default(false),
-  cardCampaignTiers: z.array(cardCampaignTierSchema).optional().default([]),
-  isCardCampaignActive: z.boolean().optional().default(false),
-  cardInstallmentOptions: z.array(installmentOptionSchema).optional().default([]),
-});
+export const storefrontOrderPdfSchema = z
+  .object({
+    subdomain: z.string().trim().min(1, "Mağaza bilgisi zorunludur."),
+    catalog_mode: z.boolean().optional().default(false),
+    items: z.array(storefrontOrderPdfCartItemSchema).min(1, "Sepet boş olamaz."),
+    customer_reference_name: z
+      .string()
+      .trim()
+      .min(2, "Müşteri adı zorunludur"),
+    note: z.string().max(500).nullable().optional(),
+    paymentMethod: z.enum(["cash", "card"]).nullable().optional(),
+    selectedInstallmentCount: z.number().int().positive().nullable().optional(),
+    cashDiscountTiers: z.array(cashDiscountTierSchema).optional().default([]),
+    isCashDiscountActive: z.boolean().optional().default(false),
+    cardCampaignTiers: z.array(cardCampaignTierSchema).optional().default([]),
+    isCardCampaignActive: z.boolean().optional().default(false),
+    cardInstallmentOptions: z.array(installmentOptionSchema).optional().default([]),
+  })
+  .superRefine((value, ctx) => {
+    if (value.catalog_mode) {
+      return;
+    }
+
+    if (!value.paymentMethod) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Ödeme yöntemi seçilmelidir.",
+        path: ["paymentMethod"],
+      });
+    }
+
+    for (const [index, item] of value.items.entries()) {
+      if (item.price === null || item.price <= 0) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Fiyatlı modda sepet kalemlerinde geçerli fiyat olmalıdır.",
+          path: ["items", index, "price"],
+        });
+      }
+    }
+  });
 
 export type StorefrontOrderPdfInput = z.infer<typeof storefrontOrderPdfSchema>;

@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { normalizeProductRecord } from "@/lib/products/records";
+import { parseProductPricesFromFormData } from "@/lib/products/form-prices";
+import { upsertProductPrices } from "@/lib/price-lists/data";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import {
   PRODUCT_IMAGES_BUCKET,
@@ -56,9 +58,7 @@ export async function PATCH(
     sku_code: formData.get("sku_code"),
     product_name: formData.get("product_name"),
     currency: formData.get("currency"),
-    price_tier_1: formData.get("price_tier_1"),
-    price_tier_2: formData.get("price_tier_2"),
-    price_tier_3: formData.get("price_tier_3"),
+    prices: parseProductPricesFromFormData(formData),
     is_in_stock: formData.get("is_in_stock"),
     package_quantity: formData.get("package_quantity"),
     carton_quantity: formData.get("carton_quantity"),
@@ -104,7 +104,16 @@ export async function PATCH(
   }
 
   const payload = {
-    ...parsed.data,
+    category_id: parsed.data.category_id,
+    sku_code: parsed.data.sku_code,
+    product_name: parsed.data.product_name,
+    currency: parsed.data.currency,
+    is_in_stock: parsed.data.is_in_stock,
+    package_quantity: parsed.data.package_quantity,
+    carton_quantity: parsed.data.carton_quantity,
+    description: parsed.data.description,
+    is_discount_active: parsed.data.is_discount_active,
+    discount_price: parsed.data.discount_price,
     ...(imageUrl ? { image_url: imageUrl } : {}),
   };
 
@@ -117,6 +126,8 @@ export async function PATCH(
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 400 });
   }
+
+  await upsertProductPrices(supabase, id, parsed.data.prices);
 
   const product = await fetchUpdatedProduct(supabase, id, tenant.id);
 

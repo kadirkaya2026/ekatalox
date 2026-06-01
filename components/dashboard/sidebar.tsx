@@ -8,6 +8,7 @@ import {
   FolderTree,
   KeyRound,
   LayoutDashboard,
+  ListOrdered,
   Settings,
 } from "lucide-react";
 import { EkataloxLogo } from "@/components/brand/ekatalox-logo";
@@ -42,6 +43,7 @@ const tenantLinks: SidebarLink[] = [
     ],
   },
   { href: "/categories", label: "Kategoriler", icon: FolderTree },
+  { href: "/price-lists", label: "Fiyat Listeleri", icon: ListOrdered },
   { href: "/access-codes", label: "Şifreler", icon: KeyRound },
   { href: "/reports", label: "Raporlar", icon: BarChart3 },
   {

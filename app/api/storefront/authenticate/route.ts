@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
 import { validateAccessCode } from "@/lib/data";
 import {
-  clearStorefrontTierCookie,
+  clearStorefrontPriceListCookie,
   isSecureStorefrontRequest,
-  setStorefrontTierCookie,
+  setStorefrontPriceListCookie,
 } from "@/lib/storefront/session";
 
 export async function POST(request: Request) {
@@ -26,24 +26,27 @@ export async function POST(request: Request) {
       { error: "Girilen şifre kodu geçersiz." },
       { status: 401 },
     );
-    clearStorefrontTierCookie({ response, subdomain, secure });
+    clearStorefrontPriceListCookie({ response, subdomain, secure });
     return response;
   }
 
   const response = NextResponse.json({
     success: true,
-    tierLevel: matched.tierLevel,
+    priceListId: matched.priceListId,
+    isCatalogOnly: matched.isCatalogOnly,
+    priceListName: matched.priceListName,
     tenant: {
       id: matched.tenant.id,
       company_name: matched.tenant.company_name,
       subdomain: matched.tenant.subdomain,
     },
   });
-  setStorefrontTierCookie({
+  setStorefrontPriceListCookie({
     response,
     tenantId: matched.tenant.id,
     subdomain,
-    tierLevel: matched.tierLevel,
+    priceListId: matched.priceListId,
+    isCatalogOnly: matched.isCatalogOnly,
     secure,
   });
 

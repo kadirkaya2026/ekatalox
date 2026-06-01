@@ -21,8 +21,8 @@ import {
 } from "@/lib/tenancy/request-host";
 import { cn } from "@/lib/utils";
 import {
-  isStorefrontTierStateValid,
-  readStorefrontTier,
+  isStorefrontPriceListStateValid,
+  readStorefrontPriceList,
 } from "@/lib/storefront/session";
 
 export async function generateMetadata(props: {
@@ -65,16 +65,23 @@ export default async function SectionDetailPage(props: {
     );
   }
 
-  const tierState = await readStorefrontTier(subdomain);
+  const priceListState = await readStorefrontPriceList(subdomain);
 
-  if (!tierState || !isStorefrontTierStateValid({ cookieState: tierState, tenant })) {
+  if (
+    !priceListState ||
+    !isStorefrontPriceListStateValid({ cookieState: priceListState, tenant })
+  ) {
     return (
       <PasswordGate subdomain={subdomain} companyName={tenant.company_name} />
     );
   }
 
   const [sections, categories, storefrontSettings] = await Promise.all([
-    getStorefrontSections(tenant.id, tierState.tierLevel),
+    getStorefrontSections(
+      tenant.id,
+      priceListState.priceListId,
+      priceListState.isCatalogOnly,
+    ),
     getTenantCategories(tenant.id),
     getTenantStorefrontSettings(tenant.id),
   ]);
@@ -118,6 +125,7 @@ export default async function SectionDetailPage(props: {
         pageTitle={section.title}
         homeHref={getStorefrontHomePath()}
         hasPageFooter={footerVisible}
+        isCatalogOnly={priceListState.isCatalogOnly}
       />
       {footerVisible ? (
         <StorefrontFooter

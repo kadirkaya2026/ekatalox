@@ -3,6 +3,7 @@ import { DEFAULT_INSTALLMENT_OPTIONS } from "@/lib/storefront/cart";
 import {
   demoAccessCodes,
   demoCategories,
+  demoPriceLists,
   demoProducts,
   demoTenants,
 } from "@/lib/demo-data";
@@ -10,12 +11,14 @@ import { shouldAllowDemoFallback } from "@/lib/env";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { normalizeProductDescription } from "@/lib/products/description-html";
 import { normalizeProductRecord } from "@/lib/products/records";
+import { normalizePriceListRecord, sortPriceLists } from "@/lib/price-lists/records";
+import { ensureDefaultPriceListsForTenant, fetchTenantPriceLists } from "@/lib/price-lists/data";
 import { toStorefrontProduct } from "@/lib/storefront/pricing";
 import type {
   AccessCode,
   Category,
   DashboardSummary,
-  PriceTierLevel,
+  PriceList,
   Product,
   StorefrontProduct,
   StorefrontSection,
@@ -27,15 +30,17 @@ import type {
 
 type AdminClient = NonNullable<ReturnType<typeof createSupabaseAdminClient>>;
 
-const productWithVariantsSelect = "*, variants:product_variants(*)";
+const productWithVariantsSelect =
+  "*, variants:product_variants(*), product_prices(price_list_id, price)";
 const sectionProductsWithVariantsSelect =
-  "product_id, display_order, products(*, variants:product_variants(*))";
-const sectionProductsFallbackSelect = "product_id, display_order, products(*)";
+  "product_id, display_order, products(*, variants:product_variants(*), product_prices(price_list_id, price))";
+const sectionProductsFallbackSelect =
+  "product_id, display_order, products(*, product_prices(price_list_id, price))";
 
 const storefrontProductListColumns =
-  "id, tenant_id, category_id, display_order, sku_code, product_name, image_url, currency, price_tier_1, price_tier_2, price_tier_3, is_in_stock, is_discount_active, discount_price, package_quantity, carton_quantity, created_at";
+  "id, tenant_id, category_id, display_order, sku_code, product_name, image_url, currency, is_in_stock, is_discount_active, discount_price, package_quantity, carton_quantity, created_at";
 const storefrontProductWithVariantsSelect =
-  `${storefrontProductListColumns}, variants:product_variants(*)`;
+  `${storefrontProductListColumns}, variants:product_variants(*), product_prices(price_list_id, price)`;
 const storefrontSectionProductsWithVariantsSelect =
   `section_id, product_id, display_order, products(${storefrontProductWithVariantsSelect})`;
 const storefrontSectionProductsFallbackSelect =
@@ -284,15 +289,17 @@ export async function getTenantsOverview(): Promise<TenantWithRelations[]> {
     return demoTenants.map((tenant) => ({
       ...tenant,
       access_codes: demoAccessCodes.filter((code) => code.tenant_id === tenant.id),
+      price_lists: demoPriceLists.filter((list) => list.tenant_id === tenant.id),
       product_count: productCounts[tenant.id] ?? 0,
     }));
   }
 
-  const [{ data: tenantRows }, { data: productRows }, { data: accessCodeRows }] =
+  const [{ data: tenantRows }, { data: productRows }, { data: accessCodeRows }, { data: priceListRows }] =
     await Promise.all([
       supabase.from("tenants").select("*").order("created_at", { ascending: false }),
       supabase.from("products").select("tenant_id"),
-      supabase.from("access_codes").select("*"),
+      supabase.from("access_codes").select("*, price_list:price_lists(name)"),
+      supabase.from("price_lists").select("*").order("sort_order", { ascending: true }),
     ]);
 
   const productCounts = groupCountByTenant(
@@ -301,11 +308,32 @@ export async function getTenantsOverview(): Promise<TenantWithRelations[]> {
     })),
   );
 
-  const accessCodes = (accessCodeRows as AccessCode[] | null) ?? [];
+  const accessCodes = ((accessCodeRows as Array<Record<string, unknown>> | null) ?? []).map(
+    (row) => {
+      const priceList = row.price_list as { name?: string } | null;
+
+      return {
+        id: String(row.id ?? ""),
+        tenant_id: String(row.tenant_id ?? ""),
+        password_code: String(row.password_code ?? ""),
+        price_list_id: String(row.price_list_id ?? ""),
+        price_list_name: priceList?.name,
+        created_at: String(row.created_at ?? ""),
+      } satisfies AccessCode;
+    },
+  );
+
+  const priceListsByTenant = ((priceListRows as PriceList[] | null) ?? []).reduce<
+    Record<string, PriceList[]>
+  >((accumulator, list) => {
+    accumulator[list.tenant_id] = [...(accumulator[list.tenant_id] ?? []), list];
+    return accumulator;
+  }, {});
 
   return ((tenantRows as Tenant[] | null) ?? []).map((tenant) => ({
     ...tenant,
     access_codes: accessCodes.filter((code) => code.tenant_id === tenant.id),
+    price_lists: (priceListsByTenant[tenant.id] ?? []).sort(sortPriceLists),
     product_count: productCounts[tenant.id] ?? 0,
   }));
 }
@@ -376,6 +404,23 @@ export async function getTenantStorefrontSettings(
   return readStorefrontSettings(tenantId);
 }
 
+export async function getTenantPriceLists(tenantId: string): Promise<PriceList[]> {
+  const supabase = createSupabaseAdminClient();
+
+  if (!supabase) {
+    if (!shouldAllowDemoFallback()) {
+      return [];
+    }
+
+    return demoPriceLists
+      .filter((list) => list.tenant_id === tenantId)
+      .sort(sortPriceLists);
+  }
+
+  const lists = await ensureDefaultPriceListsForTenant(supabase, tenantId);
+  return lists.sort(sortPriceLists);
+}
+
 export async function getTenantAccessCodes(
   tenantId: string,
 ): Promise<AccessCode[]> {
@@ -386,16 +431,33 @@ export async function getTenantAccessCodes(
       return [];
     }
 
-    return demoAccessCodes.filter((item) => item.tenant_id === tenantId);
+    return demoAccessCodes
+      .filter((item) => item.tenant_id === tenantId)
+      .map((code) => ({
+        ...code,
+        price_list_name:
+          demoPriceLists.find((list) => list.id === code.price_list_id)?.name ?? undefined,
+      }));
   }
 
   const { data } = await supabase
     .from("access_codes")
-    .select("*")
+    .select("*, price_list:price_lists(name)")
     .eq("tenant_id", tenantId)
     .order("created_at", { ascending: false });
 
-  return (data as AccessCode[] | null) ?? [];
+  return ((data as Array<Record<string, unknown>> | null) ?? []).map((row) => {
+    const priceList = row.price_list as { name?: string } | null;
+
+    return {
+      id: String(row.id ?? ""),
+      tenant_id: String(row.tenant_id ?? ""),
+      password_code: String(row.password_code ?? ""),
+      price_list_id: String(row.price_list_id ?? ""),
+      price_list_name: priceList?.name,
+      created_at: String(row.created_at ?? ""),
+    } satisfies AccessCode;
+  });
 }
 
 export async function getTenantDashboardSummary(
@@ -470,7 +532,12 @@ export async function getTenantByCustomDomain(
 export async function validateAccessCode(params: {
   subdomain: string;
   code: string;
-}): Promise<{ tenant: Tenant; tierLevel: PriceTierLevel } | null> {
+}): Promise<{
+  tenant: Tenant;
+  priceListId: string;
+  isCatalogOnly: boolean;
+  priceListName: string;
+} | null> {
   const tenant = await getStorefrontTenant(params.subdomain);
 
   if (!tenant || tenant.status !== "active") {
@@ -485,37 +552,58 @@ export async function validateAccessCode(params: {
     }
 
     const matched = demoAccessCodes.find(
-      (code) =>
-        code.tenant_id === tenant.id && code.password_code === params.code.trim(),
+      (accessCode) =>
+        accessCode.tenant_id === tenant.id &&
+        accessCode.password_code === params.code.trim(),
     );
 
-    return matched
-      ? { tenant, tierLevel: matched.price_tier_level }
-      : null;
+    if (!matched) {
+      return null;
+    }
+
+    const priceList =
+      demoPriceLists.find((list) => list.id === matched.price_list_id) ?? null;
+
+    if (!priceList) {
+      return null;
+    }
+
+    return {
+      tenant,
+      priceListId: priceList.id,
+      isCatalogOnly: priceList.is_catalog_only,
+      priceListName: priceList.name,
+    };
   }
 
   const { data } = await supabaseAdmin
     .from("access_codes")
-    .select("price_tier_level")
+    .select("price_list_id, price_list:price_lists(id, name, is_catalog_only)")
     .eq("tenant_id", tenant.id)
     .eq("password_code", params.code.trim())
     .maybeSingle();
 
-  const matched = (data as { price_tier_level: PriceTierLevel } | null) ?? null;
+  const matched = data as {
+    price_list_id: string;
+    price_list: { id: string; name: string; is_catalog_only: boolean } | null;
+  } | null;
 
-  if (!matched) {
+  if (!matched?.price_list) {
     return null;
   }
 
   return {
     tenant,
-    tierLevel: matched.price_tier_level,
+    priceListId: matched.price_list.id,
+    isCatalogOnly: matched.price_list.is_catalog_only,
+    priceListName: matched.price_list.name,
   };
 }
 
 export async function getStorefrontProducts(params: {
   tenantId: string;
-  tierLevel: PriceTierLevel;
+  priceListId: string;
+  isCatalogOnly: boolean;
 }): Promise<StorefrontProduct[]> {
   const supabaseAdmin = createSupabaseAdminClient();
   let products: Product[] = [];
@@ -535,7 +623,9 @@ export async function getStorefrontProducts(params: {
     );
   }
 
-  return products.map((product) => toStorefrontProduct(product, params.tierLevel));
+  return products.map((product) =>
+    toStorefrontProduct(product, params.priceListId, params.isCatalogOnly),
+  );
 }
 
 export async function getStorefrontProductDescription(
@@ -631,7 +721,8 @@ export async function getTenantSectionProducts(sectionId: string): Promise<Produ
 
 export async function getStorefrontSections(
   tenantId: string,
-  tierLevel: PriceTierLevel,
+  priceListId: string,
+  isCatalogOnly: boolean,
 ): Promise<StorefrontSectionWithProducts[]> {
   const supabase = createSupabaseAdminClient();
 
@@ -668,7 +759,11 @@ export async function getStorefrontSections(
       continue;
     }
     const product = normalizeProductRecord(row.products as Record<string, unknown>);
-    const storefrontProduct = toStorefrontProduct(product, tierLevel);
+    const storefrontProduct = toStorefrontProduct(
+      product,
+      priceListId,
+      isCatalogOnly,
+    );
     const existing = productsBySectionId.get(row.section_id) ?? [];
     existing.push(storefrontProduct);
     productsBySectionId.set(row.section_id, existing);

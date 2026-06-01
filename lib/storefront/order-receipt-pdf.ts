@@ -5,6 +5,7 @@ import type { CartPaymentSummary } from "@/lib/storefront/cart";
 import { formatDiscountPercentage, buildAppliedCampaignBenefitNotes } from "@/lib/storefront/cart";
 import {
   formatReceiptMoney,
+  getOrderReceiptTableHead,
   getOrderReceiptTableRows,
 } from "@/lib/storefront/order-receipt-display";
 import { registerRobotoFonts } from "@/lib/storefront/pdf-fonts";
@@ -15,9 +16,10 @@ export interface GenerateOrderReceiptPdfParams {
   orderNumber: string;
   orderDate: Date;
   items: CartItem[];
-  paymentSummary: CartPaymentSummary;
-  paymentMethodLabel: string;
+  paymentSummary: CartPaymentSummary | null;
+  paymentMethodLabel: string | null;
   note?: string | null;
+  catalogMode?: boolean;
 }
 
 const PDF_FONT = "Roboto";
@@ -114,10 +116,12 @@ export async function generateOrderReceiptPdf(
   doc.text("Sipariş Fişi", margin, cursorY);
   cursorY += 8;
 
+  const catalogMode = params.catalogMode ?? false;
+
   autoTable(doc, {
     startY: cursorY,
-    head: [["Ürün / Model", "Birim", "Miktar", "Birim Fiyat", "Toplam"]],
-    body: getOrderReceiptTableRows(params.items),
+    head: [getOrderReceiptTableHead(catalogMode)],
+    body: getOrderReceiptTableRows(params.items, catalogMode),
     theme: "striped",
     styles: {
       font: PDF_FONT,
@@ -146,13 +150,19 @@ export async function generateOrderReceiptPdf(
     alternateRowStyles: {
       fillColor: [252, 252, 253],
     },
-    columnStyles: {
-      0: { cellWidth: PRODUCT_COLUMN_WIDTH_MM, overflow: "linebreak" },
-      1: { cellWidth: 18, halign: "center" },
-      2: { cellWidth: 16, halign: "right" },
-      3: { cellWidth: 31, halign: "right" },
-      4: { cellWidth: 31, halign: "right" },
-    },
+    columnStyles: catalogMode
+      ? {
+          0: { cellWidth: PRODUCT_COLUMN_WIDTH_MM + 40, overflow: "linebreak" },
+          1: { cellWidth: 24, halign: "center" },
+          2: { cellWidth: 24, halign: "right" },
+        }
+      : {
+          0: { cellWidth: PRODUCT_COLUMN_WIDTH_MM, overflow: "linebreak" },
+          1: { cellWidth: 18, halign: "center" },
+          2: { cellWidth: 16, halign: "right" },
+          3: { cellWidth: 31, halign: "right" },
+          4: { cellWidth: 31, halign: "right" },
+        },
     margin: { left: margin, right: margin },
     didParseCell: (data) => {
       if (data.section !== "body" || data.column.index !== 0) {
@@ -179,66 +189,73 @@ export async function generateOrderReceiptPdf(
     cursorY + 20;
   cursorY = tableEndY + 12;
 
-  const summary = params.paymentSummary;
-  const currency = summary.currency;
-  const summaryX = pageWidth - margin;
-  const summaryLines: Array<{ label: string; value: string; bold?: boolean }> = [
-    {
-      label: "Ara Toplam",
-      value: formatReceiptMoney(summary.subtotal, currency),
-    },
-  ];
+  if (!catalogMode && params.paymentSummary && params.paymentMethodLabel) {
+    const summary = params.paymentSummary;
+    const currency = summary.currency;
+    const summaryX = pageWidth - margin;
+    const summaryLines: Array<{ label: string; value: string; bold?: boolean }> = [
+      {
+        label: "Ara Toplam",
+        value: formatReceiptMoney(summary.subtotal, currency),
+      },
+    ];
 
-  if (summary.discountAmount > 0) {
-    summaryLines.push({
-      label: `İskonto (%${formatDiscountPercentage(summary.discountPercentage)})`,
-      value: `-${formatReceiptMoney(summary.discountAmount, currency)}`,
-    });
-  }
-
-  if (summary.paymentMethod === "card") {
-    summaryLines.push({
-      label:
-        summary.surchargeAmount > 0
-          ? `Vade Farkı (%${formatDiscountPercentage(summary.surchargePercentage)})`
-          : "Vade Farkı",
-      value:
-        summary.surchargeAmount > 0
-          ? `+${formatReceiptMoney(summary.surchargeAmount, currency)}`
-          : formatReceiptMoney(0, currency),
-    });
-  }
-
-  summaryLines.push({
-    label: "Genel Toplam",
-    value: formatReceiptMoney(summary.finalTotal, currency),
-    bold: true,
-  });
-
-  for (const line of summaryLines) {
-    if (line.bold) {
-      setPdfFont(doc, "bold");
-      doc.setFontSize(PDF_FONT_SIZE.summaryBold);
-    } else {
-      setPdfFont(doc, "normal");
-      doc.setFontSize(PDF_FONT_SIZE.summary);
+    if (summary.discountAmount > 0) {
+      summaryLines.push({
+        label: `İskonto (%${formatDiscountPercentage(summary.discountPercentage)})`,
+        value: `-${formatReceiptMoney(summary.discountAmount, currency)}`,
+      });
     }
 
-    doc.text(line.label, summaryX - 52, cursorY, { align: "right" });
-    doc.text(line.value, summaryX, cursorY, { align: "right" });
-    cursorY += PDF_SPACING.summaryLine;
-  }
+    if (summary.paymentMethod === "card") {
+      summaryLines.push({
+        label:
+          summary.surchargeAmount > 0
+            ? `Vade Farkı (%${formatDiscountPercentage(summary.surchargePercentage)})`
+            : "Vade Farkı",
+        value:
+          summary.surchargeAmount > 0
+            ? `+${formatReceiptMoney(summary.surchargeAmount, currency)}`
+            : formatReceiptMoney(0, currency),
+      });
+    }
 
-  cursorY += 4;
-  setPdfFont(doc, "normal");
-  doc.setFontSize(PDF_FONT_SIZE.body);
-  doc.text(`Ödeme: ${params.paymentMethodLabel}`, margin, cursorY);
-  cursorY += 7;
+    summaryLines.push({
+      label: "Genel Toplam",
+      value: formatReceiptMoney(summary.finalTotal, currency),
+      bold: true,
+    });
 
-  for (const campaignNote of buildAppliedCampaignBenefitNotes(summary)) {
-    const campaignNoteLines = doc.splitTextToSize(campaignNote, pageWidth - margin * 2);
-    doc.text(campaignNoteLines, margin, cursorY, { lineHeightFactor: 1.35 });
-    cursorY += campaignNoteLines.length * PDF_SPACING.wrappedLine + 2;
+    for (const line of summaryLines) {
+      if (line.bold) {
+        setPdfFont(doc, "bold");
+        doc.setFontSize(PDF_FONT_SIZE.summaryBold);
+      } else {
+        setPdfFont(doc, "normal");
+        doc.setFontSize(PDF_FONT_SIZE.summary);
+      }
+
+      doc.text(line.label, summaryX - 52, cursorY, { align: "right" });
+      doc.text(line.value, summaryX, cursorY, { align: "right" });
+      cursorY += PDF_SPACING.summaryLine;
+    }
+
+    cursorY += 4;
+    setPdfFont(doc, "normal");
+    doc.setFontSize(PDF_FONT_SIZE.body);
+    doc.text(`Ödeme: ${params.paymentMethodLabel}`, margin, cursorY);
+    cursorY += 7;
+
+    for (const campaignNote of buildAppliedCampaignBenefitNotes(summary)) {
+      const campaignNoteLines = doc.splitTextToSize(campaignNote, pageWidth - margin * 2);
+      doc.text(campaignNoteLines, margin, cursorY, { lineHeightFactor: 1.35 });
+      cursorY += campaignNoteLines.length * PDF_SPACING.wrappedLine + 2;
+    }
+  } else if (catalogMode) {
+    setPdfFont(doc, "normal");
+    doc.setFontSize(PDF_FONT_SIZE.body);
+    doc.text("Fiyatsız katalog siparişi", margin, cursorY);
+    cursorY += 7;
   }
 
   const trimmedNote = params.note?.trim();

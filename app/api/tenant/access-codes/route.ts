@@ -17,7 +17,6 @@ export async function POST(request: Request) {
   const parsed = accessCodeSchema.safeParse({
     ...body,
     tenant_id: session.tenant!.id,
-    price_tier_level: Number(body.price_tier_level),
   });
 
   if (!parsed.success) {

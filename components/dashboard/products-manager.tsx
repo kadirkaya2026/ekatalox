@@ -34,8 +34,15 @@ import {
   defaultCurrencyCode,
   supportedCurrencyCodes,
 } from "@/lib/products/constants";
-import { computeDiscountPercentage, getMinTierPrice } from "@/lib/storefront/pricing";
-import type { Category, Product, ProductVariant, Tenant } from "@/lib/types";
+import { ProductPriceFields } from "@/components/dashboard/product-price-fields";
+import {
+  appendProductPricesToFormData,
+  buildListPriceFormState,
+  getMinPriceFromFormState,
+} from "@/lib/products/price-form";
+import { getProductPriceForList } from "@/lib/price-lists/records";
+import { computeDiscountPercentage } from "@/lib/storefront/pricing";
+import type { Category, PriceList, Product, ProductVariant, Tenant } from "@/lib/types";
 import { cn, formatCurrency } from "@/lib/utils";
 
 interface ProductFormState {
@@ -43,9 +50,7 @@ interface ProductFormState {
   sku_code: string;
   product_name: string;
   currency: string;
-  price_tier_1: string;
-  price_tier_2: string;
-  price_tier_3: string;
+  listPrices: Record<string, string>;
   is_in_stock: boolean;
   is_discount_active: boolean;
   discount_price: string;
@@ -64,14 +69,12 @@ interface VariantMatrixRow {
   display_order: number;
 }
 
-const emptyForm: ProductFormState = {
+const emptyForm = (priceLists: PriceList[]): ProductFormState => ({
   category_id: "",
   sku_code: "",
   product_name: "",
   currency: defaultCurrencyCode,
-  price_tier_1: "",
-  price_tier_2: "",
-  price_tier_3: "",
+  listPrices: buildListPriceFormState(priceLists),
   is_in_stock: true,
   is_discount_active: false,
   discount_price: "",
@@ -79,7 +82,7 @@ const emptyForm: ProductFormState = {
   carton_quantity: "",
   description: "",
   image: null,
-};
+});
 
 const emptyVariantRow = (display_order: number): VariantMatrixRow => ({
   model_name: "",
@@ -95,9 +98,7 @@ function toFormData(form: ProductFormState) {
   formData.set("sku_code", form.sku_code);
   formData.set("product_name", form.product_name);
   formData.set("currency", form.currency);
-  formData.set("price_tier_1", form.price_tier_1 || "0");
-  formData.set("price_tier_2", form.price_tier_2 || "0");
-  formData.set("price_tier_3", form.price_tier_3 || "0");
+  appendProductPricesToFormData(formData, form.listPrices);
   formData.set("is_in_stock", String(form.is_in_stock));
   formData.set("is_discount_active", String(form.is_discount_active));
   formData.set("discount_price", form.is_discount_active ? form.discount_price.trim() : "");
@@ -112,15 +113,13 @@ function toFormData(form: ProductFormState) {
   return formData;
 }
 
-function productToForm(product: Product): ProductFormState {
+function productToForm(product: Product, priceLists: PriceList[]): ProductFormState {
   return {
     category_id: product.category_id,
     sku_code: product.sku_code,
     product_name: product.product_name,
     currency: product.currency ?? defaultCurrencyCode,
-    price_tier_1: String(product.price_tier_1),
-    price_tier_2: String(product.price_tier_2),
-    price_tier_3: String(product.price_tier_3),
+    listPrices: buildListPriceFormState(priceLists, product),
     is_in_stock: product.is_in_stock,
     is_discount_active: product.is_discount_active,
     discount_price:
@@ -139,18 +138,14 @@ function getDiscountPreview(form: ProductFormState) {
     return null;
   }
 
-  const minTierPrice = getMinTierPrice({
-    price_tier_1: Number(form.price_tier_1 || 0),
-    price_tier_2: Number(form.price_tier_2 || 0),
-    price_tier_3: Number(form.price_tier_3 || 0),
-  });
+  const minListPrice = getMinPriceFromFormState(form.listPrices);
   const salePrice = Number(form.discount_price);
 
   if (Number.isNaN(salePrice)) {
     return null;
   }
 
-  return computeDiscountPercentage(minTierPrice, salePrice);
+  return computeDiscountPercentage(minListPrice, salePrice);
 }
 
 function reorderProducts(products: Product[], fromIndex: number, toIndex: number) {
@@ -276,16 +271,22 @@ export function ProductsManager({
   onProductsUpdated,
   initialProducts,
   initialCategories,
+  priceLists,
 }: {
   tenant: Tenant;
   products?: Product[];
   onProductsUpdated?: (products: Product[]) => void;
   initialProducts: Product[];
   initialCategories: Category[];
+  priceLists: PriceList[];
 }) {
+  const pricedLists = useMemo(
+    () => priceLists.filter((list) => !list.is_catalog_only),
+    [priceLists],
+  );
   const [internalProducts, setInternalProducts] = useState(initialProducts);
   const [searchTerm, setSearchTerm] = useState("");
-  const [editForm, setEditForm] = useState<ProductFormState>(emptyForm);
+  const [editForm, setEditForm] = useState<ProductFormState>(() => emptyForm(priceLists));
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [variantMatrixOpen, setVariantMatrixOpen] = useState(false);
   const [variantMatrixProduct, setVariantMatrixProduct] = useState<Product | null>(null);
@@ -395,6 +396,16 @@ export function ProductsManager({
     return () => document.removeEventListener("mousedown", handlePointerDown);
   }, [categoryFilterOpen]);
 
+  function updateListPrice(priceListId: string, value: string) {
+    setEditForm((current) => ({
+      ...current,
+      listPrices: {
+        ...current.listPrices,
+        [priceListId]: value,
+      },
+    }));
+  }
+
   function updateEditField<Key extends keyof ProductFormState>(
     key: Key,
     value: ProductFormState[Key],
@@ -404,7 +415,7 @@ export function ProductsManager({
 
   function openEdit(product: Product) {
     setEditingProduct(product);
-    setEditForm(productToForm(product));
+    setEditForm(productToForm(product, priceLists));
   }
 
   function openVariantMatrix(product: Product) {
@@ -763,7 +774,10 @@ export function ProductsManager({
 
     setMessage(null);
     startTransition(async () => {
-      const formData = toFormData({ ...productToForm(product), category_id: newCategoryId });
+      const formData = toFormData({
+        ...productToForm(product, priceLists),
+        category_id: newCategoryId,
+      });
       const response = await fetch(`/api/tenant/products/${product.id}`, {
         method: "PATCH",
         body: formData,
@@ -1076,9 +1090,11 @@ export function ProductsManager({
                 <th className="px-4 py-3">Kategori</th>
                 <th className="px-4 py-3">Stok</th>
                 <th className="px-4 py-3">Model</th>
-                <th className="px-4 py-3">Katman 1</th>
-                <th className="px-4 py-3">Katman 2</th>
-                <th className="px-4 py-3">Katman 3</th>
+                {pricedLists.map((list) => (
+                  <th key={list.id} className="px-4 py-3">
+                    {list.name}
+                  </th>
+                ))}
                 <th className="px-4 py-3 text-right">Aksiyon</th>
               </tr>
             </thead>
@@ -1197,15 +1213,14 @@ export function ProductsManager({
                   </td>
                   <td className="px-4 py-4">{renderStockBadge(product)}</td>
                   <td className="px-4 py-4">{renderVariantCountBadge(product)}</td>
-                  <td className="px-4 py-4 text-base font-semibold text-slate-900">
-                    {formatCurrency(Number(product.price_tier_1), product.currency)}
-                  </td>
-                  <td className="px-4 py-4 text-base font-semibold text-slate-900">
-                    {formatCurrency(Number(product.price_tier_2), product.currency)}
-                  </td>
-                  <td className="px-4 py-4 text-base font-semibold text-slate-900">
-                    {formatCurrency(Number(product.price_tier_3), product.currency)}
-                  </td>
+                  {pricedLists.map((list) => (
+                    <td key={list.id} className="px-4 py-4 text-base font-semibold text-slate-900">
+                      {formatCurrency(
+                        getProductPriceForList(product.prices, list.id),
+                        product.currency,
+                      )}
+                    </td>
+                  ))}
                   <td className="px-4 py-4 align-top">
                     <div className="ml-auto flex max-w-[11rem] flex-wrap justify-end gap-2">
                       <Button
@@ -1373,25 +1388,18 @@ export function ProductsManager({
                 </button>
               </div>
 
-              <div className="mt-4 grid grid-cols-3 gap-2 rounded-xl bg-slate-50 p-3 text-center">
-                <div>
-                  <p className="text-xs text-slate-500">Katman 1</p>
-                  <p className="mt-1 text-sm font-semibold text-slate-900">
-                    {formatCurrency(Number(product.price_tier_1), product.currency)}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs text-slate-500">Katman 2</p>
-                  <p className="mt-1 text-sm font-semibold text-slate-900">
-                    {formatCurrency(Number(product.price_tier_2), product.currency)}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs text-slate-500">Katman 3</p>
-                  <p className="mt-1 text-sm font-semibold text-slate-900">
-                    {formatCurrency(Number(product.price_tier_3), product.currency)}
-                  </p>
-                </div>
+              <div className="mt-4 grid grid-cols-1 gap-2 rounded-xl bg-slate-50 p-3 sm:grid-cols-3">
+                {pricedLists.map((list) => (
+                  <div key={list.id} className="text-center">
+                    <p className="text-xs text-slate-500">{list.name}</p>
+                    <p className="mt-1 text-sm font-semibold text-slate-900">
+                      {formatCurrency(
+                        getProductPriceForList(product.prices, list.id),
+                        product.currency,
+                      )}
+                    </p>
+                  </div>
+                ))}
               </div>
 
               <div className="mt-4 flex gap-2">
@@ -1478,25 +1486,13 @@ export function ProductsManager({
                 </option>
               ))}
             </select>
-            <Input
-              type="number"
-              step="0.01"
-              value={editForm.price_tier_1}
-              onChange={(event) => updateEditField("price_tier_1", event.target.value)}
-            />
-            <Input
-              type="number"
-              step="0.01"
-              value={editForm.price_tier_2}
-              onChange={(event) => updateEditField("price_tier_2", event.target.value)}
-            />
-            <Input
-              type="number"
-              step="0.01"
-              value={editForm.price_tier_3}
-              onChange={(event) => updateEditField("price_tier_3", event.target.value)}
-            />
           </div>
+
+          <ProductPriceFields
+            priceLists={priceLists}
+            values={editForm.listPrices}
+            onChange={updateListPrice}
+          />
 
           <PlanFeatureGate
             feature="product_discount"

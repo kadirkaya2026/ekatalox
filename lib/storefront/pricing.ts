@@ -1,17 +1,6 @@
 import { toStorefrontVariant } from "@/lib/products/records";
-import type { PriceTierLevel, Product, StorefrontProduct } from "@/lib/types";
-
-export function pickPriceByTier(product: Product, tierLevel: PriceTierLevel) {
-  if (tierLevel === 1) {
-    return Number(product.price_tier_1);
-  }
-
-  if (tierLevel === 2) {
-    return Number(product.price_tier_2);
-  }
-
-  return Number(product.price_tier_3);
-}
+import { getProductPriceForList } from "@/lib/price-lists/records";
+import type { Product, StorefrontProduct } from "@/lib/types";
 
 export function computeDiscountPercentage(original: number, sale: number) {
   if (original <= 0 || sale >= original) {
@@ -21,18 +10,30 @@ export function computeDiscountPercentage(original: number, sale: number) {
   return Math.round(((original - sale) / original) * 100);
 }
 
-export function getMinTierPrice(
-  product: Pick<Product, "price_tier_1" | "price_tier_2" | "price_tier_3">,
-) {
-  return Math.min(
-    Number(product.price_tier_1),
-    Number(product.price_tier_2),
-    Number(product.price_tier_3),
-  );
+export function getMinListPrice(product: Pick<Product, "prices">) {
+  const values = (product.prices ?? []).map((entry) => Number(entry.price));
+
+  if (!values.length) {
+    return 0;
+  }
+
+  return Math.min(...values);
 }
 
-export function resolveStorefrontPrice(product: Product, tierLevel: PriceTierLevel) {
-  const tierPrice = pickPriceByTier(product, tierLevel);
+export function resolveStorefrontPrice(
+  product: Product,
+  priceListId: string,
+  isCatalogOnly: boolean,
+) {
+  if (isCatalogOnly) {
+    return {
+      price: null,
+      original_price: null,
+      discount_percentage: null,
+    };
+  }
+
+  const listPrice = getProductPriceForList(product.prices, priceListId);
   const discountPrice =
     typeof product.discount_price === "number" ? product.discount_price : null;
 
@@ -40,27 +41,31 @@ export function resolveStorefrontPrice(product: Product, tierLevel: PriceTierLev
     product.is_discount_active &&
     discountPrice !== null &&
     discountPrice >= 0 &&
-    discountPrice < tierPrice
+    discountPrice < listPrice
   ) {
     return {
       price: discountPrice,
-      original_price: tierPrice,
-      discount_percentage: computeDiscountPercentage(tierPrice, discountPrice),
+      original_price: listPrice,
+      discount_percentage: computeDiscountPercentage(listPrice, discountPrice),
     };
   }
 
   return {
-    price: tierPrice,
+    price: listPrice,
     original_price: null,
     discount_percentage: null,
   };
 }
 
-export function toStorefrontProduct(product: Product, tierLevel: PriceTierLevel): StorefrontProduct {
+export function toStorefrontProduct(
+  product: Product,
+  priceListId: string,
+  isCatalogOnly: boolean,
+): StorefrontProduct {
   const variants = (product.variants ?? []).map((variant) =>
     toStorefrontVariant(variant, product.is_in_stock),
   );
-  const pricing = resolveStorefrontPrice(product, tierLevel);
+  const pricing = resolveStorefrontPrice(product, priceListId, isCatalogOnly);
 
   return {
     id: product.id,
@@ -80,4 +85,14 @@ export function toStorefrontProduct(product: Product, tierLevel: PriceTierLevel)
     has_variants: variants.length > 0,
     variants,
   };
+}
+
+/** @deprecated Use getMinListPrice */
+export function getMinTierPrice(product: Pick<Product, "prices">) {
+  return getMinListPrice(product);
+}
+
+/** @deprecated Use getProductPriceForList */
+export function pickPriceByTier(product: Product, _tierLevel: never) {
+  return getMinListPrice(product);
 }

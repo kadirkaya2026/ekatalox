@@ -1,4 +1,5 @@
 import { isVariantPurchasable } from "@/lib/storefront/variants";
+import { normalizeProductPriceRecord } from "@/lib/price-lists/records";
 import type {
   Product,
   ProductVariant,
@@ -13,7 +14,21 @@ type RawVariantRecord = Record<string, unknown> & {
 type RawProductRecord = Record<string, unknown> & {
   variants?: unknown;
   product_variants?: unknown;
+  product_prices?: unknown;
+  prices?: unknown;
 };
+
+function getPricesFromRecord(record: RawProductRecord) {
+  const rawPrices = Array.isArray(record.product_prices)
+    ? record.product_prices
+    : Array.isArray(record.prices)
+      ? record.prices
+      : [];
+
+  return rawPrices
+    .filter((item): item is Record<string, unknown> => Boolean(item) && typeof item === "object")
+    .map(normalizeProductPriceRecord);
+}
 
 function sortVariants(left: ProductVariant, right: ProductVariant) {
   if (left.display_order !== right.display_order) {
@@ -65,9 +80,7 @@ export function normalizeProductRecord(record: RawProductRecord): Product {
     description: typeof record.description === "string" ? record.description : null,
     image_url: typeof record.image_url === "string" ? record.image_url : null,
     currency: (record.currency ?? "TRY") as Product["currency"],
-    price_tier_1: Number(record.price_tier_1 ?? 0),
-    price_tier_2: Number(record.price_tier_2 ?? 0),
-    price_tier_3: Number(record.price_tier_3 ?? 0),
+    prices: getPricesFromRecord(record),
     is_in_stock: Boolean(record.is_in_stock),
     is_discount_active: Boolean(record.is_discount_active),
     discount_price:

@@ -64,10 +64,10 @@ export function AdminTenantsManager({
   const [form, setForm] = useState<NewTenantForm>(defaultForm);
   const [planDrafts, setPlanDrafts] = useState<Record<string, TenantPlan>>({});
   const [codeDrafts, setCodeDrafts] = useState<Record<string, string>>({});
-  const [tierDrafts, setTierDrafts] = useState<Record<string, 1 | 2 | 3>>({});
+  const [priceListDrafts, setPriceListDrafts] = useState<Record<string, string>>({});
   const [editingAccessCodeId, setEditingAccessCodeId] = useState<string | null>(null);
   const [editDrafts, setEditDrafts] = useState<
-    Record<string, { password_code: string; price_tier_level: 1 | 2 | 3 }>
+    Record<string, { password_code: string; price_list_id: string }>
   >({});
   const [message, setMessage] = useState<string | null>(null);
   const [createdCredentials, setCreatedCredentials] = useState<{
@@ -216,7 +216,9 @@ export function AdminTenantsManager({
 
   function createAccessCode(tenantId: string) {
     const password_code = codeDrafts[tenantId]?.trim();
-    const price_tier_level = tierDrafts[tenantId] ?? 1;
+    const tenant = tenants.find((entry) => entry.id === tenantId);
+    const price_list_id =
+      priceListDrafts[tenantId] ?? tenant?.price_lists?.[0]?.id ?? "";
 
     if (!password_code) {
       setMessage("Şifre kodu giriniz.");
@@ -231,7 +233,7 @@ export function AdminTenantsManager({
         body: JSON.stringify({
           tenant_id: tenantId,
           password_code,
-          price_tier_level,
+          price_list_id,
         }),
       });
 
@@ -299,7 +301,7 @@ export function AdminTenantsManager({
       ...current,
       [accessCode.id]: {
         password_code: accessCode.password_code,
-        price_tier_level: accessCode.price_tier_level,
+        price_list_id: accessCode.price_list_id,
       },
     }));
   }
@@ -325,7 +327,7 @@ export function AdminTenantsManager({
         body: JSON.stringify({
           id: accessCodeId,
           password_code,
-          price_tier_level: draft.price_tier_level,
+          price_list_id: draft.price_list_id,
         }),
       });
 
@@ -589,21 +591,23 @@ export function AdminTenantsManager({
                             className="sm:max-w-[140px]"
                           />
                           <select
-                            value={draft.price_tier_level}
+                            value={draft.price_list_id}
                             onChange={(event) =>
                               setEditDrafts((current) => ({
                                 ...current,
                                 [accessCode.id]: {
                                   ...current[accessCode.id],
-                                  price_tier_level: Number(event.target.value) as 1 | 2 | 3,
+                                  price_list_id: event.target.value,
                                 },
                               }))
                             }
                             className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900"
                           >
-                            <option value={1}>Katman 1 • Toptancı</option>
-                            <option value={2}>Katman 2 • Bayi</option>
-                            <option value={3}>Katman 3 • Telefoncu</option>
+                            {(tenant.price_lists ?? []).map((list) => (
+                              <option key={list.id} value={list.id}>
+                                {list.name}
+                              </option>
+                            ))}
                           </select>
                           <div className="flex gap-2">
                             <Button
@@ -635,7 +639,7 @@ export function AdminTenantsManager({
                           {accessCode.password_code}
                         </span>
                         <span className="text-slate-500">
-                          Katman {accessCode.price_tier_level}
+                          {accessCode.price_list_name ?? "Fiyat listesi"}
                         </span>
                         <button
                           type="button"
@@ -671,18 +675,20 @@ export function AdminTenantsManager({
                     }
                   />
                   <select
-                    value={tierDrafts[tenant.id] ?? 1}
+                    value={priceListDrafts[tenant.id] ?? tenant.price_lists?.[0]?.id ?? ""}
                     onChange={(event) =>
-                      setTierDrafts((current) => ({
+                      setPriceListDrafts((current) => ({
                         ...current,
-                        [tenant.id]: Number(event.target.value) as 1 | 2 | 3,
+                        [tenant.id]: event.target.value,
                       }))
                     }
                     className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900"
                   >
-                    <option value={1}>Katman 1 • Toptancı</option>
-                    <option value={2}>Katman 2 • Bayi</option>
-                    <option value={3}>Katman 3 • Telefoncu</option>
+                    {(tenant.price_lists ?? []).map((list) => (
+                      <option key={list.id} value={list.id}>
+                        {list.name}
+                      </option>
+                    ))}
                   </select>
                   <Button onClick={() => createAccessCode(tenant.id)} disabled={pending}>
                     Şifre kaydet

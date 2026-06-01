@@ -5,6 +5,7 @@ import {
   normalizeProductDescription,
   PRODUCT_DESCRIPTION_MAX_PLAIN_TEXT_LENGTH,
 } from "@/lib/products/description-html";
+import { productPricesSchema } from "@/lib/validators/price-list";
 
 export const currencyCodeSchema = z
   .string()
@@ -95,9 +96,7 @@ export const productBaseSchema = z.object({
   sku_code: z.string().min(1, "Model No zorunludur."),
   product_name: z.string().min(2, "Ürün adı zorunludur."),
   currency: currencyCodeSchema,
-  price_tier_1: z.coerce.number().min(0),
-  price_tier_2: z.coerce.number().min(0),
-  price_tier_3: z.coerce.number().min(0),
+  prices: productPricesSchema.min(1, "En az bir fiyat listesi girilmelidir."),
   is_in_stock: booleanSchema,
   package_quantity: optionalPositiveIntegerSchema,
   carton_quantity: optionalPositiveIntegerSchema,
@@ -145,13 +144,9 @@ export const productBaseSchema = z.object({
     return;
   }
 
-  const minTierPrice = Math.min(
-    value.price_tier_1,
-    value.price_tier_2,
-    value.price_tier_3,
-  );
+  const minListPrice = Math.min(...value.prices.map((entry) => entry.price));
 
-  if (minTierPrice <= 0) {
+  if (minListPrice <= 0) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
       message: "İndirim uygulamak için en az bir liste fiyatı sıfırdan büyük olmalıdır.",
@@ -160,7 +155,7 @@ export const productBaseSchema = z.object({
     return;
   }
 
-  if (value.discount_price >= minTierPrice) {
+  if (value.discount_price >= minListPrice) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
       message: "İndirimli fiyat, liste fiyatından düşük olmalıdır.",
@@ -178,9 +173,7 @@ export const productImportRowSchema = z.object({
   sku_code: z.string().min(1, "Model No zorunludur."),
   product_name: z.string().min(2, "Ürün adı zorunludur."),
   currency: currencyCodeSchema,
-  price_tier_1: z.coerce.number().min(0),
-  price_tier_2: z.coerce.number().min(0),
-  price_tier_3: z.coerce.number().min(0),
+  prices: productPricesSchema,
   is_in_stock: booleanSchema,
   image_url: imageUrlSchema,
   package_quantity: optionalPositiveIntegerSchema,

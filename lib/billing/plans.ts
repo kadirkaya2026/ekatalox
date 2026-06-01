@@ -23,6 +23,12 @@ export const PLAN_OPTIONS: PlanOption[] = [
   { id: "kurumsal", name: "Kurumsal", maxProductLimit: 2500 },
 ];
 
+export const PLAN_PRICE_LIST_LIMITS: Record<TenantPlan, number | null> = {
+  baslangic: 3,
+  profesyonel: 10,
+  kurumsal: null,
+};
+
 const PROFESSIONAL_FEATURES: Record<PlanFeature, boolean> = {
   reports: true,
   payment_settings: true,
@@ -194,4 +200,18 @@ export function formatPlanCapacityFeature(planId: TenantPlan): string {
 
 export function formatPlanCapacityDescription(planId: TenantPlan): string {
   return `${formatProductLimit(getLimitForPlan(planId))} ürün kapasitesi`;
+}
+
+export function getPriceListLimit(planId: TenantPlan): number | null {
+  return PLAN_PRICE_LIST_LIMITS[planId];
+}
+
+export function canCreatePriceList(planId: TenantPlan, currentPricedCount: number): boolean {
+  const limit = getPriceListLimit(planId);
+  return limit === null || currentPricedCount < limit;
+}
+
+export function formatPriceListLimit(planId: TenantPlan): string {
+  const limit = getPriceListLimit(planId);
+  return limit === null ? "Sınırsız" : String(limit);
 }

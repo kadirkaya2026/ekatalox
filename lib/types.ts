@@ -5,8 +5,22 @@ export type { MaxProductLimit, TenantPlan };
 
 export type TenantStatus = "active" | "suspended";
 export type UserRole = "super_admin" | "tenant_admin";
-export type PriceTierLevel = 1 | 2 | 3;
 export type StorefrontThemeKey = "minimal" | "premium-dark" | "soft-commerce";
+
+export interface PriceList {
+  id: string;
+  tenant_id: string;
+  name: string;
+  is_catalog_only: boolean;
+  sort_order: number;
+  created_at: string;
+}
+
+export interface ProductPrice {
+  product_id: string;
+  price_list_id: string;
+  price: number;
+}
 
 export interface Tenant {
   id: string;
@@ -31,9 +45,7 @@ export interface Product {
   description?: string | null;
   image_url: string | null;
   currency: CurrencyCode;
-  price_tier_1: number;
-  price_tier_2: number;
-  price_tier_3: number;
+  prices?: ProductPrice[];
   is_in_stock: boolean;
   is_discount_active: boolean;
   discount_price: number | null;
@@ -61,7 +73,8 @@ export interface AccessCode {
   id: string;
   tenant_id: string;
   password_code: string;
-  price_tier_level: PriceTierLevel;
+  price_list_id: string;
+  price_list_name?: string;
   created_at: string;
 }
 
@@ -183,6 +196,7 @@ export interface TenantStorefrontSettings {
 
 export interface TenantWithRelations extends Tenant {
   access_codes?: AccessCode[];
+  price_lists?: PriceList[];
   product_count?: number;
 }
 
@@ -201,7 +215,7 @@ export interface StorefrontProduct {
   image_url: string | null;
   is_in_stock: boolean;
   currency: CurrencyCode;
-  price: number;
+  price: number | null;
   original_price?: number | null;
   discount_percentage?: number | null;
   package_quantity: number | null;

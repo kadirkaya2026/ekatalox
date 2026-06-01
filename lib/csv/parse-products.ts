@@ -4,6 +4,11 @@ import {
   normalizeCurrencyCode,
   requiredProductCsvHeaders,
 } from "@/lib/products/constants";
+import type { ImportListPrice } from "@/lib/price-lists/import";
+import {
+  DEFAULT_PRICED_LIST_NAMES,
+  parsePriceListCsvHeader,
+} from "@/lib/price-lists/constants";
 import type { Product } from "@/lib/types";
 
 export interface ParsedCsvResult {
@@ -14,9 +19,10 @@ export interface ParsedCsvResult {
     product_name: string;
     image_url: Product["image_url"];
     currency: Product["currency"];
-    price_tier_1: Product["price_tier_1"];
-    price_tier_2: Product["price_tier_2"];
-    price_tier_3: Product["price_tier_3"];
+    prices?: ImportListPrice[];
+    price_tier_1?: number;
+    price_tier_2?: number;
+    price_tier_3?: number;
     is_in_stock: Product["is_in_stock"];
     package_quantity: Product["package_quantity"];
     carton_quantity: Product["carton_quantity"];
@@ -166,12 +172,35 @@ export function parseProductsCsv(csvText: string): ParsedCsvResult {
         errors,
       );
 
+      const dynamicPrices = parsedHeaders
+        .map((header) => {
+          const listName = parsePriceListCsvHeader(header);
+
+          if (!listName) {
+            return null;
+          }
+
+          return {
+            list_name: listName,
+            price: sanitizePrice(row[header]),
+          } satisfies ImportListPrice;
+        })
+        .filter((entry): entry is ImportListPrice => Boolean(entry));
+
+      const legacyPrices = DEFAULT_PRICED_LIST_NAMES.map((listName, index) => ({
+        list_name: listName,
+        price: sanitizePrice(
+          index === 0 ? row.price_tier_1 : index === 1 ? row.price_tier_2 : row.price_tier_3,
+        ),
+      }));
+
       return {
         category_name,
         sku_code,
         product_name,
         image_url: row.image_url?.trim() || null,
         currency,
+        prices: dynamicPrices.length ? dynamicPrices : legacyPrices,
         price_tier_1: sanitizePrice(row.price_tier_1),
         price_tier_2: sanitizePrice(row.price_tier_2),
         price_tier_3: sanitizePrice(row.price_tier_3),

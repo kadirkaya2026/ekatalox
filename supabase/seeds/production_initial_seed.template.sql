@@ -1,3 +1,6 @@
+-- Production seed template: run after 0031_price_lists migration.
+-- Price lists are created by migration backfill; access codes reference price_list_id.
+
 begin;
 
 insert into public.profiles (id, full_name, role)
@@ -52,25 +55,45 @@ with resolved_tenant as (
   select id
   from public.tenants
   where subdomain = 'demo'
+), tier1 as (
+  select pl.id
+  from public.price_lists pl
+  join resolved_tenant rt on rt.id = pl.tenant_id
+  where pl.is_catalog_only = false and pl.sort_order = 1
+  limit 1
+), tier2 as (
+  select pl.id
+  from public.price_lists pl
+  join resolved_tenant rt on rt.id = pl.tenant_id
+  where pl.is_catalog_only = false and pl.sort_order = 2
+  limit 1
+), tier3 as (
+  select pl.id
+  from public.price_lists pl
+  join resolved_tenant rt on rt.id = pl.tenant_id
+  where pl.is_catalog_only = false and pl.sort_order = 3
+  limit 1
 )
 insert into public.access_codes (
   tenant_id,
   password_code,
-  price_tier_level
+  price_list_id
 )
 select
   resolved_tenant.id,
   access_code.password_code,
-  access_code.price_tier_level
+  access_code.price_list_id
 from resolved_tenant
 cross join (
-  values
-    ('1111', 1),
-    ('2222', 2),
-    ('3333', 3)
-) as access_code(password_code, price_tier_level)
+  select '1111'::text as password_code, (select id from tier1) as price_list_id
+  union all
+  select '2222', (select id from tier2)
+  union all
+  select '3333', (select id from tier3)
+) as access_code
+where access_code.price_list_id is not null
 on conflict (tenant_id, password_code) do update
 set
-  price_tier_level = excluded.price_tier_level;
+  price_list_id = excluded.price_list_id;
 
 commit;

@@ -2,15 +2,21 @@
 
 import { useState } from "react";
 import { ProductsManager } from "@/components/dashboard/products-manager";
-import type { Category, Product, Tenant } from "@/lib/types";
+import type { Category, PriceList, Product, Tenant } from "@/lib/types";
 
 interface Props {
   tenant: Tenant;
   initialProducts: Product[];
   initialCategories: Category[];
+  priceLists: PriceList[];
 }
 
-export function ProductsPageShell({ tenant, initialProducts, initialCategories }: Props) {
+export function ProductsPageShell({
+  tenant,
+  initialProducts,
+  initialCategories,
+  priceLists,
+}: Props) {
   const [products, setProducts] = useState(initialProducts);
 
   function handleProductsUpdated(updated: Product[]) {
@@ -24,6 +30,7 @@ export function ProductsPageShell({ tenant, initialProducts, initialCategories }
       onProductsUpdated={handleProductsUpdated}
       initialProducts={products}
       initialCategories={initialCategories}
+      priceLists={priceLists}
     />
   );
 }
