@@ -3,9 +3,9 @@ export const CATALOG_ONLY_PRICE_LIST_NAME = "Fiyatsız Katalog";
 export const DEFAULT_PRICED_LIST_NAMES = ["Perakende", "Bayi 1", "Bayi 2"] as const;
 
 const ACCESS_CODE_PRICE_LIST_LABELS: Record<(typeof DEFAULT_PRICED_LIST_NAMES)[number], string> = {
-  Perakende: "Perakende : 1.Liste",
-  "Bayi 1": "Bayi 1 : Liste 2",
-  "Bayi 2": "Bayi 2 : Liste 3",
+  Perakende: "1.Liste",
+  "Bayi 1": "2.Liste",
+  "Bayi 2": "3.Liste",
 };
 
 export function getAccessCodePriceListLabel(list: {
@@ -14,7 +14,7 @@ export function getAccessCodePriceListLabel(list: {
   sort_order?: number;
 }) {
   if (list.is_catalog_only) {
-    return `${list.name} • Fiyatsız`;
+    return CATALOG_ONLY_PRICE_LIST_NAME;
   }
 
   const byName = ACCESS_CODE_PRICE_LIST_LABELS[list.name as keyof typeof ACCESS_CODE_PRICE_LIST_LABELS];
