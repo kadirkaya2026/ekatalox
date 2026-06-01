@@ -9,6 +9,10 @@ import { Input } from "@/components/ui/input";
 import { ProductDescriptionEditor } from "@/components/dashboard/product-description-editor";
 import { buildCategoryTree, flattenCategoryTree } from "@/lib/categories/tree";
 import {
+  buildPackageUpgradeHref,
+  hasPlanFeature,
+} from "@/lib/billing/plans";
+import {
   defaultCurrencyCode,
   supportedCurrencyCodes,
 } from "@/lib/products/constants";
@@ -68,13 +72,6 @@ function getDiscountPreview(form: ProductFormState) {
   return computeDiscountPercentage(minTierPrice, salePrice);
 }
 
-const PACKAGE_UPGRADE_PHONE = "905354172510";
-
-function buildPackageUpgradeHref(companyName: string) {
-  const message = `Merhaba, paketimi yükseltmek istiyorum. Firma: ${companyName}`;
-  return `https://wa.me/${PACKAGE_UPGRADE_PHONE}?text=${encodeURIComponent(message)}`;
-}
-
 function toFormData(form: ProductFormState) {
   const formData = new FormData();
   formData.set("category_id", form.category_id);
@@ -111,6 +108,7 @@ export function ProductAddForm({
   const categoryTree = useMemo(() => buildCategoryTree(initialCategories), [initialCategories]);
   const flatCategories = useMemo(() => flattenCategoryTree(categoryTree), [categoryTree]);
   const discountPreview = useMemo(() => getDiscountPreview(form), [form]);
+  const canUseProductDiscount = hasPlanFeature(tenant.plan, "product_discount");
 
   const productCount = 0;
   const isLimitFull = tenant.max_product_limit <= productCount;
@@ -259,37 +257,39 @@ export function ProductAddForm({
             />
           </div>
 
-          <div className="rounded-xl border border-slate-100 bg-slate-50 px-4 py-3">
-            <label className="flex items-center gap-3 text-sm text-slate-700">
-              <input
-                type="checkbox"
-                checked={form.is_discount_active}
-                onChange={(event) => updateField("is_discount_active", event.target.checked)}
-              />
-              İndirim uygula
-            </label>
-            {form.is_discount_active ? (
-              <div className="mt-3 grid gap-2">
-                <Input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  placeholder="İndirimli satış fiyatı"
-                  value={form.discount_price}
-                  onChange={(event) => updateField("discount_price", event.target.value)}
+          {canUseProductDiscount ? (
+            <div className="rounded-xl border border-slate-100 bg-slate-50 px-4 py-3">
+              <label className="flex items-center gap-3 text-sm text-slate-700">
+                <input
+                  type="checkbox"
+                  checked={form.is_discount_active}
+                  onChange={(event) => updateField("is_discount_active", event.target.checked)}
                 />
-                {discountPreview !== null ? (
-                  <p className="text-sm font-medium text-emerald-700">
-                    Vitrinde yaklaşık %{discountPreview} indirim görünecek
-                  </p>
-                ) : (
-                  <p className="text-sm text-slate-500">
-                    İndirimli fiyat, liste fiyatlarından düşük olmalıdır.
-                  </p>
-                )}
-              </div>
-            ) : null}
-          </div>
+                İndirim uygula
+              </label>
+              {form.is_discount_active ? (
+                <div className="mt-3 grid gap-2">
+                  <Input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    placeholder="İndirimli satış fiyatı"
+                    value={form.discount_price}
+                    onChange={(event) => updateField("discount_price", event.target.value)}
+                  />
+                  {discountPreview !== null ? (
+                    <p className="text-sm font-medium text-emerald-700">
+                      Vitrinde yaklaşık %{discountPreview} indirim görünecek
+                    </p>
+                  ) : (
+                    <p className="text-sm text-slate-500">
+                      İndirimli fiyat, liste fiyatlarından düşük olmalıdır.
+                    </p>
+                  )}
+                </div>
+              ) : null}
+            </div>
+          ) : null}
 
           <div className="grid gap-3 md:grid-cols-2">
             <Input

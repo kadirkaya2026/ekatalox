@@ -1,10 +1,10 @@
 import { Header } from "@/components/dashboard/header";
 import { ReportsPanel } from "@/components/dashboard/reports-panel";
 import { getTenantAnalyticsReport } from "@/lib/analytics/queries";
-import { requireTenantAdminPage } from "@/lib/auth/session";
+import { requireTenantPlanFeaturePage } from "@/lib/auth/session";
 
 export default async function ReportsPage() {
-  const session = await requireTenantAdminPage();
+  const session = await requireTenantPlanFeaturePage("reports");
   const report = await getTenantAnalyticsReport(session.tenant!.id, "daily");
 
   return (

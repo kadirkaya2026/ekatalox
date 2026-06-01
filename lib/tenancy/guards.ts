@@ -1,4 +1,10 @@
 import { NextResponse } from "next/server";
+import {
+  getPlanFeatureUpgradeMessage,
+  hasPlanFeature,
+  type PlanFeature,
+  type TenantPlan,
+} from "@/lib/billing/plans";
 import { getSessionContext } from "@/lib/auth/session";
 
 export async function ensureSuperAdminResponse() {
@@ -32,6 +38,29 @@ export async function ensureTenantAdminResponse() {
 
   if (session.tenant.status === "suspended") {
     return NextResponse.json({ error: "Tenant askıya alınmış durumda." }, { status: 403 });
+  }
+
+  return null;
+}
+
+function resolveTenantPlan(tenant: { plan?: TenantPlan } | null): TenantPlan {
+  return tenant?.plan ?? "baslangic";
+}
+
+export async function ensureTenantPlanFeatureResponse(feature: PlanFeature) {
+  const guard = await ensureTenantAdminResponse();
+  if (guard) {
+    return guard;
+  }
+
+  const session = await getSessionContext();
+  const plan = resolveTenantPlan(session.tenant);
+
+  if (!hasPlanFeature(plan, feature)) {
+    return NextResponse.json(
+      { error: getPlanFeatureUpgradeMessage(feature) },
+      { status: 403 },
+    );
   }
 
   return null;

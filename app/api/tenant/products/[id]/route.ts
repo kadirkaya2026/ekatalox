@@ -7,6 +7,7 @@ import {
 } from "@/lib/storage/product-images";
 import { getStorageObjectPathFromPublicUrl } from "@/lib/storage/storage-helpers";
 import { getSessionContext } from "@/lib/auth/session";
+import { hasPlanFeature } from "@/lib/billing/plans";
 import { ensureTenantAdminResponse } from "@/lib/tenancy/guards";
 import { productCreateSchema } from "@/lib/validators/product";
 
@@ -70,6 +71,14 @@ export async function PATCH(
     return NextResponse.json(
       { error: parsed.error.issues[0]?.message ?? "Ürün verisi hatalı." },
       { status: 400 },
+    );
+  }
+
+  const plan = tenant.plan ?? "baslangic";
+  if (parsed.data.is_discount_active && !hasPlanFeature(plan, "product_discount")) {
+    return NextResponse.json(
+      { error: "Ürün indirimi Başlangıç paketinde kullanılamaz." },
+      { status: 403 },
     );
   }
 

@@ -1,10 +1,10 @@
 import { Header } from "@/components/dashboard/header";
 import { ShowcaseManager } from "@/components/dashboard/showcase/showcase-manager";
-import { requireTenantAdminPage } from "@/lib/auth/session";
+import { requireTenantPlanFeaturePage } from "@/lib/auth/session";
 import { getTenantCategories, getTenantProducts, getTenantStorefrontSections } from "@/lib/data";
 
 export default async function ShowcasePage() {
-  const session = await requireTenantAdminPage();
+  const session = await requireTenantPlanFeaturePage("showcase_products");
   const tenantId = session.tenant!.id;
 
   const [sections, products, categories] = await Promise.all([

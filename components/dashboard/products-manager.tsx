@@ -29,6 +29,10 @@ import {
   getDescendantCategoryIds,
 } from "@/lib/categories/tree";
 import {
+  buildPackageUpgradeHref,
+  hasPlanFeature,
+} from "@/lib/billing/plans";
+import {
   defaultCurrencyCode,
   supportedCurrencyCodes,
 } from "@/lib/products/constants";
@@ -86,13 +90,6 @@ const emptyVariantRow = (display_order: number): VariantMatrixRow => ({
   is_available_for_sale: true,
   display_order,
 });
-
-const PACKAGE_UPGRADE_PHONE = "905354172510";
-
-function buildPackageUpgradeHref(companyName: string) {
-  const message = `Merhaba, paketimi yükseltmek istiyorum. Firma: ${companyName}`;
-  return `https://wa.me/${PACKAGE_UPGRADE_PHONE}?text=${encodeURIComponent(message)}`;
-}
 
 function toFormData(form: ProductFormState) {
   const formData = new FormData();
@@ -314,6 +311,7 @@ export function ProductsManager({
   const categoryTree = useMemo(() => buildCategoryTree(categories), [categories]);
   const flatCategories = useMemo(() => flattenCategoryTree(categoryTree), [categoryTree]);
   const editDiscountPreview = useMemo(() => getDiscountPreview(editForm), [editForm]);
+  const canUseProductDiscount = hasPlanFeature(tenant.plan, "product_discount");
   const selectedCategoryProductIds = useMemo(() => {
     if (!selectedCategoryIds.length) {
       return null;
@@ -1503,37 +1501,39 @@ export function ProductsManager({
             />
           </div>
 
-          <div className="rounded-xl border border-slate-100 bg-slate-50 px-4 py-3">
-            <label className="flex items-center gap-3 text-sm text-slate-700">
-              <input
-                type="checkbox"
-                checked={editForm.is_discount_active}
-                onChange={(event) => updateEditField("is_discount_active", event.target.checked)}
-              />
-              İndirim uygula
-            </label>
-            {editForm.is_discount_active ? (
-              <div className="mt-3 grid gap-2">
-                <Input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  placeholder="İndirimli satış fiyatı"
-                  value={editForm.discount_price}
-                  onChange={(event) => updateEditField("discount_price", event.target.value)}
+          {canUseProductDiscount ? (
+            <div className="rounded-xl border border-slate-100 bg-slate-50 px-4 py-3">
+              <label className="flex items-center gap-3 text-sm text-slate-700">
+                <input
+                  type="checkbox"
+                  checked={editForm.is_discount_active}
+                  onChange={(event) => updateEditField("is_discount_active", event.target.checked)}
                 />
-                {editDiscountPreview !== null ? (
-                  <p className="text-sm font-medium text-emerald-700">
-                    Vitrinde yaklaşık %{editDiscountPreview} indirim görünecek
-                  </p>
-                ) : (
-                  <p className="text-sm text-slate-500">
-                    İndirimli fiyat, liste fiyatlarından düşük olmalıdır.
-                  </p>
-                )}
-              </div>
-            ) : null}
-          </div>
+                İndirim uygula
+              </label>
+              {editForm.is_discount_active ? (
+                <div className="mt-3 grid gap-2">
+                  <Input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    placeholder="İndirimli satış fiyatı"
+                    value={editForm.discount_price}
+                    onChange={(event) => updateEditField("discount_price", event.target.value)}
+                  />
+                  {editDiscountPreview !== null ? (
+                    <p className="text-sm font-medium text-emerald-700">
+                      Vitrinde yaklaşık %{editDiscountPreview} indirim görünecek
+                    </p>
+                  ) : (
+                    <p className="text-sm text-slate-500">
+                      İndirimli fiyat, liste fiyatlarından düşük olmalıdır.
+                    </p>
+                  )}
+                </div>
+              ) : null}
+            </div>
+          ) : null}
 
           <div className="grid gap-3 md:grid-cols-2">
             <Input

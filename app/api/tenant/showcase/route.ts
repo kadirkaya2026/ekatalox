@@ -2,10 +2,10 @@ import { NextResponse } from "next/server";
 import { shouldAllowDemoFallback } from "@/lib/env";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { getSessionContext } from "@/lib/auth/session";
-import { ensureTenantAdminResponse } from "@/lib/tenancy/guards";
+import { ensureTenantPlanFeatureResponse } from "@/lib/tenancy/guards";
 
 export async function GET() {
-  const guard = await ensureTenantAdminResponse();
+  const guard = await ensureTenantPlanFeatureResponse("showcase_products");
   if (guard) return guard;
 
   const session = await getSessionContext();
@@ -59,7 +59,7 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const guard = await ensureTenantAdminResponse();
+  const guard = await ensureTenantPlanFeatureResponse("showcase_products");
   if (guard) return guard;
 
   const session = await getSessionContext();
@@ -116,7 +116,7 @@ export async function POST(request: Request) {
 }
 
 export async function DELETE(request: Request) {
-  const guard = await ensureTenantAdminResponse();
+  const guard = await ensureTenantPlanFeatureResponse("showcase_products");
   if (guard) return guard;
 
   const session = await getSessionContext();

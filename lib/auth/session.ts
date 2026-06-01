@@ -1,5 +1,10 @@
 import { redirect } from "next/navigation";
 import { demoMemberships, demoProfiles, demoTenants } from "@/lib/demo-data";
+import {
+  hasPlanFeature,
+  type PlanFeature,
+  type TenantPlan,
+} from "@/lib/billing/plans";
 import { appEnv, shouldAllowDemoFallback } from "@/lib/env";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -151,6 +156,17 @@ export async function requireTenantAdminPage() {
 
   if (!session.tenant && session.supabaseConfigured) {
     redirect(absoluteUrl(appEnv.marketingDomain, "/login?next=app"));
+  }
+
+  return session;
+}
+
+export async function requireTenantPlanFeaturePage(feature: PlanFeature) {
+  const session = await requireTenantAdminPage();
+  const plan: TenantPlan = session.tenant?.plan ?? "baslangic";
+
+  if (!hasPlanFeature(plan, feature)) {
+    redirect(absoluteUrl(appEnv.appDomain, "/dashboard"));
   }
 
   return session;

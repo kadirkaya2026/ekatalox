@@ -8,7 +8,8 @@ import {
   getBannerObjectPath,
   STOREFRONT_BANNERS_BUCKET,
 } from "@/lib/storage/banners";
-import { ensureTenantAdminResponse } from "@/lib/tenancy/guards";
+import { requestTouchesPaymentSettings } from "@/lib/billing/plans";
+import { ensureTenantAdminResponse, ensureTenantPlanFeatureResponse } from "@/lib/tenancy/guards";
 import { storefrontSettingsSchema } from "@/lib/validators/storefront-settings";
 
 function hasAnnouncementChanged(
@@ -59,6 +60,14 @@ export async function PATCH(request: Request) {
 
   const session = await getSessionContext();
   const body = await request.json();
+
+  if (requestTouchesPaymentSettings(body)) {
+    const paymentGuard = await ensureTenantPlanFeatureResponse("payment_settings");
+    if (paymentGuard) {
+      return paymentGuard;
+    }
+  }
+
   const supabase = createSupabaseAdminClient();
 
   let existingSettings = getDefaultTenantStorefrontSettings(session.tenant!.id);

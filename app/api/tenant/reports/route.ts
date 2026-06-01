@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
 import { getTenantAnalyticsReport } from "@/lib/analytics/queries";
 import { getSessionContext } from "@/lib/auth/session";
-import { ensureTenantAdminResponse } from "@/lib/tenancy/guards";
+import { ensureTenantPlanFeatureResponse } from "@/lib/tenancy/guards";
 import { analyticsPeriodSchema } from "@/lib/validators/analytics";
 
 export async function GET(request: Request) {
-  const guard = await ensureTenantAdminResponse();
+  const guard = await ensureTenantPlanFeatureResponse("reports");
   if (guard) {
     return guard;
   }

@@ -7,6 +7,7 @@ export default async function DashboardLayout({
   children: React.ReactNode;
 }>) {
   const session = await requireTenantAdminPage();
+  const plan = session.tenant?.plan ?? "baslangic";
 
   return (
     <div className="min-h-screen bg-slate-50 md:grid md:h-screen md:grid-cols-[280px_1fr] md:overflow-hidden">
@@ -15,6 +16,7 @@ export default async function DashboardLayout({
           mode="tenant"
           title={session.tenant?.company_name ?? "Tenant Paneli"}
           subtitle={session.tenant?.subdomain ?? "yönetim"}
+          plan={plan}
         />
       </div>
       <main className="container-shell py-6 md:h-screen md:overflow-y-auto">

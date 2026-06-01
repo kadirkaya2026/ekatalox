@@ -1,10 +1,10 @@
 import { Header } from "@/components/dashboard/header";
 import { TenantPaymentSettingsForm } from "@/components/dashboard/tenant-payment-settings-form";
 import { getTenantStorefrontSettings } from "@/lib/data";
-import { requireTenantAdminPage } from "@/lib/auth/session";
+import { requireTenantPlanFeaturePage } from "@/lib/auth/session";
 
 export default async function PaymentSettingsPage() {
-  const session = await requireTenantAdminPage();
+  const session = await requireTenantPlanFeaturePage("payment_settings");
   const storefrontSettings = await getTenantStorefrontSettings(session.tenant!.id);
 
   return (

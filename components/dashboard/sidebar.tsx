@@ -5,7 +5,6 @@ import { usePathname } from "next/navigation";
 import {
   BarChart3,
   Building2,
-  CreditCard,
   FolderTree,
   KeyRound,
   LayoutDashboard,
@@ -13,17 +12,20 @@ import {
 } from "lucide-react";
 import { EkataloxLogo } from "@/components/brand/ekatalox-logo";
 import { SidebarLogoutButton } from "@/components/dashboard/sidebar-logout-button";
+import { hasPlanFeature, type PlanFeature, type TenantPlan } from "@/lib/billing/plans";
 import { cn } from "@/lib/utils";
 
 interface SubLink {
   href: string;
   label: string;
+  requiredFeature?: PlanFeature;
 }
 
 interface SidebarLink {
   href: string;
   label: string;
   icon: React.ComponentType<{ className?: string }>;
+  requiredFeature?: PlanFeature;
   children?: SubLink[];
 }
 
@@ -36,12 +38,12 @@ const tenantLinks: SidebarLink[] = [
     children: [
       { href: "/products/add", label: "Ürün Ekle" },
       { href: "/products/bulk", label: "Toplu Ürün Ekleme" },
-      { href: "/products/showcase", label: "Vitrin Ürünleri" },
+      { href: "/products/showcase", label: "Vitrin Ürünleri", requiredFeature: "showcase_products" },
     ],
   },
   { href: "/categories", label: "Kategoriler", icon: FolderTree },
   { href: "/access-codes", label: "Şifreler", icon: KeyRound },
-  { href: "/reports", label: "Raporlar", icon: BarChart3 },
+  { href: "/reports", label: "Raporlar", icon: BarChart3, requiredFeature: "reports" },
   {
     href: "/settings",
     label: "Ayarlar",
@@ -51,7 +53,7 @@ const tenantLinks: SidebarLink[] = [
       { href: "/settings/banner", label: "Banner" },
       { href: "/settings/site", label: "Site Kimliği" },
       { href: "/settings/storefront", label: "Vitrin" },
-      { href: "/settings/payment", label: "Ödeme Ayarları" },
+      { href: "/settings/payment", label: "Ödeme Ayarları", requiredFeature: "payment_settings" },
     ],
   },
 ];
@@ -60,17 +62,36 @@ const adminLinks: SidebarLink[] = [
   { href: "/", label: "Tenant Yönetimi", icon: Building2 },
 ];
 
+function filterLinksForPlan(links: SidebarLink[], plan: TenantPlan): SidebarLink[] {
+  return links
+    .filter((link) => !link.requiredFeature || hasPlanFeature(plan, link.requiredFeature))
+    .map((link) => {
+      if (!link.children) {
+        return link;
+      }
+
+      const children = link.children.filter(
+        (child) => !child.requiredFeature || hasPlanFeature(plan, child.requiredFeature),
+      );
+
+      return { ...link, children };
+    });
+}
+
 export function Sidebar({
   mode,
   title,
   subtitle,
+  plan = "baslangic",
 }: {
   mode: "admin" | "tenant";
   title: string;
   subtitle: string;
+  plan?: TenantPlan;
 }) {
   const pathname = usePathname();
-  const links = mode === "admin" ? adminLinks : tenantLinks;
+  const links =
+    mode === "admin" ? adminLinks : filterLinksForPlan(tenantLinks, plan);
 
   function isActive(href: string) {
     if (href === "/") {

@@ -21,6 +21,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { parseProductsCsv } from "@/lib/csv/parse-products";
+import { buildPackageUpgradeHref } from "@/lib/billing/plans";
 import { sanitizeFileName } from "@/lib/storage/storage-helpers";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import type { ParsedCsvResult } from "@/lib/csv/parse-products";
@@ -104,13 +105,6 @@ interface Props {
   };
   onProductsUpdated?: (products: Product[]) => void;
   onCategoriesUpdated?: (categories: Category[]) => void;
-}
-
-const PACKAGE_UPGRADE_PHONE = "905354172510";
-
-function buildPackageUpgradeHref(companyName: string) {
-  const message = `Merhaba, paketimi yükseltmek istiyorum. Firma: ${companyName}`;
-  return `https://wa.me/${PACKAGE_UPGRADE_PHONE}?text=${encodeURIComponent(message)}`;
 }
 
 function PackageLimitAlert({

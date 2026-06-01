@@ -8,7 +8,7 @@ import {
   getBannerObjectPath,
   STOREFRONT_BANNERS_BUCKET,
 } from "@/lib/storage/banners";
-import { ensureTenantAdminResponse } from "@/lib/tenancy/guards";
+import { ensureTenantPlanFeatureResponse } from "@/lib/tenancy/guards";
 import {
   allowedBannerMimeTypes,
   maxBannerFileSizeBytes,
@@ -149,7 +149,7 @@ function isManagedBannerUrl(url: string | null, tenantId: string) {
 }
 
 export async function POST(request: Request) {
-  const guard = await ensureTenantAdminResponse();
+  const guard = await ensureTenantPlanFeatureResponse("banner_settings");
   if (guard) {
     return guard;
   }
@@ -256,7 +256,7 @@ export async function POST(request: Request) {
 }
 
 export async function DELETE(request: Request) {
-  const guard = await ensureTenantAdminResponse();
+  const guard = await ensureTenantPlanFeatureResponse("banner_settings");
   if (guard) {
     return guard;
   }
