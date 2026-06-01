@@ -80,6 +80,7 @@ import { cn, formatCurrency, formatDateSlashTr } from "@/lib/utils";
 import {
   trackStorefrontCartAdd,
   trackStorefrontProductView,
+  trackStorefrontSearch,
   trackStorefrontVisit,
 } from "@/lib/storefront/analytics";
 import { StorefrontCartDrawer } from "@/components/storefront/storefront-cart-drawer";
@@ -1297,6 +1298,28 @@ export function StorefrontClient({
 
     trackStorefrontVisit(tenant.id, analyticsSubdomain);
   }, [analyticsSubdomain, isMounted, tenant.id]);
+
+  useEffect(() => {
+    if (!isMounted || !analyticsSubdomain) {
+      return;
+    }
+
+    const normalizedSearch = debouncedSearchTerm.trim().toLocaleLowerCase("tr-TR");
+    if (normalizedSearch.length < 2) {
+      return;
+    }
+
+    trackStorefrontSearch(tenant.id, analyticsSubdomain, {
+      query: normalizedSearch,
+      resultCount: filteredProducts.length,
+    });
+  }, [
+    analyticsSubdomain,
+    debouncedSearchTerm,
+    filteredProducts.length,
+    isMounted,
+    tenant.id,
+  ]);
 
   useEffect(() => {
     if (!isMounted) {

@@ -5,9 +5,11 @@ export const analyticsPeriodSchema = z.enum(["daily", "weekly", "monthly"]);
 export const storefrontAnalyticsEventSchema = z
   .object({
     subdomain: z.string().trim().min(1, "Mağaza bilgisi gerekli."),
-    event: z.enum(["visit", "product_view", "cart_add"]),
+    event: z.enum(["visit", "product_view", "cart_add", "search"]),
     productId: z.string().uuid("Geçersiz ürün.").optional(),
     visitorKey: z.string().trim().min(1).max(64).optional(),
+    query: z.string().trim().min(2).max(80).optional(),
+    resultCount: z.number().int().nonnegative().optional(),
   })
   .superRefine((value, ctx) => {
     if (value.event === "visit" && !value.visitorKey) {
@@ -26,6 +28,14 @@ export const storefrontAnalyticsEventSchema = z
         code: z.ZodIssueCode.custom,
         message: "Ürün bilgisi gerekli.",
         path: ["productId"],
+      });
+    }
+
+    if (value.event === "search" && !value.query) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Arama metni gerekli.",
+        path: ["query"],
       });
     }
   });

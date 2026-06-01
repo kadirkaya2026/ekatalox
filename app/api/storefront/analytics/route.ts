@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+import { normalizeSearchQuery } from "@/lib/analytics/normalize-search-query";
+import { recordStorefrontSearchStat } from "@/lib/analytics/record-stats";
 import { getStorefrontTenant } from "@/lib/data";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { storefrontAnalyticsEventSchema } from "@/lib/validators/analytics";
@@ -27,6 +29,27 @@ export async function POST(request: Request) {
   const supabase = createSupabaseAdminClient();
 
   if (!supabase) {
+    return new NextResponse(null, { status: 204 });
+  }
+
+  if (parsed.data.event === "search") {
+    const query = normalizeSearchQuery(parsed.data.query ?? "");
+
+    if (query.length < 2) {
+      return new NextResponse(null, { status: 204 });
+    }
+
+    const { error } = await recordStorefrontSearchStat(
+      supabase,
+      tenant.id,
+      query,
+      (parsed.data.resultCount ?? 0) === 0,
+    );
+
+    if (error) {
+      return new NextResponse(null, { status: 204 });
+    }
+
     return new NextResponse(null, { status: 204 });
   }
 

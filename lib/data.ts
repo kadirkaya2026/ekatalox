@@ -534,6 +534,7 @@ export async function validateAccessCode(params: {
   code: string;
 }): Promise<{
   tenant: Tenant;
+  accessCodeId: string;
   priceListId: string;
   isCatalogOnly: boolean;
   priceListName: string;
@@ -570,6 +571,7 @@ export async function validateAccessCode(params: {
 
     return {
       tenant,
+      accessCodeId: matched.id,
       priceListId: priceList.id,
       isCatalogOnly: priceList.is_catalog_only,
       priceListName: priceList.name,
@@ -578,12 +580,13 @@ export async function validateAccessCode(params: {
 
   const { data } = await supabaseAdmin
     .from("access_codes")
-    .select("price_list_id, price_list:price_lists(id, name, is_catalog_only)")
+    .select("id, price_list_id, price_list:price_lists(id, name, is_catalog_only)")
     .eq("tenant_id", tenant.id)
     .eq("password_code", params.code.trim())
     .maybeSingle();
 
   const matched = data as {
+    id: string;
     price_list_id: string;
     price_list: { id: string; name: string; is_catalog_only: boolean } | null;
   } | null;
@@ -594,6 +597,7 @@ export async function validateAccessCode(params: {
 
   return {
     tenant,
+    accessCodeId: matched.id,
     priceListId: matched.price_list.id,
     isCatalogOnly: matched.price_list.is_catalog_only,
     priceListName: matched.price_list.name,

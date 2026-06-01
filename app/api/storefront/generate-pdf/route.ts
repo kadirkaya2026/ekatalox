@@ -13,6 +13,7 @@ import {
   insertOrderReceiptRecord,
   uploadOrderReceiptPdf,
 } from "@/lib/storage/order-receipts";
+import { recordStorefrontOrderStat } from "@/lib/analytics/record-stats";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { getPublicOrigin } from "@/lib/tenancy/request-host";
 import { storefrontOrderPdfSchema } from "@/lib/validators/storefront-order-pdf";
@@ -156,6 +157,8 @@ export async function POST(request: Request) {
         pdfPublicUrl,
       });
 
+      await recordStorefrontOrderStat(supabase, tenant.id, { catalogMode: true });
+
       const pdfUrl = buildSecureOrderReceiptUrl(securePdfId, getPublicOrigin(request));
       return NextResponse.json({ pdfUrl, orderNumber, securePdfId, requestId });
     } catch (error) {
@@ -272,6 +275,12 @@ export async function POST(request: Request) {
       orderNumber,
       storagePath,
       pdfPublicUrl,
+    });
+
+    await recordStorefrontOrderStat(supabase, tenant.id, {
+      catalogMode: false,
+      currency: paymentSummary.currency,
+      totalAmount: paymentSummary.finalTotal,
     });
 
     const pdfUrl = buildSecureOrderReceiptUrl(securePdfId, getPublicOrigin(request));

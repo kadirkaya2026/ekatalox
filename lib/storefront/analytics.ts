@@ -1,4 +1,4 @@
-type StorefrontAnalyticsEvent = "visit" | "product_view" | "cart_add";
+type StorefrontAnalyticsEvent = "visit" | "product_view" | "cart_add" | "search";
 
 const VISITOR_KEY_PREFIX = "ekatalox_visitor_";
 const SESSION_TRACK_PREFIX = "ekatalox_analytics_session_";
@@ -32,6 +32,8 @@ function sendAnalytics(payload: {
   event: StorefrontAnalyticsEvent;
   productId?: string;
   visitorKey?: string;
+  query?: string;
+  resultCount?: number;
 }) {
   const body = JSON.stringify(payload);
   const url = "/api/storefront/analytics";
@@ -83,5 +85,28 @@ export function trackStorefrontCartAdd(subdomain: string, productId: string) {
     subdomain,
     event: "cart_add",
     productId,
+  });
+}
+
+export function trackStorefrontSearch(
+  tenantId: string,
+  subdomain: string,
+  params: { query: string; resultCount: number },
+) {
+  const normalized = params.query.trim().toLocaleLowerCase("tr-TR");
+
+  if (normalized.length < 2) {
+    return;
+  }
+
+  if (!shouldTrackSessionEvent(tenantId, `search:${normalized}`)) {
+    return;
+  }
+
+  sendAnalytics({
+    subdomain,
+    event: "search",
+    query: normalized,
+    resultCount: params.resultCount,
   });
 }

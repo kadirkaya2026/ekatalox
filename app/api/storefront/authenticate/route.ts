@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
+import { recordStorefrontPriceListLogin } from "@/lib/analytics/record-stats";
 import { validateAccessCode } from "@/lib/data";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import {
   clearStorefrontPriceListCookie,
   isSecureStorefrontRequest,
@@ -49,6 +51,16 @@ export async function POST(request: Request) {
     isCatalogOnly: matched.isCatalogOnly,
     secure,
   });
+
+  const supabase = createSupabaseAdminClient();
+  if (supabase) {
+    await recordStorefrontPriceListLogin(
+      supabase,
+      matched.tenant.id,
+      matched.priceListId,
+      matched.accessCodeId,
+    );
+  }
 
   return response;
 }

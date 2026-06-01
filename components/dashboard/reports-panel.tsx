@@ -7,14 +7,17 @@ import {
   formatReportDateRange,
   type TenantAnalyticsReport,
 } from "@/lib/analytics/queries";
+import type { CurrencyCode } from "@/lib/products/constants";
 import type { AnalyticsPeriod } from "@/lib/validators/analytics";
-import { cn } from "@/lib/utils";
+import { cn, formatCurrency } from "@/lib/utils";
 
 const periodOptions: { value: AnalyticsPeriod; label: string }[] = [
   { value: "daily", label: "Günlük" },
   { value: "weekly", label: "Haftalık" },
   { value: "monthly", label: "Aylık" },
 ];
+
+const ORDER_CURRENCIES: CurrencyCode[] = ["TRY", "USD", "EUR"];
 
 function getVisitorCardTitle(report: TenantAnalyticsReport) {
   const dateLabel = formatReportDateRange(report.startDate, report.endDate);
@@ -24,6 +27,16 @@ function getVisitorCardTitle(report: TenantAnalyticsReport) {
   }
 
   return `${dateLabel} arasında siteye giren tekil ziyaretçi (toplam)`;
+}
+
+function getOrderCardTitle(report: TenantAnalyticsReport) {
+  const dateLabel = formatReportDateRange(report.startDate, report.endDate);
+
+  if (report.period === "daily") {
+    return `${dateLabel} tarihinde oluşturulan sipariş PDF'leri`;
+  }
+
+  return `${dateLabel} arasında oluşturulan sipariş PDF'leri`;
 }
 
 function ProductRankingTable({
@@ -86,6 +99,107 @@ function ProductRankingTable({
   );
 }
 
+function TrafficBarChart({
+  title,
+  emptyMessage,
+  rows,
+  valueLabel,
+  formatLabel,
+}: {
+  title: string;
+  emptyMessage: string;
+  rows: Array<{ label: string; count: number }>;
+  valueLabel: string;
+  formatLabel?: (label: string) => string;
+}) {
+  const maxCount = Math.max(...rows.map((row) => row.count), 0);
+  const hasData = rows.some((row) => row.count > 0);
+
+  return (
+    <Card className="p-5">
+      <h2 className="text-lg font-semibold text-slate-900">{title}</h2>
+
+      {!hasData ? (
+        <p className="mt-4 text-sm text-slate-500">{emptyMessage}</p>
+      ) : (
+        <div className="mt-4 space-y-2">
+          {rows.map((row) => {
+            const widthPercent = maxCount > 0 ? Math.round((row.count / maxCount) * 100) : 0;
+            const label = formatLabel ? formatLabel(row.label) : row.label;
+
+            return (
+              <div key={row.label} className="grid grid-cols-[4.5rem_1fr_3rem] items-center gap-3">
+                <span className="text-xs font-medium text-slate-600">{label}</span>
+                <div className="h-2 rounded-full bg-slate-100">
+                  <div
+                    className="h-2 rounded-full bg-slate-900 transition-all"
+                    style={{ width: `${widthPercent}%` }}
+                  />
+                </div>
+                <span className="text-right text-xs font-semibold text-slate-700">
+                  {row.count}
+                </span>
+              </div>
+            );
+          })}
+          <p className="pt-2 text-xs text-slate-500">{valueLabel}</p>
+        </div>
+      )}
+    </Card>
+  );
+}
+
+function SimpleUsageTable({
+  title,
+  emptyMessage,
+  headers,
+  rows,
+  showSecondary = true,
+}: {
+  title: string;
+  emptyMessage: string;
+  headers: [string, string, string];
+  rows: Array<{ key: string; primary: string; secondary: string; count: number }>;
+  showSecondary?: boolean;
+}) {
+  return (
+    <Card className="p-5">
+      <h2 className="text-lg font-semibold text-slate-900">{title}</h2>
+
+      {rows.length === 0 ? (
+        <p className="mt-4 text-sm text-slate-500">{emptyMessage}</p>
+      ) : (
+        <TableWrapper className="mt-4 block">
+          <Table>
+            <thead>
+              <tr className="border-b border-slate-100 text-left text-slate-500">
+                <th className="px-4 py-3 font-medium">#</th>
+                <th className="px-4 py-3 font-medium">{headers[0]}</th>
+                {showSecondary ? (
+                  <th className="px-4 py-3 font-medium">{headers[1]}</th>
+                ) : null}
+                <th className="px-4 py-3 font-medium text-right">{headers[2]}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((row, index) => (
+                <tr key={row.key} className="border-b border-slate-50 last:border-0">
+                  <td className="px-4 py-3 text-slate-500">{index + 1}</td>
+                  <td className="px-4 py-3 font-medium text-slate-900">{row.primary}</td>
+                  {showSecondary ? (
+                    <td className="px-4 py-3 text-slate-600">{row.secondary}</td>
+                  ) : null}
+                  <td className="px-4 py-3 text-right text-slate-700">{row.count}</td>
+                </tr>
+              ))}
+            </tbody>
+          </Table>
+        </TableWrapper>
+      )}
+    </Card>
+  );
+}
+
 export function ReportsPanel({
   initialReport,
 }: {
@@ -114,6 +228,10 @@ export function ReportsPanel({
     setPeriod(nextPeriod);
     void loadReport(nextPeriod);
   }
+
+  const currencyTotals = ORDER_CURRENCIES.filter(
+    (currency) => report.orderSummary.totalsByCurrency[currency] > 0,
+  );
 
   return (
     <div className="space-y-6">
@@ -153,6 +271,39 @@ export function ReportsPanel({
         </p>
       </Card>
 
+      <Card className="p-5">
+        <p className="text-sm text-slate-500">{getOrderCardTitle(report)}</p>
+        <p className="mt-2 text-3xl font-bold text-slate-900">
+          {report.orderSummary.totalOrders}
+          <span className="ml-2 text-base font-medium text-slate-500">Sipariş PDF</span>
+        </p>
+
+        {report.orderSummary.totalOrders === 0 ? (
+          <p className="mt-4 text-sm text-slate-500">
+            Bu dönemde sipariş PDF&apos;i oluşturulmadı.
+          </p>
+        ) : (
+          <div className="mt-4 space-y-2">
+            {currencyTotals.map((currency) => (
+              <div
+                key={currency}
+                className="flex items-center justify-between rounded-lg border border-slate-100 px-4 py-3"
+              >
+                <span className="text-sm font-medium text-slate-700">{currency} Toplam</span>
+                <span className="text-sm font-semibold text-slate-900">
+                  {formatCurrency(report.orderSummary.totalsByCurrency[currency], currency)}
+                </span>
+              </div>
+            ))}
+            {report.orderSummary.catalogOrders > 0 ? (
+              <p className="text-sm text-slate-600">
+                Fiyatsız katalog: {report.orderSummary.catalogOrders} sipariş
+              </p>
+            ) : null}
+          </div>
+        )}
+      </Card>
+
       <div className="grid gap-4 xl:grid-cols-2">
         <ProductRankingTable
           title="En Çok Tıklanan 5 Ürün"
@@ -165,6 +316,90 @@ export function ReportsPanel({
           emptyMessage="Bu dönemde sepete ekleme kaydedilmedi."
           rows={report.topCartProducts}
           countLabel="Ekleme"
+        />
+      </div>
+
+      <Card className="p-5">
+        <h2 className="text-lg font-semibold text-slate-900">En Çok Aranan Terimler</h2>
+
+        {report.topSearchQueries.length === 0 ? (
+          <p className="mt-4 text-sm text-slate-500">Bu dönemde arama kaydedilmedi.</p>
+        ) : (
+          <TableWrapper className="mt-4 block">
+            <Table>
+              <thead>
+                <tr className="border-b border-slate-100 text-left text-slate-500">
+                  <th className="px-4 py-3 font-medium">#</th>
+                  <th className="px-4 py-3 font-medium">Terim</th>
+                  <th className="px-4 py-3 font-medium text-right">Arama</th>
+                  <th className="px-4 py-3 font-medium text-right">Sonuçsuz</th>
+                </tr>
+              </thead>
+              <tbody>
+                {report.topSearchQueries.map((row, index) => (
+                  <tr key={row.query} className="border-b border-slate-50 last:border-0">
+                    <td className="px-4 py-3 text-slate-500">{index + 1}</td>
+                    <td className="px-4 py-3 font-medium text-slate-900">{row.query}</td>
+                    <td className="px-4 py-3 text-right text-slate-700">{row.searchCount}</td>
+                    <td className="px-4 py-3 text-right text-slate-700">
+                      {row.zeroResultCount}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </Table>
+          </TableWrapper>
+        )}
+      </Card>
+
+      <div className="grid gap-4 xl:grid-cols-2">
+        <SimpleUsageTable
+          title="Fiyat Listesi Kullanımı"
+          emptyMessage="Bu dönemde fiyat listesi girişi kaydedilmedi."
+          headers={["Fiyat Listesi", "", "Giriş"]}
+          showSecondary={false}
+          rows={report.priceListUsage.map((row) => ({
+            key: row.priceListId,
+            primary: row.priceListName,
+            secondary: "",
+            count: row.loginCount,
+          }))}
+        />
+        <SimpleUsageTable
+          title="Şifre Kullanımı"
+          emptyMessage="Bu dönemde şifre girişi kaydedilmedi."
+          headers={["Şifre", "Fiyat Listesi", "Giriş"]}
+          rows={report.accessCodeUsage.map((row) => ({
+            key: row.accessCodeId,
+            primary: row.passwordCode,
+            secondary: row.priceListName,
+            count: row.loginCount,
+          }))}
+        />
+      </div>
+
+      <div className="grid gap-4 xl:grid-cols-2">
+        <TrafficBarChart
+          title="Saat Dağılımı"
+          emptyMessage="Bu dönemde saatlik ziyaret kaydedilmedi."
+          rows={report.hourlyTraffic.map((row) => ({
+            label: String(row.hour),
+            count: row.count,
+          }))}
+          valueLabel="Ziyaret sayısı (Türkiye saati)"
+          formatLabel={(label) => `${label.padStart(2, "0")}:00`}
+        />
+        <TrafficBarChart
+          title="Haftanın Günü Dağılımı"
+          emptyMessage="Bu dönemde günlük ziyaret kaydedilmedi."
+          rows={report.dayOfWeekTraffic.map((row) => ({
+            label: String(row.dayIndex),
+            count: row.count,
+          }))}
+          valueLabel="Tekil ziyaretçi (cihaz)"
+          formatLabel={(label) =>
+            report.dayOfWeekTraffic[Number(label)]?.label ?? label
+          }
         />
       </div>
     </div>

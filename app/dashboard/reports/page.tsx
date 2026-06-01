@@ -18,7 +18,7 @@ export default async function ReportsPage() {
       <Header
         eyebrow="Raporlar"
         title="Mağaza Raporları"
-        description="Tekil ziyaretçi, en çok tıklanan ve sepete eklenen ürünleri günlük, haftalık veya aylık döneme göre görüntüleyin."
+        description="Ziyaretçi, sipariş PDF, arama, fiyat listesi girişleri ve trafik dağılımını günlük, haftalık veya aylık döneme göre görüntüleyin."
       />
 
       <PlanFeatureGate
