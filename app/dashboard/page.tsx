@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Header } from "@/components/dashboard/header";
 import { Card } from "@/components/ui/card";
 import { requireTenantAdminPage } from "@/lib/auth/session";
+import { formatPriceListLimit } from "@/lib/billing/plans";
 import { getTenantDashboardSummary } from "@/lib/data";
 
 export default async function DashboardHomePage() {
@@ -28,9 +29,9 @@ export default async function DashboardHomePage() {
           </p>
         </Card>
         <Card className="p-5">
-          <p className="text-sm text-slate-500">Aktif erişim kodu</p>
+          <p className="text-sm text-slate-500">Fiyat Listesi Sınırı</p>
           <p className="mt-2 text-3xl font-bold text-emerald-700">
-            {summary.activeCodeCount}
+            {formatPriceListLimit(summary.tenant.plan ?? "baslangic")}
           </p>
         </Card>
       </div>
