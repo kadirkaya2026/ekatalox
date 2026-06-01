@@ -2,6 +2,7 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { PasswordGate } from "@/components/storefront/password-gate";
 import { StorefrontClient } from "@/components/storefront/storefront-client";
@@ -14,6 +15,10 @@ import {
   getTenantStorefrontSettings,
 } from "@/lib/data";
 import { storefrontThemes } from "@/lib/storefront/themes";
+import {
+  getRequestHostFromHeaders,
+  isTenantCustomDomainHost,
+} from "@/lib/tenancy/request-host";
 import { cn } from "@/lib/utils";
 import {
   isStorefrontTierStateValid,
@@ -93,6 +98,11 @@ export default async function StorefrontPage(props: PageProps<"/store/[subdomain
   const theme =
     storefrontThemes[storefrontSettings.theme_key] ?? storefrontThemes.minimal;
   const footerVisible = storefrontSettings.is_footer_visible;
+  const headersList = await headers();
+  const requestHost = getRequestHostFromHeaders(headersList);
+  const copyrightTenantName = isTenantCustomDomainHost(requestHost, tenant)
+    ? tenant.company_name
+    : null;
 
   return (
     <div className={cn(theme.page, footerVisible && "pb-0")}>
@@ -106,7 +116,10 @@ export default async function StorefrontPage(props: PageProps<"/store/[subdomain
         hasPageFooter={footerVisible}
       />
       {footerVisible ? (
-        <StorefrontFooter settings={storefrontSettings} />
+        <StorefrontFooter
+          settings={storefrontSettings}
+          copyrightTenantName={copyrightTenantName}
+        />
       ) : null}
     </div>
   );

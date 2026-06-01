@@ -78,7 +78,7 @@ function CustomDomainSettings({
       setCustomDomain(nextDomain ?? "");
       setDomainMessage(
         nextDomain
-          ? "Özel alan adı kaydedildi. DNS ayarlarını tamamladıktan sonra vitrin bu adresten açılır."
+          ? "Özel alan adı kaydedildi. DNS ayarlarını tamamladıktan sonra vitrin bu adresten açılır. Eski subdomain adresiniz otomatik olarak bu alan adına yönlendirilir."
           : "Özel alan adı kaldırıldı.",
       );
     });
@@ -99,7 +99,11 @@ function CustomDomainSettings({
         DNS panelinizde alan adınız için CNAME kaydı oluşturun ve hedef olarak{" "}
         <span className="font-medium text-slate-700">cname.vercel-dns.com</span> veya destek
         ekibinin paylaştığı hedefi kullanın. SSL ve doğrulama tamamlandıktan sonra vitrin bu
-        adresten yayına alınır.
+        adresten yayına alınır. Özel alan adı aktifken{" "}
+        <span className="font-medium text-slate-700">
+          {tenant.subdomain}.ekatalox.com
+        </span>{" "}
+        adresi otomatik olarak özel alan adınıza yönlendirilir.
       </p>
       {savedCustomDomain ? (
         <p className="text-xs font-medium text-emerald-700">

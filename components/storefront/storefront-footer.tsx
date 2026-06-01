@@ -118,8 +118,10 @@ function MobileSection({
 
 export function StorefrontFooter({
   settings,
+  copyrightTenantName,
 }: {
   settings: TenantStorefrontSettings;
+  copyrightTenantName?: string | null;
 }) {
   const showLocation = Boolean(settings.is_footer_location_visible);
   const showWebsite = Boolean(settings.is_footer_website_visible);
@@ -225,15 +227,24 @@ export function StorefrontFooter({
           )}
         >
           ©{FOOTER_COPYRIGHT_YEAR}{" "}
-          <a
-            href={FOOTER_EKATALOX_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="font-semibold text-zinc-800 transition hover:text-zinc-950 hover:underline"
-          >
-            eKatalox
-          </a>{" "}
-          Tüm Hakları Saklıdır.
+          {copyrightTenantName ? (
+            <>
+              <span className="font-semibold text-zinc-800">{copyrightTenantName}</span>{" "}
+              Tüm Hakları Saklıdır.
+            </>
+          ) : (
+            <>
+              <a
+                href={FOOTER_EKATALOX_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-semibold text-zinc-800 transition hover:text-zinc-950 hover:underline"
+              >
+                eKatalox
+              </a>{" "}
+              Tüm Hakları Saklıdır.
+            </>
+          )}
         </div>
       </div>
     </footer>

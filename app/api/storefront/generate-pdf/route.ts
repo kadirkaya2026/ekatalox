@@ -14,6 +14,7 @@ import {
   uploadOrderReceiptPdf,
 } from "@/lib/storage/order-receipts";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { getPublicOrigin } from "@/lib/tenancy/request-host";
 import { storefrontOrderPdfSchema } from "@/lib/validators/storefront-order-pdf";
 import type { CartItem } from "@/lib/types";
 
@@ -215,7 +216,7 @@ export async function POST(request: Request) {
       pdfPublicUrl,
     });
 
-    const pdfUrl = buildSecureOrderReceiptUrl(securePdfId);
+    const pdfUrl = buildSecureOrderReceiptUrl(securePdfId, getPublicOrigin(request));
     const durationMs = Date.now() - startedAt;
 
     logOrderPdfServerEvent("info", "request_succeeded", {

@@ -61,6 +61,7 @@ import {
   STOREFRONT_LOGO_SIZES,
   STOREFRONT_MODAL_PRODUCT_SIZES,
 } from "@/lib/storefront/image-sizes";
+import { getStorefrontSectionPath } from "@/lib/storefront/paths";
 import {
   getRequestedUnitQuantity,
   type SalesUnit,
@@ -2348,7 +2349,7 @@ export function StorefrontClient({
               const visibleSectionProducts = section.products.slice(0, 8);
               const hasMore = section.products.length > 8;
               const sectionHref = subdomain
-                ? `/store/${subdomain}/section/${section.id}`
+                ? getStorefrontSectionPath(section.id)
                 : null;
 
               return (

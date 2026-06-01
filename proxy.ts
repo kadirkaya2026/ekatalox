@@ -1,12 +1,14 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
-import { getTenantByCustomDomain } from "@/lib/data";
+import { getStorefrontTenant, getTenantByCustomDomain } from "@/lib/data";
 import { appEnv } from "@/lib/env";
+import { toPublicStorefrontPath } from "@/lib/storefront/paths";
 import {
   getInternalPathFromResolution,
   resolveHost,
   type HostResolution,
 } from "@/lib/tenancy/resolve-host";
+import { isTenantCustomDomainHost } from "@/lib/tenancy/request-host";
 
 /**
  * Resolve the effective hostname for a request.
@@ -54,6 +56,70 @@ async function resolveRequestHost(hostHeader: string | null): Promise<HostResolu
   };
 }
 
+function buildStorefrontRedirectUrl(params: {
+  host: string;
+  pathname: string;
+  search: string;
+  protocol?: string | null;
+}) {
+  const redirectUrl = new URL(params.pathname || "/", `${params.protocol ?? "https"}://${params.host}`);
+  redirectUrl.search = params.search;
+  return redirectUrl;
+}
+
+async function maybeRedirectStorefrontRequest(params: {
+  request: NextRequest;
+  hostResolution: HostResolution;
+  normalizedHost: string;
+  pathname: string;
+}) {
+  if (params.hostResolution.kind !== "storefront" || !params.hostResolution.subdomain) {
+    return null;
+  }
+
+  const tenant = await getStorefrontTenant(params.hostResolution.subdomain);
+
+  if (!tenant?.custom_domain) {
+    return null;
+  }
+
+  const publicPath = toPublicStorefrontPath(
+    params.pathname,
+    params.hostResolution.subdomain,
+  );
+  const isManagedSubdomainHost =
+    params.normalizedHost.endsWith(`.${appEnv.rootDomain}`) ||
+    params.normalizedHost.endsWith(".localhost");
+  const isCustomDomainHost = isTenantCustomDomainHost(params.normalizedHost, tenant);
+  const forwardedProto = params.request.headers.get("x-forwarded-proto");
+
+  if (isManagedSubdomainHost) {
+    return NextResponse.redirect(
+      buildStorefrontRedirectUrl({
+        host: tenant.custom_domain,
+        pathname: publicPath,
+        search: params.request.nextUrl.search,
+        protocol: forwardedProto,
+      }),
+      301,
+    );
+  }
+
+  if (isCustomDomainHost && publicPath !== params.pathname) {
+    return NextResponse.redirect(
+      buildStorefrontRedirectUrl({
+        host: params.normalizedHost,
+        pathname: publicPath,
+        search: params.request.nextUrl.search,
+        protocol: forwardedProto,
+      }),
+      301,
+    );
+  }
+
+  return null;
+}
+
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
@@ -82,6 +148,17 @@ export async function proxy(request: NextRequest) {
 
   if (hostResolution.kind === "marketing") {
     return NextResponse.next();
+  }
+
+  const redirectResponse = await maybeRedirectStorefrontRequest({
+    request,
+    hostResolution,
+    normalizedHost,
+    pathname,
+  });
+
+  if (redirectResponse) {
+    return redirectResponse;
   }
 
   const rewrittenPath = getInternalPathFromResolution(hostResolution, pathname);

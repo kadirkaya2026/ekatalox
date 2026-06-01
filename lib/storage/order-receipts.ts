@@ -23,8 +23,9 @@ export function isValidSecurePdfId(value: string) {
   return UUID_V4_REGEX.test(value);
 }
 
-export function buildSecureOrderReceiptUrl(securePdfId: string) {
-  return `https://${appEnv.rootDomain}/api/storefront/pdf/${securePdfId}`;
+export function buildSecureOrderReceiptUrl(securePdfId: string, origin?: string) {
+  const base = origin ?? `https://${appEnv.rootDomain}`;
+  return `${base}/api/storefront/pdf/${securePdfId}`;
 }
 
 export function buildOrderReceiptOrderNumber(tenantId: string) {
