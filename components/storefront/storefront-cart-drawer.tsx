@@ -1,6 +1,6 @@
 "use client";
 
-import type { Dispatch, ReactNode, SetStateAction } from "react";
+import { useState, type Dispatch, ReactNode, SetStateAction } from "react";
 import {
   Banknote,
   CreditCard,
@@ -28,6 +28,7 @@ import type {
 } from "@/lib/types";
 import { formatProductModelNo } from "@/lib/products/constants";
 import { cn, formatCurrency } from "@/lib/utils";
+import type { WhatsAppOrderHandoff } from "@/lib/storefront/whatsapp-order";
 import { STOREFRONT_CART_THUMB_SIZES } from "@/lib/storefront/image-sizes";
 import { StorefrontImage } from "@/components/storefront/storefront-image";
 
@@ -59,6 +60,9 @@ export type StorefrontCartDrawerProps = {
   cartCurrency: string;
   onWhatsAppOrder: () => void | Promise<void>;
   isGeneratingOrderPdf: boolean;
+  orderPdfError: string | null;
+  whatsappHandoff: WhatsAppOrderHandoff | null;
+  onClearWhatsappHandoff: () => void;
   cartStorageKey: string;
   stickyCartButtonClassName: string;
   isCashCampaignDismissedOnCart: boolean;
@@ -98,6 +102,9 @@ export function StorefrontCartDrawer({
   cartCurrency,
   onWhatsAppOrder,
   isGeneratingOrderPdf,
+  orderPdfError,
+  whatsappHandoff,
+  onClearWhatsappHandoff,
   cartStorageKey,
   stickyCartButtonClassName,
   isCashCampaignDismissedOnCart,
@@ -108,6 +115,8 @@ export function StorefrontCartDrawer({
   renderCardCampaignBar,
   renderCrossSellCard,
 }: StorefrontCartDrawerProps) {
+  const [copyFeedback, setCopyFeedback] = useState<string | null>(null);
+
   function updateCartItemQuantity(productId: string, value: string) {
     if (value === "") {
       // Boş input — henüz silme, kullanıcı tamamlayamamış bir sayı girebilir
@@ -136,8 +145,22 @@ export function StorefrontCartDrawer({
     setSelectedPaymentMethod(null);
     setSelectedInstallmentCount(null);
     setPaymentMethodError(null);
+    onClearWhatsappHandoff();
     if (typeof window !== "undefined") {
       window.localStorage.removeItem(cartStorageKey);
+    }
+  }
+
+  async function copyOrderMessage() {
+    if (!whatsappHandoff) {
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(whatsappHandoff.message);
+      setCopyFeedback("Mesaj panoya kopyalandı.");
+    } catch {
+      setCopyFeedback("Mesaj kopyalanamadı.");
     }
   }
 
@@ -155,6 +178,7 @@ export function StorefrontCartDrawer({
       return;
     }
     setCustomerReferenceNameError(null);
+    setCopyFeedback(null);
 
     await onWhatsAppOrder();
   }
@@ -599,21 +623,65 @@ export function StorefrontCartDrawer({
                 )}
               </div>
 
-              <Button
-                type="button"
-                onClick={handleWhatsAppOrder}
-                disabled={!selectedPaymentMethod || isGeneratingOrderPdf}
-                className={cn(
-                  "mt-3 h-11 w-full rounded-full px-5 text-base font-bold shadow-none sm:h-12",
-                  stickyCartButtonClassName,
-                  (!cart.length || !selectedPaymentMethod || isGeneratingOrderPdf) &&
-                    "pointer-events-none opacity-50",
-                )}
-              >
-                {isGeneratingOrderPdf
-                  ? "PDF hazırlanıyor..."
-                  : "WhatsApp ile Siparişi Tamamla"}
-              </Button>
+              {whatsappHandoff ? (
+                <div className="mt-3 space-y-2">
+                  <p className="text-center text-xs font-medium leading-5 text-emerald-700">
+                    {whatsappHandoff.pdfIncluded
+                      ? "Sipariş fişiniz hazır. WhatsApp'ta göndermek için butona dokunun."
+                      : "Sipariş metniniz hazır. WhatsApp'ta göndermek için butona dokunun."}
+                  </p>
+                  {orderPdfError ? (
+                    <p className="text-center text-xs font-medium text-amber-600">
+                      PDF hazırlanamadı; yine de sipariş metnini gönderebilirsiniz.
+                    </p>
+                  ) : null}
+                  <a
+                    href={whatsappHandoff.href}
+                    className={cn(
+                      "inline-flex h-11 w-full items-center justify-center rounded-full px-5 text-base font-bold shadow-none sm:h-12",
+                      stickyCartButtonClassName,
+                    )}
+                  >
+                    WhatsApp&apos;ta Gönder
+                  </a>
+                  <button
+                    type="button"
+                    onClick={copyOrderMessage}
+                    className="w-full text-center text-xs font-semibold text-slate-600 transition hover:text-slate-900"
+                  >
+                    Mesajı Kopyala
+                  </button>
+                  {copyFeedback ? (
+                    <p className="text-center text-xs font-medium text-emerald-700">{copyFeedback}</p>
+                  ) : null}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCopyFeedback(null);
+                      onClearWhatsappHandoff();
+                    }}
+                    className="w-full text-center text-[11px] font-medium text-slate-400 transition hover:text-slate-600"
+                  >
+                    Yeniden Hazırla
+                  </button>
+                </div>
+              ) : (
+                <Button
+                  type="button"
+                  onClick={handleWhatsAppOrder}
+                  disabled={!selectedPaymentMethod || isGeneratingOrderPdf}
+                  className={cn(
+                    "mt-3 h-11 w-full rounded-full px-5 text-base font-bold shadow-none sm:h-12",
+                    stickyCartButtonClassName,
+                    (!cart.length || !selectedPaymentMethod || isGeneratingOrderPdf) &&
+                      "pointer-events-none opacity-50",
+                  )}
+                >
+                  {isGeneratingOrderPdf
+                    ? "PDF hazırlanıyor..."
+                    : "WhatsApp ile Siparişi Tamamla"}
+                </Button>
+              )}
               {cart.length > 0 && (
                 <button
                   type="button"

@@ -31,7 +31,14 @@ import {
   getDescendantCategoryIds,
 } from "@/lib/categories/tree";
 import { supportedCurrencyCodes, formatProductModelNo } from "@/lib/products/constants";
-import { buildWhatsAppOrderHref } from "@/lib/storefront/whatsapp-order";
+import {
+  buildWhatsAppOrderHandoff,
+  type WhatsAppOrderHandoff,
+} from "@/lib/storefront/whatsapp-order";
+import {
+  ORDER_PDF_ERROR_MESSAGE,
+  requestOrderReceiptPdf,
+} from "@/lib/storefront/order-pdf-request";
 import {
   buildWhatsAppMessage,
   CartDiscountConfig,
@@ -698,6 +705,8 @@ export function StorefrontClient({
   const [selectedInstallmentCount, setSelectedInstallmentCount] = useState<number | null>(null);
   const [paymentMethodError, setPaymentMethodError] = useState<string | null>(null);
   const [isGeneratingOrderPdf, setIsGeneratingOrderPdf] = useState(false);
+  const [orderPdfError, setOrderPdfError] = useState<string | null>(null);
+  const [whatsappHandoff, setWhatsappHandoff] = useState<WhatsAppOrderHandoff | null>(null);
   const [campaignDismissState, setCampaignDismissState] = useState<CampaignDismissBySurface>(
     () => readInitialCampaignDismissState(tenant.id),
   );
@@ -976,19 +985,32 @@ export function StorefrontClient({
     [customerReferenceName, tenant.company_name],
   );
 
+  const clearWhatsappHandoff = useCallback(() => {
+    setWhatsappHandoff(null);
+    setOrderPdfError(null);
+  }, []);
+
+  useEffect(() => {
+    setWhatsappHandoff(null);
+    setOrderPdfError(null);
+  }, [cart, customerReferenceName, note, selectedInstallmentCount, selectedPaymentMethod]);
+
   const handleWhatsAppOrder = useCallback(async () => {
     if (!cart.length || !selectedPaymentMethod) {
       return;
     }
 
+    const requestId = crypto.randomUUID();
+    setOrderPdfError(null);
+    setWhatsappHandoff(null);
     setIsGeneratingOrderPdf(true);
     let pdfUrl: string | null = null;
+    let pdfIncluded = false;
 
     try {
-      const response = await fetch("/api/storefront/generate-pdf", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+      const result = await requestOrderReceiptPdf({
+        requestId,
+        body: {
           subdomain: analyticsSubdomain,
           items: cart,
           note,
@@ -1000,30 +1022,24 @@ export function StorefrontClient({
           cardCampaignTiers: storefrontSettings.card_campaign_tiers ?? [],
           isCardCampaignActive: storefrontSettings.is_card_campaign_active,
           cardInstallmentOptions: storefrontSettings.card_installment_options ?? [],
-        }),
+        },
       });
-
-      if (response.ok) {
-        const data = (await response.json()) as { pdfUrl?: string };
-        pdfUrl = data.pdfUrl ?? null;
-      } else {
-        console.error("[whatsapp-order] PDF API hatası:", await response.text());
-      }
-    } catch (error) {
-      console.error("[whatsapp-order] PDF üretimi başarısız:", error);
+      pdfUrl = result.pdfUrl;
+      pdfIncluded = true;
+    } catch {
+      setOrderPdfError(ORDER_PDF_ERROR_MESSAGE);
     } finally {
       setIsGeneratingOrderPdf(false);
     }
 
     const message = buildWhatsAppOrderMessage(pdfUrl);
-    window.open(
-      buildWhatsAppOrderHref({
+    setWhatsappHandoff(
+      buildWhatsAppOrderHandoff({
         phone: tenant.whatsapp_number,
         message,
         directToRegisteredNumber: tenant.is_whatsapp_order_direct ?? true,
+        pdfIncluded,
       }),
-      "_blank",
-      "noopener,noreferrer",
     );
   }, [
     analyticsSubdomain,
@@ -2501,6 +2517,9 @@ export function StorefrontClient({
         cartCurrency={cartCurrency}
         onWhatsAppOrder={handleWhatsAppOrder}
         isGeneratingOrderPdf={isGeneratingOrderPdf}
+        orderPdfError={orderPdfError}
+        whatsappHandoff={whatsappHandoff}
+        onClearWhatsappHandoff={clearWhatsappHandoff}
         cartStorageKey={cartStorageKey}
         stickyCartButtonClassName={theme.stickyCartButton}
         isCashCampaignDismissedOnCart={isCampaignDismissedOnSurface("cash", "cart")}
