@@ -17,6 +17,7 @@ export interface Tenant {
   max_product_limit: MaxProductLimit;
   whatsapp_number: string;
   is_whatsapp_order_direct: boolean;
+  custom_domain: string | null;
   created_at: string;
 }
 

@@ -435,6 +435,38 @@ export async function getStorefrontTenant(
   return (data as Tenant | null) ?? null;
 }
 
+export async function getTenantByCustomDomain(
+  domain: string,
+): Promise<Tenant | null> {
+  const normalizedDomain = domain.trim().toLowerCase().replace(/:\d+$/, "");
+
+  if (!normalizedDomain) {
+    return null;
+  }
+
+  const supabaseAdmin = createSupabaseAdminClient();
+
+  if (!supabaseAdmin) {
+    if (!shouldAllowDemoFallback()) {
+      return null;
+    }
+
+    return (
+      demoTenants.find(
+        (tenant) => tenant.custom_domain?.toLowerCase() === normalizedDomain,
+      ) ?? null
+    );
+  }
+
+  const { data } = await supabaseAdmin
+    .from("tenants")
+    .select("*")
+    .ilike("custom_domain", normalizedDomain)
+    .maybeSingle();
+
+  return (data as Tenant | null) ?? null;
+}
+
 export async function validateAccessCode(params: {
   subdomain: string;
   code: string;

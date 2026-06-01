@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { PlanFeatureGate } from "@/components/dashboard/plan-feature-gate";
 import { formatPlanSummary } from "@/lib/billing/plans";
 import type { Profile, Tenant } from "@/lib/types";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
@@ -40,6 +41,89 @@ function SettingsToggle({
         )}
       />
     </button>
+  );
+}
+
+function CustomDomainSettings({
+  tenant,
+}: {
+  tenant: Tenant;
+}) {
+  const [customDomain, setCustomDomain] = useState(tenant.custom_domain ?? "");
+  const [savedCustomDomain, setSavedCustomDomain] = useState(tenant.custom_domain);
+  const [domainMessage, setDomainMessage] = useState<string | null>(null);
+  const [domainPending, startDomainTransition] = useTransition();
+
+  function saveCustomDomain(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setDomainMessage(null);
+
+    startDomainTransition(async () => {
+      const response = await fetch("/api/tenant/domain", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          custom_domain: customDomain.trim() || null,
+        }),
+      });
+      const result = await response.json();
+
+      if (!response.ok) {
+        setDomainMessage(result.error ?? "Özel alan adı kaydedilemedi.");
+        return;
+      }
+
+      const nextDomain = (result.tenant?.custom_domain as string | null | undefined) ?? null;
+      setSavedCustomDomain(nextDomain);
+      setCustomDomain(nextDomain ?? "");
+      setDomainMessage(
+        nextDomain
+          ? "Özel alan adı kaydedildi. DNS ayarlarını tamamladıktan sonra vitrin bu adresten açılır."
+          : "Özel alan adı kaldırıldı.",
+      );
+    });
+  }
+
+  return (
+    <form onSubmit={saveCustomDomain} className="mt-3 space-y-3">
+      <Input
+        value={customDomain}
+        onChange={(event) => {
+          setCustomDomain(event.target.value);
+          setDomainMessage(null);
+        }}
+        placeholder="katalog.firmaniz.com"
+        disabled={domainPending}
+      />
+      <p className="text-xs leading-5 text-slate-500">
+        DNS panelinizde alan adınız için CNAME kaydı oluşturun ve hedef olarak{" "}
+        <span className="font-medium text-slate-700">cname.vercel-dns.com</span> veya destek
+        ekibinin paylaştığı hedefi kullanın. SSL ve doğrulama tamamlandıktan sonra vitrin bu
+        adresten yayına alınır.
+      </p>
+      {savedCustomDomain ? (
+        <p className="text-xs font-medium text-emerald-700">
+          Aktif kayıt: {savedCustomDomain}
+        </p>
+      ) : null}
+      <Button type="submit" disabled={domainPending}>
+        {domainPending ? "Kaydediliyor..." : "Özel alan adını kaydet"}
+      </Button>
+      {domainMessage ? (
+        <p
+          className={cn(
+            "text-sm",
+            domainMessage.includes("kaydedilemedi") || domainMessage.includes("kaldır")
+              ? domainMessage.includes("kaldırıldı")
+                ? "text-emerald-700"
+                : "text-rose-600"
+              : "text-emerald-700",
+          )}
+        >
+          {domainMessage}
+        </p>
+      ) : null}
+    </form>
   );
 }
 
@@ -152,6 +236,18 @@ export function TenantSettingsForm({
             <dt className="text-slate-500">Alt alan adı</dt>
             <dd className="mt-1 font-medium text-slate-900">
               {tenant.subdomain}.ekatalox.com
+            </dd>
+          </div>
+          <div>
+            <dt className="text-slate-500">Özel alan adı</dt>
+            <dd className="mt-1">
+              <PlanFeatureGate
+                feature="custom_domain"
+                plan={tenant.plan ?? "baslangic"}
+                companyName={tenant.company_name}
+              >
+                <CustomDomainSettings tenant={tenant} />
+              </PlanFeatureGate>
             </dd>
           </div>
           <div>

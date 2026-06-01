@@ -74,9 +74,10 @@ export function resolveHost(hostHeader: string | null): HostResolution {
   return { host, kind: "unknown", subdomain: null };
 }
 
-export function getInternalPathFromHost(hostHeader: string | null, pathname: string) {
-  const resolution = resolveHost(hostHeader);
-
+export function getInternalPathFromResolution(
+  resolution: HostResolution,
+  pathname: string,
+) {
   if (pathname === "/login") {
     return pathname;
   }
@@ -104,10 +105,13 @@ export function getInternalPathFromHost(hostHeader: string | null, pathname: str
       return pathname;
     }
 
-    return pathname === "/"
-      ? internalBase
-      : `${internalBase}${pathname}`;
+    return pathname === "/" ? internalBase : `${internalBase}${pathname}`;
   }
 
   return pathname;
+}
+
+export function getInternalPathFromHost(hostHeader: string | null, pathname: string) {
+  const resolution = resolveHost(hostHeader);
+  return getInternalPathFromResolution(resolution, pathname);
 }

@@ -1,7 +1,12 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
+import { getTenantByCustomDomain } from "@/lib/data";
 import { appEnv } from "@/lib/env";
-import { getInternalPathFromHost, resolveHost } from "@/lib/tenancy/resolve-host";
+import {
+  getInternalPathFromResolution,
+  resolveHost,
+  type HostResolution,
+} from "@/lib/tenancy/resolve-host";
 
 /**
  * Resolve the effective hostname for a request.
@@ -18,7 +23,38 @@ function effectiveHost(request: NextRequest): string | null {
   );
 }
 
-export function proxy(request: NextRequest) {
+function stripPort(value: string) {
+  return value.replace(/:\d+$/, "").toLowerCase();
+}
+
+async function resolveRequestHost(hostHeader: string | null): Promise<HostResolution> {
+  const hostResolution = resolveHost(hostHeader);
+  const normalizedHost = stripPort(hostHeader ?? "");
+
+  if (hostResolution.kind !== "unknown") {
+    return hostResolution;
+  }
+
+  const isManagedProductionHost = normalizedHost.endsWith(`.${appEnv.rootDomain}`);
+  const isManagedLocalHost = normalizedHost.endsWith(".localhost");
+
+  if (isManagedProductionHost || isManagedLocalHost) {
+    return hostResolution;
+  }
+
+  const tenant = await getTenantByCustomDomain(normalizedHost);
+  if (!tenant) {
+    return hostResolution;
+  }
+
+  return {
+    host: normalizedHost,
+    kind: "storefront",
+    subdomain: tenant.subdomain,
+  };
+}
+
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   if (
@@ -31,8 +67,8 @@ export function proxy(request: NextRequest) {
   }
 
   const host = effectiveHost(request);
-  const hostResolution = resolveHost(host);
-  const normalizedHost = (host ?? "").replace(/:\d+$/, "").toLowerCase();
+  const hostResolution = await resolveRequestHost(host);
+  const normalizedHost = stripPort(host ?? "");
   const isManagedProductionHost = normalizedHost.endsWith(`.${appEnv.rootDomain}`);
   const isManagedLocalHost = normalizedHost.endsWith(".localhost");
 
@@ -40,11 +76,15 @@ export function proxy(request: NextRequest) {
     return new NextResponse("Not Found", { status: 404 });
   }
 
-  if (hostResolution.kind === "unknown" || hostResolution.kind === "marketing") {
+  if (hostResolution.kind === "unknown") {
+    return new NextResponse("Not Found", { status: 404 });
+  }
+
+  if (hostResolution.kind === "marketing") {
     return NextResponse.next();
   }
 
-  const rewrittenPath = getInternalPathFromHost(host, pathname);
+  const rewrittenPath = getInternalPathFromResolution(hostResolution, pathname);
   const url = request.nextUrl.clone();
   url.pathname = rewrittenPath;
 

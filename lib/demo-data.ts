@@ -47,6 +47,7 @@ export const demoTenants: Tenant[] = [
     max_product_limit: 500,
     whatsapp_number: "905354172510",
     is_whatsapp_order_direct: true,
+    custom_domain: null,
     created_at: new Date("2026-01-01").toISOString(),
   },
   {
@@ -58,6 +59,7 @@ export const demoTenants: Tenant[] = [
     max_product_limit: 1000,
     whatsapp_number: "905441112233",
     is_whatsapp_order_direct: true,
+    custom_domain: null,
     created_at: new Date("2026-01-05").toISOString(),
   },
 ];

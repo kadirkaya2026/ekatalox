@@ -8,7 +8,8 @@ export type PlanFeature =
   | "banner_settings"
   | "product_discount"
   | "showcase_products"
-  | "online_payment";
+  | "online_payment"
+  | "custom_domain";
 
 export interface PlanOption {
   id: TenantPlan;
@@ -29,6 +30,7 @@ const PROFESSIONAL_FEATURES: Record<PlanFeature, boolean> = {
   product_discount: true,
   showcase_products: true,
   online_payment: false,
+  custom_domain: true,
 };
 
 export const PLAN_FEATURES: Record<TenantPlan, Record<PlanFeature, boolean>> = {
@@ -39,6 +41,7 @@ export const PLAN_FEATURES: Record<TenantPlan, Record<PlanFeature, boolean>> = {
     product_discount: false,
     showcase_products: false,
     online_payment: false,
+    custom_domain: false,
   },
   profesyonel: PROFESSIONAL_FEATURES,
   kurumsal: {
@@ -54,11 +57,14 @@ const PLAN_FEATURE_LABELS: Record<PlanFeature, string> = {
   product_discount: "Ürün indirimi",
   showcase_products: "Vitrin ürünleri",
   online_payment: "Online sanal POS ödemesi",
+  custom_domain: "Özel alan adı",
 };
 
 const PLAN_FEATURE_UPGRADE_MESSAGES: Partial<Record<PlanFeature, string>> = {
   online_payment:
     "iyzico, Paynet gibi sanal POS firmalarından siteniz üzerinden ödeme alabilmek için paketinizi yükseltmeniz gerekmektedir.",
+  custom_domain:
+    "firmadınız.com gibi tamamen size ait bir alan adı kullanabilmek için paketinizi yükseltmeniz gerekmektedir.",
 };
 
 export const PAYMENT_SETTING_BODY_KEYS = [
@@ -81,6 +87,8 @@ export const PAYMENT_SETTING_BODY_KEYS = [
 
 /** Future sanal POS settings fields — guard when integration is added. */
 export const ONLINE_PAYMENT_BODY_KEYS = [] as const;
+
+export const CUSTOM_DOMAIN_BODY_KEYS = ["custom_domain"] as const;
 
 const PACKAGE_UPGRADE_PHONE = "905354172510";
 
@@ -152,6 +160,10 @@ export function getPlanFeatureUpgradeMessage(feature: PlanFeature): string {
 
 export function requestTouchesOnlinePaymentSettings(body: Record<string, unknown>): boolean {
   return ONLINE_PAYMENT_BODY_KEYS.some((key) => key in body);
+}
+
+export function requestTouchesCustomDomain(body: Record<string, unknown>): boolean {
+  return CUSTOM_DOMAIN_BODY_KEYS.some((key) => key in body);
 }
 
 export function requestTouchesPaymentSettings(body: Record<string, unknown>): boolean {

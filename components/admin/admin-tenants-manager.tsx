@@ -487,6 +487,11 @@ export function AdminTenantsManager({
                   {tenant.subdomain}.ekatalox.com •{" "}
                   {formatPlanSummary(tenant.plan ?? "baslangic")}
                 </p>
+                {tenant.custom_domain ? (
+                  <p className="mt-1 text-sm text-slate-600">
+                    Özel alan adı: {tenant.custom_domain}
+                  </p>
+                ) : null}
                 <p className="mt-1 text-sm text-slate-500">
                   WhatsApp: {tenant.whatsapp_number} • Açılış: {formatDate(tenant.created_at)}
                 </p>
