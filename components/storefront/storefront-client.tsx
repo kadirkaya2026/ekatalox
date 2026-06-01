@@ -13,6 +13,8 @@ import {
   ChevronDown,
   CreditCard,
   Megaphone,
+  Minus,
+  Plus,
   Search,
   ShoppingCart,
   Sparkles,
@@ -389,6 +391,93 @@ function parseUnitCount(value: string) {
   return parsedValue;
 }
 
+function QuantityStepper({
+  value,
+  onChange,
+  disabled = false,
+  placeholder = "0",
+  ariaLabel = "Adet",
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  disabled?: boolean;
+  placeholder?: string;
+  ariaLabel?: string;
+}) {
+  function handleInputChange(raw: string) {
+    if (raw === "") {
+      onChange("");
+      return;
+    }
+
+    if (/^\d+$/.test(raw)) {
+      onChange(raw);
+    }
+  }
+
+  function increment() {
+    const current = parseUnitCount(value);
+    if (current === null) {
+      return;
+    }
+    onChange(String(current + 1));
+  }
+
+  function decrement() {
+    const current = parseUnitCount(value);
+    if (current === null) {
+      return;
+    }
+    if (current <= 1) {
+      onChange("");
+    } else {
+      onChange(String(current - 1));
+    }
+  }
+
+  return (
+    <div
+      className={cn(
+        "flex h-9 items-stretch overflow-hidden rounded-lg border border-slate-200 bg-white",
+        disabled && "bg-slate-100 opacity-60",
+      )}
+    >
+      <input
+        type="text"
+        inputMode="numeric"
+        pattern="[0-9]*"
+        disabled={disabled}
+        value={value}
+        onChange={(event) => handleInputChange(event.target.value)}
+        placeholder={placeholder}
+        aria-label={ariaLabel}
+        className="min-w-0 flex-1 bg-transparent px-2.5 py-0 text-center text-[16px] leading-9 text-slate-900 outline-none disabled:cursor-not-allowed"
+        style={{ fontSize: "16px" }}
+      />
+      <div className="flex shrink-0 border-l border-slate-200">
+        <button
+          type="button"
+          disabled={disabled}
+          onClick={decrement}
+          className="flex w-8 items-center justify-center text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+          aria-label="Adedi azalt"
+        >
+          <Minus className="size-3.5" />
+        </button>
+        <button
+          type="button"
+          disabled={disabled}
+          onClick={increment}
+          className="flex w-8 items-center justify-center border-l border-slate-200 text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+          aria-label="Adedi artır"
+        >
+          <Plus className="size-3.5" />
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function normalizeVariantSearchText(value: string) {
   const normalized = value
     .toLocaleLowerCase("tr-TR")
@@ -692,9 +781,9 @@ export function StorefrontClient({
   const [previewDescriptionError, setPreviewDescriptionError] = useState<string | null>(null);
   const descriptionCacheRef = useRef(new Map<string, string | null>());
   const descriptionAbortRef = useRef<AbortController | null>(null);
-  const [selectedQuantity, setSelectedQuantity] = useState("0");
-  const [selectedPackageCount, setSelectedPackageCount] = useState("0");
-  const [selectedCartonCount, setSelectedCartonCount] = useState("0");
+  const [selectedQuantity, setSelectedQuantity] = useState("");
+  const [selectedPackageCount, setSelectedPackageCount] = useState("");
+  const [selectedCartonCount, setSelectedCartonCount] = useState("");
   const [quantityError, setQuantityError] = useState<string | null>(null);
   const [variantSelections, setVariantSelections] = useState<VariantSelectionState[]>([]);
   const [variantSearchTerm, setVariantSearchTerm] = useState("");
@@ -947,16 +1036,18 @@ export function StorefrontClient({
               quantity: item.quantity,
             })),
         );
-        setSelectedQuantity("0");
-        setSelectedPackageCount("0");
-        setSelectedCartonCount("0");
+        setSelectedQuantity("");
+        setSelectedPackageCount("");
+        setSelectedCartonCount("");
         return;
       }
 
       const existingItem = currentCart.find((item) => item.id === product.id);
-      setSelectedQuantity(String(existingItem?.quantity ?? 0));
-      setSelectedPackageCount("0");
-      setSelectedCartonCount("0");
+      setSelectedQuantity(
+        existingItem?.quantity ? String(existingItem.quantity) : "",
+      );
+      setSelectedPackageCount("");
+      setSelectedCartonCount("");
       setVariantSelections([]);
     },
     [productsById],
@@ -1405,9 +1496,9 @@ export function StorefrontClient({
 
   function closeAddToCartModal() {
     setSelectedProduct(null);
-    setSelectedQuantity("0");
-    setSelectedPackageCount("0");
-    setSelectedCartonCount("0");
+    setSelectedQuantity("");
+    setSelectedPackageCount("");
+    setSelectedCartonCount("");
     setVariantSelections([]);
     setVariantSearchTerm("");
     setQuantityError(null);
@@ -2669,7 +2760,7 @@ export function StorefrontClient({
                             ) : null}
                           </div>
 
-                          <div className="mt-1.5 grid gap-2 sm:mt-2 sm:grid-cols-[minmax(0,1fr)_5.5rem]">
+                          <div className="mt-1.5 grid gap-2 sm:mt-2 sm:grid-cols-[minmax(0,1fr)_auto]">
                             <select
                               value={selection.unit}
                               disabled={isUnavailable}
@@ -2692,25 +2783,31 @@ export function StorefrontClient({
                                 </option>
                               ))}
                             </select>
-                            <Input
-                              type="text"
-                              inputMode="numeric"
-                              pattern="[0-9]*"
+                            <QuantityStepper
                               disabled={isUnavailable}
-                              value={selection.quantity ? String(selection.quantity) : "0"}
-                              onChange={(event) => {
-                                const nextQuantity = parseUnitCount(event.target.value);
+                              value={
+                                selection.quantity > 0
+                                  ? String(selection.quantity)
+                                  : ""
+                              }
+                              onChange={(nextValue) => {
+                                const nextQuantity = parseUnitCount(nextValue);
+                                if (nextQuantity === null && nextValue.trim() !== "") {
+                                  return;
+                                }
                                 updateVariantSelection(variant.id, {
                                   variantId: variant.id,
-                                  quantity: nextQuantity && nextQuantity > 0 ? nextQuantity : 0,
+                                  quantity:
+                                    nextQuantity && nextQuantity > 0
+                                      ? nextQuantity
+                                      : 0,
                                 });
                                 if (quantityError) {
                                   setQuantityError(null);
                                 }
                               }}
                               placeholder="0"
-                              className="h-9 px-2.5 py-0 text-center text-[16px] leading-9"
-                              style={{ fontSize: "16px" }}
+                              ariaLabel={`${variant.model_name} adedi`}
                             />
                           </div>
 
@@ -2738,19 +2835,16 @@ export function StorefrontClient({
               <div className="grid w-full min-w-0 max-w-full gap-3 sm:grid-cols-3">
                 <div className="min-w-0 space-y-2">
                   <label className="text-sm font-semibold text-slate-900">ADET</label>
-                  <Input
-                    type="text"
-                    inputMode="numeric"
-                    pattern="[0-9]*"
+                  <QuantityStepper
                     value={selectedQuantity}
-                    onChange={(event) => {
-                      setSelectedQuantity(event.target.value);
+                    onChange={(nextValue) => {
+                      setSelectedQuantity(nextValue);
                       if (quantityError) {
                         setQuantityError(null);
                       }
                     }}
                     placeholder="0"
-                    style={{ fontSize: "16px" }}
+                    ariaLabel="Adet"
                   />
                 </div>
 
@@ -2759,19 +2853,16 @@ export function StorefrontClient({
                     <label className="text-sm font-semibold text-slate-900">
                       PAKET
                     </label>
-                    <Input
-                      type="text"
-                      inputMode="numeric"
-                      pattern="[0-9]*"
+                    <QuantityStepper
                       value={selectedPackageCount}
-                      onChange={(event) => {
-                        setSelectedPackageCount(event.target.value);
+                      onChange={(nextValue) => {
+                        setSelectedPackageCount(nextValue);
                         if (quantityError) {
                           setQuantityError(null);
                         }
                       }}
                       placeholder="0"
-                      style={{ fontSize: "16px" }}
+                      ariaLabel="Paket"
                     />
                     <p className="text-xs text-slate-500">
                       1 Paket = {selectedProduct.package_quantity} adet
@@ -2782,19 +2873,16 @@ export function StorefrontClient({
                 {selectedProduct.carton_quantity ? (
                   <div className="min-w-0 space-y-2">
                     <label className="text-sm font-semibold text-slate-900">KOLİ</label>
-                    <Input
-                      type="text"
-                      inputMode="numeric"
-                      pattern="[0-9]*"
+                    <QuantityStepper
                       value={selectedCartonCount}
-                      onChange={(event) => {
-                        setSelectedCartonCount(event.target.value);
+                      onChange={(nextValue) => {
+                        setSelectedCartonCount(nextValue);
                         if (quantityError) {
                           setQuantityError(null);
                         }
                       }}
                       placeholder="0"
-                      style={{ fontSize: "16px" }}
+                      ariaLabel="Koli"
                     />
                     <p className="text-xs text-slate-500">
                       1 Koli = {selectedProduct.carton_quantity} adet
