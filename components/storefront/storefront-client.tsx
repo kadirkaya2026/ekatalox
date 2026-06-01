@@ -74,6 +74,7 @@ import {
 } from "@/lib/storefront/analytics";
 import { StorefrontCartDrawer } from "@/components/storefront/storefront-cart-drawer";
 import { StorefrontImage } from "@/components/storefront/storefront-image";
+import { StorefrontLogoutButton } from "@/components/storefront/storefront-logout-button";
 import { ProductDescriptionContent } from "@/components/storefront/product-description-content";
 import {
   DiscountSticker,
@@ -1929,7 +1930,7 @@ export function StorefrontClient({
       <header className="sticky top-0 z-40 border-b border-slate-200/80 bg-white/95 backdrop-blur">
         <div className="container-shell py-4">
           <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(260px,420px)_auto] lg:items-center">
-            <div className="col-span-2 flex min-w-0 items-center gap-3 sm:gap-4 lg:col-span-1">
+            <div className="col-span-2 flex min-w-0 items-start gap-2 sm:gap-3 lg:col-span-1 lg:items-center lg:gap-4">
               <a
                 href={homeHref ?? "#"}
                 onClick={
@@ -1940,7 +1941,7 @@ export function StorefrontClient({
                         handleCategoryChange("all");
                       }
                 }
-                className="flex min-w-0 items-center gap-3 sm:gap-4"
+                className="flex min-w-0 flex-1 items-center gap-3 sm:gap-4"
               >
                 <div className="relative flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-[1.4rem] border border-slate-200 bg-white shadow-sm sm:h-16 sm:w-16 lg:h-20 lg:w-20 lg:rounded-[1.75rem]">
                   {storefrontSettings.logo_url ? (
@@ -1967,6 +1968,13 @@ export function StorefrontClient({
                   ) : null}
                 </div>
               </a>
+              {subdomain ? (
+                <StorefrontLogoutButton
+                  subdomain={subdomain}
+                  tenantId={tenant.id}
+                  className="lg:hidden"
+                />
+              ) : null}
             </div>
 
             <div
