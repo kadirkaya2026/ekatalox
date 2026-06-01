@@ -7,6 +7,7 @@ export const storefrontLayoutKeySchema = z.enum([
   "classic-grid",
   "catalog-dense",
   "catalog-list",
+  "sidebar-pro",
 ]);
 
 const optionalUrlSchema = z

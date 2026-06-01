@@ -22,4 +22,9 @@ export const LAYOUT_OPTIONS: StorefrontLayoutOption[] = [
     title: "Liste Görünümü",
     description: "Satır satır SKU, fiyat ve stok; B2B tarama için ideal.",
   },
+  {
+    key: "sidebar-pro",
+    title: "Sidebar Pro",
+    description: "Sol kategori ağacı + kompakt grid; çok kategorili B2B vitrin.",
+  },
 ];

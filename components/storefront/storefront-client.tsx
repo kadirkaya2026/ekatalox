@@ -95,6 +95,11 @@ import {
   StorefrontFloatingCartAction,
 } from "@/components/storefront/storefront-product-card";
 import { StorefrontProductListing } from "@/components/storefront/storefront-product-listing";
+import {
+  StorefrontCatalogContent,
+  StorefrontCategorySidebar,
+  StorefrontCategorySidebarSlot,
+} from "@/components/storefront/storefront-category-sidebar";
 import { getStorefrontLayout } from "@/lib/storefront/layouts";
 
 function getCartStorageKey(tenantId: string) {
@@ -815,6 +820,7 @@ export function StorefrontClient({
 
   const theme = getStorefrontTheme(storefrontSettings.theme_key);
   const layout = getStorefrontLayout(storefrontSettings.layout_key ?? "classic-grid");
+  const usesSidebarNav = layout.categoryNav === "sidebar";
   const cartStorageKey = useMemo(() => getCartStorageKey(tenant.id), [tenant.id]);
   const announcementStorageKeys = useMemo(
     () => getAnnouncementStorageKeys(tenant.id),
@@ -2181,10 +2187,13 @@ export function StorefrontClient({
           </div>
         </div>
 
-        <div className={theme.categoryRailBorder}>
+        <div className={cn(theme.categoryRailBorder, usesSidebarNav && "lg:hidden")}>
           <div className="container-shell">
             <nav
-              className="relative hidden md:flex md:flex-wrap md:items-center md:justify-center md:gap-2 md:py-3"
+              className={cn(
+                "relative hidden md:flex md:flex-wrap md:items-center md:justify-center md:gap-2 md:py-3",
+                usesSidebarNav && "lg:hidden",
+              )}
               aria-label="Ana kategoriler"
             >
               {homeHref ? (
@@ -2249,7 +2258,13 @@ export function StorefrontClient({
               })}
             </nav>
 
-            <div className={cn("border-t py-3 md:hidden", theme.categoryRailBorder)}>
+            <div
+              className={cn(
+                "border-t py-3",
+                usesSidebarNav ? "lg:hidden" : "md:hidden",
+                theme.categoryRailBorder,
+              )}
+            >
               <div className="scrollbar-hide -mx-4 flex gap-5 overflow-x-auto px-4 whitespace-nowrap">
                 {homeHref ? (
                   <a
@@ -2309,6 +2324,20 @@ export function StorefrontClient({
           hasPageFooter ? "pb-4" : "sticky-safe-bottom",
         )}
       >
+        <div className={layout.catalogShellClass}>
+          {usesSidebarNav ? (
+            <StorefrontCategorySidebarSlot>
+              <StorefrontCategorySidebar
+                categories={categories}
+                categoryTree={categoryTree}
+                selectedCategoryId={selectedCategoryId}
+                homeHref={homeHref}
+                onCategoryChange={handleCategoryChange}
+              />
+            </StorefrontCategorySidebarSlot>
+          ) : null}
+
+          <StorefrontCatalogContent>
         {showBannerSection ? (
           <section className="mb-5 sm:mb-10 w-full">
             {bannerItems.length ? (
@@ -2468,6 +2497,8 @@ export function StorefrontClient({
             </div>
           ) : null}
         </section>
+          </StorefrontCatalogContent>
+        </div>
       </main>
 
       {hasVisibleHomeCampaignBars ? (

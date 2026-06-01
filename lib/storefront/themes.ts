@@ -23,6 +23,10 @@ export interface StorefrontTheme {
   categoryDropdownItem: string;
   categoryRail: string;
   categoryChip: (active: boolean) => string;
+  categorySidebar: string;
+  categorySidebarTitle: string;
+  categorySidebarItem: (active: boolean) => string;
+  categorySidebarChildItem: (active: boolean) => string;
   searchWrap: string;
   searchInput: string;
   searchIcon: string;
@@ -193,6 +197,29 @@ function buildTheme(neutrals: ThemeNeutrals, accent: ThemeAccent): StorefrontThe
         active
           ? cn(neutrals.chipActiveBg, neutrals.chipActiveText)
           : cn(neutrals.surface, neutrals.chipInactiveBorder, "text-slate-700 hover:bg-slate-50"),
+      ),
+    categorySidebar: cn(
+      "sticky top-28 max-h-[calc(100dvh-8rem)] overflow-y-auto rounded-2xl border p-3 shadow-sm",
+      neutrals.border,
+      neutrals.surface,
+    ),
+    categorySidebarTitle: cn(
+      "px-3 pb-2 text-xs font-bold uppercase tracking-[0.18em]",
+      neutrals.textMuted,
+    ),
+    categorySidebarItem: (active) =>
+      cn(
+        "flex w-full items-center rounded-xl px-3 py-2.5 text-left text-sm font-semibold transition",
+        active
+          ? cn(neutrals.chipActiveBg, neutrals.chipActiveText)
+          : "text-slate-700 hover:bg-slate-50",
+      ),
+    categorySidebarChildItem: (active) =>
+      cn(
+        "flex w-full items-center rounded-lg py-2 pl-6 pr-3 text-left text-[13px] font-medium transition",
+        active
+          ? cn("font-semibold", accent.softText, accent.soft)
+          : "text-slate-600 hover:bg-slate-50 hover:text-slate-900",
       ),
     searchWrap: cn("relative rounded-2xl shadow-sm border", neutrals.border, neutrals.surface),
     searchInput: cn("rounded-2xl", accent.ring, accent.borderFocus),

@@ -89,6 +89,53 @@ function PreviewListRows({
   );
 }
 
+function PreviewSidebarCatalog({
+  theme,
+}: {
+  theme: ReturnType<typeof getStorefrontTheme>;
+}) {
+  return (
+    <div className="grid grid-cols-[72px_minmax(0,1fr)] gap-2">
+      <div
+        className={cn(
+          theme.categorySidebar,
+          "max-h-none rounded-lg p-1.5 shadow-none",
+        )}
+      >
+        <p className={cn(theme.categorySidebarTitle, "text-[7px]")}>Kategoriler</p>
+        <div className="space-y-1">
+          <div className={cn(theme.categorySidebarItem(true), "px-2 py-1 text-[8px]")}>Tümü</div>
+          <div className={cn(theme.categorySidebarItem(false), "px-2 py-1 text-[8px]")}>Elektronik</div>
+          <div className={cn(theme.categorySidebarChildItem(false), "py-1 pl-4 pr-2 text-[7px]")}>
+            Kablolar
+          </div>
+        </div>
+      </div>
+      <div className="grid grid-cols-2 gap-1">
+        {[1, 2].map((index) => (
+          <div
+            key={index}
+            className={cn(
+              "overflow-hidden rounded-md border",
+              theme.productCard,
+              "rounded-md shadow-none hover:translate-y-0 hover:shadow-none",
+            )}
+          >
+            <div className={cn(theme.productImageWrap, "aspect-square")}>
+              <div className="flex h-full items-center justify-center">
+                <Store className={cn("size-3", theme.logoPlaceholder)} />
+              </div>
+            </div>
+            <p className={cn("p-1 text-[8px] font-extrabold", theme.productPrice)}>
+              {formatCurrency(899, "TRY")}
+            </p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export function StorefrontThemePreview({
   themeKey,
   layoutKey = "classic-grid",
@@ -143,26 +190,30 @@ export function StorefrontThemePreview({
           </div>
         </div>
 
-        <div className="flex gap-1.5">
-          <span
-            className={cn(
-              "rounded-full px-2 py-1 text-[9px] font-semibold",
-              theme.categoryNavChip(true),
-            )}
-          >
-            Tümü
-          </span>
-          <span
-            className={cn(
-              "rounded-full px-2 py-1 text-[9px] font-semibold",
-              theme.categoryNavChip(false),
-            )}
-          >
-            Kategori
-          </span>
-        </div>
+        {layout.categoryNav !== "sidebar" ? (
+          <div className="flex gap-1.5">
+            <span
+              className={cn(
+                "rounded-full px-2 py-1 text-[9px] font-semibold",
+                theme.categoryNavChip(true),
+              )}
+            >
+              Tümü
+            </span>
+            <span
+              className={cn(
+                "rounded-full px-2 py-1 text-[9px] font-semibold",
+                theme.categoryNavChip(false),
+              )}
+            >
+              Kategori
+            </span>
+          </div>
+        ) : null}
 
-        {layout.productView === "list-row" ? (
+        {layout.categoryNav === "sidebar" ? (
+          <PreviewSidebarCatalog theme={theme} />
+        ) : layout.productView === "list-row" ? (
           <PreviewListRows theme={theme} />
         ) : layout.key === "catalog-dense" ? (
           <div className="grid grid-cols-3 gap-1">

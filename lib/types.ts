@@ -6,7 +6,13 @@ export type { MaxProductLimit, TenantPlan };
 export type TenantStatus = "active" | "suspended";
 export type UserRole = "super_admin" | "tenant_admin";
 export type StorefrontThemeKey = "minimal" | "pro-blue" | "neutral";
-export type StorefrontLayoutKey = "classic-grid" | "catalog-dense" | "catalog-list";
+export type StorefrontLayoutKey =
+  | "classic-grid"
+  | "catalog-dense"
+  | "catalog-list"
+  | "sidebar-pro";
+
+export type StorefrontCategoryNavStyle = "top-chips" | "sidebar";
 
 export interface PriceList {
   id: string;
