@@ -185,6 +185,11 @@ export function StorefrontCartDrawer({
     await onWhatsAppOrder();
   }
 
+  const canCompleteWhatsAppOrder =
+    cart.length > 0 &&
+    !isGeneratingOrderPdf &&
+    (isCatalogOnly || selectedPaymentMethod !== null);
+
   if (!isOpen) {
     return null;
   }
@@ -697,12 +702,11 @@ export function StorefrontCartDrawer({
                 <Button
                   type="button"
                   onClick={handleWhatsAppOrder}
-                  disabled={!selectedPaymentMethod || isGeneratingOrderPdf}
+                  disabled={!canCompleteWhatsAppOrder}
                   className={cn(
                     "mt-3 h-11 w-full rounded-full px-5 text-base font-bold shadow-none sm:h-12",
                     stickyCartButtonClassName,
-                    (!cart.length || !selectedPaymentMethod || isGeneratingOrderPdf) &&
-                      "pointer-events-none opacity-50",
+                    !canCompleteWhatsAppOrder && "pointer-events-none opacity-50",
                   )}
                 >
                   {isGeneratingOrderPdf
