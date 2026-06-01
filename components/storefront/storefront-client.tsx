@@ -97,6 +97,7 @@ import {
 import { StorefrontProductListing } from "@/components/storefront/storefront-product-listing";
 import {
   StorefrontCatalogContent,
+  StorefrontCategoryDrawer,
   StorefrontCategorySidebar,
   StorefrontCategorySidebarSlot,
 } from "@/components/storefront/storefront-category-sidebar";
@@ -774,6 +775,7 @@ export function StorefrontClient({
   const cartRef = useRef(cart);
   cartRef.current = cart;
   const [isCartOpen, setIsCartOpen] = useState(false);
+  const [isCategoryDrawerOpen, setIsCategoryDrawerOpen] = useState(false);
   const [isStickyCartBarDismissed, setIsStickyCartBarDismissed] = useState(false);
   const [note, setNote] = useState("");
   const [customerReferenceName, setCustomerReferenceName] = useState("");
@@ -849,6 +851,17 @@ export function StorefrontClient({
     () => topCategories.find((category) => category.id === selectedTopCategoryId) ?? null,
     [selectedTopCategoryId, topCategories],
   );
+  const selectedCategoryLabel = useMemo(() => {
+    if (selectedCategoryId === "all") {
+      return "Tüm Ürünler";
+    }
+
+    return (
+      selectedCategoryLineage.map((category) => category.name).join(" › ") ||
+      categoryNameMap.get(selectedCategoryId) ||
+      "Ürünler"
+    );
+  }, [categoryNameMap, selectedCategoryId, selectedCategoryLineage]);
   const mobileSubcategories = useMemo(() => {
     if (!selectedTopCategory) {
       return [];
@@ -2192,7 +2205,7 @@ export function StorefrontClient({
             <nav
               className={cn(
                 "relative hidden md:flex md:flex-wrap md:items-center md:justify-center md:gap-2 md:py-3",
-                usesSidebarNav && "lg:hidden",
+                usesSidebarNav && "md:hidden",
               )}
               aria-label="Ana kategoriler"
             >
@@ -2258,62 +2271,84 @@ export function StorefrontClient({
               })}
             </nav>
 
-            <div
-              className={cn(
-                "border-t py-3",
-                usesSidebarNav ? "lg:hidden" : "md:hidden",
-                theme.categoryRailBorder,
-              )}
-            >
-              <div className="scrollbar-hide -mx-4 flex gap-5 overflow-x-auto px-4 whitespace-nowrap">
-                {homeHref ? (
-                  <a
-                    href={homeHref}
-                    className={theme.categoryNavMobile(false)}
-                  >
-                    Tüm Ürünler
-                  </a>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => handleCategoryChange("all")}
-                    className={theme.categoryNavMobile(selectedCategoryId === "all")}
-                  >
-                    Tüm Ürünler
-                  </button>
-                )}
-
-                {topCategories.map((category) => (
-                  <button
-                    key={category.id}
-                    type="button"
-                    onClick={() => handleCategoryChange(category.id)}
-                    className={theme.categoryNavMobile(selectedTopCategoryId === category.id)}
-                  >
-                    {category.name}
-                  </button>
-                ))}
+            {usesSidebarNav ? (
+              <div
+                className={cn("border-t py-3 lg:hidden", theme.categoryRailBorder)}
+              >
+                <button
+                  type="button"
+                  onClick={() => setIsCategoryDrawerOpen(true)}
+                  className={cn(
+                    theme.searchWrap,
+                    "flex w-full items-center justify-between gap-3 rounded-2xl px-4 py-3 text-left shadow-none",
+                  )}
+                  aria-label="Kategorileri aç"
+                >
+                  <div className="min-w-0">
+                    <p className={cn("text-[10px] font-bold uppercase tracking-[0.18em]", theme.headerMuted)}>
+                      Kategori
+                    </p>
+                    <p className={cn("truncate text-sm font-semibold", theme.headerTitle)}>
+                      {selectedCategoryLabel}
+                    </p>
+                  </div>
+                  <ChevronDown className={cn("size-5 shrink-0", theme.headerMuted)} />
+                </button>
               </div>
+            ) : (
+              <div
+                className={cn("border-t py-3 md:hidden", theme.categoryRailBorder)}
+              >
+                <div className="scrollbar-hide -mx-4 flex gap-5 overflow-x-auto px-4 whitespace-nowrap">
+                  {homeHref ? (
+                    <a
+                      href={homeHref}
+                      className={theme.categoryNavMobile(false)}
+                    >
+                      Tüm Ürünler
+                    </a>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => handleCategoryChange("all")}
+                      className={theme.categoryNavMobile(selectedCategoryId === "all")}
+                    >
+                      Tüm Ürünler
+                    </button>
+                  )}
 
-              {selectedTopCategory && mobileSubcategories.length ? (
-                <div className="scrollbar-hide -mx-4 mt-3 flex gap-3 overflow-x-auto px-4 pb-1">
-                  {mobileSubcategories.map((subcategory) => {
-                    const isActive = selectedCategoryId === subcategory.id;
-
-                    return (
-                      <button
-                        key={subcategory.id}
-                        type="button"
-                        onClick={() => handleCategoryChange(subcategory.id)}
-                        className={theme.categorySubChip(isActive)}
-                      >
-                        {subcategory.name}
-                      </button>
-                    );
-                  })}
+                  {topCategories.map((category) => (
+                    <button
+                      key={category.id}
+                      type="button"
+                      onClick={() => handleCategoryChange(category.id)}
+                      className={theme.categoryNavMobile(selectedTopCategoryId === category.id)}
+                    >
+                      {category.name}
+                    </button>
+                  ))}
                 </div>
-              ) : null}
-            </div>
+
+                {selectedTopCategory && mobileSubcategories.length ? (
+                  <div className="scrollbar-hide -mx-4 mt-3 flex gap-3 overflow-x-auto px-4 pb-1">
+                    {mobileSubcategories.map((subcategory) => {
+                      const isActive = selectedCategoryId === subcategory.id;
+
+                      return (
+                        <button
+                          key={subcategory.id}
+                          type="button"
+                          onClick={() => handleCategoryChange(subcategory.id)}
+                          className={theme.categorySubChip(isActive)}
+                        >
+                          {subcategory.name}
+                        </button>
+                      );
+                    })}
+                  </div>
+                ) : null}
+              </div>
+            )}
           </div>
         </div>
       </header>
@@ -2609,6 +2644,18 @@ export function StorefrontClient({
             </button>
           </div>
         </div>
+      ) : null}
+
+      {usesSidebarNav ? (
+        <StorefrontCategoryDrawer
+          isOpen={isCategoryDrawerOpen}
+          onClose={() => setIsCategoryDrawerOpen(false)}
+          categories={categories}
+          categoryTree={categoryTree}
+          selectedCategoryId={selectedCategoryId}
+          homeHref={homeHref}
+          onCategoryChange={handleCategoryChange}
+        />
       ) : null}
 
       <StorefrontCartDrawer

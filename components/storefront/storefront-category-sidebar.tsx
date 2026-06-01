@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect } from "react";
+import { X } from "lucide-react";
 import type { CategoryNode } from "@/lib/categories/tree";
 import { getDescendantCategoryIds } from "@/lib/categories/tree";
 import type { Category } from "@/lib/types";
@@ -49,6 +51,58 @@ function CategorySidebarNode({
   );
 }
 
+export function StorefrontCategoryTree({
+  categories,
+  categoryTree,
+  selectedCategoryId,
+  homeHref,
+  onCategoryChange,
+  onHomeNavigate,
+  className,
+}: {
+  categories: Category[];
+  categoryTree: CategoryNode[];
+  selectedCategoryId: string;
+  homeHref?: string;
+  onCategoryChange: (categoryId: string) => void;
+  onHomeNavigate?: () => void;
+  className?: string;
+}) {
+  const theme = useStorefrontTheme();
+
+  return (
+    <div className={cn("space-y-1", className)}>
+      {homeHref ? (
+        <a
+          href={homeHref}
+          onClick={onHomeNavigate}
+          className={theme.categorySidebarItem(false)}
+        >
+          Tüm Ürünler
+        </a>
+      ) : (
+        <button
+          type="button"
+          onClick={() => onCategoryChange("all")}
+          className={theme.categorySidebarItem(selectedCategoryId === "all")}
+        >
+          Tüm Ürünler
+        </button>
+      )}
+
+      {categoryTree.map((category) => (
+        <CategorySidebarNode
+          key={category.id}
+          node={category}
+          categories={categories}
+          selectedCategoryId={selectedCategoryId}
+          onCategoryChange={onCategoryChange}
+        />
+      ))}
+    </div>
+  );
+}
+
 export function StorefrontCategorySidebar({
   categories,
   categoryTree,
@@ -67,32 +121,107 @@ export function StorefrontCategorySidebar({
   return (
     <aside className={theme.categorySidebar} aria-label="Kategori navigasyonu">
       <p className={theme.categorySidebarTitle}>Kategoriler</p>
-      <div className="space-y-1">
-        {homeHref ? (
-          <a href={homeHref} className={theme.categorySidebarItem(false)}>
-            Tüm Ürünler
-          </a>
-        ) : (
-          <button
-            type="button"
-            onClick={() => onCategoryChange("all")}
-            className={theme.categorySidebarItem(selectedCategoryId === "all")}
-          >
-            Tüm Ürünler
-          </button>
-        )}
-
-        {categoryTree.map((category) => (
-          <CategorySidebarNode
-            key={category.id}
-            node={category}
-            categories={categories}
-            selectedCategoryId={selectedCategoryId}
-            onCategoryChange={onCategoryChange}
-          />
-        ))}
-      </div>
+      <StorefrontCategoryTree
+        categories={categories}
+        categoryTree={categoryTree}
+        selectedCategoryId={selectedCategoryId}
+        homeHref={homeHref}
+        onCategoryChange={onCategoryChange}
+      />
     </aside>
+  );
+}
+
+export function StorefrontCategoryDrawer({
+  isOpen,
+  onClose,
+  categories,
+  categoryTree,
+  selectedCategoryId,
+  homeHref,
+  onCategoryChange,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  categories: Category[];
+  categoryTree: CategoryNode[];
+  selectedCategoryId: string;
+  homeHref?: string;
+  onCategoryChange: (categoryId: string) => void;
+}) {
+  const theme = useStorefrontTheme();
+
+  useEffect(() => {
+    if (!isOpen) {
+      return;
+    }
+
+    function handleEscape(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        onClose();
+      }
+    }
+
+    window.addEventListener("keydown", handleEscape);
+
+    return () => window.removeEventListener("keydown", handleEscape);
+  }, [isOpen, onClose]);
+
+  function handleCategorySelect(categoryId: string) {
+    onCategoryChange(categoryId);
+    onClose();
+  }
+
+  if (!isOpen) {
+    return null;
+  }
+
+  return (
+    <div className={theme.cartDrawerOverlay}>
+      <button
+        type="button"
+        aria-label="Kategorileri kapat"
+        className="absolute inset-0 h-full w-full"
+        onClick={onClose}
+      />
+      <div className={theme.cartDrawerPanel} role="dialog" aria-modal="true" aria-label="Kategoriler">
+        <div className="flex max-h-[94dvh] flex-col">
+          <div className="flex justify-center pt-3">
+            <span className={theme.cartDrawerHandle} />
+          </div>
+
+          <div className={cn(theme.cartDrawerHeaderBorder, "px-4 pb-3 pt-3 sm:px-5")}>
+            <div className="flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <h2 className={theme.cartDrawerTitle}>Kategoriler</h2>
+                <p className={cn("truncate text-xs font-medium sm:text-sm", theme.cartDrawerMuted)}>
+                  Kategori seçerek ürünleri filtreleyin
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={onClose}
+                className={theme.cartDrawerCloseButton}
+                aria-label="Kategorileri kapat"
+              >
+                <X className="size-5" />
+              </button>
+            </div>
+          </div>
+
+          <div className="safe-bottom-padding max-h-[min(72dvh,560px)] overflow-y-auto px-4 py-4 sm:px-5">
+            <StorefrontCategoryTree
+              categories={categories}
+              categoryTree={categoryTree}
+              selectedCategoryId={selectedCategoryId}
+              homeHref={homeHref}
+              onCategoryChange={handleCategorySelect}
+              onHomeNavigate={onClose}
+            />
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
 
