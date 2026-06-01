@@ -10,7 +10,7 @@ export default async function AdminPage() {
       <Header
         eyebrow="Merkezi Kontrol"
         title="Tüm tenant’ları tek ekrandan yönetin"
-        description="Yeni tenant açın, askıya alın, erişim kodlarını yönetin ve paket limitlerini takip edin."
+        description="Yeni tenant açın, paket seçin, askıya alın, erişim kodlarını yönetin ve limitleri takip edin."
       />
 
       <AdminTenantsManager initialTenants={tenants} />

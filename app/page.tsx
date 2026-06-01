@@ -9,6 +9,7 @@ import {
   Check, ChevronRight, Zap, Globe, ShieldCheck, BarChart3, Layers, FileSpreadsheet,
   FileUp, Loader2, CheckCircle2, Download, RefreshCw, Search, ShoppingCart, HelpCircle, Plus
 } from 'lucide-react'
+import { formatPlanCapacityFeature } from '@/lib/billing/plans'
 
 // ----------------------------- HERO ------------------------------------------
 const Hero = () => {
@@ -1791,7 +1792,7 @@ const Pricing = () => {
       cta: 'Hemen Başlayın',
       featured: false,
       features: [
-        '500 Ürün Kapasitesi',
+        formatPlanCapacityFeature('baslangic'),
         "Excel'den 1 Dakikada Canlı Vitrin",
         '3 Seviyeli Müşteri Fiyat Listesi (Bayi / Toptan / Perakende)',
         "Optimize WhatsApp Sipariş Formu (Yapılandırılmış B2B Sipariş Akışı)",
@@ -1811,7 +1812,7 @@ const Pricing = () => {
       cta: "Profesyonel'i Seç",
       featured: true,
       features: [
-        '2.500 Ürün Kapasitesi',
+        formatPlanCapacityFeature('profesyonel'),
         'Sınırsız Seviyeli Müşteri Fiyat Listesi (Özel Bayi Grupları Sınırlandırılması Yok)',
         'Özel Domain Desteği (katalog.sirketiniz.com)',
         'Akıllı Stok Durum Yönetimi (Stokta Var / Azaldı / Tükendi)',
@@ -1830,7 +1831,7 @@ const Pricing = () => {
       cta: 'Satışla Görüşün',
       featured: false,
       features: [
-        '5.000 Ürün Kapasitesi & Akıllı Stok Yönetimi',
+        `${formatPlanCapacityFeature('kurumsal')} & Akıllı Stok Yönetimi`,
         'Yapay Zeka Asistanı Alex: WhatsApp üzerinden Alex ile yazışarak sipariş yönetimi ve anlık sesli/yazılı raporlama.',
         "Alex ile Akıllı Ödeme Altyapısı: PayTR/iZico entegrasyonu ile WhatsApp üzerinden otomatik ödeme talimatı ve gelen ödemelerin sisteme otonom entegrasyonu.",
         'Otonom Tahsilat ve Ödeme: Vadesi gelen borçlar için Alex tarafından otomatik kurumsal WhatsApp hatırlatma akışı ve ödeme takibi.',

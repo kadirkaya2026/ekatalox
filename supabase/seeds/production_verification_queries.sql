@@ -5,7 +5,7 @@ where id in (
   '<TENANT_ADMIN_USER_ID>'::uuid
 );
 
-select id, company_name, subdomain, status, max_product_limit, whatsapp_number
+select id, company_name, subdomain, status, plan, max_product_limit, whatsapp_number
 from public.tenants
 where subdomain = 'demo';
 

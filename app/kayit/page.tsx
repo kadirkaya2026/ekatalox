@@ -5,11 +5,33 @@ import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ArrowRight, CheckCircle2, Check, Sparkles, ShieldCheck, Zap } from 'lucide-react'
 import { SiteNavbar, SiteFooter } from '@/components/site-chrome'
+import {
+  formatPlanCapacityDescription,
+} from '@/lib/billing/plans'
 
 const plans = [
-  { id: 'baslangic', name: 'Başlangıç', price: '₺20.000', unit: '/ Yıl', desc: '500 ürün kapasitesi.' },
-  { id: 'profesyonel', name: 'Profesyonel', price: '₺45.000', unit: '/ Yıl', desc: '2.500 ürün, özel domain.', featured: true },
-  { id: 'kurumsal', name: 'Kurumsal', price: '₺95.000', unit: '/ Yıl', desc: 'Alex AI + WhatsApp otomasyon.' },
+  {
+    id: 'baslangic',
+    name: 'Başlangıç',
+    price: '₺20.000',
+    unit: '/ Yıl',
+    desc: `${formatPlanCapacityDescription('baslangic')}.`,
+  },
+  {
+    id: 'profesyonel',
+    name: 'Profesyonel',
+    price: '₺45.000',
+    unit: '/ Yıl',
+    desc: `${formatPlanCapacityDescription('profesyonel')}, özel domain.`,
+    featured: true,
+  },
+  {
+    id: 'kurumsal',
+    name: 'Kurumsal',
+    price: '₺95.000',
+    unit: '/ Yıl',
+    desc: `${formatPlanCapacityDescription('kurumsal')}, Alex AI + WhatsApp otomasyon.`,
+  },
 ]
 
 const Page = () => {

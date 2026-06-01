@@ -14,6 +14,7 @@ with upserted_tenant as (
     company_name,
     subdomain,
     status,
+    plan,
     max_product_limit,
     whatsapp_number
   )
@@ -21,13 +22,15 @@ with upserted_tenant as (
     'Demo Tenant',
     'demo',
     'active',
-    300,
+    'baslangic',
+    500,
     '905354172510'
   )
   on conflict (subdomain) do update
   set
     company_name = excluded.company_name,
     status = excluded.status,
+    plan = excluded.plan,
     max_product_limit = excluded.max_product_limit,
     whatsapp_number = excluded.whatsapp_number
   returning id

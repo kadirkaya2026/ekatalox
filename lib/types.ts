@@ -1,7 +1,9 @@
+import type { MaxProductLimit, TenantPlan } from "@/lib/billing/plans";
 import type { CurrencyCode } from "@/lib/products/constants";
 
+export type { MaxProductLimit, TenantPlan };
+
 export type TenantStatus = "active" | "suspended";
-export type MaxProductLimit = 300 | 500 | 1000;
 export type UserRole = "super_admin" | "tenant_admin";
 export type PriceTierLevel = 1 | 2 | 3;
 export type StorefrontThemeKey = "minimal" | "premium-dark" | "soft-commerce";
@@ -11,6 +13,7 @@ export interface Tenant {
   company_name: string;
   subdomain: string;
   status: TenantStatus;
+  plan: TenantPlan;
   max_product_limit: MaxProductLimit;
   whatsapp_number: string;
   is_whatsapp_order_direct: boolean;

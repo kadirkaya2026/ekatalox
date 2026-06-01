@@ -3,6 +3,7 @@ insert into public.tenants (
   company_name,
   subdomain,
   status,
+  plan,
   max_product_limit,
   whatsapp_number
 )
@@ -12,7 +13,8 @@ values
     'Lucatech İletişim',
     'lucatech',
     'active',
-    300,
+    'baslangic',
+    500,
     '905354172510'
   )
 on conflict (id) do nothing;

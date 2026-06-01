@@ -1,10 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server'
 import nodemailer from 'nodemailer'
+import {
+  formatPlanCapacityDescription,
+  getPlanLabel,
+  type TenantPlan,
+} from '@/lib/billing/plans'
 
-const planLabels: Record<string, string> = {
-  baslangic:   'Başlangıç — ₺20.000 / Yıl',
-  profesyonel: 'Profesyonel — ₺45.000 / Yıl ⭐ Popüler',
-  kurumsal:    'Kurumsal — ₺95.000 / Yıl',
+const planPrices: Record<TenantPlan, string> = {
+  baslangic: '₺20.000 / Yıl',
+  profesyonel: '₺45.000 / Yıl ⭐ Popüler',
+  kurumsal: '₺95.000 / Yıl',
+}
+
+function getPlanLabelWithDetails(plan: TenantPlan) {
+  return `${getPlanLabel(plan)} — ${planPrices[plan]} • ${formatPlanCapacityDescription(plan)}`
 }
 
 export async function POST(req: NextRequest) {
@@ -15,6 +24,11 @@ export async function POST(req: NextRequest) {
     if (!fullName?.trim() || !company?.trim() || !email?.trim() || !plan?.trim()) {
       return NextResponse.json({ error: 'Eksik alanlar' }, { status: 400 })
     }
+
+    const planLabel =
+      plan in planPrices
+        ? getPlanLabelWithDetails(plan as TenantPlan)
+        : String(plan)
 
     const transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST,
@@ -30,7 +44,7 @@ export async function POST(req: NextRequest) {
       from: `"Ekatalox Kayıt Formu" <${process.env.SMTP_USER}>`,
       to: process.env.CONTACT_RECIPIENT ?? process.env.SMTP_USER,
       replyTo: `"${fullName}" <${email}>`,
-      subject: `[Yeni Kayıt] ${fullName} — ${company} (${planLabels[plan] ?? plan})`,
+      subject: `[Yeni Kayıt] ${fullName} — ${company} (${planLabel})`,
       html: `
         <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:24px;background:#f9f9f9;border-radius:8px;">
           <h2 style="color:#1a1a2e;margin-bottom:20px;">Yeni Kayıt Talebi</h2>
@@ -43,7 +57,7 @@ export async function POST(req: NextRequest) {
               <td style="padding:10px 0;color:#555;font-weight:bold;">Seçilen Plan</td>
               <td style="padding:10px 0;">
                 <span style="display:inline-block;padding:4px 12px;background:#1a1a2e;color:#00D2FF;border-radius:20px;font-size:13px;font-weight:600;">
-                  ${planLabels[plan] ?? plan}
+                  ${planLabel}
                 </span>
               </td>
             </tr>

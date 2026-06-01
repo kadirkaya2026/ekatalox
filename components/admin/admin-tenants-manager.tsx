@@ -7,16 +7,22 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Modal } from "@/components/ui/modal";
 import {
+  formatPlanSummary,
+  formatProductLimit,
+  getPlanLabel,
+  PLAN_OPTIONS,
+} from "@/lib/billing/plans";
+import {
   isReservedSubdomain,
   RESERVED_SUBDOMAIN_MESSAGE,
 } from "@/lib/tenancy/reserved-subdomains";
-import type { AccessCode, MaxProductLimit, TenantWithRelations } from "@/lib/types";
+import type { AccessCode, TenantPlan, TenantWithRelations } from "@/lib/types";
 import { cn, formatDate } from "@/lib/utils";
 
 interface NewTenantForm {
   company_name: string;
   subdomain: string;
-  max_product_limit: MaxProductLimit;
+  plan: TenantPlan;
   whatsapp_number: string;
   tenant_admin_email: string;
   tenant_admin_full_name: string;
@@ -25,7 +31,7 @@ interface NewTenantForm {
 const defaultForm: NewTenantForm = {
   company_name: "",
   subdomain: "",
-  max_product_limit: 300,
+  plan: "baslangic",
   whatsapp_number: "",
   tenant_admin_email: "",
   tenant_admin_full_name: "",
@@ -56,6 +62,7 @@ export function AdminTenantsManager({
 }) {
   const [tenants, setTenants] = useState(initialTenants);
   const [form, setForm] = useState<NewTenantForm>(defaultForm);
+  const [planDrafts, setPlanDrafts] = useState<Record<string, TenantPlan>>({});
   const [codeDrafts, setCodeDrafts] = useState<Record<string, string>>({});
   const [tierDrafts, setTierDrafts] = useState<Record<string, 1 | 2 | 3>>({});
   const [editingAccessCodeId, setEditingAccessCodeId] = useState<string | null>(null);
@@ -79,6 +86,10 @@ export function AdminTenantsManager({
     [tenants],
   );
   const subdomainMessage = getSubdomainMessage(form.subdomain);
+  const selectedPlanSummary = useMemo(
+    () => formatPlanSummary(form.plan),
+    [form.plan],
+  );
 
   function handleCreateTenant(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -113,6 +124,39 @@ export function AdminTenantsManager({
       }
       setForm(defaultForm);
       setMessage("Yeni tenant oluşturuldu.");
+    });
+  }
+
+  function updateTenantPlan(id: string) {
+    const plan = planDrafts[id] ?? tenants.find((tenant) => tenant.id === id)?.plan;
+
+    if (!plan) {
+      setMessage("Paket seçin.");
+      return;
+    }
+
+    setMessage(null);
+
+    startTransition(async () => {
+      const response = await fetch(`/api/admin/tenants/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ plan }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        setMessage(result.error ?? "Tenant paketi güncellenemedi.");
+        return;
+      }
+
+      setTenants((current) =>
+        current.map((tenant) =>
+          tenant.id === id ? { ...tenant, ...result.tenant } : tenant,
+        ),
+      );
+      setMessage("Tenant paketi güncellendi.");
     });
   }
 
@@ -333,7 +377,7 @@ export function AdminTenantsManager({
           <div>
             <h2 className="text-lg font-semibold text-slate-900">Yeni tenant oluştur</h2>
             <p className="mt-1 text-sm text-slate-600">
-              Alt alan adı, ürün limiti ve WhatsApp numarasıyla hızlı kurulum yapın.
+              Alt alan adı, paket seçimi ve WhatsApp numarasıyla hızlı kurulum yapın.
             </p>
           </div>
         </div>
@@ -360,18 +404,20 @@ export function AdminTenantsManager({
             }
           />
           <select
-            value={form.max_product_limit}
+            value={form.plan}
             onChange={(event) =>
               setForm((current) => ({
                 ...current,
-                max_product_limit: Number(event.target.value) as MaxProductLimit,
+                plan: event.target.value as TenantPlan,
               }))
             }
             className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900"
           >
-            <option value={300}>300 ürün</option>
-            <option value={500}>500 ürün</option>
-            <option value={1000}>1000 ürün</option>
+            {PLAN_OPTIONS.map((plan) => (
+              <option key={plan.id} value={plan.id}>
+                {plan.name} — {formatProductLimit(plan.maxProductLimit)} ürün
+              </option>
+            ))}
           </select>
           <Input
             placeholder="90555..."
@@ -399,6 +445,9 @@ export function AdminTenantsManager({
             }
           />
           <div className="md:col-span-2 xl:col-span-4">
+            <p className="mb-3 text-sm text-slate-500">
+              Seçilen paket: {selectedPlanSummary}
+            </p>
             <p className="mb-3 text-sm text-slate-500">
               Ayrılmış kelimeler: admin, app, www, api, ekatalox, assets
             </p>
@@ -435,7 +484,8 @@ export function AdminTenantsManager({
                   </Badge>
                 </div>
                 <p className="mt-2 text-sm text-slate-600">
-                  {tenant.subdomain}.ekatalox.com • Limit: {tenant.max_product_limit} ürün
+                  {tenant.subdomain}.ekatalox.com •{" "}
+                  {formatPlanSummary(tenant.plan ?? "baslangic")}
                 </p>
                 <p className="mt-1 text-sm text-slate-500">
                   WhatsApp: {tenant.whatsapp_number} • Açılış: {formatDate(tenant.created_at)}
@@ -463,6 +513,45 @@ export function AdminTenantsManager({
                 >
                   Tamamen sil
                 </Button>
+              </div>
+            </div>
+
+            <div className="mt-5 grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
+              <div className="rounded-xl border border-slate-100 bg-white p-4">
+                <p className="text-sm font-semibold text-slate-900">Paket yönetimi</p>
+                <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center">
+                  <select
+                    value={planDrafts[tenant.id] ?? tenant.plan ?? "baslangic"}
+                    onChange={(event) =>
+                      setPlanDrafts((current) => ({
+                        ...current,
+                        [tenant.id]: event.target.value as TenantPlan,
+                      }))
+                    }
+                    className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900"
+                  >
+                    {PLAN_OPTIONS.map((plan) => (
+                      <option key={plan.id} value={plan.id}>
+                        {plan.name} — {formatProductLimit(plan.maxProductLimit)} ürün
+                      </option>
+                    ))}
+                  </select>
+                  <Button
+                    variant="secondary"
+                    onClick={() => updateTenantPlan(tenant.id)}
+                    disabled={
+                      pending ||
+                      (planDrafts[tenant.id] ?? tenant.plan ?? "baslangic") ===
+                        (tenant.plan ?? "baslangic")
+                    }
+                  >
+                    Paketi güncelle
+                  </Button>
+                </div>
+                <p className="mt-3 text-sm text-slate-500">
+                  Mevcut: {getPlanLabel(tenant.plan ?? "baslangic")} •{" "}
+                  {formatProductLimit(tenant.max_product_limit)} ürün
+                </p>
               </div>
             </div>
 

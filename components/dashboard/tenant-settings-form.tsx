@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { formatPlanSummary } from "@/lib/billing/plans";
 import type { Profile, Tenant } from "@/lib/types";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
@@ -155,7 +156,9 @@ export function TenantSettingsForm({
           </div>
           <div>
             <dt className="text-slate-500">Paket limiti</dt>
-            <dd className="mt-1 font-medium text-slate-900">{tenant.max_product_limit} ürün</dd>
+            <dd className="mt-1 font-medium text-slate-900">
+              {formatPlanSummary(tenant.plan ?? "baslangic")}
+            </dd>
           </div>
           <div>
             <dt className="text-slate-500">Durum</dt>

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import type { FormEvent, ReactNode } from "react";
 import { useRef, useState } from "react";
+import { formatPlanCapacityDescription } from "@/lib/billing/plans";
 import {
   AnimatePresence,
   LayoutGroup,
@@ -96,42 +97,42 @@ const productMap: Record<
 
 const pricingPlans = [
   {
-    name: "Launch",
+    name: "Başlangıç",
     tag: "Yeni Başlayanlar",
     price: "₺20.000",
     unit: "/ yıl",
     featured: false,
     description: "Tek katalog, hızlı kurulum ve temel B2B vitrin.",
     items: [
-      "300 ürün kapasitesi",
+      formatPlanCapacityDescription("baslangic"),
       "Şifreli fiyat görünürlüğü",
       "Excel ile içe aktarma",
       "Tek tenant vitrin kurulumu",
     ],
   },
   {
-    name: "Growth",
+    name: "Profesyonel",
     tag: "En çok tercih edilen",
     price: "₺45.000",
     unit: "/ yıl",
     featured: true,
     description: "Satış ekibi büyüyen toptancılar için tam vitrin deneyimi.",
     items: [
-      "1.000 ürün kapasitesi",
+      formatPlanCapacityDescription("profesyonel"),
       "Demo ve fiyat katmanı simülasyonu",
       "Banner ve koleksiyon yönetimi",
       "Öncelikli onboarding desteği",
     ],
   },
   {
-    name: "Scale",
+    name: "Kurumsal",
     tag: "Kurumsal ekipler",
     price: "₺95.000",
     unit: "/ yıl",
     featured: false,
     description: "Birden fazla marka ve ekip için premium deneyim.",
     items: [
-      "Çoklu tenant yapısı",
+      formatPlanCapacityDescription("kurumsal"),
       "Yüksek hacimli katalog yönetimi",
       "Özel onboarding akışı",
       "Kurumsal destek ve planlama",

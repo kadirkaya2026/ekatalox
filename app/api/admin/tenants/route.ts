@@ -48,7 +48,9 @@ export async function POST(request: Request) {
   const body = await request.json();
   const parsed = tenantSchema.safeParse({
     ...body,
-    max_product_limit: Number(body.max_product_limit),
+    max_product_limit: body.max_product_limit
+      ? Number(body.max_product_limit)
+      : undefined,
   });
 
   if (!parsed.success) {
@@ -82,6 +84,7 @@ export async function POST(request: Request) {
       created_at: new Date().toISOString(),
       company_name: parsed.data.company_name,
       subdomain: parsed.data.subdomain.toLowerCase(),
+      plan: parsed.data.plan,
       max_product_limit: parsed.data.max_product_limit,
       whatsapp_number: parsed.data.whatsapp_number,
       is_whatsapp_order_direct: true,
@@ -108,6 +111,7 @@ export async function POST(request: Request) {
   const payload = {
     company_name: parsed.data.company_name,
     subdomain: parsed.data.subdomain.toLowerCase(),
+    plan: parsed.data.plan,
     max_product_limit: parsed.data.max_product_limit,
     whatsapp_number: parsed.data.whatsapp_number,
     status: "active",
