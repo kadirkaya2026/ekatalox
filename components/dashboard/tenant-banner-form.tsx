@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
+import { arrayMove } from "@dnd-kit/sortable";
 import Image from "next/image";
-import { ImageUp, Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -46,6 +47,74 @@ function createEmptyBanner(index: number): BannerItem {
   };
 }
 
+function BannerOrderInput({
+  displayOrder,
+  maxOrder,
+  disabled,
+  bannerLabel,
+  onCommit,
+}: {
+  displayOrder: number;
+  maxOrder: number;
+  disabled?: boolean;
+  bannerLabel: string;
+  onCommit: (targetOrder: number) => void;
+}) {
+  const [draft, setDraft] = useState(String(displayOrder));
+  const [isEditing, setIsEditing] = useState(false);
+
+  useEffect(() => {
+    if (!isEditing) {
+      setDraft(String(displayOrder));
+    }
+  }, [displayOrder, isEditing]);
+
+  function commit() {
+    const parsed = Number.parseInt(draft, 10);
+
+    if (!Number.isFinite(parsed) || parsed < 1 || parsed > maxOrder) {
+      setDraft(String(displayOrder));
+      setIsEditing(false);
+      return;
+    }
+
+    onCommit(parsed);
+    setIsEditing(false);
+  }
+
+  function cancel() {
+    setDraft(String(displayOrder));
+    setIsEditing(false);
+  }
+
+  return (
+    <input
+      type="number"
+      min={1}
+      max={maxOrder}
+      inputMode="numeric"
+      value={draft}
+      disabled={disabled}
+      aria-label={`${bannerLabel} sırası`}
+      onChange={(event) => setDraft(event.target.value)}
+      onFocus={() => setIsEditing(true)}
+      onBlur={commit}
+      onKeyDown={(event) => {
+        if (event.key === "Enter") {
+          event.preventDefault();
+          commit();
+        }
+
+        if (event.key === "Escape") {
+          event.preventDefault();
+          cancel();
+        }
+      }}
+      className="w-14 shrink-0 rounded-md border border-slate-200 bg-white px-2 py-1 text-center text-sm font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-400 disabled:cursor-not-allowed disabled:opacity-40"
+    />
+  );
+}
+
 export function TenantBannerForm({
   initialStorefrontSettings,
 }: {
@@ -82,6 +151,25 @@ export function TenantBannerForm({
   function addBanner() {
     setBannerItems((current) => [...current, createEmptyBanner(current.length)]);
     setSaveMessage(null);
+  }
+
+  function handleSetBannerOrder(bannerId: string, targetOrder: number) {
+    const sourceIndex = bannerItems.findIndex((banner) => banner.id === bannerId);
+
+    if (sourceIndex < 0) {
+      return;
+    }
+
+    const targetIndex =
+      Math.min(Math.max(1, Math.floor(targetOrder)), bannerItems.length) - 1;
+
+    if (targetIndex === sourceIndex) {
+      return;
+    }
+
+    setBannerItems(arrayMove(bannerItems, sourceIndex, targetIndex));
+    setSaveMessage(null);
+    setBannerItemsError(null);
   }
 
   function setBannerUploadStatus(
@@ -259,6 +347,13 @@ export function TenantBannerForm({
           </Button>
         </div>
 
+        {bannerItems.length > 1 ? (
+          <p className="mt-4 text-sm text-slate-600">
+            Her banner&apos;ın solundaki sıra numarasını değiştirerek vitrin carousel sırasını
+            ayarlayın. Değişiklikler <strong>Banner ayarlarını kaydet</strong> ile kalıcı olur.
+          </p>
+        ) : null}
+
         <div className="mt-6 space-y-4">
           {bannerItems.length ? (
             bannerItems.map((banner, index) => (
@@ -267,11 +362,27 @@ export function TenantBannerForm({
                 className="rounded-2xl border border-slate-200 bg-slate-50 p-4"
               >
                 <div className="mb-4 flex items-center justify-between gap-3">
-                  <div>
-                    <p className="text-sm font-semibold text-slate-900">Banner #{index + 1}</p>
-                    <p className="text-xs text-slate-500">
-                      Zorunlu ölçü: 1200x400 px • Maksimum dosya boyutu: 2MB
-                    </p>
+                  <div className="flex min-w-0 items-start gap-3">
+                    <div className="flex flex-col items-center gap-1">
+                      <span className="text-[10px] font-medium uppercase tracking-wide text-slate-500">
+                        Sıra
+                      </span>
+                      <BannerOrderInput
+                        displayOrder={index + 1}
+                        maxOrder={bannerItems.length}
+                        disabled={bannerItems.length <= 1 || savePending}
+                        bannerLabel={`Banner ${index + 1}`}
+                        onCommit={(targetOrder) =>
+                          handleSetBannerOrder(banner.id, targetOrder)
+                        }
+                      />
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-slate-900">Banner #{index + 1}</p>
+                      <p className="text-xs text-slate-500">
+                        Zorunlu ölçü: 1200x400 px • Maksimum dosya boyutu: 2MB
+                      </p>
+                    </div>
                   </div>
                   <button
                     type="button"
