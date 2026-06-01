@@ -6,12 +6,10 @@ import { AlertTriangle, ImagePlus, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { PlanFeatureGate } from "@/components/dashboard/plan-feature-gate";
 import { ProductDescriptionEditor } from "@/components/dashboard/product-description-editor";
 import { buildCategoryTree, flattenCategoryTree } from "@/lib/categories/tree";
-import {
-  buildPackageUpgradeHref,
-  hasPlanFeature,
-} from "@/lib/billing/plans";
+import { buildPackageUpgradeHref } from "@/lib/billing/plans";
 import {
   defaultCurrencyCode,
   supportedCurrencyCodes,
@@ -108,7 +106,6 @@ export function ProductAddForm({
   const categoryTree = useMemo(() => buildCategoryTree(initialCategories), [initialCategories]);
   const flatCategories = useMemo(() => flattenCategoryTree(categoryTree), [categoryTree]);
   const discountPreview = useMemo(() => getDiscountPreview(form), [form]);
-  const canUseProductDiscount = hasPlanFeature(tenant.plan, "product_discount");
 
   const productCount = 0;
   const isLimitFull = tenant.max_product_limit <= productCount;
@@ -257,7 +254,11 @@ export function ProductAddForm({
             />
           </div>
 
-          {canUseProductDiscount ? (
+          <PlanFeatureGate
+            feature="product_discount"
+            plan={tenant.plan}
+            companyName={tenant.company_name}
+          >
             <div className="rounded-xl border border-slate-100 bg-slate-50 px-4 py-3">
               <label className="flex items-center gap-3 text-sm text-slate-700">
                 <input
@@ -289,7 +290,7 @@ export function ProductAddForm({
                 </div>
               ) : null}
             </div>
-          ) : null}
+          </PlanFeatureGate>
 
           <div className="grid gap-3 md:grid-cols-2">
             <Input

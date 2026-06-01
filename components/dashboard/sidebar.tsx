@@ -38,12 +38,12 @@ const tenantLinks: SidebarLink[] = [
     children: [
       { href: "/products/add", label: "Ürün Ekle" },
       { href: "/products/bulk", label: "Toplu Ürün Ekleme" },
-      { href: "/products/showcase", label: "Vitrin Ürünleri", requiredFeature: "showcase_products" },
+      { href: "/products/showcase", label: "Vitrin Ürünleri" },
     ],
   },
   { href: "/categories", label: "Kategoriler", icon: FolderTree },
   { href: "/access-codes", label: "Şifreler", icon: KeyRound },
-  { href: "/reports", label: "Raporlar", icon: BarChart3, requiredFeature: "reports" },
+  { href: "/reports", label: "Raporlar", icon: BarChart3 },
   {
     href: "/settings",
     label: "Ayarlar",
