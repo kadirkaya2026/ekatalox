@@ -13,6 +13,11 @@ export function Modal({
   contentScroll = true,
   bodyClassName,
   panelClassName,
+  overlayClassName,
+  headerClassName,
+  titleClassName,
+  closeButtonClassName,
+  footerClassName,
   sheet = false,
 }: {
   open: boolean;
@@ -23,6 +28,11 @@ export function Modal({
   contentScroll?: boolean;
   bodyClassName?: string;
   panelClassName?: string;
+  overlayClassName?: string;
+  headerClassName?: string;
+  titleClassName?: string;
+  closeButtonClassName?: string;
+  footerClassName?: string;
   sheet?: boolean;
 }) {
   useBodyScrollLock(open);
@@ -36,6 +46,7 @@ export function Modal({
       className={cn(
         "fixed inset-0 z-[60] flex items-end justify-center bg-black/40 backdrop-blur-sm sm:items-center",
         sheet ? "p-0 sm:p-4" : "p-4",
+        overlayClassName,
       )}
     >
       <button
@@ -65,8 +76,8 @@ export function Modal({
           />
         </div>
 
-        <div className="flex shrink-0 items-center justify-between border-b border-slate-100 px-4 pb-2 pt-1 sm:px-5 sm:py-4 sm:pt-4">
-          <h3 id="modal-title" className="text-lg font-semibold text-slate-900">
+        <div className={cn("flex shrink-0 items-center justify-between border-b border-slate-100 px-4 pb-2 pt-1 sm:px-5 sm:py-4 sm:pt-4", headerClassName)}>
+          <h3 id="modal-title" className={cn("text-lg font-semibold text-slate-900", titleClassName)}>
             {title}
           </h3>
           <button
@@ -74,6 +85,7 @@ export function Modal({
             onClick={onClose}
             className={cn(
               "rounded-full p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-900",
+              closeButtonClassName,
             )}
           >
             <X className="size-5" />
@@ -93,7 +105,7 @@ export function Modal({
         </div>
 
         {footer ? (
-          <div className="shrink-0 space-y-4 border-t border-slate-100 px-4 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:px-5">
+          <div className={cn("shrink-0 space-y-4 border-t border-slate-100 px-4 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:px-5", footerClassName)}>
             {footer}
           </div>
         ) : null}

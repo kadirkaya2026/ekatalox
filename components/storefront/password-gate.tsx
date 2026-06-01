@@ -2,16 +2,18 @@
 
 import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import type { StorefrontThemeKey } from "@/lib/types";
+import { StorefrontThemeProvider, useStorefrontTheme } from "@/lib/storefront/theme-context";
 
-export function PasswordGate({
+function PasswordGateForm({
   subdomain,
   companyName,
 }: {
   subdomain: string;
   companyName: string;
 }) {
+  const theme = useStorefrontTheme();
   const [code, setCode] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -40,12 +42,10 @@ export function PasswordGate({
 
   return (
     <div className="container-shell flex min-h-screen items-center justify-center py-8">
-      <Card className="w-full max-w-md p-6">
-        <p className="text-xs font-semibold uppercase tracking-[0.24em] text-emerald-700">
-          B2B Giriş
-        </p>
-        <h1 className="mt-3 text-2xl font-semibold text-slate-900">{companyName}</h1>
-        <p className="mt-2 text-sm leading-6 text-slate-600">
+      <div className={theme.gateCard}>
+        <p className={theme.gateEyebrow}>B2B Giriş</p>
+        <h1 className={theme.gateTitle}>{companyName}</h1>
+        <p className={theme.gateDescription}>
           Fiyatları Görüntüleyebilmek İçin Size Özel Verilen Şifrenizi Giriniz.
         </p>
 
@@ -56,12 +56,28 @@ export function PasswordGate({
             value={code}
             onChange={(event) => setCode(event.target.value)}
           />
-          <Button type="submit" className="w-full" disabled={pending}>
+          <Button type="submit" className={`w-full ${theme.primaryButton}`} disabled={pending}>
             {pending ? "Doğrulanıyor..." : "Mağaza'ya Gir"}
           </Button>
-          {error ? <p className="text-sm text-slate-600">{error}</p> : null}
+          {error ? <p className={`text-sm ${theme.gateError}`}>{error}</p> : null}
         </form>
-      </Card>
+      </div>
     </div>
+  );
+}
+
+export function PasswordGate({
+  subdomain,
+  companyName,
+  themeKey = "minimal",
+}: {
+  subdomain: string;
+  companyName: string;
+  themeKey?: StorefrontThemeKey | string;
+}) {
+  return (
+    <StorefrontThemeProvider themeKey={themeKey}>
+      <PasswordGateForm subdomain={subdomain} companyName={companyName} />
+    </StorefrontThemeProvider>
   );
 }

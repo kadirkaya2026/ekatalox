@@ -7,37 +7,13 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { StorefrontThemePreview } from "@/components/dashboard/storefront-theme-preview";
 import type { StorefrontThemeKey, TenantStorefrontSettings } from "@/lib/types";
+import { THEME_OPTIONS } from "@/lib/storefront/theme-catalog";
 import {
   allowedLogoMimeTypes,
   maxLogoFileSizeBytes,
 } from "@/lib/validators/storefront-settings";
-
-const storefrontThemes: Array<{
-  value: StorefrontThemeKey;
-  title: string;
-  description: string;
-  previewClassName: string;
-}> = [
-  {
-    value: "minimal",
-    title: "Minimal",
-    description: "Temiz, ferah ve sade e-ticaret vitrin dili.",
-    previewClassName: "bg-gradient-to-br from-slate-100 via-white to-slate-50",
-  },
-  {
-    value: "premium-dark",
-    title: "Premium Dark",
-    description: "Koyu, güçlü ve daha premium teknoloji mağazası hissi.",
-    previewClassName: "bg-gradient-to-br from-slate-950 via-slate-800 to-slate-700",
-  },
-  {
-    value: "soft-commerce",
-    title: "Soft Commerce",
-    description: "Yumuşak tonlar ve sıcak satış deneyimi odaklı görünüm.",
-    previewClassName: "bg-gradient-to-br from-amber-50 via-white to-rose-50",
-  },
-];
 
 interface ThemeFormState {
   logo_url: string | null;
@@ -221,21 +197,25 @@ export function TenantThemeForm({
               <span>Hazır tema seçimi</span>
             </div>
             <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-              {storefrontThemes.map((theme) => {
-                const selected = form.theme_key === theme.value;
+              {THEME_OPTIONS.map((theme) => {
+                const selected = form.theme_key === theme.key;
                 return (
                   <button
-                    key={theme.value}
+                    key={theme.key}
                     type="button"
-                    onClick={() => updateField("theme_key", theme.value)}
+                    onClick={() => updateField("theme_key", theme.key)}
                     className={[
                       "rounded-2xl border p-4 text-left transition",
                       selected
-                        ? "border-emerald-500 bg-emerald-50 shadow-sm"
+                        ? "border-emerald-500 bg-emerald-50 shadow-sm ring-1 ring-emerald-500/30"
                         : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50",
                     ].join(" ")}
                   >
-                    <div className={`h-20 rounded-xl ${theme.previewClassName}`} />
+                    <StorefrontThemePreview
+                      themeKey={theme.key}
+                      storefrontTitle={form.storefront_title}
+                      logoUrl={form.logo_url}
+                    />
                     <p className="mt-4 text-sm font-semibold text-slate-900">{theme.title}</p>
                     <p className="mt-1 text-sm leading-6 text-slate-500">{theme.description}</p>
                   </button>

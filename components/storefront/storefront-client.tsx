@@ -54,7 +54,8 @@ import {
   getCartVariantCount,
   updateCartLineQuantity,
 } from "@/lib/storefront/cart";
-import { storefrontThemes } from "@/lib/storefront/themes";
+import { getStorefrontTheme } from "@/lib/storefront/themes";
+import { StorefrontThemeProvider } from "@/lib/storefront/theme-context";
 import {
   STOREFRONT_BANNER_SIZES,
   STOREFRONT_CROSS_SELL_SIZES,
@@ -810,7 +811,7 @@ export function StorefrontClient({
   );
   const analyticsSubdomain = subdomain ?? tenant.subdomain;
 
-  const theme = storefrontThemes[storefrontSettings.theme_key] ?? storefrontThemes.minimal;
+  const theme = getStorefrontTheme(storefrontSettings.theme_key);
   const cartStorageKey = useMemo(() => getCartStorageKey(tenant.id), [tenant.id]);
   const announcementStorageKeys = useMemo(
     () => getAnnouncementStorageKeys(tenant.id),
@@ -2002,9 +2003,14 @@ export function StorefrontClient({
         open={Boolean(previewProduct)}
         onClose={closeProductDetail}
         title="Ürün Detayı"
+        panelClassName={theme.modalPanel}
+        headerClassName={theme.modalHeaderBorder}
+        titleClassName={theme.modalTitle}
+        closeButtonClassName={theme.modalCloseButton}
+        footerClassName={theme.modalFooterBorder}
       >
         <div className="grid gap-4">
-          <div className="relative aspect-square overflow-hidden rounded-[1.75rem] bg-[linear-gradient(180deg,#f8fafc_0%,#eef2ff_100%)]">
+          <div className={cn("relative aspect-square overflow-hidden rounded-[1.75rem]", theme.productImageWrap)}>
             <DiscountSticker product={previewProduct} />
             {previewProduct.image_url ? (
               <StorefrontImage
@@ -2022,7 +2028,7 @@ export function StorefrontClient({
 
           <div className="space-y-1">
             <ProductPrice product={previewProduct} size="modal" />
-            <h3 className="text-lg font-semibold leading-6 text-slate-900">
+            <h3 className={cn("text-lg font-semibold leading-6", theme.text)}>
               {previewProduct.product_name}
             </h3>
           </div>
@@ -2033,19 +2039,14 @@ export function StorefrontClient({
                 key={tab.key}
                 type="button"
                 onClick={() => setActivePreviewTab(tab.key)}
-                className={cn(
-                  "shrink-0 rounded-full border px-4 py-2 text-sm font-semibold transition",
-                  activePreviewTab === tab.key
-                    ? "border-slate-900 bg-slate-900 text-white"
-                    : "border-slate-200 bg-white text-slate-600",
-                )}
+                className={theme.modalTabChip(activePreviewTab === tab.key)}
               >
                 {tab.label}
               </button>
             ))}
           </div>
 
-          <div className="min-h-[160px] max-h-[40vh] overflow-y-auto rounded-[1.35rem] border border-slate-200 bg-slate-50/80 p-4">
+          <div className={cn("min-h-[160px] max-h-[40vh] overflow-y-auto", theme.modalSurface)}>
             {tabContent}
           </div>
 
@@ -2055,6 +2056,7 @@ export function StorefrontClient({
             disabled={!previewProduct.is_in_stock}
             className={cn(
               "h-12 w-full rounded-full text-base font-bold",
+              theme.primaryButton,
               !previewProduct.is_in_stock && "cursor-not-allowed opacity-50",
             )}
           >
@@ -2067,8 +2069,9 @@ export function StorefrontClient({
 
 
   return (
+    <StorefrontThemeProvider themeKey={storefrontSettings.theme_key}>
     <div className="contents">
-      <header className="sticky top-0 z-40 border-b border-slate-200/80 bg-white/95 backdrop-blur">
+      <header className={cn(theme.header, theme.headerBorder)}>
         <div className="container-shell py-4">
           <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(260px,420px)_auto] lg:items-center">
             <div className="col-span-2 flex min-w-0 items-start gap-2 sm:gap-3 lg:col-span-1 lg:items-center lg:gap-4">
@@ -2084,7 +2087,7 @@ export function StorefrontClient({
                 }
                 className="flex min-w-0 flex-1 items-center gap-3 sm:gap-4"
               >
-                <div className="relative flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-[1.4rem] border border-slate-200 bg-white shadow-sm sm:h-16 sm:w-16 lg:h-20 lg:w-20 lg:rounded-[1.75rem]">
+                <div className={cn(theme.logoWrap, "h-14 w-14 sm:h-16 sm:w-16 lg:h-20 lg:w-20")}>
                   {storefrontSettings.logo_url ? (
                     <StorefrontImage
                       src={storefrontSettings.logo_url}
@@ -2093,16 +2096,16 @@ export function StorefrontClient({
                       sizes={STOREFRONT_LOGO_SIZES}
                     />
                   ) : (
-                    <Store className="size-5 text-slate-400" />
+                    <Store className={cn("size-5", theme.logoPlaceholder)} />
                   )}
                 </div>
                 <div className="min-w-0">
-                  <p className="truncate text-lg font-semibold tracking-tight text-slate-950 sm:text-xl lg:text-[1.65rem]">
+                  <p className={cn(theme.headerTitle, "text-lg sm:text-xl lg:text-[1.65rem]")}>
                     {storefrontTitle}
                   </p>
                   {storefrontSettings.is_price_update_date_visible &&
                   storefrontSettings.price_update_date ? (
-                    <p className="mt-0.5 truncate text-[10px] leading-4 text-slate-400 sm:text-[11px]">
+                    <p className={cn("mt-0.5 truncate text-[10px] leading-4 sm:text-[11px]", theme.headerMuted)}>
                       Fiyat Güncelleme Tarihi :{" "}
                       {formatDateSlashTr(storefrontSettings.price_update_date)}
                     </p>
@@ -2121,37 +2124,37 @@ export function StorefrontClient({
             <div
               className={cn(
                 theme.searchWrap,
-                "h-10 min-w-0 max-w-none rounded-full border-slate-200/80 bg-slate-50 shadow-none lg:h-11 lg:justify-self-center lg:w-full lg:max-w-md",
+                "h-10 min-w-0 max-w-none rounded-full shadow-none lg:h-11 lg:justify-self-center lg:w-full lg:max-w-md",
               )}
             >
-              <Search className={cn(theme.searchIcon, "left-4 size-4 text-slate-400")} />
+              <Search className={cn(theme.searchIcon, "left-4 size-4")} />
               <input
                 placeholder="Ürün adı, model no veya kategoriye göre arayın..."
                 value={searchInput}
                 onChange={(event) => handleSearchChange(event.target.value)}
                 className={cn(
                   theme.searchInput,
-                  "h-10 rounded-full border-0 bg-transparent py-2 pl-10 pr-4 text-[16px] placeholder:text-slate-400 focus-visible:ring-0 focus:ring-0 lg:h-11",
+                  "h-10 w-full rounded-full border-0 bg-transparent py-2 pl-10 pr-4 text-[16px] focus-visible:ring-0 focus:ring-0 lg:h-11",
                 )}
               />
             </div>
 
             <div className="flex items-center justify-end gap-3 lg:gap-4">
               <div className="hidden text-right sm:block">
-                <p className="text-[10px] uppercase tracking-[0.22em] text-slate-400">
+                <p className={cn("text-[10px] uppercase tracking-[0.22em]", theme.cartTotalLabel)}>
                   Sepet Toplamı
                 </p>
                 <div className="mt-1">
                   {cart.length === 0 ? (
-                    <p className="text-sm font-bold text-slate-400">Sepet Boş</p>
+                    <p className={theme.cartTotalEmpty}>Sepet Boş</p>
                   ) : cartTotalEntries.length ? (
                     cartTotalEntries.map(({ currency, total }) => (
-                      <p key={currency} className="text-sm font-bold text-slate-900">
+                      <p key={currency} className={theme.cartTotalValue}>
                         {currency}: {formatCurrency(total, currency)}
                       </p>
                     ))
                   ) : (
-                    <p className="text-sm font-bold text-slate-900">
+                    <p className={theme.cartTotalValue}>
                       {formatCurrency(cartTotal, cartCurrency)}
                     </p>
                   )}
@@ -2160,12 +2163,12 @@ export function StorefrontClient({
               <button
                 type="button"
                 onClick={openCartDrawer}
-                className="relative flex size-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 lg:size-12"
+                className={theme.cartButton}
                 aria-label="Sepeti aç"
               >
                 <ShoppingCart className="size-5" />
                 {cart.length ? (
-                  <span className="absolute -right-2 -top-2 inline-flex min-w-5 items-center justify-center rounded-full bg-emerald-600 px-1.5 py-0.5 text-[10px] font-bold text-white">
+                  <span className={theme.cartBadge}>
                     {cartItemCount}
                   </span>
                 ) : null}
@@ -2174,7 +2177,7 @@ export function StorefrontClient({
           </div>
         </div>
 
-        <div className="border-t border-slate-100">
+        <div className={theme.categoryRailBorder}>
           <div className="container-shell">
             <nav
               className="relative hidden md:flex md:flex-wrap md:items-center md:justify-center md:gap-2 md:py-3"
@@ -2183,7 +2186,7 @@ export function StorefrontClient({
               {homeHref ? (
                 <a
                   href={homeHref}
-                  className="rounded-full px-4 py-2.5 text-[13px] font-semibold transition text-slate-700 hover:bg-slate-100"
+                  className={theme.categoryNavChip(false)}
                 >
                   Tüm Ürünler
                 </a>
@@ -2191,12 +2194,7 @@ export function StorefrontClient({
                 <button
                   type="button"
                   onClick={() => handleCategoryChange("all")}
-                  className={cn(
-                    "rounded-full px-4 py-2.5 text-[13px] font-semibold transition",
-                    selectedCategoryId === "all"
-                      ? "bg-slate-900 text-white"
-                      : "text-slate-700 hover:bg-slate-100",
-                  )}
+                  className={theme.categoryNavChip(selectedCategoryId === "all")}
                 >
                   Tüm Ürünler
                 </button>
@@ -2218,12 +2216,7 @@ export function StorefrontClient({
                     <button
                       type="button"
                       onClick={() => handleCategoryChange(category.id)}
-                      className={cn(
-                        "inline-flex items-center gap-2 rounded-full px-4 py-2.5 text-[13px] font-semibold transition duration-200",
-                        isActive
-                          ? "scale-[1.03] bg-slate-900 text-white font-bold shadow-sm"
-                          : "text-slate-700 hover:bg-slate-100",
-                      )}
+                      className={theme.categoryNavChip(isActive)}
                     >
                       <span>{category.name}</span>
                       {category.children.length ? <ChevronDown className="size-4" /> : null}
@@ -2231,14 +2224,14 @@ export function StorefrontClient({
 
                     {category.children.length && isOpen ? (
                       <div className="absolute left-0 top-full z-30 pt-1">
-                        <div className="min-w-[220px] rounded-2xl border border-slate-200 bg-white p-2 shadow-xl">
+                        <div className={theme.categoryDropdown}>
                           <div className="space-y-0.5">
                             {category.children.map((child) => (
                               <button
                                 key={child.id}
                                 type="button"
                                 onClick={() => handleCategoryChange(child.id)}
-                                className="w-full rounded-xl px-4 py-2.5 text-left text-sm text-slate-700 transition hover:bg-slate-50"
+                                className={theme.categoryDropdownItem}
                               >
                                 {child.name}
                               </button>
@@ -2252,12 +2245,12 @@ export function StorefrontClient({
               })}
             </nav>
 
-            <div className="border-t border-slate-100 py-3 md:hidden">
+            <div className={cn("border-t py-3 md:hidden", theme.categoryRailBorder)}>
               <div className="scrollbar-hide -mx-4 flex gap-5 overflow-x-auto px-4 whitespace-nowrap">
                 {homeHref ? (
                   <a
                     href={homeHref}
-                    className="shrink-0 border-b-2 border-transparent px-1 pb-3 text-sm font-semibold text-slate-700"
+                    className={theme.categoryNavMobile(false)}
                   >
                     Tüm Ürünler
                   </a>
@@ -2265,12 +2258,7 @@ export function StorefrontClient({
                   <button
                     type="button"
                     onClick={() => handleCategoryChange("all")}
-                    className={cn(
-                      "shrink-0 border-b-2 px-1 pb-3 text-sm font-semibold transition",
-                      selectedCategoryId === "all"
-                        ? "border-emerald-600 text-slate-950"
-                        : "border-transparent text-slate-500",
-                    )}
+                    className={theme.categoryNavMobile(selectedCategoryId === "all")}
                   >
                     Tüm Ürünler
                   </button>
@@ -2281,12 +2269,7 @@ export function StorefrontClient({
                     key={category.id}
                     type="button"
                     onClick={() => handleCategoryChange(category.id)}
-                    className={cn(
-                      "shrink-0 border-b-2 px-1 pb-3 text-sm font-semibold transition duration-200",
-                      selectedTopCategoryId === category.id
-                        ? "scale-[1.03] border-emerald-600 text-slate-950 font-bold"
-                        : "border-transparent text-slate-500",
-                    )}
+                    className={theme.categoryNavMobile(selectedTopCategoryId === category.id)}
                   >
                     {category.name}
                   </button>
@@ -2303,12 +2286,7 @@ export function StorefrontClient({
                         key={subcategory.id}
                         type="button"
                         onClick={() => handleCategoryChange(subcategory.id)}
-                        className={cn(
-                          "shrink-0 rounded-full border px-4 py-2.5 text-sm font-semibold transition duration-200",
-                          isActive
-                            ? "border-emerald-600 bg-emerald-600 text-white shadow-sm"
-                            : "border-slate-200 bg-white text-slate-700",
-                        )}
+                        className={theme.categorySubChip(isActive)}
                       >
                         {subcategory.name}
                       </button>
@@ -2672,10 +2650,15 @@ export function StorefrontClient({
         title={selectedProduct?.has_variants ? "Model Seçimi" : "Sepete Ekle"}
         contentScroll={!selectedProduct?.has_variants}
         sheet={Boolean(selectedProduct?.has_variants)}
+        panelClassName={theme.modalPanel}
+        headerClassName={theme.modalHeaderBorder}
+        titleClassName={theme.modalTitle}
+        closeButtonClassName={theme.modalCloseButton}
+        footerClassName={theme.modalFooterBorder}
         footer={
           selectedProduct?.has_variants ? (
             <div className="space-y-3">
-              <div className="rounded-xl bg-slate-900 p-3 text-white">
+              <div className={cn("rounded-xl p-3", theme.cartDrawerSummary)}>
                 <p className="text-xs text-slate-300">Seçilen Modeller</p>
                 <p className="mt-0.5 text-xs text-slate-300">
                   {selectedVariantSummary.count} model
@@ -2944,5 +2927,6 @@ export function StorefrontClient({
         ) : null}
       </Modal>
     </div>
+    </StorefrontThemeProvider>
   );
 }

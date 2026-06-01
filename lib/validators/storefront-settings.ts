@@ -1,11 +1,7 @@
 import { z } from "zod";
 import { DEFAULT_INSTALLMENT_OPTIONS } from "@/lib/storefront/cart";
 
-export const storefrontThemeKeySchema = z.enum([
-  "minimal",
-  "premium-dark",
-  "soft-commerce",
-]);
+export const storefrontThemeKeySchema = z.enum(["minimal", "pro-blue", "neutral"]);
 
 const optionalUrlSchema = z
   .union([z.string().trim().url("Geçerli bir bağlantı girin."), z.literal(""), z.null(), z.undefined()])

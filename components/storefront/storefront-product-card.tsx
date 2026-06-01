@@ -9,6 +9,7 @@ import { STOREFRONT_PRODUCT_GRID_SIZES } from "@/lib/storefront/image-sizes";
 import { formatProductModelNo } from "@/lib/products/constants";
 import { cn, formatCurrency } from "@/lib/utils";
 import { StorefrontImage } from "@/components/storefront/storefront-image";
+import { useStorefrontTheme } from "@/lib/storefront/theme-context";
 
 const floatingActionTransition = {
   type: "spring",
@@ -26,26 +27,28 @@ export function ProductPrice({
   product: Pick<StorefrontProduct, "price" | "original_price" | "currency">;
   size?: ProductPriceSize;
 }) {
+  const theme = useStorefrontTheme();
+
   if (product.price === null) {
     return null;
   }
 
   const sizeClasses = {
     card: {
-      current: "text-sm font-extrabold text-emerald-600 sm:text-base",
-      original: "text-[10px] font-medium text-slate-400 line-through sm:text-xs",
+      current: cn("text-sm sm:text-base", theme.productPrice),
+      original: cn("text-[10px] sm:text-xs", theme.productPriceOriginal),
     },
     crossSell: {
-      current: "text-base font-extrabold text-emerald-600",
-      original: "text-[11px] font-medium text-slate-400 line-through",
+      current: cn("text-base", theme.productPrice),
+      original: cn("text-[11px]", theme.productPriceOriginal),
     },
     modal: {
-      current: "text-2xl font-extrabold tracking-tight text-emerald-600",
-      original: "text-sm font-medium text-slate-400 line-through",
+      current: cn("text-2xl tracking-tight", theme.productPrice),
+      original: cn("text-sm", theme.productPriceOriginal),
     },
     compact: {
-      current: "text-sm font-extrabold text-emerald-600",
-      original: "text-[11px] font-medium text-slate-400 line-through",
+      current: cn("text-sm", theme.productPrice),
+      original: cn("text-[11px]", theme.productPriceOriginal),
     },
   }[size];
 
@@ -103,6 +106,8 @@ export const StorefrontFloatingCartAction = memo(function StorefrontFloatingCart
   onDecrease: (productId: string) => void;
   onOpenAddToCart: (productId: string) => void;
 }) {
+  const theme = useStorefrontTheme();
+
   if (!product.is_in_stock) {
     return null;
   }
@@ -119,7 +124,8 @@ export const StorefrontFloatingCartAction = memo(function StorefrontFloatingCart
           exit={{ opacity: 0, scale: 0.92, y: -4 }}
           transition={floatingActionTransition}
           className={cn(
-            "absolute z-30 flex origin-top-right flex-col items-center rounded-[1.35rem] border border-emerald-400/30 bg-[linear-gradient(180deg,rgba(16,185,129,0.98)_0%,rgba(5,150,105,0.96)_100%)] p-1 text-white shadow-[0_18px_40px_rgba(5,150,105,0.34)] backdrop-blur",
+            "absolute z-30 flex origin-top-right flex-col items-center rounded-[1.35rem] p-1 text-white",
+            theme.floatingCartStepper,
             compact ? "-right-2 -top-2" : "-right-2.5 -top-2.5 sm:-right-2 sm:-top-2",
             compact ? "w-10" : "w-11 sm:w-12",
           )}
@@ -202,7 +208,7 @@ export const StorefrontFloatingCartAction = memo(function StorefrontFloatingCart
           onOpenAddToCart(product.id);
         }}
         className={cn(
-          "flex items-center justify-center rounded-xl border border-emerald-600 bg-emerald-500 text-white shadow-[0_14px_30px_rgba(16,185,129,0.32)] transition-all duration-200 hover:border-emerald-500 hover:bg-emerald-400",
+          theme.floatingCartAddButton,
           compact ? "size-8" : "size-9 sm:size-10",
         )}
         aria-label="Ürün ekleme birimini seç"
@@ -234,6 +240,7 @@ export const StorefrontProductCard = memo(function StorefrontProductCard({
   onDecrease: (productId: string) => void;
   onOpenAddToCart: (productId: string) => void;
 }) {
+  const theme = useStorefrontTheme();
   const handleOpenDetail = () => onOpenDetail(product.id);
 
   return (
@@ -281,7 +288,7 @@ export const StorefrontProductCard = memo(function StorefrontProductCard({
           </div>
         )}
         {!product.is_in_stock ? (
-          <div className="absolute inset-x-0 bottom-0 z-10 bg-slate-950/72 px-2 py-1.5 text-center backdrop-blur-sm">
+          <div className={theme.productOutOverlay}>
             <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-white sm:text-[11px]">
               Tükendi
             </span>
@@ -291,19 +298,19 @@ export const StorefrontProductCard = memo(function StorefrontProductCard({
 
       <div className="flex flex-1 flex-col gap-1 p-2.5 sm:p-3.5">
         <ProductPrice product={product} size="card" />
-        <p className="line-clamp-2 text-[11px] font-semibold leading-4 text-slate-900 sm:text-[13px] sm:leading-5">
+        <p className={cn("line-clamp-2 text-[11px] leading-4 sm:text-[13px] sm:leading-5", theme.productTitle)}>
           {product.product_name}
         </p>
-        <p className="truncate text-[10px] leading-4 text-slate-400 sm:text-[11px]">
+        <p className={cn("truncate text-[10px] leading-4 sm:text-[11px]", theme.productMeta)}>
           {formatProductModelNo(product.sku_code)}
         </p>
         {product.has_variants ? (
           <div className="flex flex-wrap gap-1 pt-1">
-            <Badge className="bg-blue-50 px-2 py-1 text-[10px] text-blue-700">
+            <Badge className={theme.variantBadge}>
               {product.variants.length} model
             </Badge>
             {addedVariantCount > 0 ? (
-              <Badge className="bg-emerald-50 px-2 py-1 text-[10px] text-emerald-700">
+              <Badge className={theme.addedVariantBadge}>
                 {addedVariantCount} Model Eklendi
               </Badge>
             ) : null}

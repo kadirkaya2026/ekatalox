@@ -28,6 +28,7 @@ import type {
 } from "@/lib/types";
 import { formatProductModelNo } from "@/lib/products/constants";
 import { cn, formatCurrency } from "@/lib/utils";
+import { useStorefrontTheme } from "@/lib/storefront/theme-context";
 import type { WhatsAppOrderHandoff } from "@/lib/storefront/whatsapp-order";
 import { STOREFRONT_CART_THUMB_SIZES } from "@/lib/storefront/image-sizes";
 import { StorefrontImage } from "@/components/storefront/storefront-image";
@@ -117,6 +118,7 @@ export function StorefrontCartDrawer({
   renderCrossSellCard,
   isCatalogOnly = false,
 }: StorefrontCartDrawerProps) {
+  const theme = useStorefrontTheme();
   const [copyFeedback, setCopyFeedback] = useState<string | null>(null);
 
   function updateCartItemQuantity(productId: string, value: string) {
@@ -195,26 +197,26 @@ export function StorefrontCartDrawer({
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-md">
+    <div className={theme.cartDrawerOverlay}>
       <button
         type="button"
         aria-label="Sepeti kapat"
         className="absolute inset-0 h-full w-full"
         onClick={onClose}
       />
-      <div className="absolute inset-x-0 bottom-0 z-10 max-h-[94dvh] rounded-t-[2rem] bg-white shadow-[0_-24px_80px_rgba(15,23,42,0.22)] lg:inset-y-0 lg:left-auto lg:right-0 lg:h-full lg:max-h-none lg:w-[460px] lg:rounded-l-[2rem] lg:rounded-tr-none">
+      <div className={theme.cartDrawerPanel}>
         <div className="flex h-full max-h-[94dvh] flex-col lg:max-h-none">
           <div className="flex justify-center pt-3 lg:hidden">
-            <span className="h-1.5 w-14 rounded-full bg-slate-200" />
+            <span className={theme.cartDrawerHandle} />
           </div>
 
-          <div className="border-b border-slate-100 px-4 pb-3 pt-3 sm:px-5 lg:px-6 lg:pb-4 lg:pt-5">
+          <div className={cn(theme.cartDrawerHeaderBorder, "px-4 pb-3 pt-3 sm:px-5 lg:px-6 lg:pb-4 lg:pt-5")}>
             <div className="flex items-center justify-between gap-3">
               <div className="flex min-w-0 items-baseline gap-2.5">
-                <h2 className="truncate text-xl font-bold tracking-tight text-slate-950 sm:text-2xl">
+                <h2 className={theme.cartDrawerTitle}>
                   Sepetim
                 </h2>
-                <p className="truncate text-xs font-medium text-slate-500 sm:text-sm">
+                <p className={cn("truncate text-xs font-medium sm:text-sm", theme.cartDrawerMuted)}>
                   {cartDistinctCount} kalem, {cartItemCount} ürün
                 </p>
               </div>
@@ -222,7 +224,7 @@ export function StorefrontCartDrawer({
                 <button
                   type="button"
                   onClick={onClose}
-                  className="flex size-10 items-center justify-center rounded-full border border-slate-200 bg-slate-50 text-slate-600 transition hover:border-slate-300 hover:bg-slate-100"
+                  className={theme.cartDrawerCloseButton}
                   aria-label="Sepeti kapat"
                 >
                   <X className="size-5" />
@@ -252,7 +254,7 @@ export function StorefrontCartDrawer({
                 {cart.map((item) => (
                   <div
                     key={item.id}
-                    className="min-w-0 rounded-[1.55rem] border border-slate-200/80 bg-[linear-gradient(180deg,#ffffff_0%,#f8fafc_100%)] p-3.5 shadow-[0_14px_36px_rgba(15,23,42,0.06)]"
+                    className={theme.cartDrawerItem}
                   >
                     <div className="flex gap-3">
                       <div className="relative h-[4.5rem] w-[4.5rem] shrink-0 overflow-hidden rounded-[1.15rem] border border-slate-200 bg-white sm:h-20 sm:w-20 sm:rounded-[1.35rem]">
@@ -525,9 +527,9 @@ export function StorefrontCartDrawer({
             )}
           </div>
 
-          <div className="shrink-0 border-t border-slate-100 bg-[linear-gradient(180deg,#ffffff_0%,#f8fafc_100%)] px-4 py-3.5 sm:px-5 lg:px-6 lg:py-4">
-            <div className="rounded-[1.5rem] border border-slate-200/80 bg-white p-2.5 sm:p-3 lg:p-4 shadow-[0_14px_40px_rgba(15,23,42,0.06)] sm:rounded-[1.75rem]">
-              <div className="rounded-[1.4rem] bg-slate-950 px-4 py-3 text-white shadow-[0_18px_48px_rgba(15,23,42,0.24)]">
+          <div className={cn("shrink-0 border-t px-4 py-3.5 sm:px-5 lg:px-6 lg:py-4", theme.categoryRailBorder, theme.surfaceMuted)}>
+            <div className={cn("rounded-[1.5rem] border p-2.5 sm:p-3 lg:p-4 shadow-[0_14px_40px_rgba(15,23,42,0.06)] sm:rounded-[1.75rem]", theme.border, theme.surface)}>
+              <div className={cn("rounded-[1.4rem] px-4 py-3 shadow-[0_18px_48px_rgba(15,23,42,0.24)]", theme.cartDrawerSummary)}>
                 {!isCatalogOnly && cartPaymentSummary ? (
                   <div className="space-y-2.5">
                     {(cartPaymentSummary.isQualified && cartPaymentSummary.discountAmount > 0) ||

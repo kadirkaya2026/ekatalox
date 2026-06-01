@@ -14,7 +14,7 @@ import {
   getTenantStorefrontSettings,
 } from "@/lib/data";
 import { getStorefrontHomePath } from "@/lib/storefront/paths";
-import { storefrontThemes } from "@/lib/storefront/themes";
+import { getStorefrontTheme } from "@/lib/storefront/themes";
 import {
   getRequestHostFromHeaders,
   isTenantCustomDomainHost,
@@ -71,8 +71,17 @@ export default async function SectionDetailPage(props: {
     !priceListState ||
     !isStorefrontPriceListStateValid({ cookieState: priceListState, tenant })
   ) {
+    const settings = await getTenantStorefrontSettings(tenant.id);
+    const theme = getStorefrontTheme(settings.theme_key);
+
     return (
-      <PasswordGate subdomain={subdomain} companyName={tenant.company_name} />
+      <div className={theme.page}>
+        <PasswordGate
+          subdomain={subdomain}
+          companyName={tenant.company_name}
+          themeKey={settings.theme_key}
+        />
+      </div>
     );
   }
 
@@ -92,7 +101,7 @@ export default async function SectionDetailPage(props: {
     notFound();
   }
 
-  const theme = storefrontThemes[storefrontSettings.theme_key] ?? storefrontThemes.minimal;
+  const theme = getStorefrontTheme(storefrontSettings.theme_key);
   const footerVisible = storefrontSettings.is_footer_visible;
   const headersList = await headers();
   const requestHost = getRequestHostFromHeaders(headersList);
