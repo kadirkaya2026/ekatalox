@@ -2110,7 +2110,9 @@ export function StorefrontClient({
                   Sepet Toplamı
                 </p>
                 <div className="mt-1">
-                  {cartTotalEntries.length ? (
+                  {cart.length === 0 ? (
+                    <p className="text-sm font-bold text-slate-400">—</p>
+                  ) : cartTotalEntries.length ? (
                     cartTotalEntries.map(({ currency, total }) => (
                       <p key={currency} className="text-sm font-bold text-slate-900">
                         {currency}: {formatCurrency(total, currency)}
