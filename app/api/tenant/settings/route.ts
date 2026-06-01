@@ -76,7 +76,7 @@ export async function PATCH(request: Request) {
     const { data } = await supabase
       .from("tenant_storefront_settings")
       .select(
-        "tenant_id, theme_key, logo_url, storefront_title, storefront_description, banner_items, site_tab_title, site_favicon_url, announcement_title, announcement_body, is_active, version, max_display_count, discount_threshold, discount_percentage, is_discount_active, discount_condition_note, discount_payment_method, card_installment_options, cash_discount_threshold, cash_discount_percentage, is_cash_discount_active, cash_discount_note, card_campaign_threshold, is_card_campaign_active, card_campaign_note, cash_discount_tiers, card_campaign_tiers, price_update_date, is_price_update_date_visible, is_footer_visible, is_footer_logo_visible, is_footer_social_visible, is_footer_location_visible, is_footer_copyright_visible, footer_location, footer_copyright, footer_instagram_url, footer_youtube_url, footer_x_url, footer_facebook_url, footer_whatsapp, is_footer_instagram_visible, is_footer_youtube_visible, is_footer_x_visible, is_footer_facebook_visible, is_footer_whatsapp_visible, footer_website_url, is_footer_website_visible, footer_phone, footer_email, is_footer_contact_visible",
+        "tenant_id, theme_key, layout_key, logo_url, storefront_title, storefront_description, banner_items, site_tab_title, site_favicon_url, announcement_title, announcement_body, is_active, version, max_display_count, discount_threshold, discount_percentage, is_discount_active, discount_condition_note, discount_payment_method, card_installment_options, cash_discount_threshold, cash_discount_percentage, is_cash_discount_active, cash_discount_note, card_campaign_threshold, is_card_campaign_active, card_campaign_note, cash_discount_tiers, card_campaign_tiers, price_update_date, is_price_update_date_visible, is_footer_visible, is_footer_logo_visible, is_footer_social_visible, is_footer_location_visible, is_footer_copyright_visible, footer_location, footer_copyright, footer_instagram_url, footer_youtube_url, footer_x_url, footer_facebook_url, footer_whatsapp, is_footer_instagram_visible, is_footer_youtube_visible, is_footer_x_visible, is_footer_facebook_visible, is_footer_whatsapp_visible, footer_website_url, is_footer_website_visible, footer_phone, footer_email, is_footer_contact_visible",
       )
       .eq("tenant_id", session.tenant!.id)
       .maybeSingle();
@@ -100,6 +100,7 @@ export async function PATCH(request: Request) {
       body.storefront_description ?? existingSettings.storefront_description,
     banner_items: body.banner_items ?? existingSettings.banner_items,
     theme_key: body.theme_key ?? existingSettings.theme_key,
+    layout_key: body.layout_key ?? existingSettings.layout_key,
     site_tab_title: body.site_tab_title ?? existingSettings.site_tab_title,
     site_favicon_url: body.site_favicon_url ?? existingSettings.site_favicon_url,
     announcement_title:
@@ -222,6 +223,7 @@ export async function PATCH(request: Request) {
       storefrontSettings: {
         tenant_id: session.tenant!.id,
         theme_key: parsed.data.theme_key,
+        layout_key: parsed.data.layout_key,
         logo_url: null,
         storefront_title: parsed.data.storefront_title,
         storefront_description: parsed.data.storefront_description,
@@ -306,6 +308,7 @@ export async function PATCH(request: Request) {
   const storefrontPayload = {
     tenant_id: session.tenant!.id,
     theme_key: parsed.data.theme_key,
+    layout_key: parsed.data.layout_key,
     storefront_title: parsed.data.storefront_title,
     storefront_description: parsed.data.storefront_description,
     banner_items: parsed.data.banner_items,

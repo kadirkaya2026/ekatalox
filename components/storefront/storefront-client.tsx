@@ -56,6 +56,7 @@ import {
 } from "@/lib/storefront/cart";
 import { getStorefrontTheme } from "@/lib/storefront/themes";
 import { StorefrontThemeProvider } from "@/lib/storefront/theme-context";
+import { StorefrontLayoutProvider } from "@/lib/storefront/layout-context";
 import {
   STOREFRONT_BANNER_SIZES,
   STOREFRONT_CROSS_SELL_SIZES,
@@ -92,8 +93,9 @@ import {
   DiscountSticker,
   ProductPrice,
   StorefrontFloatingCartAction,
-  StorefrontProductCard,
 } from "@/components/storefront/storefront-product-card";
+import { StorefrontProductListing } from "@/components/storefront/storefront-product-listing";
+import { getStorefrontLayout } from "@/lib/storefront/layouts";
 
 function getCartStorageKey(tenantId: string) {
   return `ekatalox_cart_${tenantId}`;
@@ -812,6 +814,7 @@ export function StorefrontClient({
   const analyticsSubdomain = subdomain ?? tenant.subdomain;
 
   const theme = getStorefrontTheme(storefrontSettings.theme_key);
+  const layout = getStorefrontLayout(storefrontSettings.layout_key ?? "classic-grid");
   const cartStorageKey = useMemo(() => getCartStorageKey(tenant.id), [tenant.id]);
   const announcementStorageKeys = useMemo(
     () => getAnnouncementStorageKeys(tenant.id),
@@ -2070,6 +2073,7 @@ export function StorefrontClient({
 
   return (
     <StorefrontThemeProvider themeKey={storefrontSettings.theme_key}>
+    <StorefrontLayoutProvider layoutKey={storefrontSettings.layout_key ?? "classic-grid"}>
     <div className="contents">
       <header className={cn(theme.header, theme.headerBorder)}>
         <div className="container-shell py-4">
@@ -2377,26 +2381,18 @@ export function StorefrontClient({
                     ) : null}
                   </div>
 
-                  <div className="grid grid-cols-3 gap-2 sm:gap-3 lg:grid-cols-4 xl:grid-cols-5">
-                    {visibleSectionProducts.map((product) => (
-                      <StorefrontProductCard
-                        key={product.id}
-                        product={product}
-                        cartQuantity={
-                          product.has_variants
-                            ? cartVariantCountByProductId.get(product.id) ?? 0
-                            : cartQuantityByProductId.get(product.id) ?? 0
-                        }
-                        addedVariantCount={cartVariantCountByProductId.get(product.id) ?? 0}
-                        productCardClassName={theme.productCard}
-                        productImageWrapClassName={theme.productImageWrap}
-                        onOpenDetail={handleOpenProductDetail}
-                        onIncrease={handleIncreaseCartItem}
-                        onDecrease={handleDecreaseCartItem}
-                        onOpenAddToCart={handleOpenAddToCartModal}
-                      />
-                    ))}
-                  </div>
+                  <StorefrontProductListing
+                    products={visibleSectionProducts}
+                    cartQuantityByProductId={cartQuantityByProductId}
+                    cartVariantCountByProductId={cartVariantCountByProductId}
+                    productCardClassName={theme.productCard}
+                    productImageWrapClassName={theme.productImageWrap}
+                    gridClassName={layout.sectionProductGridClass}
+                    onOpenDetail={handleOpenProductDetail}
+                    onIncrease={handleIncreaseCartItem}
+                    onDecrease={handleDecreaseCartItem}
+                    onOpenAddToCart={handleOpenAddToCartModal}
+                  />
 
                   {hasMore && sectionHref ? (
                     <div className="mt-6 flex justify-center">
@@ -2436,26 +2432,18 @@ export function StorefrontClient({
           </div>
 
           {filteredProducts.length ? (
-            <div className="grid grid-cols-3 gap-2 sm:gap-3 lg:grid-cols-4 xl:grid-cols-5">
-              {visibleProducts.map((product) => (
-                <StorefrontProductCard
-                  key={product.id}
-                  product={product}
-                  cartQuantity={
-                    product.has_variants
-                      ? cartVariantCountByProductId.get(product.id) ?? 0
-                      : cartQuantityByProductId.get(product.id) ?? 0
-                  }
-                  addedVariantCount={cartVariantCountByProductId.get(product.id) ?? 0}
-                  productCardClassName={theme.productCard}
-                  productImageWrapClassName={theme.productImageWrap}
-                  onOpenDetail={handleOpenProductDetail}
-                  onIncrease={handleIncreaseCartItem}
-                  onDecrease={handleDecreaseCartItem}
-                  onOpenAddToCart={handleOpenAddToCartModal}
-                />
-              ))}
-            </div>
+            <StorefrontProductListing
+              products={visibleProducts}
+              cartQuantityByProductId={cartQuantityByProductId}
+              cartVariantCountByProductId={cartVariantCountByProductId}
+              productCardClassName={theme.productCard}
+              productImageWrapClassName={theme.productImageWrap}
+              gridClassName={layout.productGridClass}
+              onOpenDetail={handleOpenProductDetail}
+              onIncrease={handleIncreaseCartItem}
+              onDecrease={handleDecreaseCartItem}
+              onOpenAddToCart={handleOpenAddToCartModal}
+            />
           ) : (
             <Card className="rounded-[2rem] border-dashed bg-transparent p-10 text-center">
               <p className="text-base font-semibold">Uyuşan ürün bulunamadı.</p>
@@ -2927,6 +2915,7 @@ export function StorefrontClient({
         ) : null}
       </Modal>
     </div>
+    </StorefrontLayoutProvider>
     </StorefrontThemeProvider>
   );
 }

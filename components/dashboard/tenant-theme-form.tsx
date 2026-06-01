@@ -2,14 +2,15 @@
 
 import { useState, useTransition } from "react";
 import Image from "next/image";
-import { ImageUp, LoaderCircle, Palette, Store } from "lucide-react";
+import { ImageUp, LayoutGrid, LoaderCircle, Palette, Store } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { StorefrontThemePreview } from "@/components/dashboard/storefront-theme-preview";
-import type { StorefrontThemeKey, TenantStorefrontSettings } from "@/lib/types";
+import type { StorefrontLayoutKey, StorefrontThemeKey, TenantStorefrontSettings } from "@/lib/types";
 import { THEME_OPTIONS } from "@/lib/storefront/theme-catalog";
+import { LAYOUT_OPTIONS } from "@/lib/storefront/layout-catalog";
 import {
   allowedLogoMimeTypes,
   maxLogoFileSizeBytes,
@@ -20,6 +21,7 @@ interface ThemeFormState {
   storefront_title: string;
   storefront_description: string;
   theme_key: StorefrontThemeKey;
+  layout_key: StorefrontLayoutKey;
 }
 
 function toThemeFormState(settings: TenantStorefrontSettings): ThemeFormState {
@@ -28,6 +30,7 @@ function toThemeFormState(settings: TenantStorefrontSettings): ThemeFormState {
     storefront_title: settings.storefront_title ?? "",
     storefront_description: settings.storefront_description ?? "",
     theme_key: settings.theme_key,
+    layout_key: settings.layout_key ?? "classic-grid",
   };
 }
 
@@ -108,6 +111,7 @@ export function TenantThemeForm({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           theme_key: form.theme_key,
+          layout_key: form.layout_key,
           storefront_title: form.storefront_title,
           storefront_description: form.storefront_description,
         }),
@@ -213,11 +217,46 @@ export function TenantThemeForm({
                   >
                     <StorefrontThemePreview
                       themeKey={theme.key}
+                      layoutKey={form.layout_key}
                       storefrontTitle={form.storefront_title}
                       logoUrl={form.logo_url}
                     />
                     <p className="mt-4 text-sm font-semibold text-slate-900">{theme.title}</p>
                     <p className="mt-1 text-sm leading-6 text-slate-500">{theme.description}</p>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div>
+            <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-slate-900">
+              <LayoutGrid className="size-4 text-emerald-700" />
+              <span>Vitrin düzeni</span>
+            </div>
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+              {LAYOUT_OPTIONS.map((layout) => {
+                const selected = form.layout_key === layout.key;
+                return (
+                  <button
+                    key={layout.key}
+                    type="button"
+                    onClick={() => updateField("layout_key", layout.key)}
+                    className={[
+                      "rounded-2xl border p-4 text-left transition",
+                      selected
+                        ? "border-emerald-500 bg-emerald-50 shadow-sm ring-1 ring-emerald-500/30"
+                        : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50",
+                    ].join(" ")}
+                  >
+                    <StorefrontThemePreview
+                      themeKey={form.theme_key}
+                      layoutKey={layout.key}
+                      storefrontTitle={form.storefront_title}
+                      logoUrl={form.logo_url}
+                    />
+                    <p className="mt-4 text-sm font-semibold text-slate-900">{layout.title}</p>
+                    <p className="mt-1 text-sm leading-6 text-slate-500">{layout.description}</p>
                   </button>
                 );
               })}

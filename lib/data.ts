@@ -64,6 +64,7 @@ export function getDefaultTenantStorefrontSettings(
     id: `storefront-default-${tenantId}`,
     tenant_id: tenantId,
     theme_key: "minimal",
+    layout_key: "classic-grid",
     logo_url: null,
     storefront_title: null,
     storefront_description: null,

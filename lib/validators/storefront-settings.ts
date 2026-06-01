@@ -3,6 +3,12 @@ import { DEFAULT_INSTALLMENT_OPTIONS } from "@/lib/storefront/cart";
 
 export const storefrontThemeKeySchema = z.enum(["minimal", "pro-blue", "neutral"]);
 
+export const storefrontLayoutKeySchema = z.enum([
+  "classic-grid",
+  "catalog-dense",
+  "catalog-list",
+]);
+
 const optionalUrlSchema = z
   .union([z.string().trim().url("Geçerli bir bağlantı girin."), z.literal(""), z.null(), z.undefined()])
   .transform((value) => value || null);
@@ -93,6 +99,7 @@ export const storefrontSettingsSchema = z
       .max(6, "En fazla 6 banner ekleyebilirsiniz.")
       .default([]),
     theme_key: storefrontThemeKeySchema,
+    layout_key: storefrontLayoutKeySchema.default("classic-grid"),
     site_tab_title: z
       .string()
       .trim()
