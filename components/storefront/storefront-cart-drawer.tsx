@@ -600,10 +600,10 @@ export function StorefrontCartDrawer({
                     </div>
                   </div>
                 ) : cart.length === 0 ? (
-                  <div className="flex items-center justify-between gap-3">
+                  <div className="hidden items-center justify-between gap-3 sm:flex">
                     <p className="text-sm font-medium text-slate-300">Toplam</p>
                     <p className="text-base font-bold tracking-tight text-slate-400 sm:text-lg">
-                      —
+                      Sepet Boş
                     </p>
                   </div>
                 ) : cartTotalEntries.length ? (

@@ -2111,7 +2111,7 @@ export function StorefrontClient({
                 </p>
                 <div className="mt-1">
                   {cart.length === 0 ? (
-                    <p className="text-sm font-bold text-slate-400">—</p>
+                    <p className="text-sm font-bold text-slate-400">Sepet Boş</p>
                   ) : cartTotalEntries.length ? (
                     cartTotalEntries.map(({ currency, total }) => (
                       <p key={currency} className="text-sm font-bold text-slate-900">
