@@ -189,7 +189,7 @@ export async function generateOrderReceiptPdf(
     cursorY + 20;
   cursorY = tableEndY + 12;
 
-  if (!catalogMode && params.paymentSummary && params.paymentMethodLabel) {
+  if (!catalogMode && params.paymentSummary) {
     const summary = params.paymentSummary;
     const currency = summary.currency;
     const summaryX = pageWidth - margin;
@@ -240,16 +240,18 @@ export async function generateOrderReceiptPdf(
       cursorY += PDF_SPACING.summaryLine;
     }
 
-    cursorY += 4;
-    setPdfFont(doc, "normal");
-    doc.setFontSize(PDF_FONT_SIZE.body);
-    doc.text(`Ödeme: ${params.paymentMethodLabel}`, margin, cursorY);
-    cursorY += 7;
+    if (params.paymentMethodLabel) {
+      cursorY += 4;
+      setPdfFont(doc, "normal");
+      doc.setFontSize(PDF_FONT_SIZE.body);
+      doc.text(`Ödeme: ${params.paymentMethodLabel}`, margin, cursorY);
+      cursorY += 7;
 
-    for (const campaignNote of buildAppliedCampaignBenefitNotes(summary)) {
-      const campaignNoteLines = doc.splitTextToSize(campaignNote, pageWidth - margin * 2);
-      doc.text(campaignNoteLines, margin, cursorY, { lineHeightFactor: 1.35 });
-      cursorY += campaignNoteLines.length * PDF_SPACING.wrappedLine + 2;
+      for (const campaignNote of buildAppliedCampaignBenefitNotes(summary)) {
+        const campaignNoteLines = doc.splitTextToSize(campaignNote, pageWidth - margin * 2);
+        doc.text(campaignNoteLines, margin, cursorY, { lineHeightFactor: 1.35 });
+        cursorY += campaignNoteLines.length * PDF_SPACING.wrappedLine + 2;
+      }
     }
   } else if (catalogMode) {
     setPdfFont(doc, "normal");

@@ -65,14 +65,6 @@ export const storefrontOrderPdfSchema = z
       return;
     }
 
-    if (!value.paymentMethod) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "Ödeme yöntemi seçilmelidir.",
-        path: ["paymentMethod"],
-      });
-    }
-
     for (const [index, item] of value.items.entries()) {
       if (item.price === null || item.price <= 0) {
         ctx.addIssue({

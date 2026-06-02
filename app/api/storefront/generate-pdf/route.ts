@@ -178,25 +178,26 @@ export async function POST(request: Request) {
     }
   }
 
+  const paymentMethod = parsed.data.paymentMethod ?? null;
   const activeInstallmentOptions = parsed.data.cardInstallmentOptions.filter(
     (option) => option.isActive,
   );
   const selectedInstallment =
-    parsed.data.paymentMethod === "card" && parsed.data.selectedInstallmentCount !== null
+    paymentMethod === "card" && parsed.data.selectedInstallmentCount !== null
       ? (activeInstallmentOptions.find(
           (option) => option.count === parsed.data.selectedInstallmentCount,
         ) ?? null)
       : null;
 
   const cashConfig =
-    parsed.data.paymentMethod === "cash"
+    paymentMethod === "cash"
       ? {
           tiers: parsed.data.cashDiscountTiers,
           isActive: parsed.data.isCashDiscountActive,
         }
       : null;
   const cardConfig =
-    parsed.data.paymentMethod === "card"
+    paymentMethod === "card"
       ? {
           tiers: parsed.data.cardCampaignTiers,
           isActive: parsed.data.isCardCampaignActive,
@@ -205,7 +206,7 @@ export async function POST(request: Request) {
 
   const paymentSummary = getCartPaymentSummary(
     items,
-    parsed.data.paymentMethod!,
+    paymentMethod ?? "cash",
     cashConfig,
     cardConfig,
     selectedInstallment,
@@ -238,11 +239,13 @@ export async function POST(request: Request) {
       orderDate,
       items,
       paymentSummary,
-      paymentMethodLabel: buildPaymentMethodLabel({
-        paymentMethod: parsed.data.paymentMethod,
-        selectedInstallment,
-        zeroCommissionApplied: paymentSummary.zeroCommissionApplied,
-      }),
+      paymentMethodLabel: paymentMethod
+        ? buildPaymentMethodLabel({
+            paymentMethod,
+            selectedInstallment,
+            zeroCommissionApplied: paymentSummary.zeroCommissionApplied,
+          })
+        : null,
       note: parsed.data.note,
     });
 

@@ -1118,10 +1118,6 @@ export function StorefrontClient({
       return;
     }
 
-    if (!isCatalogOnly && !selectedPaymentMethod) {
-      return;
-    }
-
     const requestId = crypto.randomUUID();
     setOrderPdfError(null);
     setWhatsappHandoff(null);

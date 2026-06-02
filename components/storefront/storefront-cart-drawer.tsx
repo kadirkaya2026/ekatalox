@@ -170,11 +170,6 @@ export function StorefrontCartDrawer({
 
   async function handleWhatsAppOrder() {
     if (!cart.length) return;
-    if (!isCatalogOnly && !selectedPaymentMethod) {
-      setPaymentMethodError("Lütfen ödeme yönteminizi seçin.");
-      return;
-    }
-    setPaymentMethodError(null);
 
     const trimmedCustomerName = customerReferenceName.trim();
     if (trimmedCustomerName.length < 2) {
@@ -187,10 +182,7 @@ export function StorefrontCartDrawer({
     await onWhatsAppOrder();
   }
 
-  const canCompleteWhatsAppOrder =
-    cart.length > 0 &&
-    !isGeneratingOrderPdf &&
-    (isCatalogOnly || selectedPaymentMethod !== null);
+  const canCompleteWhatsAppOrder = cart.length > 0 && !isGeneratingOrderPdf;
 
   if (!isOpen) {
     return null;
@@ -374,8 +366,8 @@ export function StorefrontCartDrawer({
                     <>
                   <div className="mb-3 flex items-center justify-between gap-3">
                     <p className="text-sm font-semibold text-slate-900">Ödeme Yöntemi</p>
-                    <span className="rounded-full bg-rose-50 px-2.5 py-1 text-[10px] font-semibold text-rose-600">
-                      Zorunlu
+                    <span className="rounded-full bg-slate-100 px-3 py-1 text-[11px] font-semibold text-slate-500">
+                      Opsiyonel
                     </span>
                   </div>
                   <div className="grid grid-cols-2 gap-2">
