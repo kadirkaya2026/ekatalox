@@ -170,13 +170,6 @@ export function StorefrontCartDrawer({
 
   async function handleWhatsAppOrder() {
     if (!cart.length) return;
-
-    const trimmedCustomerName = customerReferenceName.trim();
-    if (trimmedCustomerName.length < 2) {
-      setCustomerReferenceNameError("Lütfen Müşteri / Cari Adını giriniz!");
-      return;
-    }
-    setCustomerReferenceNameError(null);
     setCopyFeedback(null);
 
     await onWhatsAppOrder();
@@ -410,28 +403,20 @@ export function StorefrontCartDrawer({
                   ) : null}
                     </>
                   ) : null}
-                  <label className="mt-3 block">
-                    <span className="text-sm font-semibold text-slate-900">
-                      Müşteri / Cari Adı <span className="text-rose-600">*</span>
-                    </span>
+                  <div className="mt-3">
+                    <div className="mb-2 flex items-center justify-between gap-3">
+                      <span className="text-sm font-semibold text-slate-900">Müşteri / Cari Adı</span>
+                      <span className="rounded-full bg-slate-100 px-3 py-1 text-[11px] font-semibold text-slate-500">
+                        Opsiyonel
+                      </span>
+                    </div>
                     <Input
-                      required
                       value={customerReferenceName}
-                      onChange={(event) => {
-                        setCustomerReferenceName(event.target.value);
-                        if (customerReferenceNameError) {
-                          setCustomerReferenceNameError(null);
-                        }
-                      }}
+                      onChange={(event) => setCustomerReferenceName(event.target.value)}
                       placeholder="Örn: Ahmet Ticaret Ltd. Şti."
-                      className="mt-2 rounded-[1.1rem] border-slate-200 bg-slate-50/80 text-[16px]"
+                      className="rounded-[1.1rem] border-slate-200 bg-slate-50/80 text-[16px]"
                     />
-                  </label>
-                  {customerReferenceNameError ? (
-                    <p className="mt-2 text-xs font-medium text-rose-600">
-                      {customerReferenceNameError}
-                    </p>
-                  ) : null}
+                  </div>
                   {!isCatalogOnly
                     ? selectedPaymentMethod === "card" && (() => {
                     const activeInstallments = (storefrontSettings.card_installment_options ?? []).filter(

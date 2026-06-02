@@ -47,10 +47,7 @@ export const storefrontOrderPdfSchema = z
     subdomain: z.string().trim().min(1, "Mağaza bilgisi zorunludur."),
     catalog_mode: z.boolean().optional().default(false),
     items: z.array(storefrontOrderPdfCartItemSchema).min(1, "Sepet boş olamaz."),
-    customer_reference_name: z
-      .string()
-      .trim()
-      .min(2, "Müşteri adı zorunludur"),
+    customer_reference_name: z.string().trim().max(200).optional().default(""),
     note: z.string().max(500).nullable().optional(),
     paymentMethod: z.enum(["cash", "card"]).nullable().optional(),
     selectedInstallmentCount: z.number().int().positive().nullable().optional(),
