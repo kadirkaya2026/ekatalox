@@ -16,6 +16,7 @@ import {
   isReservedSubdomain,
   RESERVED_SUBDOMAIN_MESSAGE,
 } from "@/lib/tenancy/reserved-subdomains";
+import { getPriceListDisplayName, normalizePriceListName } from "@/lib/price-lists/constants";
 import type { AccessCode, TenantPlan, TenantWithRelations } from "@/lib/types";
 import { cn, formatDate } from "@/lib/utils";
 
@@ -605,7 +606,7 @@ export function AdminTenantsManager({
                           >
                             {(tenant.price_lists ?? []).map((list) => (
                               <option key={list.id} value={list.id}>
-                                {list.name}
+                                {getPriceListDisplayName(list)}
                               </option>
                             ))}
                           </select>
@@ -639,7 +640,9 @@ export function AdminTenantsManager({
                           {accessCode.password_code}
                         </span>
                         <span className="text-slate-500">
-                          {accessCode.price_list_name ?? "Fiyat listesi"}
+                          {accessCode.price_list_name
+                            ? normalizePriceListName(accessCode.price_list_name)
+                            : "Fiyat listesi"}
                         </span>
                         <button
                           type="button"
@@ -686,7 +689,7 @@ export function AdminTenantsManager({
                   >
                     {(tenant.price_lists ?? []).map((list) => (
                       <option key={list.id} value={list.id}>
-                        {list.name}
+                        {getPriceListDisplayName(list)}
                       </option>
                     ))}
                   </select>

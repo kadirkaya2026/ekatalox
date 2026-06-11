@@ -1,4 +1,5 @@
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { normalizePriceListName } from "@/lib/price-lists/constants";
 import type { CurrencyCode } from "@/lib/products/constants";
 import type { AnalyticsPeriod } from "@/lib/validators/analytics";
 
@@ -293,7 +294,10 @@ async function fetchPriceListUsage(
   ]);
 
   const priceListNames = new Map(
-    (priceLists ?? []).map((list) => [list.id as string, list.name as string]),
+    (priceLists ?? []).map((list) => [
+      list.id as string,
+      normalizePriceListName(list.name as string),
+    ]),
   );
   const accessCodeRecords = new Map(
     (accessCodes ?? []).map((code) => [

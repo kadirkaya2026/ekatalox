@@ -11,7 +11,9 @@ import { shouldAllowDemoFallback } from "@/lib/env";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { normalizeProductDescription } from "@/lib/products/description-html";
 import { normalizeProductRecord } from "@/lib/products/records";
+import { productWithVariantsAndPricesSelect } from "@/lib/products/queries";
 import { normalizePriceListRecord, sortPriceLists } from "@/lib/price-lists/records";
+import { getPriceListDisplayName } from "@/lib/price-lists/constants";
 import { ensureDefaultPriceListsForTenant, fetchTenantPriceLists } from "@/lib/price-lists/data";
 import { toStorefrontProduct } from "@/lib/storefront/pricing";
 import type {
@@ -30,8 +32,7 @@ import type {
 
 type AdminClient = NonNullable<ReturnType<typeof createSupabaseAdminClient>>;
 
-const productWithVariantsSelect =
-  "*, variants:product_variants(*), product_prices(price_list_id, price)";
+const productWithVariantsSelect = productWithVariantsAndPricesSelect;
 const sectionProductsWithVariantsSelect =
   "product_id, display_order, products(*, variants:product_variants(*), product_prices(price_list_id, price))";
 const sectionProductsFallbackSelect =
@@ -299,7 +300,7 @@ export async function getTenantsOverview(): Promise<TenantWithRelations[]> {
     await Promise.all([
       supabase.from("tenants").select("*").order("created_at", { ascending: false }),
       supabase.from("products").select("tenant_id"),
-      supabase.from("access_codes").select("*, price_list:price_lists(name)"),
+      supabase.from("access_codes").select("*, price_list:price_lists(name, is_catalog_only)"),
       supabase.from("price_lists").select("*").order("sort_order", { ascending: true }),
     ]);
 
@@ -311,14 +312,22 @@ export async function getTenantsOverview(): Promise<TenantWithRelations[]> {
 
   const accessCodes = ((accessCodeRows as Array<Record<string, unknown>> | null) ?? []).map(
     (row) => {
-      const priceList = row.price_list as { name?: string } | null;
+      const priceList = row.price_list as {
+        name?: string;
+        is_catalog_only?: boolean;
+      } | null;
 
       return {
         id: String(row.id ?? ""),
         tenant_id: String(row.tenant_id ?? ""),
         password_code: String(row.password_code ?? ""),
         price_list_id: String(row.price_list_id ?? ""),
-        price_list_name: priceList?.name,
+        price_list_name: priceList?.name
+          ? getPriceListDisplayName({
+              name: priceList.name,
+              is_catalog_only: Boolean(priceList.is_catalog_only),
+            })
+          : undefined,
         created_at: String(row.created_at ?? ""),
       } satisfies AccessCode;
     },
@@ -436,26 +445,36 @@ export async function getTenantAccessCodes(
       .filter((item) => item.tenant_id === tenantId)
       .map((code) => ({
         ...code,
-        price_list_name:
-          demoPriceLists.find((list) => list.id === code.price_list_id)?.name ?? undefined,
+        price_list_name: (() => {
+          const list = demoPriceLists.find((item) => item.id === code.price_list_id);
+          return list ? getPriceListDisplayName(list) : undefined;
+        })(),
       }));
   }
 
   const { data } = await supabase
     .from("access_codes")
-    .select("*, price_list:price_lists(name)")
+    .select("*, price_list:price_lists(name, is_catalog_only)")
     .eq("tenant_id", tenantId)
     .order("created_at", { ascending: false });
 
   return ((data as Array<Record<string, unknown>> | null) ?? []).map((row) => {
-    const priceList = row.price_list as { name?: string } | null;
+    const priceList = row.price_list as {
+      name?: string;
+      is_catalog_only?: boolean;
+    } | null;
 
     return {
       id: String(row.id ?? ""),
       tenant_id: String(row.tenant_id ?? ""),
       password_code: String(row.password_code ?? ""),
       price_list_id: String(row.price_list_id ?? ""),
-      price_list_name: priceList?.name,
+      price_list_name: priceList?.name
+        ? getPriceListDisplayName({
+            name: priceList.name,
+            is_catalog_only: Boolean(priceList.is_catalog_only),
+          })
+        : undefined,
       created_at: String(row.created_at ?? ""),
     } satisfies AccessCode;
   });
@@ -575,7 +594,7 @@ export async function validateAccessCode(params: {
       accessCodeId: matched.id,
       priceListId: priceList.id,
       isCatalogOnly: priceList.is_catalog_only,
-      priceListName: priceList.name,
+      priceListName: getPriceListDisplayName(priceList),
     };
   }
 
@@ -601,7 +620,7 @@ export async function validateAccessCode(params: {
     accessCodeId: matched.id,
     priceListId: matched.price_list.id,
     isCatalogOnly: matched.price_list.is_catalog_only,
-    priceListName: matched.price_list.name,
+    priceListName: getPriceListDisplayName(matched.price_list),
   };
 }
 

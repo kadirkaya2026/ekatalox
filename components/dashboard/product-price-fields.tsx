@@ -1,4 +1,5 @@
 import { Input } from "@/components/ui/input";
+import { getPriceListDisplayName } from "@/lib/price-lists/constants";
 import type { PriceList } from "@/lib/types";
 
 export function ProductPriceFields({
@@ -16,7 +17,7 @@ export function ProductPriceFields({
     <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
       {pricedLists.map((list) => (
         <label key={list.id} className="grid gap-2 text-sm text-slate-700">
-          <span className="font-medium">{list.name}</span>
+          <span className="font-medium">{getPriceListDisplayName(list)}</span>
           <Input
             inputMode="decimal"
             placeholder="0"

@@ -1,4 +1,8 @@
-import { DEFAULT_PRICED_LIST_NAMES } from "@/lib/price-lists/constants";
+import {
+  DEFAULT_PRICED_LIST_NAMES,
+  LEGACY_PRICE_LIST_NAME_ALIASES,
+  normalizePriceListName,
+} from "@/lib/price-lists/constants";
 import { getPricedLists } from "@/lib/price-lists/records";
 import type { PriceList } from "@/lib/types";
 
@@ -24,18 +28,39 @@ export function buildImportPricesFromLegacyTiers(row: {
   }));
 }
 
+function buildPriceListImportLookup(priceLists: PriceList[]) {
+  const pricedLists = getPricedLists(priceLists);
+  const listNameMap = new Map<string, string>();
+
+  for (const list of pricedLists) {
+    const keys = new Set<string>([
+      list.name,
+      normalizePriceListName(list.name),
+      ...DEFAULT_PRICED_LIST_NAMES,
+      ...Object.keys(LEGACY_PRICE_LIST_NAME_ALIASES),
+      ...Object.values(LEGACY_PRICE_LIST_NAME_ALIASES),
+    ]);
+
+    for (const key of keys) {
+      listNameMap.set(key.toLocaleLowerCase("tr-TR"), list.id);
+    }
+  }
+
+  return listNameMap;
+}
+
 export function resolveImportPricesForTenant(
   prices: ImportListPrice[],
   priceLists: PriceList[],
 ) {
-  const pricedLists = getPricedLists(priceLists);
-  const listNameMap = new Map(
-    pricedLists.map((list) => [list.name.toLocaleLowerCase("tr-TR"), list.id]),
-  );
+  const listNameMap = buildPriceListImportLookup(priceLists);
 
   return prices
     .map((entry) => {
-      const priceListId = listNameMap.get(entry.list_name.toLocaleLowerCase("tr-TR"));
+      const normalizedName = normalizePriceListName(entry.list_name);
+      const priceListId =
+        listNameMap.get(normalizedName.toLocaleLowerCase("tr-TR")) ??
+        listNameMap.get(entry.list_name.toLocaleLowerCase("tr-TR"));
 
       if (!priceListId) {
         return null;

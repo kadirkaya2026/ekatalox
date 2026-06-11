@@ -1,5 +1,6 @@
 import { getProductPriceForList } from "@/lib/price-lists/records";
 import { buildProductPricesFormPayload } from "@/lib/products/form-prices";
+import { sanitizePrice } from "@/lib/products/parse-price-input";
 import type { PriceList, Product } from "@/lib/types";
 
 export function buildListPriceFormState(
@@ -32,6 +33,6 @@ export function appendProductPricesToFormData(
 }
 
 export function getMinPriceFromFormState(listPrices: Record<string, string>) {
-  const values = Object.values(listPrices).map((value) => Number(value || 0));
+  const values = Object.values(listPrices).map((value) => sanitizePrice(value || 0));
   return values.length ? Math.min(...values) : 0;
 }

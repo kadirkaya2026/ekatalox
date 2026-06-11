@@ -41,6 +41,7 @@ import {
   getMinPriceFromFormState,
 } from "@/lib/products/price-form";
 import { getProductPriceForList } from "@/lib/price-lists/records";
+import { getPriceListDisplayName } from "@/lib/price-lists/constants";
 import { computeDiscountPercentage } from "@/lib/storefront/pricing";
 import type { Category, PriceList, Product, ProductVariant, Tenant } from "@/lib/types";
 import { cn, formatCurrency } from "@/lib/utils";
@@ -1092,7 +1093,7 @@ export function ProductsManager({
                 <th className="px-4 py-3">Model</th>
                 {pricedLists.map((list) => (
                   <th key={list.id} className="px-4 py-3">
-                    {list.name}
+                    {getPriceListDisplayName(list)}
                   </th>
                 ))}
                 <th className="px-4 py-3 text-right">Aksiyon</th>
@@ -1391,7 +1392,7 @@ export function ProductsManager({
               <div className="mt-4 grid grid-cols-1 gap-2 rounded-xl bg-slate-50 p-3 sm:grid-cols-3">
                 {pricedLists.map((list) => (
                   <div key={list.id} className="text-center">
-                    <p className="text-xs text-slate-500">{list.name}</p>
+                    <p className="text-xs text-slate-500">{getPriceListDisplayName(list)}</p>
                     <p className="mt-1 text-sm font-semibold text-slate-900">
                       {formatCurrency(
                         getProductPriceForList(product.prices, list.id),

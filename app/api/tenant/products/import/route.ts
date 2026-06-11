@@ -279,7 +279,14 @@ export async function POST(request: Request) {
       priceLists,
     );
 
-    await upsertProductPrices(supabase, productId, resolvedPrices);
+    const priceError = await upsertProductPrices(supabase, productId, resolvedPrices);
+
+    if (priceError) {
+      return NextResponse.json(
+        { error: priceError.message || "Ürün fiyatları kaydedilemedi." },
+        { status: 400 },
+      );
+    }
   }
 
   const [{ data: products }, { data: categories }] = await Promise.all([

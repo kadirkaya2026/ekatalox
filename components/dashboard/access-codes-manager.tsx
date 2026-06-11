@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { getAccessCodePriceListLabel } from "@/lib/price-lists/constants";
+import { getPriceListDisplayName, normalizePriceListName } from "@/lib/price-lists/constants";
 import type { AccessCode, PriceList, Tenant } from "@/lib/types";
 
 export function AccessCodesManager({
@@ -50,7 +50,7 @@ export function AccessCodesManager({
       setCodes((current) => [
         {
           ...created,
-          price_list_name: list ? getAccessCodePriceListLabel(list) : created.price_list_name,
+          price_list_name: list ? getPriceListDisplayName(list) : created.price_list_name,
         },
         ...current,
       ]);
@@ -103,7 +103,7 @@ export function AccessCodesManager({
           >
             {priceLists.map((list) => (
               <option key={list.id} value={list.id}>
-                {getAccessCodePriceListLabel(list)}
+                {getPriceListDisplayName(list)}
               </option>
             ))}
           </select>
@@ -134,8 +134,8 @@ export function AccessCodesManager({
           {codes.map((code) => {
             const linkedList = priceLists.find((entry) => entry.id === code.price_list_id);
             const listLabel = linkedList
-              ? getAccessCodePriceListLabel(linkedList)
-              : (code.price_list_name ?? "Fiyat listesi");
+              ? getPriceListDisplayName(linkedList)
+              : normalizePriceListName(code.price_list_name ?? "Fiyat listesi");
 
             return (
             <div

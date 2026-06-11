@@ -81,10 +81,10 @@ export async function upsertProductPrices(
   prices: Array<{ price_list_id: string; price: number }>,
 ) {
   if (!prices.length) {
-    return;
+    return null;
   }
 
-  await supabase.from("product_prices").upsert(
+  const { error } = await supabase.from("product_prices").upsert(
     prices.map((entry) => ({
       product_id: productId,
       price_list_id: entry.price_list_id,
@@ -92,6 +92,8 @@ export async function upsertProductPrices(
     })),
     { onConflict: "product_id,price_list_id" },
   );
+
+  return error;
 }
 
 export async function deleteProductPricesForLists(

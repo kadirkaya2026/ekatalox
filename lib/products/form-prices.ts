@@ -1,3 +1,4 @@
+import { sanitizePrice } from "@/lib/products/parse-price-input";
 import type { ProductPrice } from "@/lib/types";
 
 export function parseProductPricesFromFormData(formData: FormData): ProductPrice[] {
@@ -12,7 +13,7 @@ export function parseProductPricesFromFormData(formData: FormData): ProductPrice
         .map((entry) => ({
           product_id: "",
           price_list_id: entry.price_list_id!,
-          price: Number(entry.price ?? 0),
+          price: sanitizePrice(entry.price ?? 0),
         }));
     } catch {
       return [];
@@ -35,7 +36,7 @@ export function parseProductPricesFromFormData(formData: FormData): ProductPrice
     prices.push({
       product_id: "",
       price_list_id: priceListId,
-      price: Number(String(value).trim() || 0),
+      price: sanitizePrice(String(value).trim() || 0),
     });
   }
 
@@ -48,7 +49,7 @@ export function buildProductPricesFormPayload(
   return JSON.stringify(
     prices.map((entry) => ({
       price_list_id: entry.price_list_id,
-      price: Number(entry.price ?? 0),
+      price: sanitizePrice(entry.price ?? 0),
     })),
   );
 }

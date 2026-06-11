@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { normalizeProductRecord } from "@/lib/products/records";
+import { productWithVariantsAndPricesSelect } from "@/lib/products/queries";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { getSessionContext } from "@/lib/auth/session";
 import { ensureTenantAdminResponse } from "@/lib/tenancy/guards";
@@ -11,7 +12,7 @@ async function fetchToggledProduct(
 ) {
   const withVariants = await supabase
     .from("products")
-    .select("*, variants:product_variants(*)")
+    .select(productWithVariantsAndPricesSelect)
     .eq("id", productId)
     .eq("tenant_id", tenantId)
     .single();

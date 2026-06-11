@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { normalizeProductRecord } from "@/lib/products/records";
+import { productWithVariantsAndPricesSelect } from "@/lib/products/queries";
 import { parseProductPricesFromFormData } from "@/lib/products/form-prices";
 import { upsertProductPrices } from "@/lib/price-lists/data";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
@@ -20,7 +21,7 @@ async function fetchUpdatedProduct(
 ) {
   const withVariants = await supabase
     .from("products")
-    .select("*, variants:product_variants(*)")
+    .select(productWithVariantsAndPricesSelect)
     .eq("id", productId)
     .eq("tenant_id", tenantId)
     .single();
@@ -127,7 +128,14 @@ export async function PATCH(
     return NextResponse.json({ error: error.message }, { status: 400 });
   }
 
-  await upsertProductPrices(supabase, id, parsed.data.prices);
+  const priceError = await upsertProductPrices(supabase, id, parsed.data.prices);
+
+  if (priceError) {
+    return NextResponse.json(
+      { error: priceError.message || "Ürün fiyatları kaydedilemedi." },
+      { status: 400 },
+    );
+  }
 
   const product = await fetchUpdatedProduct(supabase, id, tenant.id);
 

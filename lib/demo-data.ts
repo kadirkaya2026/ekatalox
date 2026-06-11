@@ -104,7 +104,7 @@ export const demoPriceLists: PriceList[] = [
   {
     id: "pl-1-lucatech",
     tenant_id: "tenant-lucatech",
-    name: "Perakende",
+    name: "1.Liste",
     is_catalog_only: false,
     sort_order: 1,
     created_at: new Date("2026-01-01").toISOString(),
@@ -112,7 +112,7 @@ export const demoPriceLists: PriceList[] = [
   {
     id: "pl-2-lucatech",
     tenant_id: "tenant-lucatech",
-    name: "Bayi 1",
+    name: "2.Liste",
     is_catalog_only: false,
     sort_order: 2,
     created_at: new Date("2026-01-01").toISOString(),
@@ -120,7 +120,7 @@ export const demoPriceLists: PriceList[] = [
   {
     id: "pl-3-lucatech",
     tenant_id: "tenant-lucatech",
-    name: "Bayi 2",
+    name: "3.Liste",
     is_catalog_only: false,
     sort_order: 3,
     created_at: new Date("2026-01-01").toISOString(),
@@ -203,7 +203,7 @@ export const demoAccessCodes: AccessCode[] = [
     tenant_id: "tenant-lucatech",
     password_code: "1111",
     price_list_id: "pl-1-lucatech",
-    price_list_name: "Perakende",
+    price_list_name: "1.Liste",
     created_at: new Date("2026-01-10").toISOString(),
   },
   {
@@ -211,7 +211,7 @@ export const demoAccessCodes: AccessCode[] = [
     tenant_id: "tenant-lucatech",
     password_code: "2222",
     price_list_id: "pl-2-lucatech",
-    price_list_name: "Bayi 1",
+    price_list_name: "2.Liste",
     created_at: new Date("2026-01-10").toISOString(),
   },
   {
@@ -219,7 +219,7 @@ export const demoAccessCodes: AccessCode[] = [
     tenant_id: "tenant-lucatech",
     password_code: "3333",
     price_list_id: "pl-3-lucatech",
-    price_list_name: "Bayi 2",
+    price_list_name: "3.Liste",
     created_at: new Date("2026-01-10").toISOString(),
   },
   {
