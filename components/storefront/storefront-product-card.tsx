@@ -290,7 +290,7 @@ export const StorefrontProductCard = memo(function StorefrontProductCard({
         {!product.is_in_stock ? (
           <div className={theme.productOutOverlay}>
             <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-white sm:text-[11px]">
-              Tükendi
+              Yakında
             </span>
           </div>
         ) : null}

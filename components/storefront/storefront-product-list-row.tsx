@@ -29,7 +29,7 @@ function StorefrontInlineCartAction({
   if (!product.is_in_stock) {
     return (
       <span className={cn("shrink-0 rounded-full px-2.5 py-1 text-[10px] font-semibold", theme.stockBadgeOut)}>
-        Tükendi
+        Yakında
       </span>
     );
   }
@@ -181,7 +181,7 @@ export const StorefrontProductListRow = memo(function StorefrontProductListRow({
             </span>
           ) : (
             <span className={cn("inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold", theme.stockBadgeOut)}>
-              Tükendi
+              Yakında
             </span>
           )}
           {product.has_variants ? (

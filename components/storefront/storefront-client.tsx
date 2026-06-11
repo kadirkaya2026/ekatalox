@@ -2835,7 +2835,7 @@ export function StorefrontClient({
                             </p>
                             {isUnavailable ? (
                               <Badge className="px-2 py-1 text-[10px] bg-slate-200 text-slate-600">
-                                Tükendi
+                                Yakında
                               </Badge>
                             ) : null}
                           </div>
