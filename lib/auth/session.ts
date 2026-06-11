@@ -69,39 +69,35 @@ export const getSessionContext = cache(async (): Promise<SessionContext> => {
     };
   }
 
-  const { data: profileRow } = await admin
-    .from("profiles")
-    .select("*")
-    .eq("id", user.id)
-    .maybeSingle();
+  // Fetch the profile and the membership (with its tenant embedded via the
+  // tenant_memberships → tenants FK) in parallel, so the session lookup costs
+  // one round trip instead of three sequential ones.
+  const [profileResult, membershipResult] = await Promise.all([
+    admin.from("profiles").select("*").eq("id", user.id).maybeSingle(),
+    admin
+      .from("tenant_memberships")
+      .select("tenant_id, tenants(*)")
+      .eq("user_id", user.id)
+      .maybeSingle(),
+  ]);
 
-  const profile = (profileRow as Profile | null) ?? null;
+  const profile = (profileResult.data as Profile | null) ?? null;
 
   let tenant: Tenant | null = null;
 
-  if (profile?.role === "tenant_admin") {
-    const { data: membershipRow } = await admin
-      .from("tenant_memberships")
-      .select("tenant_id")
-      .eq("user_id", user.id)
-      .maybeSingle();
+  if (profile?.role === "tenant_admin" && membershipResult.data) {
+    const embeddedTenant = (
+      membershipResult.data as { tenants: Tenant | Tenant[] | null }
+    ).tenants;
 
-    const membership = (membershipRow as { tenant_id: string } | null) ?? null;
-
-    if (membership?.tenant_id) {
-      const { data: tenantData } = await admin
-        .from("tenants")
-        .select("*")
-        .eq("id", membership.tenant_id)
-        .maybeSingle();
-
-      tenant = (tenantData as Tenant | null) ?? null;
-    }
+    tenant = Array.isArray(embeddedTenant)
+      ? embeddedTenant[0] ?? null
+      : embeddedTenant ?? null;
   }
 
   return {
     userId: user.id,
-    profile: profile ?? null,
+    profile,
     tenant,
     supabaseConfigured: true,
   };
