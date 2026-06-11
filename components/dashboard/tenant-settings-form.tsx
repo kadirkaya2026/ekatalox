@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -53,6 +54,7 @@ function CustomDomainSettings({
   const [savedCustomDomain, setSavedCustomDomain] = useState(tenant.custom_domain);
   const [domainMessage, setDomainMessage] = useState<string | null>(null);
   const [domainPending, startDomainTransition] = useTransition();
+  const router = useRouter();
 
   function saveCustomDomain(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -81,6 +83,7 @@ function CustomDomainSettings({
           ? "Özel alan adı kaydedildi. DNS ayarlarını tamamladıktan sonra vitrin bu adresten açılır. Eski subdomain adresiniz otomatik olarak bu alan adına yönlendirilir."
           : "Özel alan adı kaldırıldı.",
       );
+      router.refresh();
     });
   }
 
@@ -151,6 +154,7 @@ export function TenantSettingsForm({
   const [pending, startTransition] = useTransition();
   const [passwordPending, startPasswordTransition] = useTransition();
   const supabase = createSupabaseBrowserClient();
+  const router = useRouter();
 
   function save(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -170,6 +174,7 @@ export function TenantSettingsForm({
         return;
       }
       setMessage("Sipariş yönlendirme ayarları güncellendi.");
+      router.refresh();
     });
   }
 

@@ -7,6 +7,7 @@ import {
   type DragEvent,
   type ChangeEvent,
 } from "react";
+import { useRouter } from "next/navigation";
 import {
   AlertCircle,
   Archive,
@@ -442,6 +443,7 @@ function ProductImportTab({
     parsed: null,
     message: null,
   });
+  const router = useRouter();
 
   const handleFile = useCallback(async (file: File) => {
     if (usage.remaining <= 0) {
@@ -536,6 +538,7 @@ function ProductImportTab({
         parsed: null,
         message: `${result.count ?? 0} ürün başarıyla aktarıldı.`,
       });
+      router.refresh();
     } catch {
       setState((s) => ({
         ...s,
@@ -543,7 +546,7 @@ function ProductImportTab({
         message: "Sunucuya bağlanılamadı. Lütfen tekrar deneyin.",
       }));
     }
-  }, [state.parsed, onCategoriesUpdated, onProductsUpdated, usage.remaining]);
+  }, [state.parsed, onCategoriesUpdated, onProductsUpdated, usage.remaining, router]);
 
   const reset = useCallback(() => {
     setState({ status: "idle", file: null, parsed: null, message: null });
@@ -756,6 +759,7 @@ function ImageImportTab({ tenant }: { tenant: Tenant }) {
     message: null,
     progress: null,
   });
+  const router = useRouter();
 
   const handleFile = useCallback(
     async (file: File) => {
@@ -935,6 +939,7 @@ function ImageImportTab({ tenant }: { tenant: Tenant }) {
               : `${successCount} resim başarıyla yüklendi ve ürünlerle eşleştirildi.`,
           progress: null,
         });
+        router.refresh();
       } catch (err) {
         setState({
           status: "error",
@@ -947,7 +952,7 @@ function ImageImportTab({ tenant }: { tenant: Tenant }) {
         });
       }
     },
-    [tenant.id],
+    [tenant.id, router],
   );
 
   const reset = useCallback(() => {

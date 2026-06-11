@@ -149,6 +149,7 @@ export function ProductAddForm({
       }
 
       router.push("/dashboard/products");
+      router.refresh();
     });
   }
 

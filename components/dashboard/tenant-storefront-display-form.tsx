@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { CalendarDays } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -22,6 +23,7 @@ export function TenantStorefrontDisplayForm({
   const [savePending, startSaveTransition] = useTransition();
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
   const [dateError, setDateError] = useState<string | null>(null);
+  const router = useRouter();
 
   function save(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -58,6 +60,7 @@ export function TenantStorefrontDisplayForm({
       }
 
       setSaveMessage("Vitrin ayarları kaydedildi.");
+      router.refresh();
     });
   }
 

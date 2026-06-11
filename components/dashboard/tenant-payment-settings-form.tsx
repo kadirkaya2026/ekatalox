@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { Banknote, CreditCard, Globe, Plus, Trash2, ShoppingCart, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -62,6 +63,7 @@ export function TenantPaymentSettingsForm({
 
   // ── UI state ────────────────────────────────────────────────────────────────
   const [message, setMessage] = useState<string | null>(null);
+  const router = useRouter();
   const [pending, startTransition] = useTransition();
 
   // ── Tier helpers ─────────────────────────────────────────────────────────────
@@ -133,6 +135,7 @@ export function TenantPaymentSettingsForm({
         return;
       }
       setMessage("Ödeme ayarları kaydedildi.");
+      router.refresh();
     });
   }
 

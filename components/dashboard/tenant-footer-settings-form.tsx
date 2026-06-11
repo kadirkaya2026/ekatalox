@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { LayoutTemplate } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -119,6 +120,7 @@ export function TenantFooterSettingsForm({
   );
   const [savePending, startSaveTransition] = useTransition();
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
+  const router = useRouter();
 
   const footerFieldsDisabled = !state.isFooterVisible;
 
@@ -173,6 +175,7 @@ export function TenantFooterSettingsForm({
       }
 
       setSaveMessage("Footer ayarları kaydedildi.");
+      router.refresh();
     });
   }
 

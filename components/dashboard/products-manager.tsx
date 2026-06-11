@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import {
   AlertTriangle,
   ArrowDown,
@@ -305,8 +306,16 @@ export function ProductsManager({
   const [isOrderSaving, setIsOrderSaving] = useState(false);
   const [pending, startTransition] = useTransition();
   const categoryFilterRef = useRef<HTMLDivElement | null>(null);
+  const router = useRouter();
   const products = controlledProducts ?? internalProducts;
-  const syncProducts = onProductsUpdated ?? setInternalProducts;
+  const applyProducts = onProductsUpdated ?? setInternalProducts;
+  // After persisting a change, also refresh the route so the server payload
+  // (used when this page is revisited from the router cache) is up to date.
+  // Local component state isn't reset by refresh(), so the open page won't flicker.
+  const syncProducts = (next: Product[]) => {
+    applyProducts(next);
+    router.refresh();
+  };
   const categories = initialCategories;
   const categoryTree = useMemo(() => buildCategoryTree(categories), [categories]);
   const flatCategories = useMemo(() => flattenCategoryTree(categoryTree), [categoryTree]);
@@ -689,6 +698,7 @@ export function ProductsManager({
       }
 
       setMessage("Ürün vitrin sırası güncellendi.");
+      router.refresh();
     } catch {
       syncProducts(previousProducts);
       setMessage("Ürün sıralaması kaydedilemedi.");

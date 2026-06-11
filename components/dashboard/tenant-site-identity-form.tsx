@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { Globe, ImageUp, LoaderCircle, Megaphone, Store } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -38,6 +39,7 @@ export function TenantSiteIdentityForm({
   const [faviconPending, startFaviconTransition] = useTransition();
   const [savePending, startSaveTransition] = useTransition();
   const [announcementPending, startAnnouncementTransition] = useTransition();
+  const router = useRouter();
   const [logoMessage, setLogoMessage] = useState<string | null>(null);
   const [storefrontSaveMessage, setStorefrontSaveMessage] = useState<string | null>(null);
   const [faviconMessage, setFaviconMessage] = useState<string | null>(null);
@@ -98,6 +100,7 @@ export function TenantSiteIdentityForm({
 
       setLogoError(null);
       setLogoMessage("Logo başarıyla güncellendi.");
+      router.refresh();
     });
   }
 
@@ -164,6 +167,7 @@ export function TenantSiteIdentityForm({
       }
 
       setStorefrontSaveMessage("Mağaza kimliği kaydedildi.");
+      router.refresh();
     });
   }
 
@@ -190,6 +194,7 @@ export function TenantSiteIdentityForm({
 
       setFaviconError(null);
       setFaviconMessage("Favicon başarıyla güncellendi.");
+      router.refresh();
     });
   }
 
@@ -247,6 +252,7 @@ export function TenantSiteIdentityForm({
       }
 
       setSaveMessage("Site kimliği kaydedildi.");
+      router.refresh();
     });
   }
 
@@ -314,6 +320,7 @@ export function TenantSiteIdentityForm({
       }
 
       setAnnouncementMessage("Duyuru ayarları kaydedildi.");
+      router.refresh();
     });
   }
 

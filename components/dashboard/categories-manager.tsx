@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import {
   DndContext,
   DragOverlay,
@@ -353,6 +354,7 @@ export function CategoriesManager({
   const overPositionRef = useRef<OverPosition>("on");
 
   const [pending, startTransition] = useTransition();
+  const router = useRouter();
 
   const categoryTree = useMemo(() => buildCategoryTree(categories), [categories]);
   const flatCategories = useMemo(() => flattenCategoryTree(categoryTree), [categoryTree]);
@@ -365,6 +367,12 @@ export function CategoriesManager({
   function showMessage(text: string, type: "success" | "error" = "success") {
     setMessage(text);
     setMessageType(type);
+    // Refresh the route cache after a successful change (non-empty success
+    // message) so revisiting this page shows fresh data. Empty clears and
+    // errors are skipped.
+    if (text && type === "success") {
+      router.refresh();
+    }
   }
 
   function closeAllInline() {

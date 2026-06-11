@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { arrayMove } from "@dnd-kit/sortable";
 import Image from "next/image";
 import { Plus, Trash2 } from "lucide-react";
@@ -132,6 +133,7 @@ export function TenantBannerForm({
   >({});
   const [savePending, startSaveTransition] = useTransition();
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
+  const router = useRouter();
   const [bannerItemsError, setBannerItemsError] = useState<string | null>(null);
 
   function updateBannerField(
@@ -323,6 +325,7 @@ export function TenantBannerForm({
       }
 
       setSaveMessage("Banner ayarları kaydedildi.");
+      router.refresh();
     });
   }
 

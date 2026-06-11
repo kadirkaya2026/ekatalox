@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { LayoutGrid, Palette } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -31,6 +32,7 @@ export function TenantThemeForm({
   );
   const [savePending, startSaveTransition] = useTransition();
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
+  const router = useRouter();
 
   const previewTitle = initialStorefrontSettings.storefront_title ?? "";
   const previewLogoUrl = initialStorefrontSettings.logo_url;
@@ -66,6 +68,7 @@ export function TenantThemeForm({
       }
 
       setSaveMessage("Tema ayarları kaydedildi.");
+      router.refresh();
     });
   }
 

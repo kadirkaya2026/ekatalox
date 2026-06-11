@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -22,6 +23,7 @@ export function AccessCodesManager({
   const [priceListId, setPriceListId] = useState(priceLists[0]?.id ?? "");
   const [message, setMessage] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  const router = useRouter();
 
   function addCode(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -56,6 +58,7 @@ export function AccessCodesManager({
       ]);
       setPasswordCode("");
       setMessage("Yeni erişim şifresi eklendi.");
+      router.refresh();
     });
   }
 
@@ -78,6 +81,7 @@ export function AccessCodesManager({
 
       setCodes((current) => current.filter((code) => code.id !== id));
       setMessage("Şifre kaldırıldı.");
+      router.refresh();
     });
   }
 
