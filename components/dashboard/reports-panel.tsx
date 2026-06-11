@@ -12,9 +12,9 @@ import type { AnalyticsPeriod } from "@/lib/validators/analytics";
 import { cn, formatCurrency } from "@/lib/utils";
 
 const periodOptions: { value: AnalyticsPeriod; label: string }[] = [
-  { value: "daily", label: "Günlük" },
-  { value: "weekly", label: "Haftalık" },
-  { value: "monthly", label: "Aylık" },
+  { value: "daily", label: "Bugün" },
+  { value: "weekly", label: "Son 7 Gün" },
+  { value: "monthly", label: "Son 30 Gün" },
 ];
 
 const ORDER_CURRENCIES: CurrencyCode[] = ["TRY", "USD", "EUR"];
@@ -208,17 +208,23 @@ export function ReportsPanel({
   const [period, setPeriod] = useState<AnalyticsPeriod>(initialReport.period);
   const [report, setReport] = useState(initialReport);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const loadReport = useCallback(async (nextPeriod: AnalyticsPeriod) => {
     setLoading(true);
+    setError(null);
 
     try {
       const response = await fetch(`/api/tenant/reports?period=${nextPeriod}`);
-      const result = await response.json();
+      const result = await response.json().catch(() => null);
 
-      if (response.ok && result.report) {
+      if (response.ok && result?.report) {
         setReport(result.report as TenantAnalyticsReport);
+      } else {
+        setError("Rapor yüklenemedi. Lütfen tekrar deneyin.");
       }
+    } catch {
+      setError("Rapor yüklenemedi. İnternet bağlantınızı kontrol edin.");
     } finally {
       setLoading(false);
     }
@@ -255,6 +261,15 @@ export function ReportsPanel({
         ))}
       </div>
 
+      {error ? (
+        <div
+          role="alert"
+          className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700"
+        >
+          {error}
+        </div>
+      ) : null}
+
       <Card className="p-5">
         <p className="text-sm text-slate-500">{getVisitorCardTitle(report)}</p>
         <p className="mt-2 text-3xl font-bold text-slate-900">
@@ -267,7 +282,7 @@ export function ReportsPanel({
           Türkiye saatiyle; tüm konumlardan girişler dahildir. Her cihaz ve tarayıcı ayrı
           sayılır.
           {report.period !== "daily" &&
-            " Haftalık ve aylık dönemde aynı cihaz farklı günlerde tekrar sayılır."}
+            " 7 ve 30 günlük dönemde aynı cihaz farklı günlerde tekrar sayılır."}
         </p>
       </Card>
 
@@ -389,18 +404,20 @@ export function ReportsPanel({
           valueLabel="Ziyaret sayısı (Türkiye saati)"
           formatLabel={(label) => `${label.padStart(2, "0")}:00`}
         />
-        <TrafficBarChart
-          title="Haftanın Günü Dağılımı"
-          emptyMessage="Bu dönemde günlük ziyaret kaydedilmedi."
-          rows={report.dayOfWeekTraffic.map((row) => ({
-            label: String(row.dayIndex),
-            count: row.count,
-          }))}
-          valueLabel="Tekil ziyaretçi (cihaz)"
-          formatLabel={(label) =>
-            report.dayOfWeekTraffic[Number(label)]?.label ?? label
-          }
-        />
+        {report.period !== "daily" ? (
+          <TrafficBarChart
+            title="Haftanın Günü Dağılımı"
+            emptyMessage="Bu dönemde günlük ziyaret kaydedilmedi."
+            rows={report.dayOfWeekTraffic.map((row) => ({
+              label: String(row.dayIndex),
+              count: row.count,
+            }))}
+            valueLabel="Ziyaret sayısı (Türkiye saati)"
+            formatLabel={(label) =>
+              report.dayOfWeekTraffic[Number(label)]?.label ?? label
+            }
+          />
+        ) : null}
       </div>
     </div>
   );

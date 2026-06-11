@@ -370,15 +370,15 @@ async function fetchDayOfWeekTraffic(
   const dayOfWeek = createEmptyDayOfWeekTraffic();
 
   const { data } = await supabase
-    .from("storefront_analytics_visitors")
-    .select("stat_date")
+    .from("storefront_analytics_traffic_hourly")
+    .select("stat_date, visit_count")
     .eq("tenant_id", tenantId)
     .gte("stat_date", startDate)
     .lte("stat_date", endDate);
 
   for (const row of data ?? []) {
     const dayIndex = getDayOfWeekIndex(row.stat_date as string);
-    dayOfWeek[dayIndex].count += 1;
+    dayOfWeek[dayIndex].count += row.visit_count ?? 0;
   }
 
   return dayOfWeek;
@@ -425,76 +425,68 @@ export async function getTenantAnalyticsReport(
     fetchDayOfWeekTraffic(supabase, tenantId, startDate, endDate),
   ]);
 
-  if (visitorsResult.error) {
-    return emptyReport;
-  }
-
-  const uniqueVisitors = visitorsResult.count ?? 0;
-
-  if (productStatsResult.error || !productStatsResult.data?.length) {
-    return {
-      ...emptyReport,
-      uniqueVisitors,
-      orderSummary,
-      topSearchQueries,
-      priceListUsage: loginUsage.priceListUsage,
-      accessCodeUsage: loginUsage.accessCodeUsage,
-      hourlyTraffic,
-      dayOfWeekTraffic,
-    };
-  }
+  // Her bölüm bağımsız: tek bir sorgu hata verirse yalnız o bölüm boş kalır,
+  // raporun geri kalanı (sipariş, arama, trafik vb.) korunur.
+  const uniqueVisitors = visitorsResult.error ? 0 : (visitorsResult.count ?? 0);
 
   const aggregated = new Map<
     string,
     { viewCount: number; cartAddCount: number }
   >();
 
-  for (const row of productStatsResult.data) {
-    const current = aggregated.get(row.product_id) ?? {
-      viewCount: 0,
-      cartAddCount: 0,
-    };
+  if (!productStatsResult.error && productStatsResult.data) {
+    for (const row of productStatsResult.data) {
+      const current = aggregated.get(row.product_id) ?? {
+        viewCount: 0,
+        cartAddCount: 0,
+      };
 
-    aggregated.set(row.product_id, {
-      viewCount: current.viewCount + (row.view_count ?? 0),
-      cartAddCount: current.cartAddCount + (row.cart_add_count ?? 0),
-    });
+      aggregated.set(row.product_id, {
+        viewCount: current.viewCount + (row.view_count ?? 0),
+        cartAddCount: current.cartAddCount + (row.cart_add_count ?? 0),
+      });
+    }
   }
 
-  const productIds = [...aggregated.keys()];
+  let topViewedProducts: AnalyticsProductRow[] = [];
+  let topCartProducts: AnalyticsProductRow[] = [];
 
-  const { data: products } = await supabase
-    .from("products")
-    .select("id, product_name")
-    .eq("tenant_id", tenantId)
-    .in("id", productIds);
+  if (aggregated.size > 0) {
+    const productIds = [...aggregated.keys()];
 
-  const productNames = new Map(
-    (products ?? []).map((product) => [
-      product.id as string,
-      product.product_name as string,
-    ]),
-  );
+    const { data: products } = await supabase
+      .from("products")
+      .select("id, product_name")
+      .eq("tenant_id", tenantId)
+      .in("id", productIds);
 
-  const topViewedProducts = [...aggregated.entries()]
-    .map(([productId, stats]) => ({
-      productId,
-      productName: productNames.get(productId) ?? "Silinmiş ürün",
-      count: stats.viewCount,
-    }))
-    .filter((row) => row.count > 0)
-    .sort((left, right) => right.count - left.count)
-    .slice(0, 5);
+    const productNames = new Map(
+      (products ?? []).map((product) => [
+        product.id as string,
+        product.product_name as string,
+      ]),
+    );
 
-  const topCartProducts = [...aggregated.entries()]
-    .map(([productId, stats]) => ({
-      productId,
-      productName: productNames.get(productId) ?? "Silinmiş ürün",
-      count: stats.cartAddCount,
-    }))
-    .filter((row) => row.count > 0)
-    .sort((left, right) => right.count - left.count)
-    .slice(0, 5);
+    topViewedProducts = [...aggregated.entries()]
+      .map(([productId, stats]) => ({
+        productId,
+        productName: productNames.get(productId) ?? "Silinmiş ürün",
+        count: stats.viewCount,
+      }))
+      .filter((row) => row.count > 0)
+      .sort((left, right) => right.count - left.count)
+      .slice(0, 5);
+
+    topCartProducts = [...aggregated.entries()]
+      .map(([productId, stats]) => ({
+        productId,
+        productName: productNames.get(productId) ?? "Silinmiş ürün",
+        count: stats.cartAddCount,
+      }))
+      .filter((row) => row.count > 0)
+      .sort((left, right) => right.count - left.count)
+      .slice(0, 5);
+  }
 
   return {
     period,
