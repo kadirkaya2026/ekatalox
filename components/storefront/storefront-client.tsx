@@ -80,6 +80,7 @@ import type {
 } from "@/lib/types";
 import { cn, formatCurrency, formatDateSlashTr } from "@/lib/utils";
 import {
+  startStorefrontHeartbeat,
   trackStorefrontCartAdd,
   trackStorefrontProductView,
   trackStorefrontSearch,
@@ -1316,6 +1317,14 @@ export function StorefrontClient({
     }
 
     trackStorefrontVisit(tenant.id, analyticsSubdomain);
+  }, [analyticsSubdomain, isMounted, tenant.id]);
+
+  useEffect(() => {
+    if (!isMounted || !analyticsSubdomain) {
+      return;
+    }
+
+    return startStorefrontHeartbeat(tenant.id, analyticsSubdomain);
   }, [analyticsSubdomain, isMounted, tenant.id]);
 
   useEffect(() => {

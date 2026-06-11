@@ -29,6 +29,19 @@ export async function recordStorefrontPriceListLogin(
   });
 }
 
+export async function recordStorefrontPresence(
+  supabase: SupabaseClient,
+  tenantId: string,
+  visitorKey: string,
+  priceListId: string,
+) {
+  return supabase.rpc("record_storefront_presence", {
+    p_tenant_id: tenantId,
+    p_visitor_key: visitorKey,
+    p_price_list_id: priceListId,
+  });
+}
+
 export async function recordStorefrontSearchStat(
   supabase: SupabaseClient,
   tenantId: string,

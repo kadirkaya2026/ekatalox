@@ -27,16 +27,8 @@ function shouldTrackSessionEvent(tenantId: string, eventKey: string) {
   return true;
 }
 
-function sendAnalytics(payload: {
-  subdomain: string;
-  event: StorefrontAnalyticsEvent;
-  productId?: string;
-  visitorKey?: string;
-  query?: string;
-  resultCount?: number;
-}) {
+function sendAnalyticsTo(url: string, payload: Record<string, unknown>) {
   const body = JSON.stringify(payload);
-  const url = "/api/storefront/analytics";
 
   if (typeof navigator !== "undefined" && typeof navigator.sendBeacon === "function") {
     navigator.sendBeacon(url, new Blob([body], { type: "application/json" }));
@@ -51,6 +43,17 @@ function sendAnalytics(payload: {
   });
 }
 
+function sendAnalytics(payload: {
+  subdomain: string;
+  event: StorefrontAnalyticsEvent;
+  productId?: string;
+  visitorKey?: string;
+  query?: string;
+  resultCount?: number;
+}) {
+  sendAnalyticsTo("/api/storefront/analytics", payload);
+}
+
 export function trackStorefrontVisit(tenantId: string, subdomain: string) {
   if (!shouldTrackSessionEvent(tenantId, "visit")) {
     return;
@@ -61,6 +64,34 @@ export function trackStorefrontVisit(tenantId: string, subdomain: string) {
     event: "visit",
     visitorKey: getVisitorKey(tenantId),
   });
+}
+
+const HEARTBEAT_INTERVAL_MS = 30_000;
+
+/**
+ * Start a presence heartbeat for the open storefront tab. Pings on mount and
+ * every 30s while the tab is visible, so reports can show who is online now.
+ * Returns a cleanup function for React effect teardown.
+ */
+export function startStorefrontHeartbeat(tenantId: string, subdomain: string) {
+  const visitorKey = getVisitorKey(tenantId);
+
+  const sendHeartbeat = () => {
+    if (typeof document !== "undefined" && document.visibilityState !== "visible") {
+      return;
+    }
+
+    sendAnalyticsTo("/api/storefront/presence", { subdomain, visitorKey });
+  };
+
+  sendHeartbeat();
+  const intervalId = window.setInterval(sendHeartbeat, HEARTBEAT_INTERVAL_MS);
+  document.addEventListener("visibilitychange", sendHeartbeat);
+
+  return () => {
+    window.clearInterval(intervalId);
+    document.removeEventListener("visibilitychange", sendHeartbeat);
+  };
 }
 
 export function trackStorefrontProductView(
