@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { redirect } from "next/navigation";
 import { demoMemberships, demoProfiles, demoTenants } from "@/lib/demo-data";
 import {
@@ -17,7 +18,10 @@ export interface SessionContext {
   supabaseConfigured: boolean;
 }
 
-export async function getSessionContext(): Promise<SessionContext> {
+// Wrapped in React cache() so a single request (e.g. layout + page rendering
+// on the same navigation) reuses one result instead of re-running the auth
+// round-trip and three DB queries per caller.
+export const getSessionContext = cache(async (): Promise<SessionContext> => {
   // Step 1: verify the JWT cookie with the user-scoped client
   const supabase = await createSupabaseServerClient();
 
@@ -101,7 +105,7 @@ export async function getSessionContext(): Promise<SessionContext> {
     tenant,
     supabaseConfigured: true,
   };
-}
+});
 
 export function absoluteUrl(host: string, path = "/") {
   return `https://${host}${path}`;
