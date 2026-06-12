@@ -3,10 +3,7 @@ import { shouldAllowDemoFallback } from "@/lib/env";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { getSessionContext } from "@/lib/auth/session";
 import { getTenantCategories, getTenantProducts, getTenantPriceLists } from "@/lib/data";
-import {
-  buildImportPricesFromLegacyTiers,
-  resolveImportPricesForTenant,
-} from "@/lib/price-lists/import";
+import { resolveImportPricesForTenant } from "@/lib/price-lists/import";
 import {
   ensureDefaultPriceListsForTenant,
   upsertProductPrices,
@@ -92,7 +89,7 @@ export async function POST(request: Request) {
       image_url: row.image_url,
       currency: row.currency,
       prices: resolveImportPricesForTenant(
-        row.prices ?? buildImportPricesFromLegacyTiers(row),
+        row.prices,
         demoPriceLists,
       ).map((entry) => ({
         product_id: `demo-import-${index}-${row.sku_code}`,
@@ -275,7 +272,7 @@ export async function POST(request: Request) {
     }
 
     const resolvedPrices = resolveImportPricesForTenant(
-      row.prices ?? buildImportPricesFromLegacyTiers(row),
+      row.prices,
       priceLists,
     );
 

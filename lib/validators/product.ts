@@ -168,12 +168,22 @@ export const productCreateSchema = productBaseSchema.extend({
   tenant_id: z.string().min(1).optional(),
 });
 
+// İçe aktarma satırları fiyatları liste adıyla taşır (price_list_id eşleşmesi
+// sunucuda doğrulamadan sonra resolveImportPricesForTenant ile yapılır), bu
+// yüzden form akışındaki productPricesSchema (price_list_id bekler) kullanılamaz.
+const importListPriceSchema = z.array(
+  z.object({
+    list_name: z.string().min(1, "Fiyat listesi adı zorunludur."),
+    price: z.coerce.number().min(0, "Fiyat sıfırdan küçük olamaz."),
+  }),
+);
+
 export const productImportRowSchema = z.object({
   category_name: z.string().min(1, "Kategori adı zorunludur."),
   sku_code: z.string().min(1, "Model No zorunludur."),
   product_name: z.string().min(2, "Ürün adı zorunludur."),
   currency: currencyCodeSchema,
-  prices: productPricesSchema,
+  prices: importListPriceSchema,
   is_in_stock: booleanSchema,
   image_url: imageUrlSchema,
   package_quantity: optionalPositiveIntegerSchema,
