@@ -33,13 +33,22 @@ function buildPriceListImportLookup(priceLists: PriceList[]) {
   const listNameMap = new Map<string, string>();
 
   for (const list of pricedLists) {
-    const keys = new Set<string>([
-      list.name,
-      normalizePriceListName(list.name),
-      ...DEFAULT_PRICED_LIST_NAMES,
-      ...Object.keys(LEGACY_PRICE_LIST_NAME_ALIASES),
-      ...Object.values(LEGACY_PRICE_LIST_NAME_ALIASES),
-    ]);
+    const canonical = normalizePriceListName(list.name);
+
+    // Her liste yalnızca KENDİSİNE çözülen anahtarları sahiplenmeli:
+    // kendi adı, normalize adı ve hedefi bu listenin normalize adı olan
+    // eski (legacy) alias'lar. Aksi halde tüm default adlar son listeye
+    // çöker ve içe aktarmada aynı price_list_id birden çok kez üretilir
+    // (upsert'te "ON CONFLICT ... cannot affect row a second time").
+    const keys = new Set<string>([list.name, canonical]);
+
+    for (const [aliasName, canonicalTarget] of Object.entries(
+      LEGACY_PRICE_LIST_NAME_ALIASES,
+    )) {
+      if (canonicalTarget === canonical) {
+        keys.add(aliasName);
+      }
+    }
 
     for (const key of keys) {
       listNameMap.set(key.toLocaleLowerCase("tr-TR"), list.id);
@@ -55,21 +64,22 @@ export function resolveImportPricesForTenant(
 ) {
   const listNameMap = buildPriceListImportLookup(priceLists);
 
-  return prices
-    .map((entry) => {
-      const normalizedName = normalizePriceListName(entry.list_name);
-      const priceListId =
-        listNameMap.get(normalizedName.toLocaleLowerCase("tr-TR")) ??
-        listNameMap.get(entry.list_name.toLocaleLowerCase("tr-TR"));
+  // price_list_id bazında tekilleştir: aynı listeye çözülen birden çok girdi
+  // (ör. yinelenen fiyat sütunu) upsert'i tek satıra indirir, son değer kazanır.
+  const byPriceListId = new Map<string, { price_list_id: string; price: number }>();
 
-      if (!priceListId) {
-        return null;
-      }
+  for (const entry of prices) {
+    const normalizedName = normalizePriceListName(entry.list_name);
+    const priceListId =
+      listNameMap.get(normalizedName.toLocaleLowerCase("tr-TR")) ??
+      listNameMap.get(entry.list_name.toLocaleLowerCase("tr-TR"));
 
-      return {
-        price_list_id: priceListId,
-        price: entry.price,
-      };
-    })
-    .filter((entry): entry is { price_list_id: string; price: number } => Boolean(entry));
+    if (!priceListId) {
+      continue;
+    }
+
+    byPriceListId.set(priceListId, { price_list_id: priceListId, price: entry.price });
+  }
+
+  return [...byPriceListId.values()];
 }
