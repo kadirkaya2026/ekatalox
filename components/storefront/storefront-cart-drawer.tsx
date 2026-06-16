@@ -505,20 +505,20 @@ export function StorefrontCartDrawer({
           </div>
 
           <div className={cn("shrink-0 border-t px-4 py-3.5 sm:px-5 lg:px-6 lg:py-4", theme.categoryRailBorder, theme.surfaceMuted)}>
-            <div className={cn("rounded-[1.5rem] border p-2.5 sm:p-3 lg:p-4 shadow-[0_14px_40px_rgba(15,23,42,0.06)] sm:rounded-[1.75rem]", theme.border, theme.surface)}>
-              <div className={cn("rounded-[1.4rem] px-4 py-3 shadow-[0_18px_48px_rgba(15,23,42,0.24)]", theme.cartDrawerSummary)}>
+            <div className={cn("rounded-[1.5rem] border p-2.5 sm:p-3 lg:p-4 sm:rounded-[1.75rem]", theme.border, theme.surface, theme.elevation1, theme.surfaceRing)}>
+              <div className={cn("rounded-[1.4rem] px-4 py-3", theme.elevation2, theme.cartDrawerSummary)}>
                 {!isCatalogOnly && cartPaymentSummary ? (
                   <div className="space-y-2.5">
                     {(cartPaymentSummary.isQualified && cartPaymentSummary.discountAmount > 0) ||
                     cartPaymentSummary.surchargeAmount > 0 ? (
                       <>
                         <div className="flex items-center justify-between gap-3">
-                          <p className="text-sm font-medium text-slate-300">Ara Toplam</p>
+                          <p className={cn("text-sm font-medium", theme.cartSummaryMuted)}>Ara Toplam</p>
                           <p
                             className={cn(
                               "text-sm font-semibold tracking-tight",
                               cartPaymentSummary.isQualified && cartPaymentSummary.discountAmount > 0
-                                ? "text-slate-400 line-through"
+                                ? cn(theme.cartSummaryMuted, "line-through")
                                 : "text-white",
                             )}
                           >
@@ -530,7 +530,7 @@ export function StorefrontCartDrawer({
                         </div>
                         {cartPaymentSummary.isQualified && cartPaymentSummary.discountAmount > 0 ? (
                           <div className="flex items-center justify-between gap-3">
-                            <p className="text-sm font-medium text-slate-300">
+                            <p className={cn("text-sm font-medium", theme.cartSummaryMuted)}>
                               İskonto (%{formatDiscountPercentage(cartPaymentSummary.discountPercentage)})
                             </p>
                             <p className="text-base font-bold tracking-tight text-emerald-300">
@@ -540,7 +540,7 @@ export function StorefrontCartDrawer({
                         ) : null}
                         {cartPaymentSummary.surchargeAmount > 0 ? (
                           <div className="flex items-center justify-between gap-3">
-                            <p className="text-sm font-medium text-slate-300">
+                            <p className={cn("text-sm font-medium", theme.cartSummaryMuted)}>
                               Vade Farkı (%{formatDiscountPercentage(cartPaymentSummary.surchargePercentage)})
                             </p>
                             <p className="text-base font-bold tracking-tight text-amber-300">
@@ -549,7 +549,7 @@ export function StorefrontCartDrawer({
                           </div>
                         ) : null}
                         <div className="flex items-center justify-between gap-3 border-t border-white/10 pt-2">
-                          <p className="text-sm font-medium text-slate-200">Genel Toplam</p>
+                          <p className={cn("text-sm font-medium text-neutral-200")}>Genel Toplam</p>
                           <p className="text-base font-bold tracking-tight text-white sm:text-lg">
                             {formatCurrency(cartPaymentSummary.finalTotal, cartPaymentSummary.currency)}
                           </p>
@@ -557,7 +557,7 @@ export function StorefrontCartDrawer({
                       </>
                     ) : (
                       <div className="flex items-center justify-between gap-3">
-                        <p className="text-sm font-medium text-slate-300">Genel Toplam</p>
+                        <p className={cn("text-sm font-medium", theme.cartSummaryMuted)}>Genel Toplam</p>
                         <p className="text-base font-bold tracking-tight text-white sm:text-lg">
                           {formatCurrency(cartPaymentSummary.finalTotal, cartPaymentSummary.currency)}
                         </p>
@@ -567,8 +567,8 @@ export function StorefrontCartDrawer({
                 ) : cartDiscountSummary?.isQualified ? (
                   <div className="space-y-2.5">
                     <div className="flex items-center justify-between gap-3">
-                      <p className="text-sm font-medium text-slate-300">Ara Toplam</p>
-                      <p className="text-sm font-semibold tracking-tight text-slate-400 line-through">
+                      <p className={cn("text-sm font-medium", theme.cartSummaryMuted)}>Ara Toplam</p>
+                      <p className={cn("text-sm font-semibold tracking-tight line-through", theme.cartSummaryMuted)}>
                         {formatCurrency(
                           cartDiscountSummary.subtotal,
                           cartDiscountSummary.currency,
@@ -576,7 +576,7 @@ export function StorefrontCartDrawer({
                       </p>
                     </div>
                     <div className="flex items-center justify-between gap-3">
-                      <p className="text-sm font-medium text-slate-300">
+                      <p className={cn("text-sm font-medium", theme.cartSummaryMuted)}>
                         İskonto (%{formatDiscountPercentage(cartDiscountSummary.percentage)})
                       </p>
                       <p className="text-base font-bold tracking-tight text-emerald-300">
@@ -588,7 +588,7 @@ export function StorefrontCartDrawer({
                       </p>
                     </div>
                     <div className="flex items-center justify-between gap-3 border-t border-white/10 pt-2">
-                      <p className="text-sm font-medium text-slate-200">Genel Toplam</p>
+                      <p className="text-sm font-medium text-neutral-200">Genel Toplam</p>
                       <p className="text-base font-bold tracking-tight text-white sm:text-lg">
                         {formatCurrency(
                           cartDiscountSummary.totalAfterDiscount,
@@ -599,15 +599,15 @@ export function StorefrontCartDrawer({
                   </div>
                 ) : isCatalogOnly && cart.length ? (
                   <div className="flex items-center justify-between gap-3">
-                    <p className="text-sm font-medium text-slate-300">Sipariş Özeti</p>
+                    <p className={cn("text-sm font-medium", theme.cartSummaryMuted)}>Sipariş Özeti</p>
                     <p className="text-base font-bold tracking-tight text-white sm:text-lg">
                       {cartItemCount} kalem
                     </p>
                   </div>
                 ) : cart.length === 0 ? (
                   <div className="hidden items-center justify-between gap-3 sm:flex">
-                    <p className="text-sm font-medium text-slate-300">Toplam</p>
-                    <p className="text-base font-bold tracking-tight text-slate-400 sm:text-lg">
+                    <p className={cn("text-sm font-medium", theme.cartSummaryMuted)}>Toplam</p>
+                    <p className={cn("text-base font-bold tracking-tight sm:text-lg", theme.cartSummaryMuted)}>
                       Sepet Boş
                     </p>
                   </div>
@@ -618,7 +618,7 @@ export function StorefrontCartDrawer({
                         key={currency}
                         className="flex items-center justify-between gap-3"
                       >
-                        <p className="text-sm font-medium text-slate-300">Toplam</p>
+                        <p className={cn("text-sm font-medium", theme.cartSummaryMuted)}>Toplam</p>
                         <p className="text-base font-bold tracking-tight text-white sm:text-lg">
                           {currency}: {formatCurrency(total, currency)}
                         </p>
@@ -627,7 +627,7 @@ export function StorefrontCartDrawer({
                   </div>
                 ) : (
                   <div className="flex items-center justify-between gap-3">
-                    <p className="text-sm font-medium text-slate-300">Toplam</p>
+                    <p className={cn("text-sm font-medium", theme.cartSummaryMuted)}>Toplam</p>
                     <p className="text-base font-bold tracking-tight text-white sm:text-lg">
                       {formatCurrency(cartTotal, cartCurrency)}
                     </p>

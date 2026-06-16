@@ -85,6 +85,29 @@ export interface StorefrontTheme {
   emptyImage: string;
   prose: string;
   proseHeading: string;
+  proseBlockquote: string;
+  proseTableHead: string;
+  proseTableCell: string;
+  proseHeadingBlock: string;
+  proseBlockquoteBlock: string;
+  proseTableHeadBlock: string;
+  proseTableCellBlock: string;
+  elevation1: string;
+  elevation2: string;
+  surfaceRing: string;
+  pageGradient: string;
+  campaignBarQualified: string;
+  campaignBarPending: string;
+  campaignIconQualified: string;
+  campaignIconPending: string;
+  campaignLabelQualified: string;
+  campaignLabelPending: string;
+  campaignNoteQualified: string;
+  campaignNotePending: string;
+  indicatorActive: string;
+  indicatorInactive: string;
+  cartSummaryMuted: string;
+  textTertiary: string;
 }
 
 interface ThemeAccent {
@@ -110,6 +133,21 @@ interface ThemeAccent {
   floatingAddBorder: string;
   floatingAddBg: string;
   floatingAddHover: string;
+  chipActiveBgDark: string;
+  chipActiveTextDark: string;
+  pageGradientDark: string;
+  campaignBarQualifiedDark: string;
+  campaignBarPendingDark: string;
+  campaignIconQualifiedDark: string;
+  campaignIconPendingDark: string;
+  campaignLabelQualifiedDark: string;
+  campaignLabelPendingDark: string;
+  campaignBarQualifiedLight: string;
+  campaignBarPendingLight: string;
+  campaignIconQualifiedLight: string;
+  campaignIconPendingLight: string;
+  campaignLabelQualifiedLight: string;
+  campaignLabelPendingLight: string;
 }
 
 interface ThemeNeutrals {
@@ -141,33 +179,84 @@ function resolveAccent(
   colorScheme: StorefrontColorScheme,
   themeKey: StorefrontThemeKey,
 ): ThemeAccent {
-  if (colorScheme === "light") {
-    return accent;
-  }
-
   const darkSoftByTheme: Record<
     StorefrontThemeKey,
-    Pick<ThemeAccent, "soft" | "softText" | "titleHover" | "priceOriginal">
+    Pick<
+      ThemeAccent,
+      | "soft"
+      | "softText"
+      | "titleHover"
+      | "priceOriginal"
+      | "chipActiveBgDark"
+      | "chipActiveTextDark"
+      | "pageGradientDark"
+      | "campaignBarQualifiedDark"
+      | "campaignBarPendingDark"
+      | "campaignIconQualifiedDark"
+      | "campaignIconPendingDark"
+      | "campaignLabelQualifiedDark"
+      | "campaignLabelPendingDark"
+    >
   > = {
     minimal: {
       soft: "bg-emerald-950/50",
       softText: "text-emerald-300",
       titleHover: "group-hover:text-emerald-300",
       priceOriginal: "text-neutral-500",
+      chipActiveBgDark: "bg-emerald-950/50 ring-1 ring-emerald-500/30",
+      chipActiveTextDark: "text-white",
+      pageGradientDark:
+        "bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,rgba(16,185,129,0.08),transparent)]",
+      campaignBarQualifiedDark:
+        "border-emerald-500/25 bg-[radial-gradient(circle_at_top_right,rgba(16,185,129,0.14),transparent_42%),linear-gradient(135deg,rgba(6,24,20,0.96)_0%,rgba(10,10,10,0.98)_50%,rgba(6,30,24,0.96)_100%)]",
+      campaignBarPendingDark:
+        "border-amber-500/20 bg-[radial-gradient(circle_at_top_right,rgba(251,191,36,0.1),transparent_42%),linear-gradient(135deg,rgba(30,20,10,0.96)_0%,rgba(10,10,10,0.98)_48%,rgba(15,25,35,0.96)_100%)]",
+      campaignIconQualifiedDark: "bg-emerald-950/60 text-emerald-300",
+      campaignIconPendingDark: "bg-amber-950/50 text-amber-300",
+      campaignLabelQualifiedDark: "text-emerald-400",
+      campaignLabelPendingDark: "text-amber-400",
     },
     "pro-blue": {
       soft: "bg-blue-950/50",
       softText: "text-blue-300",
       titleHover: "group-hover:text-blue-300",
       priceOriginal: "text-neutral-500",
+      chipActiveBgDark: "bg-blue-950/50 ring-1 ring-blue-500/30",
+      chipActiveTextDark: "text-white",
+      pageGradientDark:
+        "bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,rgba(59,130,246,0.08),transparent)]",
+      campaignBarQualifiedDark:
+        "border-blue-500/25 bg-[radial-gradient(circle_at_top_right,rgba(59,130,246,0.14),transparent_42%),linear-gradient(135deg,rgba(10,20,40,0.96)_0%,rgba(10,10,10,0.98)_50%,rgba(10,25,45,0.96)_100%)]",
+      campaignBarPendingDark:
+        "border-amber-500/20 bg-[radial-gradient(circle_at_top_right,rgba(251,191,36,0.1),transparent_42%),linear-gradient(135deg,rgba(30,20,10,0.96)_0%,rgba(10,10,10,0.98)_48%,rgba(15,25,35,0.96)_100%)]",
+      campaignIconQualifiedDark: "bg-blue-950/60 text-blue-300",
+      campaignIconPendingDark: "bg-amber-950/50 text-amber-300",
+      campaignLabelQualifiedDark: "text-blue-400",
+      campaignLabelPendingDark: "text-amber-400",
     },
     neutral: {
       soft: "bg-neutral-800",
       softText: "text-neutral-300",
       titleHover: "group-hover:text-neutral-200",
       priceOriginal: "text-neutral-500",
+      chipActiveBgDark: "bg-neutral-800 ring-1 ring-neutral-600/50",
+      chipActiveTextDark: "text-neutral-50",
+      pageGradientDark:
+        "bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,rgba(255,255,255,0.03),transparent)]",
+      campaignBarQualifiedDark:
+        "border-neutral-600/30 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.04),transparent_42%),linear-gradient(135deg,rgba(23,23,23,0.98)_0%,rgba(10,10,10,0.98)_50%,rgba(20,20,20,0.98)_100%)]",
+      campaignBarPendingDark:
+        "border-amber-500/20 bg-[radial-gradient(circle_at_top_right,rgba(251,191,36,0.1),transparent_42%),linear-gradient(135deg,rgba(30,20,10,0.96)_0%,rgba(10,10,10,0.98)_48%,rgba(15,25,35,0.96)_100%)]",
+      campaignIconQualifiedDark: "bg-neutral-800 text-neutral-200",
+      campaignIconPendingDark: "bg-amber-950/50 text-amber-300",
+      campaignLabelQualifiedDark: "text-neutral-300",
+      campaignLabelPendingDark: "text-amber-400",
     },
   };
+
+  if (colorScheme === "light") {
+    return accent;
+  }
 
   return { ...accent, ...darkSoftByTheme[themeKey] };
 }
@@ -211,21 +300,90 @@ function buildTheme(
     ? "bg-blue-950/70 px-2 py-1 text-[10px] text-blue-300"
     : "bg-blue-50 px-2 py-1 text-[10px] text-blue-700";
 
+  const elevation1 = isDark
+    ? "shadow-[0_1px_0_0_rgba(255,255,255,0.04)_inset] shadow-[0_8px_32px_rgba(0,0,0,0.45)]"
+    : "shadow-[0_12px_32px_rgba(15,23,42,0.06)]";
+  const elevation1Hover = isDark
+    ? "hover:shadow-[0_12px_40px_rgba(0,0,0,0.55)]"
+    : "hover:shadow-[0_20px_48px_rgba(15,23,42,0.12)]";
+  const elevation2 = isDark
+    ? "shadow-[0_-24px_80px_rgba(0,0,0,0.55)]"
+    : "shadow-[0_-24px_80px_rgba(15,23,42,0.22)]";
+  const surfaceRing = isDark ? "ring-1 ring-inset ring-white/5" : "";
+  const pageGradient = isDark ? accent.pageGradientDark : "";
+  const chipActiveBg = isDark ? accent.chipActiveBgDark : neutrals.chipActiveBg;
+  const chipActiveText = isDark ? accent.chipActiveTextDark : neutrals.chipActiveText;
+  const campaignBarQualified = isDark
+    ? accent.campaignBarQualifiedDark
+    : accent.campaignBarQualifiedLight;
+  const campaignBarPending = isDark
+    ? accent.campaignBarPendingDark
+    : accent.campaignBarPendingLight;
+  const campaignIconQualified = isDark
+    ? accent.campaignIconQualifiedDark
+    : accent.campaignIconQualifiedLight;
+  const campaignIconPending = isDark
+    ? accent.campaignIconPendingDark
+    : accent.campaignIconPendingLight;
+  const campaignLabelQualified = isDark
+    ? accent.campaignLabelQualifiedDark
+    : accent.campaignLabelQualifiedLight;
+  const campaignLabelPending = isDark
+    ? accent.campaignLabelPendingDark
+    : accent.campaignLabelPendingLight;
+  const campaignNoteQualified = isDark
+    ? "border-emerald-500/20 bg-emerald-950/40 text-emerald-300"
+    : "border-emerald-200 bg-emerald-50 text-emerald-800";
+  const campaignNotePending = isDark
+    ? "border-amber-500/20 bg-amber-950/40 text-amber-300"
+    : "border-amber-200 bg-amber-50 text-amber-800";
+  const indicatorActive = isDark ? "bg-white" : "bg-slate-900";
+  const indicatorInactive = isDark
+    ? "bg-neutral-600 hover:bg-neutral-500"
+    : "bg-slate-300 hover:bg-slate-400";
+  const cartSummaryMuted = isDark ? "text-neutral-400" : neutrals.textMuted;
+  const textTertiary = isDark ? "text-neutral-500" : "text-slate-500";
+  const proseBlockquote = isDark
+    ? "border-neutral-700 text-neutral-400"
+    : "border-slate-200 text-slate-500";
+  const proseTableHead = isDark
+    ? "border-neutral-700 bg-neutral-800"
+    : "border-slate-200 bg-slate-100";
+  const proseTableCell = isDark ? "border-neutral-700" : "border-slate-200";
+  const proseHeadingBlock = isDark
+    ? "[&_h2]:text-neutral-50 [&_h3]:text-neutral-50"
+    : "[&_h2]:text-slate-900 [&_h3]:text-slate-900";
+  const proseBlockquoteBlock = isDark
+    ? "[&_blockquote]:border-neutral-700 [&_blockquote]:text-neutral-400"
+    : "[&_blockquote]:border-slate-200 [&_blockquote]:text-slate-500";
+  const proseTableHeadBlock = isDark
+    ? "[&_th]:border-neutral-700 [&_th]:bg-neutral-800"
+    : "[&_th]:border-slate-200 [&_th]:bg-slate-100";
+  const proseTableCellBlock = isDark
+    ? "[&_td]:border-neutral-700"
+    : "[&_td]:border-slate-200";
+  const headerIconButtonDarkRing = isDark ? "ring-1 ring-white/10" : "";
+
   return {
     page: cn(
       "min-h-screen w-full max-w-full overflow-x-hidden pb-28 xl:pb-6",
       neutrals.page,
       neutrals.pageText,
+      pageGradient,
     ),
-    header: cn("sticky top-0 z-40 backdrop-blur", neutrals.header),
+    header: cn(
+      "sticky top-0 z-40 backdrop-blur-xl",
+      neutrals.header,
+    ),
     headerBorder: neutrals.headerBorder,
     headerTitle: cn("truncate font-semibold tracking-tight", neutrals.text),
     headerMuted: neutrals.textMuted,
     headerIconButton: cn(
-      "flex items-center justify-center rounded-2xl border shadow-sm transition",
+      "flex items-center justify-center rounded-2xl border shadow-sm transition-colors duration-300",
       neutrals.border,
       neutrals.surface,
       iconButtonInteractive,
+      headerIconButtonDarkRing,
       "lg:size-12",
     ),
     logoWrap: cn(
@@ -253,7 +411,7 @@ function buildTheme(
       cn(
         "inline-flex items-center gap-2 rounded-full px-4 py-2.5 text-[13px] font-semibold transition duration-200",
         active
-          ? cn("scale-[1.03] font-bold shadow-sm", neutrals.chipActiveBg, neutrals.chipActiveText)
+          ? cn("scale-[1.03] font-bold shadow-sm", chipActiveBg, chipActiveText)
           : neutrals.chipInactive,
       ),
     categoryNavMobile: (active) =>
@@ -282,7 +440,7 @@ function buildTheme(
       cn(
         "rounded-full px-5 py-2.5 text-sm font-semibold transition shadow-sm",
         active
-          ? cn(neutrals.chipActiveBg, neutrals.chipActiveText)
+          ? cn(chipActiveBg, chipActiveText)
           : cn(neutrals.surface, neutrals.chipInactiveBorder, chipInactiveText, chipInactiveHover),
       ),
     categorySidebar: cn(
@@ -298,7 +456,7 @@ function buildTheme(
       cn(
         "flex w-full items-center rounded-xl px-3 py-2.5 text-left text-sm font-semibold transition",
         active
-          ? cn(neutrals.chipActiveBg, neutrals.chipActiveText)
+          ? cn(chipActiveBg, chipActiveText)
           : sidebarItemInactive,
       ),
     categorySidebarChildItem: (active) =>
@@ -312,7 +470,10 @@ function buildTheme(
     searchInput: cn("rounded-2xl", accent.ring, accent.borderFocus),
     searchIcon: cn("absolute left-4 top-1/2 -translate-y-1/2 size-5", neutrals.textMuted),
     productCard: cn(
-      "group min-w-0 flex h-full flex-col overflow-hidden rounded-[1.75rem] border shadow-[0_12px_32px_rgba(15,23,42,0.06)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_20px_48px_rgba(15,23,42,0.12)]",
+      "group min-w-0 flex h-full flex-col overflow-hidden rounded-[1.75rem] border transition duration-300 hover:-translate-y-1",
+      elevation1,
+      elevation1Hover,
+      surfaceRing,
       neutrals.border,
       neutrals.surface,
       productCardHover,
@@ -358,7 +519,9 @@ function buildTheme(
     ),
     cartDrawerOverlay: "fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-md",
     cartDrawerPanel: cn(
-      "absolute inset-x-0 bottom-0 z-10 max-h-[94dvh] rounded-t-[2rem] shadow-[0_-24px_80px_rgba(15,23,42,0.22)] lg:inset-y-0 lg:left-auto lg:right-0 lg:h-full lg:max-h-none lg:w-[460px] lg:rounded-l-[2rem] lg:rounded-tr-none",
+      "absolute inset-x-0 bottom-0 z-10 max-h-[94dvh] rounded-t-[2rem] lg:inset-y-0 lg:left-auto lg:right-0 lg:h-full lg:max-h-none lg:w-[460px] lg:rounded-l-[2rem] lg:rounded-tr-none",
+      elevation2,
+      surfaceRing,
       neutrals.surface,
     ),
     cartDrawerHandle: drawerHandle,
@@ -367,7 +530,9 @@ function buildTheme(
     cartDrawerMuted: neutrals.textMuted,
     cartDrawerCloseButton: cartDrawerClose,
     cartDrawerItem: cn(
-      "min-w-0 rounded-[1.55rem] border p-3.5 shadow-[0_14px_36px_rgba(15,23,42,0.06)]",
+      "min-w-0 rounded-[1.55rem] border p-3.5",
+      elevation1,
+      surfaceRing,
       neutrals.border,
       neutrals.surfaceMuted,
     ),
@@ -375,18 +540,25 @@ function buildTheme(
     modalOverlay: "fixed inset-0 z-[60] flex items-end justify-center bg-black/40 backdrop-blur-sm sm:items-center",
     modalPanel: cn(
       "relative z-10 mx-auto flex w-full min-w-0 max-w-2xl flex-col overflow-hidden",
+      elevation2,
+      surfaceRing,
       neutrals.surface,
     ),
     modalHeaderBorder: cn("border-b", neutrals.headerRailBorder),
     modalTitle: cn("text-lg font-semibold", neutrals.text),
     modalCloseButton: modalClose,
     modalFooterBorder: cn("border-t", neutrals.headerRailBorder),
-    modalSurface: cn("rounded-[1.35rem] border p-4", neutrals.border, neutrals.modalSurface),
+    modalSurface: cn(
+      "rounded-[1.35rem] border p-4",
+      surfaceRing,
+      neutrals.border,
+      neutrals.modalSurface,
+    ),
     modalTabChip: (active) =>
       cn(
         "shrink-0 rounded-full border px-4 py-2 text-sm font-semibold transition",
         active
-          ? cn(neutrals.chipActiveBg, neutrals.chipActiveText)
+          ? cn(chipActiveBg, chipActiveText)
           : cn(neutrals.chipInactiveBorder, neutrals.surface, modalInactiveText),
       ),
     floatingCartStepper: accent.stepper,
@@ -428,7 +600,9 @@ function buildTheme(
       neutrals.text,
     ),
     panelSurface: cn(
-      "rounded-[1.5rem] border p-3 shadow-sm sm:p-4",
+      "rounded-[1.5rem] border p-3 sm:p-4",
+      elevation1,
+      surfaceRing,
       neutrals.border,
       neutrals.surface,
     ),
@@ -439,6 +613,29 @@ function buildTheme(
     ),
     prose: cn("text-sm leading-6", neutrals.textMuted),
     proseHeading: neutrals.text,
+    proseBlockquote,
+    proseTableHead,
+    proseTableCell,
+    proseHeadingBlock,
+    proseBlockquoteBlock,
+    proseTableHeadBlock,
+    proseTableCellBlock,
+    elevation1,
+    elevation2,
+    surfaceRing,
+    pageGradient,
+    campaignBarQualified,
+    campaignBarPending,
+    campaignIconQualified,
+    campaignIconPending,
+    campaignLabelQualified,
+    campaignLabelPending,
+    campaignNoteQualified,
+    campaignNotePending,
+    indicatorActive,
+    indicatorInactive,
+    cartSummaryMuted,
+    textTertiary,
   };
 }
 
@@ -488,6 +685,23 @@ const minimalAccent: ThemeAccent = {
   floatingAddBorder: "border-emerald-600",
   floatingAddBg: "bg-emerald-500",
   floatingAddHover: "hover:border-emerald-500 hover:bg-emerald-400",
+  chipActiveBgDark: "",
+  chipActiveTextDark: "",
+  pageGradientDark: "",
+  campaignBarQualifiedDark: "",
+  campaignBarPendingDark: "",
+  campaignIconQualifiedDark: "",
+  campaignIconPendingDark: "",
+  campaignLabelQualifiedDark: "",
+  campaignLabelPendingDark: "",
+  campaignBarQualifiedLight:
+    "border-emerald-200 bg-[radial-gradient(circle_at_top_right,rgba(16,185,129,0.2),transparent_42%),linear-gradient(135deg,#ecfdf5_0%,#ffffff_50%,#f0fdf4_100%)]",
+  campaignBarPendingLight:
+    "border-amber-200 bg-[radial-gradient(circle_at_top_right,rgba(14,165,233,0.18),transparent_42%),linear-gradient(135deg,#fff7ed_0%,#ffffff_48%,#eff6ff_100%)]",
+  campaignIconQualifiedLight: "bg-emerald-100 text-emerald-700",
+  campaignIconPendingLight: "bg-amber-100 text-amber-700",
+  campaignLabelQualifiedLight: "text-emerald-700",
+  campaignLabelPendingLight: "text-amber-700",
 };
 
 const proBlueAccent: ThemeAccent = {
@@ -514,6 +728,23 @@ const proBlueAccent: ThemeAccent = {
   floatingAddBorder: "border-blue-600",
   floatingAddBg: "bg-blue-500",
   floatingAddHover: "hover:border-blue-500 hover:bg-blue-400",
+  chipActiveBgDark: "",
+  chipActiveTextDark: "",
+  pageGradientDark: "",
+  campaignBarQualifiedDark: "",
+  campaignBarPendingDark: "",
+  campaignIconQualifiedDark: "",
+  campaignIconPendingDark: "",
+  campaignLabelQualifiedDark: "",
+  campaignLabelPendingDark: "",
+  campaignBarQualifiedLight:
+    "border-blue-200 bg-[radial-gradient(circle_at_top_right,rgba(59,130,246,0.18),transparent_42%),linear-gradient(135deg,#eff6ff_0%,#ffffff_50%,#f0f9ff_100%)]",
+  campaignBarPendingLight:
+    "border-amber-200 bg-[radial-gradient(circle_at_top_right,rgba(14,165,233,0.18),transparent_42%),linear-gradient(135deg,#fff7ed_0%,#ffffff_48%,#eff6ff_100%)]",
+  campaignIconQualifiedLight: "bg-blue-100 text-blue-700",
+  campaignIconPendingLight: "bg-amber-100 text-amber-700",
+  campaignLabelQualifiedLight: "text-blue-700",
+  campaignLabelPendingLight: "text-amber-700",
 };
 
 const neutralNeutrals: ThemeNeutrals = {
@@ -547,28 +778,45 @@ const neutralAccent: ThemeAccent = {
   floatingAddBorder: "border-slate-900",
   floatingAddBg: "bg-slate-800",
   floatingAddHover: "hover:border-slate-700 hover:bg-slate-700",
+  chipActiveBgDark: "",
+  chipActiveTextDark: "",
+  pageGradientDark: "",
+  campaignBarQualifiedDark: "",
+  campaignBarPendingDark: "",
+  campaignIconQualifiedDark: "",
+  campaignIconPendingDark: "",
+  campaignLabelQualifiedDark: "",
+  campaignLabelPendingDark: "",
+  campaignBarQualifiedLight:
+    "border-slate-300 bg-[radial-gradient(circle_at_top_right,rgba(100,116,139,0.12),transparent_42%),linear-gradient(135deg,#f8fafc_0%,#ffffff_50%,#f1f5f9_100%)]",
+  campaignBarPendingLight:
+    "border-amber-200 bg-[radial-gradient(circle_at_top_right,rgba(14,165,233,0.18),transparent_42%),linear-gradient(135deg,#fff7ed_0%,#ffffff_48%,#eff6ff_100%)]",
+  campaignIconQualifiedLight: "bg-slate-200 text-slate-700",
+  campaignIconPendingLight: "bg-amber-100 text-amber-700",
+  campaignLabelQualifiedLight: "text-slate-700",
+  campaignLabelPendingLight: "text-amber-700",
 };
 
 const darkNeutrals: ThemeNeutrals = {
-  page: "bg-black",
-  pageText: "text-white",
-  header: "border-b border-neutral-800 bg-neutral-900/95",
-  headerBorder: "border-neutral-800",
-  headerRailBorder: "border-neutral-800",
-  surface: "bg-neutral-900",
-  surfaceMuted: "bg-neutral-800",
+  page: "bg-neutral-950",
+  pageText: "text-neutral-50",
+  header: "border-b border-white/5 bg-neutral-950/80",
+  headerBorder: "border-white/5",
+  headerRailBorder: "border-white/5",
+  surface: "bg-neutral-900/90",
+  surfaceMuted: "bg-neutral-800/50",
   border: "border-neutral-800",
-  text: "text-white",
+  text: "text-neutral-50",
   textMuted: "text-neutral-400",
-  chipActiveBg: "bg-neutral-700",
-  chipActiveText: "text-white",
-  chipInactive: "text-neutral-300 hover:bg-neutral-800",
-  chipInactiveBorder: "border-neutral-700",
+  chipActiveBg: "bg-neutral-800 ring-1 ring-neutral-600/50",
+  chipActiveText: "text-neutral-50",
+  chipInactive: "text-neutral-300 hover:bg-neutral-800/80",
+  chipInactiveBorder: "border-neutral-700/80",
   imageGradient: "bg-[linear-gradient(180deg,#262626_0%,#171717_100%)]",
-  cartSummary: "bg-neutral-800",
-  cartSummaryText: "text-white",
-  modalSurface: "bg-neutral-800/90",
-  gatePage: "bg-black text-white",
+  cartSummary: "bg-neutral-800/90",
+  cartSummaryText: "text-neutral-50",
+  modalSurface: "bg-neutral-800/60",
+  gatePage: "bg-neutral-950 text-neutral-50",
 };
 
 function buildStorefrontThemes(
