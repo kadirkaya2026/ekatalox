@@ -1635,9 +1635,11 @@ export function ProductsManager({
             ? `${variantMatrixProduct.product_name} • Model Matrisi`
             : "Model Matrisi"
         }
+        panelClassName="max-w-6xl sm:max-h-[min(92dvh,100%)]"
+        bodyClassName="sm:p-6"
       >
         <div className="space-y-4">
-          <div className="flex items-center justify-between gap-3">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div>
               <p className="text-sm font-semibold text-foreground">
                 Hızlı varyant düzenleyici
@@ -1659,7 +1661,7 @@ export function ProductsManager({
             </div>
           ) : null}
 
-          <div className="overflow-x-auto rounded-xl border border-border">
+          <div className="max-h-[min(52vh,32rem)] overflow-auto rounded-xl border border-border">
             <table className="min-w-full border-collapse">
               <thead className="bg-muted/60 text-left text-xs uppercase tracking-[0.14em] text-muted-foreground">
                 <tr>
