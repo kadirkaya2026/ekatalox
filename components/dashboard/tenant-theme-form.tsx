@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowDown, ArrowUp, LayoutGrid, Palette, Sparkles, Type } from "lucide-react";
+import { ArrowDown, ArrowUp, LayoutGrid, Palette, RotateCcw, Sparkles, Type } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -22,6 +22,7 @@ import { LAYOUT_OPTIONS } from "@/lib/storefront/layout-catalog";
 import { FONT_OPTIONS } from "@/lib/storefront/font-catalog";
 import {
   BRAND_COLOR_PRESETS,
+  DEFAULT_STOREFRONT_APPEARANCE,
   FOOTER_STYLE_OPTIONS,
   HEADER_STYLE_OPTIONS,
   PRODUCT_CARD_STYLE_OPTIONS,
@@ -58,6 +59,44 @@ function toThemeFormState(settings: TenantStorefrontSettings): ThemeFormState {
   };
 }
 
+function buildAppearancePayload(
+  form: ThemeFormState,
+  options: {
+    canUseAdvancedAppearance: boolean;
+    canEditHomepageBlocks: boolean;
+  },
+) {
+  return {
+    theme_key: form.theme_key,
+    layout_key: form.layout_key,
+    brand_primary_color: form.brand_primary_color || null,
+    brand_accent_color: form.brand_accent_color || null,
+    ...(options.canUseAdvancedAppearance
+      ? {
+          font_key: form.font_key,
+          product_card_style: form.product_card_style,
+          header_style_key: form.header_style_key,
+          footer_style_key: form.footer_style_key,
+        }
+      : {}),
+    ...(options.canEditHomepageBlocks ? { homepage_blocks: form.homepage_blocks } : {}),
+  };
+}
+
+function toDefaultThemeFormState(): ThemeFormState {
+  return {
+    theme_key: DEFAULT_STOREFRONT_APPEARANCE.theme_key,
+    layout_key: DEFAULT_STOREFRONT_APPEARANCE.layout_key,
+    brand_primary_color: "",
+    brand_accent_color: "",
+    font_key: DEFAULT_STOREFRONT_APPEARANCE.font_key,
+    product_card_style: DEFAULT_STOREFRONT_APPEARANCE.product_card_style,
+    header_style_key: DEFAULT_STOREFRONT_APPEARANCE.header_style_key,
+    footer_style_key: DEFAULT_STOREFRONT_APPEARANCE.footer_style_key,
+    homepage_blocks: normalizeHomepageBlocks(DEFAULT_STOREFRONT_APPEARANCE.homepage_blocks),
+  };
+}
+
 export function TenantThemeForm({
   initialStorefrontSettings,
   tenantPlan,
@@ -69,6 +108,7 @@ export function TenantThemeForm({
     toThemeFormState(initialStorefrontSettings),
   );
   const [savePending, startSaveTransition] = useTransition();
+  const [resetPending, startResetTransition] = useTransition();
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
   const router = useRouter();
   const canUseAdvancedAppearance = hasPlanFeature(tenantPlan, "advanced_appearance");
@@ -102,29 +142,23 @@ export function TenantThemeForm({
     });
   }
 
-  function save(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  function saveAppearancePayload(
+    nextForm: ThemeFormState,
+    successMessage: string,
+    transition: typeof startSaveTransition,
+  ) {
     setSaveMessage(null);
 
-    startSaveTransition(async () => {
+    transition(async () => {
       const response = await fetch("/api/tenant/settings", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          theme_key: form.theme_key,
-          layout_key: form.layout_key,
-          brand_primary_color: form.brand_primary_color || null,
-          brand_accent_color: form.brand_accent_color || null,
-          ...(canUseAdvancedAppearance
-            ? {
-                font_key: form.font_key,
-                product_card_style: form.product_card_style,
-                header_style_key: form.header_style_key,
-                footer_style_key: form.footer_style_key,
-              }
-            : {}),
-          ...(canEditHomepageBlocks ? { homepage_blocks: form.homepage_blocks } : {}),
-        }),
+        body: JSON.stringify(
+          buildAppearancePayload(nextForm, {
+            canUseAdvancedAppearance,
+            canEditHomepageBlocks,
+          }),
+        ),
       });
 
       const result = await response.json();
@@ -136,11 +170,34 @@ export function TenantThemeForm({
 
       if (result.storefrontSettings) {
         setForm(toThemeFormState(result.storefrontSettings));
+      } else {
+        setForm(nextForm);
       }
 
-      setSaveMessage("Tema ayarları kaydedildi.");
+      setSaveMessage(successMessage);
       router.refresh();
     });
+  }
+
+  function save(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    saveAppearancePayload(form, "Tema ayarları kaydedildi.", startSaveTransition);
+  }
+
+  function resetAppearance() {
+    const confirmed = window.confirm(
+      "Marka renkleri ve görünüm ayarları varsayılana dönecek. Devam edilsin mi?",
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    saveAppearancePayload(
+      toDefaultThemeFormState(),
+      "Görünüm ayarları varsayılana sıfırlandı.",
+      startResetTransition,
+    );
   }
 
   return (
@@ -394,9 +451,20 @@ export function TenantThemeForm({
           <div className="min-h-6">
             {saveMessage ? <p className="text-sm text-emerald-700">{saveMessage}</p> : null}
           </div>
-          <Button type="submit" disabled={savePending}>
-            {savePending ? "Kaydediliyor..." : "Görünüm ayarlarını kaydet"}
-          </Button>
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+            <Button
+              type="button"
+              variant="secondary"
+              disabled={savePending || resetPending}
+              onClick={resetAppearance}
+            >
+              <RotateCcw className="size-4" />
+              {resetPending ? "Sıfırlanıyor..." : "Ayarları sıfırla"}
+            </Button>
+            <Button type="submit" disabled={savePending || resetPending}>
+              {savePending ? "Kaydediliyor..." : "Görünüm ayarlarını kaydet"}
+            </Button>
+          </div>
         </div>
       </Card>
     </form>

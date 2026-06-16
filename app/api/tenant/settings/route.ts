@@ -123,8 +123,13 @@ export async function PATCH(request: Request) {
     hero_cta_label: body.hero_cta_label ?? existingSettings.hero_cta_label,
     is_hero_visible: body.is_hero_visible ?? existingSettings.is_hero_visible,
     brand_primary_color:
-      body.brand_primary_color ?? existingSettings.brand_primary_color,
-    brand_accent_color: body.brand_accent_color ?? existingSettings.brand_accent_color,
+      "brand_primary_color" in body
+        ? body.brand_primary_color
+        : existingSettings.brand_primary_color,
+    brand_accent_color:
+      "brand_accent_color" in body
+        ? body.brand_accent_color
+        : existingSettings.brand_accent_color,
     font_key: body.font_key ?? existingSettings.font_key,
     product_card_style: body.product_card_style ?? existingSettings.product_card_style,
     header_style_key: body.header_style_key ?? existingSettings.header_style_key,
