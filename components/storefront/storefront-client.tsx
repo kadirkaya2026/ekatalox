@@ -2188,6 +2188,13 @@ export function StorefrontClient({
                   )}
                 </div>
               </div>
+              {subdomain ? (
+                <StorefrontLogoutButton
+                  subdomain={subdomain}
+                  tenantId={tenant.id}
+                  className="hidden lg:inline-flex"
+                />
+              ) : null}
               <button
                 type="button"
                 onClick={openCartDrawer}
