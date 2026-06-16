@@ -74,6 +74,17 @@ export interface StorefrontTheme {
   border: string;
   text: string;
   textMuted: string;
+  footerShell: string;
+  footerHeading: string;
+  footerText: string;
+  footerLink: string;
+  quantityStepper: string;
+  quantityStepperButton: string;
+  quantityInput: string;
+  panelSurface: string;
+  emptyImage: string;
+  prose: string;
+  proseHeading: string;
 }
 
 interface ThemeAccent {
@@ -123,7 +134,83 @@ interface ThemeNeutrals {
   gatePage: string;
 }
 
-function buildTheme(neutrals: ThemeNeutrals, accent: ThemeAccent): StorefrontTheme {
+export type StorefrontColorScheme = "light" | "dark";
+
+function resolveAccent(
+  accent: ThemeAccent,
+  colorScheme: StorefrontColorScheme,
+  themeKey: StorefrontThemeKey,
+): ThemeAccent {
+  if (colorScheme === "light") {
+    return accent;
+  }
+
+  const darkSoftByTheme: Record<
+    StorefrontThemeKey,
+    Pick<ThemeAccent, "soft" | "softText" | "titleHover" | "priceOriginal">
+  > = {
+    minimal: {
+      soft: "bg-emerald-950/50",
+      softText: "text-emerald-300",
+      titleHover: "group-hover:text-emerald-300",
+      priceOriginal: "text-neutral-500",
+    },
+    "pro-blue": {
+      soft: "bg-blue-950/50",
+      softText: "text-blue-300",
+      titleHover: "group-hover:text-blue-300",
+      priceOriginal: "text-neutral-500",
+    },
+    neutral: {
+      soft: "bg-neutral-800",
+      softText: "text-neutral-300",
+      titleHover: "group-hover:text-neutral-200",
+      priceOriginal: "text-neutral-500",
+    },
+  };
+
+  return { ...accent, ...darkSoftByTheme[themeKey] };
+}
+
+function buildTheme(
+  neutrals: ThemeNeutrals,
+  accent: ThemeAccent,
+  colorScheme: StorefrontColorScheme = "light",
+): StorefrontTheme {
+  const isDark = colorScheme === "dark";
+  const iconButtonInteractive = isDark
+    ? "text-neutral-200 hover:border-neutral-600 hover:bg-neutral-800"
+    : "text-slate-700 hover:border-slate-300 hover:bg-slate-50";
+  const dropdownItem = isDark
+    ? "w-full rounded-xl px-4 py-2.5 text-left text-sm text-neutral-200 transition hover:bg-neutral-800"
+    : "w-full rounded-xl px-4 py-2.5 text-left text-sm text-slate-700 transition hover:bg-slate-50";
+  const sidebarItemInactive = isDark
+    ? "text-neutral-300 hover:bg-neutral-800"
+    : "text-slate-700 hover:bg-slate-50";
+  const sidebarChildInactive = isDark
+    ? "text-neutral-400 hover:bg-neutral-800 hover:text-neutral-100"
+    : "text-slate-600 hover:bg-slate-50 hover:text-slate-900";
+  const chipInactiveText = isDark ? "text-neutral-300" : "text-slate-700";
+  const chipInactiveHover = isDark ? "hover:bg-neutral-800" : "hover:bg-slate-50";
+  const modalInactiveText = isDark ? "text-neutral-400" : "text-slate-600";
+  const stepperButton = isDark
+    ? "text-neutral-200 transition hover:bg-neutral-800 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+    : "text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:hover:bg-transparent";
+  const cartDrawerClose = isDark
+    ? "flex size-10 items-center justify-center rounded-full border border-neutral-700 bg-neutral-800 text-neutral-300 transition hover:border-neutral-600 hover:bg-neutral-700"
+    : "flex size-10 items-center justify-center rounded-full border border-slate-200 bg-slate-50 text-slate-600 transition hover:border-slate-300 hover:bg-slate-100";
+  const modalClose = isDark
+    ? "rounded-full p-2 text-neutral-400 transition hover:bg-neutral-800 hover:text-neutral-100"
+    : "rounded-full p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-900";
+  const drawerHandle = isDark ? "h-1.5 w-14 rounded-full bg-neutral-700" : "h-1.5 w-14 rounded-full bg-slate-200";
+  const productCardHover = isDark ? "hover:border-neutral-600" : "hover:border-slate-300";
+  const stockBadgeOut = isDark
+    ? "inline-flex items-center rounded-full border border-rose-500/40 bg-rose-950/60 px-3 py-1 text-[11px] font-semibold text-rose-300 shadow-sm"
+    : "inline-flex items-center rounded-full border border-rose-200 bg-rose-50 px-3 py-1 text-[11px] font-semibold text-rose-700 shadow-sm";
+  const variantBadge = isDark
+    ? "bg-blue-950/70 px-2 py-1 text-[10px] text-blue-300"
+    : "bg-blue-50 px-2 py-1 text-[10px] text-blue-700";
+
   return {
     page: cn(
       "min-h-screen w-full max-w-full overflow-x-hidden pb-28 xl:pb-6",
@@ -138,14 +225,15 @@ function buildTheme(neutrals: ThemeNeutrals, accent: ThemeAccent): StorefrontThe
       "flex items-center justify-center rounded-2xl border shadow-sm transition",
       neutrals.border,
       neutrals.surface,
-      "text-slate-700 hover:border-slate-300 hover:bg-slate-50 lg:size-12",
+      iconButtonInteractive,
+      "lg:size-12",
     ),
     logoWrap: cn(
       "relative flex shrink-0 items-center justify-center overflow-hidden rounded-[1.4rem] border shadow-sm lg:rounded-[1.75rem]",
       neutrals.border,
       neutrals.surface,
     ),
-    logoPlaceholder: "text-slate-400",
+    logoPlaceholder: neutrals.textMuted,
     cartBadge: cn(
       "absolute -right-2 -top-2 inline-flex min-w-5 items-center justify-center rounded-full px-1.5 py-0.5 text-[10px] font-bold",
       accent.primary,
@@ -155,11 +243,11 @@ function buildTheme(neutrals: ThemeNeutrals, accent: ThemeAccent): StorefrontThe
       "relative flex size-11 items-center justify-center rounded-2xl border shadow-sm transition lg:size-12",
       neutrals.border,
       neutrals.surface,
-      "text-slate-700 hover:border-slate-300 hover:bg-slate-50",
+      iconButtonInteractive,
     ),
     cartTotalLabel: neutrals.textMuted,
     cartTotalValue: cn("text-sm font-bold", neutrals.text),
-    cartTotalEmpty: "text-sm font-bold text-slate-400",
+    cartTotalEmpty: cn("text-sm font-bold", neutrals.textMuted),
     categoryRailBorder: neutrals.headerRailBorder,
     categoryNavChip: (active) =>
       cn(
@@ -180,15 +268,14 @@ function buildTheme(neutrals: ThemeNeutrals, accent: ThemeAccent): StorefrontThe
         "shrink-0 rounded-full border px-4 py-2.5 text-sm font-semibold transition duration-200",
         active
           ? cn("shadow-sm", accent.subChipActive)
-          : cn(neutrals.chipInactiveBorder, neutrals.surface, "text-slate-700"),
+          : cn(neutrals.chipInactiveBorder, neutrals.surface, chipInactiveText),
       ),
     categoryDropdown: cn(
       "min-w-[220px] rounded-2xl border p-2 shadow-xl",
       neutrals.border,
       neutrals.surface,
     ),
-    categoryDropdownItem:
-      "w-full rounded-xl px-4 py-2.5 text-left text-sm text-slate-700 transition hover:bg-slate-50",
+    categoryDropdownItem: dropdownItem,
     categoryRail:
       "flex max-w-full gap-2 overflow-x-auto pb-3 pt-1 scrollbar-none whitespace-nowrap lg:flex-wrap lg:overflow-visible lg:whitespace-normal",
     categoryChip: (active) =>
@@ -196,7 +283,7 @@ function buildTheme(neutrals: ThemeNeutrals, accent: ThemeAccent): StorefrontThe
         "rounded-full px-5 py-2.5 text-sm font-semibold transition shadow-sm",
         active
           ? cn(neutrals.chipActiveBg, neutrals.chipActiveText)
-          : cn(neutrals.surface, neutrals.chipInactiveBorder, "text-slate-700 hover:bg-slate-50"),
+          : cn(neutrals.surface, neutrals.chipInactiveBorder, chipInactiveText, chipInactiveHover),
       ),
     categorySidebar: cn(
       "sticky top-28 max-h-[calc(100dvh-8rem)] overflow-y-auto rounded-2xl border p-3 shadow-sm",
@@ -212,14 +299,14 @@ function buildTheme(neutrals: ThemeNeutrals, accent: ThemeAccent): StorefrontThe
         "flex w-full items-center rounded-xl px-3 py-2.5 text-left text-sm font-semibold transition",
         active
           ? cn(neutrals.chipActiveBg, neutrals.chipActiveText)
-          : "text-slate-700 hover:bg-slate-50",
+          : sidebarItemInactive,
       ),
     categorySidebarChildItem: (active) =>
       cn(
         "flex w-full items-center rounded-lg py-2 pl-6 pr-3 text-left text-[13px] font-medium transition",
         active
           ? cn("font-semibold", accent.softText, accent.soft)
-          : "text-slate-600 hover:bg-slate-50 hover:text-slate-900",
+          : sidebarChildInactive,
       ),
     searchWrap: cn("relative rounded-2xl shadow-sm border", neutrals.border, neutrals.surface),
     searchInput: cn("rounded-2xl", accent.ring, accent.borderFocus),
@@ -228,7 +315,7 @@ function buildTheme(neutrals: ThemeNeutrals, accent: ThemeAccent): StorefrontThe
       "group min-w-0 flex h-full flex-col overflow-hidden rounded-[1.75rem] border shadow-[0_12px_32px_rgba(15,23,42,0.06)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_20px_48px_rgba(15,23,42,0.12)]",
       neutrals.border,
       neutrals.surface,
-      "hover:border-slate-300",
+      productCardHover,
     ),
     productImageWrap: cn(
       "relative aspect-square w-full overflow-hidden",
@@ -248,9 +335,8 @@ function buildTheme(neutrals: ThemeNeutrals, accent: ThemeAccent): StorefrontThe
       accent.soft,
       accent.softText,
     ),
-    stockBadgeOut:
-      "inline-flex items-center rounded-full border border-rose-200 bg-rose-50 px-3 py-1 text-[11px] font-semibold text-rose-700 shadow-sm",
-    variantBadge: "bg-blue-50 px-2 py-1 text-[10px] text-blue-700",
+    stockBadgeOut,
+    variantBadge,
     addedVariantBadge: cn("px-2 py-1 text-[10px]", accent.soft, accent.softText),
     primaryButton: cn(
       "rounded-xl shadow-sm transition font-bold",
@@ -275,12 +361,11 @@ function buildTheme(neutrals: ThemeNeutrals, accent: ThemeAccent): StorefrontThe
       "absolute inset-x-0 bottom-0 z-10 max-h-[94dvh] rounded-t-[2rem] shadow-[0_-24px_80px_rgba(15,23,42,0.22)] lg:inset-y-0 lg:left-auto lg:right-0 lg:h-full lg:max-h-none lg:w-[460px] lg:rounded-l-[2rem] lg:rounded-tr-none",
       neutrals.surface,
     ),
-    cartDrawerHandle: "h-1.5 w-14 rounded-full bg-slate-200",
+    cartDrawerHandle: drawerHandle,
     cartDrawerHeaderBorder: cn("border-b", neutrals.headerRailBorder),
     cartDrawerTitle: cn("truncate text-xl font-bold tracking-tight sm:text-2xl", neutrals.text),
     cartDrawerMuted: neutrals.textMuted,
-    cartDrawerCloseButton:
-      "flex size-10 items-center justify-center rounded-full border border-slate-200 bg-slate-50 text-slate-600 transition hover:border-slate-300 hover:bg-slate-100",
+    cartDrawerCloseButton: cartDrawerClose,
     cartDrawerItem: cn(
       "min-w-0 rounded-[1.55rem] border p-3.5 shadow-[0_14px_36px_rgba(15,23,42,0.06)]",
       neutrals.border,
@@ -294,8 +379,7 @@ function buildTheme(neutrals: ThemeNeutrals, accent: ThemeAccent): StorefrontThe
     ),
     modalHeaderBorder: cn("border-b", neutrals.headerRailBorder),
     modalTitle: cn("text-lg font-semibold", neutrals.text),
-    modalCloseButton:
-      "rounded-full p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-900",
+    modalCloseButton: modalClose,
     modalFooterBorder: cn("border-t", neutrals.headerRailBorder),
     modalSurface: cn("rounded-[1.35rem] border p-4", neutrals.border, neutrals.modalSurface),
     modalTabChip: (active) =>
@@ -303,7 +387,7 @@ function buildTheme(neutrals: ThemeNeutrals, accent: ThemeAccent): StorefrontThe
         "shrink-0 rounded-full border px-4 py-2 text-sm font-semibold transition",
         active
           ? cn(neutrals.chipActiveBg, neutrals.chipActiveText)
-          : cn(neutrals.chipInactiveBorder, neutrals.surface, "text-slate-600"),
+          : cn(neutrals.chipInactiveBorder, neutrals.surface, modalInactiveText),
       ),
     floatingCartStepper: accent.stepper,
     floatingCartAddButton: cn(
@@ -322,6 +406,39 @@ function buildTheme(neutrals: ThemeNeutrals, accent: ThemeAccent): StorefrontThe
     border: neutrals.border,
     text: neutrals.text,
     textMuted: neutrals.textMuted,
+    footerShell: cn("relative z-0 border-t", neutrals.headerRailBorder, neutrals.surfaceMuted),
+    footerHeading: cn(
+      "mb-2 text-[11px] font-semibold uppercase tracking-[0.1em]",
+      neutrals.text,
+    ),
+    footerText: cn("text-[15px] leading-[1.7] break-words", neutrals.textMuted),
+    footerLink: cn(
+      "font-medium transition hover:underline",
+      neutrals.text,
+      isDark ? "hover:text-white" : "hover:text-slate-900",
+    ),
+    quantityStepper: cn(
+      "flex h-9 items-stretch overflow-hidden rounded-lg border",
+      neutrals.border,
+      neutrals.surface,
+    ),
+    quantityStepperButton: stepperButton,
+    quantityInput: cn(
+      "min-w-0 flex-1 bg-transparent px-2.5 py-0 text-center text-[16px] leading-9 outline-none disabled:cursor-not-allowed",
+      neutrals.text,
+    ),
+    panelSurface: cn(
+      "rounded-[1.5rem] border p-3 shadow-sm sm:p-4",
+      neutrals.border,
+      neutrals.surface,
+    ),
+    emptyImage: cn(
+      "flex h-full w-full items-center justify-center rounded-[1rem] border border-dashed",
+      neutrals.border,
+      neutrals.surfaceMuted,
+    ),
+    prose: cn("text-sm leading-6", neutrals.textMuted),
+    proseHeading: neutrals.text,
   };
 }
 
@@ -432,11 +549,55 @@ const neutralAccent: ThemeAccent = {
   floatingAddHover: "hover:border-slate-700 hover:bg-slate-700",
 };
 
-export const storefrontThemes: Record<StorefrontThemeKey, StorefrontTheme> = {
-  minimal: buildTheme(minimalNeutrals, minimalAccent),
-  "pro-blue": buildTheme(minimalNeutrals, proBlueAccent),
-  neutral: buildTheme(neutralNeutrals, neutralAccent),
+const darkNeutrals: ThemeNeutrals = {
+  page: "bg-black",
+  pageText: "text-white",
+  header: "border-b border-neutral-800 bg-neutral-900/95",
+  headerBorder: "border-neutral-800",
+  headerRailBorder: "border-neutral-800",
+  surface: "bg-neutral-900",
+  surfaceMuted: "bg-neutral-800",
+  border: "border-neutral-800",
+  text: "text-white",
+  textMuted: "text-neutral-400",
+  chipActiveBg: "bg-neutral-700",
+  chipActiveText: "text-white",
+  chipInactive: "text-neutral-300 hover:bg-neutral-800",
+  chipInactiveBorder: "border-neutral-700",
+  imageGradient: "bg-[linear-gradient(180deg,#262626_0%,#171717_100%)]",
+  cartSummary: "bg-neutral-800",
+  cartSummaryText: "text-white",
+  modalSurface: "bg-neutral-800/90",
+  gatePage: "bg-black text-white",
 };
+
+function buildStorefrontThemes(
+  colorScheme: StorefrontColorScheme,
+): Record<StorefrontThemeKey, StorefrontTheme> {
+  const neutralsFor = (lightNeutrals: ThemeNeutrals) =>
+    colorScheme === "dark" ? darkNeutrals : lightNeutrals;
+
+  return {
+    minimal: buildTheme(
+      neutralsFor(minimalNeutrals),
+      resolveAccent(minimalAccent, colorScheme, "minimal"),
+      colorScheme,
+    ),
+    "pro-blue": buildTheme(
+      neutralsFor(minimalNeutrals),
+      resolveAccent(proBlueAccent, colorScheme, "pro-blue"),
+      colorScheme,
+    ),
+    neutral: buildTheme(
+      neutralsFor(neutralNeutrals),
+      resolveAccent(neutralAccent, colorScheme, "neutral"),
+      colorScheme,
+    ),
+  };
+}
+
+export const storefrontThemes: Record<StorefrontThemeKey, StorefrontTheme> =
+  buildStorefrontThemes("light");
 
 const legacyThemeKeys = new Set(["premium-dark", "soft-commerce"]);
 
@@ -452,8 +613,11 @@ export function resolveStorefrontThemeKey(key: string): StorefrontThemeKey {
   return "minimal";
 }
 
-export function getStorefrontTheme(key: string): StorefrontTheme {
-  return storefrontThemes[resolveStorefrontThemeKey(key)];
+export function getStorefrontTheme(
+  key: string,
+  colorScheme: StorefrontColorScheme = "light",
+): StorefrontTheme {
+  return buildStorefrontThemes(colorScheme)[resolveStorefrontThemeKey(key)];
 }
 
 /** @deprecated Use StorefrontTheme */

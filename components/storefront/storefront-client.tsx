@@ -54,8 +54,9 @@ import {
   getCartVariantCount,
   updateCartLineQuantity,
 } from "@/lib/storefront/cart";
-import { getStorefrontTheme } from "@/lib/storefront/themes";
-import { StorefrontThemeProvider } from "@/lib/storefront/theme-context";
+import { useResolvedStorefrontTheme } from "@/lib/storefront/use-resolved-storefront-theme";
+import { StorefrontThemeProvider, useStorefrontTheme } from "@/lib/storefront/theme-context";
+import type { StorefrontTheme } from "@/lib/storefront/themes";
 import { StorefrontLayoutProvider } from "@/lib/storefront/layout-context";
 import {
   STOREFRONT_BANNER_SIZES,
@@ -89,6 +90,7 @@ import {
 import { StorefrontCartDrawer } from "@/components/storefront/storefront-cart-drawer";
 import { StorefrontImage } from "@/components/storefront/storefront-image";
 import { StorefrontLogoutButton } from "@/components/storefront/storefront-logout-button";
+import { StorefrontThemeToggle } from "@/components/storefront/storefront-theme-toggle";
 import { ProductDescriptionContent } from "@/components/storefront/product-description-content";
 import {
   DiscountSticker,
@@ -416,6 +418,8 @@ function QuantityStepper({
   placeholder?: string;
   ariaLabel?: string;
 }) {
+  const theme = useStorefrontTheme();
+
   function handleInputChange(raw: string) {
     if (raw === "") {
       onChange("");
@@ -450,8 +454,8 @@ function QuantityStepper({
   return (
     <div
       className={cn(
-        "flex h-9 items-stretch overflow-hidden rounded-lg border border-slate-200 bg-white",
-        disabled && "bg-slate-100 opacity-60",
+        theme.quantityStepper,
+        disabled && "opacity-60",
       )}
     >
       <input
@@ -463,15 +467,15 @@ function QuantityStepper({
         onChange={(event) => handleInputChange(event.target.value)}
         placeholder={placeholder}
         aria-label={ariaLabel}
-        className="min-w-0 flex-1 bg-transparent px-2.5 py-0 text-center text-[16px] leading-9 text-slate-900 outline-none disabled:cursor-not-allowed"
+        className={cn(theme.quantityInput, "disabled:cursor-not-allowed")}
         style={{ fontSize: "16px" }}
       />
-      <div className="flex shrink-0 border-l border-slate-200">
+      <div className={cn("flex shrink-0 border-l", theme.border)}>
         <button
           type="button"
           disabled={disabled}
           onClick={decrement}
-          className="flex w-8 items-center justify-center text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+          className={cn("flex w-8 items-center justify-center", theme.quantityStepperButton)}
           aria-label="Adedi azalt"
         >
           <Minus className="size-3.5" />
@@ -480,7 +484,11 @@ function QuantityStepper({
           type="button"
           disabled={disabled}
           onClick={increment}
-          className="flex w-8 items-center justify-center border-l border-slate-200 text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+          className={cn(
+            "flex w-8 items-center justify-center border-l",
+            theme.border,
+            theme.quantityStepperButton,
+          )}
           aria-label="Adedi artır"
         >
           <Plus className="size-3.5" />
@@ -549,11 +557,16 @@ function renderBannerItem(
   banner: BannerItem,
   index: number,
   title: string,
+  theme: StorefrontTheme,
 ) {
   return (
     <div
       key={banner.id}
-      className="relative w-full overflow-hidden rounded-[2.5rem] border border-slate-200/70 bg-white shadow-[0_24px_80px_rgba(15,23,42,0.12)]"
+      className={cn(
+        "relative w-full overflow-hidden rounded-[2.5rem] border shadow-[0_24px_80px_rgba(15,23,42,0.12)]",
+        theme.border,
+        theme.surface,
+      )}
       style={{
         background:
           banner.background_color ??
@@ -616,6 +629,7 @@ function AnnouncementModal({
   announcement: ActiveAnnouncement;
   onDismiss: () => void;
 }) {
+  const theme = useStorefrontTheme();
   const [isOpen, setIsOpen] = useState(true);
 
   function handleDismiss() {
@@ -644,7 +658,11 @@ function AnnouncementModal({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 18, scale: 0.98 }}
             transition={{ duration: 0.28, ease: "easeOut" }}
-            className="relative z-10 w-full max-w-2xl overflow-hidden rounded-[2rem] border border-white/50 bg-white/95 shadow-[0_36px_120px_rgba(15,23,42,0.30)] backdrop-blur-2xl"
+            className={cn(
+              "relative z-10 w-full max-w-2xl overflow-hidden rounded-[2rem] border shadow-[0_36px_120px_rgba(15,23,42,0.30)] backdrop-blur-2xl",
+              theme.border,
+              theme.surface,
+            )}
             role="dialog"
             aria-modal="true"
             aria-labelledby="announcement-modal-title"
@@ -663,12 +681,12 @@ function AnnouncementModal({
                     <Megaphone className="size-6" />
                   </div>
                   <div className="space-y-2">
-                    <span className="inline-flex rounded-full border border-emerald-100 bg-white/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-emerald-700">
+                    <span className={cn(theme.stockBadgeIn, "uppercase tracking-[0.22em] text-[11px]")}>
                       Yeni Duyuru
                     </span>
                     <h2
                       id="announcement-modal-title"
-                      className="text-2xl font-black tracking-tight text-slate-950 sm:text-[2.2rem]"
+                      className={cn("text-2xl font-black tracking-tight sm:text-[2.2rem]", theme.text)}
                     >
                       {announcement.title}
                     </h2>
@@ -678,18 +696,18 @@ function AnnouncementModal({
                 <button
                   type="button"
                   onClick={handleDismiss}
-                  className="rounded-full border border-slate-200/80 bg-white/90 p-2.5 text-slate-500 transition hover:border-slate-300 hover:bg-white hover:text-slate-900"
+                  className={theme.modalCloseButton}
                   aria-label="Kapat"
                 >
                   <X className="size-5" />
                 </button>
               </div>
 
-              <div className="mt-6 rounded-[1.75rem] border border-white/70 bg-white/80 p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)] sm:p-6">
+              <div className={cn("mt-6 p-5 sm:p-6", theme.modalSurface)}>
                 <div className="mb-4 h-px w-full bg-gradient-to-r from-emerald-200 via-sky-200 to-transparent" />
                 <p
                   id="announcement-modal-body"
-                  className="whitespace-pre-line text-[15px] leading-8 text-slate-600 sm:text-base"
+                  className={cn("whitespace-pre-line text-[15px] leading-8 sm:text-base", theme.textMuted)}
                 >
                   {announcement.body}
                 </p>
@@ -821,7 +839,7 @@ export function StorefrontClient({
   );
   const analyticsSubdomain = subdomain ?? tenant.subdomain;
 
-  const theme = getStorefrontTheme(storefrontSettings.theme_key);
+  const theme = useResolvedStorefrontTheme(storefrontSettings.theme_key);
   const layout = getStorefrontLayout(storefrontSettings.layout_key ?? "classic-grid");
   const usesSidebarNav = layout.categoryNav === "sidebar";
   const cartStorageKey = useMemo(() => getCartStorageKey(tenant.id), [tenant.id]);
@@ -1777,7 +1795,7 @@ export function StorefrontClient({
             <button
               type="button"
               onClick={onDismiss}
-              className="absolute right-2 top-2 z-10 rounded-full p-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
+              className={cn("absolute right-2 top-2 z-10", theme.modalCloseButton)}
               aria-label="Kapat"
             >
               <X className="size-4" />
@@ -1805,7 +1823,8 @@ export function StorefrontClient({
               </p>
               <p
                 className={cn(
-                  "mt-1 font-bold tracking-tight text-slate-950",
+                  "mt-1 font-bold tracking-tight",
+                  theme.text,
                   compact ? "text-sm leading-5" : "text-base leading-6",
                 )}
               >
@@ -1819,7 +1838,8 @@ export function StorefrontClient({
               </p>
               <p
                 className={cn(
-                  "mt-1 text-slate-600",
+                  "mt-1",
+                  theme.textMuted,
                   compact ? "text-[11px] leading-4" : "text-sm leading-5",
                 )}
               >
@@ -1853,7 +1873,7 @@ export function StorefrontClient({
           <button
             type="button"
             onClick={onDismiss}
-            className="absolute right-2 top-2 z-10 rounded-full p-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
+            className={cn("absolute right-2 top-2 z-10", theme.modalCloseButton)}
             aria-label="Kapat"
           >
             <X className="size-4" />
@@ -1883,7 +1903,8 @@ export function StorefrontClient({
             </p>
             <p
               className={cn(
-                "mt-1 font-bold tracking-tight text-slate-950",
+                "mt-1 font-bold tracking-tight",
+                theme.text,
                 compact ? "text-sm leading-5" : "text-base leading-6",
               )}
             >
@@ -1897,7 +1918,8 @@ export function StorefrontClient({
             </p>
             <p
               className={cn(
-                "mt-1 text-slate-600",
+                "mt-1",
+                theme.textMuted,
                 compact ? "text-[11px] leading-4" : "text-sm leading-5",
               )}
             >
@@ -1933,10 +1955,10 @@ export function StorefrontClient({
     return (
       <article
         key={product.id}
-        className="relative overflow-visible min-w-[182px] max-w-[182px] rounded-[1.5rem] border border-slate-200/80 bg-white p-3 shadow-[0_14px_34px_rgba(15,23,42,0.08)]"
+        className={cn("relative overflow-visible min-w-[182px] max-w-[182px] rounded-[1.5rem] border p-3 shadow-[0_14px_34px_rgba(15,23,42,0.08)]", theme.border, theme.surface)}
       >
         <div className="absolute left-3 right-14 top-3 z-10 flex">
-          <span className="truncate rounded-full bg-white/90 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500 shadow-sm">
+          <span className={cn("truncate rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] shadow-sm", theme.surfaceMuted, theme.textMuted)}>
             {categoryNameMap.get(product.category_id) || "Genel"}
           </span>
         </div>
@@ -1949,7 +1971,7 @@ export function StorefrontClient({
           onOpenAddToCart={handleOpenAddToCartModal}
         />
 
-        <div className="relative h-28 overflow-hidden rounded-[1.15rem] bg-[linear-gradient(180deg,#f8fafc_0%,#eef2ff_100%)]">
+        <div className={cn("relative h-28 overflow-hidden rounded-[1.15rem]", theme.productImageWrap)}>
           <DiscountSticker product={product} />
           {product.image_url ? (
             <StorefrontImage
@@ -1959,21 +1981,21 @@ export function StorefrontClient({
               sizes={STOREFRONT_CROSS_SELL_SIZES}
             />
           ) : (
-            <div className="flex h-full w-full items-center justify-center">
-              <Store className="size-7 text-slate-300" />
+            <div className={theme.emptyImage}>
+              <Store className={cn("size-7", theme.textMuted)} />
             </div>
           )}
         </div>
 
         <div className="mt-3 space-y-1.5">
-          <p className="line-clamp-2 text-sm font-semibold leading-5 text-slate-900">
+          <p className={cn("line-clamp-2 text-sm font-semibold leading-5", theme.text)}>
             {product.product_name}
           </p>
-          <p className="text-[11px] text-slate-500">
+          <p className={cn("text-[11px]", theme.textMuted)}>
             {formatProductModelNo(product.sku_code)}
           </p>
           {getUnitSummary(product) ? (
-            <p className="line-clamp-2 text-[11px] leading-4 text-slate-500">
+            <p className={cn("line-clamp-2 text-[11px] leading-4", theme.textMuted)}>
               {getUnitSummary(product)}
             </p>
           ) : null}
@@ -2013,16 +2035,16 @@ export function StorefrontClient({
     const tabContent =
       activePreviewTab === "details" ? (
         previewDescriptionLoading ? (
-          <p className="text-sm leading-6 text-slate-400">Detay yükleniyor…</p>
+          <p className={cn("text-sm leading-6", theme.textMuted)}>Detay yükleniyor…</p>
         ) : previewDescriptionError ? (
           <p className="text-sm leading-6 text-amber-700">{previewDescriptionError}</p>
         ) : (
           <ProductDescriptionContent content={detailContent ?? null} />
         )
       ) : activePreviewTab === "package" ? (
-        <p className="text-sm leading-6 text-slate-600">{packageContent}</p>
+        <p className={cn("text-sm leading-6", theme.textMuted)}>{packageContent}</p>
       ) : (
-        <p className="text-sm leading-6 text-slate-600">{cartonContent}</p>
+        <p className={cn("text-sm leading-6", theme.textMuted)}>{cartonContent}</p>
       );
 
     return (
@@ -2047,8 +2069,8 @@ export function StorefrontClient({
                 sizes={STOREFRONT_MODAL_PRODUCT_SIZES}
               />
             ) : (
-              <div className="flex h-full w-full items-center justify-center">
-                <Store className="size-12 text-slate-300" />
+              <div className={theme.emptyImage}>
+                <Store className={cn("size-12", theme.textMuted)} />
               </div>
             )}
           </div>
@@ -2195,6 +2217,7 @@ export function StorefrontClient({
                   className="hidden lg:inline-flex"
                 />
               ) : null}
+              <StorefrontThemeToggle />
               <button
                 type="button"
                 onClick={openCartDrawer}
@@ -2394,6 +2417,7 @@ export function StorefrontClient({
                       currentBanner,
                       activeBannerIndex,
                       storefrontTitle,
+                      theme,
                     )
                   : null}
                 {bannerItems.length > 1 ? (
@@ -2406,8 +2430,8 @@ export function StorefrontClient({
                         className={cn(
                           "h-2.5 rounded-full transition",
                           index === activeBannerIndex
-                            ? "w-8 bg-slate-900"
-                            : "w-2.5 bg-slate-300 hover:bg-slate-400",
+                            ? "w-8 bg-slate-900 dark:bg-white"
+                            : "w-2.5 bg-slate-300 hover:bg-slate-400 dark:bg-neutral-600 dark:hover:bg-neutral-500",
                         )}
                         aria-label={`Banner ${index + 1}`}
                       />
@@ -2416,9 +2440,9 @@ export function StorefrontClient({
                 ) : null}
               </div>
             ) : (
-              <div className="flex min-h-[240px] w-full flex-col justify-center rounded-[2.5rem] border border-dashed border-slate-200 bg-slate-50/80 px-6 py-10 text-center md:min-h-[320px] lg:min-h-[400px]">
-                <p className="text-sm font-semibold text-slate-900">Banner alanı şu an boş</p>
-                <p className="mt-2 text-sm text-slate-500">
+              <div className={cn("flex min-h-[240px] w-full flex-col justify-center rounded-[2.5rem] border border-dashed px-6 py-10 text-center md:min-h-[320px] lg:min-h-[400px]", theme.border, theme.surfaceMuted)}>
+                <p className={cn("text-sm font-semibold", theme.text)}>Banner alanı şu an boş</p>
+                <p className={cn("mt-2 text-sm", theme.textMuted)}>
                   Admin panelindeki vitrin ayarlarından kampanya banner’ları ekleyebilirsiniz.
                 </p>
               </div>
@@ -2444,13 +2468,18 @@ export function StorefrontClient({
               return (
                 <section key={section.id}>
                   <div className="mb-5 flex items-end justify-between gap-4">
-                    <h2 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-[2rem]">
+                    <h2 className={cn("text-2xl font-bold tracking-tight sm:text-[2rem]", theme.text)}>
                       {section.title}
                     </h2>
                     {hasMore && sectionHref ? (
                       <a
                         href={sectionHref}
-                        className="shrink-0 rounded-full border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50"
+                        className={cn(
+                          "shrink-0 rounded-full border px-5 py-2.5 text-sm font-semibold shadow-sm transition hover:opacity-90",
+                          theme.border,
+                          theme.surface,
+                          theme.textMuted,
+                        )}
                       >
                         Devamı →
                       </a>
@@ -2474,7 +2503,12 @@ export function StorefrontClient({
                     <div className="mt-6 flex justify-center">
                       <a
                         href={sectionHref}
-                        className="rounded-full border border-slate-200 bg-white px-8 py-3 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 hover:shadow"
+                        className={cn(
+                          "rounded-full border px-8 py-3 text-sm font-semibold shadow-sm transition hover:opacity-90 hover:shadow",
+                          theme.border,
+                          theme.surface,
+                          theme.textMuted,
+                        )}
                       >
                         Tüm {section.title} Ürünlerini Gör ({section.products.length} ürün)
                       </a>
@@ -2489,19 +2523,19 @@ export function StorefrontClient({
         <section id="catalog-grid" className="scroll-mt-28 pt-1">
           <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div>
-              <h2 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-[2rem]">
+              <h2 className={cn("text-2xl font-bold tracking-tight sm:text-[2rem]", theme.text)}>
                 {selectedCategoryId !== "all"
                   ? (categoryNameMap.get(selectedCategoryId) ?? "Ürünler")
                   : (pageTitle ?? "Tüm Ürünler")}
               </h2>
             </div>
             <div className="flex flex-wrap items-center gap-2.5 sm:gap-3">
-              <div className="rounded-full border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-600 shadow-sm">
-                <span className="font-semibold text-slate-900">{filteredProducts.length}</span>{" "}
+              <div className={cn("rounded-full border px-4 py-2.5 text-sm shadow-sm", theme.border, theme.surface, theme.textMuted)}>
+                <span className={cn("font-semibold", theme.text)}>{filteredProducts.length}</span>{" "}
                 ürün bulundu
               </div>
-              <div className="rounded-full border border-slate-200/80 bg-slate-50 px-4 py-2.5 text-sm text-slate-500">
-                <span className="font-semibold text-slate-900">{visibleProducts.length}</span>{" "}
+              <div className={cn("rounded-full border px-4 py-2.5 text-sm", theme.border, theme.surfaceMuted, theme.textMuted)}>
+                <span className={cn("font-semibold", theme.text)}>{visibleProducts.length}</span>{" "}
                 ürün gösteriliyor
               </div>
             </div>
@@ -2523,7 +2557,7 @@ export function StorefrontClient({
           ) : (
             <Card className="rounded-[2rem] border-dashed bg-transparent p-10 text-center">
               <p className="text-base font-semibold">Uyuşan ürün bulunamadı.</p>
-              <p className="mt-1 text-sm text-slate-500">
+              <p className={cn("mt-1 text-sm", theme.textMuted)}>
                 Arama kriterlerini veya seçili kategoriyi değiştirmeyi deneyin.
               </p>
             </Card>
@@ -2537,7 +2571,12 @@ export function StorefrontClient({
                 onClick={() =>
                   setVisibleCount((prev) => prev + STOREFRONT_PAGE_SIZE)
                 }
-                className="rounded-full border border-slate-200 bg-white px-8 py-3 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 hover:shadow"
+                className={cn(
+                  "rounded-full border px-8 py-3 text-sm font-semibold shadow-sm transition hover:opacity-90 hover:shadow",
+                  theme.border,
+                  theme.surface,
+                  theme.textMuted,
+                )}
               >
                 Daha Fazla Ürün Göster ({filteredProducts.length - visibleCount} ürün kaldı)
               </button>
@@ -2737,8 +2776,8 @@ export function StorefrontClient({
           selectedProduct?.has_variants ? (
             <div className="space-y-3">
               <div className={cn("rounded-xl p-3", theme.cartDrawerSummary)}>
-                <p className="text-xs text-slate-300">Seçilen Modeller</p>
-                <p className="mt-0.5 text-xs text-slate-300">
+                <p className={cn("text-xs", theme.cartDrawerMuted)}>Seçilen Modeller</p>
+                <p className={cn("mt-0.5 text-xs", theme.cartDrawerMuted)}>
                   {selectedVariantSummary.count} model
                 </p>
                 <p className="mt-1 text-xl font-bold">
@@ -2777,7 +2816,9 @@ export function StorefrontClient({
           >
             <div
               className={cn(
-                "w-full min-w-0 max-w-full shrink-0 rounded-xl border border-slate-100 bg-slate-50 px-3",
+                "w-full min-w-0 max-w-full shrink-0 rounded-xl border px-3",
+                theme.border,
+                theme.surfaceMuted,
                 selectedProduct.has_variants ? "py-2" : "py-2.5",
               )}
             >
@@ -2785,7 +2826,8 @@ export function StorefrontClient({
                 <div className="min-w-0 flex-1">
                   <p
                     className={cn(
-                      "break-words text-pretty font-semibold text-slate-900",
+                      "break-words text-pretty font-semibold",
+                      theme.text,
                       selectedProduct.has_variants
                         ? "line-clamp-2 text-[13px] leading-5"
                         : "line-clamp-3 text-[13px] leading-5",
@@ -2793,11 +2835,11 @@ export function StorefrontClient({
                   >
                     {selectedProduct.product_name}
                   </p>
-                  <p className="mt-0.5 truncate text-[11px] text-slate-500">
+                  <p className={cn("mt-0.5 truncate text-[11px]", theme.textMuted)}>
                     {formatProductModelNo(selectedProduct.sku_code)}
                   </p>
                   {!selectedProduct.has_variants && getUnitSummary(selectedProduct) ? (
-                    <p className="mt-0.5 text-[11px] text-slate-500">
+                    <p className={cn("mt-0.5 text-[11px]", theme.textMuted)}>
                       {getUnitSummary(selectedProduct)}
                     </p>
                   ) : null}
@@ -2808,8 +2850,8 @@ export function StorefrontClient({
 
             {selectedProduct.has_variants ? (
               <div className="flex min-h-0 flex-1 flex-col">
-                <div className="relative shrink-0 border-b border-slate-100 bg-white pb-2.5">
-                  <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
+                <div className={cn("relative shrink-0 border-b pb-2.5", theme.border, theme.surface)}>
+                  <Search className={cn("pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2", theme.textMuted)} />
                   <Input
                     value={variantSearchTerm}
                     onChange={(event) => setVariantSearchTerm(event.target.value)}
@@ -2841,16 +2883,16 @@ export function StorefrontClient({
                           className={cn(
                             "rounded-xl border-2 px-2.5 py-2 transition",
                             isUnavailable
-                              ? "border-slate-200 bg-slate-50 opacity-40"
-                              : "border-slate-300/90 bg-white shadow-[0_1px_0_rgba(15,23,42,0.04)]",
+                              ? cn("opacity-40", theme.border, theme.surfaceMuted)
+                              : cn("shadow-[0_1px_0_rgba(15,23,42,0.04)]", theme.border, theme.surface),
                           )}
                         >
                           <div className="flex items-center justify-between gap-2">
-                            <p className="truncate pr-2 text-sm font-bold leading-5 tracking-tight text-slate-950">
+                            <p className={cn("truncate pr-2 text-sm font-bold leading-5 tracking-tight", theme.text)}>
                               {variant.model_name}
                             </p>
                             {isUnavailable ? (
-                              <Badge className="px-2 py-1 text-[10px] bg-slate-200 text-slate-600">
+                              <Badge className={cn("px-2 py-1 text-[10px]", theme.surfaceMuted, theme.textMuted)}>
                                 Yakında
                               </Badge>
                             ) : null}
@@ -2870,7 +2912,12 @@ export function StorefrontClient({
                                   setQuantityError(null);
                                 }
                               }}
-                              className="h-9 rounded-lg border border-slate-200 bg-white px-2.5 py-0 text-[16px] leading-9 text-slate-900 disabled:bg-slate-100"
+                              className={cn(
+                                "h-9 rounded-lg border px-2.5 py-0 text-[16px] leading-9 disabled:opacity-60",
+                                theme.border,
+                                theme.surface,
+                                theme.text,
+                              )}
                               style={{ fontSize: "16px" }}
                             >
                               {unitChoices.map((unitOption) => (
@@ -2907,7 +2954,7 @@ export function StorefrontClient({
                             />
                           </div>
 
-                          <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[9px] leading-4 text-slate-500 sm:mt-1.5 sm:text-[10px]">
+                          <div className={cn("mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[9px] leading-4 sm:mt-1.5 sm:text-[10px]", theme.textMuted)}>
                             {variant.package_quantity ? (
                               <span className="line-clamp-1">1 Paket = {variant.package_quantity}</span>
                             ) : null}
@@ -2919,7 +2966,7 @@ export function StorefrontClient({
                       );
                     })
                   ) : (
-                    <div className="rounded-lg border border-dashed border-slate-200 px-4 py-5 text-center text-sm text-slate-500">
+                    <div className={cn("rounded-lg border border-dashed px-4 py-5 text-center text-sm", theme.border, theme.textMuted)}>
                       {variantSearchTerm.trim()
                         ? `“${variantSearchTerm.trim()}” için model bulunamadı.`
                         : "Gösterilecek model bulunamadı."}
@@ -2930,7 +2977,7 @@ export function StorefrontClient({
             ) : (
               <div className="grid w-full min-w-0 max-w-full gap-3 sm:grid-cols-3">
                 <div className="min-w-0 space-y-2">
-                  <label className="text-sm font-semibold text-slate-900">ADET</label>
+                  <label className={cn("text-sm font-semibold", theme.text)}>ADET</label>
                   <QuantityStepper
                     value={selectedQuantity}
                     onChange={(nextValue) => {
@@ -2946,7 +2993,7 @@ export function StorefrontClient({
 
                 {selectedProduct.package_quantity ? (
                   <div className="min-w-0 space-y-2">
-                    <label className="text-sm font-semibold text-slate-900">
+                    <label className={cn("text-sm font-semibold", theme.text)}>
                       PAKET
                     </label>
                     <QuantityStepper
@@ -2960,7 +3007,7 @@ export function StorefrontClient({
                       placeholder="0"
                       ariaLabel="Paket"
                     />
-                    <p className="text-xs text-slate-500">
+                    <p className={cn("text-xs", theme.textMuted)}>
                       1 Paket = {selectedProduct.package_quantity} adet
                     </p>
                   </div>
@@ -2968,7 +3015,7 @@ export function StorefrontClient({
 
                 {selectedProduct.carton_quantity ? (
                   <div className="min-w-0 space-y-2">
-                    <label className="text-sm font-semibold text-slate-900">KOLİ</label>
+                    <label className={cn("text-sm font-semibold", theme.text)}>KOLİ</label>
                     <QuantityStepper
                       value={selectedCartonCount}
                       onChange={(nextValue) => {
@@ -2980,7 +3027,7 @@ export function StorefrontClient({
                       placeholder="0"
                       ariaLabel="Koli"
                     />
-                    <p className="text-xs text-slate-500">
+                    <p className={cn("text-xs", theme.textMuted)}>
                       1 Koli = {selectedProduct.carton_quantity} adet
                     </p>
                   </div>
@@ -2993,9 +3040,9 @@ export function StorefrontClient({
             ) : null}
 
             {!selectedProduct.has_variants ? (
-              <div className="w-full min-w-0 max-w-full shrink-0 rounded-xl bg-slate-900 p-3 text-white">
-                <p className="text-xs text-slate-300">Toplam</p>
-                <p className="mt-0.5 text-xs text-slate-300">{selectedTotalQuantity} adet</p>
+              <div className={cn("w-full min-w-0 max-w-full shrink-0 rounded-xl p-3", theme.cartDrawerSummary)}>
+                <p className={cn("text-xs", theme.cartDrawerMuted)}>Toplam</p>
+                <p className={cn("mt-0.5 text-xs", theme.cartDrawerMuted)}>{selectedTotalQuantity} adet</p>
                 <p className="mt-1 break-words text-xl font-bold">
                   {formatCurrency(selectedLineTotal, selectedProduct.currency)}
                 </p>

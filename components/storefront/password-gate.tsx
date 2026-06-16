@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type { StorefrontThemeKey } from "@/lib/types";
 import { StorefrontThemeProvider, useStorefrontTheme } from "@/lib/storefront/theme-context";
+import { StorefrontThemeToggle } from "@/components/storefront/storefront-theme-toggle";
 
 function PasswordGateForm({
   subdomain,
@@ -77,7 +78,12 @@ export function PasswordGate({
 }) {
   return (
     <StorefrontThemeProvider themeKey={themeKey}>
-      <PasswordGateForm subdomain={subdomain} companyName={companyName} />
+      <div className="relative min-h-screen">
+        <div className="absolute right-4 top-4 z-10 sm:right-6 sm:top-6">
+          <StorefrontThemeToggle />
+        </div>
+        <PasswordGateForm subdomain={subdomain} companyName={companyName} />
+      </div>
     </StorefrontThemeProvider>
   );
 }

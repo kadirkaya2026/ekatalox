@@ -6,6 +6,7 @@ import {
   getStorefrontTheme,
   type StorefrontTheme,
 } from "@/lib/storefront/themes";
+import { useResolvedStorefrontTheme } from "@/lib/storefront/use-resolved-storefront-theme";
 
 const StorefrontThemeContext = createContext<StorefrontTheme>(
   getStorefrontTheme("minimal"),
@@ -18,7 +19,7 @@ export function StorefrontThemeProvider({
   themeKey: StorefrontThemeKey | string;
   children: React.ReactNode;
 }) {
-  const theme = getStorefrontTheme(themeKey);
+  const theme = useResolvedStorefrontTheme(themeKey);
 
   return (
     <StorefrontThemeContext.Provider value={theme}>

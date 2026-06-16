@@ -1,3 +1,5 @@
+"use client";
+
 import {
   FOOTER_COPYRIGHT_YEAR,
   FOOTER_EKATALOX_URL,
@@ -9,6 +11,7 @@ import {
   getVisibleFooterSocialLinks,
   type FooterSocialPlatform,
 } from "@/lib/storefront/footer-links";
+import { useStorefrontTheme } from "@/lib/storefront/theme-context";
 import type { TenantStorefrontSettings } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -58,8 +61,10 @@ function SocialIcon({
 }
 
 function FooterSectionHeading({ children }: { children: React.ReactNode }) {
+  const theme = useStorefrontTheme();
+
   return (
-    <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.1em] text-zinc-800">
+    <p className={theme.footerHeading}>
       {children}
     </p>
   );
@@ -74,13 +79,15 @@ function FooterDetailLink({
   children: React.ReactNode;
   external?: boolean;
 }) {
+  const theme = useStorefrontTheme();
+
   return (
     <a
       href={href}
       {...(external
         ? { target: "_blank", rel: "noopener noreferrer" }
         : {})}
-      className="text-[11px] leading-relaxed text-zinc-500 transition hover:text-zinc-800 hover:underline"
+      className={cn("text-[11px] leading-relaxed transition hover:underline", theme.footerText, theme.footerLink)}
     >
       {children}
     </a>
@@ -88,8 +95,10 @@ function FooterDetailLink({
 }
 
 function FooterDetailText({ children }: { children: React.ReactNode }) {
+  const theme = useStorefrontTheme();
+
   return (
-    <p className="text-[11px] leading-relaxed text-zinc-500">{children}</p>
+    <p className={cn("text-[11px] leading-relaxed", theme.footerText)}>{children}</p>
   );
 }
 
@@ -102,12 +111,14 @@ function MobileSection({
   className?: string;
   showDivider?: boolean;
 }) {
+  const theme = useStorefrontTheme();
+
   return (
     <div
       className={cn(
         "w-full",
         showDivider &&
-          "border-t border-zinc-200/80 pt-4 md:border-t-0 md:pt-0",
+          cn("border-t pt-4 md:border-t-0 md:pt-0", theme.border),
         className,
       )}
     >
@@ -123,6 +134,7 @@ export function StorefrontFooter({
   settings: TenantStorefrontSettings;
   copyrightTenantName?: string | null;
 }) {
+  const theme = useStorefrontTheme();
   const showLocation = Boolean(settings.is_footer_location_visible);
   const showWebsite = Boolean(settings.is_footer_website_visible);
   const showContact = Boolean(settings.is_footer_contact_visible);
@@ -151,7 +163,7 @@ export function StorefrontFooter({
   let mobileDividerIndex = 0;
 
   return (
-    <footer className="relative z-0 border-t border-zinc-300 bg-zinc-100">
+    <footer className={theme.footerShell}>
       <div className="mx-auto max-w-7xl px-4 pt-5 pb-0 md:py-7">
         {hasFooterMainContent ? (
           <div className="flex flex-col gap-4 md:grid md:grid-cols-2 md:items-start md:gap-x-10 lg:gap-x-16">
@@ -208,7 +220,12 @@ export function StorefrontFooter({
                         rel="noopener noreferrer"
                         aria-label={link.label}
                         title={link.label}
-                        className="inline-flex size-7 items-center justify-center rounded-full border border-zinc-200 bg-white text-zinc-400 shadow-sm transition hover:border-zinc-300 hover:text-zinc-700"
+                        className={cn(
+                          "inline-flex size-7 items-center justify-center rounded-full border shadow-sm transition hover:opacity-90",
+                          theme.border,
+                          theme.surface,
+                          theme.textMuted,
+                        )}
                       >
                         <SocialIcon platform={link.platform} />
                       </a>
@@ -222,14 +239,16 @@ export function StorefrontFooter({
 
         <div
           className={cn(
-            "border-t border-zinc-300/80 py-1.5 text-center text-[11px] leading-tight text-zinc-500",
+            "border-t py-1.5 text-center text-[11px] leading-tight",
+            theme.border,
+            theme.footerText,
             hasFooterMainContent ? "mt-4 md:mt-6" : "mt-0",
           )}
         >
           ©{FOOTER_COPYRIGHT_YEAR}{" "}
           {copyrightTenantName ? (
             <>
-              <span className="font-semibold text-zinc-800">{copyrightTenantName}</span>{" "}
+              <span className={cn("font-semibold", theme.footerLink)}>{copyrightTenantName}</span>{" "}
               Tüm Hakları Saklıdır.
             </>
           ) : (
@@ -238,7 +257,7 @@ export function StorefrontFooter({
                 href={FOOTER_EKATALOX_URL}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="font-semibold text-zinc-800 transition hover:text-zinc-950 hover:underline"
+                className={cn("font-semibold transition hover:underline", theme.footerLink)}
               >
                 eKatalox
               </a>{" "}
