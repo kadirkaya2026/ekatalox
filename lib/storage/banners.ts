@@ -42,6 +42,16 @@ export function buildTenantBannerPath(params: {
   return `${params.tenantId}/banner_${Date.now()}.${extension}`;
 }
 
+export function buildCategoryBannerPath(params: {
+  tenantId: string;
+  categoryId: string;
+  fileName?: string | null;
+  contentType?: string | null;
+}) {
+  const extension = getBannerFileExtension(params);
+  return `${params.tenantId}/category_${params.categoryId}/banner_${Date.now()}.${extension}`;
+}
+
 export function getBannerObjectPath(fileUrl: string | null) {
   return getStorageObjectPathFromPublicUrl(fileUrl, STOREFRONT_BANNERS_BUCKET);
 }

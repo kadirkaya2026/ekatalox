@@ -380,7 +380,10 @@ export async function getTenantCategories(tenantId: string): Promise<Category[]>
     .order("display_order", { ascending: true })
     .order("name", { ascending: true });
 
-  return (data as Category[] | null) ?? [];
+  return ((data as Category[] | null) ?? []).map((category) => ({
+    ...category,
+    banner_item: category.banner_item ?? null,
+  }));
 }
 
 export async function getTenantStorefrontSettings(

@@ -98,6 +98,7 @@ export interface Category {
   name: string;
   parent_id: string | null;
   display_order: number;
+  banner_item: BannerItem | null;
   created_at: string;
 }
 

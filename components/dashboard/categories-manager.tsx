@@ -28,10 +28,12 @@ import {
   ChevronRight,
   FolderTree,
   GripVertical,
+  ImageIcon,
   Pencil,
   Plus,
   Trash2,
 } from "lucide-react";
+import { CategoryBannerPanel } from "@/components/dashboard/category-banner-panel";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -58,6 +60,7 @@ interface RowProps {
   inlineParentId: string | null;
   inlineName: string;
   deleteConfirmId: string | null;
+  bannerPanelId: string | null;
   pending: boolean;
   onStartEdit: (category: Category) => void;
   onSaveRename: (id: string) => void;
@@ -72,6 +75,9 @@ interface RowProps {
   onCancelDelete: () => void;
   onPromoteToRoot: (id: string) => void;
   onOrderCommit: (targetOrder: number) => void;
+  onToggleBanner: (id: string) => void;
+  onBannerSaved: (category: Category) => void;
+  onCancelBanner: () => void;
 }
 
 function CategoryOrderInput({
@@ -228,6 +234,19 @@ function SortableCategoryRow(props: RowProps) {
         <div className="flex shrink-0 flex-wrap gap-2">
           <Button
             variant="secondary"
+            className={`h-8 gap-1.5 px-3 text-xs ${
+              props.category.banner_item?.image_url
+                ? "border-violet-200 bg-violet-50 text-violet-700 hover:bg-violet-100"
+                : ""
+            }`}
+            onClick={() => props.onToggleBanner(props.category.id)}
+            disabled={props.pending}
+          >
+            <ImageIcon className="size-3" />
+            Banner
+          </Button>
+          <Button
+            variant="secondary"
             className="h-8 gap-1.5 px-3 text-xs"
             onClick={() => props.onToggleSub(props.category.id)}
             disabled={props.pending}
@@ -318,6 +337,16 @@ function SortableCategoryRow(props: RowProps) {
         </div>
       ) : null}
 
+      {props.bannerPanelId === props.category.id ? (
+        <CategoryBannerPanel
+          category={props.category}
+          depth={props.category.depth}
+          disabled={props.pending}
+          onSaved={props.onBannerSaved}
+          onCancel={props.onCancelBanner}
+        />
+      ) : null}
+
       {/* Reorder indicator — below */}
       {isBelow ? (
         <div className="mx-1 h-0.5 rounded-full bg-blue-400" />
@@ -346,6 +375,7 @@ export function CategoriesManager({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState("");
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [bannerPanelId, setBannerPanelId] = useState<string | null>(null);
 
   // DnD states
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -381,6 +411,7 @@ export function CategoriesManager({
     setEditingId(null);
     setEditingName("");
     setDeleteConfirmId(null);
+    setBannerPanelId(null);
   }
 
   // ── CRUD ──────────────────────────────────────────────────────────────────
@@ -721,6 +752,7 @@ export function CategoriesManager({
                     inlineParentId={inlineParentId}
                     inlineName={inlineName}
                     deleteConfirmId={deleteConfirmId}
+                    bannerPanelId={bannerPanelId}
                     pending={pending}
                     onStartEdit={(cat) => { closeAllInline(); setEditingId(cat.id); setEditingName(cat.name); }}
                     onSaveRename={saveRename}
@@ -740,6 +772,28 @@ export function CategoriesManager({
                     onOrderCommit={(targetOrder) =>
                       handleSetCategoryOrder(category.id, targetOrder)
                     }
+                    onToggleBanner={(id) => {
+                      if (bannerPanelId === id) {
+                        setBannerPanelId(null);
+                        return;
+                      }
+
+                      setInlineParentId(null);
+                      setInlineName("");
+                      setEditingId(null);
+                      setEditingName("");
+                      setDeleteConfirmId(null);
+                      setBannerPanelId(id);
+                    }}
+                    onBannerSaved={(updatedCategory) => {
+                      setCategories((current) =>
+                        current.map((cat) =>
+                          cat.id === updatedCategory.id ? updatedCategory : cat,
+                        ),
+                      );
+                      showMessage(`"${updatedCategory.name}" banner ayarları güncellendi.`);
+                    }}
+                    onCancelBanner={() => setBannerPanelId(null)}
                   />
                 ))}
 

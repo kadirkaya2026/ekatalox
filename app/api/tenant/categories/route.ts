@@ -3,7 +3,12 @@ import { NextResponse } from "next/server";
 import { shouldAllowDemoFallback } from "@/lib/env";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { getSessionContext } from "@/lib/auth/session";
+import {
+  getBannerObjectPath,
+  STOREFRONT_BANNERS_BUCKET,
+} from "@/lib/storage/banners";
 import { ensureTenantAdminResponse } from "@/lib/tenancy/guards";
+import type { BannerItem } from "@/lib/types";
 import { categorySchema } from "@/lib/validators/category";
 
 export async function POST(request: Request) {
@@ -41,6 +46,7 @@ export async function POST(request: Request) {
         id: randomUUID(),
         parent_id: parsed.data.parent_id ?? null,
         display_order: 0,
+        banner_item: null,
         created_at: new Date().toISOString(),
         ...parsed.data,
       },
@@ -199,6 +205,16 @@ export async function DELETE(request: Request) {
     );
   }
 
+  const { data: categoryToDelete } = await supabase
+    .from("categories")
+    .select("banner_item")
+    .eq("id", id)
+    .eq("tenant_id", session.tenant!.id)
+    .maybeSingle();
+
+  const bannerItem = categoryToDelete?.banner_item as BannerItem | null;
+  const bannerImageUrl = bannerItem?.image_url ?? null;
+
   const { error } = await supabase
     .from("categories")
     .delete()
@@ -207,6 +223,14 @@ export async function DELETE(request: Request) {
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 400 });
+  }
+
+  if (bannerImageUrl) {
+    const objectPath = getBannerObjectPath(bannerImageUrl);
+
+    if (objectPath?.startsWith(`${session.tenant!.id}/`)) {
+      await supabase.storage.from(STOREFRONT_BANNERS_BUCKET).remove([objectPath]);
+    }
   }
 
   return NextResponse.json({ success: true });

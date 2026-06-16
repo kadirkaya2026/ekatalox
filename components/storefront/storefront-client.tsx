@@ -1107,10 +1107,25 @@ export function StorefrontClient({
   );
 
   const visibleProducts = filteredProducts.slice(0, visibleCount);
-  const bannerItems = storefrontSettings.banner_items ?? [];
+  const selectedCategory =
+    selectedCategoryId === "all"
+      ? null
+      : categories.find((category) => category.id === selectedCategoryId) ?? null;
+  const categoryBanner = selectedCategory?.banner_item ?? null;
+  const showHomeBanner =
+    !homeHref && selectedCategoryId === "all" && !searchInput.trim();
+  const showCategoryBanner =
+    !homeHref &&
+    selectedCategoryId !== "all" &&
+    !searchInput.trim() &&
+    Boolean(categoryBanner?.image_url);
+  const showBannerSection = showHomeBanner || showCategoryBanner;
+  const bannerItems =
+    showCategoryBanner && categoryBanner
+      ? [categoryBanner]
+      : (storefrontSettings.banner_items ?? []);
   const currentBanner = bannerItems[activeBannerIndex] ?? null;
-  const showBannerSection = !homeHref && selectedCategoryId === "all" && !searchInput.trim();
-  const showSections = showBannerSection && sections.length > 0;
+  const showSections = showHomeBanner && sections.length > 0;
   const recommendedProducts = useMemo(() => {
     const cartIds = new Set(cart.map((item) => item.product_id));
 
@@ -1386,6 +1401,10 @@ export function StorefrontClient({
 
     window.localStorage.setItem(cartStorageKey, JSON.stringify(cart));
   }, [cart, cartStorageKey, isMounted]);
+
+  useEffect(() => {
+    setActiveBannerIndex(0);
+  }, [selectedCategoryId, showCategoryBanner]);
 
   useEffect(() => {
     if (bannerItems.length <= 1) {
@@ -2428,7 +2447,7 @@ export function StorefrontClient({
                   ? renderBannerItem(
                       currentBanner,
                       activeBannerIndex,
-                      storefrontTitle,
+                      selectedCategory?.name ?? storefrontTitle,
                       theme,
                     )
                   : null}

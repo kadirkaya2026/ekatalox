@@ -72,6 +72,7 @@ export const demoCategories: Category[] = [
     name: "Telefonlar",
     parent_id: null,
     display_order: 1,
+    banner_item: null,
     created_at: new Date("2026-01-01").toISOString(),
   },
   {
@@ -80,6 +81,7 @@ export const demoCategories: Category[] = [
     name: "Apple",
     parent_id: "cat-phone",
     display_order: 2,
+    banner_item: null,
     created_at: new Date("2026-01-01T12:00:00").toISOString(),
   },
   {
@@ -88,6 +90,7 @@ export const demoCategories: Category[] = [
     name: "Kampanyalı Ürünler",
     parent_id: null,
     display_order: 3,
+    banner_item: null,
     created_at: new Date("2026-01-02").toISOString(),
   },
 ];
