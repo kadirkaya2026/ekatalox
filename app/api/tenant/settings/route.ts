@@ -8,7 +8,11 @@ import {
   getBannerObjectPath,
   STOREFRONT_BANNERS_BUCKET,
 } from "@/lib/storage/banners";
-import { requestTouchesPaymentSettings } from "@/lib/billing/plans";
+import {
+  requestTouchesAdvancedAppearance,
+  requestTouchesHomepageBlocks,
+  requestTouchesPaymentSettings,
+} from "@/lib/billing/plans";
 import { ensureTenantAdminResponse, ensureTenantPlanFeatureResponse } from "@/lib/tenancy/guards";
 import { storefrontSettingsSchema } from "@/lib/validators/storefront-settings";
 
@@ -68,9 +72,26 @@ export async function PATCH(request: Request) {
     }
   }
 
+  if (requestTouchesAdvancedAppearance(body)) {
+    const appearanceGuard = await ensureTenantPlanFeatureResponse("advanced_appearance");
+    if (appearanceGuard) {
+      return appearanceGuard;
+    }
+  }
+
+  if (requestTouchesHomepageBlocks(body)) {
+    const blocksGuard = await ensureTenantPlanFeatureResponse("homepage_blocks_editor");
+    if (blocksGuard) {
+      return blocksGuard;
+    }
+  }
+
   const supabase = createSupabaseAdminClient();
 
-  let existingSettings = getDefaultTenantStorefrontSettings(session.tenant!.id);
+  let existingSettings = getDefaultTenantStorefrontSettings(
+    session.tenant!.id,
+    session.tenant!.subdomain,
+  );
 
   if (supabase) {
     const { data } = await supabase
@@ -98,6 +119,17 @@ export async function PATCH(request: Request) {
     storefront_title: body.storefront_title ?? existingSettings.storefront_title,
     storefront_description:
       body.storefront_description ?? existingSettings.storefront_description,
+    hero_heading: body.hero_heading ?? existingSettings.hero_heading,
+    hero_cta_label: body.hero_cta_label ?? existingSettings.hero_cta_label,
+    is_hero_visible: body.is_hero_visible ?? existingSettings.is_hero_visible,
+    brand_primary_color:
+      body.brand_primary_color ?? existingSettings.brand_primary_color,
+    brand_accent_color: body.brand_accent_color ?? existingSettings.brand_accent_color,
+    font_key: body.font_key ?? existingSettings.font_key,
+    product_card_style: body.product_card_style ?? existingSettings.product_card_style,
+    header_style_key: body.header_style_key ?? existingSettings.header_style_key,
+    footer_style_key: body.footer_style_key ?? existingSettings.footer_style_key,
+    homepage_blocks: body.homepage_blocks ?? existingSettings.homepage_blocks,
     banner_items: body.banner_items ?? existingSettings.banner_items,
     theme_key: body.theme_key ?? existingSettings.theme_key,
     layout_key: body.layout_key ?? existingSettings.layout_key,
@@ -227,6 +259,16 @@ export async function PATCH(request: Request) {
         logo_url: null,
         storefront_title: parsed.data.storefront_title,
         storefront_description: parsed.data.storefront_description,
+        hero_heading: parsed.data.hero_heading,
+        hero_cta_label: parsed.data.hero_cta_label,
+        is_hero_visible: parsed.data.is_hero_visible,
+        brand_primary_color: parsed.data.brand_primary_color,
+        brand_accent_color: parsed.data.brand_accent_color,
+        font_key: parsed.data.font_key,
+        product_card_style: parsed.data.product_card_style,
+        header_style_key: parsed.data.header_style_key,
+        footer_style_key: parsed.data.footer_style_key,
+        homepage_blocks: parsed.data.homepage_blocks,
         banner_items: parsed.data.banner_items,
         site_tab_title: parsed.data.site_tab_title,
         site_favicon_url: parsed.data.site_favicon_url,
@@ -311,6 +353,16 @@ export async function PATCH(request: Request) {
     layout_key: parsed.data.layout_key,
     storefront_title: parsed.data.storefront_title,
     storefront_description: parsed.data.storefront_description,
+    hero_heading: parsed.data.hero_heading,
+    hero_cta_label: parsed.data.hero_cta_label,
+    is_hero_visible: parsed.data.is_hero_visible,
+    brand_primary_color: parsed.data.brand_primary_color,
+    brand_accent_color: parsed.data.brand_accent_color,
+    font_key: parsed.data.font_key,
+    product_card_style: parsed.data.product_card_style,
+    header_style_key: parsed.data.header_style_key,
+    footer_style_key: parsed.data.footer_style_key,
+    homepage_blocks: parsed.data.homepage_blocks,
     banner_items: parsed.data.banner_items,
     site_tab_title: parsed.data.site_tab_title,
     site_favicon_url: parsed.data.site_favicon_url,

@@ -27,6 +27,13 @@ export function TenantSiteIdentityForm({
   const [storefrontDescription, setStorefrontDescription] = useState(
     initialStorefrontSettings.storefront_description ?? "",
   );
+  const [heroHeading, setHeroHeading] = useState(initialStorefrontSettings.hero_heading ?? "");
+  const [heroCtaLabel, setHeroCtaLabel] = useState(
+    initialStorefrontSettings.hero_cta_label ?? "",
+  );
+  const [isHeroVisible, setIsHeroVisible] = useState(
+    initialStorefrontSettings.is_hero_visible ?? false,
+  );
   const [logoUrl, setLogoUrl] = useState(initialStorefrontSettings.logo_url ?? null);
   const [siteTabTitle, setSiteTabTitle] = useState(
     initialStorefrontSettings.site_tab_title ?? "",
@@ -148,6 +155,9 @@ export function TenantSiteIdentityForm({
         body: JSON.stringify({
           storefront_title: storefrontTitle,
           storefront_description: storefrontDescription,
+          hero_heading: heroHeading,
+          hero_cta_label: heroCtaLabel,
+          is_hero_visible: isHeroVisible,
         }),
       });
 
@@ -161,6 +171,9 @@ export function TenantSiteIdentityForm({
       if (result.storefrontSettings) {
         setStorefrontTitle(result.storefrontSettings.storefront_title ?? "");
         setStorefrontDescription(result.storefrontSettings.storefront_description ?? "");
+        setHeroHeading(result.storefrontSettings.hero_heading ?? "");
+        setHeroCtaLabel(result.storefrontSettings.hero_cta_label ?? "");
+        setIsHeroVisible(result.storefrontSettings.is_hero_visible ?? false);
         if (result.storefrontSettings.logo_url) {
           setLogoUrl(result.storefrontSettings.logo_url);
         }
@@ -424,6 +437,53 @@ export function TenantSiteIdentityForm({
             ) : null}
             <p className="mt-1 text-xs text-slate-400">
               {storefrontDescription.length}/220 karakter
+            </p>
+          </div>
+
+          <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+            <label className="flex items-center gap-2 text-sm font-semibold text-slate-900">
+              <input
+                type="checkbox"
+                checked={isHeroVisible}
+                onChange={(event) => {
+                  setIsHeroVisible(event.target.checked);
+                  setStorefrontSaveMessage(null);
+                }}
+              />
+              Ana sayfada hero metin alanını göster
+            </label>
+            <div className="mt-4 grid gap-4 md:grid-cols-2">
+              <div>
+                <label className="mb-2 block text-sm font-semibold text-slate-900">
+                  Hero başlığı
+                </label>
+                <Input
+                  value={heroHeading}
+                  onChange={(event) => {
+                    setHeroHeading(event.target.value);
+                    setStorefrontSaveMessage(null);
+                  }}
+                  placeholder="Örn. Toptan tedarikte güvenilir partneriniz"
+                  maxLength={120}
+                />
+              </div>
+              <div>
+                <label className="mb-2 block text-sm font-semibold text-slate-900">
+                  Hero buton metni
+                </label>
+                <Input
+                  value={heroCtaLabel}
+                  onChange={(event) => {
+                    setHeroCtaLabel(event.target.value);
+                    setStorefrontSaveMessage(null);
+                  }}
+                  placeholder="Kataloğu incele"
+                  maxLength={40}
+                />
+              </div>
+            </div>
+            <p className="mt-2 text-xs text-slate-500">
+              Kısa açıklama hero alanında da gösterilir. Buton tıklandığında katalog bölümüne kaydırır.
             </p>
           </div>
 

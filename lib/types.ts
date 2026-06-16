@@ -5,12 +5,34 @@ export type { MaxProductLimit, TenantPlan };
 
 export type TenantStatus = "active" | "suspended";
 export type UserRole = "super_admin" | "tenant_admin";
-export type StorefrontThemeKey = "minimal" | "pro-blue" | "neutral";
+export type StorefrontThemeKey =
+  | "minimal"
+  | "pro-blue"
+  | "neutral"
+  | "industrial"
+  | "premium"
+  | "catalog-first";
 export type StorefrontLayoutKey =
   | "classic-grid"
   | "catalog-dense"
   | "catalog-list"
   | "sidebar-pro";
+export type StorefrontFontKey =
+  | "inter"
+  | "dm-sans"
+  | "plus-jakarta"
+  | "source-sans"
+  | "playfair";
+export type StorefrontProductCardStyle = "standard" | "compact" | "image-forward";
+export type StorefrontHeaderStyleKey = "standard" | "centered" | "minimal";
+export type StorefrontFooterStyleKey = "standard" | "minimal" | "columns";
+export type HomepageBlockId = "hero" | "banner" | "campaigns" | "showcase" | "catalog";
+
+export interface HomepageBlock {
+  id: HomepageBlockId;
+  visible: boolean;
+  order: number;
+}
 
 export type StorefrontCategoryNavStyle = "top-chips" | "sidebar";
 
@@ -156,6 +178,14 @@ export interface TenantStorefrontSettings {
   storefront_description: string | null;
   hero_heading: string | null;
   hero_cta_label: string | null;
+  is_hero_visible: boolean;
+  brand_primary_color: string | null;
+  brand_accent_color: string | null;
+  font_key: StorefrontFontKey;
+  product_card_style: StorefrontProductCardStyle;
+  header_style_key: StorefrontHeaderStyleKey;
+  footer_style_key: StorefrontFooterStyleKey;
+  homepage_blocks: HomepageBlock[];
   banner_items: BannerItem[];
   site_tab_title: string | null;
   site_favicon_url: string | null;

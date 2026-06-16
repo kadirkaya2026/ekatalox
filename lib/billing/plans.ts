@@ -9,7 +9,9 @@ export type PlanFeature =
   | "product_discount"
   | "showcase_products"
   | "online_payment"
-  | "custom_domain";
+  | "custom_domain"
+  | "advanced_appearance"
+  | "homepage_blocks_editor";
 
 export interface PlanOption {
   id: TenantPlan;
@@ -37,6 +39,8 @@ const PROFESSIONAL_FEATURES: Record<PlanFeature, boolean> = {
   showcase_products: true,
   online_payment: false,
   custom_domain: true,
+  advanced_appearance: true,
+  homepage_blocks_editor: true,
 };
 
 export const PLAN_FEATURES: Record<TenantPlan, Record<PlanFeature, boolean>> = {
@@ -48,6 +52,8 @@ export const PLAN_FEATURES: Record<TenantPlan, Record<PlanFeature, boolean>> = {
     showcase_products: false,
     online_payment: false,
     custom_domain: false,
+    advanced_appearance: false,
+    homepage_blocks_editor: false,
   },
   profesyonel: PROFESSIONAL_FEATURES,
   kurumsal: {
@@ -64,6 +70,8 @@ const PLAN_FEATURE_LABELS: Record<PlanFeature, string> = {
   showcase_products: "Vitrin ürünleri",
   online_payment: "Online sanal POS ödemesi",
   custom_domain: "Özel alan adı",
+  advanced_appearance: "Gelişmiş görünüm (font, kart, header)",
+  homepage_blocks_editor: "Ana sayfa blok düzenleyici",
 };
 
 const PLAN_FEATURE_UPGRADE_MESSAGES: Partial<Record<PlanFeature, string>> = {
@@ -170,6 +178,23 @@ export function requestTouchesOnlinePaymentSettings(body: Record<string, unknown
 
 export function requestTouchesCustomDomain(body: Record<string, unknown>): boolean {
   return CUSTOM_DOMAIN_BODY_KEYS.some((key) => key in body);
+}
+
+export const ADVANCED_APPEARANCE_BODY_KEYS = [
+  "font_key",
+  "product_card_style",
+  "header_style_key",
+  "footer_style_key",
+] as const;
+
+export const HOMEPAGE_BLOCKS_BODY_KEYS = ["homepage_blocks"] as const;
+
+export function requestTouchesAdvancedAppearance(body: Record<string, unknown>): boolean {
+  return ADVANCED_APPEARANCE_BODY_KEYS.some((key) => key in body);
+}
+
+export function requestTouchesHomepageBlocks(body: Record<string, unknown>): boolean {
+  return HOMEPAGE_BLOCKS_BODY_KEYS.some((key) => key in body);
 }
 
 export function requestTouchesPaymentSettings(body: Record<string, unknown>): boolean {

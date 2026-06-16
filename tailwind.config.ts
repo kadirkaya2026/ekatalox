@@ -11,6 +11,10 @@ const config: Config = {
     extend: {
       fontFamily: {
         sans: ["var(--font-inter)", "sans-serif"],
+        "dm-sans": ["var(--font-dm-sans)", "sans-serif"],
+        "plus-jakarta": ["var(--font-plus-jakarta)", "sans-serif"],
+        "source-sans": ["var(--font-source-sans)", "sans-serif"],
+        playfair: ["var(--font-playfair)", "serif"],
       },
       boxShadow: {
         soft: "0 10px 30px rgba(15, 23, 42, 0.08)",

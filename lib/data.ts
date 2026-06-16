@@ -15,7 +15,8 @@ import { productWithVariantsAndPricesSelect } from "@/lib/products/queries";
 import { normalizePriceListRecord, sortPriceLists } from "@/lib/price-lists/records";
 import { getPriceListDisplayName } from "@/lib/price-lists/constants";
 import { ensureDefaultPriceListsForTenant, fetchTenantPriceLists } from "@/lib/price-lists/data";
-import { toStorefrontProduct } from "@/lib/storefront/pricing";
+import { DEFAULT_HOMEPAGE_BLOCKS, normalizeHomepageBlocks } from "@/lib/storefront/homepage-blocks";
+import { getSmartDefaultAppearance } from "@/lib/storefront/smart-defaults";
 import type {
   AccessCode,
   Category,
@@ -58,19 +59,29 @@ function groupCountByTenant(
 
 export function getDefaultTenantStorefrontSettings(
   tenantId: string,
+  seed?: string,
 ): TenantStorefrontSettings {
   const now = new Date().toISOString();
+  const smartDefaults = seed ? getSmartDefaultAppearance(seed) : null;
 
   return {
     id: `storefront-default-${tenantId}`,
     tenant_id: tenantId,
-    theme_key: "minimal",
-    layout_key: "classic-grid",
+    theme_key: smartDefaults?.theme_key ?? "minimal",
+    layout_key: smartDefaults?.layout_key ?? "classic-grid",
     logo_url: null,
     storefront_title: null,
     storefront_description: null,
     hero_heading: null,
     hero_cta_label: null,
+    is_hero_visible: false,
+    brand_primary_color: null,
+    brand_accent_color: null,
+    font_key: smartDefaults?.font_key ?? "inter",
+    product_card_style: "standard",
+    header_style_key: "standard",
+    footer_style_key: "standard",
+    homepage_blocks: DEFAULT_HOMEPAGE_BLOCKS,
     banner_items: [],
     site_tab_title: null,
     site_favicon_url: null,
@@ -127,9 +138,14 @@ function normalizeStorefrontSettings(
   tenantId: string,
   data: Partial<TenantStorefrontSettings> | null,
 ): TenantStorefrontSettings {
-  return {
+  const merged = {
     ...getDefaultTenantStorefrontSettings(tenantId),
     ...(data ?? {}),
+  };
+
+  return {
+    ...merged,
+    homepage_blocks: normalizeHomepageBlocks(merged.homepage_blocks),
   };
 }
 
@@ -402,6 +418,19 @@ export async function getTenantStorefrontSettings(
         .select("*")
         .eq("tenant_id", resolvedTenantId)
         .maybeSingle();
+
+      if (!data) {
+        const { data: tenant } = await supabase
+          .from("tenants")
+          .select("subdomain")
+          .eq("id", resolvedTenantId)
+          .maybeSingle();
+
+        return getDefaultTenantStorefrontSettings(
+          resolvedTenantId,
+          tenant?.subdomain,
+        );
+      }
 
       return normalizeStorefrontSettings(
         resolvedTenantId,
@@ -907,4 +936,57 @@ export async function removeProductFromSection(
     .eq("product_id", productId);
 
   return !error;
+}
+
+export interface ThemeDistributionRow {
+  signature: string;
+  theme_key: string;
+  layout_key: string;
+  brand_primary_color: string | null;
+  font_key: string;
+  count: number;
+}
+
+export async function getThemeDistributionOverview(): Promise<ThemeDistributionRow[]> {
+  const supabase = createSupabaseAdminClient();
+
+  if (!supabase) {
+    return [];
+  }
+
+  const { data, error } = await supabase
+    .from("tenant_storefront_settings")
+    .select("theme_key, layout_key, brand_primary_color, font_key");
+
+  if (error || !data) {
+    return [];
+  }
+
+  const grouped = new Map<string, ThemeDistributionRow>();
+
+  for (const row of data) {
+    const signature = [
+      row.theme_key,
+      row.layout_key,
+      row.brand_primary_color ?? "none",
+      row.font_key ?? "inter",
+    ].join("|");
+
+    const existing = grouped.get(signature);
+    if (existing) {
+      existing.count += 1;
+      continue;
+    }
+
+    grouped.set(signature, {
+      signature,
+      theme_key: row.theme_key,
+      layout_key: row.layout_key,
+      brand_primary_color: row.brand_primary_color,
+      font_key: row.font_key ?? "inter",
+      count: 1,
+    });
+  }
+
+  return [...grouped.values()].sort((left, right) => right.count - left.count);
 }

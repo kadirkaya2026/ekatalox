@@ -260,6 +260,60 @@ function resolveAccent(
       campaignLabelQualifiedDark: "text-neutral-300",
       campaignLabelPendingDark: "text-amber-400",
     },
+    industrial: {
+      soft: "bg-zinc-800",
+      softText: "text-zinc-300",
+      titleHover: "group-hover:text-zinc-200",
+      priceOriginal: "text-neutral-500",
+      chipActiveBgDark: "bg-zinc-700",
+      chipActiveTextDark: "text-white",
+      pageGradientDark:
+        "bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,rgba(82,82,91,0.18),transparent)]",
+      campaignBarQualifiedDark:
+        "border-0 bg-[linear-gradient(135deg,rgba(39,39,42,0.98)_0%,rgba(10,10,10,0.98)_50%,rgba(24,24,27,0.98)_100%)]",
+      campaignBarPendingDark:
+        "border-0 bg-[radial-gradient(circle_at_top_right,rgba(251,191,36,0.1),transparent_42%),linear-gradient(135deg,rgba(30,20,10,0.96)_0%,rgba(10,10,10,0.98)_48%,rgba(15,25,35,0.96)_100%)]",
+      campaignIconQualifiedDark: "bg-zinc-700 text-zinc-200",
+      campaignIconPendingDark: "bg-amber-950/50 text-amber-300",
+      campaignLabelQualifiedDark: "text-zinc-300",
+      campaignLabelPendingDark: "text-amber-400",
+    },
+    premium: {
+      soft: "bg-stone-800",
+      softText: "text-stone-300",
+      titleHover: "group-hover:text-stone-200",
+      priceOriginal: "text-neutral-500",
+      chipActiveBgDark: "bg-stone-700",
+      chipActiveTextDark: "text-white",
+      pageGradientDark:
+        "bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,rgba(120,113,108,0.15),transparent)]",
+      campaignBarQualifiedDark:
+        "border-0 bg-[linear-gradient(135deg,rgba(41,37,36,0.98)_0%,rgba(10,10,10,0.98)_50%,rgba(28,25,23,0.98)_100%)]",
+      campaignBarPendingDark:
+        "border-0 bg-[radial-gradient(circle_at_top_right,rgba(251,191,36,0.1),transparent_42%),linear-gradient(135deg,rgba(30,20,10,0.96)_0%,rgba(10,10,10,0.98)_48%,rgba(15,25,35,0.96)_100%)]",
+      campaignIconQualifiedDark: "bg-stone-700 text-stone-200",
+      campaignIconPendingDark: "bg-amber-950/50 text-amber-300",
+      campaignLabelQualifiedDark: "text-stone-300",
+      campaignLabelPendingDark: "text-amber-400",
+    },
+    "catalog-first": {
+      soft: "bg-slate-800",
+      softText: "text-slate-300",
+      titleHover: "group-hover:text-slate-200",
+      priceOriginal: "text-neutral-500",
+      chipActiveBgDark: "bg-slate-700",
+      chipActiveTextDark: "text-white",
+      pageGradientDark:
+        "bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,rgba(51,65,85,0.12),transparent)]",
+      campaignBarQualifiedDark:
+        "border-0 bg-[linear-gradient(135deg,rgba(30,41,59,0.98)_0%,rgba(10,10,10,0.98)_50%,rgba(15,23,42,0.98)_100%)]",
+      campaignBarPendingDark:
+        "border-0 bg-[radial-gradient(circle_at_top_right,rgba(251,191,36,0.1),transparent_42%),linear-gradient(135deg,rgba(30,20,10,0.96)_0%,rgba(10,10,10,0.98)_48%,rgba(15,25,35,0.96)_100%)]",
+      campaignIconQualifiedDark: "bg-slate-700 text-slate-200",
+      campaignIconPendingDark: "bg-amber-950/50 text-amber-300",
+      campaignLabelQualifiedDark: "text-slate-300",
+      campaignLabelPendingDark: "text-amber-400",
+    },
   };
 
   if (colorScheme === "light") {
@@ -878,6 +932,93 @@ const darkNeutrals: ThemeNeutrals = {
   gatePage: "bg-black text-neutral-50",
 };
 
+const industrialNeutrals: ThemeNeutrals = {
+  ...minimalNeutrals,
+  page: "bg-zinc-100",
+  header: "border-b border-zinc-800 bg-zinc-900 text-white",
+  headerBorder: "border-zinc-800",
+  headerRailBorder: "border-zinc-800",
+  surface: "bg-white",
+  text: "text-zinc-950",
+  textMuted: "text-zinc-500",
+  chipActiveBg: "bg-zinc-800 text-white",
+  chipActiveText: "text-white",
+  gatePage: "bg-zinc-100 text-zinc-950",
+};
+
+const industrialAccent: ThemeAccent = {
+  ...neutralAccent,
+  primary: "bg-zinc-700",
+  primaryHover: "hover:bg-zinc-800",
+  primaryActive: "active:bg-zinc-900",
+  soft: "bg-zinc-100",
+  softText: "text-zinc-800",
+  softBorder: "border-zinc-400/40",
+  price: "text-zinc-800",
+  stickyButton: "bg-zinc-700 hover:bg-zinc-800 text-white",
+  navMobileActive: "border-zinc-700",
+  subChipActive: "border-zinc-700 bg-zinc-700 text-white",
+  floatingAddBorder: "border-zinc-700",
+  floatingAddBg: "bg-zinc-700",
+  floatingAddHover: "hover:border-zinc-600 hover:bg-zinc-600",
+  campaignBarQualifiedLight:
+    "border-zinc-300 bg-[radial-gradient(circle_at_top_right,rgba(63,63,70,0.12),transparent_42%),linear-gradient(135deg,#f4f4f5_0%,#ffffff_50%,#fafafa_100%)]",
+  campaignIconQualifiedLight: "bg-zinc-200 text-zinc-800",
+  campaignLabelQualifiedLight: "text-zinc-800",
+};
+
+const premiumNeutrals: ThemeNeutrals = {
+  ...minimalNeutrals,
+  page: "bg-[linear-gradient(180deg,#fafaf9_0%,#ffffff_100%)]",
+  header: "border-b border-stone-200/80 bg-white/98",
+  surfaceMuted: "bg-[linear-gradient(180deg,#ffffff_0%,#fafaf9_100%)]",
+  text: "text-stone-950",
+  textMuted: "text-stone-500",
+  chipActiveBg: "bg-stone-900 text-white",
+  imageGradient: "bg-[linear-gradient(180deg,#fafaf9_0%,#f5f5f4_100%)]",
+  gatePage: "bg-stone-50 text-stone-950",
+};
+
+const premiumAccent: ThemeAccent = {
+  ...neutralAccent,
+  primary: "bg-stone-900",
+  soft: "bg-stone-100",
+  softText: "text-stone-800",
+  price: "text-stone-900",
+  stickyButton: "bg-stone-900 hover:bg-stone-800 text-white",
+  navMobileActive: "border-stone-900",
+  subChipActive: "border-stone-900 bg-stone-900 text-white",
+  campaignBarQualifiedLight:
+    "border-stone-300 bg-[radial-gradient(circle_at_top_right,rgba(120,113,108,0.12),transparent_42%),linear-gradient(135deg,#fafaf9_0%,#ffffff_50%,#f5f5f4_100%)]",
+  campaignIconQualifiedLight: "bg-stone-200 text-stone-800",
+  campaignLabelQualifiedLight: "text-stone-800",
+};
+
+const catalogFirstNeutrals: ThemeNeutrals = {
+  ...minimalNeutrals,
+  page: "bg-white",
+  header: "border-b border-slate-100 bg-white",
+  surfaceMuted: "bg-slate-50",
+  chipActiveBg: "bg-slate-800 text-white",
+  gatePage: "bg-white text-slate-900",
+};
+
+const catalogFirstAccent: ThemeAccent = {
+  ...proBlueAccent,
+  primary: "bg-slate-800",
+  primaryHover: "hover:bg-slate-900",
+  soft: "bg-slate-100",
+  softText: "text-slate-800",
+  price: "text-slate-900",
+  stickyButton: "bg-slate-800 hover:bg-slate-900 text-white",
+  navMobileActive: "border-slate-800",
+  subChipActive: "border-slate-800 bg-slate-800 text-white",
+  campaignBarQualifiedLight:
+    "border-slate-200 bg-[radial-gradient(circle_at_top_right,rgba(15,23,42,0.08),transparent_42%),linear-gradient(135deg,#f8fafc_0%,#ffffff_50%,#f1f5f9_100%)]",
+  campaignIconQualifiedLight: "bg-slate-200 text-slate-800",
+  campaignLabelQualifiedLight: "text-slate-800",
+};
+
 function buildStorefrontThemes(
   colorScheme: StorefrontColorScheme,
 ): Record<StorefrontThemeKey, StorefrontTheme> {
@@ -898,6 +1039,21 @@ function buildStorefrontThemes(
     neutral: buildTheme(
       neutralsFor(neutralNeutrals),
       resolveAccent(neutralAccent, colorScheme, "neutral"),
+      colorScheme,
+    ),
+    industrial: buildTheme(
+      neutralsFor(industrialNeutrals),
+      resolveAccent(industrialAccent, colorScheme, "industrial"),
+      colorScheme,
+    ),
+    premium: buildTheme(
+      neutralsFor(premiumNeutrals),
+      resolveAccent(premiumAccent, colorScheme, "premium"),
+      colorScheme,
+    ),
+    "catalog-first": buildTheme(
+      neutralsFor(catalogFirstNeutrals),
+      resolveAccent(catalogFirstAccent, colorScheme, "catalog-first"),
       colorScheme,
     ),
   };

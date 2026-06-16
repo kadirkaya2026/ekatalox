@@ -73,7 +73,7 @@ export default async function SectionDetailPage(props: {
     const settings = await getTenantStorefrontSettings(tenant.id);
 
     return (
-      <StorefrontPageShell themeKey={settings.theme_key}>
+      <StorefrontPageShell storefrontSettings={settings}>
         <PasswordGate
           subdomain={subdomain}
           companyName={tenant.company_name}
@@ -108,7 +108,7 @@ export default async function SectionDetailPage(props: {
 
   return (
     <StorefrontPageShell
-      themeKey={storefrontSettings.theme_key}
+      storefrontSettings={storefrontSettings}
       className={footerVisible ? "pb-0" : undefined}
     >
       <div className="container-shell py-4">

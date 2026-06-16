@@ -86,7 +86,7 @@ export default async function StorefrontPage(props: PageProps<"/store/[subdomain
     const settings = await getTenantStorefrontSettings(tenant.id);
 
     return (
-      <StorefrontPageShell themeKey={settings.theme_key}>
+      <StorefrontPageShell storefrontSettings={settings}>
         <PasswordGate
           subdomain={subdomain}
           companyName={tenant.company_name}
@@ -119,7 +119,7 @@ export default async function StorefrontPage(props: PageProps<"/store/[subdomain
 
   return (
     <StorefrontPageShell
-      themeKey={storefrontSettings.theme_key}
+      storefrontSettings={storefrontSettings}
       className={footerVisible ? "pb-0" : undefined}
     >
       <StorefrontClient

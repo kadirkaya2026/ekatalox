@@ -12,10 +12,13 @@ export default async function TenantThemeSettingsPage() {
       <Header
         eyebrow="Ayarlar / Tema"
         title="Tema Ayarları"
-        description="Hazır tema seçin ve vitrin düzenini belirleyin."
+        description="Tema, marka renkleri, font, kart stili ve ana sayfa bloklarını yönetin."
       />
 
-      <TenantThemeForm initialStorefrontSettings={storefrontSettings} />
+      <TenantThemeForm
+        initialStorefrontSettings={storefrontSettings}
+        tenantPlan={session.tenant!.plan ?? "baslangic"}
+      />
     </div>
   );
 }

@@ -160,16 +160,23 @@ export function StorefrontFooter({
   const hasSocialColumn = socialLinks.length > 0;
   const hasFooterMainContent = hasContactColumn || hasSocialColumn;
 
+  const footerStyle = settings.footer_style_key ?? "standard";
+  const showMainColumns = footerStyle !== "minimal" && hasFooterMainContent;
+  const gridClassName =
+    footerStyle === "columns"
+      ? "flex flex-col gap-4 md:grid md:grid-cols-3 md:items-start md:gap-x-8"
+      : "flex flex-col gap-4 md:grid md:grid-cols-2 md:items-start md:gap-x-10 lg:gap-x-16";
+
   let mobileDividerIndex = 0;
 
   return (
     <footer className={theme.footerShell}>
       <div className="mx-auto max-w-7xl px-4 pt-5 pb-0 md:py-7">
-        {hasFooterMainContent ? (
-          <div className="flex flex-col gap-4 md:grid md:grid-cols-2 md:items-start md:gap-x-10 lg:gap-x-16">
+        {showMainColumns ? (
+          <div className={gridClassName}>
             {hasContactColumn ? (
               <MobileSection showDivider={mobileDividerIndex++ > 0}>
-                <div className="flex flex-col items-center text-center md:items-start md:text-left">
+                <div className={cn("flex flex-col items-center text-center", footerStyle === "columns" ? "md:items-start md:text-left" : "md:items-start md:text-left")}>
                   <FooterSectionHeading>İletişim &amp; Adres</FooterSectionHeading>
                   <div className="space-y-1">
                     {locationText ? (
@@ -241,7 +248,7 @@ export function StorefrontFooter({
           className={cn(
             "py-1.5 text-center text-[11px] leading-tight",
             theme.footerText,
-            hasFooterMainContent ? "mt-4 md:mt-6" : "mt-0",
+            hasFooterMainContent && showMainColumns ? "mt-4 md:mt-6" : "mt-0",
           )}
         >
           ©{FOOTER_COPYRIGHT_YEAR}{" "}

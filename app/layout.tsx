@@ -1,5 +1,11 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import {
+  DM_Sans,
+  Inter,
+  Playfair_Display,
+  Plus_Jakarta_Sans,
+  Source_Sans_3,
+} from "next/font/google";
 import { ThemeProvider } from "@/components/theme/theme-provider";
 import "./globals.css";
 
@@ -7,6 +13,34 @@ const inter = Inter({
   variable: "--font-inter",
   subsets: ["latin"],
 });
+
+const dmSans = DM_Sans({
+  variable: "--font-dm-sans",
+  subsets: ["latin"],
+});
+
+const plusJakarta = Plus_Jakarta_Sans({
+  variable: "--font-plus-jakarta",
+  subsets: ["latin"],
+});
+
+const sourceSans = Source_Sans_3({
+  variable: "--font-source-sans",
+  subsets: ["latin"],
+});
+
+const playfair = Playfair_Display({
+  variable: "--font-playfair",
+  subsets: ["latin"],
+});
+
+const fontVariables = [
+  inter.variable,
+  dmSans.variable,
+  plusJakarta.variable,
+  sourceSans.variable,
+  playfair.variable,
+].join(" ");
 
 export const metadata: Metadata = {
   title: {
@@ -23,7 +57,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="tr" className={`${inter.variable} h-full`} suppressHydrationWarning>
+    <html lang="tr" className={`${fontVariables} h-full`} suppressHydrationWarning>
       <body className="min-h-full bg-background text-foreground">
         <ThemeProvider>{children}</ThemeProvider>
       </body>

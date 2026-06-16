@@ -1,0 +1,415 @@
+"use client";
+
+import { ChevronDown, Search, ShoppingCart, Store } from "lucide-react";
+import type { CategoryNode } from "@/lib/categories/tree";
+import { getDescendantCategoryIds } from "@/lib/categories/tree";
+import type { Category } from "@/lib/types";
+import { STOREFRONT_LOGO_SIZES } from "@/lib/storefront/image-sizes";
+import { useStorefrontTheme } from "@/lib/storefront/theme-context";
+import type { StorefrontHeaderStyleKey, TenantStorefrontSettings } from "@/lib/types";
+import { cn, formatCurrency, formatDateSlashTr } from "@/lib/utils";
+import { StorefrontImage } from "@/components/storefront/storefront-image";
+import { StorefrontLogoutButton } from "@/components/storefront/storefront-logout-button";
+import { StorefrontThemeToggle } from "@/components/storefront/storefront-theme-toggle";
+
+export interface StorefrontHeaderProps {
+  headerStyleKey: StorefrontHeaderStyleKey;
+  storefrontSettings: Pick<
+    TenantStorefrontSettings,
+    "logo_url" | "storefront_title" | "is_price_update_date_visible" | "price_update_date"
+  >;
+  storefrontTitle: string;
+  tenantId: string;
+  subdomain?: string;
+  homeHref?: string;
+  searchInput: string;
+  onSearchChange: (value: string) => void;
+  cartItemCount: number;
+  cartTotalEntries: Array<{ currency: string; total: number }>;
+  cartTotal: number;
+  cartCurrency: string;
+  cartLength: number;
+  onOpenCart: () => void;
+  usesSidebarNav: boolean;
+  topCategories: CategoryNode[];
+  categories: Category[];
+  selectedCategoryId: string;
+  selectedTopCategoryId: string;
+  selectedCategoryLabel: string;
+  mobileSubcategories: Array<{ id: string; name: string }>;
+  hoveredCategoryId: string | null;
+  onHoverCategory: (categoryId: string | null) => void;
+  onCategoryChange: (categoryId: string) => void;
+  onOpenCategoryDrawer: () => void;
+}
+
+function HeaderActions({
+  props,
+  compact = false,
+}: {
+  props: StorefrontHeaderProps;
+  compact?: boolean;
+}) {
+  const theme = useStorefrontTheme();
+
+  return (
+    <div className={cn("flex items-center justify-end gap-3", compact ? "gap-2" : "lg:gap-4")}>
+      <div className="hidden text-right sm:block">
+        <p className={cn("text-[10px] uppercase tracking-[0.22em]", theme.cartTotalLabel)}>
+          Sepet Toplamı
+        </p>
+        <div className="mt-1">
+          {props.cartLength === 0 ? (
+            <p className={theme.cartTotalEmpty}>Sepet Boş</p>
+          ) : props.cartTotalEntries.length ? (
+            props.cartTotalEntries.map(({ currency, total }) => (
+              <p key={currency} className={theme.cartTotalValue}>
+                {currency}: {formatCurrency(total, currency)}
+              </p>
+            ))
+          ) : (
+            <p className={theme.cartTotalValue}>
+              {formatCurrency(props.cartTotal, props.cartCurrency)}
+            </p>
+          )}
+        </div>
+      </div>
+      {props.subdomain ? (
+        <StorefrontLogoutButton
+          subdomain={props.subdomain}
+          tenantId={props.tenantId}
+          className="hidden lg:inline-flex"
+        />
+      ) : null}
+      <StorefrontThemeToggle />
+      <button
+        type="button"
+        onClick={props.onOpenCart}
+        className={theme.cartButton}
+        aria-label="Sepeti aç"
+      >
+        <ShoppingCart className="size-5" />
+        {props.cartLength ? <span className={theme.cartBadge}>{props.cartItemCount}</span> : null}
+      </button>
+    </div>
+  );
+}
+
+function HeaderSearch({
+  props,
+  className,
+}: {
+  props: StorefrontHeaderProps;
+  className?: string;
+}) {
+  const theme = useStorefrontTheme();
+
+  return (
+    <div
+      className={cn(
+        theme.searchWrap,
+        "h-10 min-w-0 max-w-none rounded-full shadow-none lg:h-11 lg:w-full lg:max-w-md",
+        className,
+      )}
+    >
+      <Search className={cn(theme.searchIcon, "left-4 size-4")} />
+      <input
+        placeholder="Ürün adı, model no veya kategoriye göre arayın..."
+        value={props.searchInput}
+        onChange={(event) => props.onSearchChange(event.target.value)}
+        className={cn(
+          theme.searchInput,
+          "h-10 w-full rounded-full border-0 bg-transparent py-2 pl-10 pr-4 text-[16px] focus-visible:ring-0 focus:ring-0 lg:h-11",
+        )}
+      />
+    </div>
+  );
+}
+
+function HeaderBrand({
+  props,
+  centered = false,
+  compact = false,
+}: {
+  props: StorefrontHeaderProps;
+  centered?: boolean;
+  compact?: boolean;
+}) {
+  const theme = useStorefrontTheme();
+
+  return (
+    <a
+      href={props.homeHref ?? "#"}
+      onClick={
+        props.homeHref
+          ? undefined
+          : (event) => {
+              event.preventDefault();
+              props.onCategoryChange("all");
+            }
+      }
+      className={cn(
+        "flex min-w-0 items-center gap-3 sm:gap-4",
+        centered && "mx-auto justify-center",
+      )}
+    >
+      <div
+        className={cn(
+          theme.logoWrap,
+          compact ? "h-12 w-12 sm:h-14 sm:w-14" : "h-14 w-14 sm:h-16 sm:w-16 lg:h-20 lg:w-20",
+        )}
+      >
+        {props.storefrontSettings.logo_url ? (
+          <StorefrontImage
+            src={props.storefrontSettings.logo_url}
+            alt={`${props.storefrontTitle} logo`}
+            className="object-contain"
+            sizes={STOREFRONT_LOGO_SIZES}
+          />
+        ) : (
+          <Store className={cn("size-5", theme.logoPlaceholder)} />
+        )}
+      </div>
+      <div className={cn("min-w-0", centered && "text-center")}>
+        <p
+          className={cn(
+            theme.headerTitle,
+            compact ? "text-base sm:text-lg" : "text-lg sm:text-xl lg:text-[1.65rem]",
+          )}
+        >
+          {props.storefrontTitle}
+        </p>
+        {props.storefrontSettings.is_price_update_date_visible &&
+        props.storefrontSettings.price_update_date ? (
+          <p className={cn("mt-0.5 truncate text-[10px] leading-4 sm:text-[11px]", theme.headerMuted)}>
+            Fiyat Güncelleme Tarihi :{" "}
+            {formatDateSlashTr(props.storefrontSettings.price_update_date)}
+          </p>
+        ) : null}
+      </div>
+    </a>
+  );
+}
+
+function StorefrontHeaderCategoryNav({ props }: { props: StorefrontHeaderProps }) {
+  const theme = useStorefrontTheme();
+
+  return (
+    <div className={cn(theme.categoryRailBorder, props.usesSidebarNav && "lg:hidden")}>
+      <div className="container-shell">
+        <nav
+          className={cn(
+            "relative hidden md:flex md:flex-wrap md:items-center md:justify-center md:gap-2 md:py-3",
+            props.usesSidebarNav && "md:hidden",
+          )}
+          aria-label="Ana kategoriler"
+        >
+          {props.homeHref ? (
+            <a href={props.homeHref} className={theme.categoryNavChip(false)}>
+              Tüm Ürünler
+            </a>
+          ) : (
+            <button
+              type="button"
+              onClick={() => props.onCategoryChange("all")}
+              className={theme.categoryNavChip(props.selectedCategoryId === "all")}
+            >
+              Tüm Ürünler
+            </button>
+          )}
+
+          {props.topCategories.map((category) => {
+            const isActive =
+              props.selectedCategoryId === category.id ||
+              getDescendantCategoryIds(props.categories, category.id).includes(
+                props.selectedCategoryId,
+              );
+            const isOpen = props.hoveredCategoryId === category.id;
+
+            return (
+              <div
+                key={category.id}
+                className="relative shrink-0"
+                onMouseEnter={() => props.onHoverCategory(category.id)}
+                onMouseLeave={() => props.onHoverCategory(null)}
+              >
+                <button
+                  type="button"
+                  onClick={() => props.onCategoryChange(category.id)}
+                  className={theme.categoryNavChip(isActive)}
+                >
+                  <span>{category.name}</span>
+                  {category.children.length ? <ChevronDown className="size-4" /> : null}
+                </button>
+
+                {category.children.length && isOpen ? (
+                  <div className="absolute left-0 top-full z-30 pt-1">
+                    <div className={theme.categoryDropdown}>
+                      <div className="space-y-0.5">
+                        {category.children.map((child) => (
+                          <button
+                            key={child.id}
+                            type="button"
+                            onClick={() => props.onCategoryChange(child.id)}
+                            className={theme.categoryDropdownItem}
+                          >
+                            {child.name}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+            );
+          })}
+        </nav>
+
+        {props.usesSidebarNav ? (
+          <div className={cn("py-3 lg:hidden", theme.sectionDivider)}>
+            <button
+              type="button"
+              onClick={props.onOpenCategoryDrawer}
+              className={cn(
+                theme.searchWrap,
+                "flex w-full items-center justify-between gap-3 rounded-2xl px-4 py-3 text-left shadow-none",
+              )}
+              aria-label="Kategorileri aç"
+            >
+              <div className="min-w-0">
+                <p className={cn("text-[10px] font-bold uppercase tracking-[0.18em]", theme.headerMuted)}>
+                  Kategori
+                </p>
+                <p className={cn("truncate text-sm font-semibold", theme.headerTitle)}>
+                  {props.selectedCategoryLabel}
+                </p>
+              </div>
+              <ChevronDown className={cn("size-5 shrink-0", theme.headerMuted)} />
+            </button>
+          </div>
+        ) : (
+          <div className={cn("py-3 md:hidden", theme.sectionDivider)}>
+            <div className="scrollbar-hide -mx-4 flex gap-5 overflow-x-auto px-4 whitespace-nowrap">
+              {props.homeHref ? (
+                <a href={props.homeHref} className={theme.categoryNavMobile(false)}>
+                  Tüm Ürünler
+                </a>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => props.onCategoryChange("all")}
+                  className={theme.categoryNavMobile(props.selectedCategoryId === "all")}
+                >
+                  Tüm Ürünler
+                </button>
+              )}
+
+              {props.topCategories.map((category) => (
+                <button
+                  key={category.id}
+                  type="button"
+                  onClick={() => props.onCategoryChange(category.id)}
+                  className={theme.categoryNavMobile(props.selectedTopCategoryId === category.id)}
+                >
+                  {category.name}
+                </button>
+              ))}
+            </div>
+
+            {props.mobileSubcategories.length ? (
+              <div className="scrollbar-hide -mx-4 mt-3 flex gap-3 overflow-x-auto px-4 pb-1">
+                {props.mobileSubcategories.map((subcategory) => {
+                  const isActive = props.selectedCategoryId === subcategory.id;
+
+                  return (
+                    <button
+                      key={subcategory.id}
+                      type="button"
+                      onClick={() => props.onCategoryChange(subcategory.id)}
+                      className={theme.categorySubChip(isActive)}
+                    >
+                      {subcategory.name}
+                    </button>
+                  );
+                })}
+              </div>
+            ) : null}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function StorefrontHeaderTopBar({ props }: { props: StorefrontHeaderProps }) {
+  const theme = useStorefrontTheme();
+
+  if (props.headerStyleKey === "centered") {
+    return (
+      <div className="container-shell space-y-4 py-4">
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex-1 lg:hidden">
+            {props.subdomain ? (
+              <StorefrontLogoutButton
+                subdomain={props.subdomain}
+                tenantId={props.tenantId}
+                className="lg:hidden"
+              />
+            ) : null}
+          </div>
+          <div className="flex flex-1 justify-center">
+            <HeaderBrand props={props} centered />
+          </div>
+          <div className="flex flex-1 justify-end">
+            <HeaderActions props={props} compact />
+          </div>
+        </div>
+        <div className="flex justify-center">
+          <HeaderSearch props={props} className="w-full max-w-xl" />
+        </div>
+      </div>
+    );
+  }
+
+  if (props.headerStyleKey === "minimal") {
+    return (
+      <div className="container-shell space-y-3 py-3">
+        <div className="flex items-center justify-between gap-3">
+          <HeaderBrand props={props} compact />
+          <HeaderActions props={props} compact />
+        </div>
+        <HeaderSearch props={props} className="w-full" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="container-shell py-4">
+      <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(260px,420px)_auto] lg:items-center">
+        <div className="col-span-2 flex min-w-0 items-start gap-2 sm:gap-3 lg:col-span-1 lg:items-center lg:gap-4">
+          <HeaderBrand props={props} />
+          {props.subdomain ? (
+            <StorefrontLogoutButton
+              subdomain={props.subdomain}
+              tenantId={props.tenantId}
+              className="lg:hidden"
+            />
+          ) : null}
+        </div>
+        <HeaderSearch props={props} className="lg:justify-self-center" />
+        <HeaderActions props={props} />
+      </div>
+    </div>
+  );
+}
+
+export function StorefrontHeader(props: StorefrontHeaderProps) {
+  const theme = useStorefrontTheme();
+
+  return (
+    <header className={cn(theme.header, theme.headerBorder)}>
+      <StorefrontHeaderTopBar props={props} />
+      <StorefrontHeaderCategoryNav props={props} />
+    </header>
+  );
+}

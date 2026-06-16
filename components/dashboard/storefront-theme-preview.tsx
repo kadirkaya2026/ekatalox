@@ -1,5 +1,6 @@
 import { Search, ShoppingCart, Store } from "lucide-react";
 import type { StorefrontLayoutKey, StorefrontThemeKey } from "@/lib/types";
+import { applyBrandColorOverrides } from "@/lib/storefront/brand-colors";
 import { getStorefrontLayout } from "@/lib/storefront/layouts";
 import { getStorefrontTheme } from "@/lib/storefront/themes";
 import { cn, formatCurrency } from "@/lib/utils";
@@ -141,13 +142,20 @@ export function StorefrontThemePreview({
   layoutKey = "classic-grid",
   storefrontTitle,
   logoUrl,
+  brandPrimaryColor,
+  brandAccentColor,
 }: {
   themeKey: StorefrontThemeKey;
   layoutKey?: StorefrontLayoutKey;
   storefrontTitle?: string;
   logoUrl?: string | null;
+  brandPrimaryColor?: string | null;
+  brandAccentColor?: string | null;
 }) {
-  const theme = getStorefrontTheme(themeKey);
+  const theme = applyBrandColorOverrides(getStorefrontTheme(themeKey), {
+    brand_primary_color: brandPrimaryColor ?? null,
+    brand_accent_color: brandAccentColor ?? null,
+  });
   const layout = getStorefrontLayout(layoutKey);
   const title = storefrontTitle?.trim() || "Mağaza Adı";
 

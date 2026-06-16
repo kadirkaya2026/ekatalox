@@ -1,7 +1,15 @@
 import { z } from "zod";
 import { DEFAULT_INSTALLMENT_OPTIONS } from "@/lib/storefront/cart";
+import { DEFAULT_HOMEPAGE_BLOCKS } from "@/lib/storefront/homepage-blocks";
 
-export const storefrontThemeKeySchema = z.enum(["minimal", "pro-blue", "neutral"]);
+export const storefrontThemeKeySchema = z.enum([
+  "minimal",
+  "pro-blue",
+  "neutral",
+  "industrial",
+  "premium",
+  "catalog-first",
+]);
 
 export const storefrontLayoutKeySchema = z.enum([
   "classic-grid",
@@ -9,6 +17,44 @@ export const storefrontLayoutKeySchema = z.enum([
   "catalog-list",
   "sidebar-pro",
 ]);
+
+export const storefrontFontKeySchema = z.enum([
+  "inter",
+  "dm-sans",
+  "plus-jakarta",
+  "source-sans",
+  "playfair",
+]);
+
+export const storefrontProductCardStyleSchema = z.enum([
+  "standard",
+  "compact",
+  "image-forward",
+]);
+
+export const storefrontHeaderStyleKeySchema = z.enum(["standard", "centered", "minimal"]);
+
+export const storefrontFooterStyleKeySchema = z.enum(["standard", "minimal", "columns"]);
+
+export const homepageBlockIdSchema = z.enum([
+  "hero",
+  "banner",
+  "campaigns",
+  "showcase",
+  "catalog",
+]);
+
+export const homepageBlockSchema = z.object({
+  id: homepageBlockIdSchema,
+  visible: z.boolean(),
+  order: z.coerce.number().int().min(1).max(10),
+});
+
+export const homepageBlocksSchema = z
+  .array(homepageBlockSchema)
+  .min(1)
+  .max(5)
+  .default(DEFAULT_HOMEPAGE_BLOCKS);
 
 const optionalUrlSchema = z
   .union([z.string().trim().url("Geçerli bir bağlantı girin."), z.literal(""), z.null(), z.undefined()])
@@ -95,6 +141,28 @@ export const storefrontSettingsSchema = z
       .nullable()
       .optional()
       .transform((value) => value || null),
+    hero_heading: z
+      .string()
+      .trim()
+      .max(120, "Hero başlığı en fazla 120 karakter olabilir.")
+      .nullable()
+      .optional()
+      .transform((value) => value || null),
+    hero_cta_label: z
+      .string()
+      .trim()
+      .max(40, "Hero buton metni en fazla 40 karakter olabilir.")
+      .nullable()
+      .optional()
+      .transform((value) => value || null),
+    is_hero_visible: z.boolean().default(false),
+    brand_primary_color: optionalColorSchema,
+    brand_accent_color: optionalColorSchema,
+    font_key: storefrontFontKeySchema.default("inter"),
+    product_card_style: storefrontProductCardStyleSchema.default("standard"),
+    header_style_key: storefrontHeaderStyleKeySchema.default("standard"),
+    footer_style_key: storefrontFooterStyleKeySchema.default("standard"),
+    homepage_blocks: homepageBlocksSchema,
     banner_items: z
       .array(bannerItemSchema)
       .max(6, "En fazla 6 banner ekleyebilirsiniz.")

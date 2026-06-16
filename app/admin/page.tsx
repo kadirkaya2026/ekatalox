@@ -1,9 +1,13 @@
 import { AdminTenantsManager } from "@/components/admin/admin-tenants-manager";
+import { AdminThemeDistributionPanel } from "@/components/admin/admin-theme-distribution-panel";
 import { Header } from "@/components/dashboard/header";
-import { getTenantsOverview } from "@/lib/data";
+import { getTenantsOverview, getThemeDistributionOverview } from "@/lib/data";
 
 export default async function AdminPage() {
-  const tenants = await getTenantsOverview();
+  const [tenants, themeDistribution] = await Promise.all([
+    getTenantsOverview(),
+    getThemeDistributionOverview(),
+  ]);
 
   return (
     <div className="space-y-6">
@@ -12,6 +16,8 @@ export default async function AdminPage() {
         title="Tüm tenant’ları tek ekrandan yönetin"
         description="Yeni tenant açın, paket seçin, askıya alın, erişim kodlarını yönetin ve limitleri takip edin."
       />
+
+      <AdminThemeDistributionPanel rows={themeDistribution} />
 
       <AdminTenantsManager initialTenants={tenants} />
     </div>

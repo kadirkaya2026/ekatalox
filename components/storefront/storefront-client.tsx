@@ -104,6 +104,13 @@ import {
   StorefrontCategorySidebar,
   StorefrontCategorySidebarSlot,
 } from "@/components/storefront/storefront-category-sidebar";
+import { getProductCardStyleClasses } from "@/lib/storefront/product-card-styles";
+import {
+  normalizeHomepageBlocks,
+  isHomepageBlockVisible,
+} from "@/lib/storefront/homepage-blocks";
+import { StorefrontHeader } from "@/components/storefront/storefront-header";
+import { StorefrontHeroBlock } from "@/components/storefront/storefront-hero-block";
 import { getStorefrontLayout } from "@/lib/storefront/layouts";
 
 function getCartStorageKey(tenantId: string) {
@@ -846,8 +853,16 @@ export function StorefrontClient({
   );
   const analyticsSubdomain = subdomain ?? tenant.subdomain;
 
-  const theme = useResolvedStorefrontTheme(storefrontSettings.theme_key);
+  const theme = useResolvedStorefrontTheme(storefrontSettings.theme_key, {
+    brand_primary_color: storefrontSettings.brand_primary_color,
+    brand_accent_color: storefrontSettings.brand_accent_color,
+  });
   const layout = getStorefrontLayout(storefrontSettings.layout_key ?? "classic-grid");
+  const productCardStyle = getProductCardStyleClasses(storefrontSettings.product_card_style);
+  const homepageBlocks = useMemo(
+    () => normalizeHomepageBlocks(storefrontSettings.homepage_blocks),
+    [storefrontSettings.homepage_blocks],
+  );
   const usesSidebarNav = layout.categoryNav === "sidebar";
   const cartStorageKey = useMemo(() => getCartStorageKey(tenant.id), [tenant.id]);
   const announcementStorageKeys = useMemo(
@@ -1119,13 +1134,22 @@ export function StorefrontClient({
     selectedCategoryId !== "all" &&
     !searchInput.trim() &&
     Boolean(categoryBanner?.image_url);
-  const showBannerSection = showHomeBanner || showCategoryBanner;
+  const showBannerSection =
+    (showHomeBanner || showCategoryBanner) &&
+    (showCategoryBanner || isHomepageBlockVisible(homepageBlocks, "banner"));
   const bannerItems =
     showCategoryBanner && categoryBanner
       ? [categoryBanner]
       : (storefrontSettings.banner_items ?? []);
   const currentBanner = bannerItems[activeBannerIndex] ?? null;
-  const showSections = showHomeBanner && sections.length > 0;
+  const showSections =
+    showHomeBanner && sections.length > 0 && isHomepageBlockVisible(homepageBlocks, "showcase");
+  const showHeroBlock =
+    showHomeBanner && isHomepageBlockVisible(homepageBlocks, "hero");
+  const showCatalogBlock =
+    selectedCategoryId !== "all" ||
+    searchInput.trim().length > 0 ||
+    isHomepageBlockVisible(homepageBlocks, "catalog");
   const recommendedProducts = useMemo(() => {
     const cartIds = new Set(cart.map((item) => item.product_id));
 
@@ -2148,276 +2172,47 @@ export function StorefrontClient({
   }
 
 
+  const resolvedProductCardClassName = cn(theme.productCard, productCardStyle.card);
+  const resolvedProductImageWrapClassName = cn(
+    theme.productImageWrap,
+    productCardStyle.imageWrap,
+  );
+
   return (
-    <StorefrontThemeProvider themeKey={storefrontSettings.theme_key}>
+    <StorefrontThemeProvider
+      themeKey={storefrontSettings.theme_key}
+      brandPrimaryColor={storefrontSettings.brand_primary_color}
+      brandAccentColor={storefrontSettings.brand_accent_color}
+    >
     <StorefrontLayoutProvider layoutKey={storefrontSettings.layout_key ?? "classic-grid"}>
     <div className="contents">
-      <header className={cn(theme.header, theme.headerBorder)}>
-        <div className="container-shell py-4">
-          <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(260px,420px)_auto] lg:items-center">
-            <div className="col-span-2 flex min-w-0 items-start gap-2 sm:gap-3 lg:col-span-1 lg:items-center lg:gap-4">
-              <a
-                href={homeHref ?? "#"}
-                onClick={
-                  homeHref
-                    ? undefined
-                    : (event) => {
-                        event.preventDefault();
-                        handleCategoryChange("all");
-                      }
-                }
-                className="flex min-w-0 flex-1 items-center gap-3 sm:gap-4"
-              >
-                <div className={cn(theme.logoWrap, "h-14 w-14 sm:h-16 sm:w-16 lg:h-20 lg:w-20")}>
-                  {storefrontSettings.logo_url ? (
-                    <StorefrontImage
-                      src={storefrontSettings.logo_url}
-                      alt={`${storefrontTitle} logo`}
-                      className="object-contain"
-                      sizes={STOREFRONT_LOGO_SIZES}
-                    />
-                  ) : (
-                    <Store className={cn("size-5", theme.logoPlaceholder)} />
-                  )}
-                </div>
-                <div className="min-w-0">
-                  <p className={cn(theme.headerTitle, "text-lg sm:text-xl lg:text-[1.65rem]")}>
-                    {storefrontTitle}
-                  </p>
-                  {storefrontSettings.is_price_update_date_visible &&
-                  storefrontSettings.price_update_date ? (
-                    <p className={cn("mt-0.5 truncate text-[10px] leading-4 sm:text-[11px]", theme.headerMuted)}>
-                      Fiyat Güncelleme Tarihi :{" "}
-                      {formatDateSlashTr(storefrontSettings.price_update_date)}
-                    </p>
-                  ) : null}
-                </div>
-              </a>
-              {subdomain ? (
-                <StorefrontLogoutButton
-                  subdomain={subdomain}
-                  tenantId={tenant.id}
-                  className="lg:hidden"
-                />
-              ) : null}
-            </div>
-
-            <div
-              className={cn(
-                theme.searchWrap,
-                "h-10 min-w-0 max-w-none rounded-full shadow-none lg:h-11 lg:justify-self-center lg:w-full lg:max-w-md",
-              )}
-            >
-              <Search className={cn(theme.searchIcon, "left-4 size-4")} />
-              <input
-                placeholder="Ürün adı, model no veya kategoriye göre arayın..."
-                value={searchInput}
-                onChange={(event) => handleSearchChange(event.target.value)}
-                className={cn(
-                  theme.searchInput,
-                  "h-10 w-full rounded-full border-0 bg-transparent py-2 pl-10 pr-4 text-[16px] focus-visible:ring-0 focus:ring-0 lg:h-11",
-                )}
-              />
-            </div>
-
-            <div className="flex items-center justify-end gap-3 lg:gap-4">
-              <div className="hidden text-right sm:block">
-                <p className={cn("text-[10px] uppercase tracking-[0.22em]", theme.cartTotalLabel)}>
-                  Sepet Toplamı
-                </p>
-                <div className="mt-1">
-                  {cart.length === 0 ? (
-                    <p className={theme.cartTotalEmpty}>Sepet Boş</p>
-                  ) : cartTotalEntries.length ? (
-                    cartTotalEntries.map(({ currency, total }) => (
-                      <p key={currency} className={theme.cartTotalValue}>
-                        {currency}: {formatCurrency(total, currency)}
-                      </p>
-                    ))
-                  ) : (
-                    <p className={theme.cartTotalValue}>
-                      {formatCurrency(cartTotal, cartCurrency)}
-                    </p>
-                  )}
-                </div>
-              </div>
-              {subdomain ? (
-                <StorefrontLogoutButton
-                  subdomain={subdomain}
-                  tenantId={tenant.id}
-                  className="hidden lg:inline-flex"
-                />
-              ) : null}
-              <StorefrontThemeToggle />
-              <button
-                type="button"
-                onClick={openCartDrawer}
-                className={theme.cartButton}
-                aria-label="Sepeti aç"
-              >
-                <ShoppingCart className="size-5" />
-                {cart.length ? (
-                  <span className={theme.cartBadge}>
-                    {cartItemCount}
-                  </span>
-                ) : null}
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <div className={cn(theme.categoryRailBorder, usesSidebarNav && "lg:hidden")}>
-          <div className="container-shell">
-            <nav
-              className={cn(
-                "relative hidden md:flex md:flex-wrap md:items-center md:justify-center md:gap-2 md:py-3",
-                usesSidebarNav && "md:hidden",
-              )}
-              aria-label="Ana kategoriler"
-            >
-              {homeHref ? (
-                <a
-                  href={homeHref}
-                  className={theme.categoryNavChip(false)}
-                >
-                  Tüm Ürünler
-                </a>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => handleCategoryChange("all")}
-                  className={theme.categoryNavChip(selectedCategoryId === "all")}
-                >
-                  Tüm Ürünler
-                </button>
-              )}
-
-              {topCategories.map((category) => {
-                const isActive =
-                  selectedCategoryId === category.id ||
-                  getDescendantCategoryIds(categories, category.id).includes(selectedCategoryId);
-                const isOpen = hoveredCategoryId === category.id;
-
-                return (
-                  <div
-                    key={category.id}
-                    className="relative shrink-0"
-                    onMouseEnter={() => setHoveredCategoryId(category.id)}
-                    onMouseLeave={() => setHoveredCategoryId(null)}
-                  >
-                    <button
-                      type="button"
-                      onClick={() => handleCategoryChange(category.id)}
-                      className={theme.categoryNavChip(isActive)}
-                    >
-                      <span>{category.name}</span>
-                      {category.children.length ? <ChevronDown className="size-4" /> : null}
-                    </button>
-
-                    {category.children.length && isOpen ? (
-                      <div className="absolute left-0 top-full z-30 pt-1">
-                        <div className={theme.categoryDropdown}>
-                          <div className="space-y-0.5">
-                            {category.children.map((child) => (
-                              <button
-                                key={child.id}
-                                type="button"
-                                onClick={() => handleCategoryChange(child.id)}
-                                className={theme.categoryDropdownItem}
-                              >
-                                {child.name}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-                    ) : null}
-                  </div>
-                );
-              })}
-            </nav>
-
-            {usesSidebarNav ? (
-              <div
-                className={cn("py-3 lg:hidden", theme.sectionDivider)}
-              >
-                <button
-                  type="button"
-                  onClick={() => setIsCategoryDrawerOpen(true)}
-                  className={cn(
-                    theme.searchWrap,
-                    "flex w-full items-center justify-between gap-3 rounded-2xl px-4 py-3 text-left shadow-none",
-                  )}
-                  aria-label="Kategorileri aç"
-                >
-                  <div className="min-w-0">
-                    <p className={cn("text-[10px] font-bold uppercase tracking-[0.18em]", theme.headerMuted)}>
-                      Kategori
-                    </p>
-                    <p className={cn("truncate text-sm font-semibold", theme.headerTitle)}>
-                      {selectedCategoryLabel}
-                    </p>
-                  </div>
-                  <ChevronDown className={cn("size-5 shrink-0", theme.headerMuted)} />
-                </button>
-              </div>
-            ) : (
-              <div
-                className={cn("py-3 md:hidden", theme.sectionDivider)}
-              >
-                <div className="scrollbar-hide -mx-4 flex gap-5 overflow-x-auto px-4 whitespace-nowrap">
-                  {homeHref ? (
-                    <a
-                      href={homeHref}
-                      className={theme.categoryNavMobile(false)}
-                    >
-                      Tüm Ürünler
-                    </a>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => handleCategoryChange("all")}
-                      className={theme.categoryNavMobile(selectedCategoryId === "all")}
-                    >
-                      Tüm Ürünler
-                    </button>
-                  )}
-
-                  {topCategories.map((category) => (
-                    <button
-                      key={category.id}
-                      type="button"
-                      onClick={() => handleCategoryChange(category.id)}
-                      className={theme.categoryNavMobile(selectedTopCategoryId === category.id)}
-                    >
-                      {category.name}
-                    </button>
-                  ))}
-                </div>
-
-                {selectedTopCategory && mobileSubcategories.length ? (
-                  <div className="scrollbar-hide -mx-4 mt-3 flex gap-3 overflow-x-auto px-4 pb-1">
-                    {mobileSubcategories.map((subcategory) => {
-                      const isActive = selectedCategoryId === subcategory.id;
-
-                      return (
-                        <button
-                          key={subcategory.id}
-                          type="button"
-                          onClick={() => handleCategoryChange(subcategory.id)}
-                          className={theme.categorySubChip(isActive)}
-                        >
-                          {subcategory.name}
-                        </button>
-                      );
-                    })}
-                  </div>
-                ) : null}
-              </div>
-            )}
-          </div>
-        </div>
-      </header>
+      <StorefrontHeader
+        headerStyleKey={storefrontSettings.header_style_key ?? "standard"}
+        storefrontSettings={storefrontSettings}
+        storefrontTitle={storefrontTitle}
+        tenantId={tenant.id}
+        subdomain={subdomain}
+        homeHref={homeHref}
+        searchInput={searchInput}
+        onSearchChange={handleSearchChange}
+        cartItemCount={cartItemCount}
+        cartTotalEntries={cartTotalEntries}
+        cartTotal={cartTotal}
+        cartCurrency={cartCurrency}
+        cartLength={cart.length}
+        onOpenCart={openCartDrawer}
+        usesSidebarNav={usesSidebarNav}
+        topCategories={topCategories}
+        categories={categories}
+        selectedCategoryId={selectedCategoryId}
+        selectedTopCategoryId={selectedTopCategoryId}
+        selectedCategoryLabel={selectedCategoryLabel}
+        mobileSubcategories={mobileSubcategories}
+        hoveredCategoryId={hoveredCategoryId}
+        onHoverCategory={setHoveredCategoryId}
+        onCategoryChange={handleCategoryChange}
+        onOpenCategoryDrawer={() => setIsCategoryDrawerOpen(true)}
+      />
 
       <main
         className={cn(
@@ -2439,101 +2234,185 @@ export function StorefrontClient({
           ) : null}
 
           <StorefrontCatalogContent>
-        {showBannerSection ? (
-          <section className="mb-5 sm:mb-10 w-full">
-            {bannerItems.length ? (
-              <div className="w-full space-y-4">
-                {currentBanner
-                  ? renderBannerItem(
-                      currentBanner,
-                      activeBannerIndex,
-                      selectedCategory?.name ?? storefrontTitle,
-                      theme,
-                    )
-                  : null}
-                {bannerItems.length > 1 ? (
-                  <div className="flex items-center justify-center gap-2">
-                    {bannerItems.map((banner, index) => (
+        {homepageBlocks
+          .filter((block) => block.visible)
+          .map((block) => {
+            if (block.id === "hero") {
+              return showHeroBlock ? (
+                <StorefrontHeroBlock key="hero" settings={storefrontSettings} />
+              ) : null;
+            }
+
+            if (block.id === "banner") {
+              return showBannerSection ? (
+                <section key="banner" className="mb-5 sm:mb-10 w-full">
+                  {bannerItems.length ? (
+                    <div className="w-full space-y-4">
+                      {currentBanner
+                        ? renderBannerItem(
+                            currentBanner,
+                            activeBannerIndex,
+                            selectedCategory?.name ?? storefrontTitle,
+                            theme,
+                          )
+                        : null}
+                      {bannerItems.length > 1 ? (
+                        <div className="flex items-center justify-center gap-2">
+                          {bannerItems.map((banner, index) => (
+                            <button
+                              key={banner.id}
+                              type="button"
+                              onClick={() => setActiveBannerIndex(index)}
+                              className={cn(
+                                "h-2.5 rounded-full transition",
+                                index === activeBannerIndex
+                                  ? cn("w-8", theme.indicatorActive)
+                                  : cn("w-2.5", theme.indicatorInactive),
+                              )}
+                              aria-label={`Banner ${index + 1}`}
+                            />
+                          ))}
+                        </div>
+                      ) : null}
+                    </div>
+                  ) : (
+                    <div className={cn("flex min-h-[240px] w-full flex-col justify-center rounded-[2.5rem] px-6 py-10 text-center md:min-h-[320px] lg:min-h-[400px]", theme.border, theme.surfaceMuted)}>
+                      <p className={cn("text-sm font-semibold", theme.text)}>Banner alanı şu an boş</p>
+                      <p className={cn("mt-2 text-sm", theme.textMuted)}>
+                        Admin panelindeki vitrin ayarlarından kampanya banner’ları ekleyebilirsiniz.
+                      </p>
+                    </div>
+                  )}
+                </section>
+              ) : null;
+            }
+
+            if (block.id === "campaigns") {
+              return hasVisibleHomeCampaignBars ? (
+                <section key="campaigns" className="mb-5 hidden space-y-3 sm:mb-6 xl:block">
+                  {renderCampaignBarsForSurface("home", false)}
+                </section>
+              ) : null;
+            }
+
+            if (block.id === "showcase") {
+              return showSections ? (
+                <div key="showcase" className="mb-10 space-y-10">
+                  {sections.map((section) => {
+                    const visibleSectionProducts = section.products.slice(0, 8);
+                    const hasMore = section.products.length > 8;
+                    const sectionHref = subdomain
+                      ? getStorefrontSectionPath(section.id)
+                      : null;
+
+                    return (
+                      <section key={section.id}>
+                        <div className="mb-5 flex items-end justify-between gap-4">
+                          <h2 className={cn("text-2xl font-bold tracking-tight sm:text-[2rem]", theme.text)}>
+                            {section.title}
+                          </h2>
+                          {hasMore && sectionHref ? (
+                            <a
+                              href={sectionHref}
+                              className={cn(
+                                "shrink-0 rounded-full px-5 py-2.5 text-sm font-semibold shadow-sm transition hover:opacity-90",
+                                theme.border,
+                                theme.surface,
+                                theme.textMuted,
+                              )}
+                            >
+                              Devamı →
+                            </a>
+                          ) : null}
+                        </div>
+
+                        <StorefrontProductListing
+                          products={visibleSectionProducts}
+                          cartQuantityByProductId={cartQuantityByProductId}
+                          cartVariantCountByProductId={cartVariantCountByProductId}
+                          productCardClassName={resolvedProductCardClassName}
+                          productImageWrapClassName={resolvedProductImageWrapClassName}
+                          gridClassName={layout.sectionProductGridClass}
+                          onOpenDetail={handleOpenProductDetail}
+                          onIncrease={handleIncreaseCartItem}
+                          onDecrease={handleDecreaseCartItem}
+                          onOpenAddToCart={handleOpenAddToCartModal}
+                        />
+
+                        {hasMore && sectionHref ? (
+                          <div className="mt-6 flex justify-center">
+                            <a
+                              href={sectionHref}
+                              className={cn(
+                                "rounded-full px-8 py-3 text-sm font-semibold shadow-sm transition hover:opacity-90 hover:shadow",
+                                theme.border,
+                                theme.surface,
+                                theme.textMuted,
+                              )}
+                            >
+                              Tüm {section.title} Ürünlerini Gör ({section.products.length} ürün)
+                            </a>
+                          </div>
+                        ) : null}
+                      </section>
+                    );
+                  })}
+                </div>
+              ) : null;
+            }
+
+            if (block.id === "catalog") {
+              return showCatalogBlock ? (
+                <section key="catalog" id="catalog-grid" className="scroll-mt-28 pt-1">
+                  <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+                    <div>
+                      <h2 className={cn("text-2xl font-bold tracking-tight sm:text-[2rem]", theme.text)}>
+                        {selectedCategoryId !== "all"
+                          ? (categoryNameMap.get(selectedCategoryId) ?? "Ürünler")
+                          : (pageTitle ?? "Tüm Ürünler")}
+                      </h2>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2.5 sm:gap-3">
+                      <div className={cn("rounded-full px-4 py-2.5 text-sm shadow-sm", theme.border, theme.surface, theme.textMuted)}>
+                        <span className={cn("font-semibold", theme.text)}>{filteredProducts.length}</span>{" "}
+                        ürün bulundu
+                      </div>
+                      <div className={cn("rounded-full px-4 py-2.5 text-sm", theme.border, theme.surfaceMuted, theme.textMuted)}>
+                        <span className={cn("font-semibold", theme.text)}>{visibleProducts.length}</span>{" "}
+                        ürün gösteriliyor
+                      </div>
+                    </div>
+                  </div>
+
+                  {filteredProducts.length ? (
+                    <StorefrontProductListing
+                      products={visibleProducts}
+                      cartQuantityByProductId={cartQuantityByProductId}
+                      cartVariantCountByProductId={cartVariantCountByProductId}
+                      productCardClassName={resolvedProductCardClassName}
+                      productImageWrapClassName={resolvedProductImageWrapClassName}
+                      gridClassName={layout.productGridClass}
+                      onOpenDetail={handleOpenProductDetail}
+                      onIncrease={handleIncreaseCartItem}
+                      onDecrease={handleDecreaseCartItem}
+                      onOpenAddToCart={handleOpenAddToCartModal}
+                    />
+                  ) : (
+                    <Card className={cn("rounded-[2rem] border-0 p-10 text-center", theme.surfaceMuted)}>
+                      <p className="text-base font-semibold">Uyuşan ürün bulunamadı.</p>
+                      <p className={cn("mt-1 text-sm", theme.textMuted)}>
+                        Arama kriterlerini veya seçili kategoriyi değiştirmeyi deneyin.
+                      </p>
+                    </Card>
+                  )}
+
+                  {filteredProducts.length > visibleCount ? (
+                    <div className="mt-8 flex justify-center">
                       <button
-                        key={banner.id}
                         type="button"
-                        onClick={() => setActiveBannerIndex(index)}
-                        className={cn(
-                          "h-2.5 rounded-full transition",
-                          index === activeBannerIndex
-                            ? cn("w-8", theme.indicatorActive)
-                            : cn("w-2.5", theme.indicatorInactive),
-                        )}
-                        aria-label={`Banner ${index + 1}`}
-                      />
-                    ))}
-                  </div>
-                ) : null}
-              </div>
-            ) : (
-              <div className={cn("flex min-h-[240px] w-full flex-col justify-center rounded-[2.5rem] px-6 py-10 text-center md:min-h-[320px] lg:min-h-[400px]", theme.border, theme.surfaceMuted)}>
-                <p className={cn("text-sm font-semibold", theme.text)}>Banner alanı şu an boş</p>
-                <p className={cn("mt-2 text-sm", theme.textMuted)}>
-                  Admin panelindeki vitrin ayarlarından kampanya banner’ları ekleyebilirsiniz.
-                </p>
-              </div>
-            )}
-          </section>
-        ) : null}
-
-        {hasVisibleHomeCampaignBars ? (
-          <section className="mb-5 hidden space-y-3 sm:mb-6 xl:block">
-            {renderCampaignBarsForSurface("home", false)}
-          </section>
-        ) : null}
-
-        {showSections ? (
-          <div className="mb-10 space-y-10">
-            {sections.map((section) => {
-              const visibleSectionProducts = section.products.slice(0, 8);
-              const hasMore = section.products.length > 8;
-              const sectionHref = subdomain
-                ? getStorefrontSectionPath(section.id)
-                : null;
-
-              return (
-                <section key={section.id}>
-                  <div className="mb-5 flex items-end justify-between gap-4">
-                    <h2 className={cn("text-2xl font-bold tracking-tight sm:text-[2rem]", theme.text)}>
-                      {section.title}
-                    </h2>
-                    {hasMore && sectionHref ? (
-                      <a
-                        href={sectionHref}
-                        className={cn(
-                          "shrink-0 rounded-full px-5 py-2.5 text-sm font-semibold shadow-sm transition hover:opacity-90",
-                          theme.border,
-                          theme.surface,
-                          theme.textMuted,
-                        )}
-                      >
-                        Devamı →
-                      </a>
-                    ) : null}
-                  </div>
-
-                  <StorefrontProductListing
-                    products={visibleSectionProducts}
-                    cartQuantityByProductId={cartQuantityByProductId}
-                    cartVariantCountByProductId={cartVariantCountByProductId}
-                    productCardClassName={theme.productCard}
-                    productImageWrapClassName={theme.productImageWrap}
-                    gridClassName={layout.sectionProductGridClass}
-                    onOpenDetail={handleOpenProductDetail}
-                    onIncrease={handleIncreaseCartItem}
-                    onDecrease={handleDecreaseCartItem}
-                    onOpenAddToCart={handleOpenAddToCartModal}
-                  />
-
-                  {hasMore && sectionHref ? (
-                    <div className="mt-6 flex justify-center">
-                      <a
-                        href={sectionHref}
+                        onClick={() =>
+                          setVisibleCount((prev) => prev + STOREFRONT_PAGE_SIZE)
+                        }
                         className={cn(
                           "rounded-full px-8 py-3 text-sm font-semibold shadow-sm transition hover:opacity-90 hover:shadow",
                           theme.border,
@@ -2541,79 +2420,16 @@ export function StorefrontClient({
                           theme.textMuted,
                         )}
                       >
-                        Tüm {section.title} Ürünlerini Gör ({section.products.length} ürün)
-                      </a>
+                        Daha Fazla Ürün Göster ({filteredProducts.length - visibleCount} ürün kaldı)
+                      </button>
                     </div>
                   ) : null}
                 </section>
-              );
-            })}
-          </div>
-        ) : null}
+              ) : null;
+            }
 
-        <section id="catalog-grid" className="scroll-mt-28 pt-1">
-          <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-            <div>
-              <h2 className={cn("text-2xl font-bold tracking-tight sm:text-[2rem]", theme.text)}>
-                {selectedCategoryId !== "all"
-                  ? (categoryNameMap.get(selectedCategoryId) ?? "Ürünler")
-                  : (pageTitle ?? "Tüm Ürünler")}
-              </h2>
-            </div>
-            <div className="flex flex-wrap items-center gap-2.5 sm:gap-3">
-              <div className={cn("rounded-full px-4 py-2.5 text-sm shadow-sm", theme.border, theme.surface, theme.textMuted)}>
-                <span className={cn("font-semibold", theme.text)}>{filteredProducts.length}</span>{" "}
-                ürün bulundu
-              </div>
-              <div className={cn("rounded-full px-4 py-2.5 text-sm", theme.border, theme.surfaceMuted, theme.textMuted)}>
-                <span className={cn("font-semibold", theme.text)}>{visibleProducts.length}</span>{" "}
-                ürün gösteriliyor
-              </div>
-            </div>
-          </div>
-
-          {filteredProducts.length ? (
-            <StorefrontProductListing
-              products={visibleProducts}
-              cartQuantityByProductId={cartQuantityByProductId}
-              cartVariantCountByProductId={cartVariantCountByProductId}
-              productCardClassName={theme.productCard}
-              productImageWrapClassName={theme.productImageWrap}
-              gridClassName={layout.productGridClass}
-              onOpenDetail={handleOpenProductDetail}
-              onIncrease={handleIncreaseCartItem}
-              onDecrease={handleDecreaseCartItem}
-              onOpenAddToCart={handleOpenAddToCartModal}
-            />
-          ) : (
-            <Card className={cn("rounded-[2rem] border-0 p-10 text-center", theme.surfaceMuted)}>
-              <p className="text-base font-semibold">Uyuşan ürün bulunamadı.</p>
-              <p className={cn("mt-1 text-sm", theme.textMuted)}>
-                Arama kriterlerini veya seçili kategoriyi değiştirmeyi deneyin.
-              </p>
-            </Card>
-          )}
-
-          {/* Ürün listesi yalnızca buton ile genişler; otomatik infinite scroll eklenmemeli. */}
-          {filteredProducts.length > visibleCount ? (
-            <div className="mt-8 flex justify-center">
-              <button
-                type="button"
-                onClick={() =>
-                  setVisibleCount((prev) => prev + STOREFRONT_PAGE_SIZE)
-                }
-                className={cn(
-                  "rounded-full px-8 py-3 text-sm font-semibold shadow-sm transition hover:opacity-90 hover:shadow",
-                  theme.border,
-                  theme.surface,
-                  theme.textMuted,
-                )}
-              >
-                Daha Fazla Ürün Göster ({filteredProducts.length - visibleCount} ürün kaldı)
-              </button>
-            </div>
-          ) : null}
-        </section>
+            return null;
+          })}
           </StorefrontCatalogContent>
         </div>
       </main>

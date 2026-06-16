@@ -22,4 +22,19 @@ export const THEME_OPTIONS: StorefrontThemeOption[] = [
     title: "Neutral",
     description: "Nötr tonlar, sade tipografi ve minimal vurgu.",
   },
+  {
+    key: "industrial",
+    title: "Endüstriyel",
+    description: "Koyu header ve güçlü B2B katalog hissi.",
+  },
+  {
+    key: "premium",
+    title: "Premium",
+    description: "Geniş boşluklar ve sofistike tipografi.",
+  },
+  {
+    key: "catalog-first",
+    title: "Katalog Odaklı",
+    description: "Banner yerine doğrudan ürün grid’i vurgusu.",
+  },
 ];
