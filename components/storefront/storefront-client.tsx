@@ -2614,12 +2614,12 @@ export function StorefrontClient({
               transition={{ duration: 0.24, ease: "easeOut" }}
               className={cn(
                 theme.stickyCart,
-                "!static w-full rounded-[1.8rem] border border-emerald-400/10 px-4 py-3 text-left shadow-[0_18px_44px_rgba(15,23,42,0.22)]",
+                "!static w-full rounded-[1.8rem] px-4 py-3 text-left shadow-[0_18px_44px_rgba(15,23,42,0.22)]",
               )}
             >
               <button type="button" onClick={openCartDrawer} className="w-full text-left">
                 <div className="flex items-center gap-3.5">
-                  <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-white/10 ring-1 ring-white/10">
+                  <div className={cn("flex size-11 shrink-0 items-center justify-center rounded-2xl", theme.surfaceMuted)}>
                     <ShoppingCart className="size-5" />
                   </div>
                   <div className="min-w-0 flex-1">
@@ -2695,7 +2695,10 @@ export function StorefrontClient({
                 event.stopPropagation();
                 setIsStickyCartBarDismissed(true);
               }}
-              className="absolute -right-2 -top-2.5 z-10 flex size-8 items-center justify-center rounded-full border border-white/20 bg-slate-900 text-slate-300 shadow-md transition hover:bg-slate-800 hover:text-white"
+              className={cn(
+                "absolute -right-2 -top-2.5 z-10 flex size-8 items-center justify-center",
+                theme.cartDrawerCloseButton,
+              )}
             >
               <X className="size-4" />
             </button>

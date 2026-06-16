@@ -548,7 +548,7 @@ export function StorefrontCartDrawer({
                             </p>
                           </div>
                         ) : null}
-                        <div className="flex items-center justify-between gap-3 border-t border-white/10 pt-2">
+                        <div className={cn("flex items-center justify-between gap-3 border-t pt-2", theme.border)}>
                           <p className={cn("text-sm font-medium text-neutral-200")}>Genel Toplam</p>
                           <p className="text-base font-bold tracking-tight text-white sm:text-lg">
                             {formatCurrency(cartPaymentSummary.finalTotal, cartPaymentSummary.currency)}
@@ -587,7 +587,7 @@ export function StorefrontCartDrawer({
                         )}
                       </p>
                     </div>
-                    <div className="flex items-center justify-between gap-3 border-t border-white/10 pt-2">
+                    <div className={cn("flex items-center justify-between gap-3 border-t pt-2", theme.border)}>
                       <p className="text-sm font-medium text-neutral-200">Genel Toplam</p>
                       <p className="text-base font-bold tracking-tight text-white sm:text-lg">
                         {formatCurrency(

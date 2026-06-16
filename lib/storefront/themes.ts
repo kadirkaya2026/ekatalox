@@ -203,14 +203,14 @@ function resolveAccent(
       softText: "text-emerald-300",
       titleHover: "group-hover:text-emerald-300",
       priceOriginal: "text-neutral-500",
-      chipActiveBgDark: "bg-emerald-950/50 ring-1 ring-emerald-500/30",
+      chipActiveBgDark: "bg-emerald-900/60",
       chipActiveTextDark: "text-white",
       pageGradientDark:
         "bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,rgba(16,185,129,0.08),transparent)]",
       campaignBarQualifiedDark:
-        "border-emerald-500/25 bg-[radial-gradient(circle_at_top_right,rgba(16,185,129,0.14),transparent_42%),linear-gradient(135deg,rgba(6,24,20,0.96)_0%,rgba(10,10,10,0.98)_50%,rgba(6,30,24,0.96)_100%)]",
+        "border-transparent bg-[radial-gradient(circle_at_top_right,rgba(16,185,129,0.14),transparent_42%),linear-gradient(135deg,rgba(6,24,20,0.96)_0%,rgba(10,10,10,0.98)_50%,rgba(6,30,24,0.96)_100%)]",
       campaignBarPendingDark:
-        "border-amber-500/20 bg-[radial-gradient(circle_at_top_right,rgba(251,191,36,0.1),transparent_42%),linear-gradient(135deg,rgba(30,20,10,0.96)_0%,rgba(10,10,10,0.98)_48%,rgba(15,25,35,0.96)_100%)]",
+        "border-transparent bg-[radial-gradient(circle_at_top_right,rgba(251,191,36,0.1),transparent_42%),linear-gradient(135deg,rgba(30,20,10,0.96)_0%,rgba(10,10,10,0.98)_48%,rgba(15,25,35,0.96)_100%)]",
       campaignIconQualifiedDark: "bg-emerald-950/60 text-emerald-300",
       campaignIconPendingDark: "bg-amber-950/50 text-amber-300",
       campaignLabelQualifiedDark: "text-emerald-400",
@@ -221,14 +221,14 @@ function resolveAccent(
       softText: "text-blue-300",
       titleHover: "group-hover:text-blue-300",
       priceOriginal: "text-neutral-500",
-      chipActiveBgDark: "bg-blue-950/50 ring-1 ring-blue-500/30",
+      chipActiveBgDark: "bg-blue-900/60",
       chipActiveTextDark: "text-white",
       pageGradientDark:
         "bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,rgba(59,130,246,0.08),transparent)]",
       campaignBarQualifiedDark:
-        "border-blue-500/25 bg-[radial-gradient(circle_at_top_right,rgba(59,130,246,0.14),transparent_42%),linear-gradient(135deg,rgba(10,20,40,0.96)_0%,rgba(10,10,10,0.98)_50%,rgba(10,25,45,0.96)_100%)]",
+        "border-transparent bg-[radial-gradient(circle_at_top_right,rgba(59,130,246,0.14),transparent_42%),linear-gradient(135deg,rgba(10,20,40,0.96)_0%,rgba(10,10,10,0.98)_50%,rgba(10,25,45,0.96)_100%)]",
       campaignBarPendingDark:
-        "border-amber-500/20 bg-[radial-gradient(circle_at_top_right,rgba(251,191,36,0.1),transparent_42%),linear-gradient(135deg,rgba(30,20,10,0.96)_0%,rgba(10,10,10,0.98)_48%,rgba(15,25,35,0.96)_100%)]",
+        "border-transparent bg-[radial-gradient(circle_at_top_right,rgba(251,191,36,0.1),transparent_42%),linear-gradient(135deg,rgba(30,20,10,0.96)_0%,rgba(10,10,10,0.98)_48%,rgba(15,25,35,0.96)_100%)]",
       campaignIconQualifiedDark: "bg-blue-950/60 text-blue-300",
       campaignIconPendingDark: "bg-amber-950/50 text-amber-300",
       campaignLabelQualifiedDark: "text-blue-400",
@@ -239,14 +239,14 @@ function resolveAccent(
       softText: "text-neutral-300",
       titleHover: "group-hover:text-neutral-200",
       priceOriginal: "text-neutral-500",
-      chipActiveBgDark: "bg-neutral-800 ring-1 ring-neutral-600/50",
+      chipActiveBgDark: "bg-neutral-700",
       chipActiveTextDark: "text-neutral-50",
       pageGradientDark:
         "bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,rgba(255,255,255,0.03),transparent)]",
       campaignBarQualifiedDark:
-        "border-neutral-600/30 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.04),transparent_42%),linear-gradient(135deg,rgba(23,23,23,0.98)_0%,rgba(10,10,10,0.98)_50%,rgba(20,20,20,0.98)_100%)]",
+        "border-transparent bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.04),transparent_42%),linear-gradient(135deg,rgba(38,38,38,0.98)_0%,rgba(10,10,10,0.98)_50%,rgba(30,30,30,0.98)_100%)]",
       campaignBarPendingDark:
-        "border-amber-500/20 bg-[radial-gradient(circle_at_top_right,rgba(251,191,36,0.1),transparent_42%),linear-gradient(135deg,rgba(30,20,10,0.96)_0%,rgba(10,10,10,0.98)_48%,rgba(15,25,35,0.96)_100%)]",
+        "border-transparent bg-[radial-gradient(circle_at_top_right,rgba(251,191,36,0.1),transparent_42%),linear-gradient(135deg,rgba(30,20,10,0.96)_0%,rgba(10,10,10,0.98)_48%,rgba(15,25,35,0.96)_100%)]",
       campaignIconQualifiedDark: "bg-neutral-800 text-neutral-200",
       campaignIconPendingDark: "bg-amber-950/50 text-amber-300",
       campaignLabelQualifiedDark: "text-neutral-300",
@@ -268,7 +268,7 @@ function buildTheme(
 ): StorefrontTheme {
   const isDark = colorScheme === "dark";
   const iconButtonInteractive = isDark
-    ? "text-neutral-200 hover:border-neutral-600 hover:bg-neutral-800"
+    ? "text-neutral-200 hover:bg-neutral-700"
     : "text-slate-700 hover:border-slate-300 hover:bg-slate-50";
   const dropdownItem = isDark
     ? "w-full rounded-xl px-4 py-2.5 text-left text-sm text-neutral-200 transition hover:bg-neutral-800"
@@ -286,13 +286,13 @@ function buildTheme(
     ? "text-neutral-200 transition hover:bg-neutral-800 disabled:cursor-not-allowed disabled:hover:bg-transparent"
     : "text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:hover:bg-transparent";
   const cartDrawerClose = isDark
-    ? "flex size-10 items-center justify-center rounded-full border border-neutral-700 bg-neutral-800 text-neutral-300 transition hover:border-neutral-600 hover:bg-neutral-700"
+    ? "flex size-10 items-center justify-center rounded-full border border-transparent bg-neutral-800 text-neutral-300 transition hover:bg-neutral-700"
     : "flex size-10 items-center justify-center rounded-full border border-slate-200 bg-slate-50 text-slate-600 transition hover:border-slate-300 hover:bg-slate-100";
   const modalClose = isDark
     ? "rounded-full p-2 text-neutral-400 transition hover:bg-neutral-800 hover:text-neutral-100"
     : "rounded-full p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-900";
   const drawerHandle = isDark ? "h-1.5 w-14 rounded-full bg-neutral-700" : "h-1.5 w-14 rounded-full bg-slate-200";
-  const productCardHover = isDark ? "hover:border-neutral-600" : "hover:border-slate-300";
+  const productCardHover = isDark ? "hover:brightness-105" : "hover:border-slate-300";
   const stockBadgeOut = isDark
     ? "inline-flex items-center rounded-full border border-rose-500/40 bg-rose-950/60 px-3 py-1 text-[11px] font-semibold text-rose-300 shadow-sm"
     : "inline-flex items-center rounded-full border border-rose-200 bg-rose-50 px-3 py-1 text-[11px] font-semibold text-rose-700 shadow-sm";
@@ -301,15 +301,15 @@ function buildTheme(
     : "bg-blue-50 px-2 py-1 text-[10px] text-blue-700";
 
   const elevation1 = isDark
-    ? "shadow-[0_1px_0_0_rgba(255,255,255,0.04)_inset] shadow-[0_8px_32px_rgba(0,0,0,0.45)]"
+    ? "shadow-[0_4px_24px_rgba(0,0,0,0.5)]"
     : "shadow-[0_12px_32px_rgba(15,23,42,0.06)]";
   const elevation1Hover = isDark
-    ? "hover:shadow-[0_12px_40px_rgba(0,0,0,0.55)]"
+    ? "hover:shadow-[0_8px_32px_rgba(0,0,0,0.6)]"
     : "hover:shadow-[0_20px_48px_rgba(15,23,42,0.12)]";
   const elevation2 = isDark
-    ? "shadow-[0_-24px_80px_rgba(0,0,0,0.55)]"
+    ? "shadow-[0_-16px_64px_rgba(0,0,0,0.55)]"
     : "shadow-[0_-24px_80px_rgba(15,23,42,0.22)]";
-  const surfaceRing = isDark ? "ring-1 ring-inset ring-white/5" : "";
+  const surfaceRing = "";
   const pageGradient = isDark ? accent.pageGradientDark : "";
   const chipActiveBg = isDark ? accent.chipActiveBgDark : neutrals.chipActiveBg;
   const chipActiveText = isDark ? accent.chipActiveTextDark : neutrals.chipActiveText;
@@ -332,10 +332,10 @@ function buildTheme(
     ? accent.campaignLabelPendingDark
     : accent.campaignLabelPendingLight;
   const campaignNoteQualified = isDark
-    ? "border-emerald-500/20 bg-emerald-950/40 text-emerald-300"
+    ? "border-transparent bg-emerald-950/40 text-emerald-300"
     : "border-emerald-200 bg-emerald-50 text-emerald-800";
   const campaignNotePending = isDark
-    ? "border-amber-500/20 bg-amber-950/40 text-amber-300"
+    ? "border-transparent bg-amber-950/40 text-amber-300"
     : "border-amber-200 bg-amber-50 text-amber-800";
   const indicatorActive = isDark ? "bg-white" : "bg-slate-900";
   const indicatorInactive = isDark
@@ -344,25 +344,26 @@ function buildTheme(
   const cartSummaryMuted = isDark ? "text-neutral-400" : neutrals.textMuted;
   const textTertiary = isDark ? "text-neutral-500" : "text-slate-500";
   const proseBlockquote = isDark
-    ? "border-neutral-700 text-neutral-400"
+    ? "border-transparent text-neutral-400"
     : "border-slate-200 text-slate-500";
   const proseTableHead = isDark
-    ? "border-neutral-700 bg-neutral-800"
+    ? "border-transparent bg-neutral-700"
     : "border-slate-200 bg-slate-100";
-  const proseTableCell = isDark ? "border-neutral-700" : "border-slate-200";
+  const proseTableCell = isDark ? "border-transparent" : "border-slate-200";
   const proseHeadingBlock = isDark
     ? "[&_h2]:text-neutral-50 [&_h3]:text-neutral-50"
     : "[&_h2]:text-slate-900 [&_h3]:text-slate-900";
   const proseBlockquoteBlock = isDark
-    ? "[&_blockquote]:border-neutral-700 [&_blockquote]:text-neutral-400"
+    ? "[&_blockquote]:border-transparent [&_blockquote]:text-neutral-400"
     : "[&_blockquote]:border-slate-200 [&_blockquote]:text-slate-500";
   const proseTableHeadBlock = isDark
-    ? "[&_th]:border-neutral-700 [&_th]:bg-neutral-800"
+    ? "[&_th]:border-transparent [&_th]:bg-neutral-700"
     : "[&_th]:border-slate-200 [&_th]:bg-slate-100";
   const proseTableCellBlock = isDark
-    ? "[&_td]:border-neutral-700"
+    ? "[&_td]:border-transparent"
     : "[&_td]:border-slate-200";
-  const headerIconButtonDarkRing = isDark ? "ring-1 ring-white/10" : "";
+
+  const stickyBarBorder = isDark ? "border-transparent" : accent.stickyBarBorder;
 
   return {
     page: cn(
@@ -383,7 +384,6 @@ function buildTheme(
       neutrals.border,
       neutrals.surface,
       iconButtonInteractive,
-      headerIconButtonDarkRing,
       "lg:size-12",
     ),
     logoWrap: cn(
@@ -509,7 +509,7 @@ function buildTheme(
     stickyCart: cn(
       "fixed bottom-4 inset-x-4 z-40 rounded-2xl p-4 shadow-[0_16px_40px_rgba(15,23,42,0.16)] md:bottom-6 max-w-lg mx-auto border",
       accent.stickyBar,
-      accent.stickyBarBorder,
+      stickyBarBorder,
     ),
     stickyCartText: "text-white font-bold",
     stickyCartButton: cn(
@@ -798,25 +798,25 @@ const neutralAccent: ThemeAccent = {
 };
 
 const darkNeutrals: ThemeNeutrals = {
-  page: "bg-neutral-950",
+  page: "bg-black",
   pageText: "text-neutral-50",
-  header: "border-b border-white/5 bg-neutral-950/80",
-  headerBorder: "border-white/5",
-  headerRailBorder: "border-white/5",
-  surface: "bg-neutral-900/90",
-  surfaceMuted: "bg-neutral-800/50",
-  border: "border-neutral-800",
+  header: "bg-neutral-900",
+  headerBorder: "border-transparent",
+  headerRailBorder: "border-transparent",
+  surface: "bg-neutral-800",
+  surfaceMuted: "bg-neutral-700/80",
+  border: "border-transparent",
   text: "text-neutral-50",
   textMuted: "text-neutral-400",
-  chipActiveBg: "bg-neutral-800 ring-1 ring-neutral-600/50",
+  chipActiveBg: "bg-neutral-700",
   chipActiveText: "text-neutral-50",
-  chipInactive: "text-neutral-300 hover:bg-neutral-800/80",
-  chipInactiveBorder: "border-neutral-700/80",
-  imageGradient: "bg-[linear-gradient(180deg,#262626_0%,#171717_100%)]",
-  cartSummary: "bg-neutral-800/90",
+  chipInactive: "text-neutral-300 hover:bg-neutral-700/80",
+  chipInactiveBorder: "border-transparent",
+  imageGradient: "bg-[linear-gradient(180deg,#404040_0%,#262626_100%)]",
+  cartSummary: "bg-neutral-700",
   cartSummaryText: "text-neutral-50",
-  modalSurface: "bg-neutral-800/60",
-  gatePage: "bg-neutral-950 text-neutral-50",
+  modalSurface: "bg-neutral-700/90",
+  gatePage: "bg-black text-neutral-50",
 };
 
 function buildStorefrontThemes(
