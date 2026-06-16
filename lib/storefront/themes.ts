@@ -247,7 +247,7 @@ function resolveAccent(
       softText: "text-neutral-300",
       titleHover: "group-hover:text-neutral-200",
       priceOriginal: "text-neutral-500",
-      chipActiveBgDark: "bg-neutral-600",
+      chipActiveBgDark: "bg-neutral-500",
       chipActiveTextDark: "text-neutral-50",
       pageGradientDark:
         "bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,rgba(64,64,64,0.15),transparent)]",
@@ -255,7 +255,7 @@ function resolveAccent(
         "border-0 bg-[linear-gradient(135deg,rgba(38,38,38,0.98)_0%,rgba(10,10,10,0.98)_50%,rgba(30,30,30,0.98)_100%)]",
       campaignBarPendingDark:
         "border-0 bg-[radial-gradient(circle_at_top_right,rgba(251,191,36,0.1),transparent_42%),linear-gradient(135deg,rgba(30,20,10,0.96)_0%,rgba(10,10,10,0.98)_48%,rgba(15,25,35,0.96)_100%)]",
-      campaignIconQualifiedDark: "bg-neutral-800 text-neutral-200",
+      campaignIconQualifiedDark: "bg-neutral-700 text-neutral-200",
       campaignIconPendingDark: "bg-amber-950/50 text-amber-300",
       campaignLabelQualifiedDark: "text-neutral-300",
       campaignLabelPendingDark: "text-amber-400",
@@ -276,30 +276,30 @@ function buildTheme(
 ): StorefrontTheme {
   const isDark = colorScheme === "dark";
   const iconButtonInteractive = isDark
-    ? "text-neutral-200 hover:bg-neutral-700"
+    ? "text-neutral-200 hover:bg-neutral-600"
     : "text-slate-700 hover:border-slate-300 hover:bg-slate-50";
   const dropdownItem = isDark
-    ? "w-full rounded-xl px-4 py-2.5 text-left text-sm text-neutral-200 transition hover:bg-neutral-800"
+    ? "w-full rounded-xl px-4 py-2.5 text-left text-sm text-neutral-200 transition hover:bg-neutral-700"
     : "w-full rounded-xl px-4 py-2.5 text-left text-sm text-slate-700 transition hover:bg-slate-50";
   const sidebarItemInactive = isDark
-    ? "text-neutral-300 hover:bg-neutral-800"
+    ? "text-neutral-300 hover:bg-neutral-700"
     : "text-slate-700 hover:bg-slate-50";
   const sidebarChildInactive = isDark
-    ? "text-neutral-400 hover:bg-neutral-800 hover:text-neutral-100"
+    ? "text-neutral-400 hover:bg-neutral-700 hover:text-neutral-100"
     : "text-slate-600 hover:bg-slate-50 hover:text-slate-900";
   const chipInactiveText = isDark ? "text-neutral-300" : "text-slate-700";
-  const chipInactiveHover = isDark ? "hover:bg-neutral-800" : "hover:bg-slate-50";
+  const chipInactiveHover = isDark ? "hover:bg-neutral-700" : "hover:bg-slate-50";
   const modalInactiveText = isDark ? "text-neutral-400" : "text-slate-600";
   const stepperButton = isDark
-    ? "text-neutral-200 transition hover:bg-neutral-800 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+    ? "text-neutral-200 transition hover:bg-neutral-700 disabled:cursor-not-allowed disabled:hover:bg-transparent"
     : "text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:hover:bg-transparent";
   const cartDrawerClose = isDark
-    ? "flex size-10 items-center justify-center rounded-full border-0 bg-neutral-700 text-neutral-300 transition hover:bg-neutral-600"
+    ? "flex size-10 items-center justify-center rounded-full border-0 bg-neutral-600 text-neutral-300 transition hover:bg-neutral-500"
     : "flex size-10 items-center justify-center rounded-full border border-slate-200 bg-slate-50 text-slate-600 transition hover:border-slate-300 hover:bg-slate-100";
   const modalClose = isDark
-    ? "rounded-full p-2 text-neutral-400 transition hover:bg-neutral-800 hover:text-neutral-100"
+    ? "rounded-full p-2 text-neutral-400 transition hover:bg-neutral-700 hover:text-neutral-100"
     : "rounded-full p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-900";
-  const drawerHandle = isDark ? "h-1.5 w-14 rounded-full bg-neutral-700" : "h-1.5 w-14 rounded-full bg-slate-200";
+  const drawerHandle = isDark ? "h-1.5 w-14 rounded-full bg-neutral-600" : "h-1.5 w-14 rounded-full bg-slate-200";
   const productCardHover = isDark ? "hover:brightness-105" : "hover:border-slate-300";
   const stockBadgeOut = isDark
     ? "inline-flex items-center rounded-full border-0 bg-rose-950/60 px-3 py-1 text-[11px] font-semibold text-rose-300 shadow-sm"
@@ -347,7 +347,7 @@ function buildTheme(
     : "border-amber-200 bg-amber-50 text-amber-800";
   const indicatorActive = isDark ? "bg-white" : "bg-slate-900";
   const indicatorInactive = isDark
-    ? "bg-neutral-600 hover:bg-neutral-500"
+    ? "bg-neutral-500 hover:bg-neutral-400"
     : "bg-slate-300 hover:bg-slate-400";
   const cartSummaryMuted = isDark ? "text-neutral-400" : neutrals.textMuted;
   const textTertiary = isDark ? "text-neutral-500" : "text-slate-500";
@@ -355,7 +355,7 @@ function buildTheme(
     ? "border-0 text-neutral-400"
     : "border-slate-200 text-slate-500";
   const proseTableHead = isDark
-    ? "border-0 bg-neutral-700"
+    ? "border-0 bg-neutral-600"
     : "border-slate-200 bg-slate-100";
   const proseTableCell = isDark ? "border-0" : "border-slate-200";
   const proseHeadingBlock = isDark
@@ -365,7 +365,7 @@ function buildTheme(
     ? "[&_blockquote]:border-0 [&_blockquote]:border-l-0 [&_blockquote]:pl-3 [&_blockquote]:text-neutral-400"
     : "[&_blockquote]:border-l-4 [&_blockquote]:border-slate-200 [&_blockquote]:text-slate-500";
   const proseTableHeadBlock = isDark
-    ? "[&_th]:border-0 [&_th]:bg-neutral-700"
+    ? "[&_th]:border-0 [&_th]:bg-neutral-600"
     : "[&_th]:border [&_th]:border-slate-200 [&_th]:bg-slate-100";
   const proseTableCellBlock = isDark
     ? "[&_td]:border-0"
@@ -374,7 +374,7 @@ function buildTheme(
   const structuralBorder = isDark ? "border-0" : neutrals.border;
   const stickyBarBorder = isDark ? "border-0" : accent.stickyBarBorder;
   const formField = isDark
-    ? "border-0 bg-neutral-700 text-neutral-50 placeholder:text-neutral-400 focus-visible:ring-1 focus-visible:ring-emerald-500/40 focus-visible:ring-offset-0 dark:border-0"
+    ? "border-0 bg-neutral-600 text-neutral-50 placeholder:text-neutral-400 focus-visible:ring-1 focus-visible:ring-emerald-500/40 focus-visible:ring-offset-0 dark:border-0"
     : "";
   const bannerOverlay = isDark ? "hidden" : "absolute inset-0 hidden md:block";
   const sectionDivider = isDark ? "" : cn("border-t", neutrals.headerRailBorder);
@@ -408,13 +408,13 @@ function buildTheme(
     headerMuted: neutrals.textMuted,
     headerIconButton: cn(
       "flex items-center justify-center rounded-2xl shadow-sm transition-colors duration-300",
-      isDark ? "border-0 bg-neutral-800" : cn("border", neutrals.border, neutrals.surface),
+      isDark ? "border-0 bg-neutral-700" : cn("border", neutrals.border, neutrals.surface),
       iconButtonInteractive,
       "lg:size-12",
     ),
     logoWrap: cn(
       "relative flex shrink-0 items-center justify-center overflow-hidden rounded-[1.4rem] shadow-sm lg:rounded-[1.75rem]",
-      isDark ? "border-0 bg-neutral-800" : cn("border", neutrals.border, neutrals.surface),
+      isDark ? "border-0 bg-neutral-700" : cn("border", neutrals.border, neutrals.surface),
     ),
     logoPlaceholder: neutrals.textMuted,
     cartBadge: cn(
@@ -424,7 +424,7 @@ function buildTheme(
     ),
     cartButton: cn(
       "relative flex size-11 items-center justify-center rounded-2xl shadow-sm transition lg:size-12",
-      isDark ? "border-0 bg-neutral-800" : cn("border", neutrals.border, neutrals.surface),
+      isDark ? "border-0 bg-neutral-700" : cn("border", neutrals.border, neutrals.surface),
       iconButtonInteractive,
     ),
     cartTotalLabel: neutrals.textMuted,
@@ -443,7 +443,7 @@ function buildTheme(
         "shrink-0 px-1 pb-3 text-sm font-semibold transition duration-200",
         isDark
           ? active
-            ? cn("rounded-lg bg-neutral-700 px-2 font-bold", chipActiveText)
+            ? cn("rounded-lg bg-neutral-600 px-2 font-bold", chipActiveText)
             : neutrals.textMuted
           : active
             ? cn("border-b-2 font-bold", accent.navMobileActive, neutrals.text)
@@ -500,7 +500,7 @@ function buildTheme(
       ),
     searchWrap: cn(
       "relative rounded-2xl shadow-sm",
-      isDark ? "border-0 bg-neutral-800" : cn("border", neutrals.border, neutrals.surface),
+      isDark ? "border-0 bg-neutral-700" : cn("border", neutrals.border, neutrals.surface),
     ),
     searchInput: isDark
       ? "rounded-2xl focus-visible:ring-0"
@@ -607,7 +607,7 @@ function buildTheme(
             : cn("border", neutrals.chipInactiveBorder, neutrals.surface, modalInactiveText),
       ),
     floatingCartStepper: isDark
-      ? "border-0 bg-neutral-700 text-white shadow-none"
+      ? "border-0 bg-neutral-600 text-white shadow-none"
       : accent.stepper,
     floatingCartAddButton: cn(
       "flex items-center justify-center rounded-xl text-white shadow-[0_14px_30px_rgba(15,23,42,0.18)] transition-all duration-200",
@@ -859,22 +859,22 @@ const neutralAccent: ThemeAccent = {
 const darkNeutrals: ThemeNeutrals = {
   page: "bg-black",
   pageText: "text-neutral-50",
-  header: "bg-neutral-900",
+  header: "bg-neutral-800",
   headerBorder: "border-0",
   headerRailBorder: "border-0",
-  surface: "bg-neutral-800",
-  surfaceMuted: "bg-neutral-700",
+  surface: "bg-neutral-700",
+  surfaceMuted: "bg-neutral-600",
   border: "border-0",
   text: "text-neutral-50",
   textMuted: "text-neutral-400",
-  chipActiveBg: "bg-neutral-600",
+  chipActiveBg: "bg-neutral-500",
   chipActiveText: "text-neutral-50",
-  chipInactive: "text-neutral-300 hover:bg-neutral-700",
+  chipInactive: "text-neutral-300 hover:bg-neutral-600",
   chipInactiveBorder: "border-0",
-  imageGradient: "bg-[linear-gradient(180deg,#404040_0%,#262626_100%)]",
-  cartSummary: "bg-neutral-700",
+  imageGradient: "bg-[linear-gradient(180deg,#525252_0%,#404040_100%)]",
+  cartSummary: "bg-neutral-600",
   cartSummaryText: "text-neutral-50",
-  modalSurface: "bg-neutral-700",
+  modalSurface: "bg-neutral-600",
   gatePage: "bg-black text-neutral-50",
 };
 
