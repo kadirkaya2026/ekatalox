@@ -10,6 +10,12 @@ export function getVariantPriceForList(
   return typeof entry?.price === "number" ? entry.price : null;
 }
 
+export function hasExplicitVariantPricesForList(product: Product, priceListId: string) {
+  return (product.variants ?? []).some(
+    (variant) => getVariantPriceForList(variant.prices, priceListId) !== null,
+  );
+}
+
 export function resolveVariantListPrice(
   variant: Pick<ProductVariant, "prices">,
   product: Pick<Product, "prices">,
@@ -62,24 +68,40 @@ export function resolveStorefrontVariantPrice(
   };
 }
 
-export function getMinVariantListPrice(
+export function collectDisplayVariantPrices(
   product: Product,
   priceListId: string,
   isCatalogOnly: boolean,
 ) {
   if (isCatalogOnly) {
-    return null;
+    return [];
   }
 
   const variants = product.variants ?? [];
 
   if (!variants.length) {
-    return resolveStorefrontVariantPrice({}, product, priceListId, false).price;
+    const resolved = resolveStorefrontVariantPrice({}, product, priceListId, false).price;
+    return resolved !== null ? [resolved] : [];
   }
 
-  const resolvedPrices = variants
+  const hasExplicit = hasExplicitVariantPricesForList(product, priceListId);
+  const sourceVariants = hasExplicit
+    ? variants.filter(
+        (variant) => getVariantPriceForList(variant.prices, priceListId) !== null,
+      )
+    : variants;
+
+  return sourceVariants
     .map((variant) => resolveStorefrontVariantPrice(variant, product, priceListId, false).price)
     .filter((price): price is number => price !== null);
+}
+
+export function getMinVariantListPrice(
+  product: Product,
+  priceListId: string,
+  isCatalogOnly: boolean,
+) {
+  const resolvedPrices = collectDisplayVariantPrices(product, priceListId, isCatalogOnly);
 
   if (!resolvedPrices.length) {
     return null;
@@ -93,23 +115,63 @@ export function getMaxVariantListPrice(
   priceListId: string,
   isCatalogOnly: boolean,
 ) {
-  if (isCatalogOnly) {
-    return null;
-  }
-
-  const variants = product.variants ?? [];
-
-  if (!variants.length) {
-    return resolveStorefrontVariantPrice({}, product, priceListId, false).price;
-  }
-
-  const resolvedPrices = variants
-    .map((variant) => resolveStorefrontVariantPrice(variant, product, priceListId, false).price)
-    .filter((price): price is number => price !== null);
+  const resolvedPrices = collectDisplayVariantPrices(product, priceListId, isCatalogOnly);
 
   if (!resolvedPrices.length) {
     return null;
   }
 
   return Math.max(...resolvedPrices);
+}
+
+export function getProductDisplayPriceForList(
+  product: Product,
+  priceListId: string,
+  isCatalogOnly = false,
+) {
+  const variants = product.variants ?? [];
+  const hasVariants = variants.length > 0;
+  const hasExplicit = hasExplicitVariantPricesForList(product, priceListId);
+
+  if (!hasVariants) {
+    const pricing = resolveStorefrontVariantPrice({}, product, priceListId, isCatalogOnly);
+
+    return {
+      price: pricing.price,
+      price_max: null as number | null,
+      price_from: false,
+      original_price: pricing.original_price,
+      discount_percentage: pricing.discount_percentage,
+    };
+  }
+
+  const minPrice = getMinVariantListPrice(product, priceListId, isCatalogOnly);
+  const maxPrice = getMaxVariantListPrice(product, priceListId, isCatalogOnly);
+
+  if (minPrice === null) {
+    return {
+      price: null,
+      price_max: null,
+      price_from: false,
+      original_price: null,
+      discount_percentage: null,
+    };
+  }
+
+  const cheapestVariant = variants.find((variant) => {
+    const resolved = resolveStorefrontVariantPrice(variant, product, priceListId, false);
+    return resolved.price === minPrice;
+  });
+
+  const cheapestPricing = cheapestVariant
+    ? resolveStorefrontVariantPrice(cheapestVariant, product, priceListId, isCatalogOnly)
+    : resolveStorefrontVariantPrice({}, product, priceListId, isCatalogOnly);
+
+  return {
+    price: cheapestPricing.price,
+    price_max: maxPrice !== null && maxPrice !== minPrice ? maxPrice : null,
+    price_from: hasExplicit,
+    original_price: cheapestPricing.original_price,
+    discount_percentage: cheapestPricing.discount_percentage,
+  };
 }

@@ -232,6 +232,7 @@ export interface StorefrontProduct {
   currency: CurrencyCode;
   price: number | null;
   price_max?: number | null;
+  price_from?: boolean;
   original_price?: number | null;
   discount_percentage?: number | null;
   package_quantity: number | null;

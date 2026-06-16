@@ -1,10 +1,6 @@
 import { toStorefrontVariant } from "@/lib/products/records";
 import { computeDiscountPercentage } from "@/lib/products/pricing-utils";
-import {
-  getMaxVariantListPrice,
-  getMinVariantListPrice,
-  resolveStorefrontVariantPrice,
-} from "@/lib/products/variant-pricing";
+import { getProductDisplayPriceForList } from "@/lib/products/variant-pricing";
 import { getProductPriceForList } from "@/lib/price-lists/records";
 import type { Product, StorefrontProduct } from "@/lib/types";
 
@@ -62,43 +58,7 @@ function resolveVariantProductCardPricing(
   priceListId: string,
   isCatalogOnly: boolean,
 ) {
-  const variants = product.variants ?? [];
-
-  if (!variants.length) {
-    const pricing = resolveStorefrontPrice(product, priceListId, isCatalogOnly);
-    return {
-      ...pricing,
-      price_max: null as number | null,
-    };
-  }
-
-  const minPrice = getMinVariantListPrice(product, priceListId, isCatalogOnly);
-  const maxPrice = getMaxVariantListPrice(product, priceListId, isCatalogOnly);
-
-  if (minPrice === null) {
-    return {
-      price: null,
-      original_price: null,
-      discount_percentage: null,
-      price_max: null,
-    };
-  }
-
-  const cheapestVariant = variants.find((variant) => {
-    const resolved = resolveStorefrontVariantPrice(variant, product, priceListId, false);
-    return resolved.price === minPrice;
-  });
-
-  const cheapestPricing = cheapestVariant
-    ? resolveStorefrontVariantPrice(cheapestVariant, product, priceListId, isCatalogOnly)
-    : resolveStorefrontPrice(product, priceListId, isCatalogOnly);
-
-  return {
-    price: cheapestPricing.price,
-    original_price: cheapestPricing.original_price,
-    discount_percentage: cheapestPricing.discount_percentage,
-    price_max: maxPrice !== null && maxPrice !== minPrice ? maxPrice : null,
-  };
+  return getProductDisplayPriceForList(product, priceListId, isCatalogOnly);
 }
 
 export function toStorefrontProduct(
@@ -122,6 +82,7 @@ export function toStorefrontProduct(
     currency: product.currency,
     price: pricing.price,
     price_max: pricing.price_max,
+    price_from: pricing.price_from,
     original_price: pricing.original_price,
     discount_percentage: pricing.discount_percentage,
     package_quantity: product.package_quantity,

@@ -24,7 +24,10 @@ export function ProductPrice({
   product,
   size = "card",
 }: {
-  product: Pick<StorefrontProduct, "price" | "price_max" | "original_price" | "currency">;
+  product: Pick<
+    StorefrontProduct,
+    "price" | "price_max" | "price_from" | "original_price" | "currency"
+  >;
   size?: ProductPriceSize;
 }) {
   const theme = useStorefrontTheme();
@@ -56,9 +59,14 @@ export function ProductPrice({
     typeof product.original_price === "number" && product.original_price > product.price;
   const hasPriceRange =
     typeof product.price_max === "number" && product.price_max > product.price;
-  const currentPriceLabel = hasPriceRange
-    ? `${formatCurrency(product.price, product.currency)}'den`
-    : formatCurrency(product.price, product.currency);
+  const currentPriceLabel =
+    size === "compact"
+      ? formatCurrency(product.price, product.currency)
+      : product.price_from
+        ? `${formatCurrency(product.price, product.currency)}'den başlayan fiyatlarla`
+        : hasPriceRange
+          ? `${formatCurrency(product.price, product.currency)}'den`
+          : formatCurrency(product.price, product.currency);
 
   if (!hasDiscount) {
     return (

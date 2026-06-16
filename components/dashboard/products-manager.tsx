@@ -42,7 +42,7 @@ import {
   buildVariantListPriceFormState,
   getMinPriceFromFormState,
 } from "@/lib/products/price-form";
-import { getProductPriceForList } from "@/lib/price-lists/records";
+import { getProductDisplayPriceForList } from "@/lib/products/variant-pricing";
 import { getPriceListDisplayName } from "@/lib/price-lists/constants";
 import { computeDiscountPercentage } from "@/lib/storefront/pricing";
 import type { Category, PriceList, Product, ProductVariant, Tenant } from "@/lib/types";
@@ -279,6 +279,21 @@ function normalizeVariantRows(rows: VariantMatrixRow[]) {
         })),
     };
   });
+}
+
+function renderProductListPrice(product: Product, priceListId: string) {
+  const display = getProductDisplayPriceForList(product, priceListId);
+
+  return (
+    <div>
+      <p className="font-semibold text-foreground">
+        {formatCurrency(display.price ?? 0, product.currency)}
+      </p>
+      {display.price_from ? (
+        <p className="text-xs text-muted-foreground">modelden</p>
+      ) : null}
+    </div>
+  );
 }
 
 export function ProductsManager({
@@ -1259,11 +1274,8 @@ export function ProductsManager({
                   <td className="px-4 py-4">{renderStockBadge(product)}</td>
                   <td className="px-4 py-4">{renderVariantCountBadge(product)}</td>
                   {pricedLists.map((list) => (
-                    <td key={list.id} className="px-4 py-4 text-base font-semibold text-foreground">
-                      {formatCurrency(
-                        getProductPriceForList(product.prices, list.id),
-                        product.currency,
-                      )}
+                    <td key={list.id} className="px-4 py-4 text-base">
+                      {renderProductListPrice(product, list.id)}
                     </td>
                   ))}
                   <td className="px-4 py-4 align-top">
@@ -1437,12 +1449,7 @@ export function ProductsManager({
                 {pricedLists.map((list) => (
                   <div key={list.id} className="text-center">
                     <p className="text-xs text-muted-foreground">{getPriceListDisplayName(list)}</p>
-                    <p className="mt-1 text-sm font-semibold text-foreground">
-                      {formatCurrency(
-                        getProductPriceForList(product.prices, list.id),
-                        product.currency,
-                      )}
-                    </p>
+                    <div className="mt-1 text-sm">{renderProductListPrice(product, list.id)}</div>
                   </div>
                 ))}
               </div>
