@@ -56,6 +56,7 @@ function PasswordGateForm({
             placeholder="Şifrenizi Giriniz"
             value={code}
             onChange={(event) => setCode(event.target.value)}
+            className={theme.formField}
           />
           <Button type="submit" className={`w-full ${theme.primaryButton}`} disabled={pending}>
             {pending ? "Doğrulanıyor..." : "Mağaza'ya Gir"}
@@ -78,7 +79,7 @@ export function PasswordGate({
 }) {
   return (
     <StorefrontThemeProvider themeKey={themeKey}>
-      <div className="relative min-h-screen">
+      <div data-storefront className="relative min-h-screen">
         <div className="absolute right-4 top-4 z-10 sm:right-6 sm:top-6">
           <StorefrontThemeToggle />
         </div>

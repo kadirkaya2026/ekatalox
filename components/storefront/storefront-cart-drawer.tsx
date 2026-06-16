@@ -242,7 +242,7 @@ export function StorefrontCartDrawer({
                     className={theme.cartDrawerItem}
                   >
                     <div className="flex gap-3">
-                      <div className={cn("relative h-[4.5rem] w-[4.5rem] shrink-0 overflow-hidden rounded-[1.15rem] border sm:h-20 sm:w-20 sm:rounded-[1.35rem]", theme.border, theme.surface)}>
+                      <div className={cn("relative h-[4.5rem] w-[4.5rem] shrink-0 overflow-hidden rounded-[1.15rem] sm:h-20 sm:w-20 sm:rounded-[1.35rem]", theme.border, theme.surface)}>
                         {item.image_url ? (
                           <StorefrontImage
                             src={item.image_url}
@@ -286,8 +286,8 @@ export function StorefrontCartDrawer({
                       </div>
                     </div>
 
-                    <div className={cn("mt-3 flex min-w-0 items-end justify-between gap-2 border-t pt-3 sm:gap-3", theme.border)}>
-                      <div className={cn("flex shrink-0 items-center rounded-full border p-0.5 shadow-sm sm:p-1", theme.border, theme.surface)}>
+                    <div className="mt-3 flex min-w-0 items-end justify-between gap-2 pt-3 sm:gap-3">
+                      <div className={cn("flex shrink-0 items-center rounded-full p-0.5 shadow-sm sm:p-1", theme.quantityStepper)}>
                         <button
                           type="button"
                           onClick={() =>
@@ -372,10 +372,10 @@ export function StorefrontCartDrawer({
                         setPaymentMethodError(null);
                       }}
                       className={cn(
-                        "flex items-center justify-center gap-2 rounded-2xl border py-3 text-sm font-semibold transition",
+                        "flex items-center justify-center gap-2 rounded-2xl py-3 text-sm font-semibold transition",
                         selectedPaymentMethod === "cash"
-                          ? "border-emerald-500 bg-emerald-50 text-emerald-700"
-                          : cn(theme.border, theme.surface, theme.textMuted, "hover:opacity-90"),
+                          ? theme.cartPaymentCashActive
+                          : theme.cartPaymentInactive,
                       )}
                     >
                       <Banknote className="size-4" />
@@ -388,10 +388,10 @@ export function StorefrontCartDrawer({
                         setPaymentMethodError(null);
                       }}
                       className={cn(
-                        "flex items-center justify-center gap-2 rounded-2xl border py-3 text-sm font-semibold transition",
+                        "flex items-center justify-center gap-2 rounded-2xl py-3 text-sm font-semibold transition",
                         selectedPaymentMethod === "card"
-                          ? "border-blue-500 bg-blue-50 text-blue-700"
-                          : cn(theme.border, theme.surface, theme.textMuted, "hover:opacity-90"),
+                          ? theme.cartPaymentCardActive
+                          : theme.cartPaymentInactive,
                       )}
                     >
                       <CreditCard className="size-4" />
@@ -414,7 +414,7 @@ export function StorefrontCartDrawer({
                       value={customerReferenceName}
                       onChange={(event) => setCustomerReferenceName(event.target.value)}
                       placeholder="Örn: Ahmet Ticaret Ltd. Şti."
-                      className={cn("rounded-[1.1rem] text-[16px]", theme.border, theme.surfaceMuted, theme.text)}
+                      className={cn("rounded-[1.1rem] text-[16px]", theme.formField, theme.text)}
                     />
                   </div>
                   {!isCatalogOnly
@@ -435,10 +435,10 @@ export function StorefrontCartDrawer({
                               type="button"
                               onClick={() => setSelectedInstallmentCount(option.count)}
                               className={cn(
-                                "rounded-xl border px-3 py-2 text-xs font-semibold transition",
+                                "rounded-xl px-3 py-2 text-xs font-semibold transition",
                                 selectedInstallmentCount === option.count
-                                  ? "border-blue-500 bg-blue-50 text-blue-700"
-                                  : cn(theme.border, theme.surface, theme.textMuted, "hover:opacity-90"),
+                                  ? theme.cartInstallmentActive
+                                  : theme.cartPaymentInactive,
                               )}
                             >
                               {option.label}
@@ -467,7 +467,7 @@ export function StorefrontCartDrawer({
                     placeholder="Sipariş notu (opsiyonel)"
                     value={note}
                     onChange={(event) => setNote(event.target.value)}
-                    className={cn("min-h-[84px] rounded-[1.1rem] text-[16px]", theme.border, theme.surfaceMuted, theme.text)}
+                    className={cn("min-h-[84px] rounded-[1.1rem] text-[16px]", theme.formField, theme.text)}
                   />
                 </div>
 
@@ -504,8 +504,8 @@ export function StorefrontCartDrawer({
             )}
           </div>
 
-          <div className={cn("shrink-0 border-t px-4 py-3.5 sm:px-5 lg:px-6 lg:py-4", theme.categoryRailBorder, theme.surfaceMuted)}>
-            <div className={cn("rounded-[1.5rem] border p-2.5 sm:p-3 lg:p-4 sm:rounded-[1.75rem]", theme.border, theme.surface, theme.elevation1, theme.surfaceRing)}>
+          <div className={cn("shrink-0 px-4 py-3.5 sm:px-5 lg:px-6 lg:py-4", theme.surfaceMuted)}>
+            <div className={cn("rounded-[1.5rem] p-2.5 sm:p-3 lg:p-4 sm:rounded-[1.75rem]", theme.border, theme.surface, theme.elevation1, theme.surfaceRing)}>
               <div className={cn("rounded-[1.4rem] px-4 py-3", theme.elevation2, theme.cartDrawerSummary)}>
                 {!isCatalogOnly && cartPaymentSummary ? (
                   <div className="space-y-2.5">
@@ -548,7 +548,7 @@ export function StorefrontCartDrawer({
                             </p>
                           </div>
                         ) : null}
-                        <div className={cn("flex items-center justify-between gap-3 border-t pt-2", theme.border)}>
+                        <div className="flex items-center justify-between gap-3 pt-2">
                           <p className={cn("text-sm font-medium text-neutral-200")}>Genel Toplam</p>
                           <p className="text-base font-bold tracking-tight text-white sm:text-lg">
                             {formatCurrency(cartPaymentSummary.finalTotal, cartPaymentSummary.currency)}
@@ -587,7 +587,7 @@ export function StorefrontCartDrawer({
                         )}
                       </p>
                     </div>
-                    <div className={cn("flex items-center justify-between gap-3 border-t pt-2", theme.border)}>
+                    <div className="flex items-center justify-between gap-3 pt-2">
                       <p className="text-sm font-medium text-neutral-200">Genel Toplam</p>
                       <p className="text-base font-bold tracking-tight text-white sm:text-lg">
                         {formatCurrency(

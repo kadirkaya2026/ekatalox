@@ -29,6 +29,10 @@
   --color-primary-foreground: #0f172a;
 }
 
+.dark [data-storefront] {
+  --color-border: transparent;
+}
+
 * {
   @apply border-border;
 }

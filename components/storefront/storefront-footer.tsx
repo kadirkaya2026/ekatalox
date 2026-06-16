@@ -118,7 +118,7 @@ function MobileSection({
       className={cn(
         "w-full",
         showDivider &&
-          cn("border-t pt-4 md:border-t-0 md:pt-0", theme.border),
+          cn("pt-4 md:pt-0", theme.sectionDivider),
         className,
       )}
     >
@@ -221,7 +221,7 @@ export function StorefrontFooter({
                         aria-label={link.label}
                         title={link.label}
                         className={cn(
-                          "inline-flex size-7 items-center justify-center rounded-full border shadow-sm transition hover:opacity-90",
+                          "inline-flex size-7 items-center justify-center rounded-full shadow-sm transition hover:opacity-90",
                           theme.border,
                           theme.surface,
                           theme.textMuted,
@@ -239,8 +239,7 @@ export function StorefrontFooter({
 
         <div
           className={cn(
-            "border-t py-1.5 text-center text-[11px] leading-tight",
-            theme.border,
+            "py-1.5 text-center text-[11px] leading-tight",
             theme.footerText,
             hasFooterMainContent ? "mt-4 md:mt-6" : "mt-0",
           )}

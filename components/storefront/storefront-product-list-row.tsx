@@ -40,7 +40,7 @@ function StorefrontInlineCartAction({
         data-unit-picker-root="true"
         onClick={(event) => event.stopPropagation()}
         className={cn(
-          "flex shrink-0 items-center gap-1 rounded-xl border p-1",
+          "flex shrink-0 items-center gap-1 rounded-xl p-1",
           theme.border,
           theme.surface,
         )}
@@ -140,7 +140,7 @@ export const StorefrontProductListRow = memo(function StorefrontProductListRow({
         }
       }}
       className={cn(
-        "grid cursor-pointer grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 rounded-2xl border p-2.5 transition sm:grid-cols-[auto_minmax(0,1fr)_auto_auto] sm:gap-4 sm:p-3",
+        "grid cursor-pointer grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 rounded-2xl p-2.5 transition sm:grid-cols-[auto_minmax(0,1fr)_auto_auto] sm:gap-4 sm:p-3",
         theme.border,
         theme.surface,
         theme.elevation1,
@@ -150,7 +150,7 @@ export const StorefrontProductListRow = memo(function StorefrontProductListRow({
     >
       <div
         className={cn(
-          "relative size-14 shrink-0 overflow-hidden rounded-xl border sm:size-16",
+          "relative size-14 shrink-0 overflow-hidden rounded-xl sm:size-16",
           theme.border,
           theme.productImageWrap,
         )}

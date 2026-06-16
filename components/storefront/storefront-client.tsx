@@ -470,7 +470,7 @@ function QuantityStepper({
         className={cn(theme.quantityInput, "disabled:cursor-not-allowed")}
         style={{ fontSize: "16px" }}
       />
-      <div className={cn("flex shrink-0 border-l", theme.border)}>
+      <div className="flex shrink-0">
         <button
           type="button"
           disabled={disabled}
@@ -485,8 +485,7 @@ function QuantityStepper({
           disabled={disabled}
           onClick={increment}
           className={cn(
-            "flex w-8 items-center justify-center border-l",
-            theme.border,
+            "flex w-8 items-center justify-center",
             theme.quantityStepperButton,
           )}
           aria-label="Adedi artır"
@@ -563,7 +562,7 @@ function renderBannerItem(
     <div
       key={banner.id}
       className={cn(
-        "relative w-full overflow-hidden rounded-[2.5rem] border",
+        "relative w-full overflow-hidden rounded-[2.5rem]",
         theme.border,
         theme.surface,
         theme.elevation1,
@@ -579,11 +578,17 @@ function renderBannerItem(
     >
       <div
         aria-hidden="true"
-        className="absolute inset-0 hidden bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.16),transparent_38%)] md:block"
+        className={cn(
+          theme.bannerOverlay,
+          "bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.16),transparent_38%)]",
+        )}
       />
       <div
         aria-hidden="true"
-        className="absolute inset-0 hidden bg-[linear-gradient(135deg,rgba(255,255,255,0.05),transparent_60%)] md:block"
+        className={cn(
+          theme.bannerOverlay,
+          "bg-[linear-gradient(135deg,rgba(255,255,255,0.05),transparent_60%)]",
+        )}
       />
       <div className="relative aspect-[3/1] bg-transparent md:min-h-[340px] md:aspect-auto lg:min-h-[400px]">
         {banner.image_url ? (
@@ -661,7 +666,7 @@ function AnnouncementModal({
             exit={{ opacity: 0, y: 18, scale: 0.98 }}
             transition={{ duration: 0.28, ease: "easeOut" }}
             className={cn(
-              "relative z-10 w-full max-w-2xl overflow-hidden rounded-[2rem] border shadow-[0_36px_120px_rgba(15,23,42,0.30)] backdrop-blur-2xl",
+              "relative z-10 w-full max-w-2xl overflow-hidden rounded-[2rem] shadow-[0_36px_120px_rgba(15,23,42,0.30)] backdrop-blur-2xl",
               theme.border,
               theme.surface,
             )}
@@ -679,7 +684,7 @@ function AnnouncementModal({
             <div className="relative p-6 sm:p-8">
               <div className="flex items-start justify-between gap-4">
                 <div className="flex items-center gap-4">
-                  <div className="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-[linear-gradient(135deg,rgba(16,185,129,0.14),rgba(14,165,233,0.16))] text-emerald-700 ring-1 ring-emerald-100">
+                  <div className={cn("flex size-14 shrink-0 items-center justify-center rounded-2xl", theme.surfaceMuted, "text-emerald-700")}>
                     <Megaphone className="size-6" />
                   </div>
                   <div className="space-y-2">
@@ -1787,7 +1792,7 @@ export function StorefrontClient({
     return (
         <div
           className={cn(
-            "relative overflow-hidden rounded-[1.55rem] border p-4",
+            "relative overflow-hidden rounded-[1.55rem] p-4",
             theme.elevation1,
             theme.surfaceRing,
             s.isQualified ? theme.campaignBarQualified : theme.campaignBarPending,
@@ -1865,7 +1870,7 @@ export function StorefrontClient({
     return (
       <div
         className={cn(
-          "relative overflow-hidden rounded-[1.55rem] border p-4",
+          "relative overflow-hidden rounded-[1.55rem] p-4",
           theme.elevation1,
           theme.surfaceRing,
           cartDiscountSummary.isQualified
@@ -1938,7 +1943,7 @@ export function StorefrontClient({
             {storefrontSettings.cash_discount_note?.trim() && !compact ? (
               <p
                 className={cn(
-                  "mt-2 rounded-xl border px-3 py-2 text-xs font-medium leading-5",
+                  "mt-2 rounded-xl px-3 py-2 text-xs font-medium leading-5",
                   cartDiscountSummary.isQualified
                     ? theme.campaignNoteQualified
                     : theme.campaignNotePending,
@@ -1961,7 +1966,7 @@ export function StorefrontClient({
     return (
       <article
         key={product.id}
-        className={cn("relative overflow-visible min-w-[182px] max-w-[182px] rounded-[1.5rem] border p-3", theme.border, theme.surface, theme.elevation1, theme.surfaceRing)}
+        className={cn("relative overflow-visible min-w-[182px] max-w-[182px] rounded-[1.5rem] p-3", theme.border, theme.surface, theme.elevation1, theme.surfaceRing)}
       >
         <div className="absolute left-3 right-14 top-3 z-10 flex">
           <span className={cn("truncate rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] shadow-sm", theme.surfaceMuted, theme.textMuted)}>
@@ -2063,6 +2068,7 @@ export function StorefrontClient({
         titleClassName={theme.modalTitle}
         closeButtonClassName={theme.modalCloseButton}
         footerClassName={theme.modalFooterBorder}
+        handleClassName={theme.modalHandle}
       >
         <div className="grid gap-4">
           <div className={cn("relative aspect-square overflow-hidden rounded-[1.75rem]", theme.productImageWrap)}>
@@ -2314,7 +2320,7 @@ export function StorefrontClient({
 
             {usesSidebarNav ? (
               <div
-                className={cn("border-t py-3 lg:hidden", theme.categoryRailBorder)}
+                className={cn("py-3 lg:hidden", theme.sectionDivider)}
               >
                 <button
                   type="button"
@@ -2338,7 +2344,7 @@ export function StorefrontClient({
               </div>
             ) : (
               <div
-                className={cn("border-t py-3 md:hidden", theme.categoryRailBorder)}
+                className={cn("py-3 md:hidden", theme.sectionDivider)}
               >
                 <div className="scrollbar-hide -mx-4 flex gap-5 overflow-x-auto px-4 whitespace-nowrap">
                   {homeHref ? (
@@ -2446,7 +2452,7 @@ export function StorefrontClient({
                 ) : null}
               </div>
             ) : (
-              <div className={cn("flex min-h-[240px] w-full flex-col justify-center rounded-[2.5rem] border border-dashed px-6 py-10 text-center md:min-h-[320px] lg:min-h-[400px]", theme.border, theme.surfaceMuted)}>
+              <div className={cn("flex min-h-[240px] w-full flex-col justify-center rounded-[2.5rem] px-6 py-10 text-center md:min-h-[320px] lg:min-h-[400px]", theme.border, theme.surfaceMuted)}>
                 <p className={cn("text-sm font-semibold", theme.text)}>Banner alanı şu an boş</p>
                 <p className={cn("mt-2 text-sm", theme.textMuted)}>
                   Admin panelindeki vitrin ayarlarından kampanya banner’ları ekleyebilirsiniz.
@@ -2481,7 +2487,7 @@ export function StorefrontClient({
                       <a
                         href={sectionHref}
                         className={cn(
-                          "shrink-0 rounded-full border px-5 py-2.5 text-sm font-semibold shadow-sm transition hover:opacity-90",
+                          "shrink-0 rounded-full px-5 py-2.5 text-sm font-semibold shadow-sm transition hover:opacity-90",
                           theme.border,
                           theme.surface,
                           theme.textMuted,
@@ -2510,7 +2516,7 @@ export function StorefrontClient({
                       <a
                         href={sectionHref}
                         className={cn(
-                          "rounded-full border px-8 py-3 text-sm font-semibold shadow-sm transition hover:opacity-90 hover:shadow",
+                          "rounded-full px-8 py-3 text-sm font-semibold shadow-sm transition hover:opacity-90 hover:shadow",
                           theme.border,
                           theme.surface,
                           theme.textMuted,
@@ -2536,11 +2542,11 @@ export function StorefrontClient({
               </h2>
             </div>
             <div className="flex flex-wrap items-center gap-2.5 sm:gap-3">
-              <div className={cn("rounded-full border px-4 py-2.5 text-sm shadow-sm", theme.border, theme.surface, theme.textMuted)}>
+              <div className={cn("rounded-full px-4 py-2.5 text-sm shadow-sm", theme.border, theme.surface, theme.textMuted)}>
                 <span className={cn("font-semibold", theme.text)}>{filteredProducts.length}</span>{" "}
                 ürün bulundu
               </div>
-              <div className={cn("rounded-full border px-4 py-2.5 text-sm", theme.border, theme.surfaceMuted, theme.textMuted)}>
+              <div className={cn("rounded-full px-4 py-2.5 text-sm", theme.border, theme.surfaceMuted, theme.textMuted)}>
                 <span className={cn("font-semibold", theme.text)}>{visibleProducts.length}</span>{" "}
                 ürün gösteriliyor
               </div>
@@ -2561,7 +2567,7 @@ export function StorefrontClient({
               onOpenAddToCart={handleOpenAddToCartModal}
             />
           ) : (
-            <Card className="rounded-[2rem] border-dashed bg-transparent p-10 text-center">
+            <Card className={cn("rounded-[2rem] border-0 p-10 text-center", theme.surfaceMuted)}>
               <p className="text-base font-semibold">Uyuşan ürün bulunamadı.</p>
               <p className={cn("mt-1 text-sm", theme.textMuted)}>
                 Arama kriterlerini veya seçili kategoriyi değiştirmeyi deneyin.
@@ -2578,7 +2584,7 @@ export function StorefrontClient({
                   setVisibleCount((prev) => prev + STOREFRONT_PAGE_SIZE)
                 }
                 className={cn(
-                  "rounded-full border px-8 py-3 text-sm font-semibold shadow-sm transition hover:opacity-90 hover:shadow",
+                  "rounded-full px-8 py-3 text-sm font-semibold shadow-sm transition hover:opacity-90 hover:shadow",
                   theme.border,
                   theme.surface,
                   theme.textMuted,
@@ -2781,6 +2787,7 @@ export function StorefrontClient({
         titleClassName={theme.modalTitle}
         closeButtonClassName={theme.modalCloseButton}
         footerClassName={theme.modalFooterBorder}
+        handleClassName={theme.modalHandle}
         footer={
           selectedProduct?.has_variants ? (
             <div className="space-y-3">
@@ -2825,7 +2832,7 @@ export function StorefrontClient({
           >
             <div
               className={cn(
-                "w-full min-w-0 max-w-full shrink-0 rounded-xl border px-3",
+                "w-full min-w-0 max-w-full shrink-0 rounded-xl px-3",
                 theme.border,
                 theme.surfaceMuted,
                 selectedProduct.has_variants ? "py-2" : "py-2.5",
@@ -2859,7 +2866,7 @@ export function StorefrontClient({
 
             {selectedProduct.has_variants ? (
               <div className="flex min-h-0 flex-1 flex-col">
-                <div className={cn("relative shrink-0 border-b pb-2.5", theme.border, theme.surface)}>
+                <div className={cn("relative shrink-0 pb-2.5", theme.surface)}>
                   <Search className={cn("pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2", theme.textMuted)} />
                   <Input
                     value={variantSearchTerm}
@@ -2890,10 +2897,10 @@ export function StorefrontClient({
                         <div
                           key={variant.id}
                           className={cn(
-                            "rounded-xl border-2 px-2.5 py-2 transition",
+                            "rounded-xl px-2.5 py-2 transition",
                             isUnavailable
-                              ? cn("opacity-40", theme.border, theme.surfaceMuted)
-                              : cn(theme.elevation1, theme.border, theme.surface),
+                              ? cn("opacity-40", theme.surfaceMuted)
+                              : cn(theme.elevation1, theme.surface),
                           )}
                         >
                           <div className="flex items-center justify-between gap-2">
@@ -2922,8 +2929,8 @@ export function StorefrontClient({
                                 }
                               }}
                               className={cn(
-                                "h-9 rounded-lg border px-2.5 py-0 text-[16px] leading-9 disabled:opacity-60",
-                                theme.border,
+                                "h-9 rounded-lg px-2.5 py-0 text-[16px] leading-9 disabled:opacity-60",
+                                theme.formField,
                                 theme.surface,
                                 theme.text,
                               )}
@@ -2975,7 +2982,7 @@ export function StorefrontClient({
                       );
                     })
                   ) : (
-                    <div className={cn("rounded-lg border border-dashed px-4 py-5 text-center text-sm", theme.border, theme.textMuted)}>
+                    <div className={cn("rounded-lg px-4 py-5 text-center text-sm", theme.surfaceMuted, theme.textMuted)}>
                       {variantSearchTerm.trim()
                         ? `“${variantSearchTerm.trim()}” için model bulunamadı.`
                         : "Gösterilecek model bulunamadı."}

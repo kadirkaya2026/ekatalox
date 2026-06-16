@@ -18,6 +18,7 @@ export function Modal({
   titleClassName,
   closeButtonClassName,
   footerClassName,
+  handleClassName,
   sheet = false,
 }: {
   open: boolean;
@@ -33,6 +34,7 @@ export function Modal({
   titleClassName?: string;
   closeButtonClassName?: string;
   footerClassName?: string;
+  handleClassName?: string;
   sheet?: boolean;
 }) {
   useBodyScrollLock(open);
@@ -71,12 +73,20 @@ export function Modal({
       >
         <div className="flex shrink-0 justify-center pt-3 sm:hidden">
           <span
-            className="mx-auto my-0.5 h-1.5 w-12 rounded-full bg-gray-300"
+            className={cn(
+              "mx-auto my-0.5 h-1.5 w-12 rounded-full bg-gray-300 dark:bg-neutral-600",
+              handleClassName,
+            )}
             aria-hidden="true"
           />
         </div>
 
-        <div className={cn("flex shrink-0 items-center justify-between border-b border-slate-100 px-4 pb-2 pt-1 dark:border-slate-800 sm:px-5 sm:py-4 sm:pt-4", headerClassName)}>
+        <div
+          className={cn(
+            "flex shrink-0 items-center justify-between px-4 pb-2 pt-1 sm:px-5 sm:py-4 sm:pt-4",
+            headerClassName ?? "border-b border-slate-100 dark:border-slate-800",
+          )}
+        >
           <h3 id="modal-title" className={cn("text-lg font-semibold text-foreground", titleClassName)}>
             {title}
           </h3>
@@ -105,7 +115,12 @@ export function Modal({
         </div>
 
         {footer ? (
-          <div className={cn("shrink-0 space-y-4 border-t border-slate-100 px-4 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] dark:border-slate-800 sm:px-5", footerClassName)}>
+          <div
+            className={cn(
+              "shrink-0 space-y-4 px-4 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:px-5",
+              footerClassName ?? "border-t border-slate-100 dark:border-slate-800",
+            )}
+          >
             {footer}
           </div>
         ) : null}

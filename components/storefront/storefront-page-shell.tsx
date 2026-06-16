@@ -12,7 +12,11 @@ function StorefrontPageShellInner({
 }) {
   const theme = useStorefrontTheme();
 
-  return <div className={cn(theme.page, className)}>{children}</div>;
+  return (
+    <div data-storefront className={cn(theme.page, className)}>
+      {children}
+    </div>
+  );
 }
 
 export function StorefrontPageShell({
