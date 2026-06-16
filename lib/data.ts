@@ -16,6 +16,7 @@ import { normalizePriceListRecord, sortPriceLists } from "@/lib/price-lists/reco
 import { getPriceListDisplayName } from "@/lib/price-lists/constants";
 import { ensureDefaultPriceListsForTenant, fetchTenantPriceLists } from "@/lib/price-lists/data";
 import { DEFAULT_HOMEPAGE_BLOCKS, normalizeHomepageBlocks } from "@/lib/storefront/homepage-blocks";
+import { toStorefrontProduct } from "@/lib/storefront/pricing";
 import { getSmartDefaultAppearance } from "@/lib/storefront/smart-defaults";
 import type {
   AccessCode,

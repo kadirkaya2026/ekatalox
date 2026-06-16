@@ -760,10 +760,10 @@ function ExcelSimulatorSection() {
                       </div>
                       <div>
                         <div className="text-sm font-semibold text-white">
-                          Müşteri Toptan A.Ş.
+                          Lucatech İletişim
                         </div>
                         <div className="text-[10px] text-slate-500">
-                          musteri.ekatalox.com
+                          lucatech.ekatalox.com
                         </div>
                       </div>
                     </div>

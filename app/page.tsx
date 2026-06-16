@@ -539,8 +539,8 @@ const GeneratedStorefront = ({ fileName }) => {
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#00D2FF] to-[#7928CA] flex items-center justify-center text-white font-bold text-sm shadow-lg">M</div>
           <div>
-            <div className="text-sm text-white font-semibold leading-tight">Müşteri Toptan A.Ş.</div>
-            <div className="text-[10px] text-slate-500">musteri.ekatalox.com</div>
+            <div className="text-sm text-white font-semibold leading-tight">Lucatech İletişim</div>
+            <div className="text-[10px] text-slate-500">lucatech.ekatalox.com</div>
           </div>
         </div>
         <div className="hidden md:flex items-center gap-3 flex-1 justify-center max-w-md">
