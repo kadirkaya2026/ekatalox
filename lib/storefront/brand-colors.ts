@@ -85,10 +85,14 @@ export function applyBrandColorOverrides(
       "hover:opacity-90 active:opacity-95",
     ),
     floatingCartAddButton: cn(
-      brandSoftBg,
-      brandSoftText,
-      brandSoftBorder,
-      "border hover:opacity-90",
+      theme.floatingCartAddButton,
+      brandPrimaryBg,
+      brandPrimaryFg,
+      "border-transparent hover:opacity-90 active:opacity-95",
+    ),
+    quantityStepper: cn(
+      theme.quantityStepper,
+      "border-slate-200 bg-white shadow-sm dark:border-0 dark:bg-neutral-800",
     ),
     productPrice: cn("min-w-0 font-extrabold tracking-tight", brandPrimaryText),
     gateEyebrow: cn("text-xs font-bold uppercase tracking-[0.24em]", brandPrimaryText),
