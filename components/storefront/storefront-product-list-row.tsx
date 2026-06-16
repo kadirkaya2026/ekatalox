@@ -55,7 +55,7 @@ function StorefrontInlineCartAction({
               onOpenAddToCart(product.id);
             }
           }}
-          className="flex size-8 items-center justify-center rounded-lg text-slate-600 transition hover:bg-slate-100"
+          className={cn("flex size-8 items-center justify-center rounded-lg transition", theme.quantityStepperButton)}
           aria-label={cartQuantity === 1 && !product.has_variants ? "Sepetten çıkar" : "Azalt"}
         >
           {!product.has_variants && cartQuantity === 1 ? (
@@ -64,7 +64,7 @@ function StorefrontInlineCartAction({
             <Minus className="size-4" />
           )}
         </button>
-        <span className="min-w-7 text-center text-sm font-bold text-slate-900">
+        <span className={cn("min-w-7 text-center text-sm font-bold", theme.text)}>
           {product.has_variants ? `${cartQuantity}M` : cartQuantity}
         </span>
         <button
@@ -143,6 +143,8 @@ export const StorefrontProductListRow = memo(function StorefrontProductListRow({
         "grid cursor-pointer grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 rounded-2xl border p-2.5 transition sm:grid-cols-[auto_minmax(0,1fr)_auto_auto] sm:gap-4 sm:p-3",
         theme.border,
         theme.surface,
+        theme.elevation1,
+        theme.surfaceRing,
         !product.is_in_stock && "opacity-60 saturate-50",
       )}
     >

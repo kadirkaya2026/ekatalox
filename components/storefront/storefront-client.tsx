@@ -563,9 +563,11 @@ function renderBannerItem(
     <div
       key={banner.id}
       className={cn(
-        "relative w-full overflow-hidden rounded-[2.5rem] border shadow-[0_24px_80px_rgba(15,23,42,0.12)]",
+        "relative w-full overflow-hidden rounded-[2.5rem] border",
         theme.border,
         theme.surface,
+        theme.elevation1,
+        theme.surfaceRing,
       )}
       style={{
         background:
@@ -1785,10 +1787,10 @@ export function StorefrontClient({
     return (
         <div
           className={cn(
-            "relative overflow-hidden rounded-[1.55rem] border p-4 shadow-[0_18px_42px_rgba(15,23,42,0.08)]",
-            s.isQualified
-              ? "border-blue-200 bg-[radial-gradient(circle_at_top_right,rgba(59,130,246,0.18),transparent_42%),linear-gradient(135deg,#eff6ff_0%,#ffffff_50%,#f0f9ff_100%)]"
-              : "border-amber-200 bg-[radial-gradient(circle_at_top_right,rgba(14,165,233,0.18),transparent_42%),linear-gradient(135deg,#fff7ed_0%,#ffffff_48%,#eff6ff_100%)]",
+            "relative overflow-hidden rounded-[1.55rem] border p-4",
+            theme.elevation1,
+            theme.surfaceRing,
+            s.isQualified ? theme.campaignBarQualified : theme.campaignBarPending,
           )}
         >
           {onDismiss && (
@@ -1806,7 +1808,7 @@ export function StorefrontClient({
               className={cn(
                 "flex shrink-0 items-center justify-center rounded-2xl",
                 compact ? "size-10" : "size-12",
-                s.isQualified ? "bg-blue-100 text-blue-700" : "bg-amber-100 text-amber-700",
+                s.isQualified ? theme.campaignIconQualified : theme.campaignIconPending,
               )}
             >
               <CreditCard className={compact ? "size-4" : "size-5"} />
@@ -1816,7 +1818,7 @@ export function StorefrontClient({
                 className={cn(
                   "font-semibold uppercase tracking-[0.2em]",
                   compact ? "text-[10px]" : "text-[11px]",
-                  s.isQualified ? "text-blue-700" : "text-amber-700",
+                  s.isQualified ? theme.campaignLabelQualified : theme.campaignLabelPending,
                 )}
               >
                 Kart Kampanyası
@@ -1863,10 +1865,12 @@ export function StorefrontClient({
     return (
       <div
         className={cn(
-          "relative overflow-hidden rounded-[1.55rem] border p-4 shadow-[0_18px_42px_rgba(15,23,42,0.08)]",
+          "relative overflow-hidden rounded-[1.55rem] border p-4",
+          theme.elevation1,
+          theme.surfaceRing,
           cartDiscountSummary.isQualified
-            ? "border-emerald-200 bg-[radial-gradient(circle_at_top_right,rgba(16,185,129,0.2),transparent_42%),linear-gradient(135deg,#ecfdf5_0%,#ffffff_50%,#f0fdf4_100%)]"
-            : "border-amber-200 bg-[radial-gradient(circle_at_top_right,rgba(14,165,233,0.18),transparent_42%),linear-gradient(135deg,#fff7ed_0%,#ffffff_48%,#eff6ff_100%)]",
+            ? theme.campaignBarQualified
+            : theme.campaignBarPending,
         )}
       >
         {onDismiss && (
@@ -1885,8 +1889,8 @@ export function StorefrontClient({
               "flex shrink-0 items-center justify-center rounded-2xl",
               compact ? "size-10" : "size-12",
               cartDiscountSummary.isQualified
-                ? "bg-emerald-100 text-emerald-700"
-                : "bg-amber-100 text-amber-700",
+                ? theme.campaignIconQualified
+                : theme.campaignIconPending,
             )}
           >
             <Sparkles className={compact ? "size-4.5" : "size-5"} />
@@ -1896,7 +1900,9 @@ export function StorefrontClient({
               className={cn(
                 "font-semibold uppercase tracking-[0.2em]",
                 compact ? "text-[10px]" : "text-[11px]",
-                cartDiscountSummary.isQualified ? "text-emerald-700" : "text-amber-700",
+                cartDiscountSummary.isQualified
+                  ? theme.campaignLabelQualified
+                  : theme.campaignLabelPending,
               )}
             >
               {cartDiscountSummary.isQualified ? "Nakit Kampanyası" : "Nakit Kampanyası"}
@@ -1934,8 +1940,8 @@ export function StorefrontClient({
                 className={cn(
                   "mt-2 rounded-xl border px-3 py-2 text-xs font-medium leading-5",
                   cartDiscountSummary.isQualified
-                    ? "border-emerald-200 bg-emerald-50 text-emerald-800"
-                    : "border-amber-200 bg-amber-50 text-amber-800",
+                    ? theme.campaignNoteQualified
+                    : theme.campaignNotePending,
                 )}
               >
                 ⚠️ Şart: {storefrontSettings.cash_discount_note}
@@ -1955,7 +1961,7 @@ export function StorefrontClient({
     return (
       <article
         key={product.id}
-        className={cn("relative overflow-visible min-w-[182px] max-w-[182px] rounded-[1.5rem] border p-3 shadow-[0_14px_34px_rgba(15,23,42,0.08)]", theme.border, theme.surface)}
+        className={cn("relative overflow-visible min-w-[182px] max-w-[182px] rounded-[1.5rem] border p-3", theme.border, theme.surface, theme.elevation1, theme.surfaceRing)}
       >
         <div className="absolute left-3 right-14 top-3 z-10 flex">
           <span className={cn("truncate rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] shadow-sm", theme.surfaceMuted, theme.textMuted)}>
@@ -2430,8 +2436,8 @@ export function StorefrontClient({
                         className={cn(
                           "h-2.5 rounded-full transition",
                           index === activeBannerIndex
-                            ? "w-8 bg-slate-900 dark:bg-white"
-                            : "w-2.5 bg-slate-300 hover:bg-slate-400 dark:bg-neutral-600 dark:hover:bg-neutral-500",
+                            ? cn("w-8", theme.indicatorActive)
+                            : cn("w-2.5", theme.indicatorInactive),
                         )}
                         aria-label={`Banner ${index + 1}`}
                       />
@@ -2884,7 +2890,7 @@ export function StorefrontClient({
                             "rounded-xl border-2 px-2.5 py-2 transition",
                             isUnavailable
                               ? cn("opacity-40", theme.border, theme.surfaceMuted)
-                              : cn("shadow-[0_1px_0_rgba(15,23,42,0.04)]", theme.border, theme.surface),
+                              : cn(theme.elevation1, theme.border, theme.surface),
                           )}
                         >
                           <div className="flex items-center justify-between gap-2">

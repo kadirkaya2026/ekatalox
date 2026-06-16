@@ -256,8 +256,10 @@ export const StorefrontProductCard = memo(function StorefrontProductCard({
       }}
       className={cn(
         productCardClassName,
-        "relative overflow-visible cursor-pointer rounded-[1.2rem] shadow-[0_10px_24px_rgba(15,23,42,0.06)]",
+        "relative overflow-visible cursor-pointer rounded-[1.2rem]",
         theme.border,
+        theme.elevation1,
+        theme.surfaceRing,
         !product.is_in_stock && "opacity-60 saturate-50",
       )}
     >

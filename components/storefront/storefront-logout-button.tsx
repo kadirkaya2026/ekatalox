@@ -1,6 +1,7 @@
 "use client";
 
 import { useTransition } from "react";
+import { useStorefrontTheme } from "@/lib/storefront/theme-context";
 import { cn } from "@/lib/utils";
 
 function getCartStorageKey(tenantId: string) {
@@ -16,6 +17,7 @@ export function StorefrontLogoutButton({
   tenantId: string;
   className?: string;
 }) {
+  const theme = useStorefrontTheme();
   const [pending, startTransition] = useTransition();
 
   function handleLogout() {
@@ -47,7 +49,9 @@ export function StorefrontLogoutButton({
       disabled={pending}
       aria-label="Çıkış"
       className={cn(
-        "shrink-0 rounded-lg px-2 py-1 text-xs font-semibold text-slate-500 transition hover:bg-slate-100 hover:text-slate-800 disabled:opacity-50",
+        "shrink-0 rounded-lg px-2 py-1 text-xs font-semibold transition disabled:opacity-50",
+        theme.textMuted,
+        "hover:opacity-80",
         className,
       )}
     >
