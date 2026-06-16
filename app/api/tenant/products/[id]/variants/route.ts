@@ -6,6 +6,9 @@ import { getSessionContext } from "@/lib/auth/session";
 import { ensureTenantAdminResponse } from "@/lib/tenancy/guards";
 import { productVariantBulkUpdateSchema } from "@/lib/validators/product";
 
+const productWithVariantPricesSelect =
+  "*, variants:product_variants(*, prices:product_variant_prices(price_list_id, price))";
+
 function isMissingVariantsTableError(message: string | undefined) {
   return (
     message?.includes("public.product_variants") ||
@@ -14,11 +17,30 @@ function isMissingVariantsTableError(message: string | undefined) {
   );
 }
 
+function isMissingVariantPricesTableError(message: string | undefined) {
+  return (
+    message?.includes("public.product_variant_prices") ||
+    message?.includes("product_variant_prices") ||
+    isMissingVariantsTableError(message)
+  );
+}
+
 async function fetchProductWithOptionalVariants(
   supabase: NonNullable<ReturnType<typeof createSupabaseAdminClient>>,
   productId: string,
   tenantId: string,
 ) {
+  const withVariantPrices = await supabase
+    .from("products")
+    .select(productWithVariantPricesSelect)
+    .eq("id", productId)
+    .eq("tenant_id", tenantId)
+    .single();
+
+  if (!withVariantPrices.error && withVariantPrices.data) {
+    return withVariantPrices.data;
+  }
+
   const withVariants = await supabase
     .from("products")
     .select("*, variants:product_variants(*)")
@@ -38,6 +60,59 @@ async function fetchProductWithOptionalVariants(
     .single();
 
   return fallback.data;
+}
+
+async function syncVariantPrices(
+  supabase: NonNullable<ReturnType<typeof createSupabaseAdminClient>>,
+  variants: Array<{
+    id: string;
+    prices?: Array<{ price_list_id: string; price: number }>;
+  }>,
+) {
+  for (const variant of variants) {
+    const { error: deleteError } = await supabase
+      .from("product_variant_prices")
+      .delete()
+      .eq("variant_id", variant.id);
+
+    if (deleteError) {
+      if (isMissingVariantPricesTableError(deleteError.message)) {
+        return {
+          error:
+            "Varyant fiyat tablosu henüz veritabanında oluşturulmamış. Migration uygulanınca fiyat kaydı aktif olacak.",
+        };
+      }
+
+      return { error: deleteError.message };
+    }
+
+    const explicitPrices = variant.prices ?? [];
+
+    if (!explicitPrices.length) {
+      continue;
+    }
+
+    const { error: insertError } = await supabase.from("product_variant_prices").insert(
+      explicitPrices.map((entry) => ({
+        variant_id: variant.id,
+        price_list_id: entry.price_list_id,
+        price: entry.price,
+      })),
+    );
+
+    if (insertError) {
+      if (isMissingVariantPricesTableError(insertError.message)) {
+        return {
+          error:
+            "Varyant fiyat tablosu henüz veritabanında oluşturulmamış. Migration uygulanınca fiyat kaydı aktif olacak.",
+        };
+      }
+
+      return { error: insertError.message };
+    }
+  }
+
+  return { error: null };
 }
 
 export async function GET(
@@ -198,8 +273,14 @@ export async function POST(
       is_available_for_sale: variant.is_available_for_sale,
       display_order: variant.display_order ?? index + 1,
       updated_at: now,
+      prices: variant.prices,
     };
   });
+
+  const variantPricePayload = payload.map((variant) => ({
+    id: variant.id,
+    prices: variant.prices,
+  }));
 
   const nextVariantIds = new Set(payload.map((variant) => variant.id));
   const deletedVariantIds = [...existingVariantIds].filter((variantId) => !nextVariantIds.has(variantId));
@@ -219,7 +300,9 @@ export async function POST(
 
   const { error: upsertError } = await supabase
     .from("product_variants")
-    .upsert(payload);
+    .upsert(
+      payload.map(({ prices: _prices, ...variant }) => variant),
+    );
 
   if (upsertError) {
     if (isMissingVariantsTableError(upsertError.message)) {
@@ -232,6 +315,12 @@ export async function POST(
       );
     }
     return NextResponse.json({ error: upsertError.message }, { status: 400 });
+  }
+
+  const priceSyncResult = await syncVariantPrices(supabase, variantPricePayload);
+
+  if (priceSyncResult.error) {
+    return NextResponse.json({ error: priceSyncResult.error }, { status: 503 });
   }
 
   const data = await fetchProductWithOptionalVariants(supabase, id, tenant.id);

@@ -1,7 +1,7 @@
 import { getProductPriceForList } from "@/lib/price-lists/records";
 import { buildProductPricesFormPayload } from "@/lib/products/form-prices";
 import { sanitizePrice } from "@/lib/products/parse-price-input";
-import type { PriceList, Product } from "@/lib/types";
+import type { PriceList, Product, ProductVariant } from "@/lib/types";
 
 export function buildListPriceFormState(
   priceLists: PriceList[],
@@ -14,6 +14,21 @@ export function buildListPriceFormState(
       list.id,
       String(getProductPriceForList(product?.prices, list.id)),
     ]),
+  );
+}
+
+export function buildVariantListPriceFormState(
+  priceLists: PriceList[],
+  variant?: Pick<ProductVariant, "prices">,
+): Record<string, string> {
+  const pricedLists = priceLists.filter((list) => !list.is_catalog_only);
+
+  return Object.fromEntries(
+    pricedLists.map((list) => {
+      const variantPrice = variant?.prices?.find((entry) => entry.price_list_id === list.id);
+
+      return [list.id, typeof variantPrice?.price === "number" ? String(variantPrice.price) : ""];
+    }),
   );
 }
 

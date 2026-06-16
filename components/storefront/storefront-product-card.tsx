@@ -24,7 +24,7 @@ export function ProductPrice({
   product,
   size = "card",
 }: {
-  product: Pick<StorefrontProduct, "price" | "original_price" | "currency">;
+  product: Pick<StorefrontProduct, "price" | "price_max" | "original_price" | "currency">;
   size?: ProductPriceSize;
 }) {
   const theme = useStorefrontTheme();
@@ -54,11 +54,16 @@ export function ProductPrice({
 
   const hasDiscount =
     typeof product.original_price === "number" && product.original_price > product.price;
+  const hasPriceRange =
+    typeof product.price_max === "number" && product.price_max > product.price;
+  const currentPriceLabel = hasPriceRange
+    ? `${formatCurrency(product.price, product.currency)}'den`
+    : formatCurrency(product.price, product.currency);
 
   if (!hasDiscount) {
     return (
       <p className={sizeClasses.current}>
-        {formatCurrency(product.price, product.currency)}
+        {currentPriceLabel}
       </p>
     );
   }
@@ -69,7 +74,7 @@ export function ProductPrice({
         {formatCurrency(product.original_price!, product.currency)}
       </p>
       <p className={sizeClasses.current}>
-        {formatCurrency(product.price, product.currency)}
+        {currentPriceLabel}
       </p>
     </div>
   );

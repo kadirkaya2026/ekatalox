@@ -1,5 +1,9 @@
 import { isVariantPurchasable } from "@/lib/storefront/variants";
-import { normalizeProductPriceRecord } from "@/lib/price-lists/records";
+import {
+  normalizeProductPriceRecord,
+  normalizeProductVariantPriceRecord,
+} from "@/lib/price-lists/records";
+import { resolveStorefrontVariantPrice } from "@/lib/products/variant-pricing";
 import type {
   Product,
   ProductVariant,
@@ -9,6 +13,8 @@ import type {
 type RawVariantRecord = Record<string, unknown> & {
   package_quantity?: number | null;
   carton_quantity?: number | null;
+  prices?: unknown;
+  product_variant_prices?: unknown;
 };
 
 type RawProductRecord = Record<string, unknown> & {
@@ -28,6 +34,18 @@ function getPricesFromRecord(record: RawProductRecord) {
   return rawPrices
     .filter((item): item is Record<string, unknown> => Boolean(item) && typeof item === "object")
     .map(normalizeProductPriceRecord);
+}
+
+function getVariantPricesFromRecord(record: RawVariantRecord) {
+  const rawPrices = Array.isArray(record.prices)
+    ? record.prices
+    : Array.isArray(record.product_variant_prices)
+      ? record.product_variant_prices
+      : [];
+
+  return rawPrices
+    .filter((item): item is Record<string, unknown> => Boolean(item) && typeof item === "object")
+    .map(normalizeProductVariantPriceRecord);
 }
 
 function sortVariants(left: ProductVariant, right: ProductVariant) {
@@ -53,6 +71,7 @@ export function normalizeProductVariantRecord(record: RawVariantRecord): Product
     display_order: Number(record.display_order ?? 0),
     created_at: String(record.created_at ?? ""),
     updated_at: String(record.updated_at ?? record.created_at ?? ""),
+    prices: getVariantPricesFromRecord(record),
   };
 }
 
@@ -96,8 +115,12 @@ export function normalizeProductRecord(record: RawProductRecord): Product {
 
 export function toStorefrontVariant(
   variant: ProductVariant,
-  productInStock: boolean,
+  product: Product,
+  priceListId: string,
+  isCatalogOnly: boolean,
 ): StorefrontProductVariant {
+  const pricing = resolveStorefrontVariantPrice(variant, product, priceListId, isCatalogOnly);
+
   return {
     id: variant.id,
     product_id: variant.product_id,
@@ -107,9 +130,12 @@ export function toStorefrontVariant(
     carton_quantity: variant.carton_quantity,
     is_available_for_sale: variant.is_available_for_sale,
     is_purchasable: isVariantPurchasable({
-      productInStock,
+      productInStock: product.is_in_stock,
       variant,
     }),
     display_order: variant.display_order,
+    price: pricing.price,
+    original_price: pricing.original_price,
+    discount_percentage: pricing.discount_percentage,
   };
 }

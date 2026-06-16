@@ -1,4 +1,4 @@
-import type { PriceList, ProductPrice } from "@/lib/types";
+import type { PriceList, ProductPrice, ProductVariantPrice } from "@/lib/types";
 
 type RawPriceListRecord = Record<string, unknown>;
 type RawProductPriceRecord = Record<string, unknown>;
@@ -17,6 +17,16 @@ export function normalizePriceListRecord(record: RawPriceListRecord): PriceList 
 export function normalizeProductPriceRecord(record: RawProductPriceRecord): ProductPrice {
   return {
     product_id: String(record.product_id ?? ""),
+    price_list_id: String(record.price_list_id ?? ""),
+    price: Number(record.price ?? 0),
+  };
+}
+
+export function normalizeProductVariantPriceRecord(
+  record: RawProductPriceRecord,
+): ProductVariantPrice {
+  return {
+    variant_id: String(record.variant_id ?? ""),
     price_list_id: String(record.price_list_id ?? ""),
     price: Number(record.price ?? 0),
   };

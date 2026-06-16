@@ -351,7 +351,7 @@ function addVariantSelectionsToCart(
           image_url: product.image_url,
           is_in_stock: product.is_in_stock && variant.is_purchasable,
           currency: product.currency,
-          price: product.price,
+          price: variant.price,
           package_quantity: variant.package_quantity,
           carton_quantity: variant.carton_quantity,
           stock_quantity: variant.stock_quantity,
@@ -1249,7 +1249,7 @@ export function StorefrontClient({
   ]);
   const selectedLineTotal =
     selectedProduct && selectedTotalQuantity > 0
-      ? selectedProduct.price * selectedTotalQuantity
+      ? (selectedProduct.price ?? 0) * selectedTotalQuantity
       : 0;
   const filteredSelectedVariants = useMemo(() => {
     if (!selectedProduct?.has_variants) {
@@ -1285,7 +1285,7 @@ export function StorefrontClient({
             quantity: selection.quantity,
             variant,
           }) *
-            selectedProduct.price
+            (variant.price ?? 0)
         );
       }, 0),
     };
@@ -2907,11 +2907,23 @@ export function StorefrontClient({
                             <p className={cn("truncate pr-2 text-sm font-bold leading-5 tracking-tight", theme.text)}>
                               {variant.model_name}
                             </p>
-                            {isUnavailable ? (
-                              <Badge className={cn("px-2 py-1 text-[10px]", theme.surfaceMuted, theme.textMuted)}>
-                                Yakında
-                              </Badge>
-                            ) : null}
+                            <div className="flex shrink-0 items-center gap-2">
+                              {variant.price !== null ? (
+                                <ProductPrice
+                                  product={{
+                                    price: variant.price,
+                                    original_price: variant.original_price,
+                                    currency: selectedProduct.currency,
+                                  }}
+                                  size="compact"
+                                />
+                              ) : null}
+                              {isUnavailable ? (
+                                <Badge className={cn("px-2 py-1 text-[10px]", theme.surfaceMuted, theme.textMuted)}>
+                                  Yakında
+                                </Badge>
+                              ) : null}
+                            </div>
                           </div>
 
                           <div className="mt-1.5 grid gap-2 sm:mt-2 sm:grid-cols-[minmax(0,1fr)_auto]">

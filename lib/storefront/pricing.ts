@@ -1,14 +1,14 @@
 import { toStorefrontVariant } from "@/lib/products/records";
+import { computeDiscountPercentage } from "@/lib/products/pricing-utils";
+import {
+  getMaxVariantListPrice,
+  getMinVariantListPrice,
+  resolveStorefrontVariantPrice,
+} from "@/lib/products/variant-pricing";
 import { getProductPriceForList } from "@/lib/price-lists/records";
 import type { Product, StorefrontProduct } from "@/lib/types";
 
-export function computeDiscountPercentage(original: number, sale: number) {
-  if (original <= 0 || sale >= original) {
-    return null;
-  }
-
-  return Math.round(((original - sale) / original) * 100);
-}
+export { computeDiscountPercentage };
 
 export function getMinListPrice(product: Pick<Product, "prices">) {
   const values = (product.prices ?? []).map((entry) => Number(entry.price));
@@ -57,15 +57,59 @@ export function resolveStorefrontPrice(
   };
 }
 
+function resolveVariantProductCardPricing(
+  product: Product,
+  priceListId: string,
+  isCatalogOnly: boolean,
+) {
+  const variants = product.variants ?? [];
+
+  if (!variants.length) {
+    const pricing = resolveStorefrontPrice(product, priceListId, isCatalogOnly);
+    return {
+      ...pricing,
+      price_max: null as number | null,
+    };
+  }
+
+  const minPrice = getMinVariantListPrice(product, priceListId, isCatalogOnly);
+  const maxPrice = getMaxVariantListPrice(product, priceListId, isCatalogOnly);
+
+  if (minPrice === null) {
+    return {
+      price: null,
+      original_price: null,
+      discount_percentage: null,
+      price_max: null,
+    };
+  }
+
+  const cheapestVariant = variants.find((variant) => {
+    const resolved = resolveStorefrontVariantPrice(variant, product, priceListId, false);
+    return resolved.price === minPrice;
+  });
+
+  const cheapestPricing = cheapestVariant
+    ? resolveStorefrontVariantPrice(cheapestVariant, product, priceListId, isCatalogOnly)
+    : resolveStorefrontPrice(product, priceListId, isCatalogOnly);
+
+  return {
+    price: cheapestPricing.price,
+    original_price: cheapestPricing.original_price,
+    discount_percentage: cheapestPricing.discount_percentage,
+    price_max: maxPrice !== null && maxPrice !== minPrice ? maxPrice : null,
+  };
+}
+
 export function toStorefrontProduct(
   product: Product,
   priceListId: string,
   isCatalogOnly: boolean,
 ): StorefrontProduct {
   const variants = (product.variants ?? []).map((variant) =>
-    toStorefrontVariant(variant, product.is_in_stock),
+    toStorefrontVariant(variant, product, priceListId, isCatalogOnly),
   );
-  const pricing = resolveStorefrontPrice(product, priceListId, isCatalogOnly);
+  const pricing = resolveVariantProductCardPricing(product, priceListId, isCatalogOnly);
 
   return {
     id: product.id,
@@ -77,6 +121,7 @@ export function toStorefrontProduct(
     is_in_stock: product.is_in_stock,
     currency: product.currency,
     price: pricing.price,
+    price_max: pricing.price_max,
     original_price: pricing.original_price,
     discount_percentage: pricing.discount_percentage,
     package_quantity: product.package_quantity,

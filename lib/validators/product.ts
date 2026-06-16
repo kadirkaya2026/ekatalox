@@ -234,6 +234,7 @@ export const productVariantBulkUpdateSchema = z.object({
       carton_quantity: optionalPositiveIntegerSchema,
       is_available_for_sale: booleanSchema.optional().default(true),
       display_order: z.coerce.number().int().min(1).optional(),
+      prices: productPricesSchema.optional(),
     }),
   ).min(1, "En az bir varyant girin."),
 });

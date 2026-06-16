@@ -39,6 +39,7 @@ import { ProductPriceFields } from "@/components/dashboard/product-price-fields"
 import {
   appendProductPricesToFormData,
   buildListPriceFormState,
+  buildVariantListPriceFormState,
   getMinPriceFromFormState,
 } from "@/lib/products/price-form";
 import { getProductPriceForList } from "@/lib/price-lists/records";
@@ -67,6 +68,7 @@ interface VariantMatrixRow {
   model_name: string;
   package_quantity: string;
   carton_quantity: string;
+  listPrices: Record<string, string>;
   is_available_for_sale: boolean;
   display_order: number;
 }
@@ -86,10 +88,11 @@ const emptyForm = (priceLists: PriceList[]): ProductFormState => ({
   image: null,
 });
 
-const emptyVariantRow = (display_order: number): VariantMatrixRow => ({
+const emptyVariantRow = (display_order: number, priceLists: PriceList[]): VariantMatrixRow => ({
   model_name: "",
   package_quantity: "",
   carton_quantity: "",
+  listPrices: buildVariantListPriceFormState(priceLists),
   is_available_for_sale: true,
   display_order,
 });
@@ -243,12 +246,17 @@ function ProductOrderInput({
   );
 }
 
-function variantToMatrixRow(variant: ProductVariant, index: number): VariantMatrixRow {
+function variantToMatrixRow(
+  variant: ProductVariant,
+  index: number,
+  priceLists: PriceList[],
+): VariantMatrixRow {
   return {
     id: variant.id,
     model_name: variant.model_name,
     package_quantity: variant.package_quantity ? String(variant.package_quantity) : "",
     carton_quantity: variant.carton_quantity ? String(variant.carton_quantity) : "",
+    listPrices: buildVariantListPriceFormState(priceLists, variant),
     is_available_for_sale: variant.is_available_for_sale,
     display_order: variant.display_order || index + 1,
   };
@@ -263,6 +271,12 @@ function normalizeVariantRows(rows: VariantMatrixRow[]) {
       carton_quantity: row.carton_quantity.trim() ? Number(row.carton_quantity) : null,
       is_available_for_sale: row.is_available_for_sale,
       display_order: index + 1,
+      prices: Object.entries(row.listPrices)
+        .filter(([, value]) => value.trim() !== "")
+        .map(([price_list_id, price]) => ({
+          price_list_id,
+          price: Number(price),
+        })),
     };
   });
 }
@@ -432,8 +446,10 @@ export function ProductsManager({
     setVariantMatrixProduct(product);
     setVariantRows(
       (product.variants ?? []).length
-        ? (product.variants ?? []).map(variantToMatrixRow)
-        : [emptyVariantRow(1)],
+        ? (product.variants ?? []).map((variant, index) =>
+            variantToMatrixRow(variant, index, priceLists),
+          )
+        : [emptyVariantRow(1, priceLists)],
     );
     setVariantMessage(null);
     setVariantMatrixOpen(true);
@@ -531,8 +547,26 @@ export function ProductsManager({
     );
   }
 
+  function updateVariantRowPrice(index: number, priceListId: string, value: string) {
+    setVariantRows((current) =>
+      current.map((row, rowIndex) => {
+        if (rowIndex !== index) {
+          return row;
+        }
+
+        return {
+          ...row,
+          listPrices: {
+            ...row.listPrices,
+            [priceListId]: value,
+          },
+        };
+      }),
+    );
+  }
+
   function addVariantRow() {
-    setVariantRows((current) => [...current, emptyVariantRow(current.length + 1)]);
+    setVariantRows((current) => [...current, emptyVariantRow(current.length + 1, priceLists)]);
   }
 
   function removeVariantRow(index: number) {
@@ -1609,7 +1643,8 @@ export function ProductsManager({
                 Hızlı varyant düzenleyici
               </p>
               <p className="mt-1 text-sm text-muted-foreground">
-                Model adı, paket içi, koli içi ve satış durumunu tek ekranda yönetin.
+                Model adı, paket içi, koli içi, fiyat ve satış durumunu tek ekranda yönetin.
+                Fiyat boş bırakılırsa ürün fiyatı kullanılır.
               </p>
             </div>
             <Button variant="secondary" onClick={addVariantRow}>
@@ -1631,6 +1666,11 @@ export function ProductsManager({
                   <th className="px-3 py-3">Model Adı</th>
                   <th className="px-3 py-3">Paket İçi</th>
                   <th className="px-3 py-3">Koli İçi</th>
+                  {pricedLists.map((list) => (
+                    <th key={list.id} className="px-3 py-3 whitespace-nowrap">
+                      {getPriceListDisplayName(list)}
+                    </th>
+                  ))}
                   <th className="px-3 py-3">Satış Durumu</th>
                   <th className="px-3 py-3 text-right">Sil</th>
                 </tr>
@@ -1672,6 +1712,19 @@ export function ProductsManager({
                           placeholder="Boş bırak"
                         />
                       </td>
+                      {pricedLists.map((list) => (
+                        <td key={list.id} className="px-3 py-3">
+                          <Input
+                            inputMode="decimal"
+                            value={row.listPrices[list.id] ?? ""}
+                            onChange={(event) =>
+                              updateVariantRowPrice(index, list.id, event.target.value)
+                            }
+                            placeholder="Ürün fiyatı"
+                            className="min-w-[6.5rem]"
+                          />
+                        </td>
+                      ))}
                       <td className="px-3 py-3">
                         <label className="flex items-center gap-3 text-sm text-muted-foreground">
                           <input

@@ -29,6 +29,12 @@ export interface ProductPrice {
   price: number;
 }
 
+export interface ProductVariantPrice {
+  variant_id: string;
+  price_list_id: string;
+  price: number;
+}
+
 export interface Tenant {
   id: string;
   company_name: string;
@@ -74,6 +80,7 @@ export interface ProductVariant {
   display_order: number;
   created_at: string;
   updated_at: string;
+  prices?: ProductVariantPrice[];
 }
 
 export interface AccessCode {
@@ -224,6 +231,7 @@ export interface StorefrontProduct {
   is_in_stock: boolean;
   currency: CurrencyCode;
   price: number | null;
+  price_max?: number | null;
   original_price?: number | null;
   discount_percentage?: number | null;
   package_quantity: number | null;
@@ -243,6 +251,9 @@ export interface StorefrontProductVariant {
   is_available_for_sale: boolean;
   is_purchasable: boolean;
   display_order: number;
+  price: number | null;
+  original_price?: number | null;
+  discount_percentage?: number | null;
 }
 
 export type SalesUnit = "adet" | "paket" | "koli";
