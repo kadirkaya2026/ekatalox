@@ -16,14 +16,26 @@
   --font-sans: var(--font-inter);
 }
 
+.dark {
+  --color-background: #0f172a;
+  --color-foreground: #f8fafc;
+  --color-card: #1e293b;
+  --color-card-foreground: #f8fafc;
+  --color-muted: #334155;
+  --color-muted-foreground: #94a3b8;
+  --color-border: #334155;
+  --color-primary: #f8fafc;
+  --color-primary-foreground: #0f172a;
+}
+
 * {
-  @apply border-slate-200;
+  @apply border-border;
 }
 
 html {
   @apply overflow-x-hidden;
   scroll-behavior: smooth;
-  background: #0b0f19;
+  background: var(--color-background);
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
 }
@@ -32,8 +44,8 @@ body {
   @apply min-h-screen overflow-x-hidden antialiased;
   font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, "SF Pro Display", system-ui, sans-serif;
   text-rendering: optimizeLegibility;
-  background: #0b0f19;
-  color: #fff;
+  background: var(--color-background);
+  color: var(--color-foreground);
 }
 
 a {
@@ -51,12 +63,19 @@ input:focus,
 select:focus,
 textarea:focus,
 button:focus-visible {
-  @apply ring-2 ring-emerald-200 ring-offset-2 ring-offset-slate-50;
+  @apply ring-2 ring-emerald-200 ring-offset-2 ring-offset-background;
+}
+
+.dark input:focus,
+.dark select:focus,
+.dark textarea:focus,
+.dark button:focus-visible {
+  @apply ring-emerald-500/30 ring-offset-slate-900;
 }
 
 ::selection {
-  background: rgba(0, 210, 255, 0.3);
-  color: #fff;
+  background: rgba(5, 150, 105, 0.25);
+  color: inherit;
 }
 
 .container-shell {
@@ -64,11 +83,11 @@ button:focus-visible {
 }
 
 .panel-card {
-  @apply rounded-xl border border-slate-100 bg-white shadow-sm;
+  @apply rounded-xl border border-slate-100 bg-card text-card-foreground shadow-sm dark:border-slate-800;
 }
 
 .data-surface {
-  @apply rounded-2xl border border-slate-200 bg-white shadow-sm;
+  @apply rounded-2xl border border-slate-200 bg-card text-card-foreground shadow-sm dark:border-slate-800;
 }
 
 .sticky-safe-bottom {
@@ -157,9 +176,9 @@ section[id] {
 }
 
 ::-webkit-scrollbar { width: 8px; height: 8px; }
-::-webkit-scrollbar-track { background: #0B0F19; }
-::-webkit-scrollbar-thumb { background: #1f2937; border-radius: 4px; }
-::-webkit-scrollbar-thumb:hover { background: #334155; }
+::-webkit-scrollbar-track { background: var(--color-background); }
+::-webkit-scrollbar-thumb { background: var(--color-muted); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--color-muted-foreground); }
 
 @keyframes ek-homepage-shimmer {
   0% {

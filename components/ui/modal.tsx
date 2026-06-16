@@ -62,7 +62,7 @@ export function Modal({
         aria-labelledby="modal-title"
         onClick={(event) => event.stopPropagation()}
         className={cn(
-          "relative z-10 mx-auto flex w-full min-w-0 max-w-2xl flex-col overflow-hidden bg-white",
+          "relative z-10 mx-auto flex w-full min-w-0 max-w-2xl flex-col overflow-hidden bg-card text-card-foreground",
           sheet
             ? "h-[100dvh] max-h-[100dvh] rounded-none pt-[env(safe-area-inset-top)] shadow-[0_-12px_48px_rgba(15,23,42,0.2)] sm:h-auto sm:max-h-[min(85dvh,100%)] sm:rounded-2xl sm:pt-0 sm:shadow-soft"
             : "max-h-[85dvh] rounded-t-2xl shadow-[0_-12px_48px_rgba(15,23,42,0.2)] sm:max-h-[min(85dvh,100%)] sm:rounded-2xl sm:shadow-soft",
@@ -76,15 +76,15 @@ export function Modal({
           />
         </div>
 
-        <div className={cn("flex shrink-0 items-center justify-between border-b border-slate-100 px-4 pb-2 pt-1 sm:px-5 sm:py-4 sm:pt-4", headerClassName)}>
-          <h3 id="modal-title" className={cn("text-lg font-semibold text-slate-900", titleClassName)}>
+        <div className={cn("flex shrink-0 items-center justify-between border-b border-slate-100 px-4 pb-2 pt-1 dark:border-slate-800 sm:px-5 sm:py-4 sm:pt-4", headerClassName)}>
+          <h3 id="modal-title" className={cn("text-lg font-semibold text-foreground", titleClassName)}>
             {title}
           </h3>
           <button
             type="button"
             onClick={onClose}
             className={cn(
-              "rounded-full p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-900",
+              "rounded-full p-2 text-muted-foreground transition hover:bg-muted hover:text-foreground",
               closeButtonClassName,
             )}
           >
@@ -105,7 +105,7 @@ export function Modal({
         </div>
 
         {footer ? (
-          <div className={cn("shrink-0 space-y-4 border-t border-slate-100 px-4 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:px-5", footerClassName)}>
+          <div className={cn("shrink-0 space-y-4 border-t border-slate-100 px-4 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] dark:border-slate-800 sm:px-5", footerClassName)}>
             {footer}
           </div>
         ) : null}

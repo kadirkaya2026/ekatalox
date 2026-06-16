@@ -52,7 +52,7 @@ function ProductRankingTable({
 }) {
   return (
     <Card className="p-5">
-      <h2 className="text-lg font-semibold text-slate-900">{title}</h2>
+      <h2 className="text-lg font-semibold text-foreground">{title}</h2>
 
       {rows.length === 0 ? (
         <p className="mt-4 text-sm text-slate-500">{emptyMessage}</p>
@@ -71,7 +71,7 @@ function ProductRankingTable({
                 {rows.map((row, index) => (
                   <tr key={row.productId} className="border-b border-slate-50 last:border-0">
                     <td className="px-4 py-3 text-slate-500">{index + 1}</td>
-                    <td className="px-4 py-3 font-medium text-slate-900">{row.productName}</td>
+                    <td className="px-4 py-3 font-medium text-foreground">{row.productName}</td>
                     <td className="px-4 py-3 text-right text-slate-700">{row.count}</td>
                   </tr>
                 ))}
@@ -87,7 +87,7 @@ function ProductRankingTable({
               >
                 <div>
                   <p className="text-xs text-slate-500">#{index + 1}</p>
-                  <p className="font-medium text-slate-900">{row.productName}</p>
+                  <p className="font-medium text-foreground">{row.productName}</p>
                 </div>
                 <p className="text-sm font-semibold text-slate-700">{row.count}</p>
               </div>
@@ -117,7 +117,7 @@ function TrafficBarChart({
 
   return (
     <Card className="p-5">
-      <h2 className="text-lg font-semibold text-slate-900">{title}</h2>
+      <h2 className="text-lg font-semibold text-foreground">{title}</h2>
 
       {!hasData ? (
         <p className="mt-4 text-sm text-slate-500">{emptyMessage}</p>
@@ -164,7 +164,7 @@ function SimpleUsageTable({
 }) {
   return (
     <Card className="p-5">
-      <h2 className="text-lg font-semibold text-slate-900">{title}</h2>
+      <h2 className="text-lg font-semibold text-foreground">{title}</h2>
 
       {rows.length === 0 ? (
         <p className="mt-4 text-sm text-slate-500">{emptyMessage}</p>
@@ -185,7 +185,7 @@ function SimpleUsageTable({
               {rows.map((row, index) => (
                 <tr key={row.key} className="border-b border-slate-50 last:border-0">
                   <td className="px-4 py-3 text-slate-500">{index + 1}</td>
-                  <td className="px-4 py-3 font-medium text-slate-900">{row.primary}</td>
+                  <td className="px-4 py-3 font-medium text-foreground">{row.primary}</td>
                   {showSecondary ? (
                     <td className="px-4 py-3 text-slate-600">{row.secondary}</td>
                   ) : null}
@@ -252,7 +252,7 @@ export function ReportsPanel({
               "rounded-lg px-4 py-2 text-sm font-semibold transition",
               period === option.value
                 ? "bg-slate-900 text-white"
-                : "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50",
+                : "border border-border bg-card text-foreground hover:bg-muted",
               loading && "opacity-70",
             )}
           >
@@ -272,7 +272,7 @@ export function ReportsPanel({
 
       <Card className="p-5">
         <p className="text-sm text-slate-500">{getVisitorCardTitle(report)}</p>
-        <p className="mt-2 text-3xl font-bold text-slate-900">
+        <p className="mt-2 text-3xl font-bold text-foreground">
           {report.uniqueVisitors}
           <span className="ml-2 text-base font-medium text-slate-500">
             Tekil Ziyaretçi (cihaz)
@@ -288,7 +288,7 @@ export function ReportsPanel({
 
       <Card className="p-5">
         <p className="text-sm text-slate-500">{getOrderCardTitle(report)}</p>
-        <p className="mt-2 text-3xl font-bold text-slate-900">
+        <p className="mt-2 text-3xl font-bold text-foreground">
           {report.orderSummary.totalOrders}
           <span className="ml-2 text-base font-medium text-slate-500">Sipariş PDF</span>
         </p>
@@ -305,7 +305,7 @@ export function ReportsPanel({
                 className="flex items-center justify-between rounded-lg border border-slate-100 px-4 py-3"
               >
                 <span className="text-sm font-medium text-slate-700">{currency} Toplam</span>
-                <span className="text-sm font-semibold text-slate-900">
+                <span className="text-sm font-semibold text-foreground">
                   {formatCurrency(report.orderSummary.totalsByCurrency[currency], currency)}
                 </span>
               </div>
@@ -335,7 +335,7 @@ export function ReportsPanel({
       </div>
 
       <Card className="p-5">
-        <h2 className="text-lg font-semibold text-slate-900">En Çok Aranan Terimler</h2>
+        <h2 className="text-lg font-semibold text-foreground">En Çok Aranan Terimler</h2>
 
         {report.topSearchQueries.length === 0 ? (
           <p className="mt-4 text-sm text-slate-500">Bu dönemde arama kaydedilmedi.</p>
@@ -354,7 +354,7 @@ export function ReportsPanel({
                 {report.topSearchQueries.map((row, index) => (
                   <tr key={row.query} className="border-b border-slate-50 last:border-0">
                     <td className="px-4 py-3 text-slate-500">{index + 1}</td>
-                    <td className="px-4 py-3 font-medium text-slate-900">{row.query}</td>
+                    <td className="px-4 py-3 font-medium text-foreground">{row.query}</td>
                     <td className="px-4 py-3 text-right text-slate-700">{row.searchCount}</td>
                     <td className="px-4 py-3 text-right text-slate-700">
                       {row.zeroResultCount}

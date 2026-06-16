@@ -10,7 +10,7 @@ export default async function DashboardLayout({
   const plan = session.tenant?.plan ?? "baslangic";
 
   return (
-    <div className="min-h-screen bg-slate-50 md:grid md:h-screen md:grid-cols-[280px_1fr] md:overflow-hidden">
+    <div className="min-h-screen bg-background text-foreground md:grid md:h-screen md:grid-cols-[280px_1fr] md:overflow-hidden">
       <div className="hidden md:block md:h-screen">
         <Sidebar
           mode="tenant"

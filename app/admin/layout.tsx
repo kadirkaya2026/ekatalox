@@ -9,7 +9,7 @@ export default async function AdminLayout({
   await requireSuperAdminPage();
 
   return (
-    <div className="min-h-screen bg-slate-50 md:grid md:h-screen md:grid-cols-[280px_1fr] md:overflow-hidden">
+    <div className="min-h-screen bg-background text-foreground md:grid md:h-screen md:grid-cols-[280px_1fr] md:overflow-hidden">
       <div className="hidden md:block md:h-screen">
         <Sidebar
           mode="admin"

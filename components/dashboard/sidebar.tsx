@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { EkataloxLogo } from "@/components/brand/ekatalox-logo";
 import { SidebarLogoutButton } from "@/components/dashboard/sidebar-logout-button";
+import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { hasPlanFeature, type PlanFeature, type TenantPlan } from "@/lib/billing/plans";
 import { cn } from "@/lib/utils";
 
@@ -167,7 +168,8 @@ export function Sidebar({
         })}
       </nav>
 
-      <div className="mt-auto border-t border-slate-800 p-4">
+      <div className="mt-auto space-y-2 border-t border-slate-800 p-4">
+        <ThemeToggle />
         <SidebarLogoutButton mode={mode} />
       </div>
     </aside>

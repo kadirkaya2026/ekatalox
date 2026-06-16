@@ -14,8 +14,8 @@ const variants: Record<ButtonVariant, string> = {
   primary:
     "bg-emerald-600 text-white hover:bg-emerald-700 disabled:bg-emerald-300",
   secondary:
-    "border border-slate-200 bg-white text-slate-900 hover:bg-slate-50 disabled:text-slate-400",
-  ghost: "bg-transparent text-slate-700 hover:bg-slate-100 disabled:text-slate-400",
+    "border border-slate-200 bg-card text-foreground hover:bg-muted disabled:text-muted-foreground dark:border-slate-700 dark:hover:bg-slate-800",
+  ghost: "bg-transparent text-foreground hover:bg-muted disabled:text-muted-foreground dark:hover:bg-slate-800",
 };
 
 export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(

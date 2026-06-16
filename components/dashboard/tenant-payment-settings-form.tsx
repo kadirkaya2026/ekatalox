@@ -141,22 +141,22 @@ export function TenantPaymentSettingsForm({
 
   return (
     <div className="space-y-6">
-    <Card className="overflow-hidden border-slate-200 p-0">
+    <Card className="overflow-hidden border-border p-0">
       {/* Header */}
-      <div className="border-b border-slate-100 bg-[radial-gradient(circle_at_top_right,rgba(16,185,129,0.16),transparent_42%),linear-gradient(135deg,#f8fafc_0%,#ffffff_45%,#ecfeff_100%)] px-5 py-5">
+      <div className="border-b border-border bg-[radial-gradient(circle_at_top_right,rgba(16,185,129,0.16),transparent_42%),linear-gradient(135deg,#f8fafc_0%,#ffffff_45%,#ecfeff_100%)] px-5 py-5">
         <div className="flex items-start gap-4">
           <div className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-700">
             <ShoppingCart className="size-5" />
           </div>
           <div>
-            <div className="inline-flex items-center gap-2 rounded-full border border-emerald-100 bg-white/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-emerald-700">
+            <div className="inline-flex items-center gap-2 rounded-full border border-emerald-100 bg-card/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-emerald-700">
               <Sparkles className="size-3.5" />
               Ödeme &amp; İskonto Ayarları
             </div>
-            <h2 className="mt-3 text-lg font-semibold text-slate-900">
+            <h2 className="mt-3 text-lg font-semibold text-foreground">
               Basamaklı nakit ve kart kampanyaları
             </h2>
-            <p className="mt-1 text-sm leading-6 text-slate-600">
+            <p className="mt-1 text-sm leading-6 text-muted-foreground">
               Her iki kampanyaya birden fazla baraj tanımlayabilirsiniz. Müşteri sepetine
               uygun en yüksek baraj otomatik uygulanır.
             </p>
@@ -165,13 +165,13 @@ export function TenantPaymentSettingsForm({
       </div>
 
       {/* Tab bar */}
-      <div className="flex border-b border-slate-100 bg-slate-50">
+      <div className="flex border-b border-border bg-muted/60">
         <button
           type="button"
           onClick={() => setTab("cash")}
           className={`flex flex-1 items-center justify-center gap-2 px-4 py-3 text-sm font-semibold transition ${
             tab === "cash"
-              ? "border-b-2 border-emerald-600 bg-white text-emerald-700"
+              ? "border-b-2 border-emerald-600 bg-card text-emerald-700"
               : "text-slate-500 hover:text-slate-700"
           }`}
         >
@@ -188,7 +188,7 @@ export function TenantPaymentSettingsForm({
           onClick={() => setTab("card")}
           className={`flex flex-1 items-center justify-center gap-2 px-4 py-3 text-sm font-semibold transition ${
             tab === "card"
-              ? "border-b-2 border-blue-600 bg-white text-blue-700"
+              ? "border-b-2 border-blue-600 bg-card text-blue-700"
               : "text-slate-500 hover:text-slate-700"
           }`}
         >
@@ -206,7 +206,7 @@ export function TenantPaymentSettingsForm({
         {/* ── NAKİT SEKMESİ ─────────────────────────────── */}
         {tab === "cash" && (
           <div className="space-y-4">
-            <div className="rounded-2xl border border-slate-200 bg-slate-50/60 p-4">
+            <div className="rounded-2xl border border-border bg-muted/60/60 p-4">
               <div className="mb-3 flex items-center justify-between">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
                   Nakit İskonto Barajları
@@ -222,22 +222,22 @@ export function TenantPaymentSettingsForm({
               </div>
 
               {cashTiers.length === 0 ? (
-                <p className="rounded-xl border border-dashed border-slate-200 p-4 text-center text-sm text-slate-400">
+                <p className="rounded-xl border border-dashed border-border p-4 text-center text-sm text-muted-foreground">
                   Henüz baraj eklenmedi. &ldquo;Baraj Ekle&rdquo; butonuna basın.
                 </p>
               ) : (
                 <div className="space-y-2">
                   {/* Başlık satırı */}
                   <div className="grid grid-cols-[1fr_1fr_auto] gap-3 px-1">
-                    <span className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">Baraj tutarı</span>
-                    <span className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">İskonto oranı (%)</span>
+                    <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Baraj tutarı</span>
+                    <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">İskonto oranı (%)</span>
                     <span className="w-8" />
                   </div>
                 {cashTiers
                     .slice()
                     .sort((a, b) => a.threshold - b.threshold)
                     .map((tier) => (
-                        <div key={tier._id} className="grid grid-cols-[1fr_1fr_auto] items-center gap-3 rounded-xl border border-slate-200 bg-white p-3">
+                        <div key={tier._id} className="grid grid-cols-[1fr_1fr_auto] items-center gap-3 rounded-xl border border-border bg-card p-3">
                           <div>
                             <Input
                               type="number"
@@ -266,14 +266,14 @@ export function TenantPaymentSettingsForm({
                               placeholder="7.5"
                               className="h-9 pr-7"
                             />
-                            <span className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-slate-400">
+                            <span className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
                               %
                             </span>
                           </div>
                           <button
                             type="button"
                             onClick={() => removeCashTier(tier._id)}
-                            className="flex size-8 items-center justify-center rounded-lg text-slate-400 transition hover:bg-rose-50 hover:text-rose-600"
+                            className="flex size-8 items-center justify-center rounded-lg text-muted-foreground transition hover:bg-rose-50 hover:text-rose-600"
                           >
                             <Trash2 className="size-4" />
                           </button>
@@ -282,16 +282,16 @@ export function TenantPaymentSettingsForm({
                 </div>
               )}
 
-              <p className="mt-2 text-xs text-slate-400">
+              <p className="mt-2 text-xs text-muted-foreground">
                 En yüksek barajı geçen müşteriye o tier&apos;ın iskontosu uygulanır.
               </p>
             </div>
 
             {/* Şart notu */}
-            <div className="rounded-2xl border border-slate-200 bg-slate-50/60 p-4">
+            <div className="rounded-2xl border border-border bg-muted/60/60 p-4">
               <label className="mb-2 block text-sm font-medium text-slate-700">
                 Şart notu{" "}
-                <span className="font-normal text-slate-400">(opsiyonel)</span>
+                <span className="font-normal text-muted-foreground">(opsiyonel)</span>
               </label>
               <textarea
                 rows={2}
@@ -299,14 +299,14 @@ export function TenantPaymentSettingsForm({
                 value={cashNote}
                 onChange={(e) => { setCashNote(e.target.value); setMessage(null); }}
                 placeholder="Örn: Bu indirim sadece nakit alımlarda geçerlidir."
-                className="w-full resize-none rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-slate-400 focus:outline-none"
+                className="w-full resize-none rounded-xl border border-border bg-card px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:border-slate-400 focus:outline-none"
               />
             </div>
 
             {/* Toggle */}
-            <div className="flex items-start justify-between gap-4 rounded-2xl border border-slate-200 bg-slate-50/60 px-4 py-3">
+            <div className="flex items-start justify-between gap-4 rounded-2xl border border-border bg-muted/60/60 px-4 py-3">
               <div>
-                <p className="text-sm font-semibold text-slate-900">Nakit kampanyasını aktif et</p>
+                <p className="text-sm font-semibold text-foreground">Nakit kampanyasını aktif et</p>
                 <p className="mt-0.5 text-xs text-slate-500">
                   Aktifken nakit ödeyen müşterilere otomatik iskonto uygulanır.
                 </p>
@@ -320,7 +320,7 @@ export function TenantPaymentSettingsForm({
                 }`}
               >
                 <span
-                  className={`absolute top-1 size-5 rounded-full bg-white shadow-sm transition ${
+                  className={`absolute top-1 size-5 rounded-full bg-card shadow-sm transition ${
                     isCashActive ? "left-6" : "left-1"
                   }`}
                 />
@@ -333,7 +333,7 @@ export function TenantPaymentSettingsForm({
         {tab === "card" && (
           <div className="space-y-4">
             {/* 0 Komisyon barajları */}
-            <div className="rounded-2xl border border-slate-200 bg-slate-50/60 p-4">
+            <div className="rounded-2xl border border-border bg-muted/60/60 p-4">
               <div className="mb-3 flex items-center justify-between">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
                   0 Komisyon Barajları
@@ -360,14 +360,14 @@ export function TenantPaymentSettingsForm({
               </div>
 
               {cardTiers.length === 0 ? (
-                <p className="rounded-xl border border-dashed border-slate-200 p-4 text-center text-sm text-slate-400">
+                <p className="rounded-xl border border-dashed border-border p-4 text-center text-sm text-muted-foreground">
                   Henüz baraj eklenmedi. &ldquo;Baraj Ekle&rdquo; butonuna basın.
                 </p>
               ) : (
                 <div className="space-y-2">
                   <div className="grid grid-cols-[1fr_1fr_auto] gap-3 px-1">
-                    <span className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">Baraj tutarı</span>
-                    <span className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">Maks. ücretsiz taksit</span>
+                    <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Baraj tutarı</span>
+                    <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Maks. ücretsiz taksit</span>
                     <span className="w-8" />
                   </div>
                   {cardTiers
@@ -376,7 +376,7 @@ export function TenantPaymentSettingsForm({
                     .map((tier) => (
                         <div
                           key={tier._id}
-                          className="grid grid-cols-[1fr_1fr_auto] items-center gap-3 rounded-xl border border-slate-200 bg-white p-3"
+                          className="grid grid-cols-[1fr_1fr_auto] items-center gap-3 rounded-xl border border-border bg-card p-3"
                         >
                           <Input
                             type="number"
@@ -399,7 +399,7 @@ export function TenantPaymentSettingsForm({
                                 Number(e.target.value),
                               )
                             }
-                            className="h-9 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-900 focus:border-slate-400 focus:outline-none"
+                            className="h-9 w-full rounded-lg border border-border bg-card px-3 text-sm text-foreground focus:border-slate-400 focus:outline-none"
                           >
                             {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((n) => (
                               <option key={n} value={n}>
@@ -410,7 +410,7 @@ export function TenantPaymentSettingsForm({
                           <button
                             type="button"
                             onClick={() => removeCardTier(tier._id)}
-                            className="flex size-8 items-center justify-center rounded-lg text-slate-400 transition hover:bg-rose-50 hover:text-rose-600"
+                            className="flex size-8 items-center justify-center rounded-lg text-muted-foreground transition hover:bg-rose-50 hover:text-rose-600"
                           >
                             <Trash2 className="size-4" />
                           </button>
@@ -418,16 +418,16 @@ export function TenantPaymentSettingsForm({
                       ))}
                 </div>
               )}
-              <p className="mt-2 text-xs text-slate-400">
+              <p className="mt-2 text-xs text-muted-foreground">
                 Örn: 1000$ barajında 6 taksit → sepet ≥ 1000$ ise 6 taksit ve altı ücretsiz.
               </p>
             </div>
 
             {/* Şart notu */}
-            <div className="rounded-2xl border border-slate-200 bg-slate-50/60 p-4">
+            <div className="rounded-2xl border border-border bg-muted/60/60 p-4">
               <label className="mb-2 block text-sm font-medium text-slate-700">
                 Şart notu{" "}
-                <span className="font-normal text-slate-400">(opsiyonel)</span>
+                <span className="font-normal text-muted-foreground">(opsiyonel)</span>
               </label>
               <textarea
                 rows={2}
@@ -435,14 +435,14 @@ export function TenantPaymentSettingsForm({
                 value={cardNote}
                 onChange={(e) => { setCardNote(e.target.value); setMessage(null); }}
                 placeholder="Örn: 1000 USD ve üzeri kart alımlarında taksit komisyonu yok."
-                className="w-full resize-none rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-slate-400 focus:outline-none"
+                className="w-full resize-none rounded-xl border border-border bg-card px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:border-slate-400 focus:outline-none"
               />
             </div>
 
             {/* Toggle */}
-            <div className="flex items-start justify-between gap-4 rounded-2xl border border-slate-200 bg-slate-50/60 px-4 py-3">
+            <div className="flex items-start justify-between gap-4 rounded-2xl border border-border bg-muted/60/60 px-4 py-3">
               <div>
-                <p className="text-sm font-semibold text-slate-900">Kart kampanyasını aktif et</p>
+                <p className="text-sm font-semibold text-foreground">Kart kampanyasını aktif et</p>
                 <p className="mt-0.5 text-xs text-slate-500">
                   Aktifken kart ile ödeyen ve barajı geçen müşterilerde vade farkı sıfırlanır.
                 </p>
@@ -456,7 +456,7 @@ export function TenantPaymentSettingsForm({
                 }`}
               >
                 <span
-                  className={`absolute top-1 size-5 rounded-full bg-white shadow-sm transition ${
+                  className={`absolute top-1 size-5 rounded-full bg-card shadow-sm transition ${
                     isCardActive ? "left-6" : "left-1"
                   }`}
                 />
@@ -464,7 +464,7 @@ export function TenantPaymentSettingsForm({
             </div>
 
             {/* Taksit seçenekleri */}
-            <div className="rounded-2xl border border-slate-200 bg-slate-50/60 p-4">
+            <div className="rounded-2xl border border-border bg-muted/60/60 p-4">
               <p className="mb-4 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
                 Taksit Seçenekleri &amp; Vade Farkları
               </p>
@@ -472,7 +472,7 @@ export function TenantPaymentSettingsForm({
                 {cardInstallmentOptions.map((option, index) => (
                   <div
                     key={option.count}
-                    className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2.5"
+                    className="flex items-center gap-3 rounded-xl border border-border bg-card px-3 py-2.5"
                   >
                     <button
                       type="button"
@@ -487,7 +487,7 @@ export function TenantPaymentSettingsForm({
                       }`}
                     >
                       <span
-                        className={`absolute top-0.5 size-4 rounded-full bg-white shadow-sm transition ${
+                        className={`absolute top-0.5 size-4 rounded-full bg-card shadow-sm transition ${
                           option.isActive ? "left-4" : "left-0.5"
                         }`}
                       />
@@ -496,7 +496,7 @@ export function TenantPaymentSettingsForm({
                     <span className="w-24 text-sm font-medium text-slate-800">{option.label}</span>
 
                     <div className="flex flex-1 items-center gap-2">
-                      <span className="text-xs text-slate-400">Vade farkı:</span>
+                      <span className="text-xs text-muted-foreground">Vade farkı:</span>
                       <div className="relative w-20">
                         <Input
                           type="number"
@@ -518,7 +518,7 @@ export function TenantPaymentSettingsForm({
                           }}
                           className="h-8 pr-6 text-sm"
                         />
-                        <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-xs text-slate-400">
+                        <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
                           %
                         </span>
                       </div>
@@ -532,7 +532,7 @@ export function TenantPaymentSettingsForm({
                   </div>
                 ))}
               </div>
-              <p className="mt-3 text-xs text-slate-400">
+              <p className="mt-3 text-xs text-muted-foreground">
                 Aktif seçenekler sepette müşteriye sunulur. Vade farkı 0 ise ek ücret uygulanmaz.
               </p>
             </div>
@@ -559,21 +559,21 @@ export function TenantPaymentSettingsForm({
     </Card>
 
     <PlanFeatureGate feature="online_payment" plan={plan} companyName={companyName}>
-      <Card className="overflow-hidden border-slate-200 p-0">
-        <div className="border-b border-slate-100 bg-[radial-gradient(circle_at_top_right,rgba(59,130,246,0.14),transparent_42%),linear-gradient(135deg,#f8fafc_0%,#ffffff_45%,#eff6ff_100%)] px-5 py-5">
+      <Card className="overflow-hidden border-border p-0">
+        <div className="border-b border-border bg-[radial-gradient(circle_at_top_right,rgba(59,130,246,0.14),transparent_42%),linear-gradient(135deg,#f8fafc_0%,#ffffff_45%,#eff6ff_100%)] px-5 py-5">
           <div className="flex items-start gap-4">
             <div className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-blue-100 text-blue-700">
               <Globe className="size-5" />
             </div>
             <div>
-              <div className="inline-flex items-center gap-2 rounded-full border border-blue-100 bg-white/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-blue-700">
+              <div className="inline-flex items-center gap-2 rounded-full border border-blue-100 bg-card/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-blue-700">
                 <CreditCard className="size-3.5" />
                 Online Sanal POS Ödemesi
               </div>
-              <h2 className="mt-3 text-lg font-semibold text-slate-900">
+              <h2 className="mt-3 text-lg font-semibold text-foreground">
                 Vitrin üzerinden kredi kartı tahsilatı
               </h2>
-              <p className="mt-1 text-sm leading-6 text-slate-600">
+              <p className="mt-1 text-sm leading-6 text-muted-foreground">
                 iyzico, Paynet ve benzeri sanal POS sağlayıcıları ile müşterilerinizin
                 sitenizden doğrudan ödeme yapmasını sağlayın.
               </p>
@@ -581,7 +581,7 @@ export function TenantPaymentSettingsForm({
           </div>
         </div>
         <div className="p-5">
-          <p className="text-sm leading-6 text-slate-600">
+          <p className="text-sm leading-6 text-muted-foreground">
             Sanal POS entegrasyon ayarları yakında eklenecek. Kurumsal paketinizle bu
             özelliği kullanmaya hazırsınız.
           </p>

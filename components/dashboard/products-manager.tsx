@@ -238,7 +238,7 @@ function ProductOrderInput({
       }}
       onMouseDown={(event) => event.stopPropagation()}
       onClick={(event) => event.stopPropagation()}
-      className="w-14 rounded-md border border-slate-200 bg-white px-2 py-1 text-center text-sm font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-400 disabled:cursor-not-allowed disabled:opacity-40"
+      className="w-14 rounded-md border border-border bg-card px-2 py-1 text-center text-sm font-semibold text-foreground focus:outline-none focus:ring-2 focus:ring-emerald-400 disabled:cursor-not-allowed disabled:opacity-40"
     />
   );
 }
@@ -845,7 +845,7 @@ export function ProductsManager({
       className={cn(
         product.is_in_stock
           ? "bg-emerald-50 text-emerald-700"
-          : "bg-slate-100 text-slate-500",
+          : "bg-slate-100 text-muted-foreground",
       )}
     >
       {product.is_in_stock ? "Stokta var" : "Stok kapalı"}
@@ -857,7 +857,7 @@ export function ProductsManager({
 
     if (!variantCount) {
       return (
-        <Badge className="bg-slate-100 text-slate-600">
+        <Badge className="bg-slate-100 text-muted-foreground">
           Tek ürün
         </Badge>
       );
@@ -874,15 +874,15 @@ export function ProductsManager({
     <div className="space-y-6">
       <div className="grid gap-4 md:grid-cols-3">
         <Card className="p-5">
-          <p className="text-sm text-slate-500">Toplam ürün</p>
-          <p className="mt-2 text-3xl font-bold text-slate-900">{usage.total}</p>
+          <p className="text-sm text-muted-foreground">Toplam ürün</p>
+          <p className="mt-2 text-3xl font-bold text-foreground">{usage.total}</p>
         </Card>
         <Card className="p-5">
-          <p className="text-sm text-slate-500">Paket limiti</p>
-          <p className="mt-2 text-3xl font-bold text-slate-900">{usage.limit}</p>
+          <p className="text-sm text-muted-foreground">Paket limiti</p>
+          <p className="mt-2 text-3xl font-bold text-foreground">{usage.limit}</p>
         </Card>
         <Card className="p-5">
-          <p className="text-sm text-slate-500">Kalan kapasite</p>
+          <p className="text-sm text-muted-foreground">Kalan kapasite</p>
           <p className="mt-2 text-3xl font-bold text-emerald-700">{usage.remaining}</p>
         </Card>
       </div>
@@ -916,11 +916,11 @@ export function ProductsManager({
       ) : null}
 
       <Card className="overflow-hidden">
-        <div className="border-b border-slate-100 px-5 py-4">
+        <div className="border-b border-border px-5 py-4">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div>
-              <h2 className="text-lg font-semibold text-slate-900">Mevcut ürünler</h2>
-              <p className="mt-1 text-sm text-slate-600">
+              <h2 className="text-lg font-semibold text-foreground">Mevcut ürünler</h2>
+              <p className="mt-1 text-sm text-muted-foreground">
                 Masaüstünde tablo, mobilde kart düzeni ile hızlı yönetim.
               </p>
             </div>
@@ -953,13 +953,13 @@ export function ProductsManager({
                 </Button>
 
                 {categoryFilterOpen ? (
-                  <div className="absolute right-0 top-full z-20 mt-2 w-full min-w-[18rem] rounded-xl border border-slate-200 bg-white p-3 shadow-lg sm:w-80">
-                    <div className="flex items-center justify-between gap-3 border-b border-slate-100 pb-3">
+                  <div className="absolute right-0 top-full z-20 mt-2 w-full min-w-[18rem] rounded-xl border border-border bg-card p-3 shadow-lg sm:w-80">
+                    <div className="flex items-center justify-between gap-3 border-b border-border pb-3">
                       <div>
-                        <p className="text-sm font-semibold text-slate-900">
+                        <p className="text-sm font-semibold text-foreground">
                           Kategorilere göre filtrele
                         </p>
-                        <p className="mt-1 text-xs text-slate-500">
+                        <p className="mt-1 text-xs text-muted-foreground">
                           İşaretli kategorilerdeki ürünler listelenir.
                         </p>
                       </div>
@@ -982,7 +982,7 @@ export function ProductsManager({
                           return (
                             <label
                               key={category.id}
-                              className="flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2 transition hover:bg-slate-50"
+                              className="flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2 transition hover:bg-muted/60"
                             >
                               <input
                                 type="checkbox"
@@ -991,7 +991,7 @@ export function ProductsManager({
                                 className="size-4 rounded border-slate-300 text-emerald-600"
                               />
                               <span
-                                className="min-w-0 text-sm text-slate-700"
+                                className="min-w-0 text-sm text-muted-foreground"
                                 style={{ paddingLeft: `${category.depth * 12}px` }}
                               >
                                 {category.name}
@@ -1004,7 +1004,7 @@ export function ProductsManager({
                         })}
                       </div>
                     ) : (
-                      <p className="mt-3 text-sm text-slate-500">
+                      <p className="mt-3 text-sm text-muted-foreground">
                         Henüz kategori bulunmuyor.
                       </p>
                     )}
@@ -1014,14 +1014,14 @@ export function ProductsManager({
             </div>
           </div>
 
-          <div className="mt-4 rounded-xl border border-slate-100 bg-slate-50 px-4 py-4">
+          <div className="mt-4 rounded-xl border border-border bg-muted/60 px-4 py-4">
             <div className="flex items-start gap-3">
-              <div className="rounded-xl bg-white p-2 text-slate-500 shadow-sm">
+              <div className="rounded-xl bg-card p-2 text-muted-foreground shadow-sm">
                 <ArrowUpDown className="size-4" />
               </div>
               <div>
-                <p className="text-sm font-semibold text-slate-900">Vitrin sıralaması</p>
-                <p className="mt-1 text-sm text-slate-600">
+                <p className="text-sm font-semibold text-foreground">Vitrin sıralaması</p>
+                <p className="mt-1 text-sm text-muted-foreground">
                   Ürünleri sürükleyip bırakın, yukarı/aşağı butonlarıyla veya sıra
                   numarasını yazarak sıralayın. Bu global sıra anasayfa ve kategori
                   listelerinde aynı şekilde kullanılır.
@@ -1040,7 +1040,7 @@ export function ProductsManager({
                   <select
                     value={bulkCategoryId}
                     onChange={(e) => setBulkCategoryId(e.target.value)}
-                    className="rounded-lg border border-blue-200 bg-white px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                    className="rounded-lg border border-blue-200 bg-card px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-blue-400"
                   >
                     <option value="">Kategori seçin</option>
                     {flatCategories.map((category) => (
@@ -1051,7 +1051,7 @@ export function ProductsManager({
                   </select>
                   <Button
                     variant="secondary"
-                    className="border-blue-200 bg-white text-blue-700 hover:bg-blue-100 disabled:opacity-50"
+                    className="border-blue-200 bg-card text-blue-700 hover:bg-blue-100 disabled:opacity-50"
                     onClick={handleBulkCategoryUpdate}
                     disabled={!bulkCategoryId || pending}
                   >
@@ -1067,7 +1067,7 @@ export function ProductsManager({
                 </p>
                 <Button
                   variant="secondary"
-                  className="border-red-200 bg-white text-red-700 hover:bg-red-100"
+                  className="border-red-200 bg-card text-red-700 hover:bg-red-100"
                   onClick={() => setBulkDeleteOpen(true)}
                   disabled={pending}
                 >
@@ -1081,7 +1081,7 @@ export function ProductsManager({
 
         <TableWrapper>
           <Table>
-            <thead className="bg-slate-50 text-left text-xs uppercase tracking-[0.16em] text-slate-500">
+            <thead className="bg-muted/60 text-left text-xs uppercase tracking-[0.16em] text-muted-foreground">
               <tr>
                 <th className="px-4 py-3">
                   <input
@@ -1114,7 +1114,7 @@ export function ProductsManager({
                 <tr
                   key={product.id}
                   className={cn(
-                    "border-t border-slate-100",
+                    "border-t border-border",
                     draggedProductId === product.id && "bg-emerald-50/60",
                   )}
                   draggable
@@ -1133,7 +1133,7 @@ export function ProductsManager({
                   </td>
                   <td className="px-4 py-4">
                     <div className="flex items-center gap-3">
-                      <div className="rounded-lg border border-slate-200 bg-white p-2 text-slate-400">
+                      <div className="rounded-lg border border-border bg-card p-2 text-slate-400">
                         <GripVertical className="size-4" />
                       </div>
                       <div>
@@ -1151,7 +1151,7 @@ export function ProductsManager({
                             type="button"
                             onClick={() => handleMoveProduct(product.id, "up")}
                             disabled={index === 0 || isOrderSaving}
-                            className="rounded-md border border-slate-200 px-2 py-1 text-slate-600 transition hover:bg-slate-50 disabled:opacity-40"
+                            className="rounded-md border border-border px-2 py-1 text-muted-foreground transition hover:bg-muted/60 disabled:opacity-40"
                             aria-label={`${product.product_name} yukarı taşı`}
                           >
                             <ArrowUp className="size-3" />
@@ -1160,7 +1160,7 @@ export function ProductsManager({
                             type="button"
                             onClick={() => handleMoveProduct(product.id, "down")}
                             disabled={index === filteredProducts.length - 1 || isOrderSaving}
-                            className="rounded-md border border-slate-200 px-2 py-1 text-slate-600 transition hover:bg-slate-50 disabled:opacity-40"
+                            className="rounded-md border border-border px-2 py-1 text-muted-foreground transition hover:bg-muted/60 disabled:opacity-40"
                             aria-label={`${product.product_name} aşağı taşı`}
                           >
                             <ArrowDown className="size-3" />
@@ -1184,8 +1184,8 @@ export function ProductsManager({
                         ) : null}
                       </div>
                       <div>
-                        <p className="font-semibold text-slate-900">{product.product_name}</p>
-                        <p className="text-sm text-slate-500">
+                        <p className="font-semibold text-foreground">{product.product_name}</p>
+                        <p className="text-sm text-muted-foreground">
                           {product.sku_code} • {product.currency}
                         </p>
                       </div>
@@ -1201,7 +1201,7 @@ export function ProductsManager({
                         onKeyDown={(e) => {
                           if (e.key === "Escape") setInlineCategoryProductId(null);
                         }}
-                        className="rounded-lg border border-emerald-300 bg-white px-2 py-1.5 text-sm text-slate-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-400"
+                        className="rounded-lg border border-emerald-300 bg-card px-2 py-1.5 text-sm text-foreground shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-400"
                       >
                         <option value="">Kategori seçin</option>
                         {flatCategories.map((category) => (
@@ -1214,7 +1214,7 @@ export function ProductsManager({
                       <button
                         type="button"
                         onClick={() => setInlineCategoryProductId(product.id)}
-                        className="group flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-sm text-slate-700 transition hover:bg-slate-100"
+                        className="group flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-sm text-muted-foreground transition hover:bg-slate-100"
                         title="Tıkla ve değiştir"
                       >
                         <span>{categoryNameMap.get(product.category_id) ?? "—"}</span>
@@ -1225,7 +1225,7 @@ export function ProductsManager({
                   <td className="px-4 py-4">{renderStockBadge(product)}</td>
                   <td className="px-4 py-4">{renderVariantCountBadge(product)}</td>
                   {pricedLists.map((list) => (
-                    <td key={list.id} className="px-4 py-4 text-base font-semibold text-slate-900">
+                    <td key={list.id} className="px-4 py-4 text-base font-semibold text-foreground">
                       {formatCurrency(
                         getProductPriceForList(product.prices, list.id),
                         product.currency,
@@ -1256,7 +1256,7 @@ export function ProductsManager({
                           className={cn(
                             "pointer-events-none px-1.5 py-0 text-[10px]",
                             product.is_in_stock
-                              ? "bg-slate-100 text-slate-600"
+                              ? "bg-slate-100 text-muted-foreground"
                               : "bg-emerald-50 text-emerald-700",
                           )}
                         >
@@ -1290,11 +1290,11 @@ export function ProductsManager({
         </TableWrapper>
 
         {!filteredProducts.length ? (
-          <div className="border-t border-slate-100 px-5 py-8 text-center">
-            <p className="text-sm font-semibold text-slate-900">
+          <div className="border-t border-border px-5 py-8 text-center">
+            <p className="text-sm font-semibold text-foreground">
               Filtrelerinize uygun ürün bulunamadı.
             </p>
-            <p className="mt-1 text-sm text-slate-500">
+            <p className="mt-1 text-sm text-muted-foreground">
               Kategori seçimini temizleyin veya ürün adı, model no ya da para birimi ile tekrar deneyin.
             </p>
           </div>
@@ -1304,7 +1304,7 @@ export function ProductsManager({
           {filteredProducts.map((product, index) => (
             <Card key={product.id} className="p-4">
               <div className="mb-3 flex items-center justify-between">
-                <label className="flex items-center gap-2 text-sm text-slate-600">
+                <label className="flex items-center gap-2 text-sm text-muted-foreground">
                   <input
                     type="checkbox"
                     checked={selectedProductIds.includes(product.id)}
@@ -1312,7 +1312,7 @@ export function ProductsManager({
                   />
                   Seç
                 </label>
-                <div className="flex items-center gap-2 text-sm text-slate-500">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <GripVertical className="size-4" />
                   <span className="shrink-0">Sıra</span>
                   <ProductOrderInput
@@ -1341,8 +1341,8 @@ export function ProductsManager({
                   ) : null}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="font-semibold text-slate-900">{product.product_name}</p>
-                  <p className="mt-1 text-sm text-slate-500">
+                  <p className="font-semibold text-foreground">{product.product_name}</p>
+                  <p className="mt-1 text-sm text-muted-foreground">
                     {product.sku_code} • {product.currency}
                   </p>
                   <div className="mt-2">
@@ -1355,7 +1355,7 @@ export function ProductsManager({
                         onKeyDown={(e) => {
                           if (e.key === "Escape") setInlineCategoryProductId(null);
                         }}
-                        className="w-full rounded-lg border border-emerald-300 bg-white px-2 py-1.5 text-sm text-slate-900"
+                        className="w-full rounded-lg border border-emerald-300 bg-card px-2 py-1.5 text-sm text-foreground"
                       >
                         <option value="">Kategori seçin</option>
                         {flatCategories.map((category) => (
@@ -1368,7 +1368,7 @@ export function ProductsManager({
                       <button
                         type="button"
                         onClick={() => setInlineCategoryProductId(product.id)}
-                        className="flex items-center gap-1 text-sm text-slate-600 underline-offset-2 hover:underline"
+                        className="flex items-center gap-1 text-sm text-muted-foreground underline-offset-2 hover:underline"
                       >
                         <span>{categoryNameMap.get(product.category_id) ?? "Kategori yok"}</span>
                         <PencilLine className="size-3 text-slate-400" />
@@ -1385,7 +1385,7 @@ export function ProductsManager({
                   type="button"
                   onClick={() => handleMoveProduct(product.id, "up")}
                   disabled={index === 0 || isOrderSaving}
-                  className="flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 disabled:opacity-40"
+                  className="flex-1 rounded-lg border border-border px-3 py-2 text-sm font-medium text-muted-foreground disabled:opacity-40"
                 >
                   Yukarı taşı
                 </button>
@@ -1393,17 +1393,17 @@ export function ProductsManager({
                   type="button"
                   onClick={() => handleMoveProduct(product.id, "down")}
                   disabled={index === filteredProducts.length - 1 || isOrderSaving}
-                  className="flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 disabled:opacity-40"
+                  className="flex-1 rounded-lg border border-border px-3 py-2 text-sm font-medium text-muted-foreground disabled:opacity-40"
                 >
                   Aşağı taşı
                 </button>
               </div>
 
-              <div className="mt-4 grid grid-cols-1 gap-2 rounded-xl bg-slate-50 p-3 sm:grid-cols-3">
+              <div className="mt-4 grid grid-cols-1 gap-2 rounded-xl bg-muted/60 p-3 sm:grid-cols-3">
                 {pricedLists.map((list) => (
                   <div key={list.id} className="text-center">
-                    <p className="text-xs text-slate-500">{getPriceListDisplayName(list)}</p>
-                    <p className="mt-1 text-sm font-semibold text-slate-900">
+                    <p className="text-xs text-muted-foreground">{getPriceListDisplayName(list)}</p>
+                    <p className="mt-1 text-sm font-semibold text-foreground">
                       {formatCurrency(
                         getProductPriceForList(product.prices, list.id),
                         product.currency,
@@ -1458,7 +1458,7 @@ export function ProductsManager({
             <select
               value={editForm.category_id}
               onChange={(event) => updateEditField("category_id", event.target.value)}
-              className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900"
+              className="rounded-lg border border-border bg-card px-4 py-3 text-sm text-foreground"
             >
               <option value="">Kategori seçin</option>
               {flatCategories.map((category) => (
@@ -1489,7 +1489,7 @@ export function ProductsManager({
             <select
               value={editForm.currency}
               onChange={(event) => updateEditField("currency", event.target.value)}
-              className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900"
+              className="rounded-lg border border-border bg-card px-4 py-3 text-sm text-foreground"
             >
               {supportedCurrencyCodes.map((currency) => (
                 <option key={currency} value={currency}>
@@ -1510,8 +1510,8 @@ export function ProductsManager({
             plan={tenant.plan}
             companyName={tenant.company_name}
           >
-            <div className="rounded-xl border border-slate-100 bg-slate-50 px-4 py-3">
-              <label className="flex items-center gap-3 text-sm text-slate-700">
+            <div className="rounded-xl border border-border bg-muted/60 px-4 py-3">
+              <label className="flex items-center gap-3 text-sm text-muted-foreground">
                 <input
                   type="checkbox"
                   checked={editForm.is_discount_active}
@@ -1534,7 +1534,7 @@ export function ProductsManager({
                       Vitrinde yaklaşık %{editDiscountPreview} indirim görünecek
                     </p>
                   ) : (
-                    <p className="text-sm text-slate-500">
+                    <p className="text-sm text-muted-foreground">
                       İndirimli fiyat, liste fiyatlarından düşük olmalıdır.
                     </p>
                   )}
@@ -1562,7 +1562,7 @@ export function ProductsManager({
             />
           </div>
 
-          <label className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-5 text-sm text-slate-600">
+          <label className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed border-border bg-muted/60 px-4 py-5 text-sm text-muted-foreground">
             <ImagePlus className="size-4 text-emerald-700" />
             <span>{editForm.image ? editForm.image.name : "Yeni fotoğraf seç"}</span>
             <input
@@ -1573,7 +1573,7 @@ export function ProductsManager({
             />
           </label>
 
-          <label className="flex items-center gap-3 rounded-xl border border-slate-100 bg-slate-50 px-4 py-3 text-sm text-slate-700">
+          <label className="flex items-center gap-3 rounded-xl border border-border bg-muted/60 px-4 py-3 text-sm text-muted-foreground">
             <input
               type="checkbox"
               checked={editForm.is_in_stock}
@@ -1605,10 +1605,10 @@ export function ProductsManager({
         <div className="space-y-4">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <p className="text-sm font-semibold text-slate-900">
+              <p className="text-sm font-semibold text-foreground">
                 Hızlı varyant düzenleyici
               </p>
-              <p className="mt-1 text-sm text-slate-500">
+              <p className="mt-1 text-sm text-muted-foreground">
                 Model adı, paket içi, koli içi ve satış durumunu tek ekranda yönetin.
               </p>
             </div>
@@ -1624,9 +1624,9 @@ export function ProductsManager({
             </div>
           ) : null}
 
-          <div className="overflow-x-auto rounded-xl border border-slate-200">
+          <div className="overflow-x-auto rounded-xl border border-border">
             <table className="min-w-full border-collapse">
-              <thead className="bg-slate-50 text-left text-xs uppercase tracking-[0.14em] text-slate-500">
+              <thead className="bg-muted/60 text-left text-xs uppercase tracking-[0.14em] text-muted-foreground">
                 <tr>
                   <th className="px-3 py-3">Model Adı</th>
                   <th className="px-3 py-3">Paket İçi</th>
@@ -1638,7 +1638,7 @@ export function ProductsManager({
               <tbody>
                 {variantRows.map((row, index) => {
                   return (
-                    <tr key={row.id ?? `variant-row-${index}`} className="border-t border-slate-100">
+                    <tr key={row.id ?? `variant-row-${index}`} className="border-t border-border">
                       <td className="px-3 py-3">
                         <Input
                           value={row.model_name}
@@ -1673,7 +1673,7 @@ export function ProductsManager({
                         />
                       </td>
                       <td className="px-3 py-3">
-                        <label className="flex items-center gap-3 text-sm text-slate-700">
+                        <label className="flex items-center gap-3 text-sm text-muted-foreground">
                           <input
                             type="checkbox"
                             checked={row.is_available_for_sale}

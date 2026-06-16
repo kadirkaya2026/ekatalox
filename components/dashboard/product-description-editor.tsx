@@ -103,10 +103,10 @@ function ToolbarButton({
       disabled={disabled}
       onClick={onClick}
       className={cn(
-        "inline-flex size-8 items-center justify-center rounded-md border text-slate-600 transition",
+        "inline-flex size-8 items-center justify-center rounded-md border text-muted-foreground transition",
         active
-          ? "border-slate-900 bg-slate-900 text-white"
-          : "border-slate-200 bg-white hover:bg-slate-50",
+          ? "border-primary bg-primary text-primary-foreground"
+          : "border-border bg-card hover:bg-muted",
         disabled && "cursor-not-allowed opacity-40",
       )}
     >
@@ -160,7 +160,7 @@ export function ProductDescriptionEditor({
     editorProps: {
       attributes: {
         class:
-          "min-h-[280px] px-4 py-3 text-[16px] leading-6 text-slate-900 outline-none",
+          "min-h-[280px] px-4 py-3 text-[16px] leading-6 text-foreground outline-none",
       },
       handleKeyDown: (_view, event) => {
         if (plainTextLengthRef.current < maxLengthRef.current) {
@@ -237,16 +237,16 @@ export function ProductDescriptionEditor({
 
   if (!editor) {
     return (
-      <div className="rounded-xl border border-slate-200 bg-white">
-        <div className="min-h-[280px] px-4 py-3 text-sm text-slate-400">{placeholder}</div>
+      <div className="rounded-xl border border-border bg-card">
+        <div className="min-h-[280px] px-4 py-3 text-sm text-muted-foreground">{placeholder}</div>
       </div>
     );
   }
 
   return (
     <div className="space-y-2">
-      <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
-        <div className="flex flex-wrap gap-1 border-b border-slate-100 bg-slate-50 p-2">
+      <div className="overflow-hidden rounded-xl border border-border bg-card">
+        <div className="flex flex-wrap gap-1 border-b border-border bg-muted/50 p-2">
           <ToolbarButton
             label="Kalın"
             active={editor.isActive("bold")}
@@ -318,11 +318,11 @@ export function ProductDescriptionEditor({
 
         <EditorContent
           editor={editor}
-          className="[&_.ProseMirror]:min-h-[280px] [&_.ProseMirror_table]:my-3 [&_.ProseMirror_table]:w-full [&_.ProseMirror_table]:border-collapse [&_.ProseMirror_td]:border [&_.ProseMirror_td]:border-slate-200 [&_.ProseMirror_td]:px-2 [&_.ProseMirror_td]:py-1.5 [&_.ProseMirror_th]:border [&_.ProseMirror_th]:border-slate-200 [&_.ProseMirror_th]:bg-slate-100 [&_.ProseMirror_th]:px-2 [&_.ProseMirror_th]:py-1.5 [&_.ProseMirror_th]:text-left [&_.ProseMirror_th]:font-semibold"
+          className="[&_.ProseMirror]:min-h-[280px] [&_.ProseMirror_table]:my-3 [&_.ProseMirror_table]:w-full [&_.ProseMirror_table]:border-collapse [&_.ProseMirror_td]:border [&_.ProseMirror_td]:border-border [&_.ProseMirror_td]:px-2 [&_.ProseMirror_td]:py-1.5 [&_.ProseMirror_th]:border [&_.ProseMirror_th]:border-border [&_.ProseMirror_th]:bg-muted [&_.ProseMirror_th]:px-2 [&_.ProseMirror_th]:py-1.5 [&_.ProseMirror_th]:text-left [&_.ProseMirror_th]:font-semibold"
         />
       </div>
 
-      <div className="flex flex-col gap-1 text-xs text-slate-500 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
+      <div className="flex flex-col gap-1 text-xs text-muted-foreground sm:flex-row sm:items-start sm:justify-between sm:gap-3">
         <span>{placeholder}</span>
         <div className="flex flex-col items-start gap-0.5 sm:items-end">
           <span className={cn(isLimitReached && "font-medium text-amber-700")}>

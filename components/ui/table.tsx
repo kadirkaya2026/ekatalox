@@ -8,7 +8,7 @@ export function TableWrapper({
   return (
     <div
       className={cn(
-        "hidden overflow-x-auto rounded-xl border border-slate-200 bg-white md:block",
+        "hidden overflow-x-auto rounded-xl border border-slate-200 bg-card dark:border-slate-800 md:block",
         className,
       )}
       {...props}
