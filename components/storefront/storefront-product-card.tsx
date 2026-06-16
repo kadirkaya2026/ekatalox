@@ -256,7 +256,8 @@ export const StorefrontProductCard = memo(function StorefrontProductCard({
       }}
       className={cn(
         productCardClassName,
-        "relative overflow-visible cursor-pointer rounded-[1.2rem] border-slate-200/70 shadow-[0_10px_24px_rgba(15,23,42,0.06)]",
+        "relative overflow-visible cursor-pointer rounded-[1.2rem] shadow-[0_10px_24px_rgba(15,23,42,0.06)]",
+        theme.border,
         !product.is_in_stock && "opacity-60 saturate-50",
       )}
     >
@@ -283,8 +284,8 @@ export const StorefrontProductCard = memo(function StorefrontProductCard({
             sizes={STOREFRONT_PRODUCT_GRID_SIZES}
           />
         ) : (
-          <div className="flex h-full w-full items-center justify-center rounded-[1rem] border border-dashed border-slate-200/80 bg-white/70">
-            <Store className="size-7 text-slate-300 sm:size-9" />
+          <div className={theme.emptyImage}>
+            <Store className={cn("size-7 sm:size-9", theme.textMuted)} />
           </div>
         )}
         {!product.is_in_stock ? (

@@ -5,6 +5,7 @@ import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { PasswordGate } from "@/components/storefront/password-gate";
+import { StorefrontPageShell } from "@/components/storefront/storefront-page-shell";
 import { StorefrontClient } from "@/components/storefront/storefront-client";
 import { StorefrontFooter } from "@/components/storefront/storefront-footer";
 import {
@@ -14,12 +15,10 @@ import {
   getTenantStorefrontSettings,
 } from "@/lib/data";
 import { getStorefrontHomePath } from "@/lib/storefront/paths";
-import { getStorefrontTheme } from "@/lib/storefront/themes";
 import {
   getRequestHostFromHeaders,
   isTenantCustomDomainHost,
 } from "@/lib/tenancy/request-host";
-import { cn } from "@/lib/utils";
 import {
   isStorefrontPriceListStateValid,
   readStorefrontPriceList,
@@ -72,16 +71,15 @@ export default async function SectionDetailPage(props: {
     !isStorefrontPriceListStateValid({ cookieState: priceListState, tenant })
   ) {
     const settings = await getTenantStorefrontSettings(tenant.id);
-    const theme = getStorefrontTheme(settings.theme_key);
 
     return (
-      <div className={theme.page}>
+      <StorefrontPageShell themeKey={settings.theme_key}>
         <PasswordGate
           subdomain={subdomain}
           companyName={tenant.company_name}
           themeKey={settings.theme_key}
         />
-      </div>
+      </StorefrontPageShell>
     );
   }
 
@@ -101,7 +99,6 @@ export default async function SectionDetailPage(props: {
     notFound();
   }
 
-  const theme = getStorefrontTheme(storefrontSettings.theme_key);
   const footerVisible = storefrontSettings.is_footer_visible;
   const headersList = await headers();
   const requestHost = getRequestHostFromHeaders(headersList);
@@ -110,7 +107,10 @@ export default async function SectionDetailPage(props: {
     : null;
 
   return (
-    <div className={cn(theme.page, footerVisible && "pb-0")}>
+    <StorefrontPageShell
+      themeKey={storefrontSettings.theme_key}
+      className={footerVisible ? "pb-0" : undefined}
+    >
       <div className="container-shell py-4">
         <nav className="flex items-center gap-2 text-sm text-slate-500">
           <a
@@ -142,6 +142,6 @@ export default async function SectionDetailPage(props: {
           copyrightTenantName={copyrightTenantName}
         />
       ) : null}
-    </div>
+    </StorefrontPageShell>
   );
 }

@@ -242,7 +242,7 @@ export function StorefrontCartDrawer({
                     className={theme.cartDrawerItem}
                   >
                     <div className="flex gap-3">
-                      <div className="relative h-[4.5rem] w-[4.5rem] shrink-0 overflow-hidden rounded-[1.15rem] border border-slate-200 bg-white sm:h-20 sm:w-20 sm:rounded-[1.35rem]">
+                      <div className={cn("relative h-[4.5rem] w-[4.5rem] shrink-0 overflow-hidden rounded-[1.15rem] border sm:h-20 sm:w-20 sm:rounded-[1.35rem]", theme.border, theme.surface)}>
                         {item.image_url ? (
                           <StorefrontImage
                             src={item.image_url}
@@ -251,8 +251,8 @@ export function StorefrontCartDrawer({
                             sizes={STOREFRONT_CART_THUMB_SIZES}
                           />
                         ) : (
-                          <div className="flex h-full w-full items-center justify-center bg-slate-50">
-                            <Store className="size-6 text-slate-300" />
+                          <div className={cn("flex h-full w-full items-center justify-center", theme.surfaceMuted)}>
+                            <Store className={cn("size-6", theme.textMuted)} />
                           </div>
                         )}
                       </div>
@@ -260,7 +260,7 @@ export function StorefrontCartDrawer({
                       <div className="min-w-0 flex-1">
                         <div className="flex items-start justify-between gap-3">
                           <div className="min-w-0">
-                            <p className="line-clamp-2 text-sm font-semibold leading-5 text-slate-900">
+                            <p className={cn("line-clamp-2 text-sm font-semibold leading-5", theme.text)}>
                               {item.product_name}
                             </p>
                             {item.variant_name ? (
@@ -268,7 +268,7 @@ export function StorefrontCartDrawer({
                                 Model: {item.variant_name}
                               </p>
                             ) : null}
-                            <p className="mt-0.5 text-xs text-slate-500">
+                            <p className={cn("mt-0.5 text-xs", theme.textMuted)}>
                               {formatProductModelNo(item.sku_code)}
                             </p>
                           </div>
@@ -277,7 +277,7 @@ export function StorefrontCartDrawer({
                             onClick={() =>
                               setCart((current) => updateCartLineQuantity(current, item.id, 0))
                             }
-                            className="h-fit rounded-full p-2 text-slate-400 transition hover:bg-rose-50 hover:text-rose-600"
+                            className={cn("h-fit rounded-full p-2 transition hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950/50", theme.textMuted)}
                             aria-label="Ürünü sepetten çıkar"
                           >
                             <Trash2 className="size-4" />
@@ -286,8 +286,8 @@ export function StorefrontCartDrawer({
                       </div>
                     </div>
 
-                    <div className="mt-3 flex min-w-0 items-end justify-between gap-2 border-t border-slate-200/80 pt-3 sm:gap-3">
-                      <div className="flex shrink-0 items-center rounded-full border border-slate-200 bg-white p-0.5 sm:p-1 shadow-sm">
+                    <div className={cn("mt-3 flex min-w-0 items-end justify-between gap-2 border-t pt-3 sm:gap-3", theme.border)}>
+                      <div className={cn("flex shrink-0 items-center rounded-full border p-0.5 shadow-sm sm:p-1", theme.border, theme.surface)}>
                         <button
                           type="button"
                           onClick={() =>
@@ -295,7 +295,7 @@ export function StorefrontCartDrawer({
                               updateCartLineQuantity(current, item.id, item.quantity - 1),
                             )
                           }
-                          className="flex size-8 sm:size-9 items-center justify-center rounded-full text-slate-700 transition hover:bg-slate-100"
+                          className={cn("flex size-8 items-center justify-center rounded-full transition sm:size-9", theme.quantityStepperButton)}
                           aria-label="Adedi azalt"
                         >
                           <Minus className="size-4" />
@@ -308,7 +308,7 @@ export function StorefrontCartDrawer({
                           onChange={(event) =>
                             updateCartItemQuantity(item.id, event.target.value)
                           }
-                          className="h-8 w-11 bg-transparent py-0 text-center text-[16px] font-bold leading-none text-slate-900 outline-none sm:h-9 sm:w-14"
+                          className={cn("h-8 w-11 bg-transparent py-0 text-center text-[16px] font-bold leading-none outline-none sm:h-9 sm:w-14", theme.text)}
                           style={{ fontSize: "16px" }}
                           aria-label="Ürün adedi"
                         />
@@ -319,7 +319,7 @@ export function StorefrontCartDrawer({
                               updateCartLineQuantity(current, item.id, item.quantity + 1),
                             )
                           }
-                          className="flex size-8 sm:size-9 items-center justify-center rounded-full text-slate-700 transition hover:bg-slate-100"
+                          className={cn("flex size-8 items-center justify-center rounded-full transition sm:size-9", theme.quantityStepperButton)}
                           aria-label="Adedi artır"
                         >
                           <Plus className="size-4" />
@@ -329,20 +329,20 @@ export function StorefrontCartDrawer({
                       {!isCatalogOnly ? (
                         <div className="ml-auto flex min-w-0 max-w-[58%] flex-1 items-end justify-end gap-2 text-right sm:max-w-none sm:gap-4">
                           <div className="min-w-0 max-w-[48%] sm:max-w-none">
-                            <p className="truncate text-[10px] font-semibold uppercase tracking-wide text-slate-400 sm:text-[11px] sm:tracking-[0.18em]">
+                            <p className={cn("truncate text-[10px] font-semibold uppercase tracking-wide sm:text-[11px] sm:tracking-[0.18em]", theme.textMuted)}>
                               Birim Fiyat
                             </p>
-                            <p className="mt-1 truncate text-sm font-semibold tabular-nums text-slate-700">
+                            <p className={cn("mt-1 truncate text-sm font-semibold tabular-nums", theme.textMuted)}>
                               {item.price !== null
                                 ? formatCurrency(item.price, item.currency)
                                 : "—"}
                             </p>
                           </div>
                           <div className="min-w-0 max-w-[52%] sm:max-w-none">
-                            <p className="truncate text-[10px] font-semibold uppercase tracking-wide text-slate-400 sm:text-[11px] sm:tracking-[0.18em]">
+                            <p className={cn("truncate text-[10px] font-semibold uppercase tracking-wide sm:text-[11px] sm:tracking-[0.18em]", theme.textMuted)}>
                               Ara Toplam
                             </p>
-                            <p className="mt-1 truncate text-sm font-bold tabular-nums tracking-tight text-slate-950 sm:text-base">
+                            <p className={cn("mt-1 truncate text-sm font-bold tabular-nums tracking-tight sm:text-base", theme.text)}>
                               {item.price !== null
                                 ? formatCurrency(item.price * item.quantity, item.currency)
                                 : "—"}
@@ -354,12 +354,12 @@ export function StorefrontCartDrawer({
                   </div>
                 ))}
 
-                <div className="rounded-[1.5rem] border border-slate-200/80 bg-white p-3 sm:p-4 shadow-[0_14px_40px_rgba(15,23,42,0.06)]">
+                <div className={theme.panelSurface}>
                   {!isCatalogOnly ? (
                     <>
                   <div className="mb-3 flex items-center justify-between gap-3">
-                    <p className="text-sm font-semibold text-slate-900">Ödeme Yöntemi</p>
-                    <span className="rounded-full bg-slate-100 px-3 py-1 text-[11px] font-semibold text-slate-500">
+                    <p className={cn("text-sm font-semibold", theme.text)}>Ödeme Yöntemi</p>
+                    <span className={cn("rounded-full px-3 py-1 text-[11px] font-semibold", theme.surfaceMuted, theme.textMuted)}>
                       Opsiyonel
                     </span>
                   </div>
@@ -375,7 +375,7 @@ export function StorefrontCartDrawer({
                         "flex items-center justify-center gap-2 rounded-2xl border py-3 text-sm font-semibold transition",
                         selectedPaymentMethod === "cash"
                           ? "border-emerald-500 bg-emerald-50 text-emerald-700"
-                          : "border-slate-200 bg-white text-slate-600 hover:border-slate-300",
+                          : cn(theme.border, theme.surface, theme.textMuted, "hover:opacity-90"),
                       )}
                     >
                       <Banknote className="size-4" />
@@ -391,7 +391,7 @@ export function StorefrontCartDrawer({
                         "flex items-center justify-center gap-2 rounded-2xl border py-3 text-sm font-semibold transition",
                         selectedPaymentMethod === "card"
                           ? "border-blue-500 bg-blue-50 text-blue-700"
-                          : "border-slate-200 bg-white text-slate-600 hover:border-slate-300",
+                          : cn(theme.border, theme.surface, theme.textMuted, "hover:opacity-90"),
                       )}
                     >
                       <CreditCard className="size-4" />
@@ -405,8 +405,8 @@ export function StorefrontCartDrawer({
                   ) : null}
                   <div className="mt-3">
                     <div className="mb-2 flex items-center justify-between gap-3">
-                      <span className="text-sm font-semibold text-slate-900">Müşteri / Cari Adı</span>
-                      <span className="rounded-full bg-slate-100 px-3 py-1 text-[11px] font-semibold text-slate-500">
+                      <span className={cn("text-sm font-semibold", theme.text)}>Müşteri / Cari Adı</span>
+                      <span className={cn("rounded-full px-3 py-1 text-[11px] font-semibold", theme.surfaceMuted, theme.textMuted)}>
                         Opsiyonel
                       </span>
                     </div>
@@ -414,7 +414,7 @@ export function StorefrontCartDrawer({
                       value={customerReferenceName}
                       onChange={(event) => setCustomerReferenceName(event.target.value)}
                       placeholder="Örn: Ahmet Ticaret Ltd. Şti."
-                      className="rounded-[1.1rem] border-slate-200 bg-slate-50/80 text-[16px]"
+                      className={cn("rounded-[1.1rem] text-[16px]", theme.border, theme.surfaceMuted, theme.text)}
                     />
                   </div>
                   {!isCatalogOnly
@@ -425,7 +425,7 @@ export function StorefrontCartDrawer({
                     if (!activeInstallments.length) return null;
                     return (
                       <div className="mt-3">
-                        <p className="mb-2 text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                        <p className={cn("mb-2 text-xs font-semibold uppercase tracking-[0.16em]", theme.textMuted)}>
                           Taksit Seçeneği
                         </p>
                         <div className="flex flex-wrap gap-2">
@@ -438,7 +438,7 @@ export function StorefrontCartDrawer({
                                 "rounded-xl border px-3 py-2 text-xs font-semibold transition",
                                 selectedInstallmentCount === option.count
                                   ? "border-blue-500 bg-blue-50 text-blue-700"
-                                  : "border-slate-200 bg-white text-slate-600 hover:border-slate-300",
+                                  : cn(theme.border, theme.surface, theme.textMuted, "hover:opacity-90"),
                               )}
                             >
                               {option.label}
@@ -456,10 +456,10 @@ export function StorefrontCartDrawer({
                     : null}
                 </div>
 
-                <div className="rounded-[1.5rem] border border-slate-200/80 bg-white p-3 sm:p-4 shadow-[0_14px_40px_rgba(15,23,42,0.06)]">
+                <div className={theme.panelSurface}>
                   <div className="mb-2 flex items-center justify-between gap-3">
-                    <p className="text-sm font-semibold text-slate-900">Sipariş Notu</p>
-                    <span className="rounded-full bg-slate-100 px-3 py-1 text-[11px] font-semibold text-slate-500">
+                    <p className={cn("text-sm font-semibold", theme.text)}>Sipariş Notu</p>
+                    <span className={cn("rounded-full px-3 py-1 text-[11px] font-semibold", theme.surfaceMuted, theme.textMuted)}>
                       Opsiyonel
                     </span>
                   </div>
@@ -467,17 +467,17 @@ export function StorefrontCartDrawer({
                     placeholder="Sipariş notu (opsiyonel)"
                     value={note}
                     onChange={(event) => setNote(event.target.value)}
-                    className="min-h-[84px] rounded-[1.1rem] border-slate-200 bg-slate-50/80 text-[16px]"
+                    className={cn("min-h-[84px] rounded-[1.1rem] text-[16px]", theme.border, theme.surfaceMuted, theme.text)}
                   />
                 </div>
 
                 {recommendedProducts.length ? (
-                  <section className="rounded-[1.75rem] border border-slate-200/80 bg-[linear-gradient(180deg,#ffffff_0%,#f8fafc_100%)] p-4 shadow-[0_14px_36px_rgba(15,23,42,0.06)]">
+                  <section className={cn(theme.panelSurface, theme.surfaceMuted)}>
                     <div className="mb-3">
                       <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-emerald-700">
                         Sepetine Uygun Ürünler
                       </p>
-                      <h3 className="mt-1 text-lg font-bold tracking-tight text-slate-950">
+                      <h3 className={cn("mt-1 text-lg font-bold tracking-tight", theme.text)}>
                         Bunları da Beğenebilirsiniz
                       </h3>
                     </div>
@@ -490,13 +490,13 @@ export function StorefrontCartDrawer({
               </div>
             ) : (
               <div className="flex h-full min-h-[320px] flex-col items-center justify-center text-center">
-                <div className="flex size-20 items-center justify-center rounded-full bg-slate-100">
-                  <ShoppingCart className="size-9 text-slate-300" />
+                <div className={cn("flex size-20 items-center justify-center rounded-full", theme.surfaceMuted)}>
+                  <ShoppingCart className={cn("size-9", theme.textMuted)} />
                 </div>
-                <p className="mt-5 text-base font-semibold text-slate-900">
+                <p className={cn("mt-5 text-base font-semibold", theme.text)}>
                   Sepetiniz şu an boş.
                 </p>
-                <p className="mt-2 max-w-xs text-sm leading-6 text-slate-500">
+                <p className={cn("mt-2 max-w-xs text-sm leading-6", theme.textMuted)}>
                   Ürünleri inceleyip birkaç kalemi sepete eklediğinizde sipariş özeti burada
                   premium bir şekilde listelenecek.
                 </p>
@@ -659,7 +659,7 @@ export function StorefrontCartDrawer({
                   <button
                     type="button"
                     onClick={copyOrderMessage}
-                    className="w-full text-center text-xs font-semibold text-slate-600 transition hover:text-slate-900"
+                    className={cn("w-full text-center text-xs font-semibold transition hover:opacity-80", theme.textMuted)}
                   >
                     Mesajı Kopyala
                   </button>
@@ -672,7 +672,7 @@ export function StorefrontCartDrawer({
                       setCopyFeedback(null);
                       onClearWhatsappHandoff();
                     }}
-                    className="w-full text-center text-[11px] font-medium text-slate-400 transition hover:text-slate-600"
+                    className={cn("w-full text-center text-[11px] font-medium transition hover:text-rose-500", theme.textMuted)}
                   >
                     Yeniden Hazırla
                   </button>
@@ -697,7 +697,7 @@ export function StorefrontCartDrawer({
                 <button
                   type="button"
                   onClick={clearCart}
-                  className="mt-2 w-full text-center text-[11px] font-medium text-slate-400 transition hover:text-rose-500"
+                  className={cn("mt-2 w-full text-center text-[11px] font-medium transition hover:text-rose-500", theme.textMuted)}
                 >
                   Sepeti Boşalt
                 </button>
