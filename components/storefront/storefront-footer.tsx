@@ -210,15 +210,11 @@ export function StorefrontFooter({
 
             {hasSocialColumn ? (
               <MobileSection
-                showDivider={mobileDividerIndex++ > 0}
-                className={cn(
-                  "md:justify-self-end",
-                  !hasContactColumn && "md:col-start-2",
-                )}
+                className={cn(!hasContactColumn && "md:col-start-2")}
               >
-                <div className="flex w-full flex-col items-center md:items-end">
+                <div className="flex w-full flex-col items-center text-center md:items-start md:text-left">
                   <FooterSectionHeading>Sosyal Medya</FooterSectionHeading>
-                  <div className="flex flex-wrap items-center justify-center gap-1.5 md:justify-end">
+                  <div className="flex flex-wrap items-center justify-center gap-1.5 md:justify-start">
                     {socialLinks.map((link) => (
                       <a
                         key={link.platform}
