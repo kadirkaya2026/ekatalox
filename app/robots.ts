@@ -11,7 +11,10 @@ export default async function robots(): Promise<MetadataRoute.Robots> {
 
   const { kind } = resolveHost(host);
 
-  if (kind === "storefront") {
+  // Yalnızca pazarlama sitesi indexlenebilir. Tenant vitrinleri, özel alan
+  // adları (kind: "unknown" döner), admin ve app panelleri dahil geri kalan
+  // her host için tarayıcılara tamamen kapalıyız.
+  if (kind !== "marketing") {
     return {
       rules: {
         userAgent: "*",
@@ -24,6 +27,8 @@ export default async function robots(): Promise<MetadataRoute.Robots> {
     rules: {
       userAgent: "*",
       allow: "/",
+      disallow: ["/store/", "/dashboard", "/admin", "/login", "/api/"],
     },
+    sitemap: "https://www.ekatalox.com/sitemap.xml",
   };
 }

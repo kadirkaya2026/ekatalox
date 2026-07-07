@@ -2253,9 +2253,52 @@ const Navbar = () => (
 )
 
 // ----------------------------- ROOT ------------------------------------------
+// Arama motorları için yapılandırılmış veri; client bileşeni de olsa SSR
+// çıktısındaki ilk HTML'e gömülür.
+const structuredData = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    {
+      '@type': 'Organization',
+      '@id': 'https://www.ekatalox.com/#organization',
+      name: 'eKatalox',
+      url: 'https://www.ekatalox.com',
+      logo: 'https://www.ekatalox.com/ekatalox-logo.png',
+    },
+    {
+      '@type': 'WebSite',
+      '@id': 'https://www.ekatalox.com/#website',
+      name: 'eKatalox',
+      url: 'https://www.ekatalox.com',
+      publisher: { '@id': 'https://www.ekatalox.com/#organization' },
+      inLanguage: 'tr',
+    },
+    {
+      '@type': 'SoftwareApplication',
+      name: 'eKatalox',
+      applicationCategory: 'BusinessApplication',
+      operatingSystem: 'Web',
+      description:
+        'Toptancılar ve distribütörler için B2B sipariş ve dijital katalog platformu. Şifre korumalı katalog, bayiye özel fiyat listeleri, Excel\'den ürün yükleme.',
+      url: 'https://www.ekatalox.com',
+      inLanguage: 'tr',
+      offers: {
+        '@type': 'Offer',
+        price: '0',
+        priceCurrency: 'TRY',
+        description: 'Ücretsiz kayıt',
+      },
+    },
+  ],
+}
+
 const App = () => {
   return (
     <main id="top" className="relative bg-[#0B0F19] text-white">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+      />
       <Navbar />
       <Hero />
       <ExcelSimulator />

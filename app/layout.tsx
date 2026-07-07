@@ -43,12 +43,51 @@ const fontVariables = [
 ].join(" ");
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://www.ekatalox.com"),
   title: {
-    default: "eKatalox - Ticaretin Dijital İşletim Sistemi",
+    default: "eKatalox — Toptan Ticaretin Dijital İşletim Sistemi",
     template: "%s | eKatalox",
   },
   description:
-    "Çok kiracılı B2B sipariş katalog altyapısı. Toptancıların alt alan adlarında şifreye dayalı fiyat katmanlarıyla sipariş toplamasını sağlar.",
+    "Toptancılar ve distribütörler için B2B sipariş ve dijital katalog platformu. Kendi alan adınızda şifre korumalı katalog, bayiye özel fiyat listeleri, Excel'den saniyeler içinde ürün yükleme ve online sipariş toplama.",
+  applicationName: "eKatalox",
+  keywords: [
+    "b2b katalog",
+    "dijital katalog",
+    "toptan satış programı",
+    "bayi sipariş sistemi",
+    "toptancı sipariş uygulaması",
+    "fiyat listesi yönetimi",
+    "b2b sipariş platformu",
+    "online katalog oluşturma",
+  ],
+  alternates: {
+    canonical: "./",
+  },
+  openGraph: {
+    type: "website",
+    siteName: "eKatalox",
+    locale: "tr_TR",
+    url: "https://www.ekatalox.com",
+    title: "eKatalox — Toptan Ticaretin Dijital İşletim Sistemi",
+    description:
+      "Toptancılar ve distribütörler için B2B sipariş ve dijital katalog platformu. Şifre korumalı katalog, bayiye özel fiyat listeleri, Excel'den ürün yükleme.",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "eKatalox",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "eKatalox — Toptan Ticaretin Dijital İşletim Sistemi",
+    description:
+      "Toptancılar ve distribütörler için B2B sipariş ve dijital katalog platformu.",
+    images: ["/og-image.png"],
+  },
 };
 
 export default function RootLayout({
