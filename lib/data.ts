@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { unstable_cache } from "next/cache";
 import { DEFAULT_INSTALLMENT_OPTIONS } from "@/lib/storefront/cart";
 import {
@@ -528,7 +529,7 @@ export async function getTenantDashboardSummary(
   };
 }
 
-export async function getStorefrontTenant(
+export const getStorefrontTenant = cache(async function getStorefrontTenant(
   subdomain: string,
 ): Promise<Tenant | null> {
   const supabaseAdmin = createSupabaseAdminClient();
@@ -548,9 +549,30 @@ export async function getStorefrontTenant(
     .maybeSingle();
 
   return (data as Tenant | null) ?? null;
+});
+
+/**
+ * ISR/statik sayfalar için tenant okuması. Admin Supabase client'ı her
+ * fetch'i `no-store` yaptığından statik render'da doğrudan kullanılamaz
+ * (app-static-to-dynamic-error); unstable_cache sarmalı bunu güvenli kılar.
+ * Ayar kaydedilince revalidateStorefrontCache tag'i tazeler.
+ */
+export async function getStorefrontTenantCached(
+  subdomain: string,
+): Promise<Tenant | null> {
+  const readTenant = unstable_cache(
+    async (resolvedSubdomain: string) => getStorefrontTenant(resolvedSubdomain),
+    [subdomain],
+    {
+      revalidate: 300,
+      tags: [`tenant_subdomain_${subdomain}`],
+    },
+  );
+
+  return readTenant(subdomain);
 }
 
-export async function getTenantByCustomDomain(
+export const getTenantByCustomDomain = cache(async function getTenantByCustomDomain(
   domain: string,
 ): Promise<Tenant | null> {
   const normalizedDomain = domain.trim().toLowerCase().replace(/:\d+$/, "");
@@ -580,7 +602,7 @@ export async function getTenantByCustomDomain(
     .maybeSingle();
 
   return (data as Tenant | null) ?? null;
-}
+});
 
 export async function validateAccessCode(params: {
   subdomain: string;

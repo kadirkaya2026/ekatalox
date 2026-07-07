@@ -2,9 +2,9 @@ import { cookies } from "next/headers";
 import type { NextResponse } from "next/server";
 import type { Tenant } from "@/lib/types";
 
-export function getStorefrontTierCookieName(subdomain: string) {
-  return `ekatalox-tier-${subdomain}`;
-}
+import { getStorefrontTierCookieName } from "@/lib/storefront/tier-cookie";
+
+export { getStorefrontTierCookieName };
 
 export interface StorefrontPriceListCookieValue {
   tenantId: string;

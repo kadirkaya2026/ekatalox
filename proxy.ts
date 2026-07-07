@@ -3,6 +3,8 @@ import { NextResponse } from "next/server";
 import { getStorefrontTenant, getTenantByCustomDomain } from "@/lib/data";
 import { appEnv } from "@/lib/env";
 import { toPublicStorefrontPath } from "@/lib/storefront/paths";
+import { getStorefrontTierCookieName } from "@/lib/storefront/tier-cookie";
+import type { Tenant } from "@/lib/types";
 import {
   getInternalPathFromResolution,
   resolveHost,
@@ -29,6 +31,39 @@ function stripPort(value: string) {
   return value.replace(/:\d+$/, "").toLowerCase();
 }
 
+// Proxy her istekte (CDN cache'inden ÖNCE) çalıştığı için tenant sorgularını
+// instance başına kısa süreli bellekte tutuyoruz; ısınmış bir instance'ta
+// istek başına Supabase sorgusu sıfıra iner. TTL kısa tutuldu ki
+// custom_domain / status değişiklikleri en geç bir dakikada yansısın.
+const TENANT_LOOKUP_TTL_MS = 60_000;
+const TENANT_LOOKUP_MAX_ENTRIES = 500;
+const tenantLookupCache = new Map<
+  string,
+  { value: Tenant | null; expires: number }
+>();
+
+async function cachedTenantLookup(
+  key: string,
+  load: () => Promise<Tenant | null>,
+): Promise<Tenant | null> {
+  const hit = tenantLookupCache.get(key);
+  if (hit && hit.expires > Date.now()) {
+    return hit.value;
+  }
+
+  const value = await load();
+
+  if (tenantLookupCache.size >= TENANT_LOOKUP_MAX_ENTRIES) {
+    tenantLookupCache.clear();
+  }
+  tenantLookupCache.set(key, {
+    value,
+    expires: Date.now() + TENANT_LOOKUP_TTL_MS,
+  });
+
+  return value;
+}
+
 async function resolveRequestHost(hostHeader: string | null): Promise<HostResolution> {
   const hostResolution = resolveHost(hostHeader);
   const normalizedHost = stripPort(hostHeader ?? "");
@@ -44,7 +79,9 @@ async function resolveRequestHost(hostHeader: string | null): Promise<HostResolu
     return hostResolution;
   }
 
-  const tenant = await getTenantByCustomDomain(normalizedHost);
+  const tenant = await cachedTenantLookup(`custom-domain:${normalizedHost}`, () =>
+    getTenantByCustomDomain(normalizedHost),
+  );
   if (!tenant) {
     return hostResolution;
   }
@@ -77,7 +114,10 @@ async function maybeRedirectStorefrontRequest(params: {
     return null;
   }
 
-  const tenant = await getStorefrontTenant(params.hostResolution.subdomain);
+  const subdomain = params.hostResolution.subdomain;
+  const tenant = await cachedTenantLookup(`subdomain:${subdomain}`, () =>
+    getStorefrontTenant(subdomain),
+  );
 
   if (!tenant?.custom_domain) {
     return null;
@@ -159,6 +199,26 @@ export async function proxy(request: NextRequest) {
 
   if (redirectResponse) {
     return redirectResponse;
+  }
+
+  // Oturum çerezi olmayan ziyaretçi her koşulda şifre ekranını görecek;
+  // onu ISR ile CDN'de tutulan /gate sayfasına yönlendir ki istek
+  // serverless fonksiyona hiç inmesin (cold start'ı devre dışı bırakır).
+  // Çerezi olup da süresi/değeri geçersiz olanları dinamik sayfa yakalar.
+  if (hostResolution.kind === "storefront" && hostResolution.subdomain) {
+    const hasTierCookie = request.cookies.has(
+      getStorefrontTierCookieName(hostResolution.subdomain),
+    );
+
+    if (!hasTierCookie) {
+      const gateUrl = request.nextUrl.clone();
+      gateUrl.pathname = `/store/${hostResolution.subdomain}/gate`;
+      gateUrl.search = "";
+
+      const gateResponse = NextResponse.rewrite(gateUrl);
+      gateResponse.headers.set("X-Robots-Tag", "noindex, nofollow");
+      return gateResponse;
+    }
   }
 
   const rewrittenPath = getInternalPathFromResolution(hostResolution, pathname);
