@@ -4,8 +4,10 @@ import { DEFAULT_INSTALLMENT_OPTIONS } from "@/lib/storefront/cart";
 import {
   demoAccessCodes,
   demoCategories,
+  demoMemberships,
   demoPriceLists,
   demoProducts,
+  demoProfiles,
   demoTenants,
 } from "@/lib/demo-data";
 import { shouldAllowDemoFallback } from "@/lib/env";
@@ -21,14 +23,17 @@ import { toStorefrontProduct } from "@/lib/storefront/pricing";
 import { getSmartDefaultAppearance } from "@/lib/storefront/smart-defaults";
 import type {
   AccessCode,
+  AdminLoginLogEntry,
   Category,
   DashboardSummary,
   PriceList,
   Product,
+  Profile,
   StorefrontProduct,
   StorefrontSection,
   StorefrontSectionWithProducts,
   Tenant,
+  TenantMembership,
   TenantStorefrontSettings,
   TenantWithRelations,
 } from "@/lib/types";
@@ -292,6 +297,82 @@ async function fetchSectionRowsWithOptionalVariants(
   }
 
   return fallback.data;
+}
+
+export async function getAdminLoginLogs(): Promise<AdminLoginLogEntry[]> {
+  const supabase = createSupabaseAdminClient();
+
+  if (!supabase) {
+    if (!shouldAllowDemoFallback()) {
+      return [];
+    }
+
+    return demoProfiles.map((profile) => {
+      const membership = demoMemberships.find((m) => m.user_id === profile.id);
+      const tenant = demoTenants.find((t) => t.id === membership?.tenant_id);
+
+      return {
+        user_id: profile.id,
+        email: `${profile.id}@demo.ekatalox.com`,
+        full_name: profile.full_name,
+        role: profile.role,
+        tenant_name: tenant?.company_name ?? null,
+        tenant_subdomain: tenant?.subdomain ?? null,
+        last_sign_in_at: new Date().toISOString(),
+        created_at: profile.created_at,
+      } satisfies AdminLoginLogEntry;
+    });
+  }
+
+  // Supabase Auth her kullanıcı için last_sign_in_at tutar; ayrıca tabloya
+  // ihtiyaç olmadan giriş bilgisinin kaynağı budur.
+  const [usersResult, profilesResult, membershipsResult, tenantsResult] =
+    await Promise.all([
+      supabase.auth.admin.listUsers({ page: 1, perPage: 1000 }),
+      supabase.from("profiles").select("*"),
+      supabase.from("tenant_memberships").select("*"),
+      supabase.from("tenants").select("id, company_name, subdomain"),
+    ]);
+
+  const users = usersResult.data?.users ?? [];
+  const profiles = (profilesResult.data as Profile[] | null) ?? [];
+  const memberships =
+    (membershipsResult.data as TenantMembership[] | null) ?? [];
+  const tenants =
+    (tenantsResult.data as Array<
+      Pick<Tenant, "id" | "company_name" | "subdomain">
+    > | null) ?? [];
+
+  const profileById = new Map(profiles.map((p) => [p.id, p]));
+  const membershipByUserId = new Map(memberships.map((m) => [m.user_id, m]));
+  const tenantById = new Map(tenants.map((t) => [t.id, t]));
+
+  const entries = users.map((user) => {
+    const profile = profileById.get(user.id);
+    const membership = membershipByUserId.get(user.id);
+    const tenant = membership ? tenantById.get(membership.tenant_id) : null;
+
+    return {
+      user_id: user.id,
+      email: user.email ?? "-",
+      full_name: profile?.full_name ?? null,
+      role: profile?.role ?? "tenant_admin",
+      tenant_name: tenant?.company_name ?? null,
+      tenant_subdomain: tenant?.subdomain ?? null,
+      last_sign_in_at: user.last_sign_in_at ?? null,
+      created_at: user.created_at,
+    } satisfies AdminLoginLogEntry;
+  });
+
+  // En son giriş yapan en üstte; hiç giriş yapmamışlar sona
+  return entries.sort((a, b) => {
+    if (!a.last_sign_in_at) return 1;
+    if (!b.last_sign_in_at) return -1;
+    return (
+      new Date(b.last_sign_in_at).getTime() -
+      new Date(a.last_sign_in_at).getTime()
+    );
+  });
 }
 
 export async function getTenantsOverview(): Promise<TenantWithRelations[]> {

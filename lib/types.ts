@@ -149,6 +149,17 @@ export interface TenantMembership {
   created_at: string;
 }
 
+export interface AdminLoginLogEntry {
+  user_id: string;
+  email: string;
+  full_name: string | null;
+  role: UserRole;
+  tenant_name: string | null;
+  tenant_subdomain: string | null;
+  last_sign_in_at: string | null;
+  created_at: string;
+}
+
 export type DiscountPaymentMethod = "cash" | "card";
 
 export interface CashDiscountTier {

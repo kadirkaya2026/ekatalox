@@ -8,6 +8,7 @@ import {
   FolderTree,
   KeyRound,
   LayoutDashboard,
+  ScrollText,
   Settings,
 } from "lucide-react";
 import { EkataloxLogo } from "@/components/brand/ekatalox-logo";
@@ -61,6 +62,7 @@ const tenantLinks: SidebarLink[] = [
 
 const adminLinks: SidebarLink[] = [
   { href: "/", label: "Tenant Yönetimi", icon: Building2 },
+  { href: "/logs", label: "Giriş Logları", icon: ScrollText },
 ];
 
 function filterLinksForPlan(links: SidebarLink[], plan: TenantPlan): SidebarLink[] {
