@@ -67,6 +67,7 @@ export interface Tenant {
   whatsapp_number: string;
   is_whatsapp_order_direct: boolean;
   custom_domain: string | null;
+  trial_ends_at: string | null;
   created_at: string;
 }
 

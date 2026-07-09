@@ -25,6 +25,28 @@ export const PLAN_OPTIONS: PlanOption[] = [
   { id: "kurumsal", name: "Kurumsal", maxProductLimit: 2500 },
 ];
 
+// Pazarlama sitesindeki (app/page.tsx Pricing) fiyatlarla senkron tutulmalı.
+export const PLAN_PRICING: Record<
+  TenantPlan,
+  { price: string; unit: string; highlight: string }
+> = {
+  baslangic: {
+    price: "₺20.000",
+    unit: "/ Yıl",
+    highlight: "Vitrin fikrinizi test edin",
+  },
+  profesyonel: {
+    price: "₺45.000",
+    unit: "/ Yıl",
+    highlight: "En çok tercih edilen",
+  },
+  kurumsal: {
+    price: "₺95.000",
+    unit: "/ Yıl",
+    highlight: "Alex AI destekli tam otomasyon",
+  },
+};
+
 export const PLAN_PRICE_LIST_LIMITS: Record<TenantPlan, number | null> = {
   baslangic: 3,
   profesyonel: 10,

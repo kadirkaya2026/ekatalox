@@ -1,5 +1,11 @@
 import { Sidebar } from "@/components/dashboard/sidebar";
+import { TrialExpiredModal } from "@/components/dashboard/trial-expired-modal";
 import { requireTenantAdminPage } from "@/lib/auth/session";
+import {
+  getTrialDaysLeft,
+  isTrialExpired,
+  isTrialTenant,
+} from "@/lib/billing/trial";
 
 export default async function DashboardLayout({
   children,
@@ -8,20 +14,36 @@ export default async function DashboardLayout({
 }>) {
   const session = await requireTenantAdminPage();
   const plan = session.tenant?.plan ?? "baslangic";
+  const tenant = session.tenant;
+  const trialExpired = tenant ? isTrialExpired(tenant) : false;
+  const trialDaysLeft =
+    tenant && isTrialTenant(tenant) && !trialExpired
+      ? getTrialDaysLeft(tenant)
+      : null;
 
   return (
     <div className="min-h-screen bg-background text-foreground md:grid md:h-screen md:grid-cols-[280px_1fr] md:overflow-hidden">
       <div className="hidden md:block md:h-screen">
         <Sidebar
           mode="tenant"
-          title={session.tenant?.company_name ?? "Tenant Paneli"}
-          subtitle={session.tenant?.subdomain ?? "yönetim"}
+          title={tenant?.company_name ?? "Tenant Paneli"}
+          subtitle={tenant?.subdomain ?? "yönetim"}
           plan={plan}
         />
       </div>
       <main className="container-shell py-6 md:h-screen md:overflow-y-auto">
+        {trialDaysLeft !== null ? (
+          <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+            <span className="font-semibold">Deneme hesabı:</span> Deneme
+            sürenizin bitmesine <strong>{trialDaysLeft} gün</strong> kaldı.
+            Kesintisiz devam etmek için süre dolmadan bir paket seçebilirsiniz.
+          </div>
+        ) : null}
         {children}
       </main>
+      {trialExpired && tenant ? (
+        <TrialExpiredModal companyName={tenant.company_name} />
+      ) : null}
     </div>
   );
 }

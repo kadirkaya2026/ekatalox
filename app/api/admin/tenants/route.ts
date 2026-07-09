@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { demoTenants } from "@/lib/demo-data";
 import { shouldAllowDemoFallback } from "@/lib/env";
 import { generateTemporaryPassword } from "@/lib/auth/password";
+import { getTrialEndDate } from "@/lib/billing/trial";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import {
   isReservedSubdomain,
@@ -88,6 +89,8 @@ export async function POST(request: Request) {
       max_product_limit: parsed.data.max_product_limit,
       whatsapp_number: parsed.data.whatsapp_number,
       is_whatsapp_order_direct: true,
+      custom_domain: null,
+      trial_ends_at: parsed.data.is_trial ? getTrialEndDate() : null,
     };
     const profile: Profile = {
       id: crypto.randomUUID(),
@@ -115,6 +118,9 @@ export async function POST(request: Request) {
     max_product_limit: parsed.data.max_product_limit,
     whatsapp_number: parsed.data.whatsapp_number,
     status: "active",
+    // Kolonu yalnızca deneme hesabında gönder: 0041 migration'ı henüz
+    // uygulanmamış bir ortamda normal tenant oluşturma etkilenmesin.
+    ...(parsed.data.is_trial ? { trial_ends_at: getTrialEndDate() } : {}),
   };
 
   const { data: tenant, error: tenantError } = await supabase

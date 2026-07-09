@@ -27,6 +27,7 @@ interface NewTenantForm {
   whatsapp_number: string;
   tenant_admin_email: string;
   tenant_admin_full_name: string;
+  is_trial: boolean;
 }
 
 const defaultForm: NewTenantForm = {
@@ -36,7 +37,26 @@ const defaultForm: NewTenantForm = {
   whatsapp_number: "",
   tenant_admin_email: "",
   tenant_admin_full_name: "",
+  is_trial: false,
 };
+
+function getTrialBadge(trialEndsAt: string | null | undefined) {
+  if (!trialEndsAt) {
+    return null;
+  }
+
+  const diffMs = new Date(trialEndsAt).getTime() - Date.now();
+  const daysLeft = Math.ceil(diffMs / (24 * 60 * 60 * 1000));
+
+  if (daysLeft <= 0) {
+    return { label: "Deneme süresi doldu", className: "bg-rose-50 text-rose-700" };
+  }
+
+  return {
+    label: `Deneme — ${daysLeft} gün kaldı`,
+    className: "bg-amber-50 text-amber-700",
+  };
+}
 
 function getSubdomainMessage(value: string) {
   const normalized = value.trim().toLowerCase();
@@ -139,10 +159,11 @@ export function AdminTenantsManager({
     setMessage(null);
 
     startTransition(async () => {
+      // Süper admin paket atadığında deneme süresi de sona erdirilir.
       const response = await fetch(`/api/admin/tenants/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ plan }),
+        body: JSON.stringify({ plan, end_trial: true }),
       });
 
       const result = await response.json();
@@ -447,6 +468,23 @@ export function AdminTenantsManager({
               }))
             }
           />
+          <label className="flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 md:col-span-2 xl:col-span-4">
+            <input
+              type="checkbox"
+              checked={form.is_trial}
+              onChange={(event) =>
+                setForm((current) => ({
+                  ...current,
+                  is_trial: event.target.checked,
+                }))
+              }
+              className="h-4 w-4 accent-amber-600"
+            />
+            <span>
+              <strong>14 günlük deneme hesabı</strong> — süre sonunda tenant
+              admin panele girişte paket seçim ekranıyla karşılanır.
+            </span>
+          </label>
           <div className="md:col-span-2 xl:col-span-4">
             <p className="mb-3 text-sm text-slate-500">
               Seçilen paket: {selectedPlanSummary}
@@ -485,6 +523,14 @@ export function AdminTenantsManager({
                   >
                     {tenant.status === "active" ? "Aktif" : "Askıda"}
                   </Badge>
+                  {(() => {
+                    const trialBadge = getTrialBadge(tenant.trial_ends_at);
+                    return trialBadge ? (
+                      <Badge className={trialBadge.className}>
+                        {trialBadge.label}
+                      </Badge>
+                    ) : null;
+                  })()}
                 </div>
                 <p className="mt-2 text-sm text-slate-600">
                   {tenant.subdomain}.ekatalox.com •{" "}

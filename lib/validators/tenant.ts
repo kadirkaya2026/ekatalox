@@ -40,6 +40,7 @@ export const tenantSchema = z
     whatsapp_number: z.string().min(10, "WhatsApp numarası zorunludur."),
     tenant_admin_email: z.email("Geçerli bir tenant admin e-postası girin."),
     tenant_admin_full_name: z.string().min(2, "Tenant admin adı zorunludur.").optional(),
+    is_trial: z.boolean().optional(),
   })
   .transform((data) => ({
     ...data,
@@ -56,16 +57,22 @@ export const tenantUpdateSchema = z
     plan: tenantPlanSchema.optional(),
     max_product_limit: maxProductLimitSchema.optional(),
     whatsapp_number: z.string().min(10).optional(),
+    end_trial: z.boolean().optional(),
   })
   .transform((data) => {
-    if (data.plan) {
+    // end_trial DB kolonu değil; trial_ends_at'e çevrilir. Süper admin bir
+    // paket atadığında deneme süresi sona erdirilir.
+    const { end_trial, ...rest } = data;
+    const mapped = end_trial ? { ...rest, trial_ends_at: null } : rest;
+
+    if (mapped.plan) {
       return {
-        ...data,
-        max_product_limit: getLimitForPlan(data.plan),
+        ...mapped,
+        max_product_limit: getLimitForPlan(mapped.plan),
       };
     }
 
-    return data;
+    return mapped;
   })
   .refine(
     (data) => {
