@@ -202,13 +202,15 @@ export function TenantThemeForm({
 
   return (
     <form onSubmit={save}>
-      <Card className="p-5">
-        <div className="space-y-8">
-          <div>
-            <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-slate-900">
-              <Palette className="size-4 text-emerald-700" />
-              <span>Marka renkleri</span>
+      <div className="space-y-6">
+          <Card className="p-5">
+            <div className="flex items-center gap-2">
+              <Palette className="size-5 text-emerald-700" />
+              <h2 className="text-lg font-semibold text-slate-900">Marka renkleri</h2>
             </div>
+            <p className="mt-1 mb-4 text-sm text-slate-600">
+              Logonuza uygun renkleri seçin veya hazır paletlerden birini kullanın.
+            </p>
             <div className="grid gap-4 md:grid-cols-2">
               <div>
                 <label className="mb-2 block text-sm font-medium text-slate-700">
@@ -262,13 +264,16 @@ export function TenantThemeForm({
                 </button>
               ))}
             </div>
-          </div>
+          </Card>
 
-          <div>
-            <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-slate-900">
-              <Palette className="size-4 text-emerald-700" />
-              <span>Hazır tema seçimi</span>
+          <Card className="p-5">
+            <div className="flex items-center gap-2">
+              <Palette className="size-5 text-emerald-700" />
+              <h2 className="text-lg font-semibold text-slate-900">Hazır tema</h2>
             </div>
+            <p className="mt-1 mb-4 text-sm text-slate-600">
+              Vitrininizin genel görünümünü belirleyen temayı seçin.
+            </p>
             <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
               {THEME_OPTIONS.map((theme) => {
                 const selected = form.theme_key === theme.key;
@@ -298,13 +303,16 @@ export function TenantThemeForm({
                 );
               })}
             </div>
-          </div>
+          </Card>
 
-          <div>
-            <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-slate-900">
-              <LayoutGrid className="size-4 text-emerald-700" />
-              <span>Vitrin düzeni</span>
+          <Card className="p-5">
+            <div className="flex items-center gap-2">
+              <LayoutGrid className="size-5 text-emerald-700" />
+              <h2 className="text-lg font-semibold text-slate-900">Vitrin düzeni</h2>
             </div>
+            <p className="mt-1 mb-4 text-sm text-slate-600">
+              Ürünlerin ve kategorilerin vitrinde nasıl dizileceğini seçin.
+            </p>
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
               {LAYOUT_OPTIONS.map((layout) => {
                 const selected = form.layout_key === layout.key;
@@ -334,15 +342,17 @@ export function TenantThemeForm({
                 );
               })}
             </div>
-          </div>
+          </Card>
 
           {canUseAdvancedAppearance ? (
-            <>
-              <div>
-                <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-slate-900">
-                  <Type className="size-4 text-emerald-700" />
-                  <span>Font, kart ve header</span>
+            <Card className="p-5">
+                <div className="flex items-center gap-2">
+                  <Type className="size-5 text-emerald-700" />
+                  <h2 className="text-lg font-semibold text-slate-900">Yazı tipi ve stiller</h2>
                 </div>
+                <p className="mt-1 mb-4 text-sm text-slate-600">
+                  Font, ürün kartı, header ve footer stillerini özelleştirin.
+                </p>
                 <div className="grid gap-6 lg:grid-cols-2">
                   <OptionPicker
                     label="Font"
@@ -379,16 +389,18 @@ export function TenantThemeForm({
                     }
                   />
                 </div>
-              </div>
-            </>
+            </Card>
           ) : null}
 
           {canEditHomepageBlocks ? (
-            <div>
-              <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-slate-900">
-                <Sparkles className="size-4 text-emerald-700" />
-                <span>Ana sayfa blokları</span>
+            <Card className="p-5">
+              <div className="flex items-center gap-2">
+                <Sparkles className="size-5 text-emerald-700" />
+                <h2 className="text-lg font-semibold text-slate-900">Ana sayfa blokları</h2>
               </div>
+              <p className="mt-1 mb-4 text-sm text-slate-600">
+                Vitrin ana sayfasındaki bölümlerin sırasını ve görünürlüğünü yönetin.
+              </p>
               <div className="space-y-3">
                 {form.homepage_blocks
                   .slice()
@@ -443,30 +455,31 @@ export function TenantThemeForm({
                     </div>
                   ))}
               </div>
-            </div>
+            </Card>
           ) : null}
-        </div>
 
-        <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="min-h-6">
-            {saveMessage ? <p className="text-sm text-emerald-700">{saveMessage}</p> : null}
-          </div>
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-            <Button
-              type="button"
-              variant="secondary"
-              disabled={savePending || resetPending}
-              onClick={resetAppearance}
-            >
-              <RotateCcw className="size-4" />
-              {resetPending ? "Sıfırlanıyor..." : "Ayarları sıfırla"}
-            </Button>
-            <Button type="submit" disabled={savePending || resetPending}>
-              {savePending ? "Kaydediliyor..." : "Görünüm ayarlarını kaydet"}
-            </Button>
+        <div className="sticky bottom-0 z-10 rounded-2xl border border-slate-200 bg-white/95 p-4 shadow-lg backdrop-blur">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="min-h-6">
+              {saveMessage ? <p className="text-sm text-emerald-700">{saveMessage}</p> : null}
+            </div>
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+              <Button
+                type="button"
+                variant="secondary"
+                disabled={savePending || resetPending}
+                onClick={resetAppearance}
+              >
+                <RotateCcw className="size-4" />
+                {resetPending ? "Sıfırlanıyor..." : "Ayarları sıfırla"}
+              </Button>
+              <Button type="submit" disabled={savePending || resetPending}>
+                {savePending ? "Kaydediliyor..." : "Görünüm ayarlarını kaydet"}
+              </Button>
+            </div>
           </div>
         </div>
-      </Card>
+      </div>
     </form>
   );
 }

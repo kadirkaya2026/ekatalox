@@ -1,17 +1,13 @@
 import Link from "next/link";
 import { Header } from "@/components/dashboard/header";
-import { StorefrontSetupChecklist } from "@/components/dashboard/storefront-setup-checklist";
 import { Card } from "@/components/ui/card";
 import { requireTenantAdminPage } from "@/lib/auth/session";
 import { formatPriceListLimit } from "@/lib/billing/plans";
-import { getTenantDashboardSummary, getTenantStorefrontSettings } from "@/lib/data";
+import { getTenantDashboardSummary } from "@/lib/data";
 
 export default async function DashboardHomePage() {
   const session = await requireTenantAdminPage();
-  const [summary, storefrontSettings] = await Promise.all([
-    getTenantDashboardSummary(session.tenant!),
-    getTenantStorefrontSettings(session.tenant!.id),
-  ]);
+  const summary = await getTenantDashboardSummary(session.tenant!);
 
   return (
     <div className="space-y-6">
@@ -20,8 +16,6 @@ export default async function DashboardHomePage() {
         title={`${summary.tenant.company_name} yönetim paneli`}
         description="Ürünlerinizi, fiyat katmanlarınızı ve mağaza erişim şifrelerinizi tek panelden yönetin."
       />
-
-      <StorefrontSetupChecklist storefrontSettings={storefrontSettings} />
 
       <div className="grid gap-4 md:grid-cols-3">
         <Card className="p-5">
