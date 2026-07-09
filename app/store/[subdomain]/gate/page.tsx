@@ -6,7 +6,9 @@ export const revalidate = 300;
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { PasswordGate } from "@/components/storefront/password-gate";
+import { StoreClosedNotice } from "@/components/storefront/store-closed-notice";
 import { StorefrontPageShell } from "@/components/storefront/storefront-page-shell";
+import { isTrialExpired } from "@/lib/billing/trial";
 import { getStorefrontTenantCached, getTenantStorefrontSettings } from "@/lib/data";
 
 export function generateStaticParams() {
@@ -66,6 +68,10 @@ export default async function StorefrontGatePage(
         </div>
       </div>
     );
+  }
+
+  if (isTrialExpired(tenant)) {
+    return <StoreClosedNotice />;
   }
 
   const settings = await getTenantStorefrontSettings(tenant.id);

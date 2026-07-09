@@ -1,5 +1,6 @@
 import { cache } from "react";
 import { unstable_cache } from "next/cache";
+import { isTrialExpired } from "@/lib/billing/trial";
 import { DEFAULT_INSTALLMENT_OPTIONS } from "@/lib/storefront/cart";
 import {
   demoAccessCodes,
@@ -698,6 +699,12 @@ export async function validateAccessCode(params: {
   const tenant = await getStorefrontTenant(params.subdomain);
 
   if (!tenant || tenant.status !== "active") {
+    return null;
+  }
+
+  // Deneme süresi dolan tenant'ın vitrini kapalıdır; erişim kodları da
+  // yeni oturum açamaz.
+  if (isTrialExpired(tenant)) {
     return null;
   }
 

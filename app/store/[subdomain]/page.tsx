@@ -5,9 +5,11 @@ import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { PasswordGate } from "@/components/storefront/password-gate";
+import { StoreClosedNotice } from "@/components/storefront/store-closed-notice";
 import { StorefrontPageShell } from "@/components/storefront/storefront-page-shell";
 import { StorefrontClient } from "@/components/storefront/storefront-client";
 import { StorefrontFooter } from "@/components/storefront/storefront-footer";
+import { isTrialExpired } from "@/lib/billing/trial";
 import {
   getStorefrontProducts,
   getStorefrontSections,
@@ -75,6 +77,10 @@ export default async function StorefrontPage(props: PageProps<"/store/[subdomain
         </div>
       </div>
     );
+  }
+
+  if (isTrialExpired(tenant)) {
+    return <StoreClosedNotice />;
   }
 
   const priceListState = await readStorefrontPriceList(subdomain);
