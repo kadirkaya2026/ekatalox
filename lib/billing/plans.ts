@@ -232,6 +232,25 @@ export function buildPackageUpgradeHref(
   return `https://wa.me/${PACKAGE_UPGRADE_PHONE}?text=${encodeURIComponent(message)}`;
 }
 
+export function getPlanRank(planId: TenantPlan): number {
+  return PLAN_OPTIONS.findIndex((plan) => plan.id === planId);
+}
+
+export function buildPlanChangeHref(params: {
+  companyName: string;
+  subdomain: string;
+  currentPlan: TenantPlan;
+  targetPlan: TenantPlan;
+  isTrial: boolean;
+}): string {
+  const target = getPlanLabel(params.targetPlan);
+  const origin = params.isTrial
+    ? "deneme sürümünden"
+    : `${getPlanLabel(params.currentPlan)} paketinden`;
+  const message = `Merhaba, ${params.companyName} (${params.subdomain}.ekatalox.com) olarak ${origin} ${target} paketine geçmek istiyoruz.`;
+  return `https://wa.me/${PACKAGE_UPGRADE_PHONE}?text=${encodeURIComponent(message)}`;
+}
+
 export function formatProductLimit(limit: number): string {
   return limit.toLocaleString("tr-TR");
 }

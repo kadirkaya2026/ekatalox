@@ -1,5 +1,6 @@
 import { Check } from "lucide-react";
 import {
+  buildPlanChangeHref,
   formatPlanCapacityFeature,
   PLAN_OPTIONS,
   PLAN_PRICING,
@@ -28,7 +29,13 @@ const PLAN_FEATURE_SUMMARY: Record<string, string[]> = {
  * Deneme süresi dolan tenant admin'i panele giriş yaptığında karşılayan,
  * kapatılamayan tam ekran paket seçim ekranı.
  */
-export function TrialExpiredModal({ companyName }: { companyName: string }) {
+export function TrialExpiredModal({
+  companyName,
+  subdomain,
+}: {
+  companyName: string;
+  subdomain: string;
+}) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-slate-900/80 p-4 backdrop-blur-sm">
       <div className="my-8 w-full max-w-4xl rounded-2xl bg-white p-6 shadow-2xl md:p-8">
@@ -88,6 +95,24 @@ export function TrialExpiredModal({ companyName }: { companyName: string }) {
                     </li>
                   ))}
                 </ul>
+                <a
+                  href={buildPlanChangeHref({
+                    companyName,
+                    subdomain,
+                    currentPlan: plan.id,
+                    targetPlan: plan.id,
+                    isTrial: true,
+                  })}
+                  target="_blank"
+                  rel="noreferrer"
+                  className={
+                    featured
+                      ? "mt-5 inline-flex w-full items-center justify-center rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-700"
+                      : "mt-5 inline-flex w-full items-center justify-center rounded-lg border border-emerald-600 px-4 py-2.5 text-sm font-semibold text-emerald-700 transition hover:bg-emerald-50"
+                  }
+                >
+                  WhatsApp ile bu paketi seç
+                </a>
               </div>
             );
           })}

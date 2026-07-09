@@ -42,7 +42,10 @@ export default async function DashboardLayout({
         {children}
       </main>
       {trialExpired && tenant ? (
-        <TrialExpiredModal companyName={tenant.company_name} />
+        <TrialExpiredModal
+          companyName={tenant.company_name}
+          subdomain={tenant.subdomain}
+        />
       ) : null}
     </div>
   );

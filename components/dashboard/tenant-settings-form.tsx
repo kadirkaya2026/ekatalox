@@ -5,8 +5,15 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { PlanFeatureGate } from "@/components/dashboard/plan-feature-gate";
-import { formatPlanSummary } from "@/lib/billing/plans";
+import {
+  buildPlanChangeHref,
+  formatPlanSummary,
+  formatProductLimit,
+  getPlanRank,
+  PLAN_OPTIONS,
+  PLAN_PRICING,
+} from "@/lib/billing/plans";
+import { isTrialTenant } from "@/lib/billing/trial";
 import type { Profile, Tenant } from "@/lib/types";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
@@ -45,92 +52,67 @@ function SettingsToggle({
   );
 }
 
-function CustomDomainSettings({
-  tenant,
-}: {
-  tenant: Tenant;
-}) {
-  const [customDomain, setCustomDomain] = useState(tenant.custom_domain ?? "");
-  const [savedCustomDomain, setSavedCustomDomain] = useState(tenant.custom_domain);
-  const [domainMessage, setDomainMessage] = useState<string | null>(null);
-  const [domainPending, startDomainTransition] = useTransition();
-  const router = useRouter();
-
-  function saveCustomDomain(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setDomainMessage(null);
-
-    startDomainTransition(async () => {
-      const response = await fetch("/api/tenant/domain", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          custom_domain: customDomain.trim() || null,
-        }),
-      });
-      const result = await response.json();
-
-      if (!response.ok) {
-        setDomainMessage(result.error ?? "Özel alan adı kaydedilemedi.");
-        return;
-      }
-
-      const nextDomain = (result.tenant?.custom_domain as string | null | undefined) ?? null;
-      setSavedCustomDomain(nextDomain);
-      setCustomDomain(nextDomain ?? "");
-      setDomainMessage(
-        nextDomain
-          ? "Özel alan adı kaydedildi. DNS ayarlarını tamamladıktan sonra vitrin bu adresten açılır. Eski subdomain adresiniz otomatik olarak bu alan adına yönlendirilir."
-          : "Özel alan adı kaldırıldı.",
-      );
-      router.refresh();
-    });
-  }
+function PlanChangeSection({ tenant }: { tenant: Tenant }) {
+  const currentPlan = tenant.plan ?? "baslangic";
+  const onTrial = isTrialTenant(tenant);
+  // Deneme hesabı tüm paketleri seçebilir; normal hesap yalnızca üst
+  // paketlere geçiş talep edebilir (alt pakete geçiş sunulmaz).
+  const targetPlans = PLAN_OPTIONS.filter((plan) =>
+    onTrial ? true : getPlanRank(plan.id) > getPlanRank(currentPlan),
+  );
 
   return (
-    <form onSubmit={saveCustomDomain} className="mt-3 space-y-3">
-      <Input
-        value={customDomain}
-        onChange={(event) => {
-          setCustomDomain(event.target.value);
-          setDomainMessage(null);
-        }}
-        placeholder="katalog.firmaniz.com"
-        disabled={domainPending}
-      />
-      <p className="text-xs leading-5 text-slate-500">
-        DNS panelinizde alan adınız için CNAME kaydı oluşturun ve hedef olarak{" "}
-        <span className="font-medium text-slate-700">cname.vercel-dns.com</span> veya destek
-        ekibinin paylaştığı hedefi kullanın. SSL ve doğrulama tamamlandıktan sonra vitrin bu
-        adresten yayına alınır. Özel alan adı aktifken{" "}
-        <span className="font-medium text-slate-700">
-          {tenant.subdomain}.ekatalox.com
-        </span>{" "}
-        adresi otomatik olarak özel alan adınıza yönlendirilir.
+    <div className="mt-1 space-y-3">
+      <p className="font-medium text-slate-900">
+        {formatPlanSummary(currentPlan)}
+        {onTrial ? (
+          <span className="ml-2 inline-flex items-center rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-semibold text-amber-700">
+            Deneme sürümü
+          </span>
+        ) : null}
       </p>
-      {savedCustomDomain ? (
-        <p className="text-xs font-medium text-emerald-700">
-          Aktif kayıt: {savedCustomDomain}
+      {targetPlans.length === 0 ? (
+        <p className="text-xs text-slate-500">
+          En üst paketi kullanıyorsunuz.
         </p>
-      ) : null}
-      <Button type="submit" disabled={domainPending}>
-        {domainPending ? "Kaydediliyor..." : "Özel alan adını kaydet"}
-      </Button>
-      {domainMessage ? (
-        <p
-          className={cn(
-            "text-sm",
-            domainMessage.includes("kaydedilemedi") || domainMessage.includes("kaldır")
-              ? domainMessage.includes("kaldırıldı")
-                ? "text-emerald-700"
-                : "text-rose-600"
-              : "text-emerald-700",
-          )}
-        >
-          {domainMessage}
-        </p>
-      ) : null}
-    </form>
+      ) : (
+        <div className="space-y-2">
+          <p className="text-xs text-slate-500">
+            {onTrial
+              ? "Paket seçin, WhatsApp üzerinden bize iletin; hesabınızı aynı gün seçtiğiniz pakete geçirelim."
+              : "Üst pakete geçmek için seçim yapın; talebiniz WhatsApp üzerinden bize iletilir."}
+          </p>
+          {targetPlans.map((plan) => (
+            <div
+              key={plan.id}
+              className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-200 px-3 py-2.5"
+            >
+              <div>
+                <p className="text-sm font-medium text-slate-900">{plan.name}</p>
+                <p className="text-xs text-slate-500">
+                  {PLAN_PRICING[plan.id].price} {PLAN_PRICING[plan.id].unit} •{" "}
+                  {formatProductLimit(plan.maxProductLimit)} ürün
+                </p>
+              </div>
+              <a
+                href={buildPlanChangeHref({
+                  companyName: tenant.company_name,
+                  subdomain: tenant.subdomain,
+                  currentPlan,
+                  targetPlan: plan.id,
+                  isTrial: onTrial,
+                })}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-emerald-700"
+              >
+                WhatsApp ile talep et
+              </a>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -248,21 +230,9 @@ export function TenantSettingsForm({
             </dd>
           </div>
           <div>
-            <dt className="text-slate-500">Özel alan adı</dt>
-            <dd className="mt-1">
-              <PlanFeatureGate
-                feature="custom_domain"
-                plan={tenant.plan ?? "baslangic"}
-                companyName={tenant.company_name}
-              >
-                <CustomDomainSettings tenant={tenant} />
-              </PlanFeatureGate>
-            </dd>
-          </div>
-          <div>
-            <dt className="text-slate-500">Paket limiti</dt>
-            <dd className="mt-1 font-medium text-slate-900">
-              {formatPlanSummary(tenant.plan ?? "baslangic")}
+            <dt className="text-slate-500">Paket</dt>
+            <dd>
+              <PlanChangeSection tenant={tenant} />
             </dd>
           </div>
           <div>
