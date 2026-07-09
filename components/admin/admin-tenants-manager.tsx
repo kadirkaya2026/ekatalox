@@ -182,6 +182,38 @@ export function AdminTenantsManager({
     });
   }
 
+  function toggleTenantTrial(id: string, action: "start" | "end") {
+    setMessage(null);
+
+    startTransition(async () => {
+      const response = await fetch(`/api/admin/tenants/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(
+          action === "start" ? { start_trial: true } : { end_trial: true },
+        ),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        setMessage(result.error ?? "Deneme durumu güncellenemedi.");
+        return;
+      }
+
+      setTenants((current) =>
+        current.map((tenant) =>
+          tenant.id === id ? { ...tenant, ...result.tenant } : tenant,
+        ),
+      );
+      setMessage(
+        action === "start"
+          ? "Hesap 14 günlük deneme süresine alındı."
+          : "Deneme süresi sonlandırıldı.",
+      );
+    });
+  }
+
   function toggleTenantStatus(id: string, status: "active" | "suspended") {
     setMessage(null);
 
@@ -547,6 +579,19 @@ export function AdminTenantsManager({
               </div>
 
               <div className="flex flex-wrap gap-2">
+                <Button
+                  variant="secondary"
+                  onClick={() =>
+                    toggleTenantTrial(
+                      tenant.id,
+                      tenant.trial_ends_at ? "end" : "start",
+                    )
+                  }
+                  disabled={pending}
+                  className="border-amber-200 text-amber-700 hover:bg-amber-50 hover:text-amber-800"
+                >
+                  {tenant.trial_ends_at ? "Denemeyi sonlandır" : "Denemeye al"}
+                </Button>
                 <Button
                   variant="secondary"
                   onClick={() =>

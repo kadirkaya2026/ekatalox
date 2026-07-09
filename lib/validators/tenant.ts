@@ -3,6 +3,7 @@ import {
   getLimitForPlan,
   TENANT_PLAN_IDS,
 } from "@/lib/billing/plans";
+import { getTrialEndDate } from "@/lib/billing/trial";
 import {
   isReservedSubdomain,
   normalizeSubdomain,
@@ -58,12 +59,18 @@ export const tenantUpdateSchema = z
     max_product_limit: maxProductLimitSchema.optional(),
     whatsapp_number: z.string().min(10).optional(),
     end_trial: z.boolean().optional(),
+    start_trial: z.boolean().optional(),
   })
   .transform((data) => {
-    // end_trial DB kolonu değil; trial_ends_at'e çevrilir. Süper admin bir
-    // paket atadığında deneme süresi sona erdirilir.
-    const { end_trial, ...rest } = data;
-    const mapped = end_trial ? { ...rest, trial_ends_at: null } : rest;
+    // end_trial / start_trial DB kolonu değil; trial_ends_at'e çevrilir.
+    // end_trial: süper admin paket atadığında deneme sonlanır.
+    // start_trial: mevcut hesap bugünden itibaren 14 günlük denemeye alınır.
+    const { end_trial, start_trial, ...rest } = data;
+    const mapped = end_trial
+      ? { ...rest, trial_ends_at: null }
+      : start_trial
+        ? { ...rest, trial_ends_at: getTrialEndDate() }
+        : rest;
 
     if (mapped.plan) {
       return {
