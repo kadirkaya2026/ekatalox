@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { extendPlanExpiry } from "@/lib/billing/membership";
 import { shouldAllowDemoFallback } from "@/lib/env";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { PRODUCT_IMAGES_BUCKET } from "@/lib/storage/product-images";
@@ -31,6 +32,12 @@ export async function PATCH(
     );
   }
 
+  // gift_months DB kolonu değil; mevcut bitiş tarihine göre hesaplanıp
+  // plan_expires_at'e çevrilir.
+  const { gift_months, ...updates } = parsed.data as typeof parsed.data & {
+    gift_months?: number;
+  };
+
   const supabase = createSupabaseAdminClient();
 
   if (!supabase) {
@@ -44,14 +51,39 @@ export async function PATCH(
     return NextResponse.json({
       tenant: {
         id,
-        ...parsed.data,
+        ...updates,
+        ...(gift_months
+          ? { plan_expires_at: extendPlanExpiry(null, gift_months) }
+          : {}),
       },
     });
   }
 
+  const updatePayload: Record<string, unknown> = { ...updates };
+
+  if (gift_months) {
+    const { data: currentTenant } = await supabase
+      .from("tenants")
+      .select("plan_expires_at")
+      .eq("id", id)
+      .maybeSingle();
+
+    updatePayload.plan_expires_at = extendPlanExpiry(
+      (currentTenant?.plan_expires_at as string | null) ?? null,
+      gift_months,
+    );
+  }
+
+  if (Object.keys(updatePayload).length === 0) {
+    return NextResponse.json(
+      { error: "Güncellenecek alan bulunamadı." },
+      { status: 400 },
+    );
+  }
+
   const { data, error } = await supabase
     .from("tenants")
-    .update(parsed.data)
+    .update(updatePayload)
     .eq("id", id)
     .select("*")
     .single();

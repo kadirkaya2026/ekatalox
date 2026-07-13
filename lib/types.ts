@@ -68,6 +68,8 @@ export interface Tenant {
   is_whatsapp_order_direct: boolean;
   custom_domain: string | null;
   trial_ends_at: string | null;
+  plan_started_at: string | null;
+  plan_expires_at: string | null;
   created_at: string;
 }
 

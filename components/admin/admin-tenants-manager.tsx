@@ -84,6 +84,7 @@ export function AdminTenantsManager({
   const [tenants, setTenants] = useState(initialTenants);
   const [form, setForm] = useState<NewTenantForm>(defaultForm);
   const [planDrafts, setPlanDrafts] = useState<Record<string, TenantPlan>>({});
+  const [giftDrafts, setGiftDrafts] = useState<Record<string, number>>({});
   const [codeDrafts, setCodeDrafts] = useState<Record<string, string>>({});
   const [priceListDrafts, setPriceListDrafts] = useState<Record<string, string>>({});
   const [editingAccessCodeId, setEditingAccessCodeId] = useState<string | null>(null);
@@ -179,6 +180,33 @@ export function AdminTenantsManager({
         ),
       );
       setMessage("Tenant paketi güncellendi.");
+    });
+  }
+
+  function addGiftMonths(id: string) {
+    const months = giftDrafts[id] ?? 1;
+    setMessage(null);
+
+    startTransition(async () => {
+      const response = await fetch(`/api/admin/tenants/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ gift_months: months }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        setMessage(result.error ?? "Hediye ay eklenemedi.");
+        return;
+      }
+
+      setTenants((current) =>
+        current.map((tenant) =>
+          tenant.id === id ? { ...tenant, ...result.tenant } : tenant,
+        ),
+      );
+      setMessage(`Üyeliğe ${months} ay hediye eklendi.`);
     });
   }
 
@@ -650,7 +678,36 @@ export function AdminTenantsManager({
                 <p className="mt-3 text-sm text-slate-500">
                   Mevcut: {getPlanLabel(tenant.plan ?? "baslangic")} •{" "}
                   {formatProductLimit(tenant.max_product_limit)} ürün
+                  {tenant.plan_expires_at ? (
+                    <> • Üyelik bitişi: {formatDate(tenant.plan_expires_at)}</>
+                  ) : null}
                 </p>
+                <div className="mt-3 flex flex-col gap-3 border-t border-slate-100 pt-3 sm:flex-row sm:items-center">
+                  <select
+                    value={giftDrafts[tenant.id] ?? 1}
+                    onChange={(event) =>
+                      setGiftDrafts((current) => ({
+                        ...current,
+                        [tenant.id]: Number(event.target.value),
+                      }))
+                    }
+                    className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900"
+                  >
+                    {[1, 2, 3, 6, 12].map((months) => (
+                      <option key={months} value={months}>
+                        +{months} ay
+                      </option>
+                    ))}
+                  </select>
+                  <Button
+                    variant="secondary"
+                    onClick={() => addGiftMonths(tenant.id)}
+                    disabled={pending}
+                    className="border-violet-200 text-violet-700 hover:bg-violet-50 hover:text-violet-800"
+                  >
+                    Hediye ay ekle
+                  </Button>
+                </div>
               </div>
             </div>
 

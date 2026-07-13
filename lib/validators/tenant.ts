@@ -3,6 +3,7 @@ import {
   getLimitForPlan,
   TENANT_PLAN_IDS,
 } from "@/lib/billing/plans";
+import { getPlanPeriodEnd } from "@/lib/billing/membership";
 import { getTrialEndDate } from "@/lib/billing/trial";
 import {
   isReservedSubdomain,
@@ -60,11 +61,13 @@ export const tenantUpdateSchema = z
     whatsapp_number: z.string().min(10).optional(),
     end_trial: z.boolean().optional(),
     start_trial: z.boolean().optional(),
+    gift_months: z.number().int().min(1).max(24).optional(),
   })
   .transform((data) => {
     // end_trial / start_trial DB kolonu değil; trial_ends_at'e çevrilir.
     // end_trial: süper admin paket atadığında deneme sonlanır.
     // start_trial: mevcut hesap bugünden itibaren 14 günlük denemeye alınır.
+    // gift_months route'ta işlenir (mevcut bitişe göre hesap gerekir).
     const { end_trial, start_trial, ...rest } = data;
     const mapped = end_trial
       ? { ...rest, trial_ends_at: null }
@@ -73,9 +76,12 @@ export const tenantUpdateSchema = z
         : rest;
 
     if (mapped.plan) {
+      // Paket onayı: ödeme alındı, üyelik dönemi o günden itibaren 12 ay.
       return {
         ...mapped,
         max_product_limit: getLimitForPlan(mapped.plan),
+        plan_started_at: new Date().toISOString(),
+        plan_expires_at: getPlanPeriodEnd(),
       };
     }
 

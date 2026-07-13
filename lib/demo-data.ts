@@ -50,6 +50,8 @@ export const demoTenants: Tenant[] = [
     is_whatsapp_order_direct: true,
     custom_domain: null,
     trial_ends_at: null,
+    plan_started_at: null,
+    plan_expires_at: null,
     created_at: new Date("2026-01-01").toISOString(),
   },
   {
@@ -63,6 +65,8 @@ export const demoTenants: Tenant[] = [
     is_whatsapp_order_direct: true,
     custom_domain: null,
     trial_ends_at: null,
+    plan_started_at: null,
+    plan_expires_at: null,
     created_at: new Date("2026-01-05").toISOString(),
   },
 ];

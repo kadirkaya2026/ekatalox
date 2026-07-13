@@ -13,6 +13,7 @@ import {
   PLAN_OPTIONS,
   PLAN_PRICING,
 } from "@/lib/billing/plans";
+import { resolveMembershipPeriod } from "@/lib/billing/membership";
 import { isTrialTenant } from "@/lib/billing/trial";
 import type { Profile, Tenant } from "@/lib/types";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
@@ -202,11 +203,14 @@ export function TenantSettingsForm({
   }
 
   const now = new Date();
-  const startDate = new Date(tenant.created_at);
-  const expiryDate = new Date(startDate);
-  expiryDate.setFullYear(expiryDate.getFullYear() + 1);
+  // Deneme hesabında 14 günlük pencere, paket onaylıysa kayıtlı dönem,
+  // eski kayıtlarda created_at + 1 yıl gösterilir.
+  const membership = resolveMembershipPeriod(tenant);
+  const startDate = membership.start;
+  const expiryDate = membership.end;
   const daysLeft = Math.ceil((expiryDate.getTime() - now.getTime()) / 86_400_000);
-  const nearExpiry = daysLeft <= 90 && daysLeft > 0;
+  // Deneme hesabının geri sayım uyarısı panel banner'ında zaten var.
+  const nearExpiry = !membership.isTrial && daysLeft <= 90 && daysLeft > 0;
 
   const dateFormatter = new Intl.DateTimeFormat("tr-TR", {
     day: "2-digit",
