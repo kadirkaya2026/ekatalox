@@ -39,6 +39,7 @@ import {
 } from "@/lib/storefront/whatsapp-order";
 import {
   ORDER_PDF_ERROR_MESSAGE,
+  OrderPdfRequestError,
   requestOrderReceiptPdf,
 } from "@/lib/storefront/order-pdf-request";
 import {
@@ -1210,8 +1211,16 @@ export function StorefrontClient({
       });
       pdfUrl = result.pdfUrl;
       pdfIncluded = true;
-    } catch {
-      setOrderPdfError(ORDER_PDF_ERROR_MESSAGE);
+    } catch (error) {
+      // API'nin döndüğü asıl nedeni müşteriye göster (ör. "Tek para birimi
+      // kullanın"); genel mesaj yalnızca neden bilinmiyorsa kalır.
+      const apiError =
+        error instanceof OrderPdfRequestError && error.apiError?.trim()
+          ? error.apiError.trim()
+          : null;
+      setOrderPdfError(
+        apiError ? `${ORDER_PDF_ERROR_MESSAGE} Neden: ${apiError}` : ORDER_PDF_ERROR_MESSAGE,
+      );
     } finally {
       setIsGeneratingOrderPdf(false);
     }

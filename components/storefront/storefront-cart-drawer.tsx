@@ -638,6 +638,14 @@ export function StorefrontCartDrawer({
                 )}
               </div>
 
+              {!isCatalogOnly && cart.length > 0 && cartTotalEntries.length > 1 ? (
+                <p className="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-center text-xs font-medium leading-5 text-amber-700">
+                  Sepetinizde birden fazla para birimi var (
+                  {cartTotalEntries.map((entry) => entry.currency).join(", ")}).
+                  Sipariş fişi tek para birimiyle oluşturulabilir; lütfen tek
+                  para birimindeki ürünlerle sipariş verin.
+                </p>
+              ) : null}
               {whatsappHandoff ? (
                 <div className="mt-3 space-y-2">
                   <p className="text-center text-xs font-medium leading-5 text-emerald-700">
@@ -647,7 +655,7 @@ export function StorefrontCartDrawer({
                   </p>
                   {orderPdfError ? (
                     <p className="text-center text-xs font-medium text-amber-600">
-                      PDF hazırlanamadı; yine de sipariş metnini gönderebilirsiniz.
+                      {orderPdfError} Yine de sipariş metnini gönderebilirsiniz.
                     </p>
                   ) : null}
                   <a
