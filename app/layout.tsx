@@ -7,6 +7,7 @@ import {
   Source_Sans_3,
 } from "next/font/google";
 import { ThemeProvider } from "@/components/theme/theme-provider";
+import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 
 const inter = Inter({
@@ -99,6 +100,7 @@ export default function RootLayout({
     <html lang="tr" className={`${fontVariables} h-full`} suppressHydrationWarning>
       <body className="min-h-full bg-background text-foreground">
         <ThemeProvider>{children}</ThemeProvider>
+        <Analytics />
       </body>
     </html>
   );
