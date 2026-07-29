@@ -34,7 +34,7 @@ import { cn } from "@/lib/utils";
 // ---------------------------------------------------------------------------
 const MAX_ZIP_BYTES = 100 * 1024 * 1024; // 100 MB
 const BATCH_SIZE = 5;
-const IMAGE_EXTS = new Set([".jpg", ".jpeg", ".png", ".webp", ".gif", ".bmp"]);
+const IMAGE_EXTS = new Set([".jpg", ".jpeg", ".jfif", ".png", ".webp", ".gif", ".bmp"]);
 const COMPRESSION_OPTIONS = {
   maxSizeMB: 0.2,
   maxWidthOrHeight: 1200,
@@ -819,7 +819,7 @@ function ImageImportTab({ tenant }: { tenant: Tenant }) {
           setState({
             status: "error",
             file: null,
-            message: "Zip içinde desteklenen resim dosyası bulunamadı (.jpg, .jpeg, .png, .webp, .gif).",
+            message: "Zip içinde desteklenen resim dosyası bulunamadı (.jpg, .jpeg, .jfif, .png, .webp, .gif).",
             progress: null,
           });
           return;
