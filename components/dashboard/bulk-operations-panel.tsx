@@ -23,8 +23,6 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { parseProductsCsv } from "@/lib/csv/parse-products";
 import { buildPackageUpgradeHref } from "@/lib/billing/plans";
-import { sanitizeFileName } from "@/lib/storage/storage-helpers";
-import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import type { ParsedCsvResult } from "@/lib/csv/parse-products";
 import type { Category, Product, Tenant } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -242,37 +240,32 @@ function getZipImageEntryInfo(entryName: string) {
 // Helper: upload a single compressed image to Supabase Storage
 // ---------------------------------------------------------------------------
 async function uploadCompressedImage(params: {
-  tenantId: string;
   skuCode: string;
   file: File;
 }): Promise<string> {
   const imageCompression = (await import("browser-image-compression")).default;
   const compressed = await imageCompression(params.file, COMPRESSION_OPTIONS);
 
-  const supabase = createSupabaseBrowserClient();
-  if (!supabase) {
-    throw new Error("Supabase bağlantısı kurulamadı.");
+  // Sıkıştırılmış resim, tarayıcının Supabase oturumuna (JWT + RLS) bağımlı
+  // olmayan bir sunucu route'una gönderilir — admin client her zaman yazabilir.
+  const formData = new FormData();
+  formData.append("file", compressed, `${params.skuCode}.jpg`);
+  formData.append("sku_code", params.skuCode);
+
+  const response = await fetch("/api/tenant/products/bulk-image-upload", {
+    method: "POST",
+    body: formData,
+  });
+
+  const result = (await response.json().catch(() => null)) as
+    | { image_url?: string; error?: string }
+    | null;
+
+  if (!response.ok || !result?.image_url) {
+    throw new Error(result?.error ?? "Resim yüklenemedi.");
   }
 
-  const safeFileName = sanitizeFileName(`${params.skuCode}.jpg`);
-  const storagePath = `${params.tenantId}/products/${safeFileName}`;
-
-  const { error: uploadError } = await supabase.storage
-    .from("product-images")
-    .upload(storagePath, compressed, {
-      upsert: true,
-      contentType: "image/jpeg",
-    });
-
-  if (uploadError) {
-    throw uploadError;
-  }
-
-  const { data } = supabase.storage
-    .from("product-images")
-    .getPublicUrl(storagePath);
-
-  return data.publicUrl;
+  return result.image_url;
 }
 
 // ---------------------------------------------------------------------------
@@ -751,7 +744,7 @@ function ProductImportTab({
 // ---------------------------------------------------------------------------
 // TAB 2: Toplu Ürün Resmi Ekleme
 // ---------------------------------------------------------------------------
-function ImageImportTab({ tenant }: { tenant: Tenant }) {
+function ImageImportTab() {
   const [state, setState] = useState<ZipState>({
     status: "idle",
     file: null,
@@ -863,7 +856,6 @@ function ImageImportTab({ tenant }: { tenant: Tenant }) {
 
               // Compress + upload
               const imageUrl = await uploadCompressedImage({
-                tenantId: tenant.id,
                 skuCode,
                 file: imageFile,
               });
@@ -962,7 +954,7 @@ function ImageImportTab({ tenant }: { tenant: Tenant }) {
         });
       }
     },
-    [tenant.id, router],
+    [router],
   );
 
   const reset = useCallback(() => {
@@ -1145,7 +1137,7 @@ export function BulkOperationsPanel({
             onCategoriesUpdated={onCategoriesUpdated}
           />
         ) : (
-          <ImageImportTab tenant={tenant} />
+          <ImageImportTab />
         )}
       </div>
     </Card>
