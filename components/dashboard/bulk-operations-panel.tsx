@@ -840,6 +840,7 @@ function ImageImportTab({ tenant }: { tenant: Tenant }) {
 
         const allUpdates: Array<{ sku_code: string; image_url: string }> = [];
         const uploadFailedSkus: string[] = [];
+        const failureReasons = new Map<string, string>();
 
         // Process in batches of BATCH_SIZE
         for (let i = 0; i < imageEntries.length; i += BATCH_SIZE) {
@@ -871,14 +872,20 @@ function ImageImportTab({ tenant }: { tenant: Tenant }) {
             }),
           );
 
-          for (const result of batchResults) {
+          batchResults.forEach((result, idx) => {
             if (result.status === "fulfilled") {
               allUpdates.push(result.value);
             } else {
-              const idx = batchResults.indexOf(result);
-              uploadFailedSkus.push(batch[idx].skuCode);
+              const skuCode = batch[idx].skuCode;
+              uploadFailedSkus.push(skuCode);
+              const reason =
+                result.reason instanceof Error
+                  ? result.reason.message
+                  : String(result.reason);
+              failureReasons.set(skuCode, reason);
+              console.error(`Resim yüklenemedi (${skuCode}):`, result.reason);
             }
-          }
+          });
 
           setState((s) => ({
             ...s,
@@ -916,12 +923,14 @@ function ImageImportTab({ tenant }: { tenant: Tenant }) {
           }
 
           if (Array.isArray(result?.failedSkus)) {
-            dbFailedSkus.push(
-              ...result.failedSkus.filter(
-                (sku): sku is string =>
-                  typeof sku === "string" && sku.trim().length > 0,
-              ),
-            );
+            for (const sku of result.failedSkus) {
+              if (typeof sku === "string" && sku.trim().length > 0) {
+                dbFailedSkus.push(sku);
+                if (!failureReasons.has(sku)) {
+                  failureReasons.set(sku, "bu Model No ile eşleşen ürün bulunamadı");
+                }
+              }
+            }
           }
         }
 
@@ -934,7 +943,9 @@ function ImageImportTab({ tenant }: { tenant: Tenant }) {
           file: null,
           message:
             failedSkus.length > 0
-              ? `${successCount} resim yüklendi. ${failedSkus.length} resim yüklenemedi: ${failedSkus.join(", ")}.`
+              ? `${successCount} resim yüklendi. ${failedSkus.length} resim yüklenemedi: ${failedSkus
+                  .map((sku) => `${sku} (${failureReasons.get(sku) ?? "bilinmeyen hata"})`)
+                  .join(", ")}.`
               : `${successCount} resim başarıyla yüklendi ve ürünlerle eşleştirildi.`,
           progress: null,
         });
