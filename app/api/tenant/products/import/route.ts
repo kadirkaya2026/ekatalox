@@ -19,6 +19,16 @@ function normalizeCategoryName(name: string) {
   return name.trim().toLocaleLowerCase("tr-TR");
 }
 
+function dedupeImportRowsBySku<T extends { sku_code: string }>(rows: T[]): T[] {
+  const bySku = new Map<string, T>();
+
+  for (const row of rows) {
+    bySku.set(row.sku_code, row);
+  }
+
+  return [...bySku.values()];
+}
+
 export async function POST(request: Request) {
   const guard = await ensureTenantAdminResponse();
   if (guard) {
@@ -44,7 +54,11 @@ export async function POST(request: Request) {
     );
   }
 
-  const rows = parsed.data;
+  // sku_code bazında tekilleştir: CSV'de aynı model no birden çok kez geçerse
+  // upsert payload'ında (tenant_id, sku_code) hedefi iki kez oluşur ve Postgres
+  // "ON CONFLICT DO UPDATE command cannot affect row a second time" hatası verir.
+  // İlk görülen satırın konumu korunur, son değer kazanır.
+  const rows = dedupeImportRowsBySku(parsed.data);
   const supabase = createSupabaseAdminClient();
 
   // -------------------------------------------------------------------------
