@@ -147,6 +147,7 @@ function PackageLimitAlert({
 // ---------------------------------------------------------------------------
 async function parseSpreadsheetFile(file: File): Promise<ParsedCsvResult> {
   const XLSX = await import("xlsx");
+  const Papa = (await import("papaparse")).default;
   const buffer = await file.arrayBuffer();
   const workbook = XLSX.read(buffer, { type: "array" });
   const firstSheetName = workbook.SheetNames[0];
@@ -164,28 +165,26 @@ async function parseSpreadsheetFile(file: File): Promise<ParsedCsvResult> {
 
   const headers = (rawRows[0] as string[]).map((h) => String(h ?? "").trim());
   const isTurkish = headers.some((h) => h in TURKISH_COLUMN_MAP);
+  const englishHeaders = isTurkish
+    ? headers.map((h) => TURKISH_COLUMN_MAP[h] ?? h)
+    : headers;
 
-  if (isTurkish) {
-    // Türkçe başlıkları İngilizce alan adlarına çevir
-    const englishHeaders = headers.map((h) => TURKISH_COLUMN_MAP[h] ?? h);
+  // image_url şablonda yok; parse fonksiyonu için boş sütun olarak ekle
+  const hasImageUrl = englishHeaders.includes("image_url");
+  if (!hasImageUrl) englishHeaders.push("image_url");
 
-    // image_url şablonda yok; parse fonksiyonu için boş sütun olarak ekle
-    const hasImageUrl = englishHeaders.includes("image_url");
-    if (!hasImageUrl) englishHeaders.push("image_url");
+  // Barkod/Model No gibi büyük sayısal hücreler XLSX.utils.sheet_to_csv'nin
+  // "General" sayı biçimiyle bilimsel gösterime (8.68183E+12) yuvarlanıyor
+  // ve farklı Model No'lar aynı metne çöküp içe aktarmada kayboluyordu.
+  // Ham sayıyı doğrudan String() ile yazarak tam hassasiyeti koruyoruz.
+  const dataRows = rawRows.slice(1).map((row) => {
+    const stringified = (row as unknown[]).map((cell) =>
+      typeof cell === "number" ? String(cell) : cell,
+    );
+    return hasImageUrl ? stringified : [...stringified, ""];
+  });
 
-    const remappedRows: unknown[][] = [englishHeaders];
-    for (let i = 1; i < rawRows.length; i++) {
-      const row = rawRows[i] as unknown[];
-      remappedRows.push(hasImageUrl ? row : [...row, ""]);
-    }
-
-    const newSheet = XLSX.utils.aoa_to_sheet(remappedRows);
-    const csvString: string = XLSX.utils.sheet_to_csv(newSheet);
-    return parseProductsCsv(csvString);
-  }
-
-  // İngilizce başlıklar — mevcut parser yeterli
-  const csvString: string = XLSX.utils.sheet_to_csv(sheet);
+  const csvString = Papa.unparse([englishHeaders, ...dataRows]);
   return parseProductsCsv(csvString);
 }
 

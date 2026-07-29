@@ -19,14 +19,18 @@ function normalizeCategoryName(name: string) {
   return name.trim().toLocaleLowerCase("tr-TR");
 }
 
-function dedupeImportRowsBySku<T extends { sku_code: string }>(rows: T[]): T[] {
-  const bySku = new Map<string, T>();
+function findDuplicateSkuCodes<T extends { sku_code: string }>(rows: T[]): string[] {
+  const seen = new Set<string>();
+  const duplicates = new Set<string>();
 
   for (const row of rows) {
-    bySku.set(row.sku_code, row);
+    if (seen.has(row.sku_code)) {
+      duplicates.add(row.sku_code);
+    }
+    seen.add(row.sku_code);
   }
 
-  return [...bySku.values()];
+  return [...duplicates];
 }
 
 export async function POST(request: Request) {
@@ -54,11 +58,25 @@ export async function POST(request: Request) {
     );
   }
 
-  // sku_code bazında tekilleştir: CSV'de aynı model no birden çok kez geçerse
-  // upsert payload'ında (tenant_id, sku_code) hedefi iki kez oluşur ve Postgres
-  // "ON CONFLICT DO UPDATE command cannot affect row a second time" hatası verir.
-  // İlk görülen satırın konumu korunur, son değer kazanır.
-  const rows = dedupeImportRowsBySku(parsed.data);
+  const rows = parsed.data;
+
+  // Aynı sku_code (Model No) birden çok satırda geçerse upsert tek komutta
+  // (tenant_id, sku_code) hedefini iki kez oluşturur ve Postgres
+  // "ON CONFLICT DO UPDATE command cannot affect row a second time" hatası
+  // verir. Sessizce atlamak yerine müşteriye tekrar eden model no'ları
+  // gösterip dosyayı düzeltmesini istiyoruz — aksi halde bazı ürünler
+  // hiç uyarı verilmeden içe aktarılmamış olur.
+  const duplicateSkuCodes = findDuplicateSkuCodes(rows);
+
+  if (duplicateSkuCodes.length) {
+    return NextResponse.json(
+      {
+        error: `Dosyada aynı Model No birden fazla satırda kullanılmış: ${duplicateSkuCodes.join(", ")}. Lütfen her ürüne benzersiz bir model numarası verip dosyayı tekrar yükleyin.`,
+      },
+      { status: 400 },
+    );
+  }
+
   const supabase = createSupabaseAdminClient();
 
   // -------------------------------------------------------------------------
