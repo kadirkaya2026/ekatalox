@@ -191,14 +191,6 @@ export function AdminTenantDetailPanel({ tenant: initialTenant }: { tenant: Tena
   }
 
   function setTenantAdminPassword(password: string | null) {
-    const confirmMessage = password
-      ? `${tenant.company_name} yöneticisinin panel şifresini belirlediğiniz şifreyle değiştirmek istediğinize emin misiniz? Mevcut şifre artık çalışmayacak.`
-      : `${tenant.company_name} yöneticisi için rastgele yeni bir şifre oluşturulacak. Mevcut şifre artık çalışmayacak. Devam edilsin mi?`;
-
-    if (!window.confirm(confirmMessage)) {
-      return;
-    }
-
     setMessage(null);
 
     startTransition(async () => {
