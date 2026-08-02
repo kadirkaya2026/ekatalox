@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Modal } from "@/components/ui/modal";
 import {
   formatEffectiveProductLimit,
   formatProductLimit,
@@ -50,6 +51,10 @@ export function AdminTenantDetailPanel({ tenant: initialTenant }: { tenant: Tena
     Record<string, { password_code: string; price_list_id: string }>
   >({});
   const [message, setMessage] = useState<string | null>(null);
+  const [resetCredentials, setResetCredentials] = useState<{
+    email: string;
+    password: string;
+  } | null>(null);
   const [pending, startTransition] = useTransition();
 
   const hasPendingChanges = useMemo(
@@ -181,6 +186,34 @@ export function AdminTenantDetailPanel({ tenant: initialTenant }: { tenant: Tena
       }
 
       setMessage("Vitrin önbelleği temizlendi. Mağaza sayfası güncel verilerle yeniden oluşturulacak.");
+    });
+  }
+
+  function resetTenantAdminPassword() {
+    const confirmed = window.confirm(
+      `${tenant.company_name} yöneticisinin panel şifresini sıfırlamak istediğinize emin misiniz? Mevcut şifre artık çalışmayacak.`,
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setMessage(null);
+
+    startTransition(async () => {
+      const response = await fetch(`/api/admin/tenants/${tenant.id}/reset-password`, {
+        method: "POST",
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        setMessage(result.error ?? "Şifre sıfırlanamadı.");
+        return;
+      }
+
+      setResetCredentials({ email: result.email, password: result.temporaryPassword });
+      setMessage("Yönetici şifresi sıfırlandı.");
     });
   }
 
@@ -386,6 +419,14 @@ export function AdminTenantDetailPanel({ tenant: initialTenant }: { tenant: Tena
               disabled={pending}
             >
               Vitrini yenile
+            </Button>
+            <Button
+              variant="secondary"
+              onClick={resetTenantAdminPassword}
+              disabled={pending}
+              className="border-violet-200 text-violet-700 hover:bg-violet-50 hover:text-violet-800"
+            >
+              Yönetici şifresini sıfırla
             </Button>
             <Button
               variant="secondary"
@@ -623,6 +664,41 @@ export function AdminTenantDetailPanel({ tenant: initialTenant }: { tenant: Tena
           </div>
         </Card>
       </div>
+
+      <Modal
+        open={Boolean(resetCredentials)}
+        onClose={() => setResetCredentials(null)}
+        title="Yönetici şifresi sıfırlandı"
+      >
+        {resetCredentials ? (
+          <div className="space-y-4">
+            <div className="rounded-xl border border-slate-100 bg-slate-50 p-4 text-sm text-slate-600">
+              <p>
+                <span className="font-medium text-slate-900">Giriş adresi:</span>{" "}
+                {resetCredentials.email}
+              </p>
+              <p className="mt-2">
+                <span className="font-medium text-slate-900">Yeni geçici şifre:</span>{" "}
+                {resetCredentials.password}
+              </p>
+              <p className="mt-2">
+                <span className="font-medium text-slate-900">Panel:</span> app.ekatalox.com
+              </p>
+            </div>
+
+            <p className="text-sm text-amber-700">
+              Bu şifre yalnız bir kez gösterilir. Lütfen şimdi kaydedin ve müşteriye WhatsApp
+              üzerinden iletin. İlk girişte şifresini değiştirmesi istenecek.
+            </p>
+
+            <div className="flex justify-end">
+              <Button variant="secondary" onClick={() => setResetCredentials(null)}>
+                Kapat
+              </Button>
+            </div>
+          </div>
+        ) : null}
+      </Modal>
     </div>
   );
 }
