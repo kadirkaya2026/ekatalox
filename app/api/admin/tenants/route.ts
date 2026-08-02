@@ -96,6 +96,7 @@ export async function POST(request: Request) {
       visitor_limit_addon: 0,
       visitor_quota_exceeded: false,
       product_limit_addon: 0,
+      is_demo: false,
     };
     const profile: Profile = {
       id: crypto.randomUUID(),

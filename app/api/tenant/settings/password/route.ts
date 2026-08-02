@@ -5,7 +5,7 @@ import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { ensureTenantAdminResponse } from "@/lib/tenancy/guards";
 
 export async function PATCH() {
-  const guard = await ensureTenantAdminResponse();
+  const guard = await ensureTenantAdminResponse({ blockDemoWrite: true });
   if (guard) {
     return guard;
   }

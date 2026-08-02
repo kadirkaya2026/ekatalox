@@ -7,7 +7,7 @@ import { customDomainUpdateSchema } from "@/lib/validators/custom-domain";
 import type { Tenant } from "@/lib/types";
 
 export async function PATCH(request: Request) {
-  const guard = await ensureTenantPlanFeatureResponse("custom_domain");
+  const guard = await ensureTenantPlanFeatureResponse("custom_domain", { blockDemoWrite: true });
   if (guard) {
     return guard;
   }

@@ -22,7 +22,7 @@ function isManagedBannerUrl(url: string | null, tenantId: string) {
 }
 
 export async function PATCH(request: Request) {
-  const guard = await ensureTenantAdminResponse();
+  const guard = await ensureTenantAdminResponse({ blockDemoWrite: true });
   if (guard) {
     return guard;
   }

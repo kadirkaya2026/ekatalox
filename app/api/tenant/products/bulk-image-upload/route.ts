@@ -11,7 +11,7 @@ import { sanitizeFileName, STORE_ASSETS_BUCKET } from "@/lib/storage/storage-hel
 // client sunucu tarafında çalıştığı için bu bağımlılığı ortadan kaldırır —
 // tıpkı tekli ürün resmi yüklemesinde zaten yapıldığı gibi.
 export async function POST(request: Request) {
-  const guard = await ensureTenantAdminResponse();
+  const guard = await ensureTenantAdminResponse({ blockDemoWrite: true });
   if (guard) {
     return guard;
   }

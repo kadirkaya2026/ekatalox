@@ -12,7 +12,7 @@ import type { BannerItem } from "@/lib/types";
 import { categorySchema } from "@/lib/validators/category";
 
 export async function POST(request: Request) {
-  const guard = await ensureTenantAdminResponse();
+  const guard = await ensureTenantAdminResponse({ blockDemoWrite: true });
   if (guard) {
     return guard;
   }
@@ -101,7 +101,7 @@ export async function POST(request: Request) {
 }
 
 export async function PATCH(request: Request) {
-  const guard = await ensureTenantAdminResponse();
+  const guard = await ensureTenantAdminResponse({ blockDemoWrite: true });
   if (guard) {
     return guard;
   }
@@ -151,7 +151,7 @@ export async function PATCH(request: Request) {
 }
 
 export async function DELETE(request: Request) {
-  const guard = await ensureTenantAdminResponse();
+  const guard = await ensureTenantAdminResponse({ blockDemoWrite: true });
   if (guard) {
     return guard;
   }

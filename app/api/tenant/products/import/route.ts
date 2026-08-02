@@ -35,7 +35,7 @@ function findDuplicateSkuCodes<T extends { sku_code: string }>(rows: T[]): strin
 }
 
 export async function POST(request: Request) {
-  const guard = await ensureTenantAdminResponse();
+  const guard = await ensureTenantAdminResponse({ blockDemoWrite: true });
   if (guard) {
     return guard;
   }

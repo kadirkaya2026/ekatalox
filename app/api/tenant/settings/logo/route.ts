@@ -15,7 +15,7 @@ import {
 } from "@/lib/validators/storefront-settings";
 
 export async function POST(request: Request) {
-  const guard = await ensureTenantAdminResponse();
+  const guard = await ensureTenantAdminResponse({ blockDemoWrite: true });
   if (guard) {
     return guard;
   }

@@ -59,7 +59,9 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const guard = await ensureTenantPlanFeatureResponse("showcase_products");
+  const guard = await ensureTenantPlanFeatureResponse("showcase_products", {
+    blockDemoWrite: true,
+  });
   if (guard) return guard;
 
   const session = await getSessionContext();
@@ -116,7 +118,9 @@ export async function POST(request: Request) {
 }
 
 export async function DELETE(request: Request) {
-  const guard = await ensureTenantPlanFeatureResponse("showcase_products");
+  const guard = await ensureTenantPlanFeatureResponse("showcase_products", {
+    blockDemoWrite: true,
+  });
   if (guard) return guard;
 
   const session = await getSessionContext();

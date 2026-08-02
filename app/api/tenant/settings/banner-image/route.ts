@@ -149,7 +149,7 @@ function isManagedBannerUrl(url: string | null, tenantId: string) {
 }
 
 export async function POST(request: Request) {
-  const guard = await ensureTenantPlanFeatureResponse("banner_settings");
+  const guard = await ensureTenantPlanFeatureResponse("banner_settings", { blockDemoWrite: true });
   if (guard) {
     return guard;
   }
@@ -256,7 +256,7 @@ export async function POST(request: Request) {
 }
 
 export async function DELETE(request: Request) {
-  const guard = await ensureTenantPlanFeatureResponse("banner_settings");
+  const guard = await ensureTenantPlanFeatureResponse("banner_settings", { blockDemoWrite: true });
   if (guard) {
     return guard;
   }

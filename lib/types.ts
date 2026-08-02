@@ -73,6 +73,7 @@ export interface Tenant {
   visitor_limit_addon: number;
   visitor_quota_exceeded: boolean;
   product_limit_addon: number;
+  is_demo: boolean;
   created_at: string;
 }
 

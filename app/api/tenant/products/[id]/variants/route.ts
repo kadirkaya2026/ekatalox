@@ -149,7 +149,7 @@ export async function POST(
   request: Request,
   ctx: RouteContext<"/api/tenant/products/[id]/variants">,
 ) {
-  const guard = await ensureTenantAdminResponse();
+  const guard = await ensureTenantAdminResponse({ blockDemoWrite: true });
   if (guard) {
     return guard;
   }

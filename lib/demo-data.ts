@@ -55,6 +55,7 @@ export const demoTenants: Tenant[] = [
     visitor_limit_addon: 0,
     visitor_quota_exceeded: false,
     product_limit_addon: 0,
+    is_demo: false,
     created_at: new Date("2026-01-01").toISOString(),
   },
   {
@@ -73,6 +74,7 @@ export const demoTenants: Tenant[] = [
     visitor_limit_addon: 0,
     visitor_quota_exceeded: false,
     product_limit_addon: 0,
+    is_demo: false,
     created_at: new Date("2026-01-05").toISOString(),
   },
 ];

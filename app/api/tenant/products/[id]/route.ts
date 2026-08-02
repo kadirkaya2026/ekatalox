@@ -44,7 +44,7 @@ export async function PATCH(
   request: Request,
   ctx: RouteContext<"/api/tenant/products/[id]">,
 ) {
-  const guard = await ensureTenantAdminResponse();
+  const guard = await ensureTenantAdminResponse({ blockDemoWrite: true });
   if (guard) {
     return guard;
   }
@@ -155,7 +155,7 @@ export async function DELETE(
   _request: Request,
   ctx: RouteContext<"/api/tenant/products/[id]">,
 ) {
-  const guard = await ensureTenantAdminResponse();
+  const guard = await ensureTenantAdminResponse({ blockDemoWrite: true });
   if (guard) {
     return guard;
   }

@@ -21,7 +21,12 @@ export async function ensureSuperAdminResponse() {
   return null;
 }
 
-export async function ensureTenantAdminResponse() {
+export const DEMO_TENANT_WRITE_BLOCKED_MESSAGE =
+  "Bu bir demo gösterim hesabıdır, bu hesapta değişiklik kaydedilemez. Tüm özellikleri test etmek için ücretsiz deneme hesabı oluşturabilirsiniz.";
+
+export async function ensureTenantAdminResponse(
+  options?: { blockDemoWrite?: boolean },
+) {
   const session = await getSessionContext();
 
   if (!session.profile) {
@@ -40,6 +45,13 @@ export async function ensureTenantAdminResponse() {
     return NextResponse.json({ error: "Tenant askıya alınmış durumda." }, { status: 403 });
   }
 
+  if (options?.blockDemoWrite && session.tenant.is_demo) {
+    return NextResponse.json(
+      { error: DEMO_TENANT_WRITE_BLOCKED_MESSAGE },
+      { status: 403 },
+    );
+  }
+
   return null;
 }
 
@@ -47,8 +59,11 @@ function resolveTenantPlan(tenant: { plan?: TenantPlan } | null): TenantPlan {
   return tenant?.plan ?? "baslangic";
 }
 
-export async function ensureTenantPlanFeatureResponse(feature: PlanFeature) {
-  const guard = await ensureTenantAdminResponse();
+export async function ensureTenantPlanFeatureResponse(
+  feature: PlanFeature,
+  options?: { blockDemoWrite?: boolean },
+) {
+  const guard = await ensureTenantAdminResponse(options);
   if (guard) {
     return guard;
   }
