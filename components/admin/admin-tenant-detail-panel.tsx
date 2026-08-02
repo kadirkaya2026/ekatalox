@@ -165,6 +165,25 @@ export function AdminTenantDetailPanel({ tenant: initialTenant }: { tenant: Tena
     });
   }
 
+  function revalidateStorefront() {
+    setMessage(null);
+
+    startTransition(async () => {
+      const response = await fetch(`/api/admin/tenants/${tenant.id}/revalidate`, {
+        method: "POST",
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        setMessage(result.error ?? "Vitrin önbelleği temizlenemedi.");
+        return;
+      }
+
+      setMessage("Vitrin önbelleği temizlendi. Mağaza sayfası güncel verilerle yeniden oluşturulacak.");
+    });
+  }
+
   function deleteTenant() {
     const confirmed = window.confirm(
       `${tenant.company_name} tenantını ve bağlı verilerini kalıcı olarak silmek istediğinize emin misiniz?`,
@@ -360,6 +379,13 @@ export function AdminTenantDetailPanel({ tenant: initialTenant }: { tenant: Tena
               disabled={pending}
             >
               {tenant.status === "active" ? "Askıya al" : "Yeniden aç"}
+            </Button>
+            <Button
+              variant="secondary"
+              onClick={revalidateStorefront}
+              disabled={pending}
+            >
+              Vitrini yenile
             </Button>
             <Button
               variant="secondary"
