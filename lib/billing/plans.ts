@@ -72,7 +72,7 @@ export const PLAN_PRICING: Record<
   kurumsal: {
     price: "₺95.000",
     unit: "/ Yıl",
-    highlight: "Alex AI destekli tam otomasyon",
+    highlight: "White-label kurumsal çözüm",
   },
   start: {
     price: "₺17.500",
@@ -107,7 +107,7 @@ export const PLAN_PRICING: Record<
     unit: "/ Yıl",
     monthlyPrice: "₺9.100",
     monthlyUnit: "/ Ay",
-    highlight: "Alex AI destekli tam otomasyon",
+    highlight: "White-label kurumsal çözüm",
   },
 };
 

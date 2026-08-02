@@ -1464,175 +1464,6 @@ const DemoSection = () => {
   )
 }
 
-// ----------------------------- ALEX AI WHATSAPP SIM --------------------------
-const AlexWhatsApp = () => {
-  const messages = [
-    { from: 'user',  text: 'Alex, depoda MagSafe kılıf kaç adet kaldı?', time: '14:32' },
-    { from: 'alex',  text: 'Canlı stok kontrolü yapıldı: 142 adet kaldı. Son 24 saatte 18 adet satıldı.', time: '14:32' },
-    { from: 'user',  text: "Ahmet Toptan'a 20 adet sipariş oluştur, ödeme talimatını ilet.", time: '14:33' },
-    { from: 'alex',  text: "Sipariş ön muhasebeye işlendi. Ödeme talimatı Ahmet Toptan'a WhatsApp üzerinden iletildi. ⚡", time: '14:33' },
-  ]
-  return (
-    <section className="relative py-28 md:py-36 px-6">
-      <div className="absolute top-1/2 left-0 w-[600px] h-[600px] rounded-full bg-[#7928CA]/20 blur-[160px] pointer-events-none" />
-      <div className="absolute top-1/3 right-0 w-[500px] h-[500px] rounded-full bg-[#00D2FF]/10 blur-[140px] pointer-events-none" />
-      <div className="max-w-7xl mx-auto relative">
-        <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
-          {/* Copy */}
-          <motion.div
-            initial={{ opacity: 0, x: -30 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: false, amount: 0.3 }}
-            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-          >
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-gradient-to-r from-[#7928CA]/15 to-[#00D2FF]/15 border border-[#7928CA]/30 text-[11px] text-[#c084fc] mb-6">
-              <Sparkles className="w-3 h-3" />
-              ALEX AI · WhatsApp Üzerinden
-            </div>
-            <h2 className="display-headline text-4xl md:text-5xl lg:text-6xl text-white text-balance">
-              Yazın. <span className="text-gradient-neon">Alex hallediyor.</span>
-            </h2>
-            <p className="mt-5 text-lg text-slate-400 font-light max-w-md leading-relaxed">
-              Kurumsal planda otonom AI asistanınız Alex; sipariş işlemeden tahsilata, stok analizinden muhasebe entegrasyonuna kadar tüm operasyonel yükü WhatsApp üzerinden otonom biçimde yönetir.
-            </p>
-            <div className="mt-8 grid grid-cols-2 gap-3 max-w-md">
-              {[
-                ['Otonom Sipariş Yönetimi', 'WhatsApp doğal dil arayüzü'],
-                ['Otonom Tahsilat ve Ödeme', 'PayTR / iZico entegrasyonu'],
-                ['Otomatik Vadeli Tahsilat', 'Kurumsal hatırlatma akışı'],
-                ['Anlık Stok Zekası', 'Doğal dil sorgu motoru'],
-              ].map(([t, s]) => (
-                <div key={t} className="p-3 rounded-xl border border-white/10 bg-white/[0.02]">
-                  <div className="text-sm text-white font-medium">{t}</div>
-                  <div className="text-[11px] text-slate-500 mt-0.5">{s}</div>
-                </div>
-              ))}
-            </div>
-            <a href="#fiyatlandirma" className="mt-8 inline-flex items-center gap-2 px-6 py-3 rounded-full bg-white text-black text-sm font-medium hover:scale-[1.02] transition-transform">
-              Kurumsal Planı Keşfet <ArrowRight className="w-4 h-4" />
-            </a>
-          </motion.div>
-
-          {/* Phone mockup */}
-          <motion.div
-            initial={{ opacity: 0, y: 40, rotate: -2 }}
-            whileInView={{ opacity: 1, y: 0, rotate: 0 }}
-            viewport={{ once: false, amount: 0.2 }}
-            transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
-            className="relative mx-auto"
-            style={{ perspective: 1000 }}
-          >
-            {/* Glow */}
-            <div className="absolute -inset-10 rounded-[60px] bg-gradient-to-br from-[#00D2FF]/20 via-transparent to-[#7928CA]/30 blur-3xl pointer-events-none" />
-
-            <div className="relative mx-auto w-[320px] md:w-[360px] rounded-[44px] bg-gradient-to-b from-slate-800 to-slate-950 p-2 border border-white/10 shadow-[0_30px_120px_-20px_rgba(0,210,255,0.35)]">
-              {/* Screen */}
-              <div className="relative rounded-[36px] bg-[#0a0e15] overflow-hidden">
-                {/* Notch */}
-                <div className="absolute top-2 left-1/2 -translate-x-1/2 w-24 h-6 rounded-full bg-black z-20" />
-
-                {/* WhatsApp top bar */}
-                <div className="relative pt-8 pb-3 px-4 bg-gradient-to-b from-[#0f1820] to-[#0a0e15] border-b border-white/5 flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#00D2FF] to-[#7928CA] flex items-center justify-center text-white text-xs font-bold border border-white/20">A</div>
-                  <div className="flex-1">
-                    <div className="text-sm text-white font-semibold flex items-center gap-1.5">
-                      Alex
-                      <Sparkles className="w-3 h-3 text-[#00D2FF]" />
-                    </div>
-                    <div className="text-[10px] text-emerald-400 flex items-center gap-1">
-                      <span className="w-1 h-1 rounded-full bg-emerald-400 animate-pulse" />
-                      çevrimiçi · yazıyor…
-                    </div>
-                  </div>
-                  <div className="text-[10px] text-slate-500">eKatalox</div>
-                </div>
-
-                {/* Chat area */}
-                <div className="px-3 py-4 space-y-2.5 min-h-[440px] bg-[url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2240%22 height=%2240%22%3E%3Cpath d=%22M0 39h40M39 0v40%22 stroke=%22%23ffffff05%22/%3E%3C/svg%3E')]">
-                  {messages.map((m, i) => (
-                    <motion.div
-                      key={i}
-                      initial={{ opacity: 0, y: 8, scale: 0.95 }}
-                      whileInView={{ opacity: 1, y: 0, scale: 1 }}
-                      viewport={{ once: false, amount: 0.5 }}
-                      transition={{ delay: 0.25 + i * 0.18, duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
-                      className={`flex ${m.from === 'user' ? 'justify-end' : 'justify-start'}`}
-                    >
-                      <div className={`relative max-w-[78%] px-3 py-2 rounded-2xl text-[12px] leading-snug ${
-                        m.from === 'user'
-                          ? 'bg-gradient-to-br from-emerald-600/90 to-emerald-700/90 text-white rounded-tr-sm'
-                          : 'bg-gradient-to-br from-[#7928CA]/30 to-[#00D2FF]/20 border border-white/10 text-slate-100 rounded-tl-sm'
-                      }`}>
-                        {m.from === 'alex' && (
-                          <div className="flex items-center gap-1 mb-1">
-                            <Sparkles className="w-2.5 h-2.5 text-[#00D2FF]" />
-                            <span className="text-[9px] uppercase tracking-widest text-[#00D2FF] font-medium">Alex AI</span>
-                          </div>
-                        )}
-                        <div>{m.text}</div>
-                        <div className={`text-[9px] mt-1 flex items-center gap-0.5 ${m.from === 'user' ? 'text-emerald-200/70 justify-end' : 'text-slate-500'}`}>
-                          {m.time}
-                          {m.from === 'user' && (
-                            <span className="ml-0.5">✓✓</span>
-                          )}
-                        </div>
-                      </div>
-                    </motion.div>
-                  ))}
-
-                  {/* typing indicator */}
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    whileInView={{ opacity: 1 }}
-                    viewport={{ once: false }}
-                    transition={{ delay: 1.4 }}
-                    className="flex justify-start"
-                  >
-                    <div className="px-3 py-2 rounded-2xl bg-white/[0.05] border border-white/5 flex gap-1">
-                      {[0, 1, 2].map(i => (
-                        <motion.div
-                          key={i}
-                          className="w-1.5 h-1.5 rounded-full bg-slate-500"
-                          animate={{ opacity: [0.3, 1, 0.3] }}
-                          transition={{ duration: 1.2, repeat: Infinity, delay: i * 0.18 }}
-                        />
-                      ))}
-                    </div>
-                  </motion.div>
-                </div>
-
-                {/* Input bar */}
-                <div className="px-3 py-3 border-t border-white/5 bg-[#0f1820] flex items-center gap-2">
-                  <div className="flex-1 px-3 py-2 rounded-full bg-white/5 text-[11px] text-slate-500">Bir mesaj yazın…</div>
-                  <div className="w-8 h-8 rounded-full bg-emerald-600 flex items-center justify-center">
-                    <ArrowRight className="w-3.5 h-3.5 text-white" />
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Floating sparkles */}
-            <motion.div
-              animate={{ y: [0, -8, 0] }}
-              transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
-              className="absolute -top-4 -right-2 px-3 py-1.5 rounded-full bg-[#0B0F19] border border-[#00D2FF]/40 text-[10px] text-[#00D2FF] font-medium flex items-center gap-1.5 shadow-[0_0_30px_rgba(0,210,255,0.3)]"
-            >
-              <Sparkles className="w-3 h-3" /> AI Powered
-            </motion.div>
-            <motion.div
-              animate={{ y: [0, 8, 0] }}
-              transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut', delay: 1 }}
-              className="absolute -bottom-2 -left-4 px-3 py-1.5 rounded-full bg-[#0B0F19] border border-emerald-500/40 text-[10px] text-emerald-400 font-medium flex items-center gap-1.5 shadow-[0_0_30px_rgba(16,185,129,0.3)]"
-            >
-              <Check className="w-3 h-3" /> 0.4sn yanıt
-            </motion.div>
-          </motion.div>
-        </div>
-      </div>
-    </section>
-  )
-}
-
 // ----------------------------- TRUST STATS -----------------------------------
 const TrustStats = () => {
   const stats = [
@@ -1682,7 +1513,7 @@ const FAQ = () => {
       a: 'Evet. eKatalox yapay zekası, Excel sütunlarınızın adı ne olursa olsun fiyat, stok ve ürün isimlerini otomatik olarak tanır ve eşleştirir.',
     },
     {
-      q: 'Yapay Zeka Alex hangi muhasebe programlarıyla uyumlu?',
+      q: 'eKatalox hangi muhasebe programlarıyla uyumlu?',
       a: "Logo, Mikro, Paraşüt, Ticimax, Zirve ve Bizimhesap dahil Türkiye'de en çok kullanılan tüm ERP ve ön muhasebe yazılımlarıyla tam entegre çalışır.",
     },
     {
@@ -1836,18 +1667,15 @@ const PLAN_MARKETING_META = {
     ],
   },
   vip: {
-    tag: 'Alex AI Enabled',
-    aiPowered: true,
-    desc: 'Yapay zeka destekli, WhatsApp üzerinden tam otomasyon.',
+    tag: 'Özel Çözüm',
+    desc: 'Size özel yapılandırılmış, white-label kurumsal çözüm.',
     cta: 'Satışla Görüşün',
     featured: false,
     features: [
       'Akıllı Stok Yönetimi & Sınırsız Fiyat Listesi',
-      'Yapay Zeka Asistanı Alex: WhatsApp üzerinden Alex ile yazışarak sipariş yönetimi ve anlık sesli/yazılı raporlama.',
-      'Alex ile Akıllı Ödeme Altyapısı: PayTR/iyzico entegrasyonu ile WhatsApp üzerinden otomatik ödeme talimatı ve gelen ödemelerin sisteme otonom entegrasyonu.',
-      'Otonom Tahsilat ve Ödeme: Vadesi gelen borçlar için Alex tarafından otomatik kurumsal WhatsApp hatırlatma akışı ve ödeme takibi.',
-      "Alex ile WhatsApp'tan Muhasebe Kaydı: Sadece yazışarak stok girişleri ve cari hesap güncellemeleri.",
-      'Saha Satış Temsilcisi (Plasiyer) Modülü & White-Label Desteği',
+      'Saha Satış Temsilcisi (Plasiyer) Modülü',
+      'White-Label Desteği (Kendi Markanızla Sunum)',
+      'Özel Onboarding ve Hesap Yöneticisi',
       'Tüm Enterprise Özellikleri Dahil',
     ],
   },
@@ -1964,44 +1792,30 @@ const PricingCard = ({ plan, index }) => {
           <div className="absolute -inset-1 rounded-3xl bg-gradient-to-br from-[#00D2FF]/40 to-[#7928CA]/40 blur-2xl opacity-60 group-hover:opacity-100 transition-opacity duration-500" />
         </>
       )}
-      {!plan.featured && !plan.aiPowered && (
+      {!plan.featured && (
         <div className="absolute inset-0 rounded-3xl border border-white/10 group-hover:border-white/20 transition-colors duration-500" />
-      )}
-      {plan.aiPowered && (
-        <>
-          <div className="absolute inset-0 rounded-3xl border border-[#7928CA]/40 group-hover:border-[#7928CA]/70 transition-colors duration-500" />
-          <div className="absolute -inset-1 rounded-3xl bg-gradient-to-br from-[#7928CA]/25 to-transparent blur-2xl opacity-40 group-hover:opacity-70 transition-opacity duration-500" />
-        </>
       )}
 
       <div className={`relative rounded-3xl bg-[#0B0F19] p-6 md:p-7 h-full flex flex-col`}>
-        {plan.aiPowered && (
-          <>
-            <div className="absolute inset-0 rounded-3xl pointer-events-none" style={{ background: 'radial-gradient(circle at top right, rgba(121,40,202,0.18), transparent 60%)' }} />
-            <div className="absolute -top-px right-12 left-12 h-px bg-gradient-to-r from-transparent via-[#7928CA] to-transparent" />
-          </>
-        )}
         <div className="relative flex items-center justify-between mb-4">
           <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-medium uppercase tracking-wider ${
             plan.featured
               ? 'bg-gradient-to-r from-[#00D2FF] to-[#7928CA] text-white'
-              : plan.aiPowered
-                ? 'bg-gradient-to-r from-[#7928CA] to-[#00D2FF] text-white shadow-[0_0_20px_rgba(121,40,202,0.45)]'
-                : 'bg-white/5 text-slate-400'
+              : 'bg-white/5 text-slate-400'
           }`}>
-            {(plan.featured || plan.aiPowered) && <Sparkles className="w-3 h-3" />}
+            {plan.featured && <Sparkles className="w-3 h-3" />}
             {plan.tag}
           </span>
         </div>
 
         <div className="flex items-center gap-2">
-          {Icon && <Icon className={`w-5 h-5 ${plan.featured || plan.aiPowered ? 'text-[#00D2FF]' : 'text-slate-400'}`} />}
+          {Icon && <Icon className={`w-5 h-5 ${plan.featured ? 'text-[#00D2FF]' : 'text-slate-400'}`} />}
           <h3 className="text-xl md:text-2xl font-semibold text-white">{plan.name}</h3>
         </div>
         <p className="mt-2 text-sm text-slate-400 min-h-[40px]">{plan.desc}</p>
 
         <div className="mt-4 flex items-baseline gap-2">
-          <span className={`text-3xl md:text-4xl font-bold tracking-tight ${plan.featured || plan.aiPowered ? 'text-gradient-neon' : 'text-white'}`}>
+          <span className={`text-3xl md:text-4xl font-bold tracking-tight ${plan.featured ? 'text-gradient-neon' : 'text-white'}`}>
             {plan.price}
           </span>
           <span className="text-sm text-slate-500">{plan.unit}</span>
@@ -2367,7 +2181,6 @@ const App = () => {
       <BentoFeatures />
       <Comparison />
       <DemoSection />
-      <AlexWhatsApp />
       <Pricing />
       <FAQ />
       <Waitlist />

@@ -31,9 +31,9 @@ const PLAN_FEATURE_SUMMARY: Record<string, string[]> = {
   ],
   vip: [
     "Sınırsız fiyat listesi",
-    "Alex AI ile WhatsApp otomasyonu",
     "Saha satış temsilcisi modülü",
     "White-label desteği",
+    "Özel onboarding ve hesap yöneticisi",
   ],
 };
 
