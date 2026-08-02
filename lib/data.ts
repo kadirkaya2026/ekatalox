@@ -49,7 +49,7 @@ const sectionProductsFallbackSelect =
   "product_id, display_order, products(*, product_prices(price_list_id, price))";
 
 const storefrontProductListColumns =
-  "id, tenant_id, category_id, display_order, sku_code, product_name, image_url, currency, is_in_stock, is_discount_active, discount_price, package_quantity, carton_quantity, created_at";
+  "id, tenant_id, category_id, display_order, sku_code, product_name, image_url, currency, is_in_stock, is_discount_active, is_recommended, discount_price, package_quantity, carton_quantity, created_at";
 const storefrontProductWithVariantsSelect =
   `${storefrontProductListColumns}, variants:product_variants(*, prices:product_variant_prices(price_list_id, price)), product_prices(price_list_id, price)`;
 const storefrontSectionProductsWithVariantsSelect =
@@ -139,6 +139,7 @@ export function getDefaultTenantStorefrontSettings(
     footer_phone: null,
     footer_email: null,
     is_footer_contact_visible: false,
+    recommendation_mode: "auto",
     updated_at: now,
   };
 }

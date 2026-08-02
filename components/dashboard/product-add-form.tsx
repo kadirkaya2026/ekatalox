@@ -30,6 +30,7 @@ interface ProductFormState {
   currency: string;
   listPrices: Record<string, string>;
   is_in_stock: boolean;
+  is_recommended: boolean;
   is_discount_active: boolean;
   discount_price: string;
   package_quantity: string;
@@ -45,6 +46,7 @@ const buildEmptyForm = (priceLists: PriceList[]): ProductFormState => ({
   currency: defaultCurrencyCode,
   listPrices: buildListPriceFormState(priceLists),
   is_in_stock: true,
+  is_recommended: false,
   is_discount_active: false,
   discount_price: "",
   package_quantity: "",
@@ -76,6 +78,7 @@ function toFormData(form: ProductFormState) {
   formData.set("currency", form.currency);
   appendProductPricesToFormData(formData, form.listPrices);
   formData.set("is_in_stock", String(form.is_in_stock));
+  formData.set("is_recommended", String(form.is_recommended));
   formData.set("is_discount_active", String(form.is_discount_active));
   formData.set("discount_price", form.is_discount_active ? form.discount_price.trim() : "");
   formData.set("package_quantity", form.package_quantity.trim());
@@ -324,6 +327,15 @@ export function ProductAddForm({
               onChange={(event) => updateField("is_in_stock", event.target.checked)}
             />
             Stokta görünsün
+          </label>
+
+          <label className="flex items-center gap-3 rounded-xl border border-slate-100 bg-slate-50 px-4 py-3 text-sm text-slate-700">
+            <input
+              type="checkbox"
+              checked={form.is_recommended}
+              onChange={(event) => updateField("is_recommended", event.target.checked)}
+            />
+            Sepet önerilerinde göster (manuel modda)
           </label>
 
           <div className="flex gap-3">

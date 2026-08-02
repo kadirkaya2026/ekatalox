@@ -1153,11 +1153,21 @@ export function StorefrontClient({
     isHomepageBlockVisible(homepageBlocks, "catalog");
   const recommendedProducts = useMemo(() => {
     const cartIds = new Set(cart.map((item) => item.product_id));
+    const availableProducts = dedupeProducts([
+      ...sections.flatMap((section) => section.products),
+      ...products,
+    ]).filter((product) => product.is_in_stock && !cartIds.has(product.id));
 
-    return dedupeProducts([...sections.flatMap((section) => section.products), ...products])
-      .filter((product) => product.is_in_stock && !cartIds.has(product.id))
-      .slice(0, 10);
-  }, [cart, products, sections]);
+    if (storefrontSettings.recommendation_mode === "manual") {
+      const manuallyRecommended = availableProducts.filter((product) => product.is_recommended);
+
+      if (manuallyRecommended.length > 0) {
+        return manuallyRecommended.slice(0, 10);
+      }
+    }
+
+    return availableProducts.slice(0, 10);
+  }, [cart, products, sections, storefrontSettings.recommendation_mode]);
   const buildWhatsAppOrderMessage = useCallback(
     (pdfUrl?: string | null) => {
       return buildWhatsAppMessage({

@@ -98,6 +98,10 @@ export const productBaseSchema = z.object({
   currency: currencyCodeSchema,
   prices: productPricesSchema.min(1, "En az bir fiyat listesi girilmelidir."),
   is_in_stock: booleanSchema,
+  is_recommended: z.preprocess(
+    (value) => (value === null || value === undefined ? "false" : value),
+    booleanSchema,
+  ),
   package_quantity: optionalPositiveIntegerSchema,
   carton_quantity: optionalPositiveIntegerSchema,
   description: z

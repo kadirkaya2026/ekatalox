@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { StorefrontThemePreview } from "@/components/dashboard/storefront-theme-preview";
 import type {
   HomepageBlock,
+  RecommendationMode,
   StorefrontFooterStyleKey,
   StorefrontHeaderStyleKey,
   StorefrontLayoutKey,
@@ -43,6 +44,7 @@ interface ThemeFormState {
   header_style_key: StorefrontHeaderStyleKey;
   footer_style_key: StorefrontFooterStyleKey;
   homepage_blocks: HomepageBlock[];
+  recommendation_mode: RecommendationMode;
 }
 
 function toThemeFormState(settings: TenantStorefrontSettings): ThemeFormState {
@@ -56,6 +58,7 @@ function toThemeFormState(settings: TenantStorefrontSettings): ThemeFormState {
     header_style_key: settings.header_style_key ?? "standard",
     footer_style_key: settings.footer_style_key ?? "standard",
     homepage_blocks: normalizeHomepageBlocks(settings.homepage_blocks),
+    recommendation_mode: settings.recommendation_mode ?? "auto",
   };
 }
 
@@ -71,6 +74,7 @@ function buildAppearancePayload(
     layout_key: form.layout_key,
     brand_primary_color: form.brand_primary_color || null,
     brand_accent_color: form.brand_accent_color || null,
+    recommendation_mode: form.recommendation_mode,
     ...(options.canUseAdvancedAppearance
       ? {
           font_key: form.font_key,
@@ -94,6 +98,7 @@ function toDefaultThemeFormState(): ThemeFormState {
     header_style_key: DEFAULT_STOREFRONT_APPEARANCE.header_style_key,
     footer_style_key: DEFAULT_STOREFRONT_APPEARANCE.footer_style_key,
     homepage_blocks: normalizeHomepageBlocks(DEFAULT_STOREFRONT_APPEARANCE.homepage_blocks),
+    recommendation_mode: "auto",
   };
 }
 
@@ -342,6 +347,34 @@ export function TenantThemeForm({
                 );
               })}
             </div>
+          </Card>
+
+          <Card className="p-5">
+            <div className="flex items-center gap-2">
+              <Sparkles className="size-5 text-emerald-700" />
+              <h2 className="text-lg font-semibold text-slate-900">Sepet ürün önerileri</h2>
+            </div>
+            <p className="mt-1 mb-4 text-sm text-slate-600">
+              &quot;Bunları da beğenebilirsiniz&quot; alanında müşteriye hangi ürünlerin önerileceğini seçin.
+            </p>
+            <OptionPicker
+              label="Öneri modu"
+              options={[
+                {
+                  key: "auto" as RecommendationMode,
+                  title: "Otomatik",
+                  description: "Sepetteki ürünler hariç, katalogdan otomatik ürün önerilir.",
+                },
+                {
+                  key: "manual" as RecommendationMode,
+                  title: "Manuel (seçtiğim ürünler)",
+                  description:
+                    "Ürün listesinde işaretlediğiniz ürünler önerilir. Ürünler yönetimi sayfasından işaretleyin.",
+                },
+              ]}
+              value={form.recommendation_mode}
+              onChange={(value) => updateField("recommendation_mode", value)}
+            />
           </Card>
 
           {canUseAdvancedAppearance ? (

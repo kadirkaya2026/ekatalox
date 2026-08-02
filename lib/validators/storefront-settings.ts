@@ -36,6 +36,8 @@ export const storefrontHeaderStyleKeySchema = z.enum(["standard", "centered", "m
 
 export const storefrontFooterStyleKeySchema = z.enum(["standard", "minimal", "columns"]);
 
+export const recommendationModeSchema = z.enum(["auto", "manual"]);
+
 export const homepageBlockIdSchema = z.enum([
   "hero",
   "banner",
@@ -296,6 +298,7 @@ export const storefrontSettingsSchema = z
       ])
       .transform((value) => (typeof value === "string" ? value.trim() || null : null)),
     is_footer_contact_visible: z.boolean().default(false),
+    recommendation_mode: recommendationModeSchema.default("auto"),
   })
   .superRefine((value, ctx) => {
     if (value.is_active) {

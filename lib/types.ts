@@ -89,6 +89,7 @@ export interface Product {
   prices?: ProductPrice[];
   is_in_stock: boolean;
   is_discount_active: boolean;
+  is_recommended: boolean;
   discount_price: number | null;
   package_quantity: number | null;
   carton_quantity: number | null;
@@ -167,6 +168,8 @@ export interface AdminLoginLogEntry {
 }
 
 export type DiscountPaymentMethod = "cash" | "card";
+
+export type RecommendationMode = "auto" | "manual";
 
 export interface CashDiscountTier {
   threshold: number;
@@ -253,6 +256,7 @@ export interface TenantStorefrontSettings {
   footer_phone: string | null;
   footer_email: string | null;
   is_footer_contact_visible: boolean;
+  recommendation_mode: RecommendationMode;
   created_at: string;
   updated_at: string;
 }
@@ -278,6 +282,7 @@ export interface StorefrontProduct {
   description?: string | null;
   image_url: string | null;
   is_in_stock: boolean;
+  is_recommended: boolean;
   currency: CurrencyCode;
   price: number | null;
   price_max?: number | null;
@@ -308,7 +313,8 @@ export interface StorefrontProductVariant {
 
 export type SalesUnit = "adet" | "paket" | "koli";
 
-export interface CartItem extends Omit<StorefrontProduct, "id" | "has_variants" | "variants"> {
+export interface CartItem
+  extends Omit<StorefrontProduct, "id" | "has_variants" | "variants" | "is_recommended"> {
   id: string;
   product_id: string;
   variant_id: string | null;

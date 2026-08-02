@@ -55,6 +55,7 @@ interface ProductFormState {
   currency: string;
   listPrices: Record<string, string>;
   is_in_stock: boolean;
+  is_recommended: boolean;
   is_discount_active: boolean;
   discount_price: string;
   package_quantity: string;
@@ -80,6 +81,7 @@ const emptyForm = (priceLists: PriceList[]): ProductFormState => ({
   currency: defaultCurrencyCode,
   listPrices: buildListPriceFormState(priceLists),
   is_in_stock: true,
+  is_recommended: false,
   is_discount_active: false,
   discount_price: "",
   package_quantity: "",
@@ -105,6 +107,7 @@ function toFormData(form: ProductFormState) {
   formData.set("currency", form.currency);
   appendProductPricesToFormData(formData, form.listPrices);
   formData.set("is_in_stock", String(form.is_in_stock));
+  formData.set("is_recommended", String(form.is_recommended));
   formData.set("is_discount_active", String(form.is_discount_active));
   formData.set("discount_price", form.is_discount_active ? form.discount_price.trim() : "");
   formData.set("package_quantity", form.package_quantity.trim());
@@ -126,6 +129,7 @@ function productToForm(product: Product, priceLists: PriceList[]): ProductFormSt
     currency: product.currency ?? defaultCurrencyCode,
     listPrices: buildListPriceFormState(priceLists, product),
     is_in_stock: product.is_in_stock,
+    is_recommended: product.is_recommended,
     is_discount_active: product.is_discount_active,
     discount_price:
       product.discount_price !== null && product.discount_price !== undefined
@@ -1627,6 +1631,15 @@ export function ProductsManager({
               onChange={(event) => updateEditField("is_in_stock", event.target.checked)}
             />
             Stokta görünsün
+          </label>
+
+          <label className="flex items-center gap-3 rounded-xl border border-border bg-muted/60 px-4 py-3 text-sm text-muted-foreground">
+            <input
+              type="checkbox"
+              checked={editForm.is_recommended}
+              onChange={(event) => updateEditField("is_recommended", event.target.checked)}
+            />
+            Sepet önerilerinde göster (manuel modda)
           </label>
 
           <div className="flex justify-end gap-2">
