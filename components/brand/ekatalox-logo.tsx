@@ -14,7 +14,7 @@ export function EkataloxLogo({
   sizes?: string;
   variant?: "dark" | "light";
 }) {
-  const src = variant === "light" ? "/ekatalox-logo-rgb.png" : "/ekatalox-logo.png";
+  const src = variant === "light" ? "/ekatalox-logo-rgb-v2.png" : "/ekatalox-logo-v2.png";
   return (
     <div className={cn("relative h-9 w-[160px] shrink-0", className)}>
       <Image
@@ -23,6 +23,7 @@ export function EkataloxLogo({
         fill
         priority={priority}
         sizes={sizes}
+        unoptimized
         className="object-cover object-center"
       />
     </div>

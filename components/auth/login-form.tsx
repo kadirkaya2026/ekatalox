@@ -107,8 +107,7 @@ export function LoginForm({ target }: { target?: string }) {
       </div>
       <Card className="w-full max-w-md p-6">
         <Link href="/#top" className="inline-flex">
-          <EkataloxLogo variant="light" className="h-10 w-[176px] dark:hidden" priority />
-          <EkataloxLogo variant="dark" className="hidden h-10 w-[176px] dark:inline-flex" priority />
+          <EkataloxLogo variant="light" className="h-10 w-[176px]" priority />
         </Link>
         <h1 className="mt-3 text-2xl font-semibold text-foreground">
           Yönetim paneline erişin

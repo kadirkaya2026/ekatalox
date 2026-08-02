@@ -91,6 +91,10 @@ export async function POST(request: Request) {
       is_whatsapp_order_direct: true,
       custom_domain: null,
       trial_ends_at: parsed.data.is_trial ? getTrialEndDate() : null,
+      plan_started_at: null,
+      plan_expires_at: null,
+      visitor_limit_addon: 0,
+      visitor_quota_exceeded: false,
     };
     const profile: Profile = {
       id: crypto.randomUUID(),

@@ -72,41 +72,41 @@ const releases = [
 ]
 
 const badgeStyles = {
-  major: 'bg-gradient-to-r from-[#00D2FF] to-[#7928CA] text-white',
-  feature: 'bg-[#00D2FF]/15 text-[#00D2FF] border border-[#00D2FF]/30',
+  major: 'bg-gradient-to-r from-[#10b981] to-[#00ff87] text-white',
+  feature: 'bg-[#10b981]/15 text-[#10b981] border border-[#10b981]/30',
   improvement: 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30',
   fix: 'bg-amber-500/15 text-amber-400 border border-amber-500/30',
 }
 const badgeLabel = { major: 'Major Sürüm', feature: 'Yeni Özellik', improvement: 'İyileştirme', fix: 'Hata Düzeltme' }
 const itemIcon = {
-  feature: { icon: Plus, color: 'text-[#00D2FF]' },
+  feature: { icon: Plus, color: 'text-[#10b981]' },
   improvement: { icon: Zap, color: 'text-emerald-400' },
   fix: { icon: Bug, color: 'text-amber-400' },
 }
 
 const Page = () => {
   return (
-    <main className="relative min-h-screen bg-[#0B0F19] text-white overflow-hidden">
+    <main className="relative min-h-screen bg-[#090d16] text-white overflow-hidden">
       <SiteNavbar />
       <PageHero
         tag="Yenilikler"
-        title={<>Sürekli daha <span className="bg-clip-text text-transparent bg-gradient-to-r from-[#00D2FF] to-[#7928CA]">hızlı, daha iyi.</span></>}
+        title={<>Sürekli daha <span className="bg-clip-text text-transparent bg-gradient-to-r from-[#10b981] to-[#00ff87]">hızlı, daha iyi.</span></>}
         subtitle="Her ay yeni özellikler, iyileştirmeler ve düzeltmeler. Geri bildiriminizle şekilleniyoruz."
       />
 
       <section className="relative px-6 pb-32">
         <div className="max-w-4xl mx-auto">
           <div className="relative">
-            <div className="absolute left-4 md:left-6 top-2 bottom-2 w-px bg-gradient-to-b from-[#00D2FF]/40 via-[#7928CA]/40 to-transparent" />
+            <div className="absolute left-4 md:left-6 top-2 bottom-2 w-px bg-gradient-to-b from-[#10b981]/40 via-[#00ff87]/40 to-transparent" />
             <div className="space-y-8 md:space-y-10">
               {releases.map((r, i) => (
                 <motion.article key={r.version} initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: false, amount: 0.15 }} transition={{ duration: 0.7, delay: i * 0.05, ease: [0.16, 1, 0.3, 1] }} className="relative pl-12 md:pl-16">
-                  <div className="absolute left-1.5 md:left-3.5 top-7 w-6 h-6 rounded-full bg-[#0B0F19] border border-white/10 flex items-center justify-center">
-                    <div className="w-2.5 h-2.5 rounded-full bg-gradient-to-br from-[#00D2FF] to-[#7928CA]" />
+                  <div className="absolute left-1.5 md:left-3.5 top-7 w-6 h-6 rounded-full bg-[#090d16] border border-white/10 flex items-center justify-center">
+                    <div className="w-2.5 h-2.5 rounded-full bg-gradient-to-br from-[#10b981] to-[#00ff87]" />
                   </div>
                   <div className="rounded-3xl border border-white/10 bg-gradient-to-b from-white/[0.04] to-transparent p-6 md:p-8 hover:border-white/20 transition-colors">
                     <div className="flex flex-wrap items-center gap-3 mb-4">
-                      <span className="text-[#00D2FF] font-mono text-sm tracking-wider">{r.version}</span>
+                      <span className="text-[#10b981] font-mono text-sm tracking-wider">{r.version}</span>
                       <span className="text-xs text-slate-500">{r.date}</span>
                       <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium uppercase tracking-wider ${badgeStyles[r.badge]}`}>
                         {r.badge === 'major' && <Sparkles className="w-2.5 h-2.5" />}
@@ -133,7 +133,7 @@ const Page = () => {
           </div>
 
           <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: false, amount: 0.3 }} className="mt-20 rounded-3xl border border-white/10 bg-gradient-to-b from-white/[0.04] to-transparent p-8 md:p-10 text-center">
-            <Sparkles className="w-7 h-7 text-[#00D2FF] mx-auto" />
+            <Sparkles className="w-7 h-7 text-[#10b981] mx-auto" />
             <h3 className="mt-4 text-2xl md:text-3xl font-bold tracking-tight" style={{ letterSpacing: '-0.04em' }}>Bir yenilik kaçırmayın.</h3>
             <p className="mt-3 text-slate-400 max-w-md mx-auto">Yeni sürüm notlarını ayda bir kez doğrudan gelen kutunuza alın.</p>
             <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-3">

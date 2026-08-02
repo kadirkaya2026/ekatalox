@@ -48,11 +48,11 @@ const Page = () => {
   }
 
   return (
-    <main className="relative min-h-screen bg-[#0B0F19] text-white overflow-hidden">
+    <main className="relative min-h-screen bg-[#090d16] text-white overflow-hidden">
       <SiteNavbar />
       <PageHero
         tag="İletişim"
-        title={<>Bizimle <span className="bg-clip-text text-transparent bg-gradient-to-r from-[#00D2FF] to-[#7928CA]">konuşalım.</span></>}
+        title={<>Bizimle <span className="bg-clip-text text-transparent bg-gradient-to-r from-[#10b981] to-[#00ff87]">konuşalım.</span></>}
         subtitle="Demo, fiyat teklifi veya genel bir soru — her türlü konuda 24 saat içinde geri dönüş sağlıyoruz."
       />
 
@@ -62,13 +62,13 @@ const Page = () => {
             {departments.map((d, i) => (
               <motion.div key={d.name} initial={{ opacity: 0, x: -20 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: false, amount: 0.3 }} transition={{ duration: 0.6, delay: i * 0.1 }}
                 className="flex items-start gap-4 p-5 rounded-2xl border border-white/10 bg-white/[0.02] hover:border-white/20 transition-colors">
-                <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-[#00D2FF]/20 to-[#7928CA]/20 border border-white/10 flex items-center justify-center flex-shrink-0">
-                  <d.icon className="w-5 h-5 text-[#00D2FF]" />
+                <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-[#10b981]/20 to-[#00ff87]/20 border border-white/10 flex items-center justify-center flex-shrink-0">
+                  <d.icon className="w-5 h-5 text-[#10b981]" />
                 </div>
                 <div>
                   <div className="text-base text-white font-semibold">{d.name}</div>
                   <div className="text-xs text-slate-500 mt-0.5">{d.desc}</div>
-                  <a href={`mailto:${d.email}`} className="text-sm text-[#00D2FF] hover:text-white transition-colors mt-2 inline-flex items-center gap-1">
+                  <a href={`mailto:${d.email}`} className="text-sm text-[#10b981] hover:text-white transition-colors mt-2 inline-flex items-center gap-1">
                     {d.email} <ArrowRight className="w-3 h-3" />
                   </a>
                 </div>
@@ -85,7 +85,7 @@ const Page = () => {
 
           <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: false, amount: 0.2 }} transition={{ duration: 0.8 }}
             className="relative rounded-3xl border border-white/10 bg-gradient-to-b from-white/[0.04] to-white/[0.01] p-7 md:p-9 overflow-hidden">
-            <div className="absolute -top-20 -right-20 w-60 h-60 rounded-full bg-[#00D2FF]/15 blur-3xl pointer-events-none" />
+            <div className="absolute -top-20 -right-20 w-60 h-60 rounded-full bg-[#10b981]/15 blur-3xl pointer-events-none" />
             <AnimatePresence mode="wait">
               {!sent ? (
                 <motion.form key="form" onSubmit={submit} noValidate initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="relative space-y-4">
@@ -101,7 +101,7 @@ const Page = () => {
                   </div>
                   <div>
                     <label className="text-xs text-slate-400 mb-1.5 block uppercase tracking-wider">Konu</label>
-                    <select value={form.subject} onChange={set('subject')} className="w-full px-4 py-3 rounded-xl bg-black/30 border border-white/10 text-sm text-white outline-none focus:border-[#00D2FF]/60">
+                    <select value={form.subject} onChange={set('subject')} className="w-full px-4 py-3 rounded-xl bg-black/30 border border-white/10 text-sm text-white outline-none focus:border-[#10b981]/60">
                       <option value="demo">Demo Talep Etmek İstiyorum</option>
                       <option value="satis">Satış / Fiyat Teklifi</option>
                       <option value="destek">Teknik Destek</option>
@@ -113,7 +113,7 @@ const Page = () => {
                     <label className="text-xs text-slate-400 mb-1.5 block uppercase tracking-wider">Mesajınız</label>
                     <textarea rows={5} placeholder="Bize biraz daha bahsedin…" value={form.message} onChange={set('message')}
                       className={`w-full px-4 py-3 rounded-xl bg-black/30 border text-sm text-white placeholder:text-slate-600 outline-none transition-colors resize-none ${
-                        errors.message ? 'border-red-500/60' : 'border-white/10 focus:border-[#00D2FF]/60'
+                        errors.message ? 'border-red-500/60' : 'border-white/10 focus:border-[#10b981]/60'
                       }`} />
                     {errors.message && <div className="mt-1 text-[11px] text-red-400">{errors.message}</div>}
                   </div>
@@ -144,7 +144,7 @@ const Page = () => {
 
 const InfoTile = ({ icon: Icon, label, value }) => (
   <div className="p-4 rounded-xl border border-white/10 bg-white/[0.02]">
-    <Icon className="w-4 h-4 text-[#00D2FF]" />
+    <Icon className="w-4 h-4 text-[#10b981]" />
     <div className="mt-2 text-[10px] uppercase tracking-widest text-slate-500">{label}</div>
     <div className="text-sm text-white mt-0.5">{value}</div>
   </div>
@@ -154,7 +154,7 @@ const FormField = ({ label, type = 'text', placeholder, value, onChange, error }
   <div>
     <label className="text-xs text-slate-400 mb-1.5 block uppercase tracking-wider">{label}</label>
     <input type={type} placeholder={placeholder} value={value} onChange={onChange}
-      className={`w-full px-4 py-3 rounded-xl bg-black/30 border text-sm text-white placeholder:text-slate-600 outline-none transition-colors ${error ? 'border-red-500/60' : 'border-white/10 focus:border-[#00D2FF]/60'}`} />
+      className={`w-full px-4 py-3 rounded-xl bg-black/30 border text-sm text-white placeholder:text-slate-600 outline-none transition-colors ${error ? 'border-red-500/60' : 'border-white/10 focus:border-[#10b981]/60'}`} />
     {error && <div className="mt-1 text-[11px] text-red-400">{error}</div>}
   </div>
 )

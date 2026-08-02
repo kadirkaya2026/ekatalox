@@ -21,6 +21,15 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: currentDirectory,
   },
+  async redirects() {
+    return [
+      {
+        source: "/kvkk",
+        destination: "/gizlilik-ve-kvkk",
+        permanent: true,
+      },
+    ];
+  },
   images: {
     remotePatterns: [
       {

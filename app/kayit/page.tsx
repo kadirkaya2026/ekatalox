@@ -57,23 +57,23 @@ const Page = () => {
   }
 
   return (
-    <main className="relative min-h-screen bg-[#0B0F19] text-white overflow-hidden">
+    <main className="relative min-h-screen bg-[#090d16] text-white overflow-hidden">
       <SiteNavbar />
 
-      <div className="absolute -top-40 left-1/4 w-[700px] h-[700px] rounded-full bg-[#00D2FF]/15 blur-[160px] pointer-events-none" />
-      <div className="absolute top-40 right-0 w-[600px] h-[600px] rounded-full bg-[#7928CA]/20 blur-[160px] pointer-events-none" />
+      <div className="absolute -top-40 left-1/4 w-[700px] h-[700px] rounded-full bg-[#10b981]/15 blur-[160px] pointer-events-none" />
+      <div className="absolute top-40 right-0 w-[600px] h-[600px] rounded-full bg-[#00ff87]/20 blur-[160px] pointer-events-none" />
 
       <div className="relative pt-32 md:pt-36 pb-24 px-6">
         <div className="max-w-6xl mx-auto grid lg:grid-cols-[1.1fr_1fr] gap-12 lg:gap-16 items-start">
           <div className="lg:sticky lg:top-32">
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7 }}>
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-xs text-slate-300 mb-6">
-                <Sparkles className="w-3 h-3 text-[#00D2FF]" />
+                <Sparkles className="w-3 h-3 text-[#10b981]" />
                 14 gün ücretsiz · Kart gerekmez
               </div>
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-balance" style={{ letterSpacing: '-0.04em', lineHeight: 1 }}>
                 B2B vitrininizi <br />
-                <span className="bg-clip-text text-transparent bg-gradient-to-r from-[#00D2FF] to-[#7928CA]">1 dakikada</span> kurun.
+                <span className="bg-clip-text text-transparent bg-gradient-to-r from-[#10b981] to-[#00ff87]">1 dakikada</span> kurun.
               </h1>
               <p className="mt-5 text-slate-400 text-base md:text-lg max-w-md font-light">
                 Hesabınızı açın, Excel'inizi yükleyin, müşterilerinize hemen profesyonel bir vitrin sunun.
@@ -87,8 +87,8 @@ const Page = () => {
                   ['7/24 öncelikli destek', 'Ekibimiz yanınızda'],
                 ].map(([t, s]) => (
                   <div key={t} className="flex items-start gap-3">
-                    <div className="mt-0.5 w-5 h-5 rounded-full bg-[#00D2FF]/15 flex items-center justify-center flex-shrink-0">
-                      <Check className="w-3 h-3 text-[#00D2FF]" />
+                    <div className="mt-0.5 w-5 h-5 rounded-full bg-[#10b981]/15 flex items-center justify-center flex-shrink-0">
+                      <Check className="w-3 h-3 text-[#10b981]" />
                     </div>
                     <div>
                       <div className="text-sm text-white">{t}</div>
@@ -110,7 +110,7 @@ const Page = () => {
 
           <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.1 }} className="relative">
             <div className="relative rounded-3xl border border-white/10 bg-gradient-to-b from-white/[0.04] to-white/[0.01] p-7 md:p-9 backdrop-blur-xl overflow-hidden">
-              <div className="absolute -top-20 -right-20 w-60 h-60 rounded-full bg-[#7928CA]/20 blur-3xl pointer-events-none" />
+              <div className="absolute -top-20 -right-20 w-60 h-60 rounded-full bg-[#00ff87]/20 blur-3xl pointer-events-none" />
               <AnimatePresence mode="wait">
                 {!submitted ? (
                   <motion.form key="form" onSubmit={submit} noValidate initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }} className="relative space-y-5">
@@ -127,25 +127,25 @@ const Page = () => {
 
                     <div>
                       <label className="text-xs text-slate-400 mb-2 block uppercase tracking-wider">Plan seçimi</label>
-                      <div className="grid grid-cols-3 gap-2">
+                      <div className="grid grid-cols-3 gap-2 pt-2">
                         {plans.map(p => {
                           const selected = form.plan === p.id
                           return (
                             <button key={p.id} type="button" onClick={() => setForm({ ...form, plan: p.id })}
-                              className={`relative p-3 rounded-xl border text-left transition-all duration-200 overflow-hidden ${
+                              className={`relative p-3 rounded-xl border text-left transition-all duration-200 ${
                                 selected
-                                  ? 'border-[#00D2FF] ring-1 ring-[#00D2FF]/30 bg-gradient-to-b from-[#00D2FF]/15 to-[#7928CA]/10'
+                                  ? 'border-[#10b981] ring-1 ring-[#10b981]/30 bg-gradient-to-b from-[#10b981]/15 to-[#00ff87]/10'
                                   : 'border-white/10 bg-white/[0.02] hover:border-white/20'
                               }`}>
                               {selected && (
-                                <span className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-[#00D2FF] to-[#7928CA]" />
+                                <span className="absolute inset-x-0 top-0 h-[2px] rounded-t-xl bg-gradient-to-r from-[#10b981] to-[#00ff87]" />
                               )}
                               {p.featured && !selected && (
-                                <span className="absolute -top-2 left-1/2 -translate-x-1/2 px-1.5 py-0.5 rounded-full bg-gradient-to-r from-[#00D2FF] to-[#7928CA] text-[8px] text-white font-medium uppercase tracking-wider">Popüler</span>
+                                <span className="absolute -top-2 left-1/2 -translate-x-1/2 px-1.5 py-0.5 rounded-full bg-gradient-to-r from-[#10b981] to-[#00ff87] text-[8px] text-white font-medium uppercase tracking-wider">Popüler</span>
                               )}
                               {selected && (
                                 <span className="absolute top-2 right-2">
-                                  <Check className="w-3 h-3 text-[#00D2FF]" />
+                                  <Check className="w-3 h-3 text-[#10b981]" />
                                 </span>
                               )}
                               <div className={`text-[11px] ${selected ? 'text-white' : 'text-slate-400'}`}>{p.name}</div>
@@ -157,16 +157,16 @@ const Page = () => {
                     </div>
 
                     {apiError && <div className="text-sm text-red-400 text-center">{apiError}</div>}
-                    <button type="submit" disabled={sending} className="w-full inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-full bg-white text-black font-medium text-sm hover:scale-[1.01] transition-transform shadow-[0_0_40px_rgba(0,210,255,0.2)] mt-2 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:scale-100">
+                    <button type="submit" disabled={sending} className="w-full inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-full bg-white text-black font-medium text-sm hover:scale-[1.01] transition-transform shadow-[0_0_40px_rgba(16, 185, 129,0.2)] mt-2 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:scale-100">
                       {sending ? 'Lütfen bekleyin…' : <><span>Ücretsiz Hesap Aç</span><ArrowRight className="w-4 h-4" /></>}
                     </button>
 
                     <p className="text-[11px] text-slate-500 text-center">
-                      Devam ederek <Link href="/yardim" className="text-slate-300 underline-offset-4 hover:underline">Kullanım Şartları</Link> ve <Link href="/yardim" className="text-slate-300 underline-offset-4 hover:underline">KVKK</Link> metnini kabul etmiş olursunuz.
+                      Devam ederek <Link href="/kullanim-sartlari" className="text-slate-300 underline-offset-4 hover:underline">Kullanım Şartları</Link> ve <Link href="/gizlilik-ve-kvkk" className="text-slate-300 underline-offset-4 hover:underline">Gizlilik ve KVKK</Link> metnini kabul etmiş olursunuz.
                     </p>
 
                     <div className="pt-4 border-t border-white/5 text-center text-sm text-slate-400">
-                      Hesabınız var mı? <Link href="/login" className="text-white hover:text-[#00D2FF]">Giriş yapın</Link>
+                      Hesabınız var mı? <Link href="/login" className="text-white hover:text-[#10b981]">Giriş yapın</Link>
                     </div>
                   </motion.form>
                 ) : (
@@ -182,7 +182,7 @@ const Page = () => {
                       Talebiniz alındı. <span className="text-white">{form.email}</span> adresine en kısa sürede dönüş sağlayacağız.
                     </motion.p>
                     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.55 }} className="mt-6 inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-[11px] text-slate-300">
-                      <Sparkles className="w-3 h-3 text-[#00D2FF]" />
+                      <Sparkles className="w-3 h-3 text-[#10b981]" />
                       Workspace URL: <span className="font-mono text-white">{form.company.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '') || 'firmaniz'}.ekatalox.com</span>
                     </motion.div>
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.7 }} className="mt-8 flex items-center justify-center gap-3">
@@ -210,7 +210,7 @@ const Field = ({ label, type = 'text', placeholder, value, onChange, error }: {
     <label className="text-xs text-slate-400 mb-1.5 block uppercase tracking-wider">{label}</label>
     <input type={type} placeholder={placeholder} value={value} onChange={onChange}
       className={`w-full px-4 py-3 rounded-xl bg-black/30 border text-sm text-white placeholder:text-slate-600 outline-none transition-colors ${
-        error ? 'border-red-500/60' : 'border-white/10 focus:border-[#00D2FF]/60'
+        error ? 'border-red-500/60' : 'border-white/10 focus:border-[#10b981]/60'
       }`} />
     {error && <div className="mt-1 text-[11px] text-red-400">{error}</div>}
   </div>
