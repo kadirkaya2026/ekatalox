@@ -4,8 +4,8 @@ import { Card } from "@/components/ui/card";
 import { requireTenantAdminPage } from "@/lib/auth/session";
 import {
   formatEffectiveProductLimit,
-  formatPriceListLimit,
   formatProductLimit,
+  getEffectiveProductLimit,
   getLimitForPlan,
 } from "@/lib/billing/plans";
 import { getTenantDashboardSummary } from "@/lib/data";
@@ -45,9 +45,17 @@ export default async function DashboardHomePage() {
           </p>
         </Card>
         <Card className="p-5">
-          <p className="text-sm text-slate-500">Fiyat Listesi Sınırı</p>
+          <p className="text-sm text-slate-500">Kalan yükleme adedi</p>
           <p className="mt-2 text-3xl font-bold text-emerald-700">
-            {formatPriceListLimit(summary.tenant.plan ?? "baslangic")}
+            {formatProductLimit(
+              Math.max(
+                getEffectiveProductLimit(
+                  summary.tenant.plan ?? "baslangic",
+                  summary.tenant.product_limit_addon,
+                ) - summary.productCount,
+                0,
+              ),
+            )}
           </p>
         </Card>
       </div>
