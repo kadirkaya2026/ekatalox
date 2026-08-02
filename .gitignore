@@ -47,3 +47,4 @@ lucatech-*.mjs
 
 # sub-project folders
 emergent-homepage/
+supabase/.temp/

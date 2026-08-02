@@ -1,6 +1,9 @@
 import { Sidebar } from "@/components/dashboard/sidebar";
 import { TrialExpiredModal } from "@/components/dashboard/trial-expired-modal";
+import { VisitorQuotaBanner } from "@/components/dashboard/visitor-quota-banner";
 import { requireTenantAdminPage } from "@/lib/auth/session";
+import { getCurrentMonthVisitorCount } from "@/lib/analytics/queries";
+import { getVisitorLimitForPlan } from "@/lib/billing/plans";
 import {
   getTrialDaysLeft,
   isTrialExpired,
@@ -20,6 +23,9 @@ export default async function DashboardLayout({
     tenant && isTrialTenant(tenant) && !trialExpired
       ? getTrialDaysLeft(tenant)
       : null;
+  const monthlyVisitorCount = tenant
+    ? await getCurrentMonthVisitorCount(tenant.id)
+    : 0;
 
   return (
     <div className="min-h-screen bg-background text-foreground md:grid md:h-screen md:grid-cols-[280px_1fr] md:overflow-hidden">
@@ -38,6 +44,13 @@ export default async function DashboardLayout({
             sürenizin bitmesine <strong>{trialDaysLeft} gün</strong> kaldı.
             Kesintisiz devam etmek için süre dolmadan bir paket seçebilirsiniz.
           </div>
+        ) : null}
+        {tenant ? (
+          <VisitorQuotaBanner
+            tenant={tenant}
+            used={monthlyVisitorCount}
+            limit={getVisitorLimitForPlan(tenant.plan, tenant.visitor_limit_addon)}
+          />
         ) : null}
         {children}
       </main>

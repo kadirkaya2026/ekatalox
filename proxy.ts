@@ -206,6 +206,23 @@ export async function proxy(request: NextRequest) {
   // serverless fonksiyona hiç inmesin (cold start'ı devre dışı bırakır).
   // Çerezi olup da süresi/değeri geçersiz olanları dinamik sayfa yakalar.
   if (hostResolution.kind === "storefront" && hostResolution.subdomain) {
+    // Aylık ziyaretçi kotası dolan tenant'lar, oturum çerezinden bağımsız
+    // olarak yoğunluk sayfasına yönlendirilir. Bayrak zaten cachedTenantLookup
+    // ile 60sn önbelleklenen tenant satırından okunur, ekstra sorgu eklemez.
+    const tenant = await cachedTenantLookup(`subdomain:${hostResolution.subdomain}`, () =>
+      getStorefrontTenant(hostResolution.subdomain as string),
+    );
+
+    if (tenant?.visitor_quota_exceeded) {
+      const quotaUrl = request.nextUrl.clone();
+      quotaUrl.pathname = `/store/${hostResolution.subdomain}/yogunluk`;
+      quotaUrl.search = "";
+
+      const quotaResponse = NextResponse.rewrite(quotaUrl);
+      quotaResponse.headers.set("X-Robots-Tag", "noindex, nofollow");
+      return quotaResponse;
+    }
+
     const hasTierCookie = request.cookies.has(
       getStorefrontTierCookieName(hostResolution.subdomain),
     );

@@ -10,7 +10,9 @@ import {
   formatPlanSummary,
   formatProductLimit,
   getPlanRank,
-  PLAN_OPTIONS,
+  isLegacyPlan,
+  LEGACY_PLAN_OPTIONS,
+  NEW_PLAN_OPTIONS,
   PLAN_PRICING,
 } from "@/lib/billing/plans";
 import { resolveMembershipPeriod } from "@/lib/billing/membership";
@@ -56,9 +58,12 @@ function SettingsToggle({
 function PlanChangeSection({ tenant }: { tenant: Tenant }) {
   const currentPlan = tenant.plan ?? "baslangic";
   const onTrial = isTrialTenant(tenant);
+  // Bir tenant kendi track'i (eski veya yeni plan seti) içinde üst pakete
+  // geçer; deneme hesabı her zaman yeni plan setinden başlar.
+  const track = onTrial || !isLegacyPlan(currentPlan) ? NEW_PLAN_OPTIONS : LEGACY_PLAN_OPTIONS;
   // Deneme hesabı tüm paketleri seçebilir; normal hesap yalnızca üst
   // paketlere geçiş talep edebilir (alt pakete geçiş sunulmaz).
-  const targetPlans = PLAN_OPTIONS.filter((plan) =>
+  const targetPlans = track.filter((plan) =>
     onTrial ? true : getPlanRank(plan.id) > getPlanRank(currentPlan),
   );
 

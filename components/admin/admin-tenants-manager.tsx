@@ -9,7 +9,9 @@ import { Modal } from "@/components/ui/modal";
 import {
   formatPlanSummary,
   formatProductLimit,
+  formatVisitorLimit,
   getPlanLabel,
+  NEW_PLAN_OPTIONS,
   PLAN_OPTIONS,
 } from "@/lib/billing/plans";
 import {
@@ -33,7 +35,7 @@ interface NewTenantForm {
 const defaultForm: NewTenantForm = {
   company_name: "",
   subdomain: "",
-  plan: "baslangic",
+  plan: "start",
   whatsapp_number: "",
   tenant_admin_email: "",
   tenant_admin_full_name: "",
@@ -85,6 +87,7 @@ export function AdminTenantsManager({
   const [form, setForm] = useState<NewTenantForm>(defaultForm);
   const [planDrafts, setPlanDrafts] = useState<Record<string, TenantPlan>>({});
   const [giftDrafts, setGiftDrafts] = useState<Record<string, number>>({});
+  const [addonDrafts, setAddonDrafts] = useState<Record<string, number>>({});
   const [codeDrafts, setCodeDrafts] = useState<Record<string, string>>({});
   const [priceListDrafts, setPriceListDrafts] = useState<Record<string, string>>({});
   const [editingAccessCodeId, setEditingAccessCodeId] = useState<string | null>(null);
@@ -180,6 +183,32 @@ export function AdminTenantsManager({
         ),
       );
       setMessage("Tenant paketi güncellendi.");
+    });
+  }
+
+  function updateVisitorAddon(id: string) {
+    const tenant = tenants.find((t) => t.id === id);
+    const addon = addonDrafts[id] ?? tenant?.visitor_limit_addon ?? 0;
+    setMessage(null);
+
+    startTransition(async () => {
+      const response = await fetch(`/api/admin/tenants/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ visitor_limit_addon: addon }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        setMessage(result.error ?? "Ek ziyaretçi kotası güncellenemedi.");
+        return;
+      }
+
+      setTenants((current) =>
+        current.map((t) => (t.id === id ? { ...t, ...result.tenant } : t)),
+      );
+      setMessage("Ek ziyaretçi kotası güncellendi.");
     });
   }
 
@@ -497,7 +526,7 @@ export function AdminTenantsManager({
             }
             className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900"
           >
-            {PLAN_OPTIONS.map((plan) => (
+            {NEW_PLAN_OPTIONS.map((plan) => (
               <option key={plan.id} value={plan.id}>
                 {plan.name} — {formatProductLimit(plan.maxProductLimit)} ürün
               </option>
@@ -682,6 +711,41 @@ export function AdminTenantsManager({
                     <> • Üyelik bitişi: {formatDate(tenant.plan_expires_at)}</>
                   ) : null}
                 </p>
+                <p className="mt-1 text-sm text-slate-500">
+                  Ziyaretçi kotası: {formatVisitorLimit(tenant.plan ?? "baslangic", tenant.visitor_limit_addon ?? 0)} / ay
+                  {tenant.visitor_quota_exceeded ? (
+                    <span className="ml-2 inline-flex items-center rounded-full bg-rose-50 px-2 py-0.5 text-xs font-semibold text-rose-700">
+                      Kota doldu
+                    </span>
+                  ) : null}
+                </p>
+                <div className="mt-3 flex flex-col gap-3 border-t border-slate-100 pt-3 sm:flex-row sm:items-center">
+                  <Input
+                    type="number"
+                    min={0}
+                    step={1000}
+                    placeholder="Ek ziyaretçi (ör. 25000)"
+                    value={String(addonDrafts[tenant.id] ?? tenant.visitor_limit_addon ?? 0)}
+                    onChange={(event) =>
+                      setAddonDrafts((current) => ({
+                        ...current,
+                        [tenant.id]: Math.max(0, Number(event.target.value) || 0),
+                      }))
+                    }
+                    className="max-w-[220px]"
+                  />
+                  <Button
+                    variant="secondary"
+                    onClick={() => updateVisitorAddon(tenant.id)}
+                    disabled={
+                      pending ||
+                      (addonDrafts[tenant.id] ?? tenant.visitor_limit_addon ?? 0) ===
+                        (tenant.visitor_limit_addon ?? 0)
+                    }
+                  >
+                    Ek kotayı güncelle
+                  </Button>
+                </div>
                 <div className="mt-3 flex flex-col gap-3 border-t border-slate-100 pt-3 sm:flex-row sm:items-center">
                   <select
                     value={giftDrafts[tenant.id] ?? 1}

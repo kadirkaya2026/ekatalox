@@ -384,6 +384,34 @@ async function fetchDayOfWeekTraffic(
   return dayOfWeek;
 }
 
+// Dashboard'daki "kotaya yaklaştı" banner'ı için tek satırlık, ucuz sorgu.
+// tenant_monthly_usage RPC (record_storefront_analytics) tarafından her
+// benzersiz ziyaretçide güncellenir; burada sadece okunur.
+export async function getCurrentMonthVisitorCount(tenantId: string): Promise<number> {
+  const supabase = createSupabaseAdminClient();
+
+  if (!supabase) {
+    return 0;
+  }
+
+  const usageMonth = new Date();
+  usageMonth.setUTCDate(1);
+  const usageMonthStr = usageMonth.toISOString().slice(0, 10);
+
+  const { data, error } = await supabase
+    .from("tenant_monthly_usage")
+    .select("visitor_count")
+    .eq("tenant_id", tenantId)
+    .eq("usage_month", usageMonthStr)
+    .maybeSingle();
+
+  if (error || !data) {
+    return 0;
+  }
+
+  return (data as { visitor_count: number }).visitor_count ?? 0;
+}
+
 export async function getTenantAnalyticsReport(
   tenantId: string,
   period: AnalyticsPeriod,

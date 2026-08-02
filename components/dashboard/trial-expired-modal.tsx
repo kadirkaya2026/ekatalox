@@ -2,26 +2,38 @@ import { Check } from "lucide-react";
 import {
   buildPlanChangeHref,
   formatPlanCapacityFeature,
-  PLAN_OPTIONS,
+  NEW_PLAN_OPTIONS,
   PLAN_PRICING,
 } from "@/lib/billing/plans";
 
 const PLAN_FEATURE_SUMMARY: Record<string, string[]> = {
-  baslangic: [
+  start: [
     "3 seviyeli müşteri fiyat listesi",
     "WhatsApp sipariş formu",
     "ekatalox.com subdomain adresi",
   ],
-  profesyonel: [
-    "Sınırsız fiyat listesi",
+  pro: [
+    "5 seviyeli müşteri fiyat listesi",
+    "Raporlar ve ürün indirimi",
+    "WhatsApp sipariş formu",
+  ],
+  business: [
+    "10 seviyeli müşteri fiyat listesi",
     "Özel domain desteği",
     "Akıllı stok yönetimi",
     "Öncelikli teknik destek",
   ],
-  kurumsal: [
+  enterprise: [
+    "20 seviyeli müşteri fiyat listesi",
+    "Özel domain desteği",
+    "Online ödeme (sanal POS)",
+    "Öncelikli teknik destek",
+  ],
+  vip: [
+    "Sınırsız fiyat listesi",
     "Alex AI ile WhatsApp otomasyonu",
-    "Tüm Profesyonel özellikleri",
-    "Kurumsal onboarding",
+    "Saha satış temsilcisi modülü",
+    "White-label desteği",
   ],
 };
 
@@ -55,9 +67,9 @@ export function TrialExpiredModal({
         </div>
 
         <div className="mt-8 grid gap-4 md:grid-cols-3">
-          {PLAN_OPTIONS.map((plan) => {
+          {NEW_PLAN_OPTIONS.map((plan) => {
             const pricing = PLAN_PRICING[plan.id];
-            const featured = plan.id === "profesyonel";
+            const featured = plan.id === "business";
 
             return (
               <div

@@ -28,9 +28,12 @@ const tenantPlanSchema = z.enum(TENANT_PLAN_IDS, {
 });
 
 const maxProductLimitSchema = z.union([
+  z.literal(200),
   z.literal(500),
   z.literal(1000),
+  z.literal(2000),
   z.literal(2500),
+  z.literal(5000),
 ]);
 
 export const tenantSchema = z
@@ -58,6 +61,7 @@ export const tenantUpdateSchema = z
     status: z.enum(["active", "suspended"]).optional(),
     plan: tenantPlanSchema.optional(),
     max_product_limit: maxProductLimitSchema.optional(),
+    visitor_limit_addon: z.number().int().min(0).optional(),
     whatsapp_number: z.string().min(10).optional(),
     end_trial: z.boolean().optional(),
     start_trial: z.boolean().optional(),

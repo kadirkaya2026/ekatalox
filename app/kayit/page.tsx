@@ -7,35 +7,21 @@ import { ArrowRight, CheckCircle2, Check, Sparkles, ShieldCheck, Zap } from 'luc
 import { SiteNavbar, SiteFooter } from '@/components/site-chrome'
 import {
   formatPlanCapacityDescription,
+  NEW_PLAN_OPTIONS,
+  PLAN_PRICING,
 } from '@/lib/billing/plans'
 
-const plans = [
-  {
-    id: 'baslangic',
-    name: 'Başlangıç',
-    price: '₺20.000',
-    unit: '/ Yıl',
-    desc: `${formatPlanCapacityDescription('baslangic')}.`,
-  },
-  {
-    id: 'profesyonel',
-    name: 'Profesyonel',
-    price: '₺45.000',
-    unit: '/ Yıl',
-    desc: `${formatPlanCapacityDescription('profesyonel')}, özel domain.`,
-    featured: true,
-  },
-  {
-    id: 'kurumsal',
-    name: 'Kurumsal',
-    price: '₺95.000',
-    unit: '/ Yıl',
-    desc: `${formatPlanCapacityDescription('kurumsal')}, Alex AI + WhatsApp otomasyon.`,
-  },
-]
+const plans = NEW_PLAN_OPTIONS.map((option) => ({
+  id: option.id,
+  name: option.name,
+  price: PLAN_PRICING[option.id].price,
+  unit: PLAN_PRICING[option.id].unit,
+  desc: `${formatPlanCapacityDescription(option.id)}.`,
+  featured: option.id === 'business',
+}))
 
 const Page = () => {
-  const [form, setForm] = useState({ fullName: '', company: '', email: '', phone: '', password: '', plan: 'profesyonel' })
+  const [form, setForm] = useState({ fullName: '', company: '', email: '', phone: '', password: '', plan: 'business' })
   const [submitted, setSubmitted] = useState(false)
   const [sending, setSending] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})

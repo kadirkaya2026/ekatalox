@@ -52,6 +52,8 @@ export const demoTenants: Tenant[] = [
     trial_ends_at: null,
     plan_started_at: null,
     plan_expires_at: null,
+    visitor_limit_addon: 0,
+    visitor_quota_exceeded: false,
     created_at: new Date("2026-01-01").toISOString(),
   },
   {
@@ -67,6 +69,8 @@ export const demoTenants: Tenant[] = [
     trial_ends_at: null,
     plan_started_at: null,
     plan_expires_at: null,
+    visitor_limit_addon: 0,
+    visitor_quota_exceeded: false,
     created_at: new Date("2026-01-05").toISOString(),
   },
 ];

@@ -10,6 +10,11 @@ const planPrices: Record<TenantPlan, string> = {
   baslangic: '₺20.000 / Yıl',
   profesyonel: '₺45.000 / Yıl ⭐ Popüler',
   kurumsal: '₺95.000 / Yıl',
+  start: '₺17.500 / Yıl',
+  pro: '₺25.000 / Yıl',
+  business: '₺35.000 / Yıl ⭐ Popüler',
+  enterprise: '₺50.000 / Yıl',
+  vip: '₺80.000 / Yıl',
 }
 
 function getPlanLabelWithDetails(plan: TenantPlan) {

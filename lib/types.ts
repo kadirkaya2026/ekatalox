@@ -70,6 +70,8 @@ export interface Tenant {
   trial_ends_at: string | null;
   plan_started_at: string | null;
   plan_expires_at: string | null;
+  visitor_limit_addon: number;
+  visitor_quota_exceeded: boolean;
   created_at: string;
 }
 

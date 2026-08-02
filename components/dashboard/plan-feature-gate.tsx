@@ -27,7 +27,7 @@ export function PlanFeatureGate({
     return <>{children}</>;
   }
 
-  const minimumPlan = getMinimumPlanForFeature(feature);
+  const minimumPlan = getMinimumPlanForFeature(feature, plan);
 
   return (
     <Card className="border-amber-200 bg-amber-50 p-6">
@@ -41,7 +41,7 @@ export function PlanFeatureGate({
               {getPlanFeatureLabel(feature)} kilitli
             </h2>
             <p className="mt-1 text-sm leading-6 text-amber-900">
-              {getPlanFeatureUpgradeMessage(feature)}
+              {getPlanFeatureUpgradeMessage(feature, plan)}
             </p>
           </div>
           <Button asChild>

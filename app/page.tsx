@@ -7,9 +7,10 @@ import { EkataloxLogo } from '@/components/brand/ekatalox-logo'
 import {
   ArrowRight, Upload, Sparkles, Store, Move, DollarSign, Image as ImageIcon,
   Check, ChevronRight, Zap, Globe, ShieldCheck, BarChart3, Layers, FileSpreadsheet,
-  FileUp, Loader2, CheckCircle2, Download, RefreshCw, Search, ShoppingCart, HelpCircle, Plus
+  FileUp, Loader2, CheckCircle2, Download, RefreshCw, Search, ShoppingCart, HelpCircle, Plus,
+  Rocket, TrendingUp, Building2, Crown, Users, Package, CircleCheck
 } from 'lucide-react'
-import { formatPlanCapacityFeature } from '@/lib/billing/plans'
+import { formatPlanCapacityFeature, formatVisitorLimit, NEW_PLAN_OPTIONS, PLAN_PRICING } from '@/lib/billing/plans'
 
 // ----------------------------- HERO ------------------------------------------
 const Hero = () => {
@@ -1780,68 +1781,95 @@ const FAQ = () => {
 }
 
 // ----------------------------- PRICING ---------------------------------------
+const PLAN_ICONS = { start: Rocket, pro: CircleCheck, business: TrendingUp, enterprise: Building2, vip: Crown }
+
+const PLAN_MARKETING_META = {
+  start: {
+    tag: 'Giriş Paketi',
+    desc: 'Vitrin fikrinizi test edin. Kredi kartı gerekmez.',
+    cta: 'Hemen Başlayın',
+    featured: false,
+    features: [
+      "Excel'den 1 Dakikada Canlı Vitrin",
+      '3 Seviyeli Müşteri Fiyat Listesi (Bayi / Toptan / Perakende)',
+      'Optimize WhatsApp Sipariş Formu (Yapılandırılmış B2B Sipariş Akışı)',
+      'Otomatik Kur Senkronizasyonu (USD/EUR/TRY)',
+      'ekatalox.com Subdomain Adresi',
+      'Kodsuz (No-Code) Altyapı · Sıfır Yazılımcı Bağımlılığı',
+    ],
+  },
+  pro: {
+    tag: 'Büyüyen Vitrinler',
+    desc: 'Excel kaosundan kurtulup büyümeye odaklanın.',
+    cta: "Pro'yu Seç",
+    featured: false,
+    features: [
+      '5 Seviyeli Müşteri Fiyat Listesi',
+      'Raporlar & Ürün İndirimi',
+      '3:1 Akıllı Banner Alanı (Tasarımcı/Ajans Gerektirmez)',
+      'Tüm Start Özellikleri Dahil',
+    ],
+  },
+  business: {
+    tag: 'En Çok Tercih Edilen',
+    desc: 'Büyüyen toptancılar için tam donanım B2B vitrin.',
+    cta: "Business'ı Seç",
+    featured: true,
+    features: [
+      '10 Seviyeli Müşteri Fiyat Listesi',
+      'Özel Domain Desteği (katalog.sirketiniz.com)',
+      'Akıllı Stok Durum Yönetimi (Stokta Var / Azaldı / Tükendi)',
+      'Hızlı Teknik Destek Hattı (2 Saat İçinde Çözüm Garantisi)',
+      'Tüm Pro Özellikleri Dahil',
+    ],
+  },
+  enterprise: {
+    tag: 'Kurumsal Ölçek',
+    desc: 'Yüksek hacimli operasyonlar için tam donanım.',
+    cta: 'Satışla Görüşün',
+    featured: false,
+    features: [
+      '20 Seviyeli Müşteri Fiyat Listesi',
+      'Online Sanal POS Ödemesi (iyzico/PayTR)',
+      'Öncelikli Teknik Destek Hattı',
+      'Tüm Business Özellikleri Dahil',
+    ],
+  },
+  vip: {
+    tag: 'Alex AI Enabled',
+    aiPowered: true,
+    desc: 'Yapay zeka destekli, WhatsApp üzerinden tam otomasyon.',
+    cta: 'Satışla Görüşün',
+    featured: false,
+    features: [
+      'Akıllı Stok Yönetimi & Sınırsız Fiyat Listesi',
+      'Yapay Zeka Asistanı Alex: WhatsApp üzerinden Alex ile yazışarak sipariş yönetimi ve anlık sesli/yazılı raporlama.',
+      'Alex ile Akıllı Ödeme Altyapısı: PayTR/iyzico entegrasyonu ile WhatsApp üzerinden otomatik ödeme talimatı ve gelen ödemelerin sisteme otonom entegrasyonu.',
+      'Otonom Tahsilat ve Ödeme: Vadesi gelen borçlar için Alex tarafından otomatik kurumsal WhatsApp hatırlatma akışı ve ödeme takibi.',
+      "Alex ile WhatsApp'tan Muhasebe Kaydı: Sadece yazışarak stok girişleri ve cari hesap güncellemeleri.",
+      'Saha Satış Temsilcisi (Plasiyer) Modülü & White-Label Desteği',
+      'Tüm Enterprise Özellikleri Dahil',
+    ],
+  },
+}
+
 const Pricing = () => {
-  const plans = [
-    {
-      id: 'baslangic',
-      name: 'Başlangıç',
-      tag: 'Giriş Paketi',
-      price: '₺20.000',
-      unit: '/ Yıl',
-      desc: 'Vitrin fikrinizi test edin. Kredi kartı gerekmez.',
-      cta: 'Hemen Başlayın',
-      featured: false,
-      features: [
-        formatPlanCapacityFeature('baslangic'),
-        "Excel'den 1 Dakikada Canlı Vitrin",
-        '3 Seviyeli Müşteri Fiyat Listesi (Bayi / Toptan / Perakende)',
-        "Optimize WhatsApp Sipariş Formu (Yapılandırılmış B2B Sipariş Akışı)",
-        '3:1 Akıllı Banner Alanı (Tasarımcı/Ajans Gerektirmez)',
-        'Otomatik Kur Senkronizasyonu (USD/EUR/TRY)',
-        'ekatalox.com Subdomain Adresi',
-        'Kodsuz (No-Code) Altyapı · Sıfır Yazılımcı Bağımlılığı',
-      ],
-    },
-    {
-      id: 'profesyonel',
-      name: 'Profesyonel',
-      tag: 'En Çok Tercih Edilen',
-      price: '₺45.000',
-      unit: '/ Yıl',
-      desc: 'Büyüyen toptancılar için tam donanım B2B vitrin.',
-      cta: "Profesyonel'i Seç",
-      featured: true,
-      features: [
-        formatPlanCapacityFeature('profesyonel'),
-        'Sınırsız Seviyeli Müşteri Fiyat Listesi (Özel Bayi Grupları Sınırlandırılması Yok)',
-        'Özel Domain Desteği (katalog.sirketiniz.com)',
-        'Akıllı Stok Durum Yönetimi (Stokta Var / Azaldı / Tükendi)',
-        'Hızlı Teknik Destek Hattı (2 Saat İçinde Çözüm Garantisi)',
-        'Tüm Başlangıç Özellikleri Dahil',
-      ],
-    },
-    {
-      id: 'kurumsal',
-      name: 'Kurumsal',
-      tag: 'Alex AI Enabled',
-      aiPowered: true,
-      price: '₺95.000',
-      unit: '/ Yıl',
-      desc: 'Yapay zeka destekli, WhatsApp üzerinden tam otomasyon.',
-      cta: 'Satışla Görüşün',
-      featured: false,
-      features: [
-        `${formatPlanCapacityFeature('kurumsal')} & Akıllı Stok Yönetimi`,
-        'Yapay Zeka Asistanı Alex: WhatsApp üzerinden Alex ile yazışarak sipariş yönetimi ve anlık sesli/yazılı raporlama.',
-        "Alex ile Akıllı Ödeme Altyapısı: PayTR/iZico entegrasyonu ile WhatsApp üzerinden otomatik ödeme talimatı ve gelen ödemelerin sisteme otonom entegrasyonu.",
-        'Otonom Tahsilat ve Ödeme: Vadesi gelen borçlar için Alex tarafından otomatik kurumsal WhatsApp hatırlatma akışı ve ödeme takibi.',
-        "Alex ile WhatsApp'tan Muhasebe Kaydı: Sadece yazışarak stok girişleri ve cari hesap güncellemeleri.",
-        "Alex ile Anlık Stok Kontrolü: WhatsApp'tan \u201cMagsafe kılıf kaç adet kaldı?\u201d diye sorun, canlı veriyi getirsin.",
-        'Saha Satış Temsilcisi (Plasiyer) Modülü & White-Label Desteği',
-        'Tüm Profesyonel Plan Özellikleri Dahil',
-      ],
-    },
-  ]
+  const [billing, setBilling] = useState('yearly')
+
+  const plans = NEW_PLAN_OPTIONS.map((option) => {
+    const meta = PLAN_MARKETING_META[option.id as keyof typeof PLAN_MARKETING_META]
+    const pricing = PLAN_PRICING[option.id]
+    return {
+      id: option.id,
+      name: option.name,
+      icon: PLAN_ICONS[option.id as keyof typeof PLAN_ICONS],
+      price: billing === 'yearly' ? pricing.price : pricing.monthlyPrice,
+      unit: billing === 'yearly' ? pricing.unit : pricing.monthlyUnit,
+      productCapacity: formatPlanCapacityFeature(option.id),
+      visitorCapacity: `${formatVisitorLimit(option.id)} Aylık Ziyaretçi`,
+      ...meta,
+    }
+  })
 
   return (
     <section id="fiyatlandirma" className="relative py-32 md:py-44 px-6">
@@ -1853,7 +1881,7 @@ const Pricing = () => {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: false, amount: 0.3 }}
           transition={{ duration: 0.8 }}
-          className="text-center mb-16 md:mb-20"
+          className="text-center mb-10 md:mb-12"
         >
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full glass text-xs text-slate-300 mb-6">
             <DollarSign className="w-3 h-3 text-[#00D2FF]" />
@@ -1868,9 +1896,36 @@ const Pricing = () => {
           </p>
         </motion.div>
 
+        <div className="flex items-center justify-center mb-16 md:mb-20">
+          <div className="inline-flex items-center gap-1 p-1 rounded-full glass">
+            {[
+              { key: 'yearly', label: 'Yıllık' },
+              { key: 'monthly', label: 'Aylık' },
+            ].map((opt) => (
+              <button
+                key={opt.key}
+                type="button"
+                onClick={() => setBilling(opt.key)}
+                className={`relative px-5 py-2 rounded-full text-sm font-medium transition-colors duration-300 ${
+                  billing === opt.key ? 'text-black' : 'text-slate-300 hover:text-white'
+                }`}
+              >
+                {billing === opt.key && (
+                  <motion.span
+                    layoutId="billing-toggle-pill"
+                    className="absolute inset-0 rounded-full bg-white"
+                    transition={{ type: 'spring', duration: 0.5 }}
+                  />
+                )}
+                <span className="relative">{opt.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
         <TrustStats />
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 lg:gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-5 lg:gap-4">
           {plans.map((p, i) => (
             <PricingCard key={p.id} plan={p} index={i} />
           ))}
@@ -1883,7 +1938,7 @@ const Pricing = () => {
           transition={{ duration: 0.8, delay: 0.4 }}
           className="mt-12 text-center text-sm text-slate-500"
         >
-          Tüm planlar 14 gün ücretsiz denemeyle başlar · Fiyatlara KDV dahildir.
+          Tüm planlar 14 gün ücretsiz denemeyle başlar · Fiyatlara KDV dahildir. Kredi kartına 12 aya varan taksit imkanı.
         </motion.div>
       </div>
     </section>
@@ -1891,6 +1946,7 @@ const Pricing = () => {
 }
 
 const PricingCard = ({ plan, index }) => {
+  const Icon = plan.icon
   return (
     <motion.div
       initial={{ opacity: 0, y: 40 }}
@@ -1902,7 +1958,6 @@ const PricingCard = ({ plan, index }) => {
         plan.featured ? 'lg:-mt-6 lg:mb-6' : ''
       }`}
     >
-      {/* Animated neon border for featured */}
       {plan.featured && (
         <>
           <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-[#00D2FF] via-[#7928CA] to-[#00D2FF] opacity-90" />
@@ -1919,16 +1974,14 @@ const PricingCard = ({ plan, index }) => {
         </>
       )}
 
-      <div className={`relative rounded-3xl bg-[#0B0F19] p-7 md:p-8 h-full flex flex-col`}>
-        {/* AI Powered halo for Kurumsal */}
+      <div className={`relative rounded-3xl bg-[#0B0F19] p-6 md:p-7 h-full flex flex-col`}>
         {plan.aiPowered && (
           <>
             <div className="absolute inset-0 rounded-3xl pointer-events-none" style={{ background: 'radial-gradient(circle at top right, rgba(121,40,202,0.18), transparent 60%)' }} />
             <div className="absolute -top-px right-12 left-12 h-px bg-gradient-to-r from-transparent via-[#7928CA] to-transparent" />
           </>
         )}
-        {/* Tag */}
-        <div className="relative flex items-center justify-between mb-5">
+        <div className="relative flex items-center justify-between mb-4">
           <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-medium uppercase tracking-wider ${
             plan.featured
               ? 'bg-gradient-to-r from-[#00D2FF] to-[#7928CA] text-white'
@@ -1939,25 +1992,33 @@ const PricingCard = ({ plan, index }) => {
             {(plan.featured || plan.aiPowered) && <Sparkles className="w-3 h-3" />}
             {plan.tag}
           </span>
-          {plan.featured && (
-            <span className="text-[10px] text-[#00D2FF] uppercase tracking-widest font-semibold">Önerilen</span>
-          )}
-          {plan.aiPowered && (
-            <span className="text-[10px] text-[#c084fc] uppercase tracking-widest font-semibold">AI</span>
-          )}
         </div>
 
-        <h3 className="text-2xl md:text-3xl font-semibold text-white">{plan.name}</h3>
+        <div className="flex items-center gap-2">
+          {Icon && <Icon className={`w-5 h-5 ${plan.featured || plan.aiPowered ? 'text-[#00D2FF]' : 'text-slate-400'}`} />}
+          <h3 className="text-xl md:text-2xl font-semibold text-white">{plan.name}</h3>
+        </div>
         <p className="mt-2 text-sm text-slate-400 min-h-[40px]">{plan.desc}</p>
 
-        <div className="mt-6 flex items-baseline gap-2">
-          <span className={`text-4xl md:text-5xl font-bold tracking-tight ${plan.featured || plan.aiPowered ? 'text-gradient-neon' : 'text-white'}`}>
+        <div className="mt-4 flex items-baseline gap-2">
+          <span className={`text-3xl md:text-4xl font-bold tracking-tight ${plan.featured || plan.aiPowered ? 'text-gradient-neon' : 'text-white'}`}>
             {plan.price}
           </span>
           <span className="text-sm text-slate-500">{plan.unit}</span>
         </div>
 
-        <div className="my-7 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+        <div className="mt-4 flex flex-wrap gap-2">
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/5 text-[11px] text-slate-300">
+            <Package className="w-3 h-3 text-[#00D2FF]" />
+            {plan.productCapacity}
+          </span>
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/5 text-[11px] text-slate-300">
+            <Users className="w-3 h-3 text-[#00D2FF]" />
+            {plan.visitorCapacity}
+          </span>
+        </div>
+
+        <div className="my-6 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
 
         <ul className="space-y-3 flex-1">
           {plan.features.map((f, i) => {

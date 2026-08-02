@@ -1,6 +1,17 @@
-export type TenantPlan = "baslangic" | "profesyonel" | "kurumsal";
+// "baslangic" | "profesyonel" | "kurumsal" eski (Tem 2026 öncesi) planlardır;
+// mevcut tenant'lar bu planlarda kalmaya devam eder ve değiştirilmez.
+// Yeni kayıtlar "start" | "pro" | "business" | "enterprise" | "vip" kullanır.
+export type TenantPlan =
+  | "baslangic"
+  | "profesyonel"
+  | "kurumsal"
+  | "start"
+  | "pro"
+  | "business"
+  | "enterprise"
+  | "vip";
 
-export type MaxProductLimit = 500 | 1000 | 2500;
+export type MaxProductLimit = 200 | 500 | 1000 | 2000 | 2500 | 5000;
 
 export type PlanFeature =
   | "reports"
@@ -20,15 +31,33 @@ export interface PlanOption {
 }
 
 export const PLAN_OPTIONS: PlanOption[] = [
-  { id: "baslangic", name: "Başlangıç", maxProductLimit: 500 },
-  { id: "profesyonel", name: "Profesyonel", maxProductLimit: 1000 },
-  { id: "kurumsal", name: "Kurumsal", maxProductLimit: 2500 },
+  // Eski planlar — sadece mevcut tenant'lar için, admin panelinde gösterilir.
+  { id: "baslangic", name: "Başlangıç (Eski)", maxProductLimit: 500 },
+  { id: "profesyonel", name: "Profesyonel (Eski)", maxProductLimit: 1000 },
+  { id: "kurumsal", name: "Kurumsal (Eski)", maxProductLimit: 2500 },
+  // Yeni planlar — yeni kayıtlar için geçerli.
+  { id: "start", name: "Start", maxProductLimit: 200 },
+  { id: "pro", name: "Pro", maxProductLimit: 500 },
+  { id: "business", name: "Business", maxProductLimit: 1000 },
+  { id: "enterprise", name: "Enterprise", maxProductLimit: 2000 },
+  { id: "vip", name: "VIP Custom", maxProductLimit: 5000 },
 ];
+
+const LEGACY_PLAN_IDS: readonly TenantPlan[] = ["baslangic", "profesyonel", "kurumsal"];
+
+export function isLegacyPlan(planId: TenantPlan): boolean {
+  return (LEGACY_PLAN_IDS as TenantPlan[]).includes(planId);
+}
+
+// Eski ve yeni planlar ayrı "track" olarak ele alınır: bir tenant kendi
+// track'i içinde üst pakete geçer, karışık (eski+yeni) liste gösterilmez.
+export const LEGACY_PLAN_OPTIONS = PLAN_OPTIONS.filter((plan) => isLegacyPlan(plan.id));
+export const NEW_PLAN_OPTIONS = PLAN_OPTIONS.filter((plan) => !isLegacyPlan(plan.id));
 
 // Pazarlama sitesindeki (app/page.tsx Pricing) fiyatlarla senkron tutulmalı.
 export const PLAN_PRICING: Record<
   TenantPlan,
-  { price: string; unit: string; highlight: string }
+  { price: string; unit: string; highlight: string; monthlyPrice?: string; monthlyUnit?: string }
 > = {
   baslangic: {
     price: "₺20.000",
@@ -45,13 +74,80 @@ export const PLAN_PRICING: Record<
     unit: "/ Yıl",
     highlight: "Alex AI destekli tam otomasyon",
   },
+  start: {
+    price: "₺17.500",
+    unit: "/ Yıl",
+    monthlyPrice: "₺1.990",
+    monthlyUnit: "/ Ay",
+    highlight: "Vitrin fikrinizi test edin",
+  },
+  pro: {
+    price: "₺25.000",
+    unit: "/ Yıl",
+    monthlyPrice: "₺2.840",
+    monthlyUnit: "/ Ay",
+    highlight: "Büyüyen vitrinler için",
+  },
+  business: {
+    price: "₺35.000",
+    unit: "/ Yıl",
+    monthlyPrice: "₺3.980",
+    monthlyUnit: "/ Ay",
+    highlight: "En çok tercih edilen",
+  },
+  enterprise: {
+    price: "₺50.000",
+    unit: "/ Yıl",
+    monthlyPrice: "₺5.690",
+    monthlyUnit: "/ Ay",
+    highlight: "Kurumsal ölçek için tam donanım",
+  },
+  vip: {
+    price: "₺80.000",
+    unit: "/ Yıl",
+    monthlyPrice: "₺9.100",
+    monthlyUnit: "/ Ay",
+    highlight: "Alex AI destekli tam otomasyon",
+  },
 };
 
 export const PLAN_PRICE_LIST_LIMITS: Record<TenantPlan, number | null> = {
   baslangic: 3,
   profesyonel: 10,
   kurumsal: null,
+  start: 3,
+  pro: 5,
+  business: 10,
+  enterprise: 20,
+  vip: null,
 };
+
+// Aylık ziyaretçi kotası — record_storefront_analytics() SQL fonksiyonundaki
+// (supabase/migrations/0043_five_tier_pricing.sql) eşleşmeyle senkron tutulmalı.
+export const PLAN_VISITOR_LIMITS: Record<TenantPlan, number> = {
+  baslangic: 10_000,
+  profesyonel: 50_000,
+  kurumsal: 100_000,
+  start: 10_000,
+  pro: 25_000,
+  business: 50_000,
+  enterprise: 100_000,
+  vip: 500_000,
+};
+
+export interface VisitorAddonPackage {
+  visitors: number;
+  monthlyPrice: string;
+  yearlyPrice: string;
+}
+
+// Ek ziyaretçi kapasitesi paketleri — satın alma WhatsApp üzerinden yürür
+// (gerçek online ödeme altyapısı yok, plan yükseltmeleriyle aynı akış).
+export const VISITOR_ADDON_PACKAGES: VisitorAddonPackage[] = [
+  { visitors: 10_000, monthlyPrice: "₺750", yearlyPrice: "₺7.500" },
+  { visitors: 25_000, monthlyPrice: "₺1.500", yearlyPrice: "₺15.000" },
+  { visitors: 50_000, monthlyPrice: "₺2.500", yearlyPrice: "₺25.000" },
+];
 
 const PROFESSIONAL_FEATURES: Record<PlanFeature, boolean> = {
   reports: true,
@@ -65,20 +161,41 @@ const PROFESSIONAL_FEATURES: Record<PlanFeature, boolean> = {
   homepage_blocks_editor: true,
 };
 
+const STARTER_FEATURES: Record<PlanFeature, boolean> = {
+  reports: false,
+  payment_settings: true,
+  banner_settings: true,
+  product_discount: false,
+  showcase_products: false,
+  online_payment: false,
+  custom_domain: false,
+  advanced_appearance: false,
+  homepage_blocks_editor: false,
+};
+
+// pro, start'ın üstüne rapor + ürün indirimi ekler; eski "profesyonel"
+// paketteki tüm özellikler business ve sonrasına (enterprise, vip) dahildir.
+const PRO_FEATURES: Record<PlanFeature, boolean> = {
+  ...STARTER_FEATURES,
+  reports: true,
+  product_discount: true,
+};
+
 export const PLAN_FEATURES: Record<TenantPlan, Record<PlanFeature, boolean>> = {
-  baslangic: {
-    reports: false,
-    payment_settings: true,
-    banner_settings: true,
-    product_discount: false,
-    showcase_products: false,
-    online_payment: false,
-    custom_domain: false,
-    advanced_appearance: false,
-    homepage_blocks_editor: false,
-  },
+  baslangic: STARTER_FEATURES,
   profesyonel: PROFESSIONAL_FEATURES,
   kurumsal: {
+    ...PROFESSIONAL_FEATURES,
+    online_payment: true,
+  },
+  start: STARTER_FEATURES,
+  pro: PRO_FEATURES,
+  business: PROFESSIONAL_FEATURES,
+  enterprise: {
+    ...PROFESSIONAL_FEATURES,
+    online_payment: true,
+  },
+  vip: {
     ...PROFESSIONAL_FEATURES,
     online_payment: true,
   },
@@ -168,29 +285,26 @@ export function hasPlanFeature(plan: TenantPlan, feature: PlanFeature): boolean 
   return PLAN_FEATURES[plan][feature];
 }
 
-export function getMinimumPlanForFeature(feature: PlanFeature): TenantPlan {
-  if (PLAN_FEATURES.baslangic[feature]) {
-    return "baslangic";
-  }
-
-  if (PLAN_FEATURES.profesyonel[feature]) {
-    return "profesyonel";
-  }
-
-  return "kurumsal";
+export function getMinimumPlanForFeature(
+  feature: PlanFeature,
+  currentPlan?: TenantPlan,
+): TenantPlan {
+  const track = currentPlan && isLegacyPlan(currentPlan) ? LEGACY_PLAN_OPTIONS : NEW_PLAN_OPTIONS;
+  const match = track.find((plan) => PLAN_FEATURES[plan.id][feature]);
+  return (match ?? track[track.length - 1]).id;
 }
 
 export function getPlanFeatureLabel(feature: PlanFeature): string {
   return PLAN_FEATURE_LABELS[feature];
 }
 
-export function getPlanFeatureUpgradeMessage(feature: PlanFeature): string {
+export function getPlanFeatureUpgradeMessage(feature: PlanFeature, currentPlan?: TenantPlan): string {
   const customMessage = PLAN_FEATURE_UPGRADE_MESSAGES[feature];
   if (customMessage) {
     return customMessage;
   }
 
-  const minimumPlan = getMinimumPlanForFeature(feature);
+  const minimumPlan = getMinimumPlanForFeature(feature, currentPlan);
   return `${getPlanFeatureLabel(feature)} özelliği ${getPlanLabel(minimumPlan)} paketinde kullanılabilir.`;
 }
 
@@ -280,4 +394,23 @@ export function canCreatePriceList(planId: TenantPlan, currentPricedCount: numbe
 export function formatPriceListLimit(planId: TenantPlan): string {
   const limit = getPriceListLimit(planId);
   return limit === null ? "Sınırsız" : String(limit);
+}
+
+export function getVisitorLimitForPlan(planId: TenantPlan, addon = 0): number {
+  return PLAN_VISITOR_LIMITS[planId] + Math.max(0, addon);
+}
+
+export function formatVisitorLimit(planId: TenantPlan, addon = 0): string {
+  return getVisitorLimitForPlan(planId, addon).toLocaleString("tr-TR");
+}
+
+export function buildVisitorAddonHref(
+  companyName: string,
+  subdomain: string,
+  addon: VisitorAddonPackage = VISITOR_ADDON_PACKAGES[0],
+): string {
+  const message = `Merhaba, ${companyName} (${subdomain}.ekatalox.com) olarak paketimize +${addon.visitors.toLocaleString(
+    "tr-TR",
+  )} ziyaretçi kapasitesi eklemek istiyoruz.`;
+  return `https://wa.me/${PACKAGE_UPGRADE_PHONE}?text=${encodeURIComponent(message)}`;
 }
