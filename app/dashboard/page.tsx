@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Header } from "@/components/dashboard/header";
 import { Card } from "@/components/ui/card";
 import { requireTenantAdminPage } from "@/lib/auth/session";
-import { formatPriceListLimit } from "@/lib/billing/plans";
+import { formatEffectiveProductLimit, formatPriceListLimit, formatProductLimit } from "@/lib/billing/plans";
 import { getTenantDashboardSummary } from "@/lib/data";
 
 export default async function DashboardHomePage() {
@@ -25,8 +25,13 @@ export default async function DashboardHomePage() {
         <Card className="p-5">
           <p className="text-sm text-slate-500">Paket limiti</p>
           <p className="mt-2 text-3xl font-bold text-slate-900">
-            {summary.tenant.max_product_limit}
+            {formatEffectiveProductLimit(summary.tenant.plan ?? "baslangic", summary.tenant.product_limit_addon)}
           </p>
+          {summary.tenant.product_limit_addon ? (
+            <p className="mt-1 text-xs font-semibold text-amber-600">
+              +{formatProductLimit(summary.tenant.product_limit_addon)} hediye ürün kapasitesi
+            </p>
+          ) : null}
         </Card>
         <Card className="p-5">
           <p className="text-sm text-slate-500">Fiyat Listesi Sınırı</p>

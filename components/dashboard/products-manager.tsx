@@ -30,7 +30,7 @@ import {
   flattenCategoryTree,
   getDescendantCategoryIds,
 } from "@/lib/categories/tree";
-import { buildPackageUpgradeHref } from "@/lib/billing/plans";
+import { buildPackageUpgradeHref, getEffectiveProductLimit } from "@/lib/billing/plans";
 import {
   defaultCurrencyCode,
   supportedCurrencyCodes,
@@ -363,14 +363,15 @@ export function ProductsManager({
     return categoryIds;
   }, [categories, selectedCategoryIds]);
 
-  const usage = useMemo(
-    () => ({
+  const usage = useMemo(() => {
+    const limit = getEffectiveProductLimit(tenant.plan ?? "baslangic", tenant.product_limit_addon);
+    return {
       total: products.length,
-      limit: tenant.max_product_limit,
-      remaining: Math.max(tenant.max_product_limit - products.length, 0),
-    }),
-    [products.length, tenant.max_product_limit],
-  );
+      limit,
+      remaining: Math.max(limit - products.length, 0),
+      giftAddon: tenant.product_limit_addon ?? 0,
+    };
+  }, [products.length, tenant.plan, tenant.product_limit_addon]);
 
   const filteredProducts = useMemo(() => {
     const normalizedSearch = searchTerm.trim().toLowerCase();
@@ -929,6 +930,11 @@ export function ProductsManager({
         <Card className="p-5">
           <p className="text-sm text-muted-foreground">Paket limiti</p>
           <p className="mt-2 text-3xl font-bold text-foreground">{usage.limit}</p>
+          {usage.giftAddon ? (
+            <p className="mt-1 text-xs font-semibold text-amber-600">
+              +{usage.giftAddon} hediye ürün kapasitesi
+            </p>
+          ) : null}
         </Card>
         <Card className="p-5">
           <p className="text-sm text-muted-foreground">Kalan kapasite</p>

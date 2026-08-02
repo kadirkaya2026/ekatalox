@@ -404,6 +404,17 @@ export function formatVisitorLimit(planId: TenantPlan, addon = 0): string {
   return getVisitorLimitForPlan(planId, addon).toLocaleString("tr-TR");
 }
 
+// Süper admin'in bir tenant'a plan tabanının üzerine tanımlayabildiği hediye
+// ürün kapasitesi. max_product_limit plan'a sıkı bağlı kalır (DB constraint);
+// efektif limit her zaman burada hesaplanır, DB'ye geri yazılmaz.
+export function getEffectiveProductLimit(planId: TenantPlan, addon = 0): number {
+  return getLimitForPlan(planId) + Math.max(0, addon);
+}
+
+export function formatEffectiveProductLimit(planId: TenantPlan, addon = 0): string {
+  return formatProductLimit(getEffectiveProductLimit(planId, addon));
+}
+
 export function buildVisitorAddonHref(
   companyName: string,
   subdomain: string,

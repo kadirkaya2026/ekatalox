@@ -2,6 +2,7 @@ import { Header } from "@/components/dashboard/header";
 import { BulkOperationsPanel } from "@/components/dashboard/bulk-operations-panel";
 import { CsvImportCard } from "@/components/dashboard/csv-import-card";
 import { requireTenantAdminPage } from "@/lib/auth/session";
+import { getEffectiveProductLimit } from "@/lib/billing/plans";
 import { getTenantProducts } from "@/lib/data";
 
 export default async function ProductBulkPage() {
@@ -9,10 +10,11 @@ export default async function ProductBulkPage() {
   const products = await getTenantProducts(session.tenant!.id);
   const tenant = session.tenant!;
 
+  const limit = getEffectiveProductLimit(tenant.plan ?? "baslangic", tenant.product_limit_addon);
   const usage = {
     total: products.length,
-    limit: tenant.max_product_limit,
-    remaining: Math.max(tenant.max_product_limit - products.length, 0),
+    limit,
+    remaining: Math.max(limit - products.length, 0),
   };
 
   return (

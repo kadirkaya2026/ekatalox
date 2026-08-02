@@ -7,7 +7,7 @@ import { upsertProductPrices } from "@/lib/price-lists/data";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { uploadProductImage } from "@/lib/storage/product-images";
 import { getSessionContext } from "@/lib/auth/session";
-import { hasPlanFeature } from "@/lib/billing/plans";
+import { getEffectiveProductLimit, hasPlanFeature } from "@/lib/billing/plans";
 import { ensureTenantAdminResponse } from "@/lib/tenancy/guards";
 import { productCreateSchema } from "@/lib/validators/product";
 
@@ -92,7 +92,9 @@ export async function POST(request: Request) {
     .select("*", { count: "exact", head: true })
     .eq("tenant_id", tenant.id);
 
-  if ((count ?? 0) >= tenant.max_product_limit) {
+  const effectiveLimit = getEffectiveProductLimit(tenant.plan, tenant.product_limit_addon);
+
+  if ((count ?? 0) >= effectiveLimit) {
     return NextResponse.json(
       { error: "Ürün limitiniz dolu. Yeni ürün ekleyemezsiniz." },
       { status: 400 },

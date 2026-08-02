@@ -10,6 +10,7 @@ import {
 } from "@/lib/price-lists/data";
 import { ensureTenantAdminResponse } from "@/lib/tenancy/guards";
 import { productImportRowsSchema } from "@/lib/validators/product";
+import { getEffectiveProductLimit } from "@/lib/billing/plans";
 
 // ---------------------------------------------------------------------------
 // Normalize a category name for case/whitespace-insensitive comparison.
@@ -234,7 +235,9 @@ export async function POST(request: Request) {
     (row) => !existingSkuSet.has(row.sku_code),
   ).length;
 
-  if (existingSkuSet.size + newSkuCount > tenant.max_product_limit) {
+  const effectiveLimit = getEffectiveProductLimit(tenant.plan, tenant.product_limit_addon);
+
+  if (existingSkuSet.size + newSkuCount > effectiveLimit) {
     return NextResponse.json(
       { error: "CSV içeriği ürün limitini aşıyor." },
       { status: 400 },

@@ -72,6 +72,7 @@ export interface Tenant {
   plan_expires_at: string | null;
   visitor_limit_addon: number;
   visitor_quota_exceeded: boolean;
+  product_limit_addon: number;
   created_at: string;
 }
 
@@ -260,6 +261,7 @@ export interface TenantWithRelations extends Tenant {
   access_codes?: AccessCode[];
   price_lists?: PriceList[];
   product_count?: number;
+  monthly_visitor_count?: number;
 }
 
 export interface DashboardSummary {

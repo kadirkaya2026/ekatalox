@@ -13,6 +13,7 @@ import {
 } from "@/lib/demo-data";
 import { shouldAllowDemoFallback } from "@/lib/env";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { getCurrentMonthVisitorCountsByTenant } from "@/lib/analytics/queries";
 import { normalizeProductDescription } from "@/lib/products/description-html";
 import { normalizeProductRecord } from "@/lib/products/records";
 import { productWithVariantsAndPricesSelect } from "@/lib/products/queries";
@@ -393,16 +394,23 @@ export async function getTenantsOverview(): Promise<TenantWithRelations[]> {
       access_codes: demoAccessCodes.filter((code) => code.tenant_id === tenant.id),
       price_lists: demoPriceLists.filter((list) => list.tenant_id === tenant.id),
       product_count: productCounts[tenant.id] ?? 0,
+      monthly_visitor_count: 0,
     }));
   }
 
-  const [{ data: tenantRows }, { data: productRows }, { data: accessCodeRows }, { data: priceListRows }] =
-    await Promise.all([
-      supabase.from("tenants").select("*").order("created_at", { ascending: false }),
-      supabase.from("products").select("tenant_id"),
-      supabase.from("access_codes").select("*, price_list:price_lists(name, is_catalog_only)"),
-      supabase.from("price_lists").select("*").order("sort_order", { ascending: true }),
-    ]);
+  const [
+    { data: tenantRows },
+    { data: productRows },
+    { data: accessCodeRows },
+    { data: priceListRows },
+    monthlyVisitorCounts,
+  ] = await Promise.all([
+    supabase.from("tenants").select("*").order("created_at", { ascending: false }),
+    supabase.from("products").select("tenant_id"),
+    supabase.from("access_codes").select("*, price_list:price_lists(name, is_catalog_only)"),
+    supabase.from("price_lists").select("*").order("sort_order", { ascending: true }),
+    getCurrentMonthVisitorCountsByTenant(),
+  ]);
 
   const productCounts = groupCountByTenant(
     ((productRows as Array<{ tenant_id: string }> | null) ?? []).map((item) => ({
@@ -445,6 +453,7 @@ export async function getTenantsOverview(): Promise<TenantWithRelations[]> {
     access_codes: accessCodes.filter((code) => code.tenant_id === tenant.id),
     price_lists: (priceListsByTenant[tenant.id] ?? []).sort(sortPriceLists),
     product_count: productCounts[tenant.id] ?? 0,
+    monthly_visitor_count: monthlyVisitorCounts[tenant.id] ?? 0,
   }));
 }
 

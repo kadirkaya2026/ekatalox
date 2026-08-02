@@ -62,6 +62,7 @@ export const tenantUpdateSchema = z
     plan: tenantPlanSchema.optional(),
     max_product_limit: maxProductLimitSchema.optional(),
     visitor_limit_addon: z.number().int().min(0).optional(),
+    product_limit_addon: z.number().int().min(0).optional(),
     whatsapp_number: z.string().min(10).optional(),
     end_trial: z.boolean().optional(),
     start_trial: z.boolean().optional(),

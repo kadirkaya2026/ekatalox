@@ -7,6 +7,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Modal } from "@/components/ui/modal";
 import {
+  formatEffectiveProductLimit,
   formatPlanSummary,
   formatProductLimit,
   formatVisitorLimit,
@@ -88,6 +89,7 @@ export function AdminTenantsManager({
   const [planDrafts, setPlanDrafts] = useState<Record<string, TenantPlan>>({});
   const [giftDrafts, setGiftDrafts] = useState<Record<string, number>>({});
   const [addonDrafts, setAddonDrafts] = useState<Record<string, number>>({});
+  const [productAddonDrafts, setProductAddonDrafts] = useState<Record<string, number>>({});
   const [codeDrafts, setCodeDrafts] = useState<Record<string, string>>({});
   const [priceListDrafts, setPriceListDrafts] = useState<Record<string, string>>({});
   const [editingAccessCodeId, setEditingAccessCodeId] = useState<string | null>(null);
@@ -209,6 +211,32 @@ export function AdminTenantsManager({
         current.map((t) => (t.id === id ? { ...t, ...result.tenant } : t)),
       );
       setMessage("Ek ziyaretçi kotası güncellendi.");
+    });
+  }
+
+  function updateProductAddon(id: string) {
+    const tenant = tenants.find((t) => t.id === id);
+    const addon = productAddonDrafts[id] ?? tenant?.product_limit_addon ?? 0;
+    setMessage(null);
+
+    startTransition(async () => {
+      const response = await fetch(`/api/admin/tenants/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ product_limit_addon: addon }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        setMessage(result.error ?? "Hediye ürün kapasitesi güncellenemedi.");
+        return;
+      }
+
+      setTenants((current) =>
+        current.map((t) => (t.id === id ? { ...t, ...result.tenant } : t)),
+      );
+      setMessage("Hediye ürün kapasitesi güncellendi.");
     });
   }
 
@@ -706,7 +734,12 @@ export function AdminTenantsManager({
                 </div>
                 <p className="mt-3 text-sm text-slate-500">
                   Mevcut: {getPlanLabel(tenant.plan ?? "baslangic")} •{" "}
-                  {formatProductLimit(tenant.max_product_limit)} ürün
+                  {formatEffectiveProductLimit(tenant.plan ?? "baslangic", tenant.product_limit_addon ?? 0)} ürün
+                  {tenant.product_limit_addon ? (
+                    <span className="ml-2 inline-flex items-center rounded-full bg-amber-50 px-2 py-0.5 text-xs font-semibold text-amber-700">
+                      +{formatProductLimit(tenant.product_limit_addon)} hediye
+                    </span>
+                  ) : null}
                   {tenant.plan_expires_at ? (
                     <> • Üyelik bitişi: {formatDate(tenant.plan_expires_at)}</>
                   ) : null}
@@ -718,6 +751,10 @@ export function AdminTenantsManager({
                       Kota doldu
                     </span>
                   ) : null}
+                </p>
+                <p className="mt-1 text-sm font-medium text-slate-700">
+                  Kullanım: {formatProductLimit(tenant.product_count ?? 0)} ürün yüklü •{" "}
+                  {formatProductLimit(tenant.monthly_visitor_count ?? 0)} ziyaretçi (bu ay)
                 </p>
                 <div className="mt-3 flex flex-col gap-3 border-t border-slate-100 pt-3 sm:flex-row sm:items-center">
                   <Input
@@ -744,6 +781,33 @@ export function AdminTenantsManager({
                     }
                   >
                     Ek kotayı güncelle
+                  </Button>
+                </div>
+                <div className="mt-3 flex flex-col gap-3 border-t border-slate-100 pt-3 sm:flex-row sm:items-center">
+                  <Input
+                    type="number"
+                    min={0}
+                    step={50}
+                    placeholder="Hediye ürün (ör. 250)"
+                    value={String(productAddonDrafts[tenant.id] ?? tenant.product_limit_addon ?? 0)}
+                    onChange={(event) =>
+                      setProductAddonDrafts((current) => ({
+                        ...current,
+                        [tenant.id]: Math.max(0, Number(event.target.value) || 0),
+                      }))
+                    }
+                    className="max-w-[220px]"
+                  />
+                  <Button
+                    variant="secondary"
+                    onClick={() => updateProductAddon(tenant.id)}
+                    disabled={
+                      pending ||
+                      (productAddonDrafts[tenant.id] ?? tenant.product_limit_addon ?? 0) ===
+                        (tenant.product_limit_addon ?? 0)
+                    }
+                  >
+                    Hediye kapasiteyi güncelle
                   </Button>
                 </div>
                 <div className="mt-3 flex flex-col gap-3 border-t border-slate-100 pt-3 sm:flex-row sm:items-center">

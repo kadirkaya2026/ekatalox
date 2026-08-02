@@ -10,7 +10,7 @@ import { PlanFeatureGate } from "@/components/dashboard/plan-feature-gate";
 import { ProductDescriptionEditor } from "@/components/dashboard/product-description-editor";
 import { ProductPriceFields } from "@/components/dashboard/product-price-fields";
 import { buildCategoryTree, flattenCategoryTree } from "@/lib/categories/tree";
-import { buildPackageUpgradeHref } from "@/lib/billing/plans";
+import { buildPackageUpgradeHref, getEffectiveProductLimit } from "@/lib/billing/plans";
 import {
   defaultCurrencyCode,
   supportedCurrencyCodes,
@@ -106,7 +106,8 @@ export function ProductAddForm({
   const discountPreview = useMemo(() => getDiscountPreview(form), [form]);
 
   const productCount = 0;
-  const isLimitFull = tenant.max_product_limit <= productCount;
+  const effectiveLimit = getEffectiveProductLimit(tenant.plan ?? "baslangic", tenant.product_limit_addon);
+  const isLimitFull = effectiveLimit <= productCount;
 
   function updateListPrice(priceListId: string, value: string) {
     setForm((current) => ({
@@ -165,7 +166,7 @@ export function ProductAddForm({
                   Paketiniz doldu, yeni ürün ekleyemezsiniz.
                 </p>
                 <p className="mt-1 text-sm text-amber-800">
-                  Limitiniz {tenant.max_product_limit} ürüne ulaştı. Paket yükseltebilir
+                  Limitiniz {effectiveLimit} ürüne ulaştı. Paket yükseltebilir
                   veya ürün silerek yeniden yer açabilirsiniz.
                 </p>
               </div>

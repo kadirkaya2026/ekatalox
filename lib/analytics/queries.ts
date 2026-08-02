@@ -412,6 +412,36 @@ export async function getCurrentMonthVisitorCount(tenantId: string): Promise<num
   return (data as { visitor_count: number }).visitor_count ?? 0;
 }
 
+// Süper admin ekranında tüm tenant'ların bu ayki ziyaretçi sayısını tek
+// sorguda göstermek için toplu versiyon.
+export async function getCurrentMonthVisitorCountsByTenant(): Promise<Record<string, number>> {
+  const supabase = createSupabaseAdminClient();
+
+  if (!supabase) {
+    return {};
+  }
+
+  const usageMonth = new Date();
+  usageMonth.setUTCDate(1);
+  const usageMonthStr = usageMonth.toISOString().slice(0, 10);
+
+  const { data, error } = await supabase
+    .from("tenant_monthly_usage")
+    .select("tenant_id, visitor_count")
+    .eq("usage_month", usageMonthStr);
+
+  if (error || !data) {
+    return {};
+  }
+
+  return (data as Array<{ tenant_id: string; visitor_count: number }>).reduce<
+    Record<string, number>
+  >((accumulator, row) => {
+    accumulator[row.tenant_id] = row.visitor_count ?? 0;
+    return accumulator;
+  }, {});
+}
+
 export async function getTenantAnalyticsReport(
   tenantId: string,
   period: AnalyticsPeriod,
