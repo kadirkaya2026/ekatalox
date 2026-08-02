@@ -5,43 +5,17 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Modal } from "@/components/ui/modal";
 import {
   formatEffectiveProductLimit,
   formatPlanSummary,
   formatProductLimit,
   formatVisitorLimit,
   getPlanLabel,
-  NEW_PLAN_OPTIONS,
   PLAN_OPTIONS,
 } from "@/lib/billing/plans";
-import {
-  isReservedSubdomain,
-  RESERVED_SUBDOMAIN_MESSAGE,
-} from "@/lib/tenancy/reserved-subdomains";
 import { getPriceListDisplayName, normalizePriceListName } from "@/lib/price-lists/constants";
 import type { AccessCode, TenantPlan, TenantWithRelations } from "@/lib/types";
 import { cn, formatDate } from "@/lib/utils";
-
-interface NewTenantForm {
-  company_name: string;
-  subdomain: string;
-  plan: TenantPlan;
-  whatsapp_number: string;
-  tenant_admin_email: string;
-  tenant_admin_full_name: string;
-  is_trial: boolean;
-}
-
-const defaultForm: NewTenantForm = {
-  company_name: "",
-  subdomain: "",
-  plan: "start",
-  whatsapp_number: "",
-  tenant_admin_email: "",
-  tenant_admin_full_name: "",
-  is_trial: false,
-};
 
 function getTrialBadge(trialEndsAt: string | null | undefined) {
   if (!trialEndsAt) {
@@ -61,31 +35,12 @@ function getTrialBadge(trialEndsAt: string | null | undefined) {
   };
 }
 
-function getSubdomainMessage(value: string) {
-  const normalized = value.trim().toLowerCase();
-
-  if (!normalized) {
-    return null;
-  }
-
-  if (isReservedSubdomain(normalized)) {
-    return RESERVED_SUBDOMAIN_MESSAGE;
-  }
-
-  if (!/^[a-z0-9-]+$/.test(normalized)) {
-    return "Alt alan adı yalnız küçük harf, rakam ve tire içerebilir.";
-  }
-
-  return null;
-}
-
 export function AdminTenantsManager({
   initialTenants,
 }: {
   initialTenants: TenantWithRelations[];
 }) {
   const [tenants, setTenants] = useState(initialTenants);
-  const [form, setForm] = useState<NewTenantForm>(defaultForm);
   const [planDrafts, setPlanDrafts] = useState<Record<string, TenantPlan>>({});
   const [giftDrafts, setGiftDrafts] = useState<Record<string, number>>({});
   const [addonDrafts, setAddonDrafts] = useState<Record<string, number>>({});
@@ -97,11 +52,6 @@ export function AdminTenantsManager({
     Record<string, { password_code: string; price_list_id: string }>
   >({});
   const [message, setMessage] = useState<string | null>(null);
-  const [createdCredentials, setCreatedCredentials] = useState<{
-    email: string;
-    password: string;
-    subdomain: string;
-  } | null>(null);
   const [pending, startTransition] = useTransition();
 
   const totals = useMemo(
@@ -112,47 +62,6 @@ export function AdminTenantsManager({
     }),
     [tenants],
   );
-  const subdomainMessage = getSubdomainMessage(form.subdomain);
-  const selectedPlanSummary = useMemo(
-    () => formatPlanSummary(form.plan),
-    [form.plan],
-  );
-
-  function handleCreateTenant(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setMessage(null);
-
-    if (subdomainMessage) {
-      setMessage(subdomainMessage);
-      return;
-    }
-
-    startTransition(async () => {
-      const response = await fetch("/api/admin/tenants", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        setMessage(result.error ?? "Tenant oluşturulamadı.");
-        return;
-      }
-
-      setTenants((current) => [result.tenant as TenantWithRelations, ...current]);
-      if (result.tenantAdmin) {
-        setCreatedCredentials({
-          email: result.tenantAdmin.email,
-          password: result.tenantAdmin.temporaryPassword,
-          subdomain: result.tenant.subdomain,
-        });
-      }
-      setForm(defaultForm);
-      setMessage("Yeni tenant oluşturuldu.");
-    });
-  }
 
   function updateTenantPlan(id: string) {
     const plan = planDrafts[id] ?? tenants.find((tenant) => tenant.id === id)?.plan;
@@ -514,106 +423,17 @@ export function AdminTenantsManager({
       </div>
 
       <Card className="p-5">
-        <div className="flex items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h2 className="text-lg font-semibold text-slate-900">Yeni tenant oluştur</h2>
             <p className="mt-1 text-sm text-slate-600">
-              Alt alan adı, paket seçimi ve WhatsApp numarasıyla hızlı kurulum yapın.
+              Ad soyad, telefon (opsiyonel) ve alt alan adıyla hızlı kurulum yapın.
             </p>
           </div>
+          <Button asChild href="/admin/tenants/new">
+            Yeni Tenant Oluştur
+          </Button>
         </div>
-
-        <form
-          onSubmit={handleCreateTenant}
-          className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4"
-        >
-          <Input
-            placeholder="Firma adı"
-            value={form.company_name}
-            onChange={(event) =>
-              setForm((current) => ({ ...current, company_name: event.target.value }))
-            }
-          />
-          <Input
-            placeholder="subdomain"
-            value={form.subdomain}
-            onChange={(event) =>
-              setForm((current) => ({
-                ...current,
-                subdomain: event.target.value.toLowerCase(),
-              }))
-            }
-          />
-          <select
-            value={form.plan}
-            onChange={(event) =>
-              setForm((current) => ({
-                ...current,
-                plan: event.target.value as TenantPlan,
-              }))
-            }
-            className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900"
-          >
-            {NEW_PLAN_OPTIONS.map((plan) => (
-              <option key={plan.id} value={plan.id}>
-                {plan.name} — {formatProductLimit(plan.maxProductLimit)} ürün
-              </option>
-            ))}
-          </select>
-          <Input
-            placeholder="90555..."
-            value={form.whatsapp_number}
-            onChange={(event) =>
-              setForm((current) => ({ ...current, whatsapp_number: event.target.value }))
-            }
-          />
-          <Input
-            type="email"
-            placeholder="tenant-admin@firma.com"
-            value={form.tenant_admin_email}
-            onChange={(event) =>
-              setForm((current) => ({ ...current, tenant_admin_email: event.target.value }))
-            }
-          />
-          <Input
-            placeholder="Tenant admin adı"
-            value={form.tenant_admin_full_name}
-            onChange={(event) =>
-              setForm((current) => ({
-                ...current,
-                tenant_admin_full_name: event.target.value,
-              }))
-            }
-          />
-          <label className="flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 md:col-span-2 xl:col-span-4">
-            <input
-              type="checkbox"
-              checked={form.is_trial}
-              onChange={(event) =>
-                setForm((current) => ({
-                  ...current,
-                  is_trial: event.target.checked,
-                }))
-              }
-              className="h-4 w-4 accent-amber-600"
-            />
-            <span>
-              <strong>14 günlük deneme hesabı</strong> — süre sonunda tenant
-              admin panele girişte paket seçim ekranıyla karşılanır.
-            </span>
-          </label>
-          <div className="md:col-span-2 xl:col-span-4">
-            <p className="mb-3 text-sm text-slate-500">
-              Seçilen paket: {selectedPlanSummary}
-            </p>
-            <p className="mb-3 text-sm text-slate-500">
-              Ayrılmış kelimeler: admin, app, www, api, ekatalox, assets
-            </p>
-            <Button type="submit" disabled={pending}>
-              {pending ? "Kaydediliyor..." : "Tenant oluştur"}
-            </Button>
-          </div>
-        </form>
       </Card>
 
       {message ? (
@@ -978,45 +798,6 @@ export function AdminTenantsManager({
           </Card>
         ))}
       </div>
-
-      <Modal
-        open={Boolean(createdCredentials)}
-        onClose={() => setCreatedCredentials(null)}
-        title="Tenant admin hesabı oluşturuldu"
-      >
-        {createdCredentials ? (
-          <div className="space-y-4">
-            <div className="rounded-xl border border-slate-100 bg-slate-50 p-4 text-sm text-slate-600">
-              <p>
-                <span className="font-medium text-slate-900">Giriş adresi:</span>{" "}
-                {createdCredentials.email}
-              </p>
-              <p className="mt-2">
-                <span className="font-medium text-slate-900">Geçici şifre:</span>{" "}
-                {createdCredentials.password}
-              </p>
-              <p className="mt-2">
-                <span className="font-medium text-slate-900">Panel:</span>{" "}
-                app.ekatalox.com
-              </p>
-              <p className="mt-2">
-                <span className="font-medium text-slate-900">Mağaza:</span>{" "}
-                {createdCredentials.subdomain}.ekatalox.com
-              </p>
-            </div>
-
-            <p className="text-sm text-amber-700">
-              Bu şifre yalnız bir kez gösterilir. Lütfen şimdi kaydedin.
-            </p>
-
-            <div className="flex justify-end">
-              <Button variant="secondary" onClick={() => setCreatedCredentials(null)}>
-                Kapat
-              </Button>
-            </div>
-          </div>
-        ) : null}
-      </Modal>
     </div>
   );
 }

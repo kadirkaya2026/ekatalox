@@ -42,7 +42,14 @@ export const tenantSchema = z
     subdomain: subdomainSchema,
     plan: tenantPlanSchema,
     max_product_limit: maxProductLimitSchema.optional(),
-    whatsapp_number: z.string().min(10, "WhatsApp numarası zorunludur."),
+    // Telefon numarası artık zorunlu değil; girildiyse en az 10 hane olmalı.
+    whatsapp_number: z
+      .string()
+      .refine((value) => value === "" || value.length >= 10, {
+        message: "WhatsApp numarası girilecekse en az 10 haneli olmalı.",
+      })
+      .optional()
+      .default(""),
     tenant_admin_email: z.email("Geçerli bir tenant admin e-postası girin."),
     tenant_admin_full_name: z.string().min(2, "Tenant admin adı zorunludur.").optional(),
     is_trial: z.boolean().optional(),
