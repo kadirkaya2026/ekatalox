@@ -7,8 +7,9 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
   buildPlanChangeHref,
-  formatPlanSummary,
+  formatEffectiveProductLimit,
   formatProductLimit,
+  getPlanLabel,
   getPlanRank,
   isLegacyPlan,
   LEGACY_PLAN_OPTIONS,
@@ -70,7 +71,13 @@ function PlanChangeSection({ tenant }: { tenant: Tenant }) {
   return (
     <div className="mt-1 space-y-3">
       <p className="font-medium text-slate-900">
-        {formatPlanSummary(currentPlan)}
+        {getPlanLabel(currentPlan)} •{" "}
+        {formatEffectiveProductLimit(currentPlan, tenant.product_limit_addon)} ürün
+        {tenant.product_limit_addon ? (
+          <span className="ml-2 inline-flex items-center rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-semibold text-amber-700">
+            +{formatProductLimit(tenant.product_limit_addon)} hediye
+          </span>
+        ) : null}
         {onTrial ? (
           <span className="ml-2 inline-flex items-center rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-semibold text-amber-700">
             Deneme sürümü

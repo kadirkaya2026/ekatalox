@@ -2,7 +2,12 @@ import Link from "next/link";
 import { Header } from "@/components/dashboard/header";
 import { Card } from "@/components/ui/card";
 import { requireTenantAdminPage } from "@/lib/auth/session";
-import { formatEffectiveProductLimit, formatPriceListLimit, formatProductLimit } from "@/lib/billing/plans";
+import {
+  formatEffectiveProductLimit,
+  formatPriceListLimit,
+  formatProductLimit,
+  getLimitForPlan,
+} from "@/lib/billing/plans";
 import { getTenantDashboardSummary } from "@/lib/data";
 
 export default async function DashboardHomePage() {
@@ -23,15 +28,21 @@ export default async function DashboardHomePage() {
           <p className="mt-2 text-3xl font-bold text-slate-900">{summary.productCount}</p>
         </Card>
         <Card className="p-5">
-          <p className="text-sm text-slate-500">Paket limiti</p>
+          <p className="text-sm text-slate-500">Toplam yüklenebilecek ürün</p>
           <p className="mt-2 text-3xl font-bold text-slate-900">
             {formatEffectiveProductLimit(summary.tenant.plan ?? "baslangic", summary.tenant.product_limit_addon)}
           </p>
-          {summary.tenant.product_limit_addon ? (
-            <p className="mt-1 text-xs font-semibold text-amber-600">
-              +{formatProductLimit(summary.tenant.product_limit_addon)} hediye ürün kapasitesi
-            </p>
-          ) : null}
+          <p className="mt-1 text-xs text-slate-500">
+            {formatProductLimit(getLimitForPlan(summary.tenant.plan ?? "baslangic"))} paket
+            {summary.tenant.product_limit_addon ? (
+              <>
+                {" + "}
+                <span className="font-semibold text-amber-600">
+                  {formatProductLimit(summary.tenant.product_limit_addon)} hediye
+                </span>
+              </>
+            ) : null}
+          </p>
         </Card>
         <Card className="p-5">
           <p className="text-sm text-slate-500">Fiyat Listesi Sınırı</p>
