@@ -91,6 +91,23 @@ const Hero = () => {
           >
             Kurulum sadece 5 dakika. Kredi kartı gerekmez. Örnek katalog şifresi: 0000
           </motion.p>
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.8, delay: 0.8 }}
+            className="mt-2 text-xs md:text-sm text-slate-500"
+          >
+            Yönetici panelini de deneyin:{" "}
+            <a
+              href="https://app.ekatalox.com"
+              target="_blank"
+              rel="noreferrer"
+              className="font-medium text-[#10b981] hover:underline"
+            >
+              app.ekatalox.com
+            </a>{" "}
+            — demo-admin@ekatalox.com / Demo1234!
+          </motion.p>
         </motion.div>
 
         {/* Storefront mockup */}
