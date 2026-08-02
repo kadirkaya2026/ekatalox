@@ -51,6 +51,7 @@ export function AdminTenantDetailPanel({ tenant: initialTenant }: { tenant: Tena
     Record<string, { password_code: string; price_list_id: string }>
   >({});
   const [message, setMessage] = useState<string | null>(null);
+  const [newPasswordDraft, setNewPasswordDraft] = useState("");
   const [resetCredentials, setResetCredentials] = useState<{
     email: string;
     password: string;
@@ -189,12 +190,12 @@ export function AdminTenantDetailPanel({ tenant: initialTenant }: { tenant: Tena
     });
   }
 
-  function resetTenantAdminPassword() {
-    const confirmed = window.confirm(
-      `${tenant.company_name} yöneticisinin panel şifresini sıfırlamak istediğinize emin misiniz? Mevcut şifre artık çalışmayacak.`,
-    );
+  function setTenantAdminPassword(password: string | null) {
+    const confirmMessage = password
+      ? `${tenant.company_name} yöneticisinin panel şifresini belirlediğiniz şifreyle değiştirmek istediğinize emin misiniz? Mevcut şifre artık çalışmayacak.`
+      : `${tenant.company_name} yöneticisi için rastgele yeni bir şifre oluşturulacak. Mevcut şifre artık çalışmayacak. Devam edilsin mi?`;
 
-    if (!confirmed) {
+    if (!window.confirm(confirmMessage)) {
       return;
     }
 
@@ -203,17 +204,20 @@ export function AdminTenantDetailPanel({ tenant: initialTenant }: { tenant: Tena
     startTransition(async () => {
       const response = await fetch(`/api/admin/tenants/${tenant.id}/reset-password`, {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(password ? { password } : {}),
       });
 
       const result = await response.json();
 
       if (!response.ok) {
-        setMessage(result.error ?? "Şifre sıfırlanamadı.");
+        setMessage(result.error ?? "Şifre güncellenemedi.");
         return;
       }
 
       setResetCredentials({ email: result.email, password: result.temporaryPassword });
-      setMessage("Yönetici şifresi sıfırlandı.");
+      setNewPasswordDraft("");
+      setMessage("Yönetici şifresi güncellendi.");
     });
   }
 
@@ -422,14 +426,6 @@ export function AdminTenantDetailPanel({ tenant: initialTenant }: { tenant: Tena
             </Button>
             <Button
               variant="secondary"
-              onClick={resetTenantAdminPassword}
-              disabled={pending}
-              className="border-violet-200 text-violet-700 hover:bg-violet-50 hover:text-violet-800"
-            >
-              Yönetici şifresini sıfırla
-            </Button>
-            <Button
-              variant="secondary"
               onClick={deleteTenant}
               disabled={pending}
               className="border-rose-200 text-rose-700 hover:bg-rose-50 hover:text-rose-800"
@@ -437,6 +433,34 @@ export function AdminTenantDetailPanel({ tenant: initialTenant }: { tenant: Tena
               Tamamen sil
             </Button>
           </div>
+        </div>
+      </Card>
+
+      <Card className="p-5">
+        <p className="text-sm font-semibold text-slate-900">Yönetici paneli şifresi</p>
+        <p className="mt-1 text-sm text-slate-500">
+          Tenant admin&apos;in /dashboard giriş şifresini burada belirleyin veya rastgele
+          oluşturun. Mevcut şifre anında geçersiz olur.
+        </p>
+        <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center">
+          <Input
+            type="text"
+            placeholder="Yeni şifre (en az 6 karakter)"
+            value={newPasswordDraft}
+            onChange={(event) => setNewPasswordDraft(event.target.value)}
+            className="max-w-[280px]"
+          />
+          <Button
+            variant="secondary"
+            onClick={() => setTenantAdminPassword(newPasswordDraft.trim())}
+            disabled={pending || newPasswordDraft.trim().length < 6}
+            className="border-violet-200 text-violet-700 hover:bg-violet-50 hover:text-violet-800"
+          >
+            Bu şifreyi ayarla
+          </Button>
+          <Button variant="secondary" onClick={() => setTenantAdminPassword(null)} disabled={pending}>
+            Rastgele şifre oluştur
+          </Button>
         </div>
       </Card>
 
@@ -668,7 +692,7 @@ export function AdminTenantDetailPanel({ tenant: initialTenant }: { tenant: Tena
       <Modal
         open={Boolean(resetCredentials)}
         onClose={() => setResetCredentials(null)}
-        title="Yönetici şifresi sıfırlandı"
+        title="Yönetici şifresi güncellendi"
       >
         {resetCredentials ? (
           <div className="space-y-4">
@@ -678,7 +702,7 @@ export function AdminTenantDetailPanel({ tenant: initialTenant }: { tenant: Tena
                 {resetCredentials.email}
               </p>
               <p className="mt-2">
-                <span className="font-medium text-slate-900">Yeni geçici şifre:</span>{" "}
+                <span className="font-medium text-slate-900">Yeni şifre:</span>{" "}
                 {resetCredentials.password}
               </p>
               <p className="mt-2">
@@ -687,8 +711,8 @@ export function AdminTenantDetailPanel({ tenant: initialTenant }: { tenant: Tena
             </div>
 
             <p className="text-sm text-amber-700">
-              Bu şifre yalnız bir kez gösterilir. Lütfen şimdi kaydedin ve müşteriye WhatsApp
-              üzerinden iletin. İlk girişte şifresini değiştirmesi istenecek.
+              Bu şifre yalnız bir kez burada gösterilir. Lütfen şimdi kaydedin ve müşteriye
+              WhatsApp üzerinden iletin.
             </p>
 
             <div className="flex justify-end">

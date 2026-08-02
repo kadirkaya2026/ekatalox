@@ -4,12 +4,25 @@ import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { ensureSuperAdminResponse } from "@/lib/tenancy/guards";
 
 export async function POST(
-  _request: Request,
+  request: Request,
   ctx: RouteContext<"/api/admin/tenants/[id]/reset-password">,
 ) {
   const guard = await ensureSuperAdminResponse();
   if (guard) {
     return guard;
+  }
+
+  const body = await request.json().catch(() => ({}));
+  const customPassword =
+    typeof body.password === "string" && body.password.length > 0
+      ? body.password
+      : null;
+
+  if (customPassword && customPassword.length < 6) {
+    return NextResponse.json(
+      { error: "Şifre en az 6 karakter olmalı." },
+      { status: 400 },
+    );
   }
 
   const { id } = await ctx.params;
@@ -68,27 +81,31 @@ export async function POST(
     );
   }
 
-  const temporaryPassword = generateTemporaryPassword();
+  // Süper admin özel bir şifre belirlediyse bu artık geçici değil, kalıcı
+  // şifredir; ilk girişte değişim zorunluluğu koyulmaz. Otomatik üretilen
+  // şifrelerde (customPassword null) mevcut onboarding akışıyla aynı şekilde
+  // ilk girişte değişim zorunlu kılınır.
+  const newPassword = customPassword ?? generateTemporaryPassword();
 
   const { data: updatedUser, error: updateError } =
     await supabase.auth.admin.updateUserById(tenantAdminUserId, {
-      password: temporaryPassword,
+      password: newPassword,
     });
 
   if (updateError || !updatedUser.user) {
     return NextResponse.json(
-      { error: "Şifre sıfırlanamadı." },
+      { error: "Şifre güncellenemedi." },
       { status: 400 },
     );
   }
 
   await supabase
     .from("profiles")
-    .update({ must_change_password: true })
+    .update({ must_change_password: !customPassword })
     .eq("id", tenantAdminUserId);
 
   return NextResponse.json({
     email: updatedUser.user.email,
-    temporaryPassword,
+    temporaryPassword: newPassword,
   });
 }
