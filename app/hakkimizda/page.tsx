@@ -6,7 +6,7 @@ import { Target, Eye, Heart, Zap, Award, ArrowRight } from 'lucide-react'
 import { SiteNavbar, SiteFooter, PageHero } from '@/components/site-chrome'
 
 const values = [
-  { icon: Zap, title: 'Hız', desc: '5 saniye standardı. Müşterilerimiz beklemek zorunda kalmaz.' },
+  { icon: Zap, title: 'Hız', desc: '1 dakika standardı. Müşterilerimiz beklemek zorunda kalmaz.' },
   { icon: Target, title: 'Odak', desc: 'Sadece B2B toptancılara odaklıyız. Genel çözüm değiliz.' },
   { icon: Heart, title: 'Sadelik', desc: 'Karmaşıklığı perde arkasına alıyor, sadelikten taviz vermiyoruz.' },
   { icon: Award, title: 'Kalite', desc: 'Apple seviyesinde ürün deneyimi B2B dünyasında artık mümkün.' },
@@ -15,7 +15,7 @@ const values = [
 const stats = [
   { v: '850+', l: 'Aktif Workspace' },
   { v: '12M+', l: 'Listelenen Ürün' },
-  { v: '5sn', l: 'Ortalama Kurulum' },
+  { v: '1dk', l: 'Ortalama Kurulum' },
   { v: '%99.9', l: 'Uptime' },
 ]
 
@@ -28,7 +28,7 @@ const team = [
 
 const timeline = [
   ['2023', 'Fikir', 'Toptancılarla yapılan 60+ görüşmede aynı sorun: "Excel\'imi vitrine dönüştüremiyorum."'],
-  ['2024 Q1', 'Beta', 'Sessiz beta ile 25 firma. İlk vitrin 5.4 saniyede yayına alındı.'],
+  ['2024 Q1', 'Beta', 'Sessiz beta ile 25 firma. İlk vitrin 1 dakikada yayına alındı.'],
   ['2024 Q3', 'Lansman', 'Halka açık lansman. İlk ay 200+ kayıt.'],
   ['2025', 'Büyüme', '850+ aktif workspace. 8 ülkede toptancılar eKatalox kullanıyor.'],
 ]
@@ -46,7 +46,7 @@ const Page = () => {
       <section className="px-6 pb-24">
         <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-5">
           {[
-            { icon: Target, label: 'Misyonumuz', title: 'Her toptancıya 5 saniyede dijital vitrin.', desc: 'Karmaşık panellerle, pahalı ajanslarla, aylar süren projelerle uğraşmadan; her işletmenin saniyeler içinde profesyonel bir B2B vitrine sahip olmasını sağlıyoruz.' },
+            { icon: Target, label: 'Misyonumuz', title: 'Her toptancıya 1 dakikada dijital vitrin.', desc: 'Karmaşık panellerle, pahalı ajanslarla, aylar süren projelerle uğraşmadan; her işletmenin dakikalar içinde profesyonel bir B2B vitrine sahip olmasını sağlıyoruz.' },
             { icon: Eye, label: 'Vizyonumuz', title: 'Toptan ticaretin global standardı.', desc: 'Dünya üzerindeki her toptancının ilk tercihi olmak. Bir gün "e-ticaret" demek yerine "katalog" diyebilmek için çalışıyoruz.' },
           ].map((c, i) => (
             <motion.div key={i} initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: false, amount: 0.3 }} transition={{ duration: 0.7, delay: i * 0.1 }} className="p-8 rounded-3xl border border-white/10 bg-gradient-to-b from-white/[0.04] to-transparent">

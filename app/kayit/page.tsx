@@ -73,7 +73,7 @@ const Page = () => {
               </div>
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-balance" style={{ letterSpacing: '-0.04em', lineHeight: 1 }}>
                 B2B vitrininizi <br />
-                <span className="bg-clip-text text-transparent bg-gradient-to-r from-[#00D2FF] to-[#7928CA]">5 saniyede</span> kurun.
+                <span className="bg-clip-text text-transparent bg-gradient-to-r from-[#00D2FF] to-[#7928CA]">1 dakikada</span> kurun.
               </h1>
               <p className="mt-5 text-slate-400 text-base md:text-lg max-w-md font-light">
                 Hesabınızı açın, Excel'inizi yükleyin, müşterilerinize hemen profesyonel bir vitrin sunun.

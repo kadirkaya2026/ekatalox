@@ -14,9 +14,9 @@ const logos = [
 const cases = [
   {
     company: 'Lucatech', sector: 'Elektronik Aksesuar',
-    quote: 'Eski sistemde 3 hafta süren vitrin güncellemesi artık 5 saniye. Müşterilerimiz fiyat değişikliklerini aynı gün görüyor.',
+    quote: 'Eski sistemde 3 hafta süren vitrin güncellemesi artık birkaç dakika. Müşterilerimiz fiyat değişikliklerini aynı gün görüyor.',
     author: 'Şerafettin Akbaş', role: 'Kurucu Ortak',
-    metrics: [['%340', 'Sipariş artışı'], ['18sn', 'Vitrin güncellemesi'], ['2.4x', 'Satış hızı']],
+    metrics: [['%340', 'Sipariş artışı'], ['1dk', 'Vitrin güncellemesi'], ['2.4x', 'Satış hızı']],
   },
   {
     company: 'Anadolu Toptan Gıda', sector: 'Gıda Distribütörü',
@@ -26,7 +26,7 @@ const cases = [
   },
   {
     company: 'NetGross Toptan', sector: 'Tekstil',
-    quote: 'Önce "5 saniyede mi olur?" dedik. Şimdi "5 dakikada olsa zaten yavaş kalırdı" diyoruz. Tasarım hiç bozulmuyor.',
+    quote: 'Önce "1 dakikada mı olur?" dedik. Şimdi "5 dakikada olsa zaten yavaş kalırdı" diyoruz. Tasarım hiç bozulmuyor.',
     author: 'Burak Şahin', role: 'Genel Müdür',
     metrics: [['%87', 'Daha az destek talebi'], ['840', 'Bayi girişi'], ['₺0', 'Geliştirme maliyeti']],
   },

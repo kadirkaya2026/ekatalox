@@ -7,7 +7,7 @@ import { Search, ChevronDown, BookOpen, Zap, CreditCard, Settings, Users, Code, 
 import { SiteNavbar, SiteFooter, PageHero } from '@/components/site-chrome'
 
 const categories = [
-  { icon: Zap, title: 'Başlarken', desc: 'İlk vitrininizi 5 saniyede yayına alın', count: 12 },
+  { icon: Zap, title: 'Başlarken', desc: 'İlk vitrininizi 1 dakikada yayına alın', count: 12 },
   { icon: FileText, title: 'Excel Yükleme', desc: 'Format, kolonlar ve ipuçları', count: 18 },
   { icon: Settings, title: 'Vitrin Yönetimi', desc: 'Banner, kategori, sıralama', count: 24 },
   { icon: CreditCard, title: 'Fiyatlandırma & Ödeme', desc: 'Faturalama ve plan değişimi', count: 9 },

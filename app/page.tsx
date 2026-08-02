@@ -1766,7 +1766,7 @@ const Pricing = () => {
           transition={{ duration: 0.8, delay: 0.4 }}
           className="mt-12 text-center text-sm text-slate-500"
         >
-          Tüm planlar 14 gün ücretsiz denemeyle başlar · Fiyatlara KDV dahildir. Kredi kartına 12 aya varan taksit imkanı.
+          Tüm planlar 14 gün ücretsiz denemeyle başlar · Fiyatlara KDV dahil değildir. Kredi kartına 12 aya varan taksit imkanı.
         </motion.div>
       </div>
     </section>
@@ -1898,14 +1898,14 @@ const Waitlist = () => {
           <div className="relative">
             <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full glass text-[11px] text-slate-300 mb-6">
               <span className="w-1.5 h-1.5 rounded-full bg-[#00D2FF] animate-pulse" />
-              Erken Erişim · Sınırlı Kontenjan
+              14 Gün Ücretsiz · Kart Gerekmez
             </div>
             <h2 className="display-headline text-3xl md:text-5xl lg:text-6xl text-white text-balance">
-              Sınırlı kontenjan ile <br />
-              <span className="text-gradient-neon">erken erişime katılın.</span>
+              Hemen başlayın. <br />
+              <span className="text-gradient-neon">Vitrininiz sizi bekliyor.</span>
             </h2>
             <p className="mt-5 text-base md:text-lg text-slate-400 max-w-xl mx-auto font-light">
-              İlk 500 işletme için %50 indirim ve özel onboarding desteği. Sıranız bizdedir.
+              İlk vitrininizi bugün oluşturun. Kredi kartı gerekmez, istediğiniz an iptal edebilirsiniz.
             </p>
 
             <div className="mt-10 max-w-md mx-auto">
@@ -1934,7 +1934,7 @@ const Waitlist = () => {
                         type="submit"
                         className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full bg-white text-black text-sm font-medium hover:scale-[1.03] transition-transform whitespace-nowrap"
                       >
-                        Sıraya Katıl
+                        Ücretsiz Başla
                         <ArrowRight className="w-3.5 h-3.5" />
                       </button>
                     </div>
@@ -1982,7 +1982,7 @@ const Waitlist = () => {
                       transition={{ delay: 0.35 }}
                       className="mt-6 text-xl md:text-2xl font-semibold text-white"
                     >
-                      Harika! Sıranız ayrıldı.
+                      Harika! Talebiniz alındı.
                     </motion.h3>
                     <motion.p
                       initial={{ opacity: 0, y: 10 }}
@@ -1995,17 +1995,10 @@ const Waitlist = () => {
                     <motion.div
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
-                      transition={{ delay: 0.55 }} className="mt-6 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-[#00D2FF]/15 to-[#7928CA]/15 border border-[#00D2FF]/40 text-sm text-white shadow-[0_0_30px_rgba(0,210,255,0.25)]">
-                      <Sparkles className="w-3.5 h-3.5 text-[#00D2FF]" />
-                      Sıra Numaranız: <span className="font-mono text-gradient-neon font-semibold">#{2400 + Math.floor(Math.random() * 200)}</span>
-                    </motion.div>
-                    <motion.div
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
                       transition={{ delay: 0.7 }}
                       className="mt-4 text-[11px] md:text-xs text-slate-500 max-w-sm mx-auto"
                     >
-                      Erken erişim kontenjanı dolmadan ekibimiz sizinle iletişime geçecektir.
+                      Ekibimiz en kısa sürede sizinle iletişime geçecektir.
                     </motion.div>
                   </motion.div>
                 )}
