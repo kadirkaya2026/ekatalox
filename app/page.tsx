@@ -89,7 +89,7 @@ const Hero = () => {
             transition={{ duration: 0.8, delay: 0.7 }}
             className="mt-6 text-xs md:text-sm text-slate-500"
           >
-            Kurulum sadece 5 dakika. Kredi kartı gerekmez. Örnek katalog şifresi: 0000
+            Kurulum sadece 5 dakika. Kredi kartı gerekmez. Örnek katalog şifreleri: 1111 - 2222 - 3333
           </motion.p>
           <motion.p
             initial={{ opacity: 0 }}
