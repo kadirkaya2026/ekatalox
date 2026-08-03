@@ -45,6 +45,10 @@ import {
 import { getProductDisplayPriceForList } from "@/lib/products/variant-pricing";
 import { getPriceListDisplayName } from "@/lib/price-lists/constants";
 import { computeDiscountPercentage } from "@/lib/storefront/pricing";
+import {
+  ProductImageValidationError,
+  validateProductImageFile,
+} from "@/lib/storage/product-images";
 import type { Category, PriceList, Product, ProductVariant, Tenant } from "@/lib/types";
 import { cn, formatCurrency } from "@/lib/utils";
 
@@ -457,6 +461,27 @@ export function ProductsManager({
     setEditForm((current) => ({ ...current, [key]: value }));
   }
 
+  function handleEditImageSelect(file: File | null) {
+    if (!file) {
+      updateEditField("image", null);
+      return;
+    }
+
+    try {
+      validateProductImageFile(file);
+    } catch (error) {
+      setMessage(
+        error instanceof ProductImageValidationError
+          ? error.message
+          : "Resim dosyası okunamadı.",
+      );
+      return;
+    }
+
+    setMessage(null);
+    updateEditField("image", file);
+  }
+
   function openEdit(product: Product) {
     setEditingProduct(product);
     setEditForm(productToForm(product, priceLists));
@@ -499,7 +524,11 @@ export function ProductsManager({
       try {
         result = await response.json();
       } catch {
-        setMessage("Sunucu yanıtı okunamadı. Lütfen tekrar deneyin.");
+        setMessage(
+          response.status === 413
+            ? "Resim dosyası çok büyük. Daha küçük bir dosya ile tekrar deneyin."
+            : "Sunucu yanıtı okunamadı. Lütfen tekrar deneyin.",
+        );
         return;
       }
 
@@ -1620,7 +1649,7 @@ export function ProductsManager({
               type="file"
               accept="image/*"
               className="hidden"
-              onChange={(event) => updateEditField("image", event.target.files?.[0] ?? null)}
+              onChange={(event) => handleEditImageSelect(event.target.files?.[0] ?? null)}
             />
           </label>
 

@@ -5,7 +5,10 @@ import { productWithVariantsAndPricesSelect } from "@/lib/products/queries";
 import { parseProductPricesFromFormData } from "@/lib/products/form-prices";
 import { upsertProductPrices } from "@/lib/price-lists/data";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
-import { uploadProductImage } from "@/lib/storage/product-images";
+import {
+  ProductImageValidationError,
+  uploadProductImage,
+} from "@/lib/storage/product-images";
 import { getSessionContext } from "@/lib/auth/session";
 import { getEffectiveProductLimit, hasPlanFeature } from "@/lib/billing/plans";
 import { ensureTenantAdminResponse } from "@/lib/tenancy/guards";
@@ -163,7 +166,10 @@ export async function POST(request: Request) {
   }
 
   return NextResponse.json({ product: normalizeProductRecord(product) });
-  } catch {
+  } catch (error) {
+    if (error instanceof ProductImageValidationError) {
+      return NextResponse.json({ error: error.message }, { status: 400 });
+    }
     return NextResponse.json({ error: "Ürün kaydedilemedi." }, { status: 500 });
   }
 }

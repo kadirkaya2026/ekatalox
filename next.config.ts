@@ -17,6 +17,11 @@ const nextConfig: NextConfig = {
       dynamic: 30,
       static: 180,
     },
+    // Proxy varsayılan olarak istek gövdesini 10MB'a kadar buffer'lar ve
+    // aşan kısmı hata vermeden sessizce keser. Ürün fotoğrafı yüklemeleri
+    // (max 10MB, bkz. lib/storage/product-images.ts) multipart overhead'i
+    // ile bu sınırı aşabildiğinden marj bırakıyoruz.
+    proxyClientMaxBodySize: "15mb",
   },
   turbopack: {
     root: currentDirectory,

@@ -6,6 +6,24 @@ import {
 
 export const PRODUCT_IMAGES_BUCKET = STORE_ASSETS_BUCKET;
 
+export const MAX_PRODUCT_IMAGE_SIZE_BYTES = 10 * 1024 * 1024;
+
+export class ProductImageValidationError extends Error {}
+
+export function validateProductImageFile(file: File) {
+  if (!isImageFile(file)) {
+    throw new ProductImageValidationError(
+      "Sadece resim dosyası yükleyebilirsiniz.",
+    );
+  }
+
+  if (file.size > MAX_PRODUCT_IMAGE_SIZE_BYTES) {
+    throw new ProductImageValidationError(
+      "Resim dosyası çok büyük. En fazla 10MB yükleyebilirsiniz.",
+    );
+  }
+}
+
 export function buildProductImagePath(params: {
   tenantId: string;
   productId: string;
@@ -29,6 +47,8 @@ export async function uploadProductImage(params: {
   productId: string;
   file: File;
 }) {
+  validateProductImageFile(params.file);
+
   const filePath = buildProductImagePath({
     tenantId: params.tenantId,
     productId: params.productId,

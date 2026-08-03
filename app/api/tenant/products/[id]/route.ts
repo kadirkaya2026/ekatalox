@@ -6,6 +6,7 @@ import { upsertProductPrices } from "@/lib/price-lists/data";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import {
   PRODUCT_IMAGES_BUCKET,
+  ProductImageValidationError,
   uploadProductImage,
 } from "@/lib/storage/product-images";
 import { getStorageObjectPathFromPublicUrl } from "@/lib/storage/storage-helpers";
@@ -146,7 +147,10 @@ export async function PATCH(
   }
 
   return NextResponse.json({ product: normalizeProductRecord(product) });
-  } catch {
+  } catch (error) {
+    if (error instanceof ProductImageValidationError) {
+      return NextResponse.json({ error: error.message }, { status: 400 });
+    }
     return NextResponse.json({ error: "Ürün kaydedilemedi." }, { status: 500 });
   }
 }
