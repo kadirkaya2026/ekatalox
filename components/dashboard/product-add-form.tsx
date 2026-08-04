@@ -11,88 +11,13 @@ import { ProductDescriptionEditor } from "@/components/dashboard/product-descrip
 import { ProductPriceFields } from "@/components/dashboard/product-price-fields";
 import { buildCategoryTree, flattenCategoryTree } from "@/lib/categories/tree";
 import { buildPackageUpgradeHref, getEffectiveProductLimit } from "@/lib/billing/plans";
+import { supportedCurrencyCodes } from "@/lib/products/constants";
 import {
-  defaultCurrencyCode,
-  supportedCurrencyCodes,
-} from "@/lib/products/constants";
-import {
-  appendProductPricesToFormData,
-  buildListPriceFormState,
-  getMinPriceFromFormState,
-} from "@/lib/products/price-form";
-import { computeDiscountPercentage } from "@/lib/storefront/pricing";
-import {
-  ProductImageValidationError,
-  validateProductImageFile,
-} from "@/lib/storage/product-images";
+  buildEmptyProductForm,
+  toProductFormData,
+  useProductForm,
+} from "@/lib/hooks/use-product-form";
 import type { Category, PriceList, Tenant } from "@/lib/types";
-
-interface ProductFormState {
-  category_id: string;
-  sku_code: string;
-  product_name: string;
-  currency: string;
-  listPrices: Record<string, string>;
-  is_in_stock: boolean;
-  is_recommended: boolean;
-  is_discount_active: boolean;
-  discount_price: string;
-  package_quantity: string;
-  carton_quantity: string;
-  description: string;
-  image: File | null;
-}
-
-const buildEmptyForm = (priceLists: PriceList[]): ProductFormState => ({
-  category_id: "",
-  sku_code: "",
-  product_name: "",
-  currency: defaultCurrencyCode,
-  listPrices: buildListPriceFormState(priceLists),
-  is_in_stock: true,
-  is_recommended: false,
-  is_discount_active: false,
-  discount_price: "",
-  package_quantity: "",
-  carton_quantity: "",
-  description: "",
-  image: null,
-});
-
-function getDiscountPreview(form: ProductFormState) {
-  if (!form.is_discount_active || !form.discount_price.trim()) {
-    return null;
-  }
-
-  const minListPrice = getMinPriceFromFormState(form.listPrices);
-  const salePrice = Number(form.discount_price);
-
-  if (Number.isNaN(salePrice)) {
-    return null;
-  }
-
-  return computeDiscountPercentage(minListPrice, salePrice);
-}
-
-function toFormData(form: ProductFormState) {
-  const formData = new FormData();
-  formData.set("category_id", form.category_id);
-  formData.set("sku_code", form.sku_code);
-  formData.set("product_name", form.product_name);
-  formData.set("currency", form.currency);
-  appendProductPricesToFormData(formData, form.listPrices);
-  formData.set("is_in_stock", String(form.is_in_stock));
-  formData.set("is_recommended", String(form.is_recommended));
-  formData.set("is_discount_active", String(form.is_discount_active));
-  formData.set("discount_price", form.is_discount_active ? form.discount_price.trim() : "");
-  formData.set("package_quantity", form.package_quantity.trim());
-  formData.set("carton_quantity", form.carton_quantity.trim());
-  formData.set("description", form.description.trim());
-  if (form.image) {
-    formData.set("image", form.image);
-  }
-  return formData;
-}
 
 export function ProductAddForm({
   tenant,
@@ -104,55 +29,17 @@ export function ProductAddForm({
   priceLists: PriceList[];
 }) {
   const router = useRouter();
-  const [form, setForm] = useState<ProductFormState>(() => buildEmptyForm(priceLists));
   const [message, setMessage] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  const { form, updateField, updateListPrice, handleImageSelect, discountPreview } =
+    useProductForm(() => buildEmptyProductForm(priceLists), { onImageResult: setMessage });
 
   const categoryTree = useMemo(() => buildCategoryTree(initialCategories), [initialCategories]);
   const flatCategories = useMemo(() => flattenCategoryTree(categoryTree), [categoryTree]);
-  const discountPreview = useMemo(() => getDiscountPreview(form), [form]);
 
   const productCount = 0;
   const effectiveLimit = getEffectiveProductLimit(tenant.plan ?? "baslangic", tenant.product_limit_addon);
   const isLimitFull = effectiveLimit <= productCount;
-
-  function updateListPrice(priceListId: string, value: string) {
-    setForm((current) => ({
-      ...current,
-      listPrices: {
-        ...current.listPrices,
-        [priceListId]: value,
-      },
-    }));
-  }
-
-  function updateField<Key extends keyof ProductFormState>(
-    key: Key,
-    value: ProductFormState[Key],
-  ) {
-    setForm((current) => ({ ...current, [key]: value }));
-  }
-
-  function handleImageSelect(file: File | null) {
-    if (!file) {
-      updateField("image", null);
-      return;
-    }
-
-    try {
-      validateProductImageFile(file);
-    } catch (error) {
-      setMessage(
-        error instanceof ProductImageValidationError
-          ? error.message
-          : "Resim dosyası okunamadı.",
-      );
-      return;
-    }
-
-    setMessage(null);
-    updateField("image", file);
-  }
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -161,7 +48,7 @@ export function ProductAddForm({
     startTransition(async () => {
       const response = await fetch("/api/tenant/products", {
         method: "POST",
-        body: toFormData(form),
+        body: toProductFormData(form),
       });
 
       let result: { error?: string } = {};
