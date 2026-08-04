@@ -262,7 +262,6 @@ export interface TenantWithRelations extends Tenant {
 export interface DashboardSummary {
   tenant: Tenant;
   productCount: number;
-  activeCodeCount: number;
 }
 
 export interface StorefrontProduct {

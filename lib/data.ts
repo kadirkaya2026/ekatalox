@@ -623,15 +623,11 @@ export async function getTenantAccessCodes(
 export async function getTenantDashboardSummary(
   tenant: Tenant,
 ): Promise<DashboardSummary> {
-  const [products, accessCodes] = await Promise.all([
-    getTenantProducts(tenant.id),
-    getTenantAccessCodes(tenant.id),
-  ]);
+  const products = await getTenantProducts(tenant.id);
 
   return {
     tenant,
     productCount: products.length,
-    activeCodeCount: accessCodes.length,
   };
 }
 
