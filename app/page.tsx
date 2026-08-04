@@ -473,6 +473,7 @@ const PLAN_MARKETING_META = {
       '5 Seviyeli Müşteri Fiyat Listesi',
       'Raporlar & Ürün İndirimi',
       '3:1 Akıllı Banner Alanı (Tasarımcı/Ajans Gerektirmez)',
+      'Özel Domain Desteği (katalog.sirketiniz.com)',
       'Tüm Start Özellikleri Dahil',
     ],
   },
@@ -483,7 +484,6 @@ const PLAN_MARKETING_META = {
     featured: true,
     features: [
       '10 Seviyeli Müşteri Fiyat Listesi',
-      'Özel Domain Desteği (katalog.sirketiniz.com)',
       'Akıllı Stok Durum Yönetimi (Stokta Var / Azaldı / Tükendi)',
       'Hızlı Teknik Destek Hattı (2 Saat İçinde Çözüm Garantisi)',
       'Tüm Pro Özellikleri Dahil',

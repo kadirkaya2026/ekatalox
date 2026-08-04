@@ -173,12 +173,12 @@ const STARTER_FEATURES: Record<PlanFeature, boolean> = {
   homepage_blocks_editor: false,
 };
 
-// pro, start'ın üstüne rapor + ürün indirimi ekler; eski "profesyonel"
-// paketteki tüm özellikler business ve sonrasına (enterprise, vip) dahildir.
+// pro, business ile aynı özellik setini kullanır (showcase_products,
+// custom_domain, advanced_appearance, homepage_blocks_editor dahil);
+// paketler arası fark artık yalnızca ürün/ziyaretçi kapasitesi ve
+// fiyattır. online_payment yalnızca enterprise/vip'te açılır.
 const PRO_FEATURES: Record<PlanFeature, boolean> = {
-  ...STARTER_FEATURES,
-  reports: true,
-  product_discount: true,
+  ...PROFESSIONAL_FEATURES,
 };
 
 export const PLAN_FEATURES: Record<TenantPlan, Record<PlanFeature, boolean>> = {
