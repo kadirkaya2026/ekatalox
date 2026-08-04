@@ -1,21 +1,21 @@
 import { Header } from "@/components/dashboard/header";
-import { TenantThemeForm } from "@/components/dashboard/tenant-theme-form";
+import { TenantHomepageContentForm } from "@/components/dashboard/tenant-homepage-content-form";
 import { requireTenantAdminPage } from "@/lib/auth/session";
 import { getTenantStorefrontSettings } from "@/lib/data";
 
-export default async function TenantThemeSettingsPage() {
+export default async function TenantHomepageSettingsPage() {
   const session = await requireTenantAdminPage();
   const storefrontSettings = await getTenantStorefrontSettings(session.tenant!.id);
 
   return (
     <div className="space-y-6">
       <Header
-        eyebrow="Ayarlar / Tema & Marka Renkleri"
-        title="Tema & Marka Renkleri"
-        description="Marka renkleri, hazır tema, vitrin düzeni, sepet önerileri ve (üst paketlerde) yazı tipi/kart/header/footer stillerini yönetin."
+        eyebrow="Ayarlar / Ana Sayfa İçerikleri"
+        title="Ana Sayfa İçerikleri"
+        description="Hero alanını ve (üst paketlerde) ana sayfa bölümlerinin sırasını/görünürlüğünü yönetin."
       />
 
-      <TenantThemeForm
+      <TenantHomepageContentForm
         initialStorefrontSettings={storefrontSettings}
         tenantPlan={session.tenant!.plan ?? "baslangic"}
         companyName={session.tenant!.company_name}

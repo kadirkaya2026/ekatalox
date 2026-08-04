@@ -221,17 +221,9 @@ const PLAN_FEATURE_UPGRADE_MESSAGES: Partial<Record<PlanFeature, string>> = {
 };
 
 export const PAYMENT_SETTING_BODY_KEYS = [
-  "discount_threshold",
-  "discount_percentage",
-  "is_discount_active",
-  "discount_condition_note",
-  "discount_payment_method",
   "card_installment_options",
-  "cash_discount_threshold",
-  "cash_discount_percentage",
   "is_cash_discount_active",
   "cash_discount_note",
-  "card_campaign_threshold",
   "is_card_campaign_active",
   "card_campaign_note",
   "cash_discount_tiers",
@@ -325,12 +317,18 @@ export const ADVANCED_APPEARANCE_BODY_KEYS = [
 
 export const HOMEPAGE_BLOCKS_BODY_KEYS = ["homepage_blocks"] as const;
 
+export const BANNER_SETTING_BODY_KEYS = ["banner_items"] as const;
+
 export function requestTouchesAdvancedAppearance(body: Record<string, unknown>): boolean {
   return ADVANCED_APPEARANCE_BODY_KEYS.some((key) => key in body);
 }
 
 export function requestTouchesHomepageBlocks(body: Record<string, unknown>): boolean {
   return HOMEPAGE_BLOCKS_BODY_KEYS.some((key) => key in body);
+}
+
+export function requestTouchesBannerSettings(body: Record<string, unknown>): boolean {
+  return BANNER_SETTING_BODY_KEYS.some((key) => key in body);
 }
 
 export function requestTouchesPaymentSettings(body: Record<string, unknown>): boolean {

@@ -89,9 +89,12 @@ function SocialMediaRow({
 function getInitialFooterState(settings: TenantStorefrontSettings) {
   return {
     isFooterVisible: settings.is_footer_visible ?? false,
+    isFooterLogoVisible: settings.is_footer_logo_visible ?? true,
     isFooterSocialVisible: settings.is_footer_social_visible ?? false,
     isFooterLocationVisible: settings.is_footer_location_visible ?? false,
     footerLocation: settings.footer_location ?? "",
+    isFooterCopyrightVisible: settings.is_footer_copyright_visible ?? false,
+    footerCopyright: settings.footer_copyright ?? "",
     footerWebsiteUrl: settings.footer_website_url ?? "",
     isFooterWebsiteVisible: settings.is_footer_website_visible ?? false,
     footerPhone: settings.footer_phone ?? "",
@@ -142,9 +145,12 @@ export function TenantFooterSettingsForm({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           is_footer_visible: state.isFooterVisible,
+          is_footer_logo_visible: state.isFooterLogoVisible,
           is_footer_social_visible: state.isFooterSocialVisible,
           is_footer_location_visible: state.isFooterLocationVisible,
           footer_location: state.footerLocation || null,
+          is_footer_copyright_visible: state.isFooterCopyrightVisible,
+          footer_copyright: state.footerCopyright || null,
           footer_website_url: state.footerWebsiteUrl || null,
           is_footer_website_visible: state.isFooterWebsiteVisible,
           footer_phone: state.footerPhone || null,
@@ -212,6 +218,20 @@ export function TenantFooterSettingsForm({
         </div>
 
         <div className={cn("space-y-4", footerFieldsDisabled && "opacity-60")}>
+          <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3">
+            <div className="flex items-center justify-between gap-4">
+              <p className="text-sm font-semibold text-slate-900">Logoyu footer&apos;da göster</p>
+              <SettingsToggle
+                label="Logoyu footer'da göster"
+                pressed={state.isFooterLogoVisible}
+                disabled={footerFieldsDisabled}
+                onToggle={() =>
+                  updateState("isFooterLogoVisible", !state.isFooterLogoVisible)
+                }
+              />
+            </div>
+          </div>
+
           <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3">
             <div className="mb-3 flex items-center justify-between gap-4">
               <p className="text-sm font-semibold text-slate-900">Adresimiz</p>
@@ -393,6 +413,29 @@ export function TenantFooterSettingsForm({
                 />
               </div>
             </div>
+          </div>
+
+          <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3">
+            <div className="mb-3 flex items-center justify-between gap-4">
+              <p className="text-sm font-semibold text-slate-900">Telif hakkı yazısı</p>
+              <SettingsToggle
+                label="Telif hakkı yazısını göster"
+                pressed={state.isFooterCopyrightVisible}
+                disabled={footerFieldsDisabled}
+                onToggle={() =>
+                  updateState(
+                    "isFooterCopyrightVisible",
+                    !state.isFooterCopyrightVisible,
+                  )
+                }
+              />
+            </div>
+            <Input
+              value={state.footerCopyright}
+              disabled={footerFieldsDisabled}
+              placeholder="© 2026 Firma Adı. Tüm hakları saklıdır."
+              onChange={(event) => updateState("footerCopyright", event.target.value)}
+            />
           </div>
         </div>
 

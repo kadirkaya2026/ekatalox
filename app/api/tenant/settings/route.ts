@@ -10,11 +10,13 @@ import {
 } from "@/lib/storage/banners";
 import {
   requestTouchesAdvancedAppearance,
+  requestTouchesBannerSettings,
   requestTouchesHomepageBlocks,
   requestTouchesPaymentSettings,
 } from "@/lib/billing/plans";
 import { ensureTenantAdminResponse, ensureTenantPlanFeatureResponse } from "@/lib/tenancy/guards";
 import { storefrontSettingsSchema } from "@/lib/validators/storefront-settings";
+import { isHeroOnlyVisibilityChange, isHomepageBlockVisible } from "@/lib/storefront/homepage-blocks";
 
 function hasAnnouncementChanged(
   existingSettings: {
@@ -65,27 +67,6 @@ export async function PATCH(request: Request) {
   const session = await getSessionContext();
   const body = await request.json();
 
-  if (requestTouchesPaymentSettings(body)) {
-    const paymentGuard = await ensureTenantPlanFeatureResponse("payment_settings");
-    if (paymentGuard) {
-      return paymentGuard;
-    }
-  }
-
-  if (requestTouchesAdvancedAppearance(body)) {
-    const appearanceGuard = await ensureTenantPlanFeatureResponse("advanced_appearance");
-    if (appearanceGuard) {
-      return appearanceGuard;
-    }
-  }
-
-  if (requestTouchesHomepageBlocks(body)) {
-    const blocksGuard = await ensureTenantPlanFeatureResponse("homepage_blocks_editor");
-    if (blocksGuard) {
-      return blocksGuard;
-    }
-  }
-
   const supabase = createSupabaseAdminClient();
 
   let existingSettings = getDefaultTenantStorefrontSettings(
@@ -97,7 +78,7 @@ export async function PATCH(request: Request) {
     const { data } = await supabase
       .from("tenant_storefront_settings")
       .select(
-        "tenant_id, theme_key, layout_key, logo_url, storefront_title, storefront_description, banner_items, site_tab_title, site_favicon_url, announcement_title, announcement_body, is_active, version, max_display_count, discount_threshold, discount_percentage, is_discount_active, discount_condition_note, discount_payment_method, card_installment_options, cash_discount_threshold, cash_discount_percentage, is_cash_discount_active, cash_discount_note, card_campaign_threshold, is_card_campaign_active, card_campaign_note, cash_discount_tiers, card_campaign_tiers, price_update_date, is_price_update_date_visible, is_footer_visible, is_footer_logo_visible, is_footer_social_visible, is_footer_location_visible, is_footer_copyright_visible, footer_location, footer_copyright, footer_instagram_url, footer_youtube_url, footer_x_url, footer_facebook_url, footer_whatsapp, is_footer_instagram_visible, is_footer_youtube_visible, is_footer_x_visible, is_footer_facebook_visible, is_footer_whatsapp_visible, footer_website_url, is_footer_website_visible, footer_phone, footer_email, is_footer_contact_visible, recommendation_mode",
+        "tenant_id, theme_key, layout_key, logo_url, storefront_title, storefront_description, banner_items, site_tab_title, site_favicon_url, announcement_title, announcement_body, is_active, version, max_display_count, card_installment_options, is_cash_discount_active, cash_discount_note, is_card_campaign_active, card_campaign_note, cash_discount_tiers, card_campaign_tiers, price_update_date, is_price_update_date_visible, is_footer_visible, is_footer_logo_visible, is_footer_social_visible, is_footer_location_visible, is_footer_copyright_visible, footer_location, footer_copyright, footer_instagram_url, footer_youtube_url, footer_x_url, footer_facebook_url, footer_whatsapp, is_footer_instagram_visible, is_footer_youtube_visible, is_footer_x_visible, is_footer_facebook_visible, is_footer_whatsapp_visible, footer_website_url, is_footer_website_visible, footer_phone, footer_email, is_footer_contact_visible, recommendation_mode",
       )
       .eq("tenant_id", session.tenant!.id)
       .maybeSingle();
@@ -107,6 +88,37 @@ export async function PATCH(request: Request) {
         ...existingSettings,
         ...data,
       };
+    }
+  }
+
+  if (requestTouchesPaymentSettings(body)) {
+    const paymentGuard = await ensureTenantPlanFeatureResponse("payment_settings");
+    if (paymentGuard) {
+      return paymentGuard;
+    }
+  }
+
+  if (requestTouchesBannerSettings(body)) {
+    const bannerGuard = await ensureTenantPlanFeatureResponse("banner_settings");
+    if (bannerGuard) {
+      return bannerGuard;
+    }
+  }
+
+  if (requestTouchesAdvancedAppearance(body)) {
+    const appearanceGuard = await ensureTenantPlanFeatureResponse("advanced_appearance");
+    if (appearanceGuard) {
+      return appearanceGuard;
+    }
+  }
+
+  if (
+    requestTouchesHomepageBlocks(body) &&
+    !isHeroOnlyVisibilityChange(existingSettings.homepage_blocks, body.homepage_blocks)
+  ) {
+    const blocksGuard = await ensureTenantPlanFeatureResponse("homepage_blocks_editor");
+    if (blocksGuard) {
+      return blocksGuard;
     }
   }
 
@@ -146,28 +158,12 @@ export async function PATCH(request: Request) {
     is_active: body.is_active ?? existingSettings.is_active,
     max_display_count:
       body.max_display_count ?? existingSettings.max_display_count,
-    discount_threshold:
-      body.discount_threshold ?? existingSettings.discount_threshold,
-    discount_percentage:
-      body.discount_percentage ?? existingSettings.discount_percentage,
-    is_discount_active:
-      body.is_discount_active ?? existingSettings.is_discount_active,
-    discount_condition_note:
-      body.discount_condition_note ?? existingSettings.discount_condition_note,
-    discount_payment_method:
-      body.discount_payment_method ?? existingSettings.discount_payment_method,
     card_installment_options:
       body.card_installment_options ?? existingSettings.card_installment_options,
-    cash_discount_threshold:
-      body.cash_discount_threshold ?? existingSettings.cash_discount_threshold,
-    cash_discount_percentage:
-      body.cash_discount_percentage ?? existingSettings.cash_discount_percentage,
     is_cash_discount_active:
       body.is_cash_discount_active ?? existingSettings.is_cash_discount_active,
     cash_discount_note:
       body.cash_discount_note ?? existingSettings.cash_discount_note,
-    card_campaign_threshold:
-      body.card_campaign_threshold ?? existingSettings.card_campaign_threshold,
     is_card_campaign_active:
       body.is_card_campaign_active ?? existingSettings.is_card_campaign_active,
     card_campaign_note:
@@ -227,6 +223,11 @@ export async function PATCH(request: Request) {
     );
   }
 
+  // homepage_blocks içindeki "hero" girdisinin görünürlüğü kanonik kaynaktır;
+  // is_hero_visible artık client'tan güvenilmez, DB'de sadece bununla senkron
+  // tutulur (bkz. StorefrontHeroBlock / storefront-client.tsx).
+  const derivedIsHeroVisible = isHomepageBlockVisible(parsed.data.homepage_blocks, "hero");
+
   const nextAnnouncementVersion = getNextAnnouncementVersion({
     previousVersion: existingSettings.version,
     wasActive: existingSettings.is_active,
@@ -268,7 +269,7 @@ export async function PATCH(request: Request) {
         storefront_description: parsed.data.storefront_description,
         hero_heading: parsed.data.hero_heading,
         hero_cta_label: parsed.data.hero_cta_label,
-        is_hero_visible: parsed.data.is_hero_visible,
+        is_hero_visible: derivedIsHeroVisible,
         brand_primary_color: parsed.data.brand_primary_color,
         brand_accent_color: parsed.data.brand_accent_color,
         font_key: parsed.data.font_key,
@@ -284,17 +285,9 @@ export async function PATCH(request: Request) {
         is_active: parsed.data.is_active,
         version: nextAnnouncementVersion,
         max_display_count: parsed.data.max_display_count,
-        discount_threshold: parsed.data.discount_threshold,
-        discount_percentage: parsed.data.discount_percentage,
-        is_discount_active: parsed.data.is_discount_active,
-        discount_condition_note: parsed.data.discount_condition_note,
-        discount_payment_method: parsed.data.discount_payment_method,
         card_installment_options: parsed.data.card_installment_options,
-        cash_discount_threshold: parsed.data.cash_discount_threshold,
-        cash_discount_percentage: parsed.data.cash_discount_percentage,
         is_cash_discount_active: parsed.data.is_cash_discount_active,
         cash_discount_note: parsed.data.cash_discount_note,
-        card_campaign_threshold: parsed.data.card_campaign_threshold,
         is_card_campaign_active: parsed.data.is_card_campaign_active,
         card_campaign_note: parsed.data.card_campaign_note,
         cash_discount_tiers: parsed.data.cash_discount_tiers,
@@ -363,7 +356,7 @@ export async function PATCH(request: Request) {
     storefront_description: parsed.data.storefront_description,
     hero_heading: parsed.data.hero_heading,
     hero_cta_label: parsed.data.hero_cta_label,
-    is_hero_visible: parsed.data.is_hero_visible,
+    is_hero_visible: derivedIsHeroVisible,
     brand_primary_color: parsed.data.brand_primary_color,
     brand_accent_color: parsed.data.brand_accent_color,
     font_key: parsed.data.font_key,
@@ -379,17 +372,9 @@ export async function PATCH(request: Request) {
     is_active: parsed.data.is_active,
     version: nextAnnouncementVersion,
     max_display_count: parsed.data.max_display_count,
-    discount_threshold: parsed.data.discount_threshold,
-    discount_percentage: parsed.data.discount_percentage,
-    is_discount_active: parsed.data.is_discount_active,
-    discount_condition_note: parsed.data.discount_condition_note,
-    discount_payment_method: parsed.data.discount_payment_method,
     card_installment_options: parsed.data.card_installment_options,
-    cash_discount_threshold: parsed.data.cash_discount_threshold,
-    cash_discount_percentage: parsed.data.cash_discount_percentage,
     is_cash_discount_active: parsed.data.is_cash_discount_active,
     cash_discount_note: parsed.data.cash_discount_note ?? null,
-    card_campaign_threshold: parsed.data.card_campaign_threshold,
     is_card_campaign_active: parsed.data.is_card_campaign_active,
     card_campaign_note: parsed.data.card_campaign_note ?? null,
     cash_discount_tiers: parsed.data.cash_discount_tiers,

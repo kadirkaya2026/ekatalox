@@ -168,8 +168,6 @@ export interface AdminLoginLogEntry {
   created_at: string;
 }
 
-export type DiscountPaymentMethod = "cash" | "card";
-
 export type RecommendationMode = "auto" | "manual";
 
 export interface CashDiscountTier {
@@ -215,19 +213,11 @@ export interface TenantStorefrontSettings {
   is_active: boolean;
   version: number;
   max_display_count: number;
-  discount_threshold: number;
-  discount_percentage: number;
-  is_discount_active: boolean;
-  discount_condition_note: string | null;
-  discount_payment_method: DiscountPaymentMethod;
   card_installment_options: InstallmentOption[];
   // Bağımsız nakit kampanyası
-  cash_discount_threshold: number;
-  cash_discount_percentage: number;
   is_cash_discount_active: boolean;
   cash_discount_note: string | null;
   // Bağımsız kart kampanyası (0 komisyon)
-  card_campaign_threshold: number;
   is_card_campaign_active: boolean;
   card_campaign_note: string | null;
   // Tier (basamaklı) kampanya dizileri

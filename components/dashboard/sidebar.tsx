@@ -21,6 +21,7 @@ interface SubLink {
   href: string;
   label: string;
   requiredFeature?: PlanFeature;
+  group?: string;
 }
 
 interface SidebarLink {
@@ -51,11 +52,25 @@ const tenantLinks: SidebarLink[] = [
     label: "Ayarlar",
     icon: Settings,
     children: [
-      { href: "/settings/theme", label: "Tema" },
-      { href: "/settings/banner", label: "Banner" },
-      { href: "/settings/site", label: "Site Kimliği" },
-      { href: "/settings/storefront", label: "Vitrin" },
-      { href: "/settings/payment", label: "Ödeme Ayarları", requiredFeature: "payment_settings" },
+      { href: "/settings", label: "Hesap ve Üyelik", group: "Hesap" },
+      {
+        href: "/settings/domain",
+        label: "Özel Alan Adı",
+        group: "Hesap",
+        requiredFeature: "custom_domain",
+      },
+      { href: "/settings/theme", label: "Tema & Marka Renkleri", group: "Marka & Görünüm" },
+      { href: "/settings/identity", label: "Mağaza Kimliği", group: "Marka & Görünüm" },
+      { href: "/settings/homepage", label: "Ana Sayfa İçerikleri", group: "Marka & Görünüm" },
+      { href: "/settings/banner", label: "Anasayfa Banner'ı", group: "Marka & Görünüm" },
+      { href: "/settings/announcement", label: "Duyuru Modalı", group: "İçerik & İletişim" },
+      { href: "/settings/footer", label: "Footer (Sayfa Altı)", group: "İçerik & İletişim" },
+      {
+        href: "/settings/payment",
+        label: "Ödeme ve Kampanyalar",
+        group: "Ödeme",
+        requiredFeature: "payment_settings",
+      },
     ],
   },
 ];
@@ -146,21 +161,36 @@ export function Sidebar({
 
               {link.children && parentActive ? (
                 <div className="ml-7 mt-1 flex flex-col gap-1 border-l-2 border-slate-600 pl-4">
-                  {link.children.map((child) => {
+                  {link.children.map((child, index) => {
                     const childActive = isActive(child.href);
+                    const previousGroup = link.children![index - 1]?.group;
+                    const showGroupHeader = Boolean(
+                      child.group && child.group !== previousGroup,
+                    );
                     return (
-                      <Link
-                        key={child.href}
-                        href={child.href}
-                        className={cn(
-                          "rounded-lg px-3 py-2 text-sm font-medium transition",
-                          childActive
-                            ? "bg-white text-slate-900"
-                            : "text-slate-400 hover:bg-slate-800 hover:text-white",
-                        )}
-                      >
-                        {child.label}
-                      </Link>
+                      <div key={child.href}>
+                        {showGroupHeader ? (
+                          <p
+                            className={cn(
+                              "mb-1 px-3 text-[10px] font-semibold uppercase tracking-wider text-slate-500",
+                              index > 0 && "mt-3",
+                            )}
+                          >
+                            {child.group}
+                          </p>
+                        ) : null}
+                        <Link
+                          href={child.href}
+                          className={cn(
+                            "block rounded-lg px-3 py-2 text-sm font-medium transition",
+                            childActive
+                              ? "bg-white text-slate-900"
+                              : "text-slate-400 hover:bg-slate-800 hover:text-white",
+                          )}
+                        >
+                          {child.label}
+                        </Link>
+                      </div>
                     );
                   })}
                 </div>

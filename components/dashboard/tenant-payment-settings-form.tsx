@@ -28,8 +28,6 @@ export function TenantPaymentSettingsForm({
   plan: TenantPlan;
   companyName: string;
 }) {
-  const [tab, setTab] = useState<"cash" | "card">("cash");
-
   // ── Nakit kampanyası state ─────────────────────────────────────────────────
   const [cashTiers, setCashTiers] = useState<CashTierRow[]>(() =>
     (storefrontSettings.cash_discount_tiers ?? []).map((t) => ({
@@ -163,48 +161,20 @@ export function TenantPaymentSettingsForm({
           </div>
         </div>
       </div>
+    </Card>
 
-      {/* Tab bar */}
-      <div className="flex border-b border-border bg-muted/60">
-        <button
-          type="button"
-          onClick={() => setTab("cash")}
-          className={`flex flex-1 items-center justify-center gap-2 px-4 py-3 text-sm font-semibold transition ${
-            tab === "cash"
-              ? "border-b-2 border-emerald-600 bg-card text-emerald-700"
-              : "text-slate-500 hover:text-slate-700"
-          }`}
-        >
-          <Banknote className="size-4" />
-          Nakit
-          {isCashActive && (
-            <span className="ml-1 rounded-full bg-emerald-100 px-1.5 py-0.5 text-[10px] font-bold text-emerald-700">
-              AKTİF
-            </span>
-          )}
-        </button>
-        <button
-          type="button"
-          onClick={() => setTab("card")}
-          className={`flex flex-1 items-center justify-center gap-2 px-4 py-3 text-sm font-semibold transition ${
-            tab === "card"
-              ? "border-b-2 border-blue-600 bg-card text-blue-700"
-              : "text-slate-500 hover:text-slate-700"
-          }`}
-        >
-          <CreditCard className="size-4" />
-          Kredi Kartı
-          {isCardActive && (
-            <span className="ml-1 rounded-full bg-blue-100 px-1.5 py-0.5 text-[10px] font-bold text-blue-700">
-              AKTİF
-            </span>
-          )}
-        </button>
-      </div>
-
-      <form onSubmit={save} className="space-y-5 p-5">
-        {/* ── NAKİT SEKMESİ ─────────────────────────────── */}
-        {tab === "cash" && (
+      <form onSubmit={save} className="space-y-6">
+        {/* ── NAKİT KAMPANYASI ─────────────────────────────── */}
+        <Card className="p-5">
+          <div className="mb-4 flex items-center gap-2">
+            <Banknote className="size-5 text-emerald-700" />
+            <h2 className="text-lg font-semibold text-foreground">Nakit Kampanyası</h2>
+            {isCashActive && (
+              <span className="rounded-full bg-emerald-100 px-1.5 py-0.5 text-[10px] font-bold text-emerald-700">
+                AKTİF
+              </span>
+            )}
+          </div>
           <div className="space-y-4">
             <div className="rounded-2xl border border-border bg-muted/60/60 p-4">
               <div className="mb-3 flex items-center justify-between">
@@ -327,10 +297,19 @@ export function TenantPaymentSettingsForm({
               </button>
             </div>
           </div>
-        )}
+        </Card>
 
-        {/* ── KART SEKMESİ ───────────────────────────────── */}
-        {tab === "card" && (
+        {/* ── KART KAMPANYASI ───────────────────────────────── */}
+        <Card className="p-5">
+          <div className="mb-4 flex items-center gap-2">
+            <CreditCard className="size-5 text-blue-700" />
+            <h2 className="text-lg font-semibold text-foreground">Kart Kampanyası</h2>
+            {isCardActive && (
+              <span className="rounded-full bg-blue-100 px-1.5 py-0.5 text-[10px] font-bold text-blue-700">
+                AKTİF
+              </span>
+            )}
+          </div>
           <div className="space-y-4">
             {/* 0 Komisyon barajları */}
             <div className="rounded-2xl border border-border bg-muted/60/60 p-4">
@@ -462,12 +441,18 @@ export function TenantPaymentSettingsForm({
                 />
               </button>
             </div>
+          </div>
+        </Card>
 
-            {/* Taksit seçenekleri */}
-            <div className="rounded-2xl border border-border bg-muted/60/60 p-4">
-              <p className="mb-4 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
-                Taksit Seçenekleri &amp; Vade Farkları
-              </p>
+        {/* ── TAKSİT SEÇENEKLERİ & VADE FARKLARI ───────────────────────────────── */}
+        <Card className="p-5">
+          <div className="mb-4 flex items-center gap-2">
+            <CreditCard className="size-5 text-emerald-700" />
+            <h2 className="text-lg font-semibold text-foreground">
+              Taksit Seçenekleri &amp; Vade Farkları
+            </h2>
+          </div>
+          <div>
               <div className="space-y-2">
                 {cardInstallmentOptions.map((option, index) => (
                   <div
@@ -535,9 +520,8 @@ export function TenantPaymentSettingsForm({
               <p className="mt-3 text-xs text-muted-foreground">
                 Aktif seçenekler sepette müşteriye sunulur. Vade farkı 0 ise ek ücret uygulanmaz.
               </p>
-            </div>
           </div>
-        )}
+        </Card>
 
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="min-h-6">
@@ -556,7 +540,6 @@ export function TenantPaymentSettingsForm({
           </Button>
         </div>
       </form>
-    </Card>
 
     <PlanFeatureGate feature="online_payment" plan={plan} companyName={companyName}>
       <Card className="overflow-hidden border-border p-0">

@@ -192,23 +192,6 @@ export const storefrontSettingsSchema = z
       .number()
       .int("Maksimum gösterim sayısı tam sayı olmalıdır.")
       .min(1, "Maksimum gösterim sayısı en az 1 olmalıdır."),
-    discount_threshold: z.coerce
-      .number()
-      .min(0, "İskonto barajı negatif olamaz.")
-      .default(0),
-    discount_percentage: z.coerce
-      .number()
-      .min(0, "İskonto oranı negatif olamaz.")
-      .max(100, "İskonto oranı en fazla %100 olabilir.")
-      .default(0),
-    is_discount_active: z.boolean().default(false),
-    discount_condition_note: z
-      .string()
-      .max(300, "Şart notu en fazla 300 karakter olabilir.")
-      .nullable()
-      .optional()
-      .default(null),
-    discount_payment_method: z.enum(["cash", "card"]).default("cash"),
     card_installment_options: z
       .array(
         z.object({
@@ -223,12 +206,9 @@ export const storefrontSettingsSchema = z
       )
       .default(DEFAULT_INSTALLMENT_OPTIONS),
     // Bağımsız nakit kampanyası
-    cash_discount_threshold: z.coerce.number().min(0).default(0),
-    cash_discount_percentage: z.coerce.number().min(0).max(100).default(0),
     is_cash_discount_active: z.boolean().default(false),
     cash_discount_note: z.string().max(300).nullable().optional().default(null),
     // Bağımsız kart kampanyası (0 komisyon)
-    card_campaign_threshold: z.coerce.number().min(0).default(0),
     is_card_campaign_active: z.boolean().default(false),
     card_campaign_note: z.string().max(300).nullable().optional().default(null),
     // Tier (basamaklı) kampanya dizileri
@@ -317,30 +297,6 @@ export const storefrontSettingsSchema = z
           message: "Yayına almak için duyuru metni zorunludur.",
         });
       }
-    }
-
-    if (value.is_cash_discount_active && value.cash_discount_threshold <= 0) {
-      ctx.addIssue({
-        code: "custom",
-        path: ["cash_discount_threshold"],
-        message: "Nakit kampanyasını yayına almak için baraj 0'dan büyük olmalıdır.",
-      });
-    }
-
-    if (value.is_cash_discount_active && value.cash_discount_percentage <= 0) {
-      ctx.addIssue({
-        code: "custom",
-        path: ["cash_discount_percentage"],
-        message: "Nakit kampanyasını yayına almak için iskonto oranı 0'dan büyük olmalıdır.",
-      });
-    }
-
-    if (value.is_card_campaign_active && value.card_campaign_threshold <= 0) {
-      ctx.addIssue({
-        code: "custom",
-        path: ["card_campaign_threshold"],
-        message: "Kart kampanyasını yayına almak için baraj 0'dan büyük olmalıdır.",
-      });
     }
 
     if (value.is_cash_discount_active && value.cash_discount_tiers.length === 0) {
