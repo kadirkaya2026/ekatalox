@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { formatPriceListLimit, getPriceListLimit } from "@/lib/billing/plans";
 import { getPriceListDisplayName, normalizePriceListName } from "@/lib/price-lists/constants";
 import type { AccessCode, PriceList, Tenant } from "@/lib/types";
 
@@ -24,6 +25,9 @@ export function AccessCodesManager({
   const [message, setMessage] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const router = useRouter();
+
+  const codeLimit = getPriceListLimit(tenant.plan);
+  const atCodeLimit = codeLimit !== null && codes.length >= codeLimit;
 
   function addCode(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -94,15 +98,24 @@ export function AccessCodesManager({
           listesine göre vitrin davranışı belirlenir.
         </p>
 
+        {atCodeLimit ? (
+          <div className="mt-4 rounded-xl border border-amber-100 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+            Paketinizde en fazla {formatPriceListLimit(tenant.plan)} şifre oluşturabilirsiniz.
+            Daha fazla fiyat seviyesi için paketinizi yükseltin.
+          </div>
+        ) : null}
+
         <form onSubmit={addCode} className="mt-5 grid gap-3">
           <Input
             placeholder="Örn. 1111"
             value={passwordCode}
             onChange={(event) => setPasswordCode(event.target.value)}
+            disabled={atCodeLimit}
           />
           <select
             value={priceListId}
             onChange={(event) => setPriceListId(event.target.value)}
+            disabled={atCodeLimit}
             className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900"
           >
             {priceLists.map((list) => (
@@ -111,7 +124,7 @@ export function AccessCodesManager({
               </option>
             ))}
           </select>
-          <Button type="submit" disabled={pending || !priceListId}>
+          <Button type="submit" disabled={pending || !priceListId || atCodeLimit}>
             {pending ? "Kaydediliyor..." : "Kodu ekle"}
           </Button>
         </form>
@@ -125,7 +138,9 @@ export function AccessCodesManager({
               {tenant.company_name} • {tenant.subdomain}.ekatalox.com
             </p>
           </div>
-          <Badge className="bg-slate-100 text-slate-700">{codes.length} kod</Badge>
+          <Badge className="bg-slate-100 text-slate-700">
+            {codes.length} / {formatPriceListLimit(tenant.plan)} kod
+          </Badge>
         </div>
 
         {message ? (

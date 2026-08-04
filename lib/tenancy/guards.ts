@@ -1,11 +1,14 @@
 import { NextResponse } from "next/server";
 import {
   getPlanFeatureUpgradeMessage,
+  getPlanLabel,
+  getPriceListLimit,
   hasPlanFeature,
   type PlanFeature,
   type TenantPlan,
 } from "@/lib/billing/plans";
 import { getSessionContext } from "@/lib/auth/session";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
 export async function ensureSuperAdminResponse() {
   const session = await getSessionContext();
@@ -57,6 +60,41 @@ export async function ensureTenantAdminResponse(
 
 function resolveTenantPlan(tenant: { plan?: TenantPlan } | null): TenantPlan {
   return tenant?.plan ?? "baslangic";
+}
+
+// Paket bazlı fiyat seviyesi vaadi (bkz. app/page.tsx Pricing bölümü: "3/5/10/20
+// Seviyeli Müşteri Fiyat Listesi") pratikte erişim şifresi (access_code) sayısı
+// üzerinden uygulanır — tenant admin her şifreyi bir fiyat listesine bağlayarak
+// müşteri fiyat seviyesi oluşturur.
+export async function ensureAccessCodeLimitResponse() {
+  const session = await getSessionContext();
+  const plan = resolveTenantPlan(session.tenant);
+  const limit = getPriceListLimit(plan);
+
+  if (limit === null) {
+    return null;
+  }
+
+  const supabase = createSupabaseAdminClient();
+  if (!supabase || !session.tenant) {
+    return null;
+  }
+
+  const { count } = await supabase
+    .from("access_codes")
+    .select("id", { count: "exact", head: true })
+    .eq("tenant_id", session.tenant.id);
+
+  if ((count ?? 0) >= limit) {
+    return NextResponse.json(
+      {
+        error: `${getPlanLabel(plan)} paketinde en fazla ${limit} fiyat seviyesi (şifre) oluşturabilirsiniz. Daha fazlası için paketinizi yükseltin.`,
+      },
+      { status: 403 },
+    );
+  }
+
+  return null;
 }
 
 export async function ensureTenantPlanFeatureResponse(

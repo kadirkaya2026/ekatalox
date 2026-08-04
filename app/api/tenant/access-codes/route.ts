@@ -3,13 +3,18 @@ import { NextResponse } from "next/server";
 import { shouldAllowDemoFallback } from "@/lib/env";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { getSessionContext } from "@/lib/auth/session";
-import { ensureTenantAdminResponse } from "@/lib/tenancy/guards";
+import { ensureAccessCodeLimitResponse, ensureTenantAdminResponse } from "@/lib/tenancy/guards";
 import { accessCodeSchema } from "@/lib/validators/access-code";
 
 export async function POST(request: Request) {
   const guard = await ensureTenantAdminResponse({ blockDemoWrite: true });
   if (guard) {
     return guard;
+  }
+
+  const limitGuard = await ensureAccessCodeLimitResponse();
+  if (limitGuard) {
+    return limitGuard;
   }
 
   const session = await getSessionContext();
