@@ -5,11 +5,23 @@ import { usePathname } from "next/navigation";
 import {
   BarChart3,
   Building2,
+  CreditCard,
   FolderTree,
+  Globe,
+  ImageIcon,
   KeyRound,
   LayoutDashboard,
+  LayoutTemplate,
+  Megaphone,
+  PanelBottom,
+  Palette,
+  PlusCircle,
   ScrollText,
   Settings,
+  Star,
+  Store,
+  UploadCloud,
+  UserCircle,
 } from "lucide-react";
 import { EkataloxLogo } from "@/components/brand/ekatalox-logo";
 import { SidebarLogoutButton } from "@/components/dashboard/sidebar-logout-button";
@@ -20,6 +32,7 @@ import { cn } from "@/lib/utils";
 interface SubLink {
   href: string;
   label: string;
+  icon: React.ComponentType<{ className?: string }>;
   requiredFeature?: PlanFeature;
   group?: string;
 }
@@ -39,9 +52,9 @@ const tenantLinks: SidebarLink[] = [
     label: "Ürünler",
     icon: Building2,
     children: [
-      { href: "/products/add", label: "Ürün Ekle" },
-      { href: "/products/bulk", label: "Toplu Ürün Ekleme" },
-      { href: "/products/showcase", label: "Vitrin Ürünleri" },
+      { href: "/products/add", label: "Ürün Ekle", icon: PlusCircle },
+      { href: "/products/bulk", label: "Toplu Ürün Ekleme", icon: UploadCloud },
+      { href: "/products/showcase", label: "Vitrin Ürünleri", icon: Star },
     ],
   },
   { href: "/categories", label: "Kategoriler", icon: FolderTree },
@@ -52,22 +65,54 @@ const tenantLinks: SidebarLink[] = [
     label: "Ayarlar",
     icon: Settings,
     children: [
-      { href: "/settings", label: "Hesap ve Üyelik", group: "Hesap" },
+      { href: "/settings", label: "Hesap ve Üyelik", icon: UserCircle, group: "Hesap" },
       {
         href: "/settings/domain",
         label: "Özel Alan Adı",
+        icon: Globe,
         group: "Hesap",
         requiredFeature: "custom_domain",
       },
-      { href: "/settings/theme", label: "Tema & Marka Renkleri", group: "Marka & Görünüm" },
-      { href: "/settings/identity", label: "Mağaza Kimliği", group: "Marka & Görünüm" },
-      { href: "/settings/homepage", label: "Ana Sayfa İçerikleri", group: "Marka & Görünüm" },
-      { href: "/settings/banner", label: "Anasayfa Banner'ı", group: "Marka & Görünüm" },
-      { href: "/settings/announcement", label: "Duyuru Modalı", group: "İçerik & İletişim" },
-      { href: "/settings/footer", label: "Footer (Sayfa Altı)", group: "İçerik & İletişim" },
+      {
+        href: "/settings/theme",
+        label: "Tema & Marka Renkleri",
+        icon: Palette,
+        group: "Marka & Görünüm",
+      },
+      {
+        href: "/settings/identity",
+        label: "Mağaza Kimliği",
+        icon: Store,
+        group: "Marka & Görünüm",
+      },
+      {
+        href: "/settings/homepage",
+        label: "Ana Sayfa İçerikleri",
+        icon: LayoutTemplate,
+        group: "Marka & Görünüm",
+      },
+      {
+        href: "/settings/banner",
+        label: "Anasayfa Banner'ı",
+        icon: ImageIcon,
+        group: "Marka & Görünüm",
+      },
+      {
+        href: "/settings/announcement",
+        label: "Duyuru Modalı",
+        icon: Megaphone,
+        group: "İçerik & İletişim",
+      },
+      {
+        href: "/settings/footer",
+        label: "Footer (Sayfa Altı)",
+        icon: PanelBottom,
+        group: "İçerik & İletişim",
+      },
       {
         href: "/settings/payment",
         label: "Ödeme ve Kampanyalar",
+        icon: CreditCard,
         group: "Ödeme",
         requiredFeature: "payment_settings",
       },
@@ -127,6 +172,21 @@ export function Sidebar({
     return link.children?.some((child) => isActive(child.href)) ?? false;
   }
 
+  function groupChildren(children: SubLink[]) {
+    const sections: { group?: string; items: SubLink[] }[] = [];
+
+    for (const child of children) {
+      const lastSection = sections[sections.length - 1];
+      if (lastSection && lastSection.group === child.group) {
+        lastSection.items.push(child);
+      } else {
+        sections.push({ group: child.group, items: [child] });
+      }
+    }
+
+    return sections;
+  }
+
   return (
     <aside className="flex h-full w-full flex-col bg-slate-900 text-white md:sticky md:top-0 md:h-screen">
       <div className="border-b border-slate-800 px-6 py-6">
@@ -160,39 +220,41 @@ export function Sidebar({
               </Link>
 
               {link.children && parentActive ? (
-                <div className="ml-7 mt-1 flex flex-col gap-1 border-l-2 border-slate-600 pl-4">
-                  {link.children.map((child, index) => {
-                    const childActive = isActive(child.href);
-                    const previousGroup = link.children![index - 1]?.group;
-                    const showGroupHeader = Boolean(
-                      child.group && child.group !== previousGroup,
-                    );
-                    return (
-                      <div key={child.href}>
-                        {showGroupHeader ? (
-                          <p
-                            className={cn(
-                              "mb-1 px-3 text-[10px] font-semibold uppercase tracking-wider text-slate-500",
-                              index > 0 && "mt-3",
-                            )}
-                          >
-                            {child.group}
-                          </p>
-                        ) : null}
-                        <Link
-                          href={child.href}
-                          className={cn(
-                            "block rounded-lg px-3 py-2 text-sm font-medium transition",
-                            childActive
-                              ? "bg-white text-slate-900"
-                              : "text-slate-400 hover:bg-slate-800 hover:text-white",
-                          )}
-                        >
-                          {child.label}
-                        </Link>
+                <div className="animate-sidebar-submenu ml-1 mt-1.5 space-y-4">
+                  {groupChildren(link.children).map((section, sectionIndex) => (
+                    <div key={section.group ?? `ungrouped-${sectionIndex}`}>
+                      {section.group ? (
+                        <p className="mb-1.5 px-3 text-[10px] font-semibold uppercase tracking-widest text-emerald-500/70">
+                          {section.group}
+                        </p>
+                      ) : null}
+                      <div className="space-y-0.5">
+                        {section.items.map((child) => {
+                          const childActive = isActive(child.href);
+                          return (
+                            <Link
+                              key={child.href}
+                              href={child.href}
+                              className={cn(
+                                "flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition",
+                                childActive
+                                  ? "bg-emerald-500/15 text-emerald-300"
+                                  : "text-slate-400 hover:bg-white/5 hover:text-slate-200",
+                              )}
+                            >
+                              <child.icon
+                                className={cn(
+                                  "size-4 shrink-0",
+                                  childActive ? "text-emerald-400" : "text-slate-500",
+                                )}
+                              />
+                              <span>{child.label}</span>
+                            </Link>
+                          );
+                        })}
                       </div>
-                    );
-                  })}
+                    </div>
+                  ))}
                 </div>
               ) : null}
             </div>
