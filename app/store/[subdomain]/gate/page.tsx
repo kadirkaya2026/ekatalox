@@ -58,16 +58,20 @@ export default async function StorefrontGatePage(
   }
 
   if (tenant.status === "suspended") {
+    const settings = await getTenantStorefrontSettings(tenant.id);
+
     return (
-      <StorefrontLocaleProvider subdomain={subdomain}>
+      <StorefrontLocaleProvider subdomain={subdomain} initialLocale={settings.default_locale}>
         <StorefrontSuspendedNotice />
       </StorefrontLocaleProvider>
     );
   }
 
   if (isTrialExpired(tenant)) {
+    const settings = await getTenantStorefrontSettings(tenant.id);
+
     return (
-      <StorefrontLocaleProvider subdomain={subdomain}>
+      <StorefrontLocaleProvider subdomain={subdomain} initialLocale={settings.default_locale}>
         <StoreClosedNotice />
       </StorefrontLocaleProvider>
     );

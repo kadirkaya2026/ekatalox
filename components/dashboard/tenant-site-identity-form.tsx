@@ -10,11 +10,22 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import type { TenantStorefrontSettings } from "@/lib/types";
 import {
+  STOREFRONT_LOCALES,
+  type StorefrontLocale,
+} from "@/lib/storefront/i18n/dictionary";
+import {
   allowedFaviconMimeTypes,
   allowedLogoMimeTypes,
   maxFaviconFileSizeBytes,
   maxLogoFileSizeBytes,
 } from "@/lib/validators/storefront-settings";
+
+const STOREFRONT_LOCALE_LABELS: Record<StorefrontLocale, string> = {
+  tr: "Türkçe",
+  de: "Almanca (Deutsch)",
+  en: "İngilizce (English)",
+  ru: "Rusça (Русский)",
+};
 
 export function TenantSiteIdentityForm({
   initialStorefrontSettings,
@@ -34,15 +45,20 @@ export function TenantSiteIdentityForm({
   const [faviconUrl, setFaviconUrl] = useState(
     initialStorefrontSettings.site_favicon_url ?? null,
   );
+  const [defaultLocale, setDefaultLocale] = useState<StorefrontLocale>(
+    initialStorefrontSettings.default_locale ?? "tr",
+  );
   const [logoPending, startLogoTransition] = useTransition();
   const [storefrontSavePending, startStorefrontSaveTransition] = useTransition();
   const [faviconPending, startFaviconTransition] = useTransition();
   const [savePending, startSaveTransition] = useTransition();
+  const [localePending, startLocaleTransition] = useTransition();
   const router = useRouter();
   const [logoMessage, setLogoMessage] = useState<string | null>(null);
   const [storefrontSaveMessage, setStorefrontSaveMessage] = useState<string | null>(null);
   const [faviconMessage, setFaviconMessage] = useState<string | null>(null);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
+  const [localeMessage, setLocaleMessage] = useState<string | null>(null);
   const [logoError, setLogoError] = useState<string | null>(null);
   const [faviconError, setFaviconError] = useState<string | null>(null);
   const [storefrontTitleError, setStorefrontTitleError] = useState<string | null>(null);
@@ -230,6 +246,33 @@ export function TenantSiteIdentityForm({
     });
   }
 
+  function saveDefaultLocale(nextLocale: StorefrontLocale) {
+    setDefaultLocale(nextLocale);
+    setLocaleMessage(null);
+
+    startLocaleTransition(async () => {
+      const response = await fetch("/api/tenant/settings", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ default_locale: nextLocale }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        setLocaleMessage(result.error ?? "Vitrin dili kaydedilemedi.");
+        return;
+      }
+
+      if (result.storefrontSettings?.default_locale) {
+        setDefaultLocale(result.storefrontSettings.default_locale as StorefrontLocale);
+      }
+
+      setLocaleMessage("Vitrin dili kaydedildi.");
+      router.refresh();
+    });
+  }
+
   return (
     <div className="space-y-6">
       <Card className="p-5">
@@ -385,6 +428,46 @@ export function TenantSiteIdentityForm({
             </Button>
           </div>
         </form>
+      </Card>
+
+      <Card className="p-5">
+        <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-slate-900">
+          <Globe className="size-4 text-emerald-700" />
+          <span>Vitrin dili</span>
+        </div>
+        <p className="mb-4 text-sm text-slate-500">
+          Mağazanıza ilk kez gelen (henüz dil seçmemiş) ziyaretçiye vitrin hangi dilde
+          açılsın? Ziyaretçi dilerse header&apos;daki dil seçiciyle kendi tarayıcısında
+          farklı bir dile geçebilir; bu ayar yalnızca varsayılanı belirler. Yalnızca sabit
+          arayüz metinleri (Sepete Ekle, Sepetim vb.) çevrilir — ürün adı/açıklaması siz ne
+          yazdıysanız aynen görünür.
+        </p>
+
+        <div className="flex flex-wrap gap-2">
+          {STOREFRONT_LOCALES.map((option) => (
+            <button
+              key={option.value}
+              type="button"
+              disabled={localePending}
+              onClick={() => saveDefaultLocale(option.value)}
+              className={`rounded-xl border px-4 py-2.5 text-sm font-semibold transition disabled:opacity-50 ${
+                defaultLocale === option.value
+                  ? "border-emerald-600 bg-emerald-50 text-emerald-700"
+                  : "border-slate-200 bg-white text-slate-600 hover:border-emerald-300 hover:bg-emerald-50/40"
+              }`}
+            >
+              {STOREFRONT_LOCALE_LABELS[option.value]}
+            </button>
+          ))}
+        </div>
+
+        <div className="mt-3 min-h-6">
+          {localePending ? (
+            <p className="text-sm text-slate-500">Kaydediliyor...</p>
+          ) : localeMessage ? (
+            <p className="text-sm text-emerald-700">{localeMessage}</p>
+          ) : null}
+        </div>
       </Card>
 
       <Card className="p-5">

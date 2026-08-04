@@ -38,6 +38,8 @@ export const storefrontFooterStyleKeySchema = z.enum(["standard", "minimal", "co
 
 export const recommendationModeSchema = z.enum(["auto", "manual"]);
 
+export const storefrontDefaultLocaleSchema = z.enum(["tr", "de", "en", "ru"]);
+
 export const homepageBlockIdSchema = z.enum([
   "hero",
   "banner",
@@ -279,6 +281,7 @@ export const storefrontSettingsSchema = z
       .transform((value) => (typeof value === "string" ? value.trim() || null : null)),
     is_footer_contact_visible: z.boolean().default(false),
     recommendation_mode: recommendationModeSchema.default("auto"),
+    default_locale: storefrontDefaultLocaleSchema.default("tr"),
   })
   .superRefine((value, ctx) => {
     if (value.is_active) {

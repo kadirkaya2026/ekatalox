@@ -156,6 +156,7 @@ export function getDefaultTenantStorefrontSettings(
     footer_email: null,
     is_footer_contact_visible: false,
     recommendation_mode: "auto",
+    default_locale: "tr",
     updated_at: now,
   };
 }

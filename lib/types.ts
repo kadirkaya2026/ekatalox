@@ -1,5 +1,6 @@
 import type { MaxProductLimit, TenantPlan } from "@/lib/billing/plans";
 import type { CurrencyCode } from "@/lib/products/constants";
+import type { StorefrontLocale } from "@/lib/storefront/i18n/dictionary";
 
 export type { MaxProductLimit, TenantPlan };
 
@@ -248,6 +249,7 @@ export interface TenantStorefrontSettings {
   footer_email: string | null;
   is_footer_contact_visible: boolean;
   recommendation_mode: RecommendationMode;
+  default_locale: StorefrontLocale;
   created_at: string;
   updated_at: string;
 }

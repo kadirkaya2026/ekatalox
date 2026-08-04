@@ -13,7 +13,7 @@ export default async function TenantIdentitySettingsPage() {
       <Header
         eyebrow="Ayarlar / Mağaza Kimliği"
         title="Mağaza Kimliği"
-        description="Mağaza logosu, vitrin başlığı, kısa açıklama, tarayıcı sekmesi, favicon ve fiyat güncelleme tarihini yönetin."
+        description="Mağaza logosu, vitrin başlığı, kısa açıklama, tarayıcı sekmesi, favicon, vitrin dili ve fiyat güncelleme tarihini yönetin."
       />
 
       <TenantSiteIdentityForm initialStorefrontSettings={storefrontSettings} />

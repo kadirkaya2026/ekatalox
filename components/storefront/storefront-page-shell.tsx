@@ -45,7 +45,7 @@ export function StorefrontPageShell({
 }: {
   storefrontSettings?: Pick<
     TenantStorefrontSettings,
-    "theme_key" | "brand_primary_color" | "brand_accent_color" | "font_key"
+    "theme_key" | "brand_primary_color" | "brand_accent_color" | "font_key" | "default_locale"
   >;
   themeKey?: string;
   subdomain: string;
@@ -67,7 +67,7 @@ export function StorefrontPageShell({
     : undefined;
 
   return (
-    <StorefrontLocaleProvider subdomain={subdomain}>
+    <StorefrontLocaleProvider subdomain={subdomain} initialLocale={storefrontSettings?.default_locale}>
       <StorefrontThemeProvider
         themeKey={resolvedThemeKey}
         brandPrimaryColor={brandPrimaryColor}

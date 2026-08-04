@@ -72,16 +72,20 @@ function writeStoredLocale(subdomain: string, locale: StorefrontLocale) {
 
 export function StorefrontLocaleProvider({
   subdomain,
+  initialLocale,
   children,
 }: {
   subdomain: string;
+  initialLocale?: StorefrontLocale;
   children: React.ReactNode;
 }) {
-  const [locale, setLocaleState] = useState<StorefrontLocale>(STOREFRONT_DEFAULT_LOCALE);
+  const [locale, setLocaleState] = useState<StorefrontLocale>(
+    initialLocale ?? STOREFRONT_DEFAULT_LOCALE,
+  );
 
   useEffect(() => {
     const stored = readStoredLocale(subdomain);
-    if (stored && stored !== STOREFRONT_DEFAULT_LOCALE) {
+    if (stored) {
       setLocaleState(stored);
     }
     // Yalnızca mount sonrası bir kez okunur; subdomain bu provider için sabittir.

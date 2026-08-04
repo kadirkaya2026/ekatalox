@@ -53,8 +53,10 @@ export default async function StorefrontVisitorQuotaPage(
     notFound();
   }
 
+  const settings = await getTenantStorefrontSettings(tenant.id);
+
   return (
-    <StorefrontLocaleProvider subdomain={subdomain}>
+    <StorefrontLocaleProvider subdomain={subdomain} initialLocale={settings.default_locale}>
       <VisitorQuotaNotice />
     </StorefrontLocaleProvider>
   );
