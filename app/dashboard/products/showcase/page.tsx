@@ -23,7 +23,7 @@ export default async function ShowcasePage() {
     <div className="space-y-6">
       <Header
         eyebrow="Ürün Yönetimi"
-        title="Vitrin Ürünleri"
+        title="Öne Çıkan Bölümler"
         description="Anasayfada öne çıkarmak istediğiniz ürün bölümlerini oluşturun. En fazla 3 bölüm eklenebilir. Her bölümde 8'den fazla ürün varsa ziyaretçilere «Devamı» butonu gösterilir."
       />
       <PlanFeatureGate

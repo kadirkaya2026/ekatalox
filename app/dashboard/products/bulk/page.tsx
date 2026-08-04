@@ -1,6 +1,5 @@
 import { Header } from "@/components/dashboard/header";
 import { BulkOperationsPanel } from "@/components/dashboard/bulk-operations-panel";
-import { CsvImportCard } from "@/components/dashboard/csv-import-card";
 import { requireTenantAdminPage } from "@/lib/auth/session";
 import { getEffectiveProductLimit } from "@/lib/billing/plans";
 import { getTenantProducts } from "@/lib/data";
@@ -22,10 +21,9 @@ export default async function ProductBulkPage() {
       <Header
         eyebrow="Ürün Yönetimi"
         title="Toplu Ürün Ekleme"
-        description="Excel/CSV ile yüzlerce ürünü tek seferde ekleyin, toplu resim yükleyin veya basit CSV içe aktarma yapın."
+        description="Excel/CSV ile yüzlerce ürünü tek seferde ekleyin veya toplu resim yükleyin."
       />
       <BulkOperationsPanel tenant={tenant} usage={usage} />
-      <CsvImportCard tenant={tenant} />
     </div>
   );
 }

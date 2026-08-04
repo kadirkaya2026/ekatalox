@@ -303,7 +303,7 @@ export function ShowcaseManager({
       <Modal
         open={isCreateOpen}
         onClose={() => setIsCreateOpen(false)}
-        title="Yeni Vitrin Bölümü"
+        title="Yeni Bölüm"
       >
         <div className="grid gap-4">
           <div className="space-y-2">
