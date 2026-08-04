@@ -66,6 +66,30 @@ function groupCountByTenant(
   }, {});
 }
 
+// Supabase/PostgREST, filtresiz select sorgularında satırları sessizce
+// varsayılan üst sınıra (genelde 1000) kadar döndürür. Tüm tenant'ların
+// ürünlerini tek sorguda çekip client-side saymak, toplam ürün sayısı bu
+// sınırı aştığında yanlış (eksik) sayılara yol açar. Bunun yerine her
+// tenant için ayrı "exact count" sorgusu kullanılır; head:true sayesinde
+// satır verisi indirilmez, sadece sayı döner.
+async function getProductCountsByTenant(
+  supabase: AdminClient,
+  tenantIds: string[],
+): Promise<Record<string, number>> {
+  const entries = await Promise.all(
+    tenantIds.map(async (tenantId) => {
+      const { count } = await supabase
+        .from("products")
+        .select("id", { count: "exact", head: true })
+        .eq("tenant_id", tenantId);
+
+      return [tenantId, count ?? 0] as const;
+    }),
+  );
+
+  return Object.fromEntries(entries);
+}
+
 export function getDefaultTenantStorefrontSettings(
   tenantId: string,
   seed?: string,
@@ -401,22 +425,20 @@ export async function getTenantsOverview(): Promise<TenantWithRelations[]> {
 
   const [
     { data: tenantRows },
-    { data: productRows },
     { data: accessCodeRows },
     { data: priceListRows },
     monthlyVisitorCounts,
   ] = await Promise.all([
     supabase.from("tenants").select("*").order("created_at", { ascending: false }),
-    supabase.from("products").select("tenant_id"),
     supabase.from("access_codes").select("*, price_list:price_lists(name, is_catalog_only)"),
     supabase.from("price_lists").select("*").order("sort_order", { ascending: true }),
     getCurrentMonthVisitorCountsByTenant(),
   ]);
 
-  const productCounts = groupCountByTenant(
-    ((productRows as Array<{ tenant_id: string }> | null) ?? []).map((item) => ({
-      tenant_id: item.tenant_id,
-    })),
+  const tenants = (tenantRows as Tenant[] | null) ?? [];
+  const productCounts = await getProductCountsByTenant(
+    supabase,
+    tenants.map((tenant) => tenant.id),
   );
 
   const accessCodes = ((accessCodeRows as Array<Record<string, unknown>> | null) ?? []).map(
@@ -449,7 +471,7 @@ export async function getTenantsOverview(): Promise<TenantWithRelations[]> {
     return accumulator;
   }, {});
 
-  return ((tenantRows as Tenant[] | null) ?? []).map((tenant) => ({
+  return tenants.map((tenant) => ({
     ...tenant,
     access_codes: accessCodes.filter((code) => code.tenant_id === tenant.id),
     price_lists: (priceListsByTenant[tenant.id] ?? []).sort(sortPriceLists),
