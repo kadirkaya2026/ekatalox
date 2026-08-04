@@ -1,3 +1,4 @@
+import { MobileDashboardNav } from "@/components/dashboard/mobile-dashboard-nav";
 import { Sidebar } from "@/components/dashboard/sidebar";
 import { requireSuperAdminPage } from "@/lib/auth/session";
 
@@ -10,6 +11,11 @@ export default async function AdminLayout({
 
   return (
     <div className="min-h-screen bg-background text-foreground md:grid md:h-screen md:grid-cols-[280px_1fr] md:overflow-hidden">
+      <MobileDashboardNav
+        mode="admin"
+        title="Süper Admin"
+        subtitle="Tenant ve şifre yönetimi"
+      />
       <div className="hidden md:block md:h-screen">
         <Sidebar
           mode="admin"

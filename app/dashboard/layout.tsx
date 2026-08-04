@@ -1,3 +1,4 @@
+import { MobileDashboardNav } from "@/components/dashboard/mobile-dashboard-nav";
 import { Sidebar } from "@/components/dashboard/sidebar";
 import { TrialExpiredModal } from "@/components/dashboard/trial-expired-modal";
 import { VisitorQuotaBanner } from "@/components/dashboard/visitor-quota-banner";
@@ -29,6 +30,12 @@ export default async function DashboardLayout({
 
   return (
     <div className="min-h-screen bg-background text-foreground md:grid md:h-screen md:grid-cols-[280px_1fr] md:overflow-hidden">
+      <MobileDashboardNav
+        mode="tenant"
+        title={tenant?.company_name ?? "Tenant Paneli"}
+        subtitle={tenant?.subdomain ?? "yönetim"}
+        plan={plan}
+      />
       <div className="hidden md:block md:h-screen">
         <Sidebar
           mode="tenant"
