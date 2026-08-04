@@ -202,8 +202,10 @@ function SimpleUsageTable({
 
 export function ReportsPanel({
   initialReport,
+  endpoint = "/api/tenant/reports",
 }: {
   initialReport: TenantAnalyticsReport;
+  endpoint?: string;
 }) {
   const [period, setPeriod] = useState<AnalyticsPeriod>(initialReport.period);
   const [report, setReport] = useState(initialReport);
@@ -215,7 +217,7 @@ export function ReportsPanel({
     setError(null);
 
     try {
-      const response = await fetch(`/api/tenant/reports?period=${nextPeriod}`);
+      const response = await fetch(`${endpoint}?period=${nextPeriod}`);
       const result = await response.json().catch(() => null);
 
       if (response.ok && result?.report) {
@@ -228,7 +230,7 @@ export function ReportsPanel({
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [endpoint]);
 
   function handlePeriodChange(nextPeriod: AnalyticsPeriod) {
     setPeriod(nextPeriod);

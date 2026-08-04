@@ -8,8 +8,10 @@ const REFRESH_INTERVAL_MS = 30_000;
 
 export function OnlinePresenceCard({
   initialPresence,
+  endpoint = "/api/tenant/presence",
 }: {
   initialPresence: TenantPresenceReport;
+  endpoint?: string;
 }) {
   const [presence, setPresence] = useState(initialPresence);
   const [stale, setStale] = useState(false);
@@ -22,7 +24,7 @@ export function OnlinePresenceCard({
     isFetching.current = true;
 
     try {
-      const response = await fetch("/api/tenant/presence", { cache: "no-store" });
+      const response = await fetch(endpoint, { cache: "no-store" });
       const result = await response.json().catch(() => null);
 
       if (response.ok && result?.presence) {
@@ -36,7 +38,7 @@ export function OnlinePresenceCard({
     } finally {
       isFetching.current = false;
     }
-  }, []);
+  }, [endpoint]);
 
   useEffect(() => {
     const intervalId = window.setInterval(loadPresence, REFRESH_INTERVAL_MS);
