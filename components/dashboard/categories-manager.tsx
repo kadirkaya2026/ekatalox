@@ -34,6 +34,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { CategoryBannerPanel } from "@/components/dashboard/category-banner-panel";
+import { PlanFeatureGate } from "@/components/dashboard/plan-feature-gate";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -50,6 +51,7 @@ type OverPosition = "above" | "below" | "on";
 
 interface RowProps {
   category: Category & { depth: number };
+  tenant: Tenant;
   displayOrder: number;
   maxOrder: number;
   isDragging: boolean;
@@ -338,13 +340,20 @@ function SortableCategoryRow(props: RowProps) {
       ) : null}
 
       {props.bannerPanelId === props.category.id ? (
-        <CategoryBannerPanel
-          category={props.category}
-          depth={props.category.depth}
-          disabled={props.pending}
-          onSaved={props.onBannerSaved}
-          onCancel={props.onCancelBanner}
-        />
+        <div className="mt-1" style={{ marginLeft: `${props.category.depth * 20}px` }}>
+          <PlanFeatureGate
+            feature="banner_settings"
+            plan={props.tenant.plan}
+            companyName={props.tenant.company_name}
+          >
+            <CategoryBannerPanel
+              category={props.category}
+              disabled={props.pending}
+              onSaved={props.onBannerSaved}
+              onCancel={props.onCancelBanner}
+            />
+          </PlanFeatureGate>
+        </div>
       ) : null}
 
       {/* Reorder indicator — below */}
@@ -742,6 +751,7 @@ export function CategoriesManager({
                   <SortableCategoryRow
                     key={category.id}
                     category={category}
+                    tenant={tenant}
                     displayOrder={index + 1}
                     maxOrder={flatCategories.length}
                     isDragging={activeId === category.id}

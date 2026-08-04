@@ -7,7 +7,7 @@ import {
   getBannerObjectPath,
   STOREFRONT_BANNERS_BUCKET,
 } from "@/lib/storage/banners";
-import { ensureTenantAdminResponse } from "@/lib/tenancy/guards";
+import { ensureTenantPlanFeatureResponse } from "@/lib/tenancy/guards";
 import type { BannerItem } from "@/lib/types";
 import { categoryBannerUpdateSchema } from "@/lib/validators/category-banner";
 
@@ -22,7 +22,7 @@ function isManagedBannerUrl(url: string | null, tenantId: string) {
 }
 
 export async function PATCH(request: Request) {
-  const guard = await ensureTenantAdminResponse({ blockDemoWrite: true });
+  const guard = await ensureTenantPlanFeatureResponse("banner_settings", { blockDemoWrite: true });
   if (guard) {
     return guard;
   }
