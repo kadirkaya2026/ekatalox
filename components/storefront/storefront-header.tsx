@@ -6,11 +6,13 @@ import { getDescendantCategoryIds } from "@/lib/categories/tree";
 import type { Category } from "@/lib/types";
 import { STOREFRONT_LOGO_SIZES } from "@/lib/storefront/image-sizes";
 import { useStorefrontTheme } from "@/lib/storefront/theme-context";
+import { useStorefrontLocale } from "@/lib/storefront/locale-context";
 import type { StorefrontHeaderStyleKey, TenantStorefrontSettings } from "@/lib/types";
 import { cn, formatCurrency, formatDateSlashTr } from "@/lib/utils";
 import { StorefrontImage } from "@/components/storefront/storefront-image";
 import { StorefrontLogoutButton } from "@/components/storefront/storefront-logout-button";
 import { StorefrontThemeToggle } from "@/components/storefront/storefront-theme-toggle";
+import { StorefrontLanguageSwitcher } from "@/components/storefront/storefront-language-switcher";
 
 export interface StorefrontHeaderProps {
   headerStyleKey: StorefrontHeaderStyleKey;
@@ -51,16 +53,17 @@ function HeaderActions({
   compact?: boolean;
 }) {
   const theme = useStorefrontTheme();
+  const { t } = useStorefrontLocale();
 
   return (
     <div className={cn("flex items-center justify-end gap-3", compact ? "gap-2" : "lg:gap-4")}>
       <div className="hidden text-right sm:block">
         <p className={cn("text-[10px] uppercase tracking-[0.22em]", theme.cartTotalLabel)}>
-          Sepet Toplamı
+          {t("header.cartTotal")}
         </p>
         <div className="mt-1">
           {props.cartLength === 0 ? (
-            <p className={theme.cartTotalEmpty}>Sepet Boş</p>
+            <p className={theme.cartTotalEmpty}>{t("header.cartEmpty")}</p>
           ) : props.cartTotalEntries.length ? (
             props.cartTotalEntries.map(({ currency, total }) => (
               <p key={currency} className={theme.cartTotalValue}>
@@ -81,12 +84,13 @@ function HeaderActions({
           className="hidden lg:inline-flex"
         />
       ) : null}
+      <StorefrontLanguageSwitcher />
       <StorefrontThemeToggle />
       <button
         type="button"
         onClick={props.onOpenCart}
         className={theme.cartButton}
-        aria-label="Sepeti aç"
+        aria-label={t("header.openCartAria")}
       >
         <ShoppingCart className="size-5" />
         {props.cartLength ? <span className={theme.cartBadge}>{props.cartItemCount}</span> : null}
@@ -103,6 +107,7 @@ function HeaderSearch({
   className?: string;
 }) {
   const theme = useStorefrontTheme();
+  const { t } = useStorefrontLocale();
 
   return (
     <div
@@ -114,7 +119,7 @@ function HeaderSearch({
     >
       <Search className={cn(theme.searchIcon, "left-4 size-4")} />
       <input
-        placeholder="Ürün adı, model no veya kategoriye göre arayın..."
+        placeholder={t("header.searchPlaceholder")}
         value={props.searchInput}
         onChange={(event) => props.onSearchChange(event.target.value)}
         className={cn(
@@ -136,6 +141,7 @@ function HeaderBrand({
   compact?: boolean;
 }) {
   const theme = useStorefrontTheme();
+  const { t } = useStorefrontLocale();
 
   return (
     <a
@@ -182,7 +188,7 @@ function HeaderBrand({
         {props.storefrontSettings.is_price_update_date_visible &&
         props.storefrontSettings.price_update_date ? (
           <p className={cn("mt-0.5 truncate text-[10px] leading-4 sm:text-[11px]", theme.headerMuted)}>
-            Fiyat Güncelleme Tarihi :{" "}
+            {t("header.priceUpdateDate")}{" "}
             {formatDateSlashTr(props.storefrontSettings.price_update_date)}
           </p>
         ) : null}
@@ -193,6 +199,7 @@ function HeaderBrand({
 
 function StorefrontHeaderCategoryNav({ props }: { props: StorefrontHeaderProps }) {
   const theme = useStorefrontTheme();
+  const { t } = useStorefrontLocale();
 
   return (
     <div className={cn(theme.categoryRailBorder, props.usesSidebarNav && "lg:hidden")}>
@@ -202,11 +209,11 @@ function StorefrontHeaderCategoryNav({ props }: { props: StorefrontHeaderProps }
             "relative hidden md:flex md:flex-wrap md:items-center md:justify-center md:gap-2 md:py-3",
             props.usesSidebarNav && "md:hidden",
           )}
-          aria-label="Ana kategoriler"
+          aria-label={t("header.mainCategoriesAria")}
         >
           {props.homeHref ? (
             <a href={props.homeHref} className={theme.categoryNavChip(false)}>
-              Tüm Ürünler
+              {t("header.allProducts")}
             </a>
           ) : (
             <button
@@ -214,7 +221,7 @@ function StorefrontHeaderCategoryNav({ props }: { props: StorefrontHeaderProps }
               onClick={() => props.onCategoryChange("all")}
               className={theme.categoryNavChip(props.selectedCategoryId === "all")}
             >
-              Tüm Ürünler
+              {t("header.allProducts")}
             </button>
           )}
 
@@ -274,11 +281,11 @@ function StorefrontHeaderCategoryNav({ props }: { props: StorefrontHeaderProps }
                 theme.searchWrap,
                 "flex w-full items-center justify-between gap-3 rounded-2xl px-4 py-3 text-left shadow-none",
               )}
-              aria-label="Kategorileri aç"
+              aria-label={t("header.openCategoriesAria")}
             >
               <div className="min-w-0">
                 <p className={cn("text-[10px] font-bold uppercase tracking-[0.18em]", theme.headerMuted)}>
-                  Kategori
+                  {t("header.category")}
                 </p>
                 <p className={cn("truncate text-sm font-semibold", theme.headerTitle)}>
                   {props.selectedCategoryLabel}
@@ -292,7 +299,7 @@ function StorefrontHeaderCategoryNav({ props }: { props: StorefrontHeaderProps }
             <div className="scrollbar-hide -mx-4 flex gap-5 overflow-x-auto px-4 whitespace-nowrap">
               {props.homeHref ? (
                 <a href={props.homeHref} className={theme.categoryNavMobile(false)}>
-                  Tüm Ürünler
+                  {t("header.allProducts")}
                 </a>
               ) : (
                 <button
@@ -300,7 +307,7 @@ function StorefrontHeaderCategoryNav({ props }: { props: StorefrontHeaderProps }
                   onClick={() => props.onCategoryChange("all")}
                   className={theme.categoryNavMobile(props.selectedCategoryId === "all")}
                 >
-                  Tüm Ürünler
+                  {t("header.allProducts")}
                 </button>
               )}
 

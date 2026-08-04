@@ -2,6 +2,7 @@
 
 import { useTransition } from "react";
 import { useStorefrontTheme } from "@/lib/storefront/theme-context";
+import { useStorefrontLocale } from "@/lib/storefront/locale-context";
 import { cn } from "@/lib/utils";
 
 function getCartStorageKey(tenantId: string) {
@@ -18,6 +19,7 @@ export function StorefrontLogoutButton({
   className?: string;
 }) {
   const theme = useStorefrontTheme();
+  const { t } = useStorefrontLocale();
   const [pending, startTransition] = useTransition();
 
   function handleLogout() {
@@ -47,7 +49,7 @@ export function StorefrontLogoutButton({
       type="button"
       onClick={handleLogout}
       disabled={pending}
-      aria-label="Çıkış"
+      aria-label={t("logout.label")}
       className={cn(
         "shrink-0 rounded-lg px-2 py-1 text-xs font-semibold transition disabled:opacity-50",
         theme.textMuted,
@@ -55,7 +57,7 @@ export function StorefrontLogoutButton({
         className,
       )}
     >
-      {pending ? "..." : "Çıkış"}
+      {pending ? "..." : t("logout.label")}
     </button>
   );
 }

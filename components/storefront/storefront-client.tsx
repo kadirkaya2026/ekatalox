@@ -57,6 +57,7 @@ import {
 } from "@/lib/storefront/cart";
 import { useResolvedStorefrontTheme } from "@/lib/storefront/use-resolved-storefront-theme";
 import { StorefrontThemeProvider, useStorefrontTheme } from "@/lib/storefront/theme-context";
+import { useStorefrontLocale, type TranslateFn } from "@/lib/storefront/locale-context";
 import type { StorefrontTheme } from "@/lib/storefront/themes";
 import { StorefrontLayoutProvider } from "@/lib/storefront/layout-context";
 import {
@@ -383,15 +384,15 @@ function addVariantSelectionsToCart(
   }, items);
 }
 
-function getUnitSummary(product: StorefrontProduct) {
+function getUnitSummary(product: StorefrontProduct, t: TranslateFn) {
   const parts: string[] = [];
 
   if (product.package_quantity) {
-    parts.push(`Paket: ${product.package_quantity} adet`);
+    parts.push(`${t("productModal.tabPackage")}: ${product.package_quantity} ${t("unit.piece")}`);
   }
 
   if (product.carton_quantity) {
-    parts.push(`Koli: ${product.carton_quantity} adet`);
+    parts.push(`${t("productModal.tabCarton")}: ${product.carton_quantity} ${t("unit.piece")}`);
   }
 
   return parts.join("  ");
@@ -418,7 +419,7 @@ function QuantityStepper({
   onChange,
   disabled = false,
   placeholder = "0",
-  ariaLabel = "Adet",
+  ariaLabel,
 }: {
   value: string;
   onChange: (value: string) => void;
@@ -427,6 +428,7 @@ function QuantityStepper({
   ariaLabel?: string;
 }) {
   const theme = useStorefrontTheme();
+  const { t } = useStorefrontLocale();
 
   function handleInputChange(raw: string) {
     if (raw === "") {
@@ -474,7 +476,7 @@ function QuantityStepper({
         value={value}
         onChange={(event) => handleInputChange(event.target.value)}
         placeholder={placeholder}
-        aria-label={ariaLabel}
+        aria-label={ariaLabel ?? t("unit.piece")}
         className={cn(theme.quantityInput, "disabled:cursor-not-allowed")}
         style={{ fontSize: "16px" }}
       />
@@ -484,7 +486,7 @@ function QuantityStepper({
           disabled={disabled}
           onClick={decrement}
           className={cn("flex w-8 items-center justify-center", theme.quantityStepperButton)}
-          aria-label="Adedi azalt"
+          aria-label={t("cart.decreaseAria")}
         >
           <Minus className="size-3.5" />
         </button>
@@ -496,7 +498,7 @@ function QuantityStepper({
             "flex w-8 items-center justify-center",
             theme.quantityStepperButton,
           )}
-          aria-label="Adedi artır"
+          aria-label={t("cart.increaseAria")}
         >
           <Plus className="size-3.5" />
         </button>
@@ -565,6 +567,7 @@ function renderBannerItem(
   index: number,
   title: string,
   theme: StorefrontTheme,
+  t: TranslateFn,
 ) {
   return (
     <div
@@ -610,9 +613,9 @@ function renderBannerItem(
         ) : (
           <div className="flex h-full min-h-[180px] items-center justify-center p-8 text-center text-white/70 sm:min-h-[220px] md:min-h-[340px] lg:min-h-[400px]">
             <div>
-              <p className="text-lg font-semibold sm:text-xl">Banner görseli eklenmedi</p>
+              <p className="text-lg font-semibold sm:text-xl">{t("catalog.bannerImageMissing")}</p>
               <p className="mt-2 text-sm leading-6 sm:text-base">
-                Yönetim panelinden bu segmente banner görseli yükleyebilirsiniz.
+                {t("catalog.bannerImageMissingHint")}
               </p>
             </div>
           </div>
@@ -645,6 +648,7 @@ function AnnouncementModal({
   onDismiss: () => void;
 }) {
   const theme = useStorefrontTheme();
+  const { t } = useStorefrontLocale();
   const [isOpen, setIsOpen] = useState(true);
 
   function handleDismiss() {
@@ -663,7 +667,7 @@ function AnnouncementModal({
         >
           <button
             type="button"
-            aria-label="Duyuru modalını kapat"
+            aria-label={t("announcement.closeAria")}
             className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(16,185,129,0.14),transparent_30%),radial-gradient(circle_at_bottom,rgba(14,165,233,0.16),transparent_34%),rgba(2,6,23,0.60)] backdrop-blur-md"
             onClick={handleDismiss}
           />
@@ -697,7 +701,7 @@ function AnnouncementModal({
                   </div>
                   <div className="space-y-2">
                     <span className={cn(theme.stockBadgeIn, "uppercase tracking-[0.22em] text-[11px]")}>
-                      Yeni Duyuru
+                      {t("announcement.badge")}
                     </span>
                     <h2
                       id="announcement-modal-title"
@@ -712,7 +716,7 @@ function AnnouncementModal({
                   type="button"
                   onClick={handleDismiss}
                   className={theme.modalCloseButton}
-                  aria-label="Kapat"
+                  aria-label={t("common.close")}
                 >
                   <X className="size-5" />
                 </button>
@@ -734,7 +738,7 @@ function AnnouncementModal({
                   onClick={handleDismiss}
                   className="h-12 rounded-full bg-[linear-gradient(135deg,#0f172a_0%,#111827_45%,#0f766e_100%)] px-7 text-sm font-semibold text-white shadow-[0_18px_40px_rgba(15,23,42,0.22)] transition hover:scale-[1.01] hover:shadow-[0_22px_48px_rgba(15,23,42,0.28)]"
                 >
-                  Anladım
+                  {t("announcement.acknowledge")}
                 </Button>
               </div>
             </div>
@@ -853,6 +857,7 @@ export function StorefrontClient({
     getServerMountedState,
   );
   const analyticsSubdomain = subdomain ?? tenant.subdomain;
+  const { t } = useStorefrontLocale();
 
   const theme = useResolvedStorefrontTheme(storefrontSettings.theme_key, {
     brand_primary_color: storefrontSettings.brand_primary_color,
@@ -895,15 +900,15 @@ export function StorefrontClient({
   );
   const selectedCategoryLabel = useMemo(() => {
     if (selectedCategoryId === "all") {
-      return "Tüm Ürünler";
+      return t("header.allProducts");
     }
 
     return (
       selectedCategoryLineage.map((category) => category.name).join(" › ") ||
       categoryNameMap.get(selectedCategoryId) ||
-      "Ürünler"
+      t("catalog.products")
     );
-  }, [categoryNameMap, selectedCategoryId, selectedCategoryLineage]);
+  }, [categoryNameMap, selectedCategoryId, selectedCategoryLineage, t]);
   const mobileSubcategories = useMemo(() => {
     if (!selectedTopCategory) {
       return [];
@@ -1565,7 +1570,7 @@ export function StorefrontClient({
     if (!subdomain) {
       setPreviewDescription(null);
       setPreviewDescriptionLoading(false);
-      setPreviewDescriptionError("Detay bilgisi yüklenemedi.");
+      setPreviewDescriptionError(t("productModal.detailLoadFailed"));
       return;
     }
 
@@ -1590,7 +1595,7 @@ export function StorefrontClient({
         });
 
         if (!response.ok) {
-          let errorMessage = "Detay bilgisi yüklenemedi.";
+          let errorMessage = t("productModal.detailLoadFailed");
 
           try {
             const result = await response.json();
@@ -1626,7 +1631,7 @@ export function StorefrontClient({
         }
 
         if (!abortController.signal.aborted) {
-          setPreviewDescriptionError("Detay bilgisi yüklenemedi.");
+          setPreviewDescriptionError(t("productModal.detailLoadFailed"));
           setPreviewDescriptionLoading(false);
         }
       }
@@ -1635,7 +1640,7 @@ export function StorefrontClient({
     return () => {
       abortController.abort();
     };
-  }, [previewProduct, subdomain]);
+  }, [previewProduct, subdomain, t]);
 
   function openCartDrawer() {
     setIsCartOpen(true);
@@ -1719,7 +1724,7 @@ export function StorefrontClient({
     const result = await response.json();
     return {
       ok: false as const,
-      error: result.error ?? "Seçilen modeller için stok doğrulaması başarısız oldu.",
+      error: result.error ?? t("errors.variantStockFailed"),
     };
   }
 
@@ -1734,7 +1739,7 @@ export function StorefrontClient({
       const selections = variantSelections.filter((selection) => selection.quantity > 0);
 
       if (!selections.length) {
-        setQuantityError("Sepete eklemek için en az bir model seçin.");
+        setQuantityError(t("errors.selectAtLeastOneModel"));
         return;
       }
 
@@ -1748,7 +1753,7 @@ export function StorefrontClient({
       });
 
       if (invalidSelection) {
-        setQuantityError("Bazı model seçimleri şu anda satışa kapalı.");
+        setQuantityError(t("errors.someModelsUnavailable"));
         return;
       }
 
@@ -1781,12 +1786,12 @@ export function StorefrontClient({
       selectedPackageCountValue === null ||
       selectedCartonCountValue === null
     ) {
-      setQuantityError("Lütfen geçerli tam sayı değerleri girin.");
+      setQuantityError(t("errors.enterValidNumbers"));
       return;
     }
 
     if (selectedTotalQuantity <= 0) {
-      setQuantityError("Sepete eklemek için en az bir değer girin.");
+      setQuantityError(t("errors.enterAtLeastOneValue"));
       return;
     }
 
@@ -1865,7 +1870,7 @@ export function StorefrontClient({
               type="button"
               onClick={onDismiss}
               className={cn("absolute right-2 top-2 z-10", theme.modalCloseButton)}
-              aria-label="Kapat"
+              aria-label={t("common.close")}
             >
               <X className="size-4" />
             </button>
@@ -1888,7 +1893,7 @@ export function StorefrontClient({
                   s.isQualified ? theme.campaignLabelQualified : theme.campaignLabelPending,
                 )}
               >
-                Kart Kampanyası
+                {t("campaign.cardTitle")}
               </p>
               <p
                 className={cn(
@@ -1899,11 +1904,18 @@ export function StorefrontClient({
               >
                 {s.isQualified
                   ? s.nextTier
-                    ? `${s.appliedTier!.maxFreeInstallmentCount} taksite kadar 0 Komisyon aktif 🎉 — ${formatCurrency(s.remainingAmount, s.currency)} daha ekle, ${s.nextTier.maxFreeInstallmentCount} taksite çık!`
-                    : `Tebrikler! ${s.appliedTier!.maxFreeInstallmentCount} taksite kadar 0 Komisyon! 🎉`
+                    ? t("campaign.cardQualifiedWithNext", {
+                        tier: s.appliedTier!.maxFreeInstallmentCount,
+                        amount: formatCurrency(s.remainingAmount, s.currency),
+                        nextTier: s.nextTier.maxFreeInstallmentCount,
+                      })
+                    : t("campaign.cardQualifiedNoNext", { tier: s.appliedTier!.maxFreeInstallmentCount })
                   : s.nextTier
-                    ? `${formatCurrency(s.remainingAmount, s.currency)} daha ekle, ${s.nextTier.maxFreeInstallmentCount} taksite kadar 0 Komisyon kazan! 💳`
-                    : "0 Komisyon kampanyası aktif 💳"}
+                    ? t("campaign.cardUnqualifiedWithNext", {
+                        amount: formatCurrency(s.remainingAmount, s.currency),
+                        nextTier: s.nextTier.maxFreeInstallmentCount,
+                      })
+                    : t("campaign.cardUnqualifiedNoNext")}
               </p>
               <p
                 className={cn(
@@ -1913,10 +1925,18 @@ export function StorefrontClient({
                 )}
               >
                 {s.isQualified
-                  ? `Sepetin ${formatCurrency(s.subtotal, s.currency)} — ${s.appliedTier!.maxFreeInstallmentCount} taksit ve altına vade farkı uygulanmaz.`
+                  ? t("campaign.cardSubtitleQualified", {
+                      subtotal: formatCurrency(s.subtotal, s.currency),
+                      tier: s.appliedTier!.maxFreeInstallmentCount,
+                    })
                   : s.nextTier
-                    ? `İlk baraj ${formatCurrency(s.nextTier.threshold, s.currency)} · Sepetin şu an ${formatCurrency(s.subtotal, s.currency)}`
-                    : `Sepetin ${formatCurrency(s.subtotal, s.currency)}`}
+                    ? t("campaign.cardSubtitleUnqualifiedWithNext", {
+                        threshold: formatCurrency(s.nextTier.threshold, s.currency),
+                        subtotal: formatCurrency(s.subtotal, s.currency),
+                      })
+                    : t("campaign.cardSubtitleUnqualifiedNoNext", {
+                        subtotal: formatCurrency(s.subtotal, s.currency),
+                      })}
               </p>
             </div>
           </div>
@@ -1945,7 +1965,7 @@ export function StorefrontClient({
             type="button"
             onClick={onDismiss}
             className={cn("absolute right-2 top-2 z-10", theme.modalCloseButton)}
-            aria-label="Kapat"
+            aria-label={t("common.close")}
           >
             <X className="size-4" />
           </button>
@@ -1972,7 +1992,7 @@ export function StorefrontClient({
                   : theme.campaignLabelPending,
               )}
             >
-              {cartDiscountSummary.isQualified ? "Nakit Kampanyası" : "Nakit Kampanyası"}
+              {t("campaign.cashTitle")}
             </p>
             <p
               className={cn(
@@ -1983,11 +2003,18 @@ export function StorefrontClient({
             >
               {cartDiscountSummary.isQualified
                 ? cartDiscountSummary.nextTier
-                  ? `%${percentageLabel} aktif 🎉 — ${formatCurrency(cartDiscountSummary.remainingAmount, cartDiscountSummary.currency)} daha ekle, %${formatDiscountPercentage(cartDiscountSummary.nextTier.percentage)} kazan!`
-                  : `Tebrikler! %${percentageLabel} İskonto Kazandınız! 🎉`
+                  ? t("campaign.cashQualifiedWithNext", {
+                      percentage: percentageLabel,
+                      amount: formatCurrency(cartDiscountSummary.remainingAmount, cartDiscountSummary.currency),
+                      nextPercentage: formatDiscountPercentage(cartDiscountSummary.nextTier.percentage),
+                    })
+                  : t("campaign.cashQualifiedNoNext", { percentage: percentageLabel })
                 : cartDiscountSummary.nextTier
-                  ? `${formatCurrency(cartDiscountSummary.remainingAmount, cartDiscountSummary.currency)} daha mal ekle, %${formatDiscountPercentage(cartDiscountSummary.nextTier.percentage)} İskonto Kazan! 🚀`
-                  : `%${percentageLabel} İskonto Kampanyası 🚀`}
+                  ? t("campaign.cashUnqualifiedWithNext", {
+                      amount: formatCurrency(cartDiscountSummary.remainingAmount, cartDiscountSummary.currency),
+                      nextPercentage: formatDiscountPercentage(cartDiscountSummary.nextTier.percentage),
+                    })
+                  : t("campaign.cashUnqualifiedNoNext", { percentage: percentageLabel })}
             </p>
             <p
               className={cn(
@@ -1997,10 +2024,18 @@ export function StorefrontClient({
               )}
             >
               {cartDiscountSummary.isQualified
-                ? `Ara toplam ${formatCurrency(cartDiscountSummary.subtotal, cartDiscountSummary.currency)} oldu. Net toplamın artık ${formatCurrency(cartDiscountSummary.totalAfterDiscount, cartDiscountSummary.currency)}.`
+                ? t("campaign.cashSubtitleQualified", {
+                    subtotal: formatCurrency(cartDiscountSummary.subtotal, cartDiscountSummary.currency),
+                    total: formatCurrency(cartDiscountSummary.totalAfterDiscount, cartDiscountSummary.currency),
+                  })
                 : cartDiscountSummary.nextTier
-                  ? `İlk baraj ${formatCurrency(cartDiscountSummary.nextTier.threshold, cartDiscountSummary.currency)} · Sepetin şu an ${formatCurrency(cartDiscountSummary.subtotal, cartDiscountSummary.currency)}.`
-                  : `Sepetin şu an ${formatCurrency(cartDiscountSummary.subtotal, cartDiscountSummary.currency)}.`}
+                  ? t("campaign.cashSubtitleUnqualifiedWithNext", {
+                      threshold: formatCurrency(cartDiscountSummary.nextTier.threshold, cartDiscountSummary.currency),
+                      subtotal: formatCurrency(cartDiscountSummary.subtotal, cartDiscountSummary.currency),
+                    })
+                  : t("campaign.cashSubtitleUnqualifiedNoNext", {
+                      subtotal: formatCurrency(cartDiscountSummary.subtotal, cartDiscountSummary.currency),
+                    })}
             </p>
             {storefrontSettings.cash_discount_note?.trim() && !compact ? (
               <p
@@ -2011,7 +2046,7 @@ export function StorefrontClient({
                     : theme.campaignNotePending,
                 )}
               >
-                ⚠️ Şart: {storefrontSettings.cash_discount_note}
+                {t("campaign.conditionPrefix")} {storefrontSettings.cash_discount_note}
               </p>
             ) : null}
           </div>
@@ -2032,7 +2067,7 @@ export function StorefrontClient({
       >
         <div className="absolute left-3 right-14 top-3 z-10 flex">
           <span className={cn("truncate rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] shadow-sm", theme.surfaceMuted, theme.textMuted)}>
-            {categoryNameMap.get(product.category_id) || "Genel"}
+            {categoryNameMap.get(product.category_id) || t("product.generalCategory")}
           </span>
         </div>
         <StorefrontFloatingCartAction
@@ -2067,9 +2102,9 @@ export function StorefrontClient({
           <p className={cn("text-[11px]", theme.textMuted)}>
             {formatProductModelNo(product.sku_code)}
           </p>
-          {getUnitSummary(product) ? (
+          {getUnitSummary(product, t) ? (
             <p className={cn("line-clamp-2 text-[11px] leading-4", theme.textMuted)}>
-              {getUnitSummary(product)}
+              {getUnitSummary(product, t)}
             </p>
           ) : null}
         </div>
@@ -2078,7 +2113,7 @@ export function StorefrontClient({
           <ProductPrice product={product} size="crossSell" />
           {cartQuantity > 0 ? (
             <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-semibold text-emerald-700">
-              {cartQuantity} adet
+              {t("crossSell.unitCount", { count: cartQuantity })}
             </span>
           ) : null}
         </div>
@@ -2092,23 +2127,23 @@ export function StorefrontClient({
     }
 
     const tabItems: Array<{ key: ProductDetailTab; label: string }> = [
-      { key: "details", label: "Detaylar" },
-      { key: "package", label: "Paket" },
-      { key: "carton", label: "Koli" },
+      { key: "details", label: t("productModal.tabDetails") },
+      { key: "package", label: t("productModal.tabPackage") },
+      { key: "carton", label: t("productModal.tabCarton") },
     ];
 
     const detailContent = previewDescription;
     const packageContent = previewProduct.package_quantity
-      ? `1 Paket = ${previewProduct.package_quantity} adet`
-      : "Paket bilgisi eklenmedi.";
+      ? t("productModal.packageEquals", { count: previewProduct.package_quantity })
+      : t("productModal.packageMissing");
     const cartonContent = previewProduct.carton_quantity
-      ? `1 Koli = ${previewProduct.carton_quantity} adet`
-      : "Koli bilgisi eklenmedi.";
+      ? t("productModal.cartonEquals", { count: previewProduct.carton_quantity })
+      : t("productModal.cartonMissing");
 
     const tabContent =
       activePreviewTab === "details" ? (
         previewDescriptionLoading ? (
-          <p className={cn("text-sm leading-6", theme.textMuted)}>Detay yükleniyor…</p>
+          <p className={cn("text-sm leading-6", theme.textMuted)}>{t("productModal.detailLoading")}</p>
         ) : previewDescriptionError ? (
           <p className="text-sm leading-6 text-amber-700">{previewDescriptionError}</p>
         ) : (
@@ -2124,7 +2159,7 @@ export function StorefrontClient({
       <Modal
         open={Boolean(previewProduct)}
         onClose={closeProductDetail}
-        title="Ürün Detayı"
+        title={t("productModal.title")}
         panelClassName={theme.modalPanel}
         headerClassName={theme.modalHeaderBorder}
         titleClassName={theme.modalTitle}
@@ -2183,7 +2218,7 @@ export function StorefrontClient({
               !previewProduct.is_in_stock && "cursor-not-allowed opacity-50",
             )}
           >
-            {previewProduct.is_in_stock ? "Sepete Ekle" : "Satışa Kapalı"}
+            {previewProduct.is_in_stock ? t("product.addToCart") : t("product.soldOut")}
           </Button>
         </div>
       </Modal>
@@ -2273,6 +2308,7 @@ export function StorefrontClient({
                             activeBannerIndex,
                             selectedCategory?.name ?? storefrontTitle,
                             theme,
+                            t,
                           )
                         : null}
                       {bannerItems.length > 1 ? (
@@ -2296,9 +2332,9 @@ export function StorefrontClient({
                     </div>
                   ) : (
                     <div className={cn("flex min-h-[240px] w-full flex-col justify-center rounded-[2.5rem] px-6 py-10 text-center md:min-h-[320px] lg:min-h-[400px]", theme.border, theme.surfaceMuted)}>
-                      <p className={cn("text-sm font-semibold", theme.text)}>Banner alanı şu an boş</p>
+                      <p className={cn("text-sm font-semibold", theme.text)}>{t("catalog.bannerEmpty")}</p>
                       <p className={cn("mt-2 text-sm", theme.textMuted)}>
-                        Admin panelindeki vitrin ayarlarından kampanya banner’ları ekleyebilirsiniz.
+                        {t("catalog.bannerEmptyHint")}
                       </p>
                     </div>
                   )}
@@ -2369,7 +2405,7 @@ export function StorefrontClient({
                                 theme.textMuted,
                               )}
                             >
-                              Tüm {section.title} Ürünlerini Gör ({section.products.length} ürün)
+                              {t("catalog.viewAllSectionProducts", { section: section.title, count: section.products.length })}
                             </a>
                           </div>
                         ) : null}
@@ -2387,18 +2423,18 @@ export function StorefrontClient({
                     <div>
                       <h2 className={cn("text-2xl font-bold tracking-tight sm:text-[2rem]", theme.text)}>
                         {selectedCategoryId !== "all"
-                          ? (categoryNameMap.get(selectedCategoryId) ?? "Ürünler")
-                          : (pageTitle ?? "Tüm Ürünler")}
+                          ? (categoryNameMap.get(selectedCategoryId) ?? t("catalog.products"))
+                          : (pageTitle ?? t("header.allProducts"))}
                       </h2>
                     </div>
                     <div className="flex flex-wrap items-center gap-2.5 sm:gap-3">
                       <div className={cn("rounded-full px-4 py-2.5 text-sm shadow-sm", theme.border, theme.surface, theme.textMuted)}>
                         <span className={cn("font-semibold", theme.text)}>{filteredProducts.length}</span>{" "}
-                        ürün bulundu
+                        {t("catalog.foundSuffix")}
                       </div>
                       <div className={cn("rounded-full px-4 py-2.5 text-sm", theme.border, theme.surfaceMuted, theme.textMuted)}>
                         <span className={cn("font-semibold", theme.text)}>{visibleProducts.length}</span>{" "}
-                        ürün gösteriliyor
+                        {t("catalog.showingSuffix")}
                       </div>
                     </div>
                   </div>
@@ -2418,9 +2454,9 @@ export function StorefrontClient({
                     />
                   ) : (
                     <Card className={cn("rounded-[2rem] border-0 p-10 text-center", theme.surfaceMuted)}>
-                      <p className="text-base font-semibold">Uyuşan ürün bulunamadı.</p>
+                      <p className="text-base font-semibold">{t("catalog.noMatchTitle")}</p>
                       <p className={cn("mt-1 text-sm", theme.textMuted)}>
-                        Arama kriterlerini veya seçili kategoriyi değiştirmeyi deneyin.
+                        {t("catalog.noMatchHint")}
                       </p>
                     </Card>
                   )}
@@ -2439,7 +2475,7 @@ export function StorefrontClient({
                           theme.textMuted,
                         )}
                       >
-                        Daha Fazla Ürün Göster ({filteredProducts.length - visibleCount} ürün kaldı)
+                        {t("catalog.showMore", { count: filteredProducts.length - visibleCount })}
                       </button>
                     </div>
                   ) : null}
@@ -2484,10 +2520,10 @@ export function StorefrontClient({
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="text-[13px] font-semibold tracking-tight text-white">
-                      Sipariş Özeti
+                      {t("cart.orderSummary")}
                     </p>
                     <p className="mt-0.5 text-[11px] text-slate-300">
-                      {cartDistinctCount} kalem, {cartItemCount} ürün
+                      {t("cart.lineSummary", { distinct: cartDistinctCount, count: cartItemCount })}
                     </p>
                   </div>
                   <div className="min-w-0 text-right">
@@ -2543,14 +2579,14 @@ export function StorefrontClient({
                       "shrink-0 rounded-full px-4 py-2 text-sm font-semibold shadow-[0_8px_24px_rgba(16,185,129,0.22)]",
                     )}
                   >
-                    Devam &gt;
+                    {t("stickyCart.continue")}
                   </span>
                 </div>
               </button>
             </motion.div>
             <button
               type="button"
-              aria-label="Sipariş özetini kapat"
+              aria-label={t("stickyCart.closeAria")}
               onClick={(event) => {
                 event.stopPropagation();
                 setIsStickyCartBarDismissed(true);
@@ -2633,7 +2669,7 @@ export function StorefrontClient({
       <Modal
         open={Boolean(selectedProduct)}
         onClose={closeAddToCartModal}
-        title={selectedProduct?.has_variants ? "Model Seçimi" : "Sepete Ekle"}
+        title={selectedProduct?.has_variants ? t("product.selectModel") : t("product.addToCart")}
         contentScroll={!selectedProduct?.has_variants}
         sheet={Boolean(selectedProduct?.has_variants)}
         panelClassName={theme.modalPanel}
@@ -2646,9 +2682,9 @@ export function StorefrontClient({
           selectedProduct?.has_variants ? (
             <div className="space-y-3">
               <div className={cn("rounded-xl p-3", theme.cartDrawerSummary)}>
-                <p className={cn("text-xs", theme.cartDrawerMuted)}>Seçilen Modeller</p>
+                <p className={cn("text-xs", theme.cartDrawerMuted)}>{t("addToCart.selectedModels")}</p>
                 <p className={cn("mt-0.5 text-xs", theme.cartDrawerMuted)}>
-                  {selectedVariantSummary.count} model
+                  {t("product.modelCount", { count: selectedVariantSummary.count })}
                 </p>
                 <p className="mt-1 text-xl font-bold">
                   {formatCurrency(selectedVariantSummary.total, selectedProduct.currency)}
@@ -2659,7 +2695,7 @@ export function StorefrontClient({
                 form="add-to-cart-form"
                 className="flex h-11 w-full rounded-full text-sm font-bold sm:h-auto sm:w-auto sm:rounded-lg sm:px-4 sm:py-2.5"
               >
-                Sepete Ekle
+                {t("product.addToCart")}
               </Button>
             </div>
           ) : (
@@ -2668,7 +2704,7 @@ export function StorefrontClient({
               form="add-to-cart-form"
               className="flex h-11 w-full rounded-full text-sm font-bold sm:h-auto sm:w-auto sm:rounded-lg sm:px-4 sm:py-2.5"
             >
-              Sepete Ekle
+              {t("product.addToCart")}
             </Button>
           )
         }
@@ -2708,9 +2744,9 @@ export function StorefrontClient({
                   <p className={cn("mt-0.5 truncate text-[11px]", theme.textMuted)}>
                     {formatProductModelNo(selectedProduct.sku_code)}
                   </p>
-                  {!selectedProduct.has_variants && getUnitSummary(selectedProduct) ? (
+                  {!selectedProduct.has_variants && getUnitSummary(selectedProduct, t) ? (
                     <p className={cn("mt-0.5 text-[11px]", theme.textMuted)}>
-                      {getUnitSummary(selectedProduct)}
+                      {getUnitSummary(selectedProduct, t)}
                     </p>
                   ) : null}
                 </div>
@@ -2725,7 +2761,7 @@ export function StorefrontClient({
                   <Input
                     value={variantSearchTerm}
                     onChange={(event) => setVariantSearchTerm(event.target.value)}
-                    placeholder="Model ara (14 Pro, 12/12 PF)"
+                    placeholder={t("addToCart.searchPlaceholder")}
                     className="h-9 rounded-lg pl-9 pr-3 text-[16px]"
                   />
                 </div>
@@ -2774,7 +2810,7 @@ export function StorefrontClient({
                               ) : null}
                               {isUnavailable ? (
                                 <Badge className={cn("px-2 py-1 text-[10px]", theme.surfaceMuted, theme.textMuted)}>
-                                  Yakında
+                                  {t("product.soon")}
                                 </Badge>
                               ) : null}
                             </div>
@@ -2804,7 +2840,11 @@ export function StorefrontClient({
                             >
                               {unitChoices.map((unitOption) => (
                                 <option key={unitOption.value} value={unitOption.value}>
-                                  {unitOption.label}
+                                  {unitOption.value === "adet"
+                                    ? t("unit.piece")
+                                    : unitOption.value === "paket"
+                                      ? t("unit.package")
+                                      : t("unit.carton")}
                                 </option>
                               ))}
                             </select>
@@ -2832,16 +2872,16 @@ export function StorefrontClient({
                                 }
                               }}
                               placeholder="0"
-                              ariaLabel={`${variant.model_name} adedi`}
+                              ariaLabel={t("addToCart.variantQuantityAria", { model: variant.model_name })}
                             />
                           </div>
 
                           <div className={cn("mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[9px] leading-4 sm:mt-1.5 sm:text-[10px]", theme.textMuted)}>
                             {variant.package_quantity ? (
-                              <span className="line-clamp-1">1 Paket = {variant.package_quantity}</span>
+                              <span className="line-clamp-1">{t("addToCart.packageEqualsShort", { count: variant.package_quantity })}</span>
                             ) : null}
                             {variant.carton_quantity ? (
-                              <span className="line-clamp-1">1 Koli = {variant.carton_quantity}</span>
+                              <span className="line-clamp-1">{t("addToCart.cartonEqualsShort", { count: variant.carton_quantity })}</span>
                             ) : null}
                           </div>
                         </div>
@@ -2850,8 +2890,8 @@ export function StorefrontClient({
                   ) : (
                     <div className={cn("rounded-lg px-4 py-5 text-center text-sm", theme.surfaceMuted, theme.textMuted)}>
                       {variantSearchTerm.trim()
-                        ? `“${variantSearchTerm.trim()}” için model bulunamadı.`
-                        : "Gösterilecek model bulunamadı."}
+                        ? t("addToCart.noModelFoundQuery", { query: variantSearchTerm.trim() })
+                        : t("addToCart.noModelFound")}
                     </div>
                   )}
                 </div>
@@ -2859,7 +2899,7 @@ export function StorefrontClient({
             ) : (
               <div className="grid w-full min-w-0 max-w-full gap-3 sm:grid-cols-3">
                 <div className="min-w-0 space-y-2">
-                  <label className={cn("text-sm font-semibold", theme.text)}>ADET</label>
+                  <label className={cn("text-sm font-semibold", theme.text)}>{t("addToCart.quantityLabel")}</label>
                   <QuantityStepper
                     value={selectedQuantity}
                     onChange={(nextValue) => {
@@ -2869,14 +2909,14 @@ export function StorefrontClient({
                       }
                     }}
                     placeholder="0"
-                    ariaLabel="Adet"
+                    ariaLabel={t("addToCart.quantityAria")}
                   />
                 </div>
 
                 {selectedProduct.package_quantity ? (
                   <div className="min-w-0 space-y-2">
                     <label className={cn("text-sm font-semibold", theme.text)}>
-                      PAKET
+                      {t("addToCart.packageLabel")}
                     </label>
                     <QuantityStepper
                       value={selectedPackageCount}
@@ -2887,17 +2927,17 @@ export function StorefrontClient({
                         }
                       }}
                       placeholder="0"
-                      ariaLabel="Paket"
+                      ariaLabel={t("addToCart.packageAria")}
                     />
                     <p className={cn("text-xs", theme.textMuted)}>
-                      1 Paket = {selectedProduct.package_quantity} adet
+                      {t("productModal.packageEquals", { count: selectedProduct.package_quantity })}
                     </p>
                   </div>
                 ) : null}
 
                 {selectedProduct.carton_quantity ? (
                   <div className="min-w-0 space-y-2">
-                    <label className={cn("text-sm font-semibold", theme.text)}>KOLİ</label>
+                    <label className={cn("text-sm font-semibold", theme.text)}>{t("addToCart.cartonLabel")}</label>
                     <QuantityStepper
                       value={selectedCartonCount}
                       onChange={(nextValue) => {
@@ -2907,10 +2947,10 @@ export function StorefrontClient({
                         }
                       }}
                       placeholder="0"
-                      ariaLabel="Koli"
+                      ariaLabel={t("addToCart.cartonAria")}
                     />
                     <p className={cn("text-xs", theme.textMuted)}>
-                      1 Koli = {selectedProduct.carton_quantity} adet
+                      {t("productModal.cartonEquals", { count: selectedProduct.carton_quantity })}
                     </p>
                   </div>
                 ) : null}
@@ -2923,8 +2963,8 @@ export function StorefrontClient({
 
             {!selectedProduct.has_variants ? (
               <div className={cn("w-full min-w-0 max-w-full shrink-0 rounded-xl p-3", theme.cartDrawerSummary)}>
-                <p className={cn("text-xs", theme.cartDrawerMuted)}>Toplam</p>
-                <p className={cn("mt-0.5 text-xs", theme.cartDrawerMuted)}>{selectedTotalQuantity} adet</p>
+                <p className={cn("text-xs", theme.cartDrawerMuted)}>{t("cart.total")}</p>
+                <p className={cn("mt-0.5 text-xs", theme.cartDrawerMuted)}>{t("crossSell.unitCount", { count: selectedTotalQuantity })}</p>
                 <p className="mt-1 break-words text-xl font-bold">
                   {formatCurrency(selectedLineTotal, selectedProduct.currency)}
                 </p>

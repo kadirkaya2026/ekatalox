@@ -6,9 +6,12 @@ import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { PasswordGate } from "@/components/storefront/password-gate";
 import { StoreClosedNotice } from "@/components/storefront/store-closed-notice";
+import { StorefrontSuspendedNotice } from "@/components/storefront/storefront-suspended-notice";
 import { StorefrontPageShell } from "@/components/storefront/storefront-page-shell";
 import { StorefrontClient } from "@/components/storefront/storefront-client";
 import { StorefrontFooter } from "@/components/storefront/storefront-footer";
+import { StorefrontSectionBreadcrumb } from "@/components/storefront/storefront-section-breadcrumb";
+import { StorefrontLocaleProvider } from "@/lib/storefront/locale-context";
 import { isTrialExpired } from "@/lib/billing/trial";
 import {
   getStorefrontSections,
@@ -53,21 +56,18 @@ export default async function SectionDetailPage(props: {
 
   if (tenant.status === "suspended") {
     return (
-      <div className="container-shell flex min-h-screen items-center justify-center py-8">
-        <div className="max-w-lg rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-sm">
-          <h1 className="text-2xl font-semibold text-slate-900">
-            Bu mağaza geçici olarak kapalı
-          </h1>
-          <p className="mt-3 text-sm leading-6 text-slate-600">
-            Tenant askıya alındığı için katalog şu an görüntülenemiyor.
-          </p>
-        </div>
-      </div>
+      <StorefrontLocaleProvider subdomain={subdomain}>
+        <StorefrontSuspendedNotice />
+      </StorefrontLocaleProvider>
     );
   }
 
   if (isTrialExpired(tenant)) {
-    return <StoreClosedNotice />;
+    return (
+      <StorefrontLocaleProvider subdomain={subdomain}>
+        <StoreClosedNotice />
+      </StorefrontLocaleProvider>
+    );
   }
 
   const priceListState = await readStorefrontPriceList(subdomain);
@@ -79,7 +79,7 @@ export default async function SectionDetailPage(props: {
     const settings = await getTenantStorefrontSettings(tenant.id);
 
     return (
-      <StorefrontPageShell storefrontSettings={settings}>
+      <StorefrontPageShell storefrontSettings={settings} subdomain={subdomain}>
         <PasswordGate
           subdomain={subdomain}
           companyName={tenant.company_name}
@@ -115,19 +115,14 @@ export default async function SectionDetailPage(props: {
   return (
     <StorefrontPageShell
       storefrontSettings={storefrontSettings}
+      subdomain={subdomain}
       className={footerVisible ? "pb-0" : undefined}
     >
       <div className="container-shell py-4">
-        <nav className="flex items-center gap-2 text-sm text-slate-500">
-          <a
-            href={getStorefrontHomePath()}
-            className="font-medium transition hover:text-slate-900"
-          >
-            Anasayfa
-          </a>
-          <span>/</span>
-          <span className="font-semibold text-slate-900">{section.title}</span>
-        </nav>
+        <StorefrontSectionBreadcrumb
+          homeHref={getStorefrontHomePath()}
+          sectionTitle={section.title}
+        />
       </div>
 
       <StorefrontClient

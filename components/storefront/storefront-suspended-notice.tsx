@@ -3,12 +3,9 @@
 import { useStorefrontLocale } from "@/lib/storefront/locale-context";
 import { StorefrontLanguageSwitcher } from "@/components/storefront/storefront-language-switcher";
 
-/**
- * Deneme süresi dolan tenant'ın vitrininde son müşteriye gösterilen nötr
- * kapalıyız ekranı. Ziyaretçi tenant'ın müşterisi olduğu için paket/ödeme
- * detayı içermez; o mesaj yalnızca yönetim panelinde gösterilir.
- */
-export function StoreClosedNotice() {
+// Tenant admin tarafından askıya alındığında gösterilen nötr ekran
+// (deneme süresi dolan tenant'lar için ayrı olan StoreClosedNotice'tan farklıdır).
+export function StorefrontSuspendedNotice() {
   const { t } = useStorefrontLocale();
 
   return (
@@ -18,10 +15,10 @@ export function StoreClosedNotice() {
       </div>
       <div className="max-w-lg rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-sm">
         <h1 className="text-2xl font-semibold text-slate-900">
-          {t("notice.closedTitle")}
+          {t("notice.suspendedTitle")}
         </h1>
         <p className="mt-3 text-sm leading-6 text-slate-600">
-          {t("notice.closedBody")}
+          {t("notice.suspendedBody")}
         </p>
       </div>
     </div>

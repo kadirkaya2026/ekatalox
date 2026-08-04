@@ -10,6 +10,7 @@ import { formatProductModelNo } from "@/lib/products/constants";
 import { cn, formatCurrency } from "@/lib/utils";
 import { StorefrontImage } from "@/components/storefront/storefront-image";
 import { useStorefrontTheme } from "@/lib/storefront/theme-context";
+import { useStorefrontLocale } from "@/lib/storefront/locale-context";
 
 const floatingActionTransition = {
   type: "spring",
@@ -31,6 +32,7 @@ export function ProductPrice({
   size?: ProductPriceSize;
 }) {
   const theme = useStorefrontTheme();
+  const { t } = useStorefrontLocale();
 
   if (product.price === null) {
     return null;
@@ -63,9 +65,9 @@ export function ProductPrice({
     size === "compact"
       ? formatCurrency(product.price, product.currency)
       : product.price_from
-        ? `${formatCurrency(product.price, product.currency)}'den başlayan fiyatlarla`
+        ? `${formatCurrency(product.price, product.currency)}${t("product.priceFromSuffix")}`
         : hasPriceRange
-          ? `${formatCurrency(product.price, product.currency)}'den`
+          ? `${formatCurrency(product.price, product.currency)}${t("product.priceFromRangeSuffix")}`
           : formatCurrency(product.price, product.currency);
 
   if (!hasDiscount) {
@@ -89,6 +91,8 @@ export function ProductPrice({
 }
 
 export function DiscountSticker({ product }: { product: StorefrontProduct }) {
+  const { t } = useStorefrontLocale();
+
   if (
     product.price === null ||
     typeof product.discount_percentage !== "number" ||
@@ -99,7 +103,7 @@ export function DiscountSticker({ product }: { product: StorefrontProduct }) {
 
   return (
     <span className="absolute left-2 top-2 z-10 rounded-full bg-rose-500 px-2 py-0.5 text-[10px] font-bold text-white shadow-sm">
-      %{product.discount_percentage} İndirim
+      {t("product.discountBadge", { percentage: product.discount_percentage })}
     </span>
   );
 }
@@ -120,6 +124,7 @@ export const StorefrontFloatingCartAction = memo(function StorefrontFloatingCart
   onOpenAddToCart: (productId: string) => void;
 }) {
   const theme = useStorefrontTheme();
+  const { t } = useStorefrontLocale();
 
   if (!product.is_in_stock) {
     return null;
@@ -158,7 +163,7 @@ export const StorefrontFloatingCartAction = memo(function StorefrontFloatingCart
               "flex items-center justify-center rounded-full text-white transition hover:bg-white/15",
               compact ? "size-8" : "size-9 sm:size-10",
             )}
-            aria-label="Adedi artır"
+            aria-label={t("product.increaseAria")}
           >
             <Plus className={compact ? "size-4" : "size-4 sm:size-5"} />
           </motion.button>
@@ -187,10 +192,10 @@ export const StorefrontFloatingCartAction = memo(function StorefrontFloatingCart
             )}
             aria-label={
               product.has_variants
-                ? "Model seçimini aç"
+                ? t("product.openVariantSelectionAria")
                 : cartQuantity === 1
-                  ? "Ürünü sepetten çıkar"
-                  : "Adedi azalt"
+                  ? t("product.removeAria")
+                  : t("product.decreaseAria")
             }
           >
             {!product.has_variants && cartQuantity === 1 ? (
@@ -224,7 +229,7 @@ export const StorefrontFloatingCartAction = memo(function StorefrontFloatingCart
           theme.floatingCartAddButton,
           compact ? "size-8" : "size-9 sm:size-10",
         )}
-        aria-label="Ürün ekleme birimini seç"
+        aria-label={t("product.selectAddUnitAria")}
       >
         <Plus className={compact ? "size-3.5" : "size-4"} strokeWidth={2.8} />
       </motion.button>
@@ -254,6 +259,7 @@ export const StorefrontProductCard = memo(function StorefrontProductCard({
   onOpenAddToCart: (productId: string) => void;
 }) {
   const theme = useStorefrontTheme();
+  const { t } = useStorefrontLocale();
   const handleOpenDetail = () => onOpenDetail(product.id);
 
   return (
@@ -306,7 +312,7 @@ export const StorefrontProductCard = memo(function StorefrontProductCard({
         {!product.is_in_stock ? (
           <div className={theme.productOutOverlay}>
             <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-white sm:text-[11px]">
-              Yakında
+              {t("product.soon")}
             </span>
           </div>
         ) : null}
@@ -323,11 +329,11 @@ export const StorefrontProductCard = memo(function StorefrontProductCard({
         {product.has_variants ? (
           <div className="flex flex-wrap gap-1 pt-1">
             <Badge className={theme.variantBadge}>
-              {product.variants.length} model
+              {t("product.modelCount", { count: product.variants.length })}
             </Badge>
             {addedVariantCount > 0 ? (
               <Badge className={theme.addedVariantBadge}>
-                {addedVariantCount} Model Eklendi
+                {t("product.modelsAdded", { count: addedVariantCount })}
               </Badge>
             ) : null}
           </div>

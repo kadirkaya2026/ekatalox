@@ -7,6 +7,7 @@ import {
 } from "@/lib/storefront/brand-colors";
 import { getStorefrontFontOption } from "@/lib/storefront/font-catalog";
 import { StorefrontThemeProvider, useStorefrontTheme } from "@/lib/storefront/theme-context";
+import { StorefrontLocaleProvider } from "@/lib/storefront/locale-context";
 import type { TenantStorefrontSettings } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -38,6 +39,7 @@ function StorefrontPageShellInner({
 export function StorefrontPageShell({
   storefrontSettings,
   themeKey,
+  subdomain,
   className,
   children,
 }: {
@@ -46,6 +48,7 @@ export function StorefrontPageShell({
     "theme_key" | "brand_primary_color" | "brand_accent_color" | "font_key"
   >;
   themeKey?: string;
+  subdomain: string;
   className?: string;
   children: React.ReactNode;
 }) {
@@ -64,18 +67,20 @@ export function StorefrontPageShell({
     : undefined;
 
   return (
-    <StorefrontThemeProvider
-      themeKey={resolvedThemeKey}
-      brandPrimaryColor={brandPrimaryColor}
-      brandAccentColor={brandAccentColor}
-    >
-      <StorefrontPageShellInner
-        className={className}
-        fontClassName={fontOption.className}
-        style={brandStyle}
+    <StorefrontLocaleProvider subdomain={subdomain}>
+      <StorefrontThemeProvider
+        themeKey={resolvedThemeKey}
+        brandPrimaryColor={brandPrimaryColor}
+        brandAccentColor={brandAccentColor}
       >
-        {children}
-      </StorefrontPageShellInner>
-    </StorefrontThemeProvider>
+        <StorefrontPageShellInner
+          className={className}
+          fontClassName={fontOption.className}
+          style={brandStyle}
+        >
+          {children}
+        </StorefrontPageShellInner>
+      </StorefrontThemeProvider>
+    </StorefrontLocaleProvider>
   );
 }

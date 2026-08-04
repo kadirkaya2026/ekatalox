@@ -29,6 +29,7 @@ import type {
 import { formatProductModelNo } from "@/lib/products/constants";
 import { cn, formatCurrency } from "@/lib/utils";
 import { useStorefrontTheme } from "@/lib/storefront/theme-context";
+import { useStorefrontLocale } from "@/lib/storefront/locale-context";
 import type { WhatsAppOrderHandoff } from "@/lib/storefront/whatsapp-order";
 import { STOREFRONT_CART_THUMB_SIZES } from "@/lib/storefront/image-sizes";
 import { StorefrontImage } from "@/components/storefront/storefront-image";
@@ -119,6 +120,7 @@ export function StorefrontCartDrawer({
   isCatalogOnly = false,
 }: StorefrontCartDrawerProps) {
   const theme = useStorefrontTheme();
+  const { t } = useStorefrontLocale();
   const [copyFeedback, setCopyFeedback] = useState<string | null>(null);
 
   function updateCartItemQuantity(productId: string, value: string) {
@@ -162,9 +164,9 @@ export function StorefrontCartDrawer({
 
     try {
       await navigator.clipboard.writeText(whatsappHandoff.message);
-      setCopyFeedback("Mesaj panoya kopyalandı.");
+      setCopyFeedback(t("cart.messageCopied"));
     } catch {
-      setCopyFeedback("Mesaj kopyalanamadı.");
+      setCopyFeedback(t("cart.messageCopyFailed"));
     }
   }
 
@@ -185,7 +187,7 @@ export function StorefrontCartDrawer({
     <div className={theme.cartDrawerOverlay}>
       <button
         type="button"
-        aria-label="Sepeti kapat"
+        aria-label={t("cart.closeAria")}
         className="absolute inset-0 h-full w-full"
         onClick={onClose}
       />
@@ -199,10 +201,10 @@ export function StorefrontCartDrawer({
             <div className="flex items-center justify-between gap-3">
               <div className="flex min-w-0 items-baseline gap-2.5">
                 <h2 className={theme.cartDrawerTitle}>
-                  Sepetim
+                  {t("cart.title")}
                 </h2>
                 <p className={cn("truncate text-xs font-medium sm:text-sm", theme.cartDrawerMuted)}>
-                  {cartDistinctCount} kalem, {cartItemCount} ürün
+                  {t("cart.lineSummary", { distinct: cartDistinctCount, count: cartItemCount })}
                 </p>
               </div>
               <div className="flex items-center">
@@ -210,7 +212,7 @@ export function StorefrontCartDrawer({
                   type="button"
                   onClick={onClose}
                   className={theme.cartDrawerCloseButton}
-                  aria-label="Sepeti kapat"
+                  aria-label={t("cart.closeAria")}
                 >
                   <X className="size-5" />
                 </button>
@@ -265,7 +267,7 @@ export function StorefrontCartDrawer({
                             </p>
                             {item.variant_name ? (
                               <p className="mt-0.5 text-xs font-medium text-emerald-700">
-                                Model: {item.variant_name}
+                                {t("cart.modelPrefix")} {item.variant_name}
                               </p>
                             ) : null}
                             <p className={cn("mt-0.5 text-xs", theme.textMuted)}>
@@ -278,7 +280,7 @@ export function StorefrontCartDrawer({
                               setCart((current) => updateCartLineQuantity(current, item.id, 0))
                             }
                             className={cn("h-fit rounded-full p-2 transition hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950/50", theme.textMuted)}
-                            aria-label="Ürünü sepetten çıkar"
+                            aria-label={t("cart.removeItemAria")}
                           >
                             <Trash2 className="size-4" />
                           </button>
@@ -296,7 +298,7 @@ export function StorefrontCartDrawer({
                             )
                           }
                           className={cn("flex size-8 items-center justify-center rounded-full transition sm:size-9", theme.quantityStepperButton)}
-                          aria-label="Adedi azalt"
+                          aria-label={t("cart.decreaseAria")}
                         >
                           <Minus className="size-4" />
                         </button>
@@ -313,7 +315,7 @@ export function StorefrontCartDrawer({
                             theme.text,
                           )}
                           style={{ fontSize: "16px" }}
-                          aria-label="Ürün adedi"
+                          aria-label={t("cart.quantityAria")}
                         />
                         <button
                           type="button"
@@ -323,7 +325,7 @@ export function StorefrontCartDrawer({
                             )
                           }
                           className={cn("flex size-8 items-center justify-center rounded-full transition sm:size-9", theme.quantityStepperButton)}
-                          aria-label="Adedi artır"
+                          aria-label={t("cart.increaseAria")}
                         >
                           <Plus className="size-4" />
                         </button>
@@ -333,7 +335,7 @@ export function StorefrontCartDrawer({
                         <div className="ml-auto flex min-w-0 max-w-[58%] flex-1 items-end justify-end gap-2 text-right sm:max-w-none sm:gap-4">
                           <div className="min-w-0 max-w-[48%] sm:max-w-none">
                             <p className={cn("truncate text-[10px] font-semibold uppercase tracking-wide sm:text-[11px] sm:tracking-[0.18em]", theme.textMuted)}>
-                              Birim Fiyat
+                              {t("cart.unitPrice")}
                             </p>
                             <p className={cn("mt-1 truncate text-sm font-semibold tabular-nums", theme.textMuted)}>
                               {item.price !== null
@@ -343,7 +345,7 @@ export function StorefrontCartDrawer({
                           </div>
                           <div className="min-w-0 max-w-[52%] sm:max-w-none">
                             <p className={cn("truncate text-[10px] font-semibold uppercase tracking-wide sm:text-[11px] sm:tracking-[0.18em]", theme.textMuted)}>
-                              Ara Toplam
+                              {t("cart.subtotalLine")}
                             </p>
                             <p className={cn("mt-1 truncate text-sm font-bold tabular-nums tracking-tight sm:text-base", theme.text)}>
                               {item.price !== null
@@ -361,9 +363,9 @@ export function StorefrontCartDrawer({
                   {!isCatalogOnly ? (
                     <>
                   <div className="mb-3 flex items-center justify-between gap-3">
-                    <p className={cn("text-sm font-semibold", theme.text)}>Ödeme Yöntemi</p>
+                    <p className={cn("text-sm font-semibold", theme.text)}>{t("cart.paymentMethod")}</p>
                     <span className={cn("rounded-full px-3 py-1 text-[11px] font-semibold", theme.surfaceMuted, theme.textMuted)}>
-                      Opsiyonel
+                      {t("cart.optional")}
                     </span>
                   </div>
                   <div className="grid grid-cols-2 gap-2">
@@ -382,7 +384,7 @@ export function StorefrontCartDrawer({
                       )}
                     >
                       <Banknote className="size-4" />
-                      Nakit
+                      {t("cart.cash")}
                     </button>
                     <button
                       type="button"
@@ -398,7 +400,7 @@ export function StorefrontCartDrawer({
                       )}
                     >
                       <CreditCard className="size-4" />
-                      Kredi Kartı
+                      {t("cart.card")}
                     </button>
                   </div>
                   {paymentMethodError ? (
@@ -408,15 +410,15 @@ export function StorefrontCartDrawer({
                   ) : null}
                   <div className="mt-3">
                     <div className="mb-2 flex items-center justify-between gap-3">
-                      <span className={cn("text-sm font-semibold", theme.text)}>Müşteri / Cari Adı</span>
+                      <span className={cn("text-sm font-semibold", theme.text)}>{t("cart.customerReferenceName")}</span>
                       <span className={cn("rounded-full px-3 py-1 text-[11px] font-semibold", theme.surfaceMuted, theme.textMuted)}>
-                        Opsiyonel
+                        {t("cart.optional")}
                       </span>
                     </div>
                     <Input
                       value={customerReferenceName}
                       onChange={(event) => setCustomerReferenceName(event.target.value)}
-                      placeholder="Örn: Ahmet Ticaret Ltd. Şti."
+                      placeholder={t("cart.customerReferenceNamePlaceholder")}
                       className={cn("rounded-[1.1rem] text-[16px]", theme.formField, theme.text)}
                     />
                   </div>
@@ -429,7 +431,7 @@ export function StorefrontCartDrawer({
                     return (
                       <div className="mt-3">
                         <p className={cn("mb-2 text-xs font-semibold uppercase tracking-[0.16em]", theme.textMuted)}>
-                          Taksit Seçeneği
+                          {t("cart.installmentOption")}
                         </p>
                         <div className="flex flex-wrap gap-2">
                           {activeInstallments.map((option: InstallmentOption) => (
@@ -461,13 +463,13 @@ export function StorefrontCartDrawer({
 
                 <div className={theme.panelSurface}>
                   <div className="mb-2 flex items-center justify-between gap-3">
-                    <p className={cn("text-sm font-semibold", theme.text)}>Sipariş Notu</p>
+                    <p className={cn("text-sm font-semibold", theme.text)}>{t("cart.orderNote")}</p>
                     <span className={cn("rounded-full px-3 py-1 text-[11px] font-semibold", theme.surfaceMuted, theme.textMuted)}>
-                      Opsiyonel
+                      {t("cart.optional")}
                     </span>
                   </div>
                   <Textarea
-                    placeholder="Sipariş notu (opsiyonel)"
+                    placeholder={t("cart.orderNotePlaceholder")}
                     value={note}
                     onChange={(event) => setNote(event.target.value)}
                     className={cn("min-h-[84px] rounded-[1.1rem] text-[16px]", theme.formField, theme.text)}
@@ -478,10 +480,10 @@ export function StorefrontCartDrawer({
                   <section className={cn(theme.panelSurface, theme.surfaceMuted)}>
                     <div className="mb-3">
                       <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-emerald-700">
-                        Sepetine Uygun Ürünler
+                        {t("cart.suggestedProducts")}
                       </p>
                       <h3 className={cn("mt-1 text-lg font-bold tracking-tight", theme.text)}>
-                        Bunları da Beğenebilirsiniz
+                        {t("cart.youMayAlsoLike")}
                       </h3>
                     </div>
 
@@ -497,11 +499,10 @@ export function StorefrontCartDrawer({
                   <ShoppingCart className={cn("size-9", theme.textMuted)} />
                 </div>
                 <p className={cn("mt-5 text-base font-semibold", theme.text)}>
-                  Sepetiniz şu an boş.
+                  {t("cart.emptyTitle")}
                 </p>
                 <p className={cn("mt-2 max-w-xs text-sm leading-6", theme.textMuted)}>
-                  Ürünleri inceleyip birkaç kalemi sepete eklediğinizde sipariş özeti burada
-                  premium bir şekilde listelenecek.
+                  {t("cart.emptyHint")}
                 </p>
               </div>
             )}
@@ -516,7 +517,7 @@ export function StorefrontCartDrawer({
                     cartPaymentSummary.surchargeAmount > 0 ? (
                       <>
                         <div className="flex items-center justify-between gap-3">
-                          <p className={cn("text-sm font-medium", theme.cartSummaryMuted)}>Ara Toplam</p>
+                          <p className={cn("text-sm font-medium", theme.cartSummaryMuted)}>{t("cart.subtotalLine")}</p>
                           <p
                             className={cn(
                               "text-sm font-semibold tracking-tight",
@@ -534,7 +535,7 @@ export function StorefrontCartDrawer({
                         {cartPaymentSummary.isQualified && cartPaymentSummary.discountAmount > 0 ? (
                           <div className="flex items-center justify-between gap-3">
                             <p className={cn("text-sm font-medium", theme.cartSummaryMuted)}>
-                              İskonto (%{formatDiscountPercentage(cartPaymentSummary.discountPercentage)})
+                              {t("cart.discount", { percentage: formatDiscountPercentage(cartPaymentSummary.discountPercentage) })}
                             </p>
                             <p className="text-base font-bold tracking-tight text-emerald-300">
                               -{formatCurrency(cartPaymentSummary.discountAmount, cartPaymentSummary.currency)}
@@ -544,7 +545,7 @@ export function StorefrontCartDrawer({
                         {cartPaymentSummary.surchargeAmount > 0 ? (
                           <div className="flex items-center justify-between gap-3">
                             <p className={cn("text-sm font-medium", theme.cartSummaryMuted)}>
-                              Vade Farkı (%{formatDiscountPercentage(cartPaymentSummary.surchargePercentage)})
+                              {t("cart.surcharge", { percentage: formatDiscountPercentage(cartPaymentSummary.surchargePercentage) })}
                             </p>
                             <p className="text-base font-bold tracking-tight text-amber-300">
                               +{formatCurrency(cartPaymentSummary.surchargeAmount, cartPaymentSummary.currency)}
@@ -552,7 +553,7 @@ export function StorefrontCartDrawer({
                           </div>
                         ) : null}
                         <div className="flex items-center justify-between gap-3 pt-2">
-                          <p className={cn("text-sm font-medium text-neutral-200")}>Genel Toplam</p>
+                          <p className={cn("text-sm font-medium text-neutral-200")}>{t("cart.grandTotal")}</p>
                           <p className="text-base font-bold tracking-tight text-white sm:text-lg">
                             {formatCurrency(cartPaymentSummary.finalTotal, cartPaymentSummary.currency)}
                           </p>
@@ -560,7 +561,7 @@ export function StorefrontCartDrawer({
                       </>
                     ) : (
                       <div className="flex items-center justify-between gap-3">
-                        <p className={cn("text-sm font-medium", theme.cartSummaryMuted)}>Genel Toplam</p>
+                        <p className={cn("text-sm font-medium", theme.cartSummaryMuted)}>{t("cart.grandTotal")}</p>
                         <p className="text-base font-bold tracking-tight text-white sm:text-lg">
                           {formatCurrency(cartPaymentSummary.finalTotal, cartPaymentSummary.currency)}
                         </p>
@@ -570,7 +571,7 @@ export function StorefrontCartDrawer({
                 ) : cartDiscountSummary?.isQualified ? (
                   <div className="space-y-2.5">
                     <div className="flex items-center justify-between gap-3">
-                      <p className={cn("text-sm font-medium", theme.cartSummaryMuted)}>Ara Toplam</p>
+                      <p className={cn("text-sm font-medium", theme.cartSummaryMuted)}>{t("cart.subtotalLine")}</p>
                       <p className={cn("text-sm font-semibold tracking-tight line-through", theme.cartSummaryMuted)}>
                         {formatCurrency(
                           cartDiscountSummary.subtotal,
@@ -580,7 +581,7 @@ export function StorefrontCartDrawer({
                     </div>
                     <div className="flex items-center justify-between gap-3">
                       <p className={cn("text-sm font-medium", theme.cartSummaryMuted)}>
-                        İskonto (%{formatDiscountPercentage(cartDiscountSummary.percentage)})
+                        {t("cart.discount", { percentage: formatDiscountPercentage(cartDiscountSummary.percentage) })}
                       </p>
                       <p className="text-base font-bold tracking-tight text-emerald-300">
                         -
@@ -591,7 +592,7 @@ export function StorefrontCartDrawer({
                       </p>
                     </div>
                     <div className="flex items-center justify-between gap-3 pt-2">
-                      <p className="text-sm font-medium text-neutral-200">Genel Toplam</p>
+                      <p className="text-sm font-medium text-neutral-200">{t("cart.grandTotal")}</p>
                       <p className="text-base font-bold tracking-tight text-white sm:text-lg">
                         {formatCurrency(
                           cartDiscountSummary.totalAfterDiscount,
@@ -602,16 +603,16 @@ export function StorefrontCartDrawer({
                   </div>
                 ) : isCatalogOnly && cart.length ? (
                   <div className="flex items-center justify-between gap-3">
-                    <p className={cn("text-sm font-medium", theme.cartSummaryMuted)}>Sipariş Özeti</p>
+                    <p className={cn("text-sm font-medium", theme.cartSummaryMuted)}>{t("cart.orderSummary")}</p>
                     <p className="text-base font-bold tracking-tight text-white sm:text-lg">
-                      {cartItemCount} kalem
+                      {t("cart.itemsCountShort", { count: cartItemCount })}
                     </p>
                   </div>
                 ) : cart.length === 0 ? (
                   <div className="hidden items-center justify-between gap-3 sm:flex">
-                    <p className={cn("text-sm font-medium", theme.cartSummaryMuted)}>Toplam</p>
+                    <p className={cn("text-sm font-medium", theme.cartSummaryMuted)}>{t("cart.total")}</p>
                     <p className={cn("text-base font-bold tracking-tight sm:text-lg", theme.cartSummaryMuted)}>
-                      Sepet Boş
+                      {t("header.cartEmpty")}
                     </p>
                   </div>
                 ) : cartTotalEntries.length ? (
@@ -621,7 +622,7 @@ export function StorefrontCartDrawer({
                         key={currency}
                         className="flex items-center justify-between gap-3"
                       >
-                        <p className={cn("text-sm font-medium", theme.cartSummaryMuted)}>Toplam</p>
+                        <p className={cn("text-sm font-medium", theme.cartSummaryMuted)}>{t("cart.total")}</p>
                         <p className="text-base font-bold tracking-tight text-white sm:text-lg">
                           {currency}: {formatCurrency(total, currency)}
                         </p>
@@ -630,7 +631,7 @@ export function StorefrontCartDrawer({
                   </div>
                 ) : (
                   <div className="flex items-center justify-between gap-3">
-                    <p className={cn("text-sm font-medium", theme.cartSummaryMuted)}>Toplam</p>
+                    <p className={cn("text-sm font-medium", theme.cartSummaryMuted)}>{t("cart.total")}</p>
                     <p className="text-base font-bold tracking-tight text-white sm:text-lg">
                       {formatCurrency(cartTotal, cartCurrency)}
                     </p>
@@ -640,22 +641,21 @@ export function StorefrontCartDrawer({
 
               {!isCatalogOnly && cart.length > 0 && cartTotalEntries.length > 1 ? (
                 <p className="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-center text-xs font-medium leading-5 text-amber-700">
-                  Sepetinizde birden fazla para birimi var (
-                  {cartTotalEntries.map((entry) => entry.currency).join(", ")}).
-                  Sipariş fişi tek para birimiyle oluşturulabilir; lütfen tek
-                  para birimindeki ürünlerle sipariş verin.
+                  {t("cart.multiCurrencyWarning", {
+                    currencies: cartTotalEntries.map((entry) => entry.currency).join(", "),
+                  })}
                 </p>
               ) : null}
               {whatsappHandoff ? (
                 <div className="mt-3 space-y-2">
                   <p className="text-center text-xs font-medium leading-5 text-emerald-700">
                     {whatsappHandoff.pdfIncluded
-                      ? "Sipariş fişiniz hazır. WhatsApp'ta göndermek için butona dokunun."
-                      : "Sipariş metniniz hazır. WhatsApp'ta göndermek için butona dokunun."}
+                      ? t("cart.whatsappReadyPdf")
+                      : t("cart.whatsappReadyText")}
                   </p>
                   {orderPdfError ? (
                     <p className="text-center text-xs font-medium text-amber-600">
-                      {orderPdfError} Yine de sipariş metnini gönderebilirsiniz.
+                      {orderPdfError} {t("cart.orderPdfErrorSuffix")}
                     </p>
                   ) : null}
                   <a
@@ -665,14 +665,14 @@ export function StorefrontCartDrawer({
                       stickyCartButtonClassName,
                     )}
                   >
-                    WhatsApp&apos;ta Gönder
+                    {t("cart.sendViaWhatsApp")}
                   </a>
                   <button
                     type="button"
                     onClick={copyOrderMessage}
                     className={cn("w-full text-center text-xs font-semibold transition hover:opacity-80", theme.textMuted)}
                   >
-                    Mesajı Kopyala
+                    {t("cart.copyMessage")}
                   </button>
                   {copyFeedback ? (
                     <p className="text-center text-xs font-medium text-emerald-700">{copyFeedback}</p>
@@ -685,7 +685,7 @@ export function StorefrontCartDrawer({
                     }}
                     className={cn("w-full text-center text-[11px] font-medium transition hover:text-rose-500", theme.textMuted)}
                   >
-                    Yeniden Hazırla
+                    {t("cart.startOver")}
                   </button>
                 </div>
               ) : (
@@ -700,8 +700,8 @@ export function StorefrontCartDrawer({
                   )}
                 >
                   {isGeneratingOrderPdf
-                    ? "PDF hazırlanıyor..."
-                    : "WhatsApp ile Siparişi Tamamla"}
+                    ? t("cart.pdfPreparing")
+                    : t("cart.completeViaWhatsApp")}
                 </Button>
               )}
               {cart.length > 0 && (
@@ -710,7 +710,7 @@ export function StorefrontCartDrawer({
                   onClick={clearCart}
                   className={cn("mt-2 w-full text-center text-[11px] font-medium transition hover:text-rose-500", theme.textMuted)}
                 >
-                  Sepeti Boşalt
+                  {t("cart.clearCart")}
                 </button>
               )}
             </div>

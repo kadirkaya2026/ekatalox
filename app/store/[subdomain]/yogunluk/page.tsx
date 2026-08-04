@@ -7,6 +7,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { VisitorQuotaNotice } from "@/components/storefront/visitor-quota-notice";
 import { getStorefrontTenantCached, getTenantStorefrontSettings } from "@/lib/data";
+import { StorefrontLocaleProvider } from "@/lib/storefront/locale-context";
 
 export function generateStaticParams() {
   return [];
@@ -52,5 +53,9 @@ export default async function StorefrontVisitorQuotaPage(
     notFound();
   }
 
-  return <VisitorQuotaNotice />;
+  return (
+    <StorefrontLocaleProvider subdomain={subdomain}>
+      <VisitorQuotaNotice />
+    </StorefrontLocaleProvider>
+  );
 }

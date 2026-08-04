@@ -9,6 +9,7 @@ import { formatProductModelNo } from "@/lib/products/constants";
 import { cn } from "@/lib/utils";
 import { StorefrontImage } from "@/components/storefront/storefront-image";
 import { useStorefrontTheme } from "@/lib/storefront/theme-context";
+import { useStorefrontLocale } from "@/lib/storefront/locale-context";
 import { ProductPrice } from "@/components/storefront/storefront-product-card";
 
 function StorefrontInlineCartAction({
@@ -25,11 +26,12 @@ function StorefrontInlineCartAction({
   onOpenAddToCart: (productId: string) => void;
 }) {
   const theme = useStorefrontTheme();
+  const { t } = useStorefrontLocale();
 
   if (!product.is_in_stock) {
     return (
       <span className={cn("shrink-0 rounded-full px-2.5 py-1 text-[10px] font-semibold", theme.stockBadgeOut)}>
-        Yakında
+        {t("product.soon")}
       </span>
     );
   }
@@ -56,7 +58,7 @@ function StorefrontInlineCartAction({
             }
           }}
           className={cn("flex size-8 items-center justify-center rounded-lg transition", theme.quantityStepperButton)}
-          aria-label={cartQuantity === 1 && !product.has_variants ? "Sepetten çıkar" : "Azalt"}
+          aria-label={cartQuantity === 1 && !product.has_variants ? t("listRow.removeAria") : t("listRow.decreaseAria")}
         >
           {!product.has_variants && cartQuantity === 1 ? (
             <Trash2 className="size-4" />
@@ -81,7 +83,7 @@ function StorefrontInlineCartAction({
             "flex size-8 items-center justify-center rounded-lg text-white transition",
             theme.primaryButton,
           )}
-          aria-label="Artır"
+          aria-label={t("listRow.increaseAria")}
         >
           <Plus className="size-4" />
         </button>
@@ -100,7 +102,7 @@ function StorefrontInlineCartAction({
         "flex size-9 shrink-0 items-center justify-center rounded-xl text-white transition",
         theme.floatingCartAddButton,
       )}
-      aria-label="Sepete ekle"
+      aria-label={t("listRow.addAria")}
     >
       <Plus className="size-4" strokeWidth={2.8} />
     </button>
@@ -125,6 +127,7 @@ export const StorefrontProductListRow = memo(function StorefrontProductListRow({
   onOpenAddToCart: (productId: string) => void;
 }) {
   const theme = useStorefrontTheme();
+  const { t } = useStorefrontLocale();
 
   const handleOpenDetail = () => onOpenDetail(product.id);
 
@@ -179,18 +182,18 @@ export const StorefrontProductListRow = memo(function StorefrontProductListRow({
         <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
           {product.is_in_stock ? (
             <span className={cn("inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold", theme.stockBadgeIn)}>
-              Stokta
+              {t("product.inStock")}
             </span>
           ) : (
             <span className={cn("inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold", theme.stockBadgeOut)}>
-              Yakında
+              {t("product.soon")}
             </span>
           )}
           {product.has_variants ? (
             <>
-              <Badge className={theme.variantBadge}>{product.variants.length} model</Badge>
+              <Badge className={theme.variantBadge}>{t("product.modelCount", { count: product.variants.length })}</Badge>
               {addedVariantCount > 0 ? (
-                <Badge className={theme.addedVariantBadge}>{addedVariantCount} eklendi</Badge>
+                <Badge className={theme.addedVariantBadge}>{t("product.modelsAddedShort", { count: addedVariantCount })}</Badge>
               ) : null}
             </>
           ) : null}

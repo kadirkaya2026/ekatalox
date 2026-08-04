@@ -12,6 +12,7 @@ import {
   type FooterSocialPlatform,
 } from "@/lib/storefront/footer-links";
 import { useStorefrontTheme } from "@/lib/storefront/theme-context";
+import { useStorefrontLocale } from "@/lib/storefront/locale-context";
 import type { TenantStorefrontSettings } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -135,6 +136,7 @@ export function StorefrontFooter({
   copyrightTenantName?: string | null;
 }) {
   const theme = useStorefrontTheme();
+  const { t } = useStorefrontLocale();
   const showLocation = Boolean(settings.is_footer_location_visible);
   const showWebsite = Boolean(settings.is_footer_website_visible);
   const showContact = Boolean(settings.is_footer_contact_visible);
@@ -177,7 +179,7 @@ export function StorefrontFooter({
             {hasContactColumn ? (
               <MobileSection showDivider={mobileDividerIndex++ > 0}>
                 <div className={cn("flex flex-col items-center text-center", footerStyle === "columns" ? "md:items-start md:text-left" : "md:items-start md:text-left")}>
-                  <FooterSectionHeading>İletişim &amp; Adres</FooterSectionHeading>
+                  <FooterSectionHeading>{t("footer.contact")}</FooterSectionHeading>
                   <div className="space-y-1">
                     {locationText ? (
                       <FooterDetailText>{locationText}</FooterDetailText>
@@ -216,7 +218,7 @@ export function StorefrontFooter({
                 )}
               >
                 <div className="flex w-full flex-col items-center md:items-end">
-                  <FooterSectionHeading>Sosyal Medya</FooterSectionHeading>
+                  <FooterSectionHeading>{t("footer.social")}</FooterSectionHeading>
                   <div className="flex flex-wrap items-center justify-center gap-1.5 md:justify-end">
                     {socialLinks.map((link) => (
                       <a
@@ -254,7 +256,7 @@ export function StorefrontFooter({
           {copyrightTenantName ? (
             <>
               <span className={cn("font-semibold", theme.footerLink)}>{copyrightTenantName}</span>{" "}
-              Tüm Hakları Saklıdır.
+              {t("footer.allRightsReserved")}
             </>
           ) : (
             <>
@@ -266,7 +268,7 @@ export function StorefrontFooter({
               >
                 eKatalox
               </a>{" "}
-              Tüm Hakları Saklıdır.
+              {t("footer.allRightsReserved")}
             </>
           )}
         </div>
