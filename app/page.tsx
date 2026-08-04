@@ -555,7 +555,7 @@ const Pricing = () => {
             <span className="text-gradient-neon">Yıllık ve Aylık Seçenekler.</span>
           </h2>
           <p className="mt-6 text-lg md:text-xl text-slate-400 max-w-2xl mx-auto font-light">
-            İhtiyacınıza uygun planı seçin. Yıllık ödemede 2 ay hediye.
+            İhtiyacınıza uygun planı seçin.
           </p>
           <div className="mt-6 inline-flex items-center gap-2 px-4 py-2 rounded-full border border-[#10b981]/40 bg-[#10b981]/10 text-sm text-white">
             <CreditCard className="w-4 h-4 text-[#10b981]" />
@@ -803,7 +803,7 @@ const Navbar = () => (
           <Link href="/iletisim" className="hover:text-white transition-colors">İletişim</Link>
         </div>
         <div className="flex items-center gap-3">
-          <Link href="/login" className="hidden sm:inline text-sm text-slate-300 hover:text-white">Giriş</Link>
+          <Link href="/login" className="text-sm text-slate-300 hover:text-white">Giriş</Link>
           <Link href="/kayit" className="px-4 py-1.5 rounded-full bg-white text-black text-sm font-medium hover:scale-105 transition-transform">Başla</Link>
         </div>
       </div>
