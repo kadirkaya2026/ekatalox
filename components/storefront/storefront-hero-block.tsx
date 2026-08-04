@@ -9,14 +9,10 @@ export function StorefrontHeroBlock({
 }: {
   settings: Pick<
     TenantStorefrontSettings,
-    "hero_heading" | "hero_cta_label" | "storefront_description" | "is_hero_visible"
+    "hero_heading" | "hero_cta_label" | "storefront_description"
   >;
 }) {
   const theme = useStorefrontTheme();
-
-  if (!settings.is_hero_visible) {
-    return null;
-  }
 
   const heading = settings.hero_heading?.trim();
   const description = settings.storefront_description?.trim();

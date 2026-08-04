@@ -18,7 +18,7 @@ export const DEFAULT_HOMEPAGE_BLOCKS: HomepageBlock[] = [
 
 export const HOMEPAGE_BLOCK_LABELS: Record<HomepageBlockId, string> = {
   hero: "Hero metin alanı",
-  banner: "Banner carousel",
+  banner: "Anasayfa banner alanı",
   campaigns: "Kampanya barları",
   showcase: "Vitrin bölümleri",
   catalog: "Tam ürün kataloğu",
@@ -57,4 +57,29 @@ export function isHomepageBlockVisible(
   id: HomepageBlockId,
 ): boolean {
   return normalizeHomepageBlocks(blocks).find((block) => block.id === id)?.visible ?? true;
+}
+
+// Tenant admin, homepage_blocks_editor paket özelliği olmadan da hero'yu
+// aç/kapa yapabilmeli (bkz. tenant-homepage-content-form.tsx). Bu yüzden
+// "sadece hero görünürlüğü değişti mi" ayrımı gerekiyor: öyleyse tam blok
+// editörü paket kısıtına takılmadan kaydedilebilir.
+export function isHeroOnlyVisibilityChange(
+  existingBlocks: HomepageBlock[] | null | undefined,
+  nextBlocks: HomepageBlock[] | null | undefined,
+): boolean {
+  const existing = normalizeHomepageBlocks(existingBlocks);
+  const next = normalizeHomepageBlocks(nextBlocks);
+
+  return existing.every((block, index) => {
+    const candidate = next[index];
+    if (!candidate || candidate.id !== block.id || candidate.order !== block.order) {
+      return false;
+    }
+
+    if (block.id === "hero") {
+      return true;
+    }
+
+    return candidate.visible === block.visible;
+  });
 }
