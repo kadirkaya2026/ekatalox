@@ -123,41 +123,32 @@ async function maybeRedirectStorefrontRequest(params: {
     return null;
   }
 
+  // Yönetilen alt alan adı (musteri.ekatalox.com) her zaman doğrudan mağazayı
+  // sunar; tenant'ın custom_domain alanına ne yazıldığı bu isteği asla
+  // dışarıya yönlendirmez (DNS/sahiplik doğrulaması olmadan açık yönlendirme
+  // oluşturmamak için). Sadece gerçekten custom_domain host'undan gelen
+  // trafik (yani DNS gerçekten eKatalox'a bağlanmışsa) kanonik mağaza
+  // adresine yönlendirilir.
+  const isCustomDomainHost = isTenantCustomDomainHost(params.normalizedHost, tenant);
+  if (!isCustomDomainHost) {
+    return null;
+  }
+
   const publicPath = toPublicStorefrontPath(
     params.pathname,
     params.hostResolution.subdomain,
   );
-  const isManagedSubdomainHost =
-    params.normalizedHost.endsWith(`.${appEnv.rootDomain}`) ||
-    params.normalizedHost.endsWith(".localhost");
-  const isCustomDomainHost = isTenantCustomDomainHost(params.normalizedHost, tenant);
   const forwardedProto = params.request.headers.get("x-forwarded-proto");
 
-  if (isManagedSubdomainHost) {
-    return NextResponse.redirect(
-      buildStorefrontRedirectUrl({
-        host: tenant.custom_domain,
-        pathname: publicPath,
-        search: params.request.nextUrl.search,
-        protocol: forwardedProto,
-      }),
-      301,
-    );
-  }
-
-  if (isCustomDomainHost && publicPath !== params.pathname) {
-    return NextResponse.redirect(
-      buildStorefrontRedirectUrl({
-        host: params.normalizedHost,
-        pathname: publicPath,
-        search: params.request.nextUrl.search,
-        protocol: forwardedProto,
-      }),
-      301,
-    );
-  }
-
-  return null;
+  return NextResponse.redirect(
+    buildStorefrontRedirectUrl({
+      host: `${params.hostResolution.subdomain}.${appEnv.rootDomain}`,
+      pathname: publicPath,
+      search: params.request.nextUrl.search,
+      protocol: forwardedProto,
+    }),
+    301,
+  );
 }
 
 export async function proxy(request: NextRequest) {
