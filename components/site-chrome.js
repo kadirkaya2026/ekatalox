@@ -12,6 +12,7 @@ export const SiteNavbar = () => (
           <EkataloxLogo className="h-8 w-[148px]" priority />
         </Link>
         <div className="hidden md:flex items-center gap-7 text-sm text-slate-300">
+          <Link href="/temalar" className="hover:text-white transition-colors">Temalar</Link>
           <Link href="/#demo" className="hover:text-white transition-colors">Özellikler</Link>
           <Link href="/musteriler" className="hover:text-white transition-colors">Müşteriler</Link>
           <Link href="/#fiyatlandirma" className="hover:text-white transition-colors">Fiyatlandırma</Link>
@@ -45,6 +46,7 @@ export const SiteFooter = () => (
           </div>
         </div>
         <FooterCol title="Ürün" items={[
+          ['Temalar', '/temalar'],
           ['Özellikler', '/#demo'],
           ['Fiyatlandırma', '/#fiyatlandirma'],
           ['Demo', '/#demo'],

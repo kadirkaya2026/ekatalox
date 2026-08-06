@@ -48,6 +48,11 @@ export const HEADER_STYLE_OPTIONS: AppearanceOption<StorefrontHeaderStyleKey>[] 
     title: "Minimal",
     description: "Kompakt üst bar; arama ve kategori alt satırda.",
   },
+  {
+    key: "split",
+    title: "Bölünmüş",
+    description: "Logo ve kategoriler solda, arama ve sepet sağda tek sırada.",
+  },
 ];
 
 export const FOOTER_STYLE_OPTIONS: AppearanceOption<StorefrontFooterStyleKey>[] = [

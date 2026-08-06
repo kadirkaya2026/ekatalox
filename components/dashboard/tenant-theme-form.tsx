@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { LayoutGrid, Palette, RotateCcw, Sparkles, Type } from "lucide-react";
+import { ExternalLink, LayoutGrid, Palette, RotateCcw, Sparkles, Type } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -22,6 +22,7 @@ import type {
 import { THEME_OPTIONS } from "@/lib/storefront/theme-catalog";
 import { LAYOUT_OPTIONS } from "@/lib/storefront/layout-catalog";
 import { FONT_OPTIONS } from "@/lib/storefront/font-catalog";
+import { STOREFRONT_THEME_PRESETS, type StorefrontThemePreset } from "@/lib/storefront/theme-presets";
 import {
   BRAND_COLOR_PRESETS,
   DEFAULT_STOREFRONT_APPEARANCE,
@@ -44,13 +45,14 @@ interface ThemeFormState {
   recommendation_mode: RecommendationMode;
 }
 
-type ThemeFormTab = "brand" | "theme" | "layout" | "recommendations" | "appearance";
+type ThemeFormTab = "presets" | "brand" | "theme" | "layout" | "recommendations" | "appearance";
 
 const THEME_FORM_TABS: Array<{
   key: ThemeFormTab;
   label: string;
   icon: React.ComponentType<{ className?: string }>;
 }> = [
+  { key: "presets", label: "Hazır Paketler", icon: Sparkles },
   { key: "brand", label: "Marka Renkleri", icon: Palette },
   { key: "theme", label: "Hazır Tema", icon: Palette },
   { key: "layout", label: "Vitrin Düzeni", icon: LayoutGrid },
@@ -121,9 +123,11 @@ export function TenantThemeForm({
   const [form, setForm] = useState<ThemeFormState>(
     toThemeFormState(initialStorefrontSettings),
   );
-  const [activeTab, setActiveTab] = useState<ThemeFormTab>("brand");
+  const [activeTab, setActiveTab] = useState<ThemeFormTab>("presets");
   const [savePending, startSaveTransition] = useTransition();
   const [resetPending, startResetTransition] = useTransition();
+  const [applyingPresetKey, setApplyingPresetKey] = useState<string | null>(null);
+  const [applyPending, startApplyTransition] = useTransition();
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
   const router = useRouter();
   const canUseAdvancedAppearance = hasPlanFeature(tenantPlan, "advanced_appearance");
@@ -193,6 +197,60 @@ export function TenantThemeForm({
     );
   }
 
+  function applyPreset(preset: StorefrontThemePreset) {
+    const confirmed = window.confirm(
+      `"${preset.title}" paketini uygulamak istediğinize emin misiniz? Tema, düzen ve görünüm ayarlarınız bu pakete göre değişecek.`,
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setApplyingPresetKey(preset.key);
+    setSaveMessage(null);
+
+    startApplyTransition(async () => {
+      const payload = {
+        theme_key: preset.settings.theme_key,
+        layout_key: preset.settings.layout_key,
+        brand_primary_color: null,
+        brand_accent_color: null,
+        recommendation_mode: form.recommendation_mode,
+        ...(canUseAdvancedAppearance
+          ? {
+              font_key: preset.settings.font_key,
+              product_card_style: preset.settings.product_card_style,
+              header_style_key: preset.settings.header_style_key,
+              footer_style_key: preset.settings.footer_style_key,
+              hero_style_key: preset.settings.hero_style_key,
+            }
+          : {}),
+      };
+
+      const response = await fetch("/api/tenant/settings", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        setApplyingPresetKey(null);
+        setSaveMessage(result.error ?? "Tema paketi uygulanamadı.");
+        return;
+      }
+
+      if (result.storefrontSettings) {
+        setForm(toThemeFormState(result.storefrontSettings));
+      }
+
+      setApplyingPresetKey(null);
+      setSaveMessage(`"${preset.title}" paketi uygulandı.`);
+      router.refresh();
+    });
+  }
+
   return (
     <form onSubmit={save}>
       <div className="space-y-6">
@@ -217,6 +275,89 @@ export function TenantThemeForm({
           </div>
 
           <div className="p-5">
+            {activeTab === "presets" ? (
+              <div>
+                <div className="flex items-center gap-2">
+                  <Sparkles className="size-5 text-emerald-700" />
+                  <h2 className="text-lg font-semibold text-slate-900">Hazır paketler</h2>
+                </div>
+                <p className="mt-1 mb-4 text-sm text-slate-600">
+                  Sektörünüze uygun hazır bir paket seçin: renk teması, vitrin düzeni, header,
+                  footer ve hero görünümü tek tıkla birlikte değişir. Uyguladıktan sonra diğer
+                  sekmelerden ince ayar yapabilirsiniz.
+                </p>
+                <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+                  {STOREFRONT_THEME_PRESETS.map((preset) => {
+                    const isSelected =
+                      form.theme_key === preset.settings.theme_key &&
+                      form.layout_key === preset.settings.layout_key &&
+                      form.header_style_key === preset.settings.header_style_key &&
+                      form.footer_style_key === preset.settings.footer_style_key;
+                    const isApplying = applyPending && applyingPresetKey === preset.key;
+
+                    return (
+                      <div
+                        key={preset.key}
+                        className={cn(
+                          "rounded-2xl border p-4",
+                          isSelected
+                            ? "border-emerald-500 bg-emerald-50/50 ring-1 ring-emerald-500/30"
+                            : "border-slate-200 bg-white",
+                        )}
+                      >
+                        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                          <div>
+                            <p className="inline-flex rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-600">
+                              {preset.sector}
+                            </p>
+                            <h3 className="mt-1.5 text-base font-semibold text-slate-900">
+                              {preset.title}
+                            </h3>
+                          </div>
+                          <a
+                            href={`https://${preset.demoSubdomain}.ekatalox.com`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 hover:underline"
+                          >
+                            Canlı demoyu gör
+                            <ExternalLink className="size-3.5" />
+                          </a>
+                        </div>
+                        <p className="mb-4 text-sm leading-6 text-slate-500">
+                          {preset.description}
+                        </p>
+
+                        <StorefrontThemeShowcase
+                          themeKey={preset.settings.theme_key}
+                          layoutKey={preset.settings.layout_key}
+                          headerStyleKey={preset.settings.header_style_key}
+                          footerStyleKey={preset.settings.footer_style_key}
+                          heroStyleKey={preset.settings.hero_style_key}
+                          storefrontTitle={previewTitle}
+                          logoUrl={previewLogoUrl}
+                        />
+
+                        <Button
+                          type="button"
+                          className="mt-4 w-full"
+                          variant={isSelected ? "secondary" : "primary"}
+                          disabled={applyPending}
+                          onClick={() => applyPreset(preset)}
+                        >
+                          {isApplying
+                            ? "Uygulanıyor..."
+                            : isSelected
+                              ? "Bu paket uygulandı"
+                              : "Bu paketi uygula"}
+                        </Button>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ) : null}
+
             {activeTab === "brand" ? (
               <div>
                 <div className="flex items-center gap-2">

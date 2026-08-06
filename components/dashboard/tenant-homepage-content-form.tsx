@@ -2,17 +2,48 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowDown, ArrowUp, Sparkles } from "lucide-react";
+import { ArrowDown, ArrowUp, ImageOff, Sparkles, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { PlanFeatureGate } from "@/components/dashboard/plan-feature-gate";
-import type { HomepageBlock, TenantPlan, TenantStorefrontSettings } from "@/lib/types";
+import type {
+  HomepageBlock,
+  StorefrontHeroStyleKey,
+  TenantPlan,
+  TenantStorefrontSettings,
+} from "@/lib/types";
 import {
   HOMEPAGE_BLOCK_LABELS,
   normalizeHomepageBlocks,
 } from "@/lib/storefront/homepage-blocks";
+import {
+  allowedHeroImageMimeTypes,
+  maxHeroImageFileSizeBytes,
+} from "@/lib/validators/storefront-settings";
 import { cn } from "@/lib/utils";
+
+const HERO_STYLE_OPTIONS: Array<{
+  key: StorefrontHeroStyleKey;
+  title: string;
+  description: string;
+}> = [
+  {
+    key: "text",
+    title: "Sade metin",
+    description: "Görsel yok, sadece başlık ve açıklama.",
+  },
+  {
+    key: "image-split",
+    title: "Görsel yan yana",
+    description: "Solda metin, sağda hero görseli.",
+  },
+  {
+    key: "full-bleed",
+    title: "Tam genişlik banner",
+    description: "Arka planda büyük görsel, üzerinde başlık.",
+  },
+];
 
 type HomepageContentTab = "hero" | "blocks";
 
@@ -35,12 +66,87 @@ export function TenantHomepageContentForm({
   const [heroCtaLabel, setHeroCtaLabel] = useState(
     initialStorefrontSettings.hero_cta_label ?? "",
   );
+  const [heroImageUrl, setHeroImageUrl] = useState(
+    initialStorefrontSettings.hero_image_url ?? "",
+  );
+  const [heroStyleKey, setHeroStyleKey] = useState<StorefrontHeroStyleKey>(
+    initialStorefrontSettings.hero_style_key ?? "text",
+  );
+  const [heroImagePending, setHeroImagePending] = useState(false);
+  const [heroImageMessage, setHeroImageMessage] = useState<string | null>(null);
   const [blocks, setBlocks] = useState<HomepageBlock[]>(
     normalizeHomepageBlocks(initialStorefrontSettings.homepage_blocks),
   );
   const [savePending, startSaveTransition] = useTransition();
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
   const router = useRouter();
+
+  async function handleHeroImageChange(file: File | null) {
+    if (!file) return;
+
+    if (!allowedHeroImageMimeTypes.includes(file.type as (typeof allowedHeroImageMimeTypes)[number])) {
+      setHeroImageMessage("Hero görseli yalnız PNG, JPEG veya WEBP olabilir.");
+      return;
+    }
+
+    if (file.size > maxHeroImageFileSizeBytes) {
+      setHeroImageMessage("Hero görseli en fazla 3MB olabilir.");
+      return;
+    }
+
+    setHeroImagePending(true);
+    setHeroImageMessage(null);
+
+    const formData = new FormData();
+    formData.set("image", file);
+    if (heroImageUrl) {
+      formData.set("previous_image_url", heroImageUrl);
+    }
+
+    const response = await fetch("/api/tenant/settings/hero-image", {
+      method: "POST",
+      body: formData,
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      setHeroImagePending(false);
+      setHeroImageMessage(result.error ?? "Hero görseli yüklenemedi.");
+      return;
+    }
+
+    setHeroImageUrl(result.image_url as string);
+    setHeroImagePending(false);
+    setHeroImageMessage("Hero görseli yüklendi.");
+    setSaveMessage(null);
+  }
+
+  async function removeHeroImage() {
+    if (!heroImageUrl) return;
+
+    setHeroImagePending(true);
+    setHeroImageMessage(null);
+
+    const response = await fetch("/api/tenant/settings/hero-image", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ image_url: heroImageUrl }),
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      setHeroImagePending(false);
+      setHeroImageMessage(result.error ?? "Hero görseli silinemedi.");
+      return;
+    }
+
+    setHeroImageUrl("");
+    setHeroImagePending(false);
+    setHeroImageMessage(null);
+    setSaveMessage(null);
+  }
 
   const isHeroVisible = blocks.find((block) => block.id === "hero")?.visible ?? true;
 
@@ -77,6 +183,8 @@ export function TenantHomepageContentForm({
         body: JSON.stringify({
           hero_heading: heroHeading,
           hero_cta_label: heroCtaLabel,
+          hero_image_url: heroImageUrl || null,
+          hero_style_key: heroStyleKey,
           homepage_blocks: blocks,
         }),
       });
@@ -91,6 +199,8 @@ export function TenantHomepageContentForm({
       if (result.storefrontSettings) {
         setHeroHeading(result.storefrontSettings.hero_heading ?? "");
         setHeroCtaLabel(result.storefrontSettings.hero_cta_label ?? "");
+        setHeroImageUrl(result.storefrontSettings.hero_image_url ?? "");
+        setHeroStyleKey(result.storefrontSettings.hero_style_key ?? "text");
         setBlocks(normalizeHomepageBlocks(result.storefrontSettings.homepage_blocks));
       }
 
@@ -174,6 +284,87 @@ export function TenantHomepageContentForm({
           <p className="mt-2 text-xs text-slate-500">
             Buton tıklandığında katalog bölümüne kaydırır.
           </p>
+        </div>
+
+        <div className="mt-4">
+          <PlanFeatureGate
+            feature="advanced_appearance"
+            plan={tenantPlan}
+            companyName={companyName}
+          >
+            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+              <p className="mb-3 text-sm font-semibold text-slate-900">Hero görünümü</p>
+              <div className="grid gap-2 sm:grid-cols-3">
+                {HERO_STYLE_OPTIONS.map((option) => (
+                  <button
+                    key={option.key}
+                    type="button"
+                    onClick={() => {
+                      setHeroStyleKey(option.key);
+                      setSaveMessage(null);
+                    }}
+                    className={cn(
+                      "rounded-xl border p-3 text-left transition",
+                      heroStyleKey === option.key
+                        ? "border-emerald-500 bg-emerald-50"
+                        : "border-slate-200 bg-white hover:border-slate-300",
+                    )}
+                  >
+                    <p className="text-sm font-semibold text-slate-900">{option.title}</p>
+                    <p className="mt-1 text-xs text-slate-500">{option.description}</p>
+                  </button>
+                ))}
+              </div>
+
+              {heroStyleKey !== "text" ? (
+                <div className="mt-4">
+                  <p className="mb-2 text-sm font-semibold text-slate-900">Hero görseli</p>
+                  {heroImageUrl ? (
+                    <div className="relative mb-3 overflow-hidden rounded-xl border border-slate-200">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={heroImageUrl}
+                        alt="Hero görseli"
+                        className="h-40 w-full object-cover"
+                      />
+                      <button
+                        type="button"
+                        onClick={removeHeroImage}
+                        disabled={heroImagePending}
+                        className="absolute right-2 top-2 flex size-7 items-center justify-center rounded-full bg-black/60 text-white transition hover:bg-black/80"
+                        aria-label="Hero görselini kaldır"
+                      >
+                        <X className="size-4" />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="mb-3 flex h-40 items-center justify-center rounded-xl border border-dashed border-slate-300 bg-white text-slate-400">
+                      <ImageOff className="size-6" />
+                    </div>
+                  )}
+                  <label className="inline-flex cursor-pointer items-center gap-2 rounded-full border border-slate-300 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:border-slate-400">
+                    {heroImagePending ? "Yükleniyor..." : "Görsel yükle"}
+                    <input
+                      type="file"
+                      accept={allowedHeroImageMimeTypes.join(",")}
+                      className="hidden"
+                      disabled={heroImagePending}
+                      onChange={(event) =>
+                        handleHeroImageChange(event.target.files?.[0] ?? null)
+                      }
+                    />
+                  </label>
+                  <p className="mt-2 text-xs text-slate-500">
+                    PNG, JPEG veya WEBP, en fazla 3MB. Geniş, düşük detaylı görseller en iyi
+                    sonucu verir.
+                  </p>
+                  {heroImageMessage ? (
+                    <p className="mt-2 text-xs text-emerald-700">{heroImageMessage}</p>
+                  ) : null}
+                </div>
+              ) : null}
+            </div>
+          </PlanFeatureGate>
         </div>
         </div>
         ) : null}

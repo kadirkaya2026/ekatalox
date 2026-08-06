@@ -27,8 +27,9 @@ export type StorefrontFontKey =
   | "source-sans"
   | "playfair";
 export type StorefrontProductCardStyle = "standard" | "compact" | "image-forward";
-export type StorefrontHeaderStyleKey = "standard" | "centered" | "minimal";
+export type StorefrontHeaderStyleKey = "standard" | "centered" | "minimal" | "split";
 export type StorefrontFooterStyleKey = "standard" | "minimal" | "columns";
+export type StorefrontHeroStyleKey = "text" | "image-split" | "full-bleed";
 export type HomepageBlockId = "hero" | "banner" | "campaigns" | "showcase" | "catalog";
 
 export interface HomepageBlock {
@@ -202,6 +203,8 @@ export interface TenantStorefrontSettings {
   storefront_description: string | null;
   hero_heading: string | null;
   hero_cta_label: string | null;
+  hero_image_url: string | null;
+  hero_style_key: StorefrontHeroStyleKey;
   is_hero_visible: boolean;
   brand_primary_color: string | null;
   brand_accent_color: string | null;

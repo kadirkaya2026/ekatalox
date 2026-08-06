@@ -390,6 +390,22 @@ function StorefrontHeaderTopBar({ props }: { props: StorefrontHeaderProps }) {
     );
   }
 
+  if (props.headerStyleKey === "split") {
+    return (
+      <div className="container-shell py-3">
+        <div className="flex flex-wrap items-center gap-3 lg:flex-nowrap lg:gap-6">
+          <div className="flex min-w-0 shrink-0 items-center gap-2">
+            <HeaderBrand props={props} compact />
+          </div>
+          <HeaderSearch props={props} className="order-3 w-full lg:order-none lg:max-w-none lg:flex-1" />
+          <div className="ml-auto flex shrink-0 items-center">
+            <HeaderActions props={props} compact />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="container-shell py-4">
       <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(260px,420px)_auto] lg:items-center">

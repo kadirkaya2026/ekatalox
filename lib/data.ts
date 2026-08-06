@@ -107,6 +107,8 @@ export function getDefaultTenantStorefrontSettings(
     storefront_description: null,
     hero_heading: null,
     hero_cta_label: null,
+    hero_image_url: null,
+    hero_style_key: "text",
     is_hero_visible: false,
     brand_primary_color: null,
     brand_accent_color: null,

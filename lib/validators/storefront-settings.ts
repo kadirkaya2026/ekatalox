@@ -9,6 +9,8 @@ export const storefrontThemeKeySchema = z.enum([
   "industrial",
   "premium",
   "catalog-first",
+  "market",
+  "vitrin-pro",
 ]);
 
 export const storefrontLayoutKeySchema = z.enum([
@@ -32,9 +34,16 @@ export const storefrontProductCardStyleSchema = z.enum([
   "image-forward",
 ]);
 
-export const storefrontHeaderStyleKeySchema = z.enum(["standard", "centered", "minimal"]);
+export const storefrontHeaderStyleKeySchema = z.enum([
+  "standard",
+  "centered",
+  "minimal",
+  "split",
+]);
 
 export const storefrontFooterStyleKeySchema = z.enum(["standard", "minimal", "columns"]);
+
+export const storefrontHeroStyleKeySchema = z.enum(["text", "image-split", "full-bleed"]);
 
 export const recommendationModeSchema = z.enum(["auto", "manual"]);
 
@@ -159,6 +168,8 @@ export const storefrontSettingsSchema = z
       .nullable()
       .optional()
       .transform((value) => value || null),
+    hero_image_url: optionalUrlSchema,
+    hero_style_key: storefrontHeroStyleKeySchema.default("text"),
     is_hero_visible: z.boolean().default(false),
     brand_primary_color: optionalColorSchema,
     brand_accent_color: optionalColorSchema,
@@ -344,6 +355,14 @@ export const allowedBannerMimeTypes = [
 export const maxBannerFileSizeBytes = 2 * 1024 * 1024;
 export const requiredBannerWidth = 1200;
 export const requiredBannerHeight = 400;
+
+export const allowedHeroImageMimeTypes = [
+  "image/png",
+  "image/jpeg",
+  "image/webp",
+] as const;
+
+export const maxHeroImageFileSizeBytes = 3 * 1024 * 1024;
 
 export const allowedFaviconMimeTypes = [
   "image/png",

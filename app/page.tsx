@@ -344,6 +344,42 @@ const Features = () => {
   )
 }
 
+// ----------------------------- THEMES PROMO -----------------------------------
+const ThemesPromo = () => (
+  <section className="relative py-24 md:py-32 px-6">
+    <div className="max-w-6xl mx-auto relative rounded-3xl border border-white/10 bg-gradient-to-b from-white/[0.04] to-transparent overflow-hidden p-10 md:p-16 text-center">
+      <div className="absolute -top-24 left-1/2 -translate-x-1/2 w-[600px] h-[400px] rounded-full bg-[#10b981]/15 blur-[140px] pointer-events-none" />
+      <motion.div
+        initial={{ opacity: 0, y: 24 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: false, amount: 0.3 }}
+        transition={{ duration: 0.7 }}
+        className="relative"
+      >
+        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full glass text-xs text-slate-300 mb-6">
+          <Sparkles className="w-3 h-3 text-[#10b981]" />
+          Sektörünüze özel temalar
+        </div>
+        <h2 className="display-headline text-3xl md:text-5xl text-white text-balance">
+          Sadece renk değil, <span className="text-gradient-neon">baştan sona farklı bir vitrin.</span>
+        </h2>
+        <p className="mt-5 max-w-2xl mx-auto text-slate-400 text-base md:text-lg">
+          Elektronikten gıdaya, tekstilden mobilyaya; her tema kendi header, banner ve vitrin
+          düzeniyle geliyor. Karta tıklayın, gerçek bir eKatalox mağazasını canlı gezin.
+        </p>
+        <div className="mt-9">
+          <Link
+            href="/temalar"
+            className="inline-flex items-center gap-2 px-7 py-3.5 rounded-full bg-white text-black text-sm font-medium hover:scale-105 transition-transform"
+          >
+            Tüm Temaları İncele <ArrowRight className="w-4 h-4" />
+          </Link>
+        </div>
+      </motion.div>
+    </div>
+  </section>
+)
+
 // ----------------------------- FAQ -------------------------------------------
 const FAQ = () => {
   const faqs = [
@@ -754,7 +790,7 @@ const Footer = () => (
           </div>
         </div>
 
-        <FooterCol title="Ürün" items={[['Özellikler','#ozellikler'], ['Fiyatlandırma','#fiyatlandirma'], ['Örnek Katalog','https://demo.ekatalox.com'], ['Yenilikler','/yenilikler'], ['Yol Haritası','/yenilikler']]} />
+        <FooterCol title="Ürün" items={[['Temalar','/temalar'], ['Özellikler','#ozellikler'], ['Fiyatlandırma','#fiyatlandirma'], ['Örnek Katalog','https://demo.ekatalox.com'], ['Yenilikler','/yenilikler'], ['Yol Haritası','/yenilikler']]} />
         <FooterCol title="Şirket" items={[['Hakkımızda','/hakkimizda'], ['Müşteriler','/musteriler'], ['İletişim','/iletisim'], ['Kariyer','/hakkimizda'], ['Basın','/iletisim']]} />
         <FooterCol title="Destek" items={[['Dokümantasyon','/yardim'], ['Yardım Merkezi','/yardim'], ['API','/yardim'], ['Durum','/yardim'], ['İletişim','/iletisim']]} />
       </div>
@@ -796,6 +832,7 @@ const Navbar = () => (
           <EkataloxLogo className="h-8 w-[148px]" priority />
         </Link>
         <div className="hidden md:flex items-center gap-8 text-sm text-slate-300">
+          <Link href="/temalar" className="hover:text-white transition-colors">Temalar</Link>
           <a href="#ozellikler" className="hover:text-white transition-colors">Özellikler</a>
           <Link href="/musteriler" className="hover:text-white transition-colors">Müşteriler</Link>
           <a href="#fiyatlandirma" className="hover:text-white transition-colors">Fiyatlandırma</a>
@@ -862,6 +899,7 @@ const App = () => {
       <Hero />
       <ProblemSolution />
       <Features />
+      <ThemesPromo />
       <Pricing />
       <FAQ />
       <FinalCTA />

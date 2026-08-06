@@ -133,6 +133,9 @@ export async function PATCH(request: Request) {
       body.storefront_description ?? existingSettings.storefront_description,
     hero_heading: body.hero_heading ?? existingSettings.hero_heading,
     hero_cta_label: body.hero_cta_label ?? existingSettings.hero_cta_label,
+    hero_image_url:
+      "hero_image_url" in body ? body.hero_image_url : existingSettings.hero_image_url,
+    hero_style_key: body.hero_style_key ?? existingSettings.hero_style_key,
     is_hero_visible: body.is_hero_visible ?? existingSettings.is_hero_visible,
     brand_primary_color:
       "brand_primary_color" in body
@@ -270,6 +273,8 @@ export async function PATCH(request: Request) {
         storefront_description: parsed.data.storefront_description,
         hero_heading: parsed.data.hero_heading,
         hero_cta_label: parsed.data.hero_cta_label,
+        hero_image_url: parsed.data.hero_image_url,
+        hero_style_key: parsed.data.hero_style_key,
         is_hero_visible: derivedIsHeroVisible,
         brand_primary_color: parsed.data.brand_primary_color,
         brand_accent_color: parsed.data.brand_accent_color,
@@ -358,6 +363,8 @@ export async function PATCH(request: Request) {
     storefront_description: parsed.data.storefront_description,
     hero_heading: parsed.data.hero_heading,
     hero_cta_label: parsed.data.hero_cta_label,
+    hero_image_url: parsed.data.hero_image_url,
+    hero_style_key: parsed.data.hero_style_key,
     is_hero_visible: derivedIsHeroVisible,
     brand_primary_color: parsed.data.brand_primary_color,
     brand_accent_color: parsed.data.brand_accent_color,

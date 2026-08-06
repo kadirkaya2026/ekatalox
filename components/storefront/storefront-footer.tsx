@@ -160,9 +160,10 @@ export function StorefrontFooter({
   );
   const hasContactColumn = Boolean(locationText || hasWebsite || hasContactInfo);
   const hasSocialColumn = socialLinks.length > 0;
-  const hasFooterMainContent = hasContactColumn || hasSocialColumn;
 
   const footerStyle = settings.footer_style_key ?? "standard";
+  const hasQuickLinksColumn = footerStyle === "columns";
+  const hasFooterMainContent = hasContactColumn || hasSocialColumn || hasQuickLinksColumn;
   const showMainColumns = footerStyle !== "minimal" && hasFooterMainContent;
   const gridClassName =
     footerStyle === "columns"
@@ -176,6 +177,24 @@ export function StorefrontFooter({
       <div className="mx-auto max-w-7xl px-4 pt-5 pb-0 md:py-7">
         {showMainColumns ? (
           <div className={gridClassName}>
+            {hasQuickLinksColumn ? (
+              <MobileSection showDivider={mobileDividerIndex++ > 0}>
+                <div className="flex flex-col items-center text-center md:items-start md:text-left">
+                  <FooterSectionHeading>{t("footer.quickLinks")}</FooterSectionHeading>
+                  <div className="space-y-1">
+                    <p>
+                      <FooterDetailLink href="/">{t("footer.home")}</FooterDetailLink>
+                    </p>
+                    <p>
+                      <FooterDetailLink href="#catalog-grid">
+                        {t("header.allProducts")}
+                      </FooterDetailLink>
+                    </p>
+                  </div>
+                </div>
+              </MobileSection>
+            ) : null}
+
             {hasContactColumn ? (
               <MobileSection showDivider={mobileDividerIndex++ > 0}>
                 <div className={cn("flex flex-col items-center text-center", footerStyle === "columns" ? "md:items-start md:text-left" : "md:items-start md:text-left")}>
@@ -214,7 +233,7 @@ export function StorefrontFooter({
               <MobileSection
                 className={cn(
                   "md:justify-self-end",
-                  !hasContactColumn && "md:col-start-2",
+                  footerStyle !== "columns" && !hasContactColumn && "md:col-start-2",
                 )}
               >
                 <div className="flex w-full flex-col items-center md:items-end">

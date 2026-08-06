@@ -182,6 +182,8 @@ export const storefrontDictionary: Record<StorefrontLocale, StorefrontDictionary
     "campaign.cashSubtitleUnqualifiedNoNext": "Sepetin şu an {subtotal}.",
     "campaign.conditionPrefix": "⚠️ Şart:",
 
+    "footer.quickLinks": "Hızlı Linkler",
+    "footer.home": "Anasayfa",
     "footer.contact": "İletişim & Adres",
     "footer.social": "Sosyal Medya",
     "footer.allRightsReserved": "Tüm Hakları Saklıdır.",
@@ -372,6 +374,8 @@ export const storefrontDictionary: Record<StorefrontLocale, StorefrontDictionary
     "campaign.cashSubtitleUnqualifiedNoNext": "Ihr Warenkorb aktuell {subtotal}.",
     "campaign.conditionPrefix": "⚠️ Bedingung:",
 
+    "footer.quickLinks": "Schnelllinks",
+    "footer.home": "Startseite",
     "footer.contact": "Kontakt & Adresse",
     "footer.social": "Soziale Medien",
     "footer.allRightsReserved": "Alle Rechte vorbehalten.",
@@ -562,6 +566,8 @@ export const storefrontDictionary: Record<StorefrontLocale, StorefrontDictionary
     "campaign.cashSubtitleUnqualifiedNoNext": "Your cart is now {subtotal}.",
     "campaign.conditionPrefix": "⚠️ Condition:",
 
+    "footer.quickLinks": "Quick Links",
+    "footer.home": "Home",
     "footer.contact": "Contact & Address",
     "footer.social": "Social Media",
     "footer.allRightsReserved": "All Rights Reserved.",
@@ -751,6 +757,8 @@ export const storefrontDictionary: Record<StorefrontLocale, StorefrontDictionary
     "campaign.cashSubtitleUnqualifiedNoNext": "Ваша корзина сейчас {subtotal}.",
     "campaign.conditionPrefix": "⚠️ Условие:",
 
+    "footer.quickLinks": "Быстрые ссылки",
+    "footer.home": "Главная",
     "footer.contact": "Контакты и адрес",
     "footer.social": "Социальные сети",
     "footer.allRightsReserved": "Все права защищены.",

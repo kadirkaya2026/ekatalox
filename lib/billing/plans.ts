@@ -316,6 +316,8 @@ export const ADVANCED_APPEARANCE_BODY_KEYS = [
   "product_card_style",
   "header_style_key",
   "footer_style_key",
+  "hero_style_key",
+  "hero_image_url",
 ] as const;
 
 export const HOMEPAGE_BLOCKS_BODY_KEYS = ["homepage_blocks"] as const;

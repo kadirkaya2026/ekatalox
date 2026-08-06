@@ -1,5 +1,11 @@
 import { Menu, Search, ShoppingCart, Store } from "lucide-react";
-import type { StorefrontLayoutKey, StorefrontThemeKey } from "@/lib/types";
+import type {
+  StorefrontFooterStyleKey,
+  StorefrontHeaderStyleKey,
+  StorefrontHeroStyleKey,
+  StorefrontLayoutKey,
+  StorefrontThemeKey,
+} from "@/lib/types";
 import { applyBrandColorOverrides } from "@/lib/storefront/brand-colors";
 import { getStorefrontLayout } from "@/lib/storefront/layouts";
 import { getStorefrontTheme } from "@/lib/storefront/themes";
@@ -100,35 +106,136 @@ function ShowcaseSidebar({ theme }: { theme: ReturnType<typeof getStorefrontThem
   );
 }
 
+function ShowcaseLogo({
+  theme,
+  logoUrl,
+  size,
+}: {
+  theme: ReturnType<typeof getStorefrontTheme>;
+  logoUrl?: string | null;
+  size: "desktop" | "mobile";
+}) {
+  return (
+    <div
+      className={cn(
+        "flex shrink-0 items-center justify-center overflow-hidden rounded-lg border",
+        theme.logoWrap,
+        size === "desktop" ? "size-9" : "size-7",
+      )}
+    >
+      {logoUrl ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={logoUrl} alt="" className="size-full object-contain p-1" />
+      ) : (
+        <Store className={cn(size === "desktop" ? "size-4" : "size-3.5", theme.logoPlaceholder)} />
+      )}
+    </div>
+  );
+}
+
+function ShowcaseSearchField({
+  theme,
+  className,
+}: {
+  theme: ReturnType<typeof getStorefrontTheme>;
+  className?: string;
+}) {
+  return (
+    <div className={cn("relative h-9 rounded-full border", theme.searchWrap, className)}>
+      <Search className={cn(theme.searchIcon, "left-3 size-3.5")} />
+      <span className={cn("block h-9 truncate pl-9 pr-3 pt-2.5 text-[11px]", theme.textMuted)}>
+        Ürün, model no veya kategori ara...
+      </span>
+    </div>
+  );
+}
+
+function ShowcaseCartButton({
+  theme,
+  size,
+}: {
+  theme: ReturnType<typeof getStorefrontTheme>;
+  size: "desktop" | "mobile";
+}) {
+  return (
+    <div className="relative shrink-0">
+      <div
+        className={cn(
+          "flex items-center justify-center rounded-full",
+          size === "desktop" ? "size-9" : "size-7",
+          theme.cartButton,
+        )}
+      >
+        <ShoppingCart className={size === "desktop" ? "size-4" : "size-3.5"} />
+      </div>
+      <span
+        className={cn(
+          "absolute -right-1 -top-1 flex size-4 items-center justify-center rounded-full text-[8px] font-bold",
+          theme.cartBadge,
+        )}
+      >
+        2
+      </span>
+    </div>
+  );
+}
+
 function ShowcaseHeader({
   theme,
   title,
   logoUrl,
   variant,
+  headerStyleKey,
 }: {
   theme: ReturnType<typeof getStorefrontTheme>;
   title: string;
   logoUrl?: string | null;
   variant: "desktop" | "mobile";
+  headerStyleKey: StorefrontHeaderStyleKey;
 }) {
+  if (variant === "desktop" && headerStyleKey === "centered") {
+    return (
+      <div className={cn("border-b", theme.headerBorder, theme.surface, "space-y-2 px-5 py-3")}>
+        <div className="flex items-center justify-center gap-2">
+          <ShowcaseLogo theme={theme} logoUrl={logoUrl} size="desktop" />
+          <p className={cn("truncate text-sm font-semibold", theme.headerTitle)}>{title}</p>
+        </div>
+        <ShowcaseSearchField theme={theme} className="mx-auto max-w-xs" />
+      </div>
+    );
+  }
+
+  if (variant === "desktop" && headerStyleKey === "split") {
+    return (
+      <div className={cn("border-b", theme.headerBorder, theme.surface, "flex items-center gap-3 px-5 py-3")}>
+        <ShowcaseLogo theme={theme} logoUrl={logoUrl} size="desktop" />
+        <p className={cn("shrink-0 truncate text-sm font-semibold", theme.headerTitle)}>{title}</p>
+        <ShowcaseSearchField theme={theme} className="flex-1" />
+        <ShowcaseCartButton theme={theme} size="desktop" />
+      </div>
+    );
+  }
+
+  if (variant === "desktop" && headerStyleKey === "minimal") {
+    return (
+      <div className={cn("border-b", theme.headerBorder, theme.surface, "space-y-2 px-5 py-2.5")}>
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <ShowcaseLogo theme={theme} logoUrl={logoUrl} size="desktop" />
+            <p className={cn("truncate text-sm font-semibold", theme.headerTitle)}>{title}</p>
+          </div>
+          <ShowcaseCartButton theme={theme} size="desktop" />
+        </div>
+        <ShowcaseSearchField theme={theme} className="w-full" />
+      </div>
+    );
+  }
+
   return (
     <div className={cn("border-b", theme.headerBorder, theme.surface)}>
       <div className={cn("flex items-center gap-3", variant === "desktop" ? "px-5 py-3" : "px-3 py-2.5")}>
         {variant === "mobile" ? <Menu className={cn("size-4 shrink-0", theme.textMuted)} /> : null}
-        <div
-          className={cn(
-            "flex shrink-0 items-center justify-center overflow-hidden rounded-lg border",
-            theme.logoWrap,
-            variant === "desktop" ? "size-9" : "size-7",
-          )}
-        >
-          {logoUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={logoUrl} alt="" className="size-full object-contain p-1" />
-          ) : (
-            <Store className={cn(variant === "desktop" ? "size-4" : "size-3.5", theme.logoPlaceholder)} />
-          )}
-        </div>
+        <ShowcaseLogo theme={theme} logoUrl={logoUrl} size={variant} />
         <p
           className={cn(
             "truncate font-semibold",
@@ -140,47 +247,67 @@ function ShowcaseHeader({
         </p>
 
         {variant === "desktop" ? (
-          <div className={cn("relative ml-4 h-9 flex-1 rounded-full border", theme.searchWrap)}>
-            <Search className={cn(theme.searchIcon, "left-3 size-3.5")} />
-            <span className={cn("block h-9 truncate pl-9 pr-3 pt-2.5 text-[11px]", theme.textMuted)}>
-              Ürün, model no veya kategori ara...
-            </span>
-          </div>
+          <ShowcaseSearchField theme={theme} className="ml-4 flex-1" />
         ) : (
           <div className="flex-1" />
         )}
 
-        <div className="relative shrink-0">
-          <div
-            className={cn(
-              "flex items-center justify-center rounded-full",
-              variant === "desktop" ? "size-9" : "size-7",
-              theme.cartButton,
-            )}
-          >
-            <ShoppingCart className={variant === "desktop" ? "size-4" : "size-3.5"} />
-          </div>
-          <span
-            className={cn(
-              "absolute -right-1 -top-1 flex size-4 items-center justify-center rounded-full text-[8px] font-bold",
-              theme.cartBadge,
-            )}
-          >
-            2
-          </span>
-        </div>
+        <ShowcaseCartButton theme={theme} size={variant} />
       </div>
 
       {variant === "mobile" ? (
         <div className="px-3 pb-2.5">
-          <div className={cn("relative h-8 rounded-full border", theme.searchWrap)}>
-            <Search className={cn(theme.searchIcon, "left-2.5 size-3")} />
-            <span className={cn("block h-8 truncate pl-8 pr-3 pt-2 text-[10px]", theme.textMuted)}>
-              Ara...
-            </span>
-          </div>
+          <ShowcaseSearchField theme={theme} className="h-8" />
         </div>
       ) : null}
+    </div>
+  );
+}
+
+function ShowcaseHero({
+  theme,
+  heroStyleKey,
+  variant,
+}: {
+  theme: ReturnType<typeof getStorefrontTheme>;
+  heroStyleKey: StorefrontHeroStyleKey;
+  variant: "desktop" | "mobile";
+}) {
+  if (heroStyleKey === "text") {
+    return null;
+  }
+
+  if (heroStyleKey === "full-bleed") {
+    return (
+      <div
+        className={cn(
+          "relative overflow-hidden rounded-xl bg-gradient-to-br from-slate-700 to-slate-900",
+          variant === "desktop" ? "mb-3 h-24" : "mb-2 h-16",
+        )}
+      >
+        <div className="absolute inset-0 bg-black/25" />
+        <div className="relative flex h-full flex-col justify-end p-3">
+          <div className="h-2 w-20 rounded-full bg-white/90" />
+          <div className="mt-1.5 h-4 w-28 rounded-full bg-white" />
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className={cn(
+        "mb-3 grid overflow-hidden rounded-xl border",
+        theme.border,
+        theme.surface,
+        variant === "desktop" ? "grid-cols-2" : "grid-cols-2",
+      )}
+    >
+      <div className={cn("flex flex-col justify-center gap-1.5 p-3")}>
+        <div className={cn("h-2 w-16 rounded-full", theme.textMuted, "bg-current opacity-40")} />
+        <div className={cn("h-3 w-20 rounded-full", theme.text, "bg-current opacity-70")} />
+      </div>
+      <div className="bg-gradient-to-br from-slate-300 to-slate-500" />
     </div>
   );
 }
@@ -217,14 +344,50 @@ function ShowcaseStickyCart({
   );
 }
 
+function ShowcaseFooter({
+  theme,
+  footerStyleKey,
+  variant,
+}: {
+  theme: ReturnType<typeof getStorefrontTheme>;
+  footerStyleKey: StorefrontFooterStyleKey;
+  variant: "desktop" | "mobile";
+}) {
+  if (footerStyleKey === "minimal" || variant === "mobile") {
+    return (
+      <div className={cn("mt-4 border-t px-4 py-3 text-center", theme.sectionDivider)}>
+        <p className={cn("text-[9px]", theme.footerText)}>© eKatalox mağazası</p>
+      </div>
+    );
+  }
+
+  const columnCount = footerStyleKey === "columns" ? 3 : 2;
+
+  return (
+    <div className={cn("mt-4 border-t px-5 py-4", theme.sectionDivider)}>
+      <div className={cn("grid gap-3", columnCount === 3 ? "grid-cols-3" : "grid-cols-2")}>
+        {Array.from({ length: columnCount }).map((_, index) => (
+          <div key={index} className="space-y-1.5">
+            <div className={cn("h-1.5 w-10 rounded-full", theme.footerHeading, "bg-current opacity-60")} />
+            <div className={cn("h-1.5 w-14 rounded-full", theme.footerText, "bg-current opacity-30")} />
+            <div className={cn("h-1.5 w-12 rounded-full", theme.footerText, "bg-current opacity-30")} />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function ShowcaseBody({
   theme,
   layout,
   variant,
+  heroStyleKey,
 }: {
   theme: ReturnType<typeof getStorefrontTheme>;
   layout: ReturnType<typeof getStorefrontLayout>;
   variant: "desktop" | "mobile";
+  heroStyleKey: StorefrontHeroStyleKey;
 }) {
   const showSidebar = variant === "desktop" && layout.categoryNav === "sidebar";
   const gridCols =
@@ -253,6 +416,8 @@ function ShowcaseBody({
 
   return (
     <div className={cn(variant === "desktop" ? "p-5" : "p-3")}>
+      <ShowcaseHero theme={theme} heroStyleKey={heroStyleKey} variant={variant} />
+
       {!showSidebar ? (
         <div className="mb-3">
           <ShowcaseCategoryChips theme={theme} />
@@ -283,7 +448,7 @@ function DesktopFrame({ children }: { children: React.ReactNode }) {
         <span className="size-2.5 rounded-full bg-slate-300" />
         <span className="size-2.5 rounded-full bg-slate-300" />
       </div>
-      <div className="max-h-[520px] overflow-y-auto">{children}</div>
+      <div className="max-h-[560px] overflow-y-auto">{children}</div>
     </div>
   );
 }
@@ -295,7 +460,7 @@ function MobileFrame({ children }: { children: React.ReactNode }) {
         <div className="flex justify-center bg-slate-900 pb-1 pt-1.5">
           <div className="h-4 w-24 rounded-full bg-slate-900" />
         </div>
-        <div className="max-h-[560px] overflow-y-auto">{children}</div>
+        <div className="max-h-[600px] overflow-y-auto">{children}</div>
       </div>
     </div>
   );
@@ -304,6 +469,9 @@ function MobileFrame({ children }: { children: React.ReactNode }) {
 export function StorefrontThemeShowcase({
   themeKey,
   layoutKey = "classic-grid",
+  headerStyleKey = "standard",
+  footerStyleKey = "standard",
+  heroStyleKey = "text",
   storefrontTitle,
   logoUrl,
   brandPrimaryColor,
@@ -311,6 +479,9 @@ export function StorefrontThemeShowcase({
 }: {
   themeKey: StorefrontThemeKey;
   layoutKey?: StorefrontLayoutKey;
+  headerStyleKey?: StorefrontHeaderStyleKey;
+  footerStyleKey?: StorefrontFooterStyleKey;
+  heroStyleKey?: StorefrontHeroStyleKey;
   storefrontTitle?: string;
   logoUrl?: string | null;
   brandPrimaryColor?: string | null;
@@ -331,8 +502,15 @@ export function StorefrontThemeShowcase({
         </p>
         <DesktopFrame>
           <div className={theme.page}>
-            <ShowcaseHeader theme={theme} title={title} logoUrl={logoUrl} variant="desktop" />
-            <ShowcaseBody theme={theme} layout={layout} variant="desktop" />
+            <ShowcaseHeader
+              theme={theme}
+              title={title}
+              logoUrl={logoUrl}
+              variant="desktop"
+              headerStyleKey={headerStyleKey}
+            />
+            <ShowcaseBody theme={theme} layout={layout} variant="desktop" heroStyleKey={heroStyleKey} />
+            <ShowcaseFooter theme={theme} footerStyleKey={footerStyleKey} variant="desktop" />
           </div>
         </DesktopFrame>
       </div>
@@ -343,8 +521,15 @@ export function StorefrontThemeShowcase({
         </p>
         <MobileFrame>
           <div className={theme.page}>
-            <ShowcaseHeader theme={theme} title={title} logoUrl={logoUrl} variant="mobile" />
-            <ShowcaseBody theme={theme} layout={layout} variant="mobile" />
+            <ShowcaseHeader
+              theme={theme}
+              title={title}
+              logoUrl={logoUrl}
+              variant="mobile"
+              headerStyleKey={headerStyleKey}
+            />
+            <ShowcaseBody theme={theme} layout={layout} variant="mobile" heroStyleKey={heroStyleKey} />
+            <ShowcaseFooter theme={theme} footerStyleKey={footerStyleKey} variant="mobile" />
           </div>
         </MobileFrame>
       </div>
