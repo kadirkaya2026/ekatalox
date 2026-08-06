@@ -174,11 +174,14 @@ const STARTER_FEATURES: Record<PlanFeature, boolean> = {
 };
 
 // pro, business ile aynı özellik setini kullanır (showcase_products,
-// custom_domain, advanced_appearance, homepage_blocks_editor dahil);
-// paketler arası fark artık yalnızca ürün/ziyaretçi kapasitesi ve
-// fiyattır. online_payment yalnızca enterprise/vip'te açılır.
+// advanced_appearance, homepage_blocks_editor dahil); paketler arası
+// fark artık yalnızca ürün/ziyaretçi kapasitesi ve fiyattır.
+// online_payment yalnızca enterprise/vip'te açılır. custom_domain
+// business ve üstü planlara özeldir (Ağu 2026): istenen alan adı admin
+// tarafından tedarik edilip yönlendirilir, bu yüzden start/pro'da kapalı.
 const PRO_FEATURES: Record<PlanFeature, boolean> = {
   ...PROFESSIONAL_FEATURES,
+  custom_domain: false,
 };
 
 export const PLAN_FEATURES: Record<TenantPlan, Record<PlanFeature, boolean>> = {
