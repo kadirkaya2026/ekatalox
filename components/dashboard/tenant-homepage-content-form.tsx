@@ -12,6 +12,14 @@ import {
   HOMEPAGE_BLOCK_LABELS,
   normalizeHomepageBlocks,
 } from "@/lib/storefront/homepage-blocks";
+import { cn } from "@/lib/utils";
+
+type HomepageContentTab = "hero" | "blocks";
+
+const HOMEPAGE_CONTENT_TABS: Array<{ key: HomepageContentTab; label: string }> = [
+  { key: "hero", label: "Hero Alanı" },
+  { key: "blocks", label: "Bölüm Sırası ve Görünürlüğü" },
+];
 
 export function TenantHomepageContentForm({
   initialStorefrontSettings,
@@ -22,6 +30,7 @@ export function TenantHomepageContentForm({
   tenantPlan: TenantPlan;
   companyName: string;
 }) {
+  const [activeTab, setActiveTab] = useState<HomepageContentTab>("hero");
   const [heroHeading, setHeroHeading] = useState(initialStorefrontSettings.hero_heading ?? "");
   const [heroCtaLabel, setHeroCtaLabel] = useState(
     initialStorefrontSettings.hero_cta_label ?? "",
@@ -92,7 +101,28 @@ export function TenantHomepageContentForm({
 
   return (
     <form onSubmit={save} className="space-y-6">
-      <Card className="p-5">
+      <Card className="overflow-hidden p-0">
+        <div className="flex flex-wrap border-b border-slate-100">
+          {HOMEPAGE_CONTENT_TABS.map((tab) => (
+            <button
+              key={tab.key}
+              type="button"
+              onClick={() => setActiveTab(tab.key)}
+              className={cn(
+                "flex items-center gap-2 border-b-2 px-4 py-3 text-sm font-semibold transition sm:px-5",
+                activeTab === tab.key
+                  ? "border-emerald-500 text-emerald-700"
+                  : "border-transparent text-slate-500 hover:text-slate-700",
+              )}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        <div className="p-5">
+        {activeTab === "hero" ? (
+        <div>
         <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-slate-900">
           <Sparkles className="size-4 text-emerald-700" />
           <span>Hero alanı</span>
@@ -145,14 +175,16 @@ export function TenantHomepageContentForm({
             Buton tıklandığında katalog bölümüne kaydırır.
           </p>
         </div>
-      </Card>
+        </div>
+        ) : null}
 
-      <PlanFeatureGate
-        feature="homepage_blocks_editor"
-        plan={tenantPlan}
-        companyName={companyName}
-      >
-        <Card className="p-5">
+        {activeTab === "blocks" ? (
+        <PlanFeatureGate
+          feature="homepage_blocks_editor"
+          plan={tenantPlan}
+          companyName={companyName}
+        >
+          <div>
           <div className="flex items-center gap-2">
             <Sparkles className="size-5 text-emerald-700" />
             <h2 className="text-lg font-semibold text-slate-900">Bölüm sırası ve görünürlüğü</h2>
@@ -214,8 +246,11 @@ export function TenantHomepageContentForm({
                 </div>
               ))}
           </div>
-        </Card>
-      </PlanFeatureGate>
+          </div>
+        </PlanFeatureGate>
+        ) : null}
+        </div>
+      </Card>
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-h-6">

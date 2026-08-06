@@ -19,6 +19,7 @@ import {
   maxFaviconFileSizeBytes,
   maxLogoFileSizeBytes,
 } from "@/lib/validators/storefront-settings";
+import { cn } from "@/lib/utils";
 
 const STOREFRONT_LOCALE_LABELS: Record<StorefrontLocale, string> = {
   tr: "Türkçe",
@@ -27,11 +28,21 @@ const STOREFRONT_LOCALE_LABELS: Record<StorefrontLocale, string> = {
   ru: "Rusça (Русский)",
 };
 
+type SiteIdentityTab = "brand" | "tabTitle" | "locale" | "favicon";
+
+const SITE_IDENTITY_TABS: Array<{ key: SiteIdentityTab; label: string }> = [
+  { key: "brand", label: "Logo, Başlık ve Açıklama" },
+  { key: "tabTitle", label: "Tarayıcı Sekme Başlığı" },
+  { key: "locale", label: "Vitrin Dili" },
+  { key: "favicon", label: "Favicon" },
+];
+
 export function TenantSiteIdentityForm({
   initialStorefrontSettings,
 }: {
   initialStorefrontSettings: TenantStorefrontSettings;
 }) {
+  const [activeTab, setActiveTab] = useState<SiteIdentityTab>("brand");
   const [storefrontTitle, setStorefrontTitle] = useState(
     initialStorefrontSettings.storefront_title ?? "",
   );
@@ -274,8 +285,28 @@ export function TenantSiteIdentityForm({
   }
 
   return (
-    <div className="space-y-6">
-      <Card className="p-5">
+    <Card className="overflow-hidden p-0">
+      <div className="flex flex-wrap border-b border-slate-100">
+        {SITE_IDENTITY_TABS.map((tab) => (
+          <button
+            key={tab.key}
+            type="button"
+            onClick={() => setActiveTab(tab.key)}
+            className={cn(
+              "flex items-center gap-2 border-b-2 px-4 py-3 text-sm font-semibold transition sm:px-5",
+              activeTab === tab.key
+                ? "border-emerald-500 text-emerald-700"
+                : "border-transparent text-slate-500 hover:text-slate-700",
+            )}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      <div className="p-5">
+      {activeTab === "brand" ? (
+      <div>
         <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-slate-900">
           <Store className="size-4 text-emerald-700" />
           <span>Mağaza logosu, başlık ve açıklama</span>
@@ -387,9 +418,11 @@ export function TenantSiteIdentityForm({
             </Button>
           </div>
         </form>
-      </Card>
+      </div>
+      ) : null}
 
-      <Card className="p-5">
+      {activeTab === "tabTitle" ? (
+      <div>
         <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-slate-900">
           <Globe className="size-4 text-emerald-700" />
           <span>Tarayıcı sekme başlığı</span>
@@ -428,9 +461,11 @@ export function TenantSiteIdentityForm({
             </Button>
           </div>
         </form>
-      </Card>
+      </div>
+      ) : null}
 
-      <Card className="p-5">
+      {activeTab === "locale" ? (
+      <div>
         <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-slate-900">
           <Globe className="size-4 text-emerald-700" />
           <span>Vitrin dili</span>
@@ -468,9 +503,11 @@ export function TenantSiteIdentityForm({
             <p className="text-sm text-emerald-700">{localeMessage}</p>
           ) : null}
         </div>
-      </Card>
+      </div>
+      ) : null}
 
-      <Card className="p-5">
+      {activeTab === "favicon" ? (
+      <div>
         <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-slate-900">
           <ImageUp className="size-4 text-emerald-700" />
           <span>Favicon (sekme ikonu)</span>
@@ -533,7 +570,9 @@ export function TenantSiteIdentityForm({
         {faviconMessage ? (
           <p className="mt-3 text-sm text-emerald-700">{faviconMessage}</p>
         ) : null}
-      </Card>
-    </div>
+      </div>
+      ) : null}
+      </div>
+    </Card>
   );
 }

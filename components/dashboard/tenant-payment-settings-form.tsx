@@ -15,9 +15,18 @@ import type {
   TenantStorefrontSettings,
 } from "@/lib/types";
 import { DEFAULT_INSTALLMENT_OPTIONS } from "@/lib/storefront/cart";
+import { cn } from "@/lib/utils";
 
 type CashTierRow = CashDiscountTier & { _id: string };
 type CardTierRow = CardCampaignTier & { _id: string };
+
+type PaymentSettingsTab = "cash" | "card" | "installments";
+
+const PAYMENT_SETTINGS_TABS: Array<{ key: PaymentSettingsTab; label: string }> = [
+  { key: "cash", label: "Nakit Kampanyası" },
+  { key: "card", label: "Kart Kampanyası" },
+  { key: "installments", label: "Taksit Seçenekleri & Vade Farkları" },
+];
 
 export function TenantPaymentSettingsForm({
   storefrontSettings,
@@ -60,6 +69,7 @@ export function TenantPaymentSettingsForm({
   });
 
   // ── UI state ────────────────────────────────────────────────────────────────
+  const [activeTab, setActiveTab] = useState<PaymentSettingsTab>("cash");
   const [message, setMessage] = useState<string | null>(null);
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -164,8 +174,29 @@ export function TenantPaymentSettingsForm({
     </Card>
 
       <form onSubmit={save} className="space-y-6">
+        <Card className="overflow-hidden p-0">
+          <div className="flex flex-wrap border-b border-border">
+            {PAYMENT_SETTINGS_TABS.map((tab) => (
+              <button
+                key={tab.key}
+                type="button"
+                onClick={() => setActiveTab(tab.key)}
+                className={cn(
+                  "flex items-center gap-2 border-b-2 px-4 py-3 text-sm font-semibold transition sm:px-5",
+                  activeTab === tab.key
+                    ? "border-emerald-500 text-emerald-700"
+                    : "border-transparent text-slate-500 hover:text-slate-700",
+                )}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+
+          <div className="p-5">
         {/* ── NAKİT KAMPANYASI ─────────────────────────────── */}
-        <Card className="p-5">
+        {activeTab === "cash" ? (
+        <div>
           <div className="mb-4 flex items-center gap-2">
             <Banknote className="size-5 text-emerald-700" />
             <h2 className="text-lg font-semibold text-foreground">Nakit Kampanyası</h2>
@@ -297,10 +328,12 @@ export function TenantPaymentSettingsForm({
               </button>
             </div>
           </div>
-        </Card>
+        </div>
+        ) : null}
 
         {/* ── KART KAMPANYASI ───────────────────────────────── */}
-        <Card className="p-5">
+        {activeTab === "card" ? (
+        <div>
           <div className="mb-4 flex items-center gap-2">
             <CreditCard className="size-5 text-blue-700" />
             <h2 className="text-lg font-semibold text-foreground">Kart Kampanyası</h2>
@@ -442,10 +475,12 @@ export function TenantPaymentSettingsForm({
               </button>
             </div>
           </div>
-        </Card>
+        </div>
+        ) : null}
 
         {/* ── TAKSİT SEÇENEKLERİ & VADE FARKLARI ───────────────────────────────── */}
-        <Card className="p-5">
+        {activeTab === "installments" ? (
+        <div>
           <div className="mb-4 flex items-center gap-2">
             <CreditCard className="size-5 text-emerald-700" />
             <h2 className="text-lg font-semibold text-foreground">
@@ -520,6 +555,9 @@ export function TenantPaymentSettingsForm({
               <p className="mt-3 text-xs text-muted-foreground">
                 Aktif seçenekler sepette müşteriye sunulur. Vade farkı 0 ise ek ücret uygulanmaz.
               </p>
+          </div>
+        </div>
+        ) : null}
           </div>
         </Card>
 

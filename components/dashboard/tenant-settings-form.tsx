@@ -129,6 +129,14 @@ function PlanChangeSection({ tenant }: { tenant: Tenant }) {
   );
 }
 
+type TenantSettingsTab = "membership" | "orders" | "password";
+
+const TENANT_SETTINGS_TABS: Array<{ key: TenantSettingsTab; label: string }> = [
+  { key: "membership", label: "Üyelik Bilgileri" },
+  { key: "orders", label: "Sipariş Yönlendirme" },
+  { key: "password", label: "Şifre Değiştir" },
+];
+
 export function TenantSettingsForm({
   tenant,
   profile,
@@ -138,6 +146,9 @@ export function TenantSettingsForm({
   profile: Profile;
   forcePasswordChange?: boolean;
 }) {
+  const [activeTab, setActiveTab] = useState<TenantSettingsTab>(
+    forcePasswordChange ? "password" : "membership",
+  );
   const [whatsapp, setWhatsapp] = useState(tenant.whatsapp_number);
   const [isWhatsappOrderDirect, setIsWhatsappOrderDirect] = useState(
     tenant.is_whatsapp_order_direct ?? true,
@@ -231,119 +242,144 @@ export function TenantSettingsForm({
   });
 
   return (
-    <div className="grid gap-6 xl:grid-cols-[0.8fr_1.2fr]">
-      <Card className="p-5">
-        <h2 className="text-lg font-semibold text-slate-900">Üyelik bilgileri</h2>
-        <dl className="mt-5 space-y-4 text-sm text-slate-600">
+    <Card className="overflow-hidden p-0">
+      <div className="flex flex-wrap border-b border-slate-100">
+        {TENANT_SETTINGS_TABS.map((tab) => (
+          <button
+            key={tab.key}
+            type="button"
+            onClick={() => setActiveTab(tab.key)}
+            className={cn(
+              "flex items-center gap-2 border-b-2 px-4 py-3 text-sm font-semibold transition sm:px-5",
+              activeTab === tab.key
+                ? "border-emerald-500 text-emerald-700"
+                : "border-transparent text-slate-500 hover:text-slate-700",
+            )}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      <div className="p-5">
+        {activeTab === "membership" ? (
           <div>
-            <dt className="text-slate-500">Firma</dt>
-            <dd className="mt-1 font-medium text-slate-900">{tenant.company_name}</dd>
-          </div>
-          <div>
-            <dt className="text-slate-500">Alt alan adı</dt>
-            <dd className="mt-1 font-medium text-slate-900">
-              {tenant.subdomain}.ekatalox.com
-            </dd>
-          </div>
-          <div>
-            <dt className="text-slate-500">Paket</dt>
-            <dd>
-              <PlanChangeSection tenant={tenant} />
-            </dd>
-          </div>
-          <div>
-            <dt className="text-slate-500">Durum</dt>
-            <dd className="mt-1 font-medium text-slate-900">
-              {tenant.status === "active" ? "Aktif" : "Askıda"}
-            </dd>
-          </div>
-          <div>
-            <dt className="text-slate-500">Rol</dt>
-            <dd className="mt-1 font-medium text-slate-900">
-              {profile.role === "tenant_admin" ? "Yönetici" : profile.role}
-            </dd>
-          </div>
-          <div>
-            <dt className="text-slate-500">Üyelik başlangıcı</dt>
-            <dd className="mt-1 font-medium text-slate-900">
-              {dateFormatter.format(startDate)}
-            </dd>
-          </div>
-          <div>
-            <dt className="text-slate-500">Üyelik bitiş tarihi</dt>
-            <dd className="mt-1 font-medium text-slate-900">
-              {dateFormatter.format(expiryDate)}
-            </dd>
-          </div>
-        </dl>
-        {nearExpiry ? (
-          <div className="mt-5 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-            Paket tarihinizin bitmesine çok az kaldı, yenilemek için iletişime geçin.
+            <h2 className="text-lg font-semibold text-slate-900">Üyelik bilgileri</h2>
+            <dl className="mt-5 space-y-4 text-sm text-slate-600">
+              <div>
+                <dt className="text-slate-500">Firma</dt>
+                <dd className="mt-1 font-medium text-slate-900">{tenant.company_name}</dd>
+              </div>
+              <div>
+                <dt className="text-slate-500">Alt alan adı</dt>
+                <dd className="mt-1 font-medium text-slate-900">
+                  {tenant.subdomain}.ekatalox.com
+                </dd>
+              </div>
+              <div>
+                <dt className="text-slate-500">Paket</dt>
+                <dd>
+                  <PlanChangeSection tenant={tenant} />
+                </dd>
+              </div>
+              <div>
+                <dt className="text-slate-500">Durum</dt>
+                <dd className="mt-1 font-medium text-slate-900">
+                  {tenant.status === "active" ? "Aktif" : "Askıda"}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-slate-500">Rol</dt>
+                <dd className="mt-1 font-medium text-slate-900">
+                  {profile.role === "tenant_admin" ? "Yönetici" : profile.role}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-slate-500">Üyelik başlangıcı</dt>
+                <dd className="mt-1 font-medium text-slate-900">
+                  {dateFormatter.format(startDate)}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-slate-500">Üyelik bitiş tarihi</dt>
+                <dd className="mt-1 font-medium text-slate-900">
+                  {dateFormatter.format(expiryDate)}
+                </dd>
+              </div>
+            </dl>
+            {nearExpiry ? (
+              <div className="mt-5 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                Paket tarihinizin bitmesine çok az kaldı, yenilemek için iletişime geçin.
+              </div>
+            ) : null}
           </div>
         ) : null}
-      </Card>
 
-      <div className="space-y-6">
-        <Card className="p-5">
-          <h2 className="text-lg font-semibold text-slate-900">Sipariş yönlendirme</h2>
-          <p className="mt-1 text-sm text-slate-600">
-            Müşteriler sepetten siparişi WhatsApp ile iletir. Numara ve yönlendirme modunu buradan
-            yönetin.
-          </p>
-          <form onSubmit={save} className="mt-5 space-y-4">
-            <div className="flex items-center justify-between gap-4 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
-              <div className="min-w-0">
-                <p className="text-sm font-medium text-slate-900">
-                  Siparişler kayıtlı WhatsApp numarasına yönlendirilsin
-                </p>
-                <p className="mt-1 text-xs text-slate-600">
-                  Kapalıyken müşteri WhatsApp&apos;ta alıcıyı kendisi seçer; mesaj önceden doldurulur.
-                </p>
+        {activeTab === "orders" ? (
+          <div>
+            <h2 className="text-lg font-semibold text-slate-900">Sipariş yönlendirme</h2>
+            <p className="mt-1 text-sm text-slate-600">
+              Müşteriler sepetten siparişi WhatsApp ile iletir. Numara ve yönlendirme modunu
+              buradan yönetin.
+            </p>
+            <form onSubmit={save} className="mt-5 space-y-4">
+              <div className="flex items-center justify-between gap-4 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-slate-900">
+                    Siparişler kayıtlı WhatsApp numarasına yönlendirilsin
+                  </p>
+                  <p className="mt-1 text-xs text-slate-600">
+                    Kapalıyken müşteri WhatsApp&apos;ta alıcıyı kendisi seçer; mesaj önceden
+                    doldurulur.
+                  </p>
+                </div>
+                <SettingsToggle
+                  label="Siparişler kayıtlı WhatsApp numarasına yönlendirilsin"
+                  pressed={isWhatsappOrderDirect}
+                  disabled={pending}
+                  onToggle={() => setIsWhatsappOrderDirect((current) => !current)}
+                />
               </div>
-              <SettingsToggle
-                label="Siparişler kayıtlı WhatsApp numarasına yönlendirilsin"
-                pressed={isWhatsappOrderDirect}
-                disabled={pending}
-                onToggle={() => setIsWhatsappOrderDirect((current) => !current)}
-              />
-            </div>
-            <Input value={whatsapp} onChange={(e) => setWhatsapp(e.target.value)} />
-            <Button type="submit" disabled={pending}>
-              {pending ? "Kaydediliyor..." : "Kaydet"}
-            </Button>
-            {message ? <p className="text-sm text-emerald-700">{message}</p> : null}
-          </form>
-        </Card>
+              <Input value={whatsapp} onChange={(e) => setWhatsapp(e.target.value)} />
+              <Button type="submit" disabled={pending}>
+                {pending ? "Kaydediliyor..." : "Kaydet"}
+              </Button>
+              {message ? <p className="text-sm text-emerald-700">{message}</p> : null}
+            </form>
+          </div>
+        ) : null}
 
-        <Card className="p-5">
-          <h2 className="text-lg font-semibold text-slate-900">Şifre değiştir</h2>
-          <p className="mt-1 text-sm text-slate-600">
-            {forcePasswordChange
-              ? "İlk giriş güvenliği için geçici şifrenizi hemen değiştirin."
-              : "Panel giriş şifrenizi buradan güncelleyebilirsiniz."}
-          </p>
-          <form onSubmit={changePassword} className="mt-5 space-y-4">
-            <Input
-              type="password"
-              placeholder="Yeni şifre"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
-            <Input
-              type="password"
-              placeholder="Yeni şifre tekrar"
-              value={passwordRepeat}
-              onChange={(e) => setPasswordRepeat(e.target.value)}
-            />
-            <Button type="submit" disabled={passwordPending}>
-              {passwordPending ? "Şifre güncelleniyor..." : "Şifreyi güncelle"}
-            </Button>
-            {passwordMessage ? (
-              <p className="text-sm text-emerald-700">{passwordMessage}</p>
-            ) : null}
-          </form>
-        </Card>
+        {activeTab === "password" ? (
+          <div>
+            <h2 className="text-lg font-semibold text-slate-900">Şifre değiştir</h2>
+            <p className="mt-1 text-sm text-slate-600">
+              {forcePasswordChange
+                ? "İlk giriş güvenliği için geçici şifrenizi hemen değiştirin."
+                : "Panel giriş şifrenizi buradan güncelleyebilirsiniz."}
+            </p>
+            <form onSubmit={changePassword} className="mt-5 space-y-4">
+              <Input
+                type="password"
+                placeholder="Yeni şifre"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+              <Input
+                type="password"
+                placeholder="Yeni şifre tekrar"
+                value={passwordRepeat}
+                onChange={(e) => setPasswordRepeat(e.target.value)}
+              />
+              <Button type="submit" disabled={passwordPending}>
+                {passwordPending ? "Şifre güncelleniyor..." : "Şifreyi güncelle"}
+              </Button>
+              {passwordMessage ? (
+                <p className="text-sm text-emerald-700">{passwordMessage}</p>
+              ) : null}
+            </form>
+          </div>
+        ) : null}
       </div>
-    </div>
+    </Card>
   );
 }
