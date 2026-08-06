@@ -26,8 +26,19 @@ export function AccessCodesManager({
   const [pending, startTransition] = useTransition();
   const router = useRouter();
 
+  // Fiyatsız katalog (is_catalog_only) şifreleri bir fiyat seviyesi
+  // göstermediği için paket kotasına dahil edilmez — bkz.
+  // ensureAccessCodeLimitResponse (lib/tenancy/guards.ts).
+  const catalogOnlyPriceListIds = new Set(
+    priceLists.filter((list) => list.is_catalog_only).map((list) => list.id),
+  );
+  const pricedCodeCount = codes.filter(
+    (code) => !catalogOnlyPriceListIds.has(code.price_list_id),
+  ).length;
   const codeLimit = getPriceListLimit(tenant.plan);
-  const atCodeLimit = codeLimit !== null && codes.length >= codeLimit;
+  const selectedIsCatalogOnly = catalogOnlyPriceListIds.has(priceListId);
+  const atCodeLimit =
+    codeLimit !== null && !selectedIsCatalogOnly && pricedCodeCount >= codeLimit;
 
   function addCode(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -100,7 +111,8 @@ export function AccessCodesManager({
 
         {atCodeLimit ? (
           <div className="mt-4 rounded-xl border border-amber-100 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-            Paketinizde en fazla {formatPriceListLimit(tenant.plan)} şifre oluşturabilirsiniz.
+            Paketinizde en fazla {formatPriceListLimit(tenant.plan)} fiyatlı seviye
+            oluşturabilirsiniz (fiyatsız katalog şifreleri bu sayıma dahil değildir).
             Daha fazla fiyat seviyesi için paketinizi yükseltin.
           </div>
         ) : null}
@@ -110,12 +122,10 @@ export function AccessCodesManager({
             placeholder="Örn. 1111"
             value={passwordCode}
             onChange={(event) => setPasswordCode(event.target.value)}
-            disabled={atCodeLimit}
           />
           <select
             value={priceListId}
             onChange={(event) => setPriceListId(event.target.value)}
-            disabled={atCodeLimit}
             className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900"
           >
             {priceLists.map((list) => (
@@ -139,7 +149,7 @@ export function AccessCodesManager({
             </p>
           </div>
           <Badge className="bg-slate-100 text-slate-700">
-            {codes.length} / {formatPriceListLimit(tenant.plan)} kod
+            {pricedCodeCount} / {formatPriceListLimit(tenant.plan)} fiyat seviyesi
           </Badge>
         </div>
 

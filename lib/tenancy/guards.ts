@@ -65,7 +65,10 @@ function resolveTenantPlan(tenant: { plan?: TenantPlan } | null): TenantPlan {
 // Paket bazlı fiyat seviyesi vaadi (bkz. app/page.tsx Pricing bölümü: "3/5/10/20
 // Seviyeli Müşteri Fiyat Listesi") pratikte erişim şifresi (access_code) sayısı
 // üzerinden uygulanır — tenant admin her şifreyi bir fiyat listesine bağlayarak
-// müşteri fiyat seviyesi oluşturur.
+// müşteri fiyat seviyesi oluşturur. Fiyatsız katalog (is_catalog_only) şifreleri
+// bir "fiyat seviyesi" göstermediği için bu sayıma dahil edilmez; aksi halde
+// varsayılan fiyatsız katalog şifresi tek başına bir kotayı tüketip tenant'ın
+// vaat edilenden bir eksik fiyatlı seviye eklemesine yol açar.
 export async function ensureAccessCodeLimitResponse() {
   const session = await getSessionContext();
   const plan = resolveTenantPlan(session.tenant);
@@ -82,8 +85,9 @@ export async function ensureAccessCodeLimitResponse() {
 
   const { count } = await supabase
     .from("access_codes")
-    .select("id", { count: "exact", head: true })
-    .eq("tenant_id", session.tenant.id);
+    .select("id, price_lists!inner(is_catalog_only)", { count: "exact", head: true })
+    .eq("tenant_id", session.tenant.id)
+    .eq("price_lists.is_catalog_only", false);
 
   if ((count ?? 0) >= limit) {
     return NextResponse.json(
