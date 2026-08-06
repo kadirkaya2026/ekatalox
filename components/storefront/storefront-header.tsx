@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect, useState } from "react";
+import { useTheme } from "next-themes";
 import { ChevronDown, Search, ShoppingCart, Store } from "lucide-react";
 import type { CategoryNode } from "@/lib/categories/tree";
 import { getDescendantCategoryIds } from "@/lib/categories/tree";
@@ -9,10 +11,47 @@ import { useStorefrontTheme } from "@/lib/storefront/theme-context";
 import { useStorefrontLocale } from "@/lib/storefront/locale-context";
 import type { StorefrontHeaderStyleKey, TenantStorefrontSettings } from "@/lib/types";
 import { cn, formatCurrency, formatDateSlashTr } from "@/lib/utils";
+import { EkataloxLogo } from "@/components/brand/ekatalox-logo";
 import { StorefrontImage } from "@/components/storefront/storefront-image";
 import { StorefrontLogoutButton } from "@/components/storefront/storefront-logout-button";
 import { StorefrontThemeToggle } from "@/components/storefront/storefront-theme-toggle";
 import { StorefrontLanguageSwitcher } from "@/components/storefront/storefront-language-switcher";
+
+// Tenant admin panelinden kaldırılamayan, sabit "eKatalox ürünüdür" rozeti.
+// Özel alan adına yönlendirilse bile her storefront'ta değişmeden görünür.
+function StorefrontPoweredByBar() {
+  const { t } = useStorefrontLocale();
+  const { resolvedTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const logoVariant = mounted && resolvedTheme === "dark" ? "dark" : "light";
+
+  return (
+    <div className="border-b border-black/5 bg-white/70 py-1.5 dark:border-white/10 dark:bg-black/20">
+      <div className="container-shell flex items-center justify-center">
+        <a
+          href="https://ekatalox.com"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label={t("header.poweredByAria")}
+          className="flex items-center gap-1.5 text-[11px] font-medium text-slate-500 transition hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
+        >
+          <span>{t("header.poweredByPrefix")}</span>
+          <EkataloxLogo
+            variant={logoVariant}
+            alt="eKatalox"
+            className="h-3.5 w-[62px]"
+          />
+          {t("header.poweredBySuffix") ? <span>{t("header.poweredBySuffix")}</span> : null}
+        </a>
+      </div>
+    </div>
+  );
+}
 
 export interface StorefrontHeaderProps {
   headerStyleKey: StorefrontHeaderStyleKey;
@@ -415,6 +454,7 @@ export function StorefrontHeader(props: StorefrontHeaderProps) {
 
   return (
     <header className={cn(theme.header, theme.headerBorder)}>
+      <StorefrontPoweredByBar />
       <StorefrontHeaderTopBar props={props} />
       <StorefrontHeaderCategoryNav props={props} />
     </header>

@@ -30,6 +30,9 @@ export const storefrontDictionary: Record<StorefrontLocale, StorefrontDictionary
     "header.category": "Kategori",
     "header.priceUpdateDate": "Fiyat Güncelleme Tarihi :",
     "header.searchPlaceholder": "Ürün adı, model no veya kategoriye göre arayın...",
+    "header.poweredByPrefix": "Bu site",
+    "header.poweredBySuffix": "ürünüdür.",
+    "header.poweredByAria": "eKatalox web sitesine git",
 
     "logout.label": "Çıkış",
 
@@ -217,6 +220,9 @@ export const storefrontDictionary: Record<StorefrontLocale, StorefrontDictionary
     "header.category": "Kategorie",
     "header.priceUpdateDate": "Preisaktualisierung :",
     "header.searchPlaceholder": "Suche nach Produktname, Modellnummer oder Kategorie...",
+    "header.poweredByPrefix": "Diese Seite ist ein",
+    "header.poweredBySuffix": "Produkt.",
+    "header.poweredByAria": "Zur eKatalox-Website",
 
     "logout.label": "Abmelden",
 
@@ -404,6 +410,9 @@ export const storefrontDictionary: Record<StorefrontLocale, StorefrontDictionary
     "header.category": "Category",
     "header.priceUpdateDate": "Price Update Date :",
     "header.searchPlaceholder": "Search by product name, model no. or category...",
+    "header.poweredByPrefix": "This site is an",
+    "header.poweredBySuffix": "product.",
+    "header.poweredByAria": "Go to eKatalox website",
 
     "logout.label": "Log out",
 
@@ -590,6 +599,9 @@ export const storefrontDictionary: Record<StorefrontLocale, StorefrontDictionary
     "header.category": "Категория",
     "header.priceUpdateDate": "Дата обновления цен :",
     "header.searchPlaceholder": "Поиск по названию товара, номеру модели или категории...",
+    "header.poweredByPrefix": "Этот сайт — продукт",
+    "header.poweredBySuffix": "",
+    "header.poweredByAria": "Перейти на сайт eKatalox",
 
     "logout.label": "Выйти",
 
