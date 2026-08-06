@@ -10,6 +10,7 @@ import { StorefrontThemeProvider, useStorefrontTheme } from "@/lib/storefront/th
 import { StorefrontLocaleProvider } from "@/lib/storefront/locale-context";
 import type { TenantStorefrontSettings } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { StorefrontPoweredByBar } from "@/components/storefront/storefront-powered-by-bar";
 
 function StorefrontPageShellInner({
   className,
@@ -32,6 +33,7 @@ function StorefrontPageShellInner({
       className={cn(theme.page, fontClassName, className)}
     >
       {children}
+      <StorefrontPoweredByBar />
     </div>
   );
 }
