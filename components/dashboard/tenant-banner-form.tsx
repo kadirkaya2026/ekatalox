@@ -4,7 +4,8 @@ import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { arrayMove } from "@dnd-kit/sortable";
 import Image from "next/image";
-import { Plus, Trash2 } from "lucide-react";
+import { ChevronDown, Plus, Trash2 } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -131,6 +132,7 @@ export function TenantBannerForm({
   const [bannerUploadState, setBannerUploadState] = useState<
     Record<string, { pending?: boolean; message?: string | null }>
   >({});
+  const [expandedBannerId, setExpandedBannerId] = useState<string | null>(null);
   const [savePending, startSaveTransition] = useTransition();
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
   const router = useRouter();
@@ -151,7 +153,9 @@ export function TenantBannerForm({
   }
 
   function addBanner() {
-    setBannerItems((current) => [...current, createEmptyBanner(current.length)]);
+    const banner = createEmptyBanner(bannerItems.length);
+    setBannerItems((current) => [...current, banner]);
+    setExpandedBannerId(banner.id);
     setSaveMessage(null);
   }
 
@@ -359,14 +363,26 @@ export function TenantBannerForm({
 
         <div className="mt-6 space-y-4">
           {bannerItems.length ? (
-            bannerItems.map((banner, index) => (
+            bannerItems.map((banner, index) => {
+              const isExpanded = expandedBannerId === banner.id;
+              return (
               <div
                 key={banner.id}
                 className="rounded-2xl border border-slate-200 bg-slate-50 p-4"
               >
-                <div className="mb-4 flex items-center justify-between gap-3">
-                  <div className="flex min-w-0 items-start gap-3">
-                    <div className="flex flex-col items-center gap-1">
+                <div className="flex items-center justify-between gap-3">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setExpandedBannerId((current) => (current === banner.id ? null : banner.id))
+                    }
+                    aria-expanded={isExpanded}
+                    className="flex min-w-0 flex-1 items-center gap-3 text-left"
+                  >
+                    <div
+                      className="flex flex-col items-center gap-1"
+                      onClick={(event) => event.stopPropagation()}
+                    >
                       <span className="text-[10px] font-medium uppercase tracking-wide text-slate-500">
                         Sıra
                       </span>
@@ -380,23 +396,37 @@ export function TenantBannerForm({
                         }
                       />
                     </div>
-                    <div>
-                      <p className="text-sm font-semibold text-slate-900">Banner #{index + 1}</p>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-semibold text-slate-900">
+                        Banner #{index + 1}
+                        {banner.title ? (
+                          <span className="ml-2 truncate font-normal text-slate-500">
+                            {banner.title}
+                          </span>
+                        ) : null}
+                      </p>
                       <p className="text-xs text-slate-500">
                         Zorunlu ölçü: 1200x400 px • Maksimum dosya boyutu: 2MB
                       </p>
                     </div>
-                  </div>
+                    <ChevronDown
+                      className={cn(
+                        "size-4 shrink-0 text-slate-400 transition-transform",
+                        isExpanded && "rotate-180",
+                      )}
+                    />
+                  </button>
                   <button
                     type="button"
                     onClick={() => { void removeBanner(banner.id); }}
-                    className="rounded-xl border border-red-200 px-3 py-2 text-sm font-semibold text-red-700 transition hover:bg-red-50"
+                    className="shrink-0 rounded-xl border border-red-200 px-3 py-2 text-sm font-semibold text-red-700 transition hover:bg-red-50"
                   >
                     <Trash2 className="size-4" />
                   </button>
                 </div>
 
-                <div className="grid gap-3">
+                {isExpanded ? (
+                <div className="mt-4 grid gap-3">
                   <Input
                     value={banner.title ?? ""}
                     onChange={(event) =>
@@ -467,8 +497,10 @@ export function TenantBannerForm({
                     />
                   </div>
                 </div>
+                ) : null}
               </div>
-            ))
+              );
+            })
           ) : (
             <div className="rounded-2xl border border-dashed border-slate-200 bg-white px-4 py-6 text-center text-sm text-slate-500">
               Henüz banner eklenmedi. İsterseniz boş bırakabilirsiniz; storefront tarafında alan

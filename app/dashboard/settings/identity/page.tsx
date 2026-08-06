@@ -1,6 +1,5 @@
 import { Header } from "@/components/dashboard/header";
 import { TenantSiteIdentityForm } from "@/components/dashboard/tenant-site-identity-form";
-import { TenantStorefrontDisplayForm } from "@/components/dashboard/tenant-storefront-display-form";
 import { requireTenantAdminPage } from "@/lib/auth/session";
 import { getTenantStorefrontSettings } from "@/lib/data";
 
@@ -17,7 +16,6 @@ export default async function TenantIdentitySettingsPage() {
       />
 
       <TenantSiteIdentityForm initialStorefrontSettings={storefrontSettings} />
-      <TenantStorefrontDisplayForm initialStorefrontSettings={storefrontSettings} />
     </div>
   );
 }

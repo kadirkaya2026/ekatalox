@@ -17,6 +17,16 @@ const periodOptions: { value: AnalyticsPeriod; label: string }[] = [
   { value: "monthly", label: "Son 30 Gün" },
 ];
 
+type ReportsTab = "overview" | "products" | "search" | "usage" | "traffic";
+
+const REPORTS_TABS: Array<{ key: ReportsTab; label: string }> = [
+  { key: "overview", label: "Genel Bakış" },
+  { key: "products", label: "Ürünler" },
+  { key: "search", label: "Arama" },
+  { key: "usage", label: "Fiyat Listesi & Şifre Kullanımı" },
+  { key: "traffic", label: "Trafik Dağılımı" },
+];
+
 const ORDER_CURRENCIES: CurrencyCode[] = ["TRY", "USD", "EUR"];
 
 function getVisitorCardTitle(report: TenantAnalyticsReport) {
@@ -207,6 +217,7 @@ export function ReportsPanel({
   initialReport: TenantAnalyticsReport;
   endpoint?: string;
 }) {
+  const [activeTab, setActiveTab] = useState<ReportsTab>("overview");
   const [period, setPeriod] = useState<AnalyticsPeriod>(initialReport.period);
   const [report, setReport] = useState(initialReport);
   const [loading, setLoading] = useState(false);
@@ -272,6 +283,28 @@ export function ReportsPanel({
         </div>
       ) : null}
 
+      <Card className="overflow-hidden p-0">
+        <div className="flex flex-wrap border-b border-slate-100">
+          {REPORTS_TABS.map((tab) => (
+            <button
+              key={tab.key}
+              type="button"
+              onClick={() => setActiveTab(tab.key)}
+              className={cn(
+                "flex items-center gap-2 border-b-2 px-4 py-3 text-sm font-semibold transition sm:px-5",
+                activeTab === tab.key
+                  ? "border-emerald-500 text-emerald-700"
+                  : "border-transparent text-slate-500 hover:text-slate-700",
+              )}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        <div className="space-y-6 p-5">
+        {activeTab === "overview" ? (
+        <>
       <Card className="p-5">
         <p className="text-sm text-slate-500">{getVisitorCardTitle(report)}</p>
         <p className="mt-2 text-3xl font-bold text-foreground">
@@ -320,7 +353,10 @@ export function ReportsPanel({
           </div>
         )}
       </Card>
+        </>
+        ) : null}
 
+        {activeTab === "products" ? (
       <div className="grid gap-4 xl:grid-cols-2">
         <ProductRankingTable
           title="En Çok Tıklanan 5 Ürün"
@@ -335,7 +371,9 @@ export function ReportsPanel({
           countLabel="Ekleme"
         />
       </div>
+        ) : null}
 
+        {activeTab === "search" ? (
       <Card className="p-5">
         <h2 className="text-lg font-semibold text-foreground">En Çok Aranan Terimler</h2>
 
@@ -368,7 +406,9 @@ export function ReportsPanel({
           </TableWrapper>
         )}
       </Card>
+        ) : null}
 
+        {activeTab === "usage" ? (
       <div className="grid gap-4 xl:grid-cols-2">
         <SimpleUsageTable
           title="Fiyat Listesi Kullanımı"
@@ -394,7 +434,9 @@ export function ReportsPanel({
           }))}
         />
       </div>
+        ) : null}
 
+        {activeTab === "traffic" ? (
       <div className="grid gap-4 xl:grid-cols-2">
         <TrafficBarChart
           title="Saat Dağılımı"
@@ -421,6 +463,9 @@ export function ReportsPanel({
           />
         ) : null}
       </div>
+        ) : null}
+        </div>
+      </Card>
     </div>
   );
 }

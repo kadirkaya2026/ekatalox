@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { Globe, ImageUp, LoaderCircle, Store } from "lucide-react";
+import { CalendarDays, Globe, ImageUp, LoaderCircle, Store } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -19,7 +19,7 @@ import {
   maxFaviconFileSizeBytes,
   maxLogoFileSizeBytes,
 } from "@/lib/validators/storefront-settings";
-import { cn } from "@/lib/utils";
+import { cn, formatDateSlashTr } from "@/lib/utils";
 
 const STOREFRONT_LOCALE_LABELS: Record<StorefrontLocale, string> = {
   tr: "Türkçe",
@@ -28,13 +28,14 @@ const STOREFRONT_LOCALE_LABELS: Record<StorefrontLocale, string> = {
   ru: "Rusça (Русский)",
 };
 
-type SiteIdentityTab = "brand" | "tabTitle" | "locale" | "favicon";
+type SiteIdentityTab = "brand" | "tabTitle" | "locale" | "favicon" | "priceDate";
 
 const SITE_IDENTITY_TABS: Array<{ key: SiteIdentityTab; label: string }> = [
   { key: "brand", label: "Logo, Başlık ve Açıklama" },
   { key: "tabTitle", label: "Tarayıcı Sekme Başlığı" },
   { key: "locale", label: "Vitrin Dili" },
   { key: "favicon", label: "Favicon" },
+  { key: "priceDate", label: "Fiyat Güncelleme Tarihi" },
 ];
 
 export function TenantSiteIdentityForm({
@@ -59,17 +60,25 @@ export function TenantSiteIdentityForm({
   const [defaultLocale, setDefaultLocale] = useState<StorefrontLocale>(
     initialStorefrontSettings.default_locale ?? "tr",
   );
+  const [priceUpdateDate, setPriceUpdateDate] = useState(
+    initialStorefrontSettings.price_update_date ?? "",
+  );
+  const [isPriceUpdateDateVisible, setIsPriceUpdateDateVisible] = useState(
+    initialStorefrontSettings.is_price_update_date_visible ?? false,
+  );
   const [logoPending, startLogoTransition] = useTransition();
   const [storefrontSavePending, startStorefrontSaveTransition] = useTransition();
   const [faviconPending, startFaviconTransition] = useTransition();
   const [savePending, startSaveTransition] = useTransition();
   const [localePending, startLocaleTransition] = useTransition();
+  const [priceDateSavePending, startPriceDateSaveTransition] = useTransition();
   const router = useRouter();
   const [logoMessage, setLogoMessage] = useState<string | null>(null);
   const [storefrontSaveMessage, setStorefrontSaveMessage] = useState<string | null>(null);
   const [faviconMessage, setFaviconMessage] = useState<string | null>(null);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
   const [localeMessage, setLocaleMessage] = useState<string | null>(null);
+  const [priceDateSaveMessage, setPriceDateSaveMessage] = useState<string | null>(null);
   const [logoError, setLogoError] = useState<string | null>(null);
   const [faviconError, setFaviconError] = useState<string | null>(null);
   const [storefrontTitleError, setStorefrontTitleError] = useState<string | null>(null);
@@ -77,6 +86,7 @@ export function TenantSiteIdentityForm({
     null,
   );
   const [titleError, setTitleError] = useState<string | null>(null);
+  const [priceDateError, setPriceDateError] = useState<string | null>(null);
 
   function uploadLogo(file: File) {
     startLogoTransition(async () => {
@@ -280,6 +290,45 @@ export function TenantSiteIdentityForm({
       }
 
       setLocaleMessage("Vitrin dili kaydedildi.");
+      router.refresh();
+    });
+  }
+
+  function savePriceUpdateDate(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setPriceDateSaveMessage(null);
+    setPriceDateError(null);
+
+    if (isPriceUpdateDateVisible && !priceUpdateDate) {
+      setPriceDateError("Vitrinde göstermek için fiyat güncelleme tarihi zorunludur.");
+      return;
+    }
+
+    startPriceDateSaveTransition(async () => {
+      const response = await fetch("/api/tenant/settings", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          price_update_date: priceUpdateDate || null,
+          is_price_update_date_visible: isPriceUpdateDateVisible,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        setPriceDateSaveMessage(result.error ?? "Vitrin ayarları kaydedilemedi.");
+        return;
+      }
+
+      if (result.storefrontSettings) {
+        setPriceUpdateDate(result.storefrontSettings.price_update_date ?? "");
+        setIsPriceUpdateDateVisible(
+          result.storefrontSettings.is_price_update_date_visible ?? false,
+        );
+      }
+
+      setPriceDateSaveMessage("Vitrin ayarları kaydedildi.");
       router.refresh();
     });
   }
@@ -570,6 +619,97 @@ export function TenantSiteIdentityForm({
         {faviconMessage ? (
           <p className="mt-3 text-sm text-emerald-700">{faviconMessage}</p>
         ) : null}
+      </div>
+      ) : null}
+
+      {activeTab === "priceDate" ? (
+      <div>
+        <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-slate-900">
+          <CalendarDays className="size-4 text-emerald-700" />
+          <span>Fiyat Güncelleme Tarihi</span>
+        </div>
+        <p className="mb-4 text-sm text-slate-500">
+          Vitrin anasayfasında logo yanındaki mağaza adının altında fiyat güncelleme
+          tarihini gösterebilirsiniz.
+        </p>
+
+        <form onSubmit={savePriceUpdateDate} className="space-y-4">
+          <div>
+            <label className="mb-2 block text-sm font-medium text-slate-700">
+              Fiyat güncelleme tarihi
+            </label>
+            <Input
+              type="date"
+              value={priceUpdateDate}
+              onChange={(event) => {
+                setPriceUpdateDate(event.target.value);
+                setPriceDateSaveMessage(null);
+                setPriceDateError(null);
+              }}
+            />
+            {priceDateError ? (
+              <p className="mt-2 text-sm text-amber-700">{priceDateError}</p>
+            ) : (
+              <p className="mt-2 text-xs text-slate-400">
+                Tarih, vitrinde gg/aa/yyyy formatında gösterilir.
+              </p>
+            )}
+          </div>
+
+          <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-sm font-semibold text-slate-900">Vitrinde göster</p>
+                <p className="mt-1 text-sm text-slate-500">
+                  Açıkken tarih, mağaza adının altında görünür.
+                </p>
+                {isPriceUpdateDateVisible && priceUpdateDate ? (
+                  <p className="mt-2 text-sm text-slate-600">
+                    Önizleme: Fiyat Güncelleme Tarihi :{" "}
+                    {formatDateSlashTr(priceUpdateDate)}
+                  </p>
+                ) : null}
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsPriceUpdateDateVisible((current) => !current);
+                  setPriceDateSaveMessage(null);
+                  setPriceDateError(null);
+                }}
+                aria-pressed={isPriceUpdateDateVisible}
+                className={`relative inline-flex h-7 w-12 shrink-0 rounded-full transition ${
+                  isPriceUpdateDateVisible ? "bg-emerald-600" : "bg-slate-300"
+                }`}
+              >
+                <span
+                  className={`absolute top-0.5 size-6 rounded-full bg-white shadow transition ${
+                    isPriceUpdateDateVisible ? "left-5" : "left-0.5"
+                  }`}
+                />
+              </button>
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="min-h-6">
+              {priceDateSaveMessage ? (
+                <p
+                  className={`text-sm ${
+                    priceDateSaveMessage.includes("kaydedildi")
+                      ? "text-emerald-700"
+                      : "text-amber-700"
+                  }`}
+                >
+                  {priceDateSaveMessage}
+                </p>
+              ) : null}
+            </div>
+            <Button type="submit" disabled={priceDateSavePending}>
+              {priceDateSavePending ? "Kaydediliyor..." : "Kaydet"}
+            </Button>
+          </div>
+        </form>
       </div>
       ) : null}
       </div>
