@@ -43,6 +43,7 @@ export function AdminTenantDetailPanel({ tenant: initialTenant }: { tenant: Tena
   const [planDraft, setPlanDraft] = useState<TenantPlan>(tenant.plan ?? "baslangic");
   const [visitorAddonDraft, setVisitorAddonDraft] = useState(tenant.visitor_limit_addon ?? 0);
   const [productAddonDraft, setProductAddonDraft] = useState(tenant.product_limit_addon ?? 0);
+  const [customDomainDraft, setCustomDomainDraft] = useState(tenant.custom_domain ?? "");
   const [giftMonths, setGiftMonths] = useState(1);
   const [codeDraft, setCodeDraft] = useState("");
   const [priceListDraft, setPriceListDraft] = useState(tenant.price_lists?.[0]?.id ?? "");
@@ -98,6 +99,30 @@ export function AdminTenantDetailPanel({ tenant: initialTenant }: { tenant: Tena
 
       setTenant((current) => ({ ...current, ...result.tenant }));
       setMessage("Değişiklikler kaydedildi.");
+    });
+  }
+
+  function saveCustomDomain(overrideValue?: string) {
+    setMessage(null);
+    const value = (overrideValue ?? customDomainDraft).trim();
+
+    startTransition(async () => {
+      const response = await fetch(`/api/admin/tenants/${tenant.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ custom_domain: value || null }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        setMessage(result.error ?? "Özel alan adı kaydedilemedi.");
+        return;
+      }
+
+      setTenant((current) => ({ ...current, custom_domain: result.tenant.custom_domain }));
+      setCustomDomainDraft(result.tenant.custom_domain ?? "");
+      setMessage("Özel alan adı güncellendi.");
     });
   }
 
@@ -453,6 +478,45 @@ export function AdminTenantDetailPanel({ tenant: initialTenant }: { tenant: Tena
           <Button variant="secondary" onClick={() => setTenantAdminPassword(null)} disabled={pending}>
             Rastgele şifre oluştur
           </Button>
+        </div>
+      </Card>
+
+      <Card className="p-5">
+        <p className="text-sm font-semibold text-slate-900">Özel alan adı</p>
+        <p className="mt-1 text-sm text-slate-500">
+          Müşterinin istediği alan adını (ör. katalog.firma.com) DNS/Vercel tarafında
+          bağladıktan sonra burada tanımlayın. Tenant admin paneli üzerinden bu alan
+          artık değiştirilemez — yalnızca siz güncelleyebilirsiniz.
+        </p>
+        <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center">
+          <Input
+            type="text"
+            placeholder="katalog.firma.com"
+            value={customDomainDraft}
+            onChange={(event) => setCustomDomainDraft(event.target.value)}
+            className="max-w-[280px]"
+          />
+          <Button
+            variant="secondary"
+            onClick={() => saveCustomDomain()}
+            disabled={pending || customDomainDraft.trim() === (tenant.custom_domain ?? "")}
+            className="border-emerald-200 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800"
+          >
+            Kaydet
+          </Button>
+          {tenant.custom_domain ? (
+            <Button
+              variant="secondary"
+              onClick={() => {
+                setCustomDomainDraft("");
+                saveCustomDomain("");
+              }}
+              disabled={pending}
+              className="border-rose-200 text-rose-700 hover:bg-rose-50 hover:text-rose-800"
+            >
+              Kaldır
+            </Button>
+          ) : null}
         </div>
       </Card>
 

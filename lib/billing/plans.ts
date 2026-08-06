@@ -416,6 +416,17 @@ export function formatEffectiveProductLimit(planId: TenantPlan, addon = 0): stri
   return formatProductLimit(getEffectiveProductLimit(planId, addon));
 }
 
+export function buildCustomDomainRequestHref(
+  companyName: string,
+  subdomain: string,
+  currentDomain?: string | null,
+): string {
+  const message = currentDomain
+    ? `Merhaba, ${companyName} (${subdomain}.ekatalox.com) olarak özel alan adımızı (${currentDomain}) değiştirmek istiyoruz.`
+    : `Merhaba, ${companyName} (${subdomain}.ekatalox.com) olarak kendi alan adımızı bağlamak istiyoruz.`;
+  return `https://wa.me/${PACKAGE_UPGRADE_PHONE}?text=${encodeURIComponent(message)}`;
+}
+
 export function buildVisitorAddonHref(
   companyName: string,
   subdomain: string,

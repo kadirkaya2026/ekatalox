@@ -61,6 +61,22 @@ export async function PATCH(
 
   const updatePayload: Record<string, unknown> = { ...updates };
 
+  if (updatePayload.custom_domain) {
+    const { data: existingTenant } = await supabase
+      .from("tenants")
+      .select("id")
+      .ilike("custom_domain", updatePayload.custom_domain as string)
+      .neq("id", id)
+      .maybeSingle();
+
+    if (existingTenant) {
+      return NextResponse.json(
+        { error: "Bu alan adı başka bir mağaza tarafından kullanılıyor." },
+        { status: 409 },
+      );
+    }
+  }
+
   if (gift_months) {
     const { data: currentTenant } = await supabase
       .from("tenants")

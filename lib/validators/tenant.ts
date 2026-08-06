@@ -10,6 +10,7 @@ import {
   normalizeSubdomain,
   RESERVED_SUBDOMAIN_MESSAGE,
 } from "@/lib/tenancy/reserved-subdomains";
+import { customDomainFieldSchema } from "@/lib/validators/custom-domain";
 
 const subdomainSchema = z.preprocess(
   (value) => (typeof value === "string" ? normalizeSubdomain(value) : value),
@@ -71,6 +72,7 @@ export const tenantUpdateSchema = z
     visitor_limit_addon: z.number().int().min(0).optional(),
     product_limit_addon: z.number().int().min(0).optional(),
     whatsapp_number: z.string().min(10).optional(),
+    custom_domain: customDomainFieldSchema.optional(),
     end_trial: z.boolean().optional(),
     start_trial: z.boolean().optional(),
     gift_months: z.number().int().min(1).max(24).optional(),

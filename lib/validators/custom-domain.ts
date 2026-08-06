@@ -83,21 +83,22 @@ export function validateCustomDomainValue(value: string | null | undefined) {
   return { ok: true as const, value: normalized };
 }
 
-export const customDomainUpdateSchema = z.object({
-  custom_domain: z
-    .union([z.string(), z.null()])
-    .transform((value) => (typeof value === "string" ? normalizeCustomDomain(value) : null))
-    .superRefine((value, ctx) => {
-      if (value === null) {
-        return;
-      }
+// Süper admin panelinde tenant güncelleme şeması dahil, alan adı yazan her
+// yerde aynı normalizasyon/doğrulama kuralını paylaşmak için ayrı export edildi.
+export const customDomainFieldSchema = z
+  .union([z.string(), z.null()])
+  .transform((value) => (typeof value === "string" ? normalizeCustomDomain(value) : null))
+  .superRefine((value, ctx) => {
+    if (value === null) {
+      return;
+    }
 
-      const result = validateCustomDomainValue(value);
-      if (!result.ok) {
-        ctx.addIssue({
-          code: "custom",
-          message: result.error,
-        });
-      }
-    }),
-});
+    const result = validateCustomDomainValue(value);
+    if (!result.ok) {
+      ctx.addIssue({
+        code: "custom",
+        message: result.error,
+      });
+    }
+  });
+

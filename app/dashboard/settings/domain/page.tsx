@@ -1,6 +1,6 @@
 import { Header } from "@/components/dashboard/header";
 import { PlanFeatureGate } from "@/components/dashboard/plan-feature-gate";
-import { TenantDomainForm } from "@/components/dashboard/tenant-domain-form";
+import { TenantDomainInfo } from "@/components/dashboard/tenant-domain-info";
 import { requireTenantAdminPage } from "@/lib/auth/session";
 
 export default async function TenantDomainSettingsPage() {
@@ -16,7 +16,7 @@ export default async function TenantDomainSettingsPage() {
       />
 
       <PlanFeatureGate feature="custom_domain" plan={tenant.plan} companyName={tenant.company_name}>
-        <TenantDomainForm tenant={tenant} />
+        <TenantDomainInfo tenant={tenant} />
       </PlanFeatureGate>
     </div>
   );
