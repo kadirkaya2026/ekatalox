@@ -53,6 +53,8 @@ export function buildBrandCssVariables(
     "--brand-primary-soft": `color-mix(in srgb, ${primary} 14%, transparent)`,
     "--brand-primary-soft-text": primary,
     "--brand-primary-border": `color-mix(in srgb, ${primary} 35%, transparent)`,
+    "--brand-accent-soft": `color-mix(in srgb, ${accent ?? primary} 16%, transparent)`,
+    "--brand-accent-soft-text": accent ?? primary,
   } as CSSProperties;
 }
 
@@ -62,6 +64,8 @@ const brandPrimaryFg = "text-[var(--brand-primary-foreground)]";
 const brandSoftBg = "bg-[var(--brand-primary-soft)]";
 const brandSoftText = "text-[var(--brand-primary-soft-text)]";
 const brandSoftBorder = "border-[var(--brand-primary-border)]";
+const brandAccentSoftBg = "bg-[var(--brand-accent-soft)]";
+const brandAccentSoftText = "text-[var(--brand-accent-soft-text)]";
 
 export function applyBrandColorOverrides(
   theme: StorefrontTheme,
@@ -74,6 +78,8 @@ export function applyBrandColorOverrides(
   return {
     ...theme,
     cartBadge: cn(brandPrimaryBg, brandPrimaryFg),
+    variantBadge: cn(brandAccentSoftBg, brandAccentSoftText),
+    addedVariantBadge: cn(brandAccentSoftBg, brandAccentSoftText),
     primaryButton: cn(
       brandPrimaryBg,
       brandPrimaryFg,

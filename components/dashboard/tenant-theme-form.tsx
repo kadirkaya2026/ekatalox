@@ -29,6 +29,7 @@ import {
   PRODUCT_CARD_STYLE_OPTIONS,
 } from "@/lib/storefront/appearance-catalog";
 import { hasPlanFeature } from "@/lib/billing/plans";
+import { cn } from "@/lib/utils";
 
 interface ThemeFormState {
   theme_key: StorefrontThemeKey;
@@ -41,6 +42,20 @@ interface ThemeFormState {
   footer_style_key: StorefrontFooterStyleKey;
   recommendation_mode: RecommendationMode;
 }
+
+type ThemeFormTab = "brand" | "theme" | "layout" | "recommendations" | "appearance";
+
+const THEME_FORM_TABS: Array<{
+  key: ThemeFormTab;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+}> = [
+  { key: "brand", label: "Marka Renkleri", icon: Palette },
+  { key: "theme", label: "Hazır Tema", icon: Palette },
+  { key: "layout", label: "Vitrin Düzeni", icon: LayoutGrid },
+  { key: "recommendations", label: "Sepet Önerileri", icon: Sparkles },
+  { key: "appearance", label: "Yazı Tipi ve Stiller", icon: Type },
+];
 
 function toThemeFormState(settings: TenantStorefrontSettings): ThemeFormState {
   return {
@@ -105,6 +120,7 @@ export function TenantThemeForm({
   const [form, setForm] = useState<ThemeFormState>(
     toThemeFormState(initialStorefrontSettings),
   );
+  const [activeTab, setActiveTab] = useState<ThemeFormTab>("brand");
   const [savePending, startSaveTransition] = useTransition();
   const [resetPending, startResetTransition] = useTransition();
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
@@ -179,226 +195,276 @@ export function TenantThemeForm({
   return (
     <form onSubmit={save}>
       <div className="space-y-6">
-          <Card className="p-5">
-            <div className="flex items-center gap-2">
-              <Palette className="size-5 text-emerald-700" />
-              <h2 className="text-lg font-semibold text-slate-900">Marka renkleri</h2>
-            </div>
-            <p className="mt-1 mb-4 text-sm text-slate-600">
-              Logonuza uygun renkleri seçin veya hazır paletlerden birini kullanın.
-            </p>
-            <div className="grid gap-4 md:grid-cols-2">
+        <Card className="overflow-hidden p-0">
+          <div className="flex flex-wrap border-b border-slate-100">
+            {THEME_FORM_TABS.map((tab) => (
+              <button
+                key={tab.key}
+                type="button"
+                onClick={() => setActiveTab(tab.key)}
+                className={cn(
+                  "flex items-center gap-2 border-b-2 px-4 py-3 text-sm font-semibold transition sm:px-5",
+                  activeTab === tab.key
+                    ? "border-emerald-500 text-emerald-700"
+                    : "border-transparent text-slate-500 hover:text-slate-700",
+                )}
+              >
+                <tab.icon className="size-4" />
+                {tab.label}
+              </button>
+            ))}
+          </div>
+
+          <div className="p-5">
+            {activeTab === "brand" ? (
               <div>
-                <label className="mb-2 block text-sm font-medium text-slate-700">
-                  Birincil renk
-                </label>
-                <div className="flex items-center gap-3">
-                  <Input
-                    type="color"
-                    value={form.brand_primary_color || "#059669"}
-                    onChange={(event) => updateField("brand_primary_color", event.target.value)}
-                    className="h-11 w-16 cursor-pointer p-1"
-                  />
-                  <Input
-                    value={form.brand_primary_color}
-                    onChange={(event) => updateField("brand_primary_color", event.target.value)}
-                    placeholder="#059669"
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="mb-2 block text-sm font-medium text-slate-700">
-                  Vurgu rengi
-                </label>
-                <div className="flex items-center gap-3">
-                  <Input
-                    type="color"
-                    value={form.brand_accent_color || "#10b981"}
-                    onChange={(event) => updateField("brand_accent_color", event.target.value)}
-                    className="h-11 w-16 cursor-pointer p-1"
-                  />
-                  <Input
-                    value={form.brand_accent_color}
-                    onChange={(event) => updateField("brand_accent_color", event.target.value)}
-                    placeholder="#10b981"
-                  />
-                </div>
-              </div>
-            </div>
-            <div className="mt-4 flex flex-wrap gap-2">
-              {BRAND_COLOR_PRESETS.map((preset) => (
-                <button
-                  key={preset.label}
-                  type="button"
-                  onClick={() => {
-                    updateField("brand_primary_color", preset.primary);
-                    updateField("brand_accent_color", preset.accent);
-                  }}
-                  className="rounded-full border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-700 hover:border-emerald-300 hover:bg-emerald-50"
-                >
-                  {preset.label}
-                </button>
-              ))}
-            </div>
-          </Card>
-
-          <Card className="p-5">
-            <div className="flex items-center gap-2">
-              <Palette className="size-5 text-emerald-700" />
-              <h2 className="text-lg font-semibold text-slate-900">Hazır tema</h2>
-            </div>
-            <p className="mt-1 mb-4 text-sm text-slate-600">
-              Vitrininizin genel görünümünü belirleyen temayı seçin.
-            </p>
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-              {THEME_OPTIONS.map((theme) => {
-                const selected = form.theme_key === theme.key;
-                return (
-                  <button
-                    key={theme.key}
-                    type="button"
-                    onClick={() => updateField("theme_key", theme.key)}
-                    className={[
-                      "rounded-2xl border p-4 text-left transition",
-                      selected
-                        ? "border-emerald-500 bg-emerald-50 shadow-sm ring-1 ring-emerald-500/30"
-                        : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50",
-                    ].join(" ")}
-                  >
-                    <StorefrontThemePreview
-                      themeKey={theme.key}
-                      layoutKey={form.layout_key}
-                      storefrontTitle={previewTitle}
-                      logoUrl={previewLogoUrl}
-                      brandPrimaryColor={form.brand_primary_color || null}
-                      brandAccentColor={form.brand_accent_color || null}
-                    />
-                    <p className="mt-4 text-sm font-semibold text-slate-900">{theme.title}</p>
-                    <p className="mt-1 text-sm leading-6 text-slate-500">{theme.description}</p>
-                  </button>
-                );
-              })}
-            </div>
-          </Card>
-
-          <Card className="p-5">
-            <div className="flex items-center gap-2">
-              <LayoutGrid className="size-5 text-emerald-700" />
-              <h2 className="text-lg font-semibold text-slate-900">Vitrin düzeni</h2>
-            </div>
-            <p className="mt-1 mb-4 text-sm text-slate-600">
-              Ürünlerin ve kategorilerin vitrinde nasıl dizileceğini seçin.
-            </p>
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-              {LAYOUT_OPTIONS.map((layout) => {
-                const selected = form.layout_key === layout.key;
-                return (
-                  <button
-                    key={layout.key}
-                    type="button"
-                    onClick={() => updateField("layout_key", layout.key)}
-                    className={[
-                      "rounded-2xl border p-4 text-left transition",
-                      selected
-                        ? "border-emerald-500 bg-emerald-50 shadow-sm ring-1 ring-emerald-500/30"
-                        : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50",
-                    ].join(" ")}
-                  >
-                    <StorefrontThemePreview
-                      themeKey={form.theme_key}
-                      layoutKey={layout.key}
-                      storefrontTitle={previewTitle}
-                      logoUrl={previewLogoUrl}
-                      brandPrimaryColor={form.brand_primary_color || null}
-                      brandAccentColor={form.brand_accent_color || null}
-                    />
-                    <p className="mt-4 text-sm font-semibold text-slate-900">{layout.title}</p>
-                    <p className="mt-1 text-sm leading-6 text-slate-500">{layout.description}</p>
-                  </button>
-                );
-              })}
-            </div>
-          </Card>
-
-          <Card className="p-5">
-            <div className="flex items-center gap-2">
-              <Sparkles className="size-5 text-emerald-700" />
-              <h2 className="text-lg font-semibold text-slate-900">Sepet ürün önerileri</h2>
-            </div>
-            <p className="mt-1 mb-4 text-sm text-slate-600">
-              &quot;Bunları da beğenebilirsiniz&quot; alanında müşteriye hangi ürünlerin önerileceğini seçin.
-            </p>
-            <OptionPicker
-              label="Öneri modu"
-              options={[
-                {
-                  key: "auto" as RecommendationMode,
-                  title: "Otomatik",
-                  description: "Sepetteki ürünler hariç, katalogdan otomatik ürün önerilir.",
-                },
-                {
-                  key: "manual" as RecommendationMode,
-                  title: "Manuel (seçtiğim ürünler)",
-                  description:
-                    "Ürün listesinde işaretlediğiniz ürünler önerilir. Ürünler yönetimi sayfasından işaretleyin.",
-                },
-              ]}
-              value={form.recommendation_mode}
-              onChange={(value) => updateField("recommendation_mode", value)}
-            />
-          </Card>
-
-          <PlanFeatureGate
-            feature="advanced_appearance"
-            plan={tenantPlan}
-            companyName={companyName}
-          >
-            <Card className="p-5">
                 <div className="flex items-center gap-2">
-                  <Type className="size-5 text-emerald-700" />
-                  <h2 className="text-lg font-semibold text-slate-900">Yazı tipi ve stiller</h2>
+                  <Palette className="size-5 text-emerald-700" />
+                  <h2 className="text-lg font-semibold text-slate-900">Marka renkleri</h2>
                 </div>
                 <p className="mt-1 mb-4 text-sm text-slate-600">
-                  Font, ürün kartı, header ve footer stillerini özelleştirin.
+                  Logonuza uygun renkleri seçin veya hazır paletlerden birini kullanın.
                 </p>
-                <div className="grid gap-6 lg:grid-cols-2">
-                  <OptionPicker
-                    label="Font"
-                    options={FONT_OPTIONS.map((option) => ({
-                      key: option.key,
-                      title: option.title,
-                      description: option.description,
-                    }))}
-                    value={form.font_key}
-                    onChange={(value) => updateField("font_key", value as ThemeFormState["font_key"])}
-                  />
-                  <OptionPicker
-                    label="Ürün kart stili"
-                    options={PRODUCT_CARD_STYLE_OPTIONS}
-                    value={form.product_card_style}
-                    onChange={(value) =>
-                      updateField("product_card_style", value as StorefrontProductCardStyle)
-                    }
-                  />
-                  <OptionPicker
-                    label="Header stili"
-                    options={HEADER_STYLE_OPTIONS}
-                    value={form.header_style_key}
-                    onChange={(value) =>
-                      updateField("header_style_key", value as StorefrontHeaderStyleKey)
-                    }
-                  />
-                  <OptionPicker
-                    label="Footer stili"
-                    options={FOOTER_STYLE_OPTIONS}
-                    value={form.footer_style_key}
-                    onChange={(value) =>
-                      updateField("footer_style_key", value as StorefrontFooterStyleKey)
-                    }
-                  />
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div>
+                    <label className="mb-2 block text-sm font-medium text-slate-700">
+                      Birincil renk
+                    </label>
+                    <div className="flex items-center gap-3">
+                      <Input
+                        type="color"
+                        value={form.brand_primary_color || "#059669"}
+                        onChange={(event) => updateField("brand_primary_color", event.target.value)}
+                        className="h-11 w-16 cursor-pointer p-1"
+                      />
+                      <Input
+                        value={form.brand_primary_color}
+                        onChange={(event) => updateField("brand_primary_color", event.target.value)}
+                        placeholder="#059669"
+                      />
+                    </div>
+                    <p className="mt-2 text-xs leading-5 text-slate-500">
+                      Nerede kullanılır: <strong>Sepete ekle</strong> butonları, ürün{" "}
+                      <strong>fiyatları</strong>, aktif <strong>kategori</strong> vurguları ve
+                      sepet ikonu üzerindeki sayı rozeti.
+                    </p>
+                  </div>
+                  <div>
+                    <label className="mb-2 block text-sm font-medium text-slate-700">
+                      Vurgu rengi
+                    </label>
+                    <div className="flex items-center gap-3">
+                      <Input
+                        type="color"
+                        value={form.brand_accent_color || "#10b981"}
+                        onChange={(event) => updateField("brand_accent_color", event.target.value)}
+                        className="h-11 w-16 cursor-pointer p-1"
+                      />
+                      <Input
+                        value={form.brand_accent_color}
+                        onChange={(event) => updateField("brand_accent_color", event.target.value)}
+                        placeholder="#10b981"
+                      />
+                    </div>
+                    <p className="mt-2 text-xs leading-5 text-slate-500">
+                      Nerede kullanılır: ürün kartlarındaki{" "}
+                      <strong>varyant/model rozetleri</strong> (ör. &quot;3 Model&quot;, sepete
+                      eklenen varyant sayısı).
+                    </p>
+                  </div>
                 </div>
-            </Card>
-          </PlanFeatureGate>
+
+                <BrandColorPreview
+                  primary={form.brand_primary_color || "#059669"}
+                  accent={form.brand_accent_color || "#10b981"}
+                />
+
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {BRAND_COLOR_PRESETS.map((preset) => (
+                    <button
+                      key={preset.label}
+                      type="button"
+                      onClick={() => {
+                        updateField("brand_primary_color", preset.primary);
+                        updateField("brand_accent_color", preset.accent);
+                      }}
+                      className="rounded-full border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-700 hover:border-emerald-300 hover:bg-emerald-50"
+                    >
+                      {preset.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+
+            {activeTab === "theme" ? (
+              <div>
+                <div className="flex items-center gap-2">
+                  <Palette className="size-5 text-emerald-700" />
+                  <h2 className="text-lg font-semibold text-slate-900">Hazır tema</h2>
+                </div>
+                <p className="mt-1 mb-4 text-sm text-slate-600">
+                  Vitrininizin genel görünümünü belirleyen temayı seçin.
+                </p>
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                  {THEME_OPTIONS.map((theme) => {
+                    const selected = form.theme_key === theme.key;
+                    return (
+                      <button
+                        key={theme.key}
+                        type="button"
+                        onClick={() => updateField("theme_key", theme.key)}
+                        className={[
+                          "rounded-2xl border p-4 text-left transition",
+                          selected
+                            ? "border-emerald-500 bg-emerald-50 shadow-sm ring-1 ring-emerald-500/30"
+                            : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50",
+                        ].join(" ")}
+                      >
+                        <StorefrontThemePreview
+                          themeKey={theme.key}
+                          layoutKey={form.layout_key}
+                          storefrontTitle={previewTitle}
+                          logoUrl={previewLogoUrl}
+                          brandPrimaryColor={form.brand_primary_color || null}
+                          brandAccentColor={form.brand_accent_color || null}
+                        />
+                        <p className="mt-4 text-sm font-semibold text-slate-900">{theme.title}</p>
+                        <p className="mt-1 text-sm leading-6 text-slate-500">{theme.description}</p>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ) : null}
+
+            {activeTab === "layout" ? (
+              <div>
+                <div className="flex items-center gap-2">
+                  <LayoutGrid className="size-5 text-emerald-700" />
+                  <h2 className="text-lg font-semibold text-slate-900">Vitrin düzeni</h2>
+                </div>
+                <p className="mt-1 mb-4 text-sm text-slate-600">
+                  Ürünlerin ve kategorilerin vitrinde nasıl dizileceğini seçin.
+                </p>
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+                  {LAYOUT_OPTIONS.map((layout) => {
+                    const selected = form.layout_key === layout.key;
+                    return (
+                      <button
+                        key={layout.key}
+                        type="button"
+                        onClick={() => updateField("layout_key", layout.key)}
+                        className={[
+                          "rounded-2xl border p-4 text-left transition",
+                          selected
+                            ? "border-emerald-500 bg-emerald-50 shadow-sm ring-1 ring-emerald-500/30"
+                            : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50",
+                        ].join(" ")}
+                      >
+                        <StorefrontThemePreview
+                          themeKey={form.theme_key}
+                          layoutKey={layout.key}
+                          storefrontTitle={previewTitle}
+                          logoUrl={previewLogoUrl}
+                          brandPrimaryColor={form.brand_primary_color || null}
+                          brandAccentColor={form.brand_accent_color || null}
+                        />
+                        <p className="mt-4 text-sm font-semibold text-slate-900">{layout.title}</p>
+                        <p className="mt-1 text-sm leading-6 text-slate-500">{layout.description}</p>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ) : null}
+
+            {activeTab === "recommendations" ? (
+              <div>
+                <div className="flex items-center gap-2">
+                  <Sparkles className="size-5 text-emerald-700" />
+                  <h2 className="text-lg font-semibold text-slate-900">Sepet ürün önerileri</h2>
+                </div>
+                <p className="mt-1 mb-4 text-sm text-slate-600">
+                  &quot;Bunları da beğenebilirsiniz&quot; alanında müşteriye hangi ürünlerin
+                  önerileceğini seçin.
+                </p>
+                <OptionPicker
+                  label="Öneri modu"
+                  options={[
+                    {
+                      key: "auto" as RecommendationMode,
+                      title: "Otomatik",
+                      description: "Sepetteki ürünler hariç, katalogdan otomatik ürün önerilir.",
+                    },
+                    {
+                      key: "manual" as RecommendationMode,
+                      title: "Manuel (seçtiğim ürünler)",
+                      description:
+                        "Ürün listesinde işaretlediğiniz ürünler önerilir. Ürünler yönetimi sayfasından işaretleyin.",
+                    },
+                  ]}
+                  value={form.recommendation_mode}
+                  onChange={(value) => updateField("recommendation_mode", value)}
+                />
+              </div>
+            ) : null}
+
+            {activeTab === "appearance" ? (
+              <PlanFeatureGate
+                feature="advanced_appearance"
+                plan={tenantPlan}
+                companyName={companyName}
+              >
+                <div>
+                  <div className="flex items-center gap-2">
+                    <Type className="size-5 text-emerald-700" />
+                    <h2 className="text-lg font-semibold text-slate-900">Yazı tipi ve stiller</h2>
+                  </div>
+                  <p className="mt-1 mb-4 text-sm text-slate-600">
+                    Font, ürün kartı, header ve footer stillerini özelleştirin.
+                  </p>
+                  <div className="grid gap-6 lg:grid-cols-2">
+                    <OptionPicker
+                      label="Font"
+                      options={FONT_OPTIONS.map((option) => ({
+                        key: option.key,
+                        title: option.title,
+                        description: option.description,
+                      }))}
+                      value={form.font_key}
+                      onChange={(value) => updateField("font_key", value as ThemeFormState["font_key"])}
+                    />
+                    <OptionPicker
+                      label="Ürün kart stili"
+                      options={PRODUCT_CARD_STYLE_OPTIONS}
+                      value={form.product_card_style}
+                      onChange={(value) =>
+                        updateField("product_card_style", value as StorefrontProductCardStyle)
+                      }
+                    />
+                    <OptionPicker
+                      label="Header stili"
+                      options={HEADER_STYLE_OPTIONS}
+                      value={form.header_style_key}
+                      onChange={(value) =>
+                        updateField("header_style_key", value as StorefrontHeaderStyleKey)
+                      }
+                    />
+                    <OptionPicker
+                      label="Footer stili"
+                      options={FOOTER_STYLE_OPTIONS}
+                      value={form.footer_style_key}
+                      onChange={(value) =>
+                        updateField("footer_style_key", value as StorefrontFooterStyleKey)
+                      }
+                    />
+                  </div>
+                </div>
+              </PlanFeatureGate>
+            ) : null}
+          </div>
+        </Card>
 
         <div className="sticky bottom-0 z-10 rounded-2xl border border-slate-200 bg-white/95 p-4 shadow-lg backdrop-blur">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -423,6 +489,31 @@ export function TenantThemeForm({
         </div>
       </div>
     </form>
+  );
+}
+
+// Müşterinin seçtiği renklerin mağazada gerçekte nasıl göründüğünü canlı
+// gösteren küçük önizleme; renklerin "nerede kullanılacağını" metinden çok
+// daha net anlatır.
+function BrandColorPreview({ primary, accent }: { primary: string; accent: string }) {
+  return (
+    <div className="mt-4 flex flex-wrap items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4">
+      <span
+        className="inline-flex items-center rounded-full px-4 py-2 text-sm font-semibold text-white shadow-sm"
+        style={{ backgroundColor: primary }}
+      >
+        Sepete Ekle
+      </span>
+      <span className="text-base font-extrabold" style={{ color: primary }}>
+        ₺1.250
+      </span>
+      <span
+        className="inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-semibold"
+        style={{ backgroundColor: `${accent}26`, color: accent }}
+      >
+        3 Model
+      </span>
+    </div>
   );
 }
 
