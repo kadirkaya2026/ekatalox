@@ -484,7 +484,7 @@ const PLAN_MARKETING_META = {
     features: [
       '10 Seviyeli Müşteri Fiyat Listesi',
       'Akıllı Stok Durum Yönetimi (Stokta Var / Azaldı / Tükendi)',
-      'Özel Domain Desteği (katalog.sirketiniz.com)',
+      'Özel Domain Desteği (sirketiniz.com)',
       'Hızlı Teknik Destek Hattı (2 Saat İçinde Çözüm Garantisi)',
       'Tüm Pro Özellikleri Dahil',
     ],
