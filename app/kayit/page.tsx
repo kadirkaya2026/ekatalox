@@ -1,7 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ArrowRight, CheckCircle2, Check, Sparkles, ShieldCheck, Zap } from 'lucide-react'
 import { SiteNavbar, SiteFooter } from '@/components/site-chrome'
@@ -11,21 +12,50 @@ import {
   PLAN_PRICING,
 } from '@/lib/billing/plans'
 
-const plans = NEW_PLAN_OPTIONS.map((option) => ({
-  id: option.id,
-  name: option.name,
-  price: PLAN_PRICING[option.id].price,
-  unit: PLAN_PRICING[option.id].unit,
-  desc: `${formatPlanCapacityDescription(option.id)}.`,
-  featured: option.id === 'business',
-}))
+type BillingPeriod = 'yearly' | 'monthly'
 
-const Page = () => {
+const PLAN_IDS = NEW_PLAN_OPTIONS.map((option) => option.id)
+
+function buildPlans(billing: BillingPeriod) {
+  return NEW_PLAN_OPTIONS.map((option) => {
+    const pricing = PLAN_PRICING[option.id]
+    return {
+      id: option.id,
+      name: option.name,
+      price: billing === 'yearly' ? pricing.price : pricing.monthlyPrice,
+      unit: billing === 'yearly' ? pricing.unit : pricing.monthlyUnit,
+      desc: `${formatPlanCapacityDescription(option.id)}.`,
+      featured: option.id === 'business',
+    }
+  })
+}
+
+const KayitForm = () => {
+  const searchParams = useSearchParams()
+  const [billing, setBilling] = useState<BillingPeriod>('yearly')
+  const plans = buildPlans(billing)
   const [form, setForm] = useState({ fullName: '', company: '', email: '', phone: '', password: '', plan: 'business' })
   const [submitted, setSubmitted] = useState(false)
   const [sending, setSending] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [apiError, setApiError] = useState('')
+
+  // Fiyatlandırma bölümündeki "Paket Seç" bağlantısı seçilen paketi ve
+  // aylık/yıllık tercihi query param olarak taşır — aksi halde başvuru
+  // formu her zaman varsayılan (business/yıllık) ile açılıp müşterinin
+  // asıl seçtiği paket/dönem kayboluyordu.
+  useEffect(() => {
+    const planParam = searchParams.get('plan')
+    const billingParam = searchParams.get('billing')
+
+    if (planParam && (PLAN_IDS as string[]).includes(planParam)) {
+      setForm((current) => ({ ...current, plan: planParam }))
+    }
+
+    if (billingParam === 'monthly' || billingParam === 'yearly') {
+      setBilling(billingParam)
+    }
+  }, [searchParams])
 
   const set = (k: string) => (e: React.ChangeEvent<HTMLInputElement>) => setForm({ ...form, [k]: e.target.value })
 
@@ -45,7 +75,7 @@ const Page = () => {
       const res = await fetch('/api/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ fullName: form.fullName, company: form.company, email: form.email, phone: form.phone, plan: form.plan }),
+        body: JSON.stringify({ fullName: form.fullName, company: form.company, email: form.email, phone: form.phone, plan: form.plan, billingPeriod: billing }),
       })
       if (!res.ok) throw new Error()
       setSubmitted(true)
@@ -126,7 +156,26 @@ const Page = () => {
                     <Field label="Şifre" type="password" placeholder="En az 6 karakter" value={form.password} onChange={set('password')} error={errors.password} />
 
                     <div>
-                      <label className="text-xs text-slate-400 mb-2 block uppercase tracking-wider">Plan seçimi</label>
+                      <div className="flex items-center justify-between">
+                        <label className="text-xs text-slate-400 block uppercase tracking-wider">Plan seçimi</label>
+                        <div className="inline-flex items-center gap-1 rounded-full bg-white/5 border border-white/10 p-0.5">
+                          {([
+                            { key: 'yearly' as const, label: 'Yıllık' },
+                            { key: 'monthly' as const, label: 'Aylık' },
+                          ]).map((opt) => (
+                            <button
+                              key={opt.key}
+                              type="button"
+                              onClick={() => setBilling(opt.key)}
+                              className={`px-3 py-1 rounded-full text-[11px] font-medium transition-colors ${
+                                billing === opt.key ? 'bg-white text-black' : 'text-slate-400 hover:text-white'
+                              }`}
+                            >
+                              {opt.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
                       <div className="grid grid-cols-3 gap-2 pt-2">
                         {plans.map(p => {
                           const selected = form.plan === p.id
@@ -214,6 +263,12 @@ const Field = ({ label, type = 'text', placeholder, value, onChange, error }: {
       }`} />
     {error && <div className="mt-1 text-[11px] text-red-400">{error}</div>}
   </div>
+)
+
+const Page = () => (
+  <Suspense fallback={null}>
+    <KayitForm />
+  </Suspense>
 )
 
 export default Page

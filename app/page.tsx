@@ -593,7 +593,7 @@ const Pricing = () => {
 
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-5 lg:gap-4">
           {plans.map((p, i) => (
-            <PricingCard key={p.id} plan={p} index={i} />
+            <PricingCard key={p.id} plan={p} index={i} billing={billing} />
           ))}
         </div>
 
@@ -611,7 +611,7 @@ const Pricing = () => {
   )
 }
 
-const PricingCard = ({ plan, index }) => {
+const PricingCard = ({ plan, index, billing }) => {
   const Icon = plan.icon
   return (
     <motion.div
@@ -689,7 +689,7 @@ const PricingCard = ({ plan, index }) => {
         </ul>
 
         <a
-          href="/kayit"
+          href={`/kayit?plan=${plan.id}&billing=${billing}`}
           className={`mt-8 inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-full font-medium text-sm transition-all duration-300 ${
             plan.featured
               ? 'bg-white text-black hover:scale-[1.02] shadow-[0_0_40px_rgba(16, 185, 129,0.3)]'

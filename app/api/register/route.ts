@@ -3,37 +3,36 @@ import nodemailer from 'nodemailer'
 import {
   formatPlanCapacityDescription,
   getPlanLabel,
+  PLAN_PRICING,
   type TenantPlan,
 } from '@/lib/billing/plans'
 
-const planPrices: Record<TenantPlan, string> = {
-  baslangic: '₺20.000 / Yıl',
-  profesyonel: '₺45.000 / Yıl ⭐ Popüler',
-  kurumsal: '₺95.000 / Yıl',
-  start: '₺17.500 / Yıl',
-  pro: '₺25.000 / Yıl',
-  business: '₺35.000 / Yıl ⭐ Popüler',
-  enterprise: '₺50.000 / Yıl',
-  vip: '₺80.000 / Yıl',
-}
+type BillingPeriod = 'yearly' | 'monthly'
 
-function getPlanLabelWithDetails(plan: TenantPlan) {
-  return `${getPlanLabel(plan)} — ${planPrices[plan]} • ${formatPlanCapacityDescription(plan)}`
+function getPlanLabelWithDetails(plan: TenantPlan, billingPeriod: BillingPeriod) {
+  const pricing = PLAN_PRICING[plan]
+  const priceLabel =
+    billingPeriod === 'monthly' && pricing.monthlyPrice
+      ? `${pricing.monthlyPrice} ${pricing.monthlyUnit}`
+      : `${pricing.price} ${pricing.unit}`
+  return `${getPlanLabel(plan)} — ${priceLabel} • ${formatPlanCapacityDescription(plan)}`
 }
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
-    const { fullName, company, email, phone, plan } = body
+    const { fullName, company, email, phone, plan, billingPeriod } = body
+    const normalizedBillingPeriod: BillingPeriod = billingPeriod === 'monthly' ? 'monthly' : 'yearly'
 
     if (!fullName?.trim() || !company?.trim() || !email?.trim() || !plan?.trim()) {
       return NextResponse.json({ error: 'Eksik alanlar' }, { status: 400 })
     }
 
     const planLabel =
-      plan in planPrices
-        ? getPlanLabelWithDetails(plan as TenantPlan)
+      plan in PLAN_PRICING
+        ? getPlanLabelWithDetails(plan as TenantPlan, normalizedBillingPeriod)
         : String(plan)
+    const billingPeriodLabel = normalizedBillingPeriod === 'monthly' ? 'Aylık' : 'Yıllık'
 
     const transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST,
@@ -58,6 +57,10 @@ export async function POST(req: NextRequest) {
             <tr><td style="padding:10px 0;color:#555;font-weight:bold;border-bottom:1px solid #eee;">Şirket</td><td style="padding:10px 0;color:#222;border-bottom:1px solid #eee;">${company}</td></tr>
             <tr><td style="padding:10px 0;color:#555;font-weight:bold;border-bottom:1px solid #eee;">E-posta</td><td style="padding:10px 0;color:#222;border-bottom:1px solid #eee;">${email}</td></tr>
             ${phone ? `<tr><td style="padding:10px 0;color:#555;font-weight:bold;border-bottom:1px solid #eee;">Telefon</td><td style="padding:10px 0;color:#222;border-bottom:1px solid #eee;">${phone}</td></tr>` : ''}
+            <tr>
+              <td style="padding:10px 0;color:#555;font-weight:bold;border-bottom:1px solid #eee;">Ödeme Dönemi</td>
+              <td style="padding:10px 0;color:#222;border-bottom:1px solid #eee;">${billingPeriodLabel}</td>
+            </tr>
             <tr>
               <td style="padding:10px 0;color:#555;font-weight:bold;">Seçilen Plan</td>
               <td style="padding:10px 0;">
