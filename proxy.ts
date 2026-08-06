@@ -123,14 +123,37 @@ async function maybeRedirectStorefrontRequest(params: {
     return null;
   }
 
-  // Yönetilen alt alan adı (musteri.ekatalox.com) her zaman doğrudan mağazayı
-  // sunar; tenant'ın custom_domain alanına ne yazıldığı bu isteği asla
-  // dışarıya yönlendirmez. custom_domain artık yalnızca süper admin
-  // tarafından, DNS gerçekten Vercel'e bağlandığı doğrulandıktan sonra
-  // yazılabiliyor (bkz. /api/admin/tenants) — bu yüzden custom_domain
-  // host'undan gelen trafik güvenle doğrudan mağazayı gösterir, kanonik
-  // subdomain'e yönlendirilmez; yalnızca path normalize edilir.
+  // custom_domain artık yalnızca süper admin tarafından, DNS gerçekten
+  // Vercel'e bağlandığı doğrulandıktan sonra yazılabiliyor (bkz.
+  // /api/admin/tenants) — bu yüzden aşağıdaki yönlendirmeler artık güvenli:
+  // rastgele bir tenant kendi subdomain'ini dışarıya yönlendiremiyor, çünkü
+  // custom_domain kendisi self-servis değil.
+  const isManagedSubdomainHost =
+    params.normalizedHost.endsWith(`.${appEnv.rootDomain}`) ||
+    params.normalizedHost.endsWith(".localhost");
   const isCustomDomainHost = isTenantCustomDomainHost(params.normalizedHost, tenant);
+  const forwardedProto = params.request.headers.get("x-forwarded-proto");
+
+  // Doğrulanmış özel alan adı olan tenant'larda kanonik adres artık
+  // custom_domain'dir: musteri.ekatalox.com'a gelen ziyaretçi oraya
+  // yönlendirilir (SEO açısından da tek kanonik URL doğrusu budur).
+  if (isManagedSubdomainHost) {
+    const publicPath = toPublicStorefrontPath(
+      params.pathname,
+      params.hostResolution.subdomain,
+    );
+
+    return NextResponse.redirect(
+      buildStorefrontRedirectUrl({
+        host: tenant.custom_domain,
+        pathname: publicPath,
+        search: params.request.nextUrl.search,
+        protocol: forwardedProto,
+      }),
+      301,
+    );
+  }
+
   if (!isCustomDomainHost) {
     return null;
   }
@@ -143,8 +166,6 @@ async function maybeRedirectStorefrontRequest(params: {
   if (publicPath === params.pathname) {
     return null;
   }
-
-  const forwardedProto = params.request.headers.get("x-forwarded-proto");
 
   return NextResponse.redirect(
     buildStorefrontRedirectUrl({
