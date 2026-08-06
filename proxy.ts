@@ -125,10 +125,11 @@ async function maybeRedirectStorefrontRequest(params: {
 
   // Yönetilen alt alan adı (musteri.ekatalox.com) her zaman doğrudan mağazayı
   // sunar; tenant'ın custom_domain alanına ne yazıldığı bu isteği asla
-  // dışarıya yönlendirmez (DNS/sahiplik doğrulaması olmadan açık yönlendirme
-  // oluşturmamak için). Sadece gerçekten custom_domain host'undan gelen
-  // trafik (yani DNS gerçekten eKatalox'a bağlanmışsa) kanonik mağaza
-  // adresine yönlendirilir.
+  // dışarıya yönlendirmez. custom_domain artık yalnızca süper admin
+  // tarafından, DNS gerçekten Vercel'e bağlandığı doğrulandıktan sonra
+  // yazılabiliyor (bkz. /api/admin/tenants) — bu yüzden custom_domain
+  // host'undan gelen trafik güvenle doğrudan mağazayı gösterir, kanonik
+  // subdomain'e yönlendirilmez; yalnızca path normalize edilir.
   const isCustomDomainHost = isTenantCustomDomainHost(params.normalizedHost, tenant);
   if (!isCustomDomainHost) {
     return null;
@@ -138,11 +139,16 @@ async function maybeRedirectStorefrontRequest(params: {
     params.pathname,
     params.hostResolution.subdomain,
   );
+
+  if (publicPath === params.pathname) {
+    return null;
+  }
+
   const forwardedProto = params.request.headers.get("x-forwarded-proto");
 
   return NextResponse.redirect(
     buildStorefrontRedirectUrl({
-      host: `${params.hostResolution.subdomain}.${appEnv.rootDomain}`,
+      host: params.normalizedHost,
       pathname: publicPath,
       search: params.request.nextUrl.search,
       protocol: forwardedProto,
