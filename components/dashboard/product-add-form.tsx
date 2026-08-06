@@ -2,12 +2,13 @@
 
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { AlertTriangle, ImagePlus, Plus } from "lucide-react";
+import { AlertTriangle, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { PlanFeatureGate } from "@/components/dashboard/plan-feature-gate";
 import { ProductDescriptionEditor } from "@/components/dashboard/product-description-editor";
+import { ProductImageFields } from "@/components/dashboard/product-image-fields";
 import { ProductPriceFields } from "@/components/dashboard/product-price-fields";
 import { buildCategoryTree, flattenCategoryTree } from "@/lib/categories/tree";
 import { buildPackageUpgradeHref, getEffectiveProductLimit } from "@/lib/billing/plans";
@@ -225,16 +226,11 @@ export function ProductAddForm({
             />
           </div>
 
-          <label className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-5 text-sm text-slate-600">
-            <ImagePlus className="size-4 text-emerald-700" />
-            <span>{form.image ? form.image.name : "Ürün fotoğrafı yükle"}</span>
-            <input
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={(event) => handleImageSelect(event.target.files?.[0] ?? null)}
-            />
-          </label>
+          <ProductImageFields
+            images={[form.image, form.image2, form.image3]}
+            onSelect={(slot, file) => handleImageSelect(slot, file)}
+            onRemove={(slot) => handleImageSelect(slot, null)}
+          />
 
           <label className="flex items-center gap-3 rounded-xl border border-slate-100 bg-slate-50 px-4 py-3 text-sm text-slate-700">
             <input

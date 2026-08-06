@@ -81,6 +81,8 @@ export async function POST(request: Request) {
   }
 
   const image = formData.get("image");
+  const image2 = formData.get("image_2");
+  const image3 = formData.get("image_3");
   const supabase = createSupabaseAdminClient();
   const productId = randomUUID();
 
@@ -106,6 +108,8 @@ export async function POST(request: Request) {
   }
 
   let imageUrl: string | null = null;
+  let imageUrl2: string | null = null;
+  let imageUrl3: string | null = null;
 
   if (image instanceof File && image.size > 0) {
     imageUrl = await uploadProductImage({
@@ -113,6 +117,26 @@ export async function POST(request: Request) {
       tenantId: tenant.id,
       productId,
       file: image,
+    });
+  }
+
+  if (image2 instanceof File && image2.size > 0) {
+    imageUrl2 = await uploadProductImage({
+      supabase,
+      tenantId: tenant.id,
+      productId,
+      file: image2,
+      slot: 2,
+    });
+  }
+
+  if (image3 instanceof File && image3.size > 0) {
+    imageUrl3 = await uploadProductImage({
+      supabase,
+      tenantId: tenant.id,
+      productId,
+      file: image3,
+      slot: 3,
     });
   }
 
@@ -140,6 +164,8 @@ export async function POST(request: Request) {
     is_discount_active: parsed.data.is_discount_active,
     discount_price: parsed.data.discount_price,
     image_url: imageUrl,
+    image_url_2: imageUrl2,
+    image_url_3: imageUrl3,
   };
 
   const { error } = await supabase

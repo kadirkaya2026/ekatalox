@@ -87,6 +87,8 @@ export interface Product {
   product_name: string;
   description?: string | null;
   image_url: string | null;
+  image_url_2: string | null;
+  image_url_3: string | null;
   currency: CurrencyCode;
   prices?: ProductPrice[];
   is_in_stock: boolean;
@@ -273,6 +275,8 @@ export interface StorefrontProduct {
   product_name: string;
   description?: string | null;
   image_url: string | null;
+  image_url_2: string | null;
+  image_url_3: string | null;
   is_in_stock: boolean;
   is_recommended: boolean;
   currency: CurrencyCode;

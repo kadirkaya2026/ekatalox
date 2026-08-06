@@ -268,7 +268,7 @@ export function Sidebar({
       </nav>
 
       <div className="mt-auto space-y-2 border-t border-slate-800 p-4">
-        <ThemeToggle />
+        {mode === "admin" ? <ThemeToggle /> : null}
         <SidebarLogoutButton mode={mode} />
       </div>
     </aside>

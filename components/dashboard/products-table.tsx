@@ -2,7 +2,16 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { ArrowDown, ArrowUp, GripVertical, PencilLine, Trash2 } from "lucide-react";
+import {
+  ArrowDown,
+  ArrowUp,
+  GripVertical,
+  Layers,
+  PackageCheck,
+  PackageX,
+  PencilLine,
+  Trash2,
+} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -224,7 +233,7 @@ export function ProductsTable({
                 onDrop={() => onDrop(product.id)}
                 onDragEnd={onDragEnd}
               >
-                <td className="px-4 py-4">
+                <td className="px-4 py-3">
                   <input
                     type="checkbox"
                     checked={selectedProductIds.includes(product.id)}
@@ -232,7 +241,7 @@ export function ProductsTable({
                     aria-label={`${product.product_name} seç`}
                   />
                 </td>
-                <td className="px-4 py-4">
+                <td className="px-4 py-3">
                   <div className="flex items-center gap-3">
                     <div className="rounded-lg border border-border bg-card p-2 text-slate-400">
                       <GripVertical className="size-4" />
@@ -268,7 +277,7 @@ export function ProductsTable({
                     </div>
                   </div>
                 </td>
-                <td className="px-4 py-4">
+                <td className="px-4 py-3">
                   <div className="flex items-center gap-3">
                     <div className="relative h-14 w-14 overflow-hidden rounded-xl bg-slate-100">
                       {product.image_url ? (
@@ -290,7 +299,7 @@ export function ProductsTable({
                     </div>
                   </div>
                 </td>
-                <td className="px-4 py-4">
+                <td className="px-4 py-3">
                   {inlineCategoryProductId === product.id ? (
                     <select
                       autoFocus
@@ -322,59 +331,58 @@ export function ProductsTable({
                     </button>
                   )}
                 </td>
-                <td className="px-4 py-4">{renderStockBadge(product)}</td>
-                <td className="px-4 py-4">{renderVariantCountBadge(product)}</td>
+                <td className="px-4 py-3">{renderStockBadge(product)}</td>
+                <td className="px-4 py-3">{renderVariantCountBadge(product)}</td>
                 {pricedLists.map((list) => (
-                  <td key={list.id} className="px-4 py-4 text-base">
+                  <td key={list.id} className="px-4 py-3 text-base">
                     {renderProductListPrice(product, list.id)}
                   </td>
                 ))}
-                <td className="px-4 py-4 align-top">
-                  <div className="ml-auto flex max-w-[11rem] flex-wrap justify-end gap-2">
+                <td className="px-4 py-3 align-top">
+                  <div className="ml-auto grid w-[13rem] grid-cols-2 gap-2">
                     <Button
                       variant="secondary"
-                      className="h-9 px-3"
+                      className="h-9 w-full justify-center gap-1.5 px-2 text-xs font-semibold"
                       onClick={() => onOpenVariantMatrix(product)}
-                      title="Model matrisi"
-                      aria-label="Model matrisi"
+                      title="Model matrisini düzenle"
+                      aria-label="Model matrisini düzenle"
                     >
-                      <span className="text-xs font-semibold">Model</span>
+                      <Layers className="size-3.5" />
+                      Model
                     </Button>
                     <Button
                       variant="secondary"
-                      className="h-9 px-3"
+                      className="h-9 w-full justify-center gap-1.5 px-2 text-xs font-semibold"
                       onClick={() => onToggleStock(product)}
                       title={product.is_in_stock ? "Stoğu kapat" : "Stoğu aç"}
                       aria-label={product.is_in_stock ? "Stoğu kapat" : "Stoğu aç"}
                     >
-                      <Badge
-                        className={cn(
-                          "pointer-events-none px-1.5 py-0 text-[10px]",
-                          product.is_in_stock
-                            ? "bg-slate-100 text-muted-foreground"
-                            : "bg-emerald-50 text-emerald-700",
-                        )}
-                      >
-                        {product.is_in_stock ? "Kapat" : "Aç"}
-                      </Badge>
+                      {product.is_in_stock ? (
+                        <PackageX className="size-3.5" />
+                      ) : (
+                        <PackageCheck className="size-3.5" />
+                      )}
+                      {product.is_in_stock ? "Stoğu Kapat" : "Stoğu Aç"}
                     </Button>
                     <Button
                       variant="secondary"
-                      className="h-9 px-3"
+                      className="h-9 w-full justify-center gap-1.5 px-2 text-xs font-semibold"
                       onClick={() => onOpenEdit(product)}
-                      title="Düzenle"
-                      aria-label="Düzenle"
+                      title="Ürünü düzenle"
+                      aria-label="Ürünü düzenle"
                     >
-                      <PencilLine className="size-4" />
+                      <PencilLine className="size-3.5" />
+                      Düzenle
                     </Button>
                     <Button
                       variant="secondary"
-                      className="h-9 border-red-200 px-3 text-red-700 hover:bg-red-50"
+                      className="h-9 w-full justify-center gap-1.5 border-red-200 px-2 text-xs font-semibold text-red-700 hover:bg-red-50"
                       onClick={() => onRequestDelete(product)}
-                      title="Sil"
-                      aria-label="Sil"
+                      title="Ürünü kalıcı olarak sil"
+                      aria-label="Ürünü kalıcı olarak sil"
                     >
-                      <Trash2 className="size-4" />
+                      <Trash2 className="size-3.5" />
+                      Sil
                     </Button>
                   </div>
                 </td>
@@ -396,7 +404,7 @@ export function ProductsTable({
         </div>
       ) : null}
 
-      <div className="grid gap-4 p-4 md:hidden">
+      <div className="grid gap-3 p-4 md:hidden">
         {filteredProducts.map((product, index) => (
           <Card key={product.id} className="p-4">
             <div className="mb-3 flex items-center justify-between">

@@ -78,6 +78,8 @@ export function toStorefrontProduct(
     product_name: product.product_name,
     description: product.description ?? null,
     image_url: product.image_url,
+    image_url_2: product.image_url_2,
+    image_url_3: product.image_url_3,
     is_in_stock: product.is_in_stock,
     is_recommended: product.is_recommended,
     currency: product.currency,

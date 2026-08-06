@@ -295,6 +295,8 @@ function addToCart(items: CartItem[], product: StorefrontProduct, quantity: numb
         sku_code: product.sku_code,
         product_name: product.product_name,
         image_url: product.image_url,
+        image_url_2: product.image_url_2,
+        image_url_3: product.image_url_3,
         is_in_stock: product.is_in_stock,
         currency: product.currency,
         price: product.price,
@@ -358,6 +360,8 @@ function addVariantSelectionsToCart(
           sku_code: product.sku_code,
           product_name: product.product_name,
           image_url: product.image_url,
+          image_url_2: product.image_url_2,
+          image_url_3: product.image_url_3,
           is_in_stock: product.is_in_stock && variant.is_purchasable,
           currency: product.currency,
           price: variant.price,
@@ -826,6 +830,7 @@ export function StorefrontClient({
   const [selectedProduct, setSelectedProduct] = useState<StorefrontProduct | null>(null);
   const [previewProduct, setPreviewProduct] = useState<StorefrontProduct | null>(null);
   const [activePreviewTab, setActivePreviewTab] = useState<ProductDetailTab>("details");
+  const [activePreviewImageIndex, setActivePreviewImageIndex] = useState(0);
   const [previewDescription, setPreviewDescription] = useState<string | null | undefined>(
     undefined,
   );
@@ -1064,6 +1069,7 @@ export function StorefrontClient({
 
       setPreviewProduct(product);
       setActivePreviewTab("details");
+      setActivePreviewImageIndex(0);
 
       if (analyticsSubdomain) {
         trackStorefrontProductView(tenant.id, analyticsSubdomain, product.id);
@@ -2126,6 +2132,14 @@ export function StorefrontClient({
       return null;
     }
 
+    const previewImages = [
+      previewProduct.image_url,
+      previewProduct.image_url_2,
+      previewProduct.image_url_3,
+    ].filter((url): url is string => Boolean(url));
+    const activePreviewImage =
+      previewImages[activePreviewImageIndex] ?? previewImages[0] ?? null;
+
     const tabItems: Array<{ key: ProductDetailTab; label: string }> = [
       { key: "details", label: t("productModal.tabDetails") },
       { key: "package", label: t("productModal.tabPackage") },
@@ -2170,9 +2184,9 @@ export function StorefrontClient({
         <div className="grid gap-4">
           <div className={cn("relative aspect-square overflow-hidden rounded-[1.75rem]", theme.productImageWrap)}>
             <DiscountSticker product={previewProduct} />
-            {previewProduct.image_url ? (
+            {activePreviewImage ? (
               <StorefrontImage
-                src={previewProduct.image_url}
+                src={activePreviewImage}
                 alt={previewProduct.product_name}
                 className="object-contain p-6"
                 sizes={STOREFRONT_MODAL_PRODUCT_SIZES}
@@ -2183,6 +2197,32 @@ export function StorefrontClient({
               </div>
             )}
           </div>
+
+          {previewImages.length > 1 ? (
+            <div className="flex items-center justify-center gap-2">
+              {previewImages.map((imageUrl, index) => (
+                <button
+                  key={imageUrl}
+                  type="button"
+                  onClick={() => setActivePreviewImageIndex(index)}
+                  aria-label={`${previewProduct.product_name} fotoğraf ${index + 1}`}
+                  className={cn(
+                    "relative size-14 shrink-0 overflow-hidden rounded-xl border transition",
+                    index === activePreviewImageIndex
+                      ? "border-[var(--brand-primary,theme(colors.emerald.600))] ring-2 ring-[var(--brand-primary,theme(colors.emerald.400))] ring-offset-1"
+                      : cn("opacity-60 hover:opacity-100", theme.border),
+                  )}
+                >
+                  <StorefrontImage
+                    src={imageUrl}
+                    alt={`${previewProduct.product_name} fotoğraf ${index + 1}`}
+                    className="object-cover"
+                    sizes="56px"
+                  />
+                </button>
+              ))}
+            </div>
+          ) : null}
 
           <div className="space-y-1">
             <ProductPrice product={previewProduct} size="modal" />

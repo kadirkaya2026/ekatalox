@@ -28,8 +28,10 @@ export function buildProductImagePath(params: {
   tenantId: string;
   productId: string;
   fileName: string;
+  slot?: 1 | 2 | 3;
 }) {
-  return `${params.tenantId}/products/${params.productId}-${sanitizeFileName(
+  const slotSuffix = params.slot && params.slot > 1 ? `-${params.slot}` : "";
+  return `${params.tenantId}/products/${params.productId}${slotSuffix}-${sanitizeFileName(
     params.fileName,
   )}`;
 }
@@ -46,6 +48,7 @@ export async function uploadProductImage(params: {
   tenantId: string;
   productId: string;
   file: File;
+  slot?: 1 | 2 | 3;
 }) {
   validateProductImageFile(params.file);
 
@@ -53,6 +56,7 @@ export async function uploadProductImage(params: {
     tenantId: params.tenantId,
     productId: params.productId,
     fileName: params.file.name,
+    slot: params.slot,
   });
 
   const { error } = await params.supabase.storage

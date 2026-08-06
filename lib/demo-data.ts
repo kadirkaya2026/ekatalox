@@ -154,6 +154,8 @@ export const demoProducts: Product[] = [
     product_name: "iPhone 15 128GB",
     image_url:
       "https://images.unsplash.com/photo-1695048133142-1a20484d2569?auto=format&fit=crop&w=900&q=80",
+    image_url_2: null,
+    image_url_3: null,
     currency: "TRY",
     prices: [
       { product_id: "prd-1", price_list_id: "pl-1-lucatech", price: 41250 },
@@ -178,6 +180,8 @@ export const demoProducts: Product[] = [
     product_name: "Samsung S24 256GB",
     image_url:
       "https://images.unsplash.com/photo-1610945415295-d9bbf067e59c?auto=format&fit=crop&w=900&q=80",
+    image_url_2: null,
+    image_url_3: null,
     currency: "TRY",
     prices: [
       { product_id: "prd-2", price_list_id: "pl-1-lucatech", price: 35890 },
@@ -201,6 +205,8 @@ export const demoProducts: Product[] = [
     product_name: "Redmi Note 13",
     image_url:
       "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=900&q=80",
+    image_url_2: null,
+    image_url_3: null,
     currency: "TRY",
     prices: [
       { product_id: "prd-3", price_list_id: "pl-1-lucatech", price: 10350 },

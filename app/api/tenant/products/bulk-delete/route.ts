@@ -36,7 +36,7 @@ export async function POST(request: Request) {
 
   const { data: products, error: productsError } = await supabase
     .from("products")
-    .select("id, image_url")
+    .select("id, image_url, image_url_2, image_url_3")
     .eq("tenant_id", tenant.id)
     .in("id", parsed.data.productIds);
 
@@ -51,12 +51,8 @@ export async function POST(request: Request) {
   const imagePaths = Array.from(
     new Set(
       products
-        .map((product) =>
-          getStorageObjectPathFromPublicUrl(
-            product.image_url,
-            PRODUCT_IMAGES_BUCKET,
-          ),
-        )
+        .flatMap((product) => [product.image_url, product.image_url_2, product.image_url_3])
+        .map((url) => getStorageObjectPathFromPublicUrl(url, PRODUCT_IMAGES_BUCKET))
         .filter((path): path is string => Boolean(path)),
     ),
   );

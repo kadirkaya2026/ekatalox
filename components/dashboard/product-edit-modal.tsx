@@ -1,12 +1,12 @@
 "use client";
 
 import { useTransition, type FormEvent } from "react";
-import { ImagePlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Modal } from "@/components/ui/modal";
 import { PlanFeatureGate } from "@/components/dashboard/plan-feature-gate";
 import { ProductDescriptionEditor } from "@/components/dashboard/product-description-editor";
+import { ProductImageFields } from "@/components/dashboard/product-image-fields";
 import { ProductPriceFields } from "@/components/dashboard/product-price-fields";
 import type { CategoryNode } from "@/lib/categories/tree";
 import {
@@ -35,7 +35,7 @@ export function ProductEditModal({
   onError: (message: string) => void;
 }) {
   const [pending, startTransition] = useTransition();
-  const { form, updateField, updateListPrice, handleImageSelect, discountPreview } =
+  const { form, updateField, updateListPrice, handleImageSelect, handleImageRemove, discountPreview } =
     useProductForm(() => buildProductFormFromProduct(product, priceLists), {
       onImageResult: (message) => {
         if (message) {
@@ -181,16 +181,13 @@ export function ProductEditModal({
           />
         </div>
 
-        <label className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed border-border bg-muted/60 px-4 py-5 text-sm text-muted-foreground">
-          <ImagePlus className="size-4 text-emerald-700" />
-          <span>{form.image ? form.image.name : "Yeni fotoğraf seç"}</span>
-          <input
-            type="file"
-            accept="image/*"
-            className="hidden"
-            onChange={(event) => handleImageSelect(event.target.files?.[0] ?? null)}
-          />
-        </label>
+        <ProductImageFields
+          images={[form.image, form.image2, form.image3]}
+          existingUrls={[product.image_url, product.image_url_2, product.image_url_3]}
+          removedSlots={[form.removeImage, form.removeImage2, form.removeImage3]}
+          onSelect={(slot, file) => handleImageSelect(slot, file)}
+          onRemove={(slot) => handleImageRemove(slot)}
+        />
 
         <label className="flex items-center gap-3 rounded-xl border border-border bg-muted/60 px-4 py-3 text-sm text-muted-foreground">
           <input

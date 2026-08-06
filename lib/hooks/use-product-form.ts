@@ -14,6 +14,8 @@ import {
 } from "@/lib/storage/product-images";
 import type { PriceList, Product } from "@/lib/types";
 
+export type ProductImageSlot = 1 | 2 | 3;
+
 export interface ProductFormState {
   category_id: string;
   sku_code: string;
@@ -28,6 +30,11 @@ export interface ProductFormState {
   carton_quantity: string;
   description: string;
   image: File | null;
+  image2: File | null;
+  image3: File | null;
+  removeImage: boolean;
+  removeImage2: boolean;
+  removeImage3: boolean;
 }
 
 export function buildEmptyProductForm(priceLists: PriceList[]): ProductFormState {
@@ -45,6 +52,11 @@ export function buildEmptyProductForm(priceLists: PriceList[]): ProductFormState
     carton_quantity: "",
     description: "",
     image: null,
+    image2: null,
+    image3: null,
+    removeImage: false,
+    removeImage2: false,
+    removeImage3: false,
   };
 }
 
@@ -69,6 +81,11 @@ export function buildProductFormFromProduct(
     carton_quantity: product.carton_quantity ? String(product.carton_quantity) : "",
     description: product.description ?? "",
     image: null,
+    image2: null,
+    image3: null,
+    removeImage: false,
+    removeImage2: false,
+    removeImage3: false,
   };
 }
 
@@ -89,6 +106,20 @@ export function toProductFormData(form: ProductFormState) {
 
   if (form.image) {
     formData.set("image", form.image);
+  } else if (form.removeImage) {
+    formData.set("remove_image", "1");
+  }
+
+  if (form.image2) {
+    formData.set("image_2", form.image2);
+  } else if (form.removeImage2) {
+    formData.set("remove_image_2", "1");
+  }
+
+  if (form.image3) {
+    formData.set("image_3", form.image3);
+  } else if (form.removeImage3) {
+    formData.set("remove_image_3", "1");
   }
 
   return formData;
@@ -108,6 +139,15 @@ export function getProductDiscountPreview(form: ProductFormState) {
 
   return computeDiscountPercentage(minListPrice, salePrice);
 }
+
+const IMAGE_SLOT_FIELDS: Record<
+  ProductImageSlot,
+  { file: "image" | "image2" | "image3"; remove: "removeImage" | "removeImage2" | "removeImage3" }
+> = {
+  1: { file: "image", remove: "removeImage" },
+  2: { file: "image2", remove: "removeImage2" },
+  3: { file: "image3", remove: "removeImage3" },
+};
 
 // Ürün ekleme ve düzenleme formları aynı alan setini, aynı doğrulama ve
 // aynı FormData serileştirmesini paylaşır — bu hook her iki yerde de
@@ -135,9 +175,11 @@ export function useProductForm(
     }));
   }
 
-  function handleImageSelect(file: File | null) {
+  function handleImageSelect(slot: ProductImageSlot, file: File | null) {
+    const { file: fileKey, remove: removeKey } = IMAGE_SLOT_FIELDS[slot];
+
     if (!file) {
-      updateField("image", null);
+      updateField(fileKey, null);
       return;
     }
 
@@ -153,7 +195,12 @@ export function useProductForm(
     }
 
     options?.onImageResult?.(null);
-    updateField("image", file);
+    setForm((current) => ({ ...current, [fileKey]: file, [removeKey]: false }));
+  }
+
+  function handleImageRemove(slot: ProductImageSlot) {
+    const { file: fileKey, remove: removeKey } = IMAGE_SLOT_FIELDS[slot];
+    setForm((current) => ({ ...current, [fileKey]: null, [removeKey]: true }));
   }
 
   const discountPreview = useMemo(() => getProductDiscountPreview(form), [form]);
@@ -164,6 +211,7 @@ export function useProductForm(
     updateField,
     updateListPrice,
     handleImageSelect,
+    handleImageRemove,
     discountPreview,
   };
 }

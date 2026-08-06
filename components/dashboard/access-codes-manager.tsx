@@ -13,17 +13,21 @@ import type { AccessCode, PriceList, Tenant } from "@/lib/types";
 export function AccessCodesManager({
   tenant,
   initialCodes,
-  priceLists,
+  priceLists: initialPriceLists,
 }: {
   tenant: Tenant;
   initialCodes: AccessCode[];
   priceLists: PriceList[];
 }) {
   const [codes, setCodes] = useState(initialCodes);
+  const [priceLists, setPriceLists] = useState(initialPriceLists);
   const [passwordCode, setPasswordCode] = useState("");
-  const [priceListId, setPriceListId] = useState(priceLists[0]?.id ?? "");
+  const [priceListId, setPriceListId] = useState(initialPriceLists[0]?.id ?? "");
+  const [newPriceListName, setNewPriceListName] = useState("");
   const [message, setMessage] = useState<string | null>(null);
+  const [priceListMessage, setPriceListMessage] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  const [priceListPending, startPriceListTransition] = useTransition();
   const router = useRouter();
 
   // Fiyatsız katalog (is_catalog_only) şifreleri bir fiyat seviyesi
@@ -32,6 +36,9 @@ export function AccessCodesManager({
   const catalogOnlyPriceListIds = new Set(
     priceLists.filter((list) => list.is_catalog_only).map((list) => list.id),
   );
+  const pricedListCount = priceLists.filter(
+    (list) => !catalogOnlyPriceListIds.has(list.id),
+  ).length;
   const pricedCodeCount = codes.filter(
     (code) => !catalogOnlyPriceListIds.has(code.price_list_id),
   ).length;
@@ -39,6 +46,34 @@ export function AccessCodesManager({
   const selectedIsCatalogOnly = catalogOnlyPriceListIds.has(priceListId);
   const atCodeLimit =
     codeLimit !== null && !selectedIsCatalogOnly && pricedCodeCount >= codeLimit;
+  const atPriceListLimit = codeLimit !== null && pricedListCount >= codeLimit;
+
+  function addPriceList(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setPriceListMessage(null);
+
+    startPriceListTransition(async () => {
+      const response = await fetch("/api/tenant/price-lists", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: newPriceListName.trim() }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        setPriceListMessage(result.error ?? "Fiyat listesi eklenemedi.");
+        return;
+      }
+
+      const created = result.priceList as PriceList;
+      setPriceLists((current) => [...current, created]);
+      setPriceListId(created.id);
+      setNewPriceListName("");
+      setPriceListMessage("Yeni fiyat listesi eklendi. Şimdi bu listeye bir şifre bağlayın.");
+      router.refresh();
+    });
+  }
 
   function addCode(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -102,6 +137,55 @@ export function AccessCodesManager({
 
   return (
     <div className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
+      <div className="space-y-6">
+      <Card className="p-5">
+        <h2 className="text-lg font-semibold text-slate-900">Fiyat listeleri</h2>
+        <p className="mt-1 text-sm text-slate-600">
+          Yeni bir fiyatlı seviye (ör. &quot;4.Liste&quot;, &quot;VIP Bayi&quot;) oluşturun,
+          ardından aşağıdan bu listeye bağlı bir şifre ekleyin.
+        </p>
+
+        <div className="mt-4 flex flex-wrap gap-2">
+          {priceLists
+            .filter((list) => !list.is_catalog_only)
+            .map((list) => (
+              <span
+                key={list.id}
+                className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-medium text-slate-700"
+              >
+                {getPriceListDisplayName(list)}
+              </span>
+            ))}
+        </div>
+
+        {atPriceListLimit ? (
+          <div className="mt-4 rounded-xl border border-amber-100 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+            Paketinizde en fazla {formatPriceListLimit(tenant.plan)} fiyatlı seviye
+            oluşturabilirsiniz. Daha fazlası için paketinizi yükseltin.
+          </div>
+        ) : (
+          <form onSubmit={addPriceList} className="mt-4 flex flex-col gap-3 sm:flex-row">
+            <Input
+              placeholder="Örn. 4.Liste"
+              value={newPriceListName}
+              onChange={(event) => setNewPriceListName(event.target.value)}
+              className="sm:flex-1"
+            />
+            <Button
+              type="submit"
+              variant="secondary"
+              disabled={priceListPending || !newPriceListName.trim()}
+            >
+              {priceListPending ? "Ekleniyor..." : "Liste ekle"}
+            </Button>
+          </form>
+        )}
+
+        {priceListMessage ? (
+          <p className="mt-3 text-sm text-emerald-700">{priceListMessage}</p>
+        ) : null}
+      </Card>
+
       <Card className="p-5">
         <h2 className="text-lg font-semibold text-slate-900">Yeni erişim kodu</h2>
         <p className="mt-1 text-sm text-slate-600">
@@ -139,6 +223,7 @@ export function AccessCodesManager({
           </Button>
         </form>
       </Card>
+      </div>
 
       <Card className="p-5">
         <div className="flex items-center justify-between gap-3">

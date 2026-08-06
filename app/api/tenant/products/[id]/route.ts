@@ -86,6 +86,11 @@ export async function PATCH(
   }
 
   const image = formData.get("image");
+  const image2 = formData.get("image_2");
+  const image3 = formData.get("image_3");
+  const removeImage = formData.get("remove_image") === "1";
+  const removeImage2 = formData.get("remove_image_2") === "1";
+  const removeImage3 = formData.get("remove_image_3") === "1";
   const supabase = createSupabaseAdminClient();
 
   if (!supabase) {
@@ -95,7 +100,10 @@ export async function PATCH(
     );
   }
 
-  let imageUrl: string | undefined;
+  let imageUrl: string | null | undefined;
+  let imageUrl2: string | null | undefined;
+  let imageUrl3: string | null | undefined;
+  const removedImagePaths: string[] = [];
 
   if (image instanceof File && image.size > 0) {
     imageUrl = await uploadProductImage({
@@ -104,6 +112,59 @@ export async function PATCH(
       productId: id,
       file: image,
     });
+  } else if (removeImage) {
+    imageUrl = null;
+  }
+
+  if (image2 instanceof File && image2.size > 0) {
+    imageUrl2 = await uploadProductImage({
+      supabase,
+      tenantId: tenant.id,
+      productId: id,
+      file: image2,
+      slot: 2,
+    });
+  } else if (removeImage2) {
+    imageUrl2 = null;
+  }
+
+  if (image3 instanceof File && image3.size > 0) {
+    imageUrl3 = await uploadProductImage({
+      supabase,
+      tenantId: tenant.id,
+      productId: id,
+      file: image3,
+      slot: 3,
+    });
+  } else if (removeImage3) {
+    imageUrl3 = null;
+  }
+
+  if (removeImage || removeImage2 || removeImage3) {
+    const { data: currentProduct } = await supabase
+      .from("products")
+      .select("image_url, image_url_2, image_url_3")
+      .eq("id", id)
+      .eq("tenant_id", tenant.id)
+      .maybeSingle();
+
+    for (const [shouldRemove, url] of [
+      [removeImage, currentProduct?.image_url],
+      [removeImage2, currentProduct?.image_url_2],
+      [removeImage3, currentProduct?.image_url_3],
+    ] as const) {
+      if (!shouldRemove || !url) {
+        continue;
+      }
+      const path = getStorageObjectPathFromPublicUrl(url, PRODUCT_IMAGES_BUCKET);
+      if (path) {
+        removedImagePaths.push(path);
+      }
+    }
+
+    if (removedImagePaths.length) {
+      await supabase.storage.from(PRODUCT_IMAGES_BUCKET).remove(removedImagePaths);
+    }
   }
 
   const payload = {
@@ -118,7 +179,9 @@ export async function PATCH(
     description: parsed.data.description,
     is_discount_active: parsed.data.is_discount_active,
     discount_price: parsed.data.discount_price,
-    ...(imageUrl ? { image_url: imageUrl } : {}),
+    ...(imageUrl !== undefined ? { image_url: imageUrl } : {}),
+    ...(imageUrl2 !== undefined ? { image_url_2: imageUrl2 } : {}),
+    ...(imageUrl3 !== undefined ? { image_url_3: imageUrl3 } : {}),
   };
 
   const { error } = await supabase
@@ -178,7 +241,7 @@ export async function DELETE(
 
   const { data: product, error: productError } = await supabase
     .from("products")
-    .select("id, image_url")
+    .select("id, image_url, image_url_2, image_url_3")
     .eq("id", id)
     .eq("tenant_id", tenant.id)
     .maybeSingle();
@@ -191,15 +254,14 @@ export async function DELETE(
     return NextResponse.json({ error: "Ürün bulunamadı." }, { status: 404 });
   }
 
-  const imagePath = getStorageObjectPathFromPublicUrl(
-    product.image_url,
-    PRODUCT_IMAGES_BUCKET,
-  );
+  const imagePaths = [product.image_url, product.image_url_2, product.image_url_3]
+    .map((url) => getStorageObjectPathFromPublicUrl(url, PRODUCT_IMAGES_BUCKET))
+    .filter((path): path is string => Boolean(path));
 
-  if (imagePath) {
+  if (imagePaths.length) {
     const { error: storageError } = await supabase.storage
       .from(PRODUCT_IMAGES_BUCKET)
-      .remove([imagePath]);
+      .remove(imagePaths);
 
     if (storageError) {
       return NextResponse.json({ error: storageError.message }, { status: 400 });
