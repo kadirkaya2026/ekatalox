@@ -12,7 +12,9 @@ export type StorefrontThemeKey =
   | "neutral"
   | "industrial"
   | "premium"
-  | "catalog-first";
+  | "catalog-first"
+  | "market"
+  | "vitrin-pro";
 export type StorefrontLayoutKey =
   | "classic-grid"
   | "catalog-dense"

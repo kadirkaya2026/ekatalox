@@ -37,4 +37,14 @@ export const THEME_OPTIONS: StorefrontThemeOption[] = [
     title: "Katalog Odaklı",
     description: "Banner yerine doğrudan ürün grid’i vurgusu.",
   },
+  {
+    key: "market",
+    title: "Market Vitrini",
+    description: "Market/hızlı teslimat uygulamaları gibi sade, canlı ve net.",
+  },
+  {
+    key: "vitrin-pro",
+    title: "Vitrin Pro",
+    description: "Kurumsal e-ticaret sitesi hissi veren temiz, düzenli vitrin.",
+  },
 ];

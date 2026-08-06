@@ -8,6 +8,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { PlanFeatureGate } from "@/components/dashboard/plan-feature-gate";
 import { StorefrontThemePreview } from "@/components/dashboard/storefront-theme-preview";
+import { StorefrontThemeShowcase } from "@/components/dashboard/storefront-theme-showcase";
 import type {
   RecommendationMode,
   StorefrontFooterStyleKey,
@@ -334,6 +335,24 @@ export function TenantThemeForm({
                       </button>
                     );
                   })}
+                </div>
+
+                <div className="mt-8 border-t border-slate-100 pt-6">
+                  <h3 className="text-sm font-semibold text-slate-900">
+                    Seçili temanın önizlemesi
+                  </h3>
+                  <p className="mt-1 mb-4 text-sm text-slate-600">
+                    Mağazanız, seçtiğiniz temayla masaüstünde ve mobilde müşterilerinize böyle
+                    görünecek.
+                  </p>
+                  <StorefrontThemeShowcase
+                    themeKey={form.theme_key}
+                    layoutKey={form.layout_key}
+                    storefrontTitle={previewTitle}
+                    logoUrl={previewLogoUrl}
+                    brandPrimaryColor={form.brand_primary_color || null}
+                    brandAccentColor={form.brand_accent_color || null}
+                  />
                 </div>
               </div>
             ) : null}
