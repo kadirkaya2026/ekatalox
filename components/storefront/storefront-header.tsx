@@ -89,7 +89,9 @@ function HeaderActions({
         />
       ) : null}
       <StorefrontLanguageSwitcher />
-      {props.storefrontSettings.is_theme_toggle_visible ? <StorefrontThemeToggle /> : null}
+      {props.storefrontSettings.is_theme_toggle_visible !== false ? (
+        <StorefrontThemeToggle />
+      ) : null}
       <button
         type="button"
         onClick={props.onOpenCart}
