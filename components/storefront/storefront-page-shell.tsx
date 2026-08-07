@@ -11,16 +11,19 @@ import { StorefrontLocaleProvider } from "@/lib/storefront/locale-context";
 import type { TenantStorefrontSettings } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { StorefrontPoweredByBar } from "@/components/storefront/storefront-powered-by-bar";
+import { StorefrontThemeReset } from "@/components/storefront/storefront-theme-reset";
 
 function StorefrontPageShellInner({
   className,
   fontClassName,
   style,
+  isThemeToggleVisible,
   children,
 }: {
   className?: string;
   fontClassName: string;
   style?: CSSProperties;
+  isThemeToggleVisible: boolean;
   children: React.ReactNode;
 }) {
   const theme = useStorefrontTheme();
@@ -32,6 +35,7 @@ function StorefrontPageShellInner({
       style={style}
       className={cn("flex min-h-screen flex-col", theme.page, fontClassName, className)}
     >
+      <StorefrontThemeReset isToggleVisible={isThemeToggleVisible} />
       {children}
       <StorefrontPoweredByBar />
     </div>
@@ -47,7 +51,12 @@ export function StorefrontPageShell({
 }: {
   storefrontSettings?: Pick<
     TenantStorefrontSettings,
-    "theme_key" | "brand_primary_color" | "brand_accent_color" | "font_key" | "default_locale"
+    | "theme_key"
+    | "brand_primary_color"
+    | "brand_accent_color"
+    | "font_key"
+    | "default_locale"
+    | "is_theme_toggle_visible"
   >;
   themeKey?: string;
   subdomain: string;
@@ -79,6 +88,7 @@ export function StorefrontPageShell({
           className={className}
           fontClassName={fontOption.className}
           style={brandStyle}
+          isThemeToggleVisible={storefrontSettings?.is_theme_toggle_visible !== false}
         >
           {children}
         </StorefrontPageShellInner>
