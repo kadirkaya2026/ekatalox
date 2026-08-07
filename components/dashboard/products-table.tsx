@@ -346,46 +346,50 @@ export function ProductsTable({
                     draggedProductId === product.id && "bg-emerald-50/60",
                   )}
                 >
-                  <div className="ml-auto flex items-center justify-end gap-1.5">
+                  <div className="ml-auto grid w-[10.5rem] grid-cols-2 gap-1.5">
                     <Button
                       variant="secondary"
-                      className="size-9 shrink-0 p-0"
+                      className="h-8 w-full justify-center gap-1 px-1.5 text-[10px] font-semibold leading-none"
                       onClick={() => onOpenVariantMatrix(product)}
                       title="Model matrisini düzenle"
                       aria-label="Model matrisini düzenle"
                     >
-                      <Layers className="size-4" />
+                      <Layers className="size-3 shrink-0" />
+                      <span className="truncate">Model</span>
                     </Button>
                     <Button
                       variant="secondary"
-                      className="size-9 shrink-0 p-0"
+                      className="h-8 w-full justify-center gap-1 px-1.5 text-[10px] font-semibold leading-none"
                       onClick={() => onToggleStock(product)}
                       title={product.is_in_stock ? "Stoğu kapat" : "Stoğu aç"}
                       aria-label={product.is_in_stock ? "Stoğu kapat" : "Stoğu aç"}
                     >
                       {product.is_in_stock ? (
-                        <PackageX className="size-4" />
+                        <PackageX className="size-3 shrink-0" />
                       ) : (
-                        <PackageCheck className="size-4" />
+                        <PackageCheck className="size-3 shrink-0" />
                       )}
+                      <span className="truncate">{product.is_in_stock ? "Kapat" : "Aç"}</span>
                     </Button>
                     <Button
                       variant="secondary"
-                      className="size-9 shrink-0 p-0"
+                      className="h-8 w-full justify-center gap-1 px-1.5 text-[10px] font-semibold leading-none"
                       onClick={() => onOpenEdit(product)}
                       title="Ürünü düzenle"
                       aria-label="Ürünü düzenle"
                     >
-                      <PencilLine className="size-4" />
+                      <PencilLine className="size-3 shrink-0" />
+                      <span className="truncate">Düzenle</span>
                     </Button>
                     <Button
                       variant="secondary"
-                      className="size-9 shrink-0 border-red-200 p-0 text-red-700 hover:bg-red-50"
+                      className="h-8 w-full justify-center gap-1 border-red-200 px-1.5 text-[10px] font-semibold leading-none text-red-700 hover:bg-red-50"
                       onClick={() => onRequestDelete(product)}
                       title="Ürünü kalıcı olarak sil"
                       aria-label="Ürünü kalıcı olarak sil"
                     >
-                      <Trash2 className="size-4" />
+                      <Trash2 className="size-3 shrink-0" />
+                      <span className="truncate">Sil</span>
                     </Button>
                   </div>
                 </td>
