@@ -168,13 +168,14 @@ export function StorefrontFooter({
   const columnsPresentCount = [hasQuickLinksColumn, hasContactColumn, hasSocialColumn].filter(
     Boolean,
   ).length;
-  const isContactLastColumn = hasContactColumn && !hasSocialColumn && columnsPresentCount > 1;
+  const isContactLastColumn = hasContactColumn && !hasSocialColumn;
   const columnsGridColsClass =
     columnsPresentCount >= 3 ? "md:grid-cols-3" : columnsPresentCount === 2 ? "md:grid-cols-2" : "md:grid-cols-1";
-  const gridClassName =
-    footerStyle === "columns"
-      ? cn("flex flex-col gap-4 md:grid md:items-start md:gap-x-8", columnsGridColsClass)
-      : "flex flex-col gap-4 md:grid md:grid-cols-2 md:items-start md:gap-x-10 lg:gap-x-16";
+  const gridClassName = cn(
+    "flex flex-col gap-4 md:grid md:items-start",
+    footerStyle === "columns" ? "md:gap-x-8" : "md:gap-x-10 lg:gap-x-16",
+    columnsGridColsClass,
+  );
 
   let mobileDividerIndex = 0;
 
@@ -244,12 +245,7 @@ export function StorefrontFooter({
             ) : null}
 
             {hasSocialColumn ? (
-              <MobileSection
-                className={cn(
-                  "md:justify-self-end",
-                  footerStyle !== "columns" && !hasContactColumn && "md:col-start-2",
-                )}
-              >
+              <MobileSection className="md:justify-self-end">
                 <div className="flex w-full flex-col items-center md:items-end">
                   <FooterSectionHeading>{t("footer.social")}</FooterSectionHeading>
                   <div className="flex flex-wrap items-center justify-center gap-1.5 md:justify-end">
