@@ -182,8 +182,12 @@ export function StorefrontCategoryTiles({
   }
 
   const tiles = categories.slice(0, 8).map((category, index) => {
+    // Tenant "Kategoriler" ekranında bu kategori için özel bir görsel
+    // yüklediyse (kategori banner'ı) onu kullan; yoksa kategorideki ilk
+    // ürünün fotoğrafına düş.
+    const customImage = category.banner_item?.image_url ?? null;
     const representativeProduct = products.find((product) => product.category_id === category.id);
-    return { category, image: representativeProduct?.image_url ?? null, index };
+    return { category, image: customImage ?? representativeProduct?.image_url ?? null, index };
   });
 
   return (
@@ -204,7 +208,7 @@ export function StorefrontCategoryTiles({
                 <StorefrontImage
                   src={image}
                   alt={category.name}
-                  className="object-contain p-2.5 mix-blend-normal"
+                  className="object-cover"
                   sizes="80px"
                 />
               ) : (

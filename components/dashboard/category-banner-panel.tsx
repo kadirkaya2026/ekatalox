@@ -228,8 +228,8 @@ export function CategoryBannerPanel({
             &quot;{category.name}&quot; kategori banner&apos;ı
           </p>
           <p className="mt-1 text-xs text-slate-600">
-            Bu kategoriye tıklandığında vitrinde gösterilir. Zorunlu ölçü: 1200x400 px •
-            Maksimum 2MB
+            Bu kategoriye tıklandığında vitrinde gösterilir; ayrıca açıksa anasayfadaki kategori
+            kutucuğunun görseli olarak da kullanılır. Zorunlu ölçü: 1200x400 px • Maksimum 2MB
           </p>
         </div>
         {hasSavedBanner ? (
