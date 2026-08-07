@@ -39,7 +39,13 @@ export const HOMEPAGE_BLOCK_LABELS: Record<HomepageBlockId, string> = {
 export function normalizeHomepageBlocks(
   blocks: HomepageBlock[] | null | undefined,
 ): HomepageBlock[] {
-  const source = blocks?.length ? blocks : DEFAULT_HOMEPAGE_BLOCKS;
+  // Yeni tenant (hiç kaydı yok) tam varsayılan set ile başlar. Ama daha önce
+  // kaydedilmiş bir bloğu olan tenant'lar için sonradan eklenen yeni block
+  // id'leri (ör. heroCluster, categoryTiles) otomatik olarak görünür
+  // yapılmamalı — aksi halde canlı bir mağazanın anasayfasına, tenant hiç
+  // dokunmadan, yeni bölümler sessizce eklenmiş olur.
+  const isNewTenant = !blocks?.length;
+  const source = isNewTenant ? DEFAULT_HOMEPAGE_BLOCKS : blocks;
   const known = new Map<HomepageBlockId, HomepageBlock>();
 
   for (const block of source) {
@@ -56,7 +62,7 @@ export function normalizeHomepageBlocks(
     if (!known.has(id)) {
       const fallback = DEFAULT_HOMEPAGE_BLOCKS.find((block) => block.id === id);
       if (fallback) {
-        known.set(id, fallback);
+        known.set(id, isNewTenant ? fallback : { ...fallback, visible: false });
       }
     }
   }
