@@ -487,7 +487,7 @@ export function StorefrontCartDrawer({
                       </h3>
                     </div>
 
-                    <div className="scrollbar-hide -mx-1 flex gap-3 overflow-x-auto px-1 pb-1">
+                    <div className="scrollbar-hide -mx-1 -mt-2 flex gap-3 overflow-x-auto px-1 pb-1 pt-2">
                       {recommendedProducts.map((product) => renderCrossSellCard(product))}
                     </div>
                   </section>

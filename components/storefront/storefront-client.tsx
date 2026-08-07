@@ -558,6 +558,25 @@ function dedupeProducts(items: StorefrontProduct[]) {
   });
 }
 
+// Sepet önerilerini bir oturum tohumuna göre sıralamak için saf bir hash —
+// böylece ürün, sekme kapanana kadar aynı (kararlı) ama sayfa her
+// yenilendiğinde farklı bir sırada gösteriliyor. Ref/mutasyon kullanmıyor
+// (render sırasında ref erişimi React Compiler tarafından yasak).
+function hashStringToUnitInterval(input: string): number {
+  let hash = 0;
+  for (let index = 0; index < input.length; index += 1) {
+    hash = (hash * 31 + input.charCodeAt(index)) | 0;
+  }
+  return (hash >>> 0) / 0xffffffff;
+}
+
+function shuffleProductsBySeed(items: StorefrontProduct[], seed: string) {
+  return [...items].sort(
+    (a, b) =>
+      hashStringToUnitInterval(a.id + seed) - hashStringToUnitInterval(b.id + seed),
+  );
+}
+
 
 function subscribeToMountState() {
   return () => {};
@@ -843,6 +862,7 @@ export function StorefrontClient({
   const [previewDescriptionError, setPreviewDescriptionError] = useState<string | null>(null);
   const descriptionCacheRef = useRef(new Map<string, string | null>());
   const descriptionAbortRef = useRef<AbortController | null>(null);
+  const [recommendationSeed] = useState(() => Math.random().toString(36));
   const [selectedQuantity, setSelectedQuantity] = useState("");
   const [selectedPackageCount, setSelectedPackageCount] = useState("");
   const [selectedCartonCount, setSelectedCartonCount] = useState("");
@@ -1190,8 +1210,18 @@ export function StorefrontClient({
       }
     }
 
-    return availableProducts.slice(0, 10);
-  }, [cart, products, sections, storefrontSettings.recommendation_mode]);
+    // Sepetteki ürünlerle aynı kategoriden olanları öne al (çapraz satış),
+    // geri kalanını rastgele sırayla doldur — aksi halde her açılışta
+    // katalogdaki ilk 10 ürün sabit şekilde gösteriliyordu.
+    const cartCategoryIds = new Set(
+      cart.map((item) => item.category_id).filter((id): id is string => Boolean(id)),
+    );
+    const shuffled = shuffleProductsBySeed(availableProducts, recommendationSeed);
+    const crossSell = shuffled.filter((product) => cartCategoryIds.has(product.category_id));
+    const rest = shuffled.filter((product) => !cartCategoryIds.has(product.category_id));
+
+    return [...crossSell, ...rest].slice(0, 10);
+  }, [cart, products, sections, storefrontSettings.recommendation_mode, recommendationSeed]);
   const buildWhatsAppOrderMessage = useCallback(
     (pdfUrl?: string | null) => {
       return buildWhatsAppMessage({
