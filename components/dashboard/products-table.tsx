@@ -342,14 +342,14 @@ export function ProductsTable({
                 ))}
                 <td
                   className={cn(
-                    "sticky right-0 z-10 border-l border-border bg-card px-3 py-3 align-top",
+                    "sticky right-0 z-10 border-l border-border bg-card px-2 py-3 align-top",
                     draggedProductId === product.id && "bg-emerald-50/60",
                   )}
                 >
-                  <div className="ml-auto grid w-[10.5rem] grid-cols-2 gap-1.5">
+                  <div className="ml-auto grid w-[9.5rem] grid-cols-2 gap-1">
                     <Button
                       variant="secondary"
-                      className="h-8 w-full justify-center gap-1 px-1.5 text-[10px] font-semibold leading-none"
+                      className="h-8 w-full justify-center gap-0.5 px-0.5 text-[10px] font-semibold leading-none"
                       onClick={() => onOpenVariantMatrix(product)}
                       title="Model matrisini düzenle"
                       aria-label="Model matrisini düzenle"
@@ -359,7 +359,7 @@ export function ProductsTable({
                     </Button>
                     <Button
                       variant="secondary"
-                      className="h-8 w-full justify-center gap-1 px-1.5 text-[10px] font-semibold leading-none"
+                      className="h-8 w-full justify-center gap-0.5 px-0.5 text-[10px] font-semibold leading-none"
                       onClick={() => onToggleStock(product)}
                       title={product.is_in_stock ? "Stoğu kapat" : "Stoğu aç"}
                       aria-label={product.is_in_stock ? "Stoğu kapat" : "Stoğu aç"}
@@ -373,7 +373,7 @@ export function ProductsTable({
                     </Button>
                     <Button
                       variant="secondary"
-                      className="h-8 w-full justify-center gap-1 px-1.5 text-[10px] font-semibold leading-none"
+                      className="h-8 w-full justify-center gap-0.5 px-0.5 text-[10px] font-semibold leading-none"
                       onClick={() => onOpenEdit(product)}
                       title="Ürünü düzenle"
                       aria-label="Ürünü düzenle"
@@ -383,7 +383,7 @@ export function ProductsTable({
                     </Button>
                     <Button
                       variant="secondary"
-                      className="h-8 w-full justify-center gap-1 border-red-200 px-1.5 text-[10px] font-semibold leading-none text-red-700 hover:bg-red-50"
+                      className="h-8 w-full justify-center gap-1 border-red-200 px-0.5 text-[10px] font-semibold leading-none text-red-700 hover:bg-red-50"
                       onClick={() => onRequestDelete(product)}
                       title="Ürünü kalıcı olarak sil"
                       aria-label="Ürünü kalıcı olarak sil"
