@@ -276,6 +276,7 @@ export interface TenantWithRelations extends Tenant {
   price_lists?: PriceList[];
   product_count?: number;
   monthly_visitor_count?: number;
+  has_tenant_admin?: boolean;
 }
 
 export interface DashboardSummary {

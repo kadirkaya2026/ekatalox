@@ -53,9 +53,11 @@ export function AdminTenantDetailPanel({ tenant: initialTenant }: { tenant: Tena
   >({});
   const [message, setMessage] = useState<string | null>(null);
   const [newPasswordDraft, setNewPasswordDraft] = useState("");
+  const [newAdminEmailDraft, setNewAdminEmailDraft] = useState("");
   const [resetCredentials, setResetCredentials] = useState<{
     email: string;
     password: string;
+    kind: "reset" | "create";
   } | null>(null);
   const [pending, startTransition] = useTransition();
 
@@ -232,9 +234,40 @@ export function AdminTenantDetailPanel({ tenant: initialTenant }: { tenant: Tena
         return;
       }
 
-      setResetCredentials({ email: result.email, password: result.temporaryPassword });
+      setResetCredentials({ email: result.email, password: result.temporaryPassword, kind: "reset" });
       setNewPasswordDraft("");
       setMessage("Yönetici şifresi güncellendi.");
+    });
+  }
+
+  function createTenantAdmin() {
+    const email = newAdminEmailDraft.trim();
+
+    if (!email || !email.includes("@")) {
+      setMessage("Geçerli bir e-posta adresi girin.");
+      return;
+    }
+
+    setMessage(null);
+
+    startTransition(async () => {
+      const response = await fetch(`/api/admin/tenants/${tenant.id}/create-admin`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        setMessage(result.error ?? "Yönetici hesabı oluşturulamadı.");
+        return;
+      }
+
+      setTenant((current) => ({ ...current, has_tenant_admin: true }));
+      setResetCredentials({ email: result.email, password: result.temporaryPassword, kind: "create" });
+      setNewAdminEmailDraft("");
+      setMessage("Yönetici hesabı oluşturuldu.");
     });
   }
 
@@ -453,33 +486,60 @@ export function AdminTenantDetailPanel({ tenant: initialTenant }: { tenant: Tena
         </div>
       </Card>
 
-      <Card className="p-5">
-        <p className="text-sm font-semibold text-slate-900">Yönetici paneli şifresi</p>
-        <p className="mt-1 text-sm text-slate-500">
-          Tenant admin&apos;in /dashboard giriş şifresini burada belirleyin veya rastgele
-          oluşturun. Mevcut şifre anında geçersiz olur.
-        </p>
-        <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center">
-          <Input
-            type="text"
-            placeholder="Yeni şifre (en az 6 karakter)"
-            value={newPasswordDraft}
-            onChange={(event) => setNewPasswordDraft(event.target.value)}
-            className="max-w-[280px]"
-          />
-          <Button
-            variant="secondary"
-            onClick={() => setTenantAdminPassword(newPasswordDraft.trim())}
-            disabled={pending || newPasswordDraft.trim().length < 6}
-            className="border-violet-200 text-violet-700 hover:bg-violet-50 hover:text-violet-800"
-          >
-            Bu şifreyi ayarla
-          </Button>
-          <Button variant="secondary" onClick={() => setTenantAdminPassword(null)} disabled={pending}>
-            Rastgele şifre oluştur
-          </Button>
-        </div>
-      </Card>
+      {tenant.has_tenant_admin ? (
+        <Card className="p-5">
+          <p className="text-sm font-semibold text-slate-900">Yönetici paneli şifresi</p>
+          <p className="mt-1 text-sm text-slate-500">
+            Tenant admin&apos;in /dashboard giriş şifresini burada belirleyin veya rastgele
+            oluşturun. Mevcut şifre anında geçersiz olur.
+          </p>
+          <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center">
+            <Input
+              type="text"
+              placeholder="Yeni şifre (en az 6 karakter)"
+              value={newPasswordDraft}
+              onChange={(event) => setNewPasswordDraft(event.target.value)}
+              className="max-w-[280px]"
+            />
+            <Button
+              variant="secondary"
+              onClick={() => setTenantAdminPassword(newPasswordDraft.trim())}
+              disabled={pending || newPasswordDraft.trim().length < 6}
+              className="border-violet-200 text-violet-700 hover:bg-violet-50 hover:text-violet-800"
+            >
+              Bu şifreyi ayarla
+            </Button>
+            <Button variant="secondary" onClick={() => setTenantAdminPassword(null)} disabled={pending}>
+              Rastgele şifre oluştur
+            </Button>
+          </div>
+        </Card>
+      ) : (
+        <Card className="p-5 border-amber-200 bg-amber-50/40">
+          <p className="text-sm font-semibold text-slate-900">Yönetici hesabı yok</p>
+          <p className="mt-1 text-sm text-slate-500">
+            Bu tenant için henüz bir /dashboard giriş hesabı oluşturulmamış. E-posta girip
+            hesabı oluşturun; geçici şifre bir kereliğine burada gösterilecek.
+          </p>
+          <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center">
+            <Input
+              type="email"
+              placeholder="yonetici@ornek.com"
+              value={newAdminEmailDraft}
+              onChange={(event) => setNewAdminEmailDraft(event.target.value)}
+              className="max-w-[280px]"
+            />
+            <Button
+              variant="secondary"
+              onClick={createTenantAdmin}
+              disabled={pending || !newAdminEmailDraft.trim()}
+              className="border-violet-200 text-violet-700 hover:bg-violet-50 hover:text-violet-800"
+            >
+              Yönetici Hesabı Oluştur
+            </Button>
+          </div>
+        </Card>
+      )}
 
       <Card className="p-5">
         <p className="text-sm font-semibold text-slate-900">Özel alan adı</p>
@@ -748,7 +808,7 @@ export function AdminTenantDetailPanel({ tenant: initialTenant }: { tenant: Tena
       <Modal
         open={Boolean(resetCredentials)}
         onClose={() => setResetCredentials(null)}
-        title="Yönetici şifresi güncellendi"
+        title={resetCredentials?.kind === "create" ? "Yönetici hesabı oluşturuldu" : "Yönetici şifresi güncellendi"}
       >
         {resetCredentials ? (
           <div className="space-y-4">
@@ -758,7 +818,9 @@ export function AdminTenantDetailPanel({ tenant: initialTenant }: { tenant: Tena
                 {resetCredentials.email}
               </p>
               <p className="mt-2">
-                <span className="font-medium text-slate-900">Yeni şifre:</span>{" "}
+                <span className="font-medium text-slate-900">
+                  {resetCredentials.kind === "create" ? "Geçici şifre:" : "Yeni şifre:"}
+                </span>{" "}
                 {resetCredentials.password}
               </p>
               <p className="mt-2">

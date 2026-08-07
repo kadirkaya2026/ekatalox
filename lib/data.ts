@@ -416,6 +416,7 @@ export async function getTenantsOverview(): Promise<TenantWithRelations[]> {
       price_lists: demoPriceLists.filter((list) => list.tenant_id === tenant.id),
       product_count: productCounts[tenant.id] ?? 0,
       monthly_visitor_count: 0,
+      has_tenant_admin: true,
     }));
   }
 
@@ -424,12 +425,35 @@ export async function getTenantsOverview(): Promise<TenantWithRelations[]> {
     { data: accessCodeRows },
     { data: priceListRows },
     monthlyVisitorCounts,
+    { data: membershipRows },
   ] = await Promise.all([
     supabase.from("tenants").select("*").order("created_at", { ascending: false }),
     supabase.from("access_codes").select("*, price_list:price_lists(name, is_catalog_only)"),
     supabase.from("price_lists").select("*").order("sort_order", { ascending: true }),
     getCurrentMonthVisitorCountsByTenant(),
+    supabase.from("tenant_memberships").select("tenant_id, user_id"),
   ]);
+
+  const memberships = (membershipRows as Array<{ tenant_id: string; user_id: string }> | null) ?? [];
+  const { data: adminProfileRows } = memberships.length
+    ? await supabase
+        .from("profiles")
+        .select("id")
+        .eq("role", "tenant_admin")
+        .in(
+          "id",
+          memberships.map((membership) => membership.user_id),
+        )
+    : { data: [] as Array<{ id: string }> };
+
+  const adminUserIds = new Set(
+    ((adminProfileRows as Array<{ id: string }> | null) ?? []).map((row) => row.id),
+  );
+  const tenantIdsWithAdmin = new Set(
+    memberships
+      .filter((membership) => adminUserIds.has(membership.user_id))
+      .map((membership) => membership.tenant_id),
+  );
 
   const tenants = (tenantRows as Tenant[] | null) ?? [];
   const productCounts = await getProductCountsByTenant(
@@ -473,6 +497,7 @@ export async function getTenantsOverview(): Promise<TenantWithRelations[]> {
     price_lists: (priceListsByTenant[tenant.id] ?? []).sort(sortPriceLists),
     product_count: productCounts[tenant.id] ?? 0,
     monthly_visitor_count: monthlyVisitorCounts[tenant.id] ?? 0,
+    has_tenant_admin: tenantIdsWithAdmin.has(tenant.id),
   }));
 }
 
