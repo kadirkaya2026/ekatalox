@@ -123,11 +123,7 @@ export function TenantBannerForm({
   initialStorefrontSettings: TenantStorefrontSettings;
 }) {
   const [bannerItems, setBannerItems] = useState<BannerItem[]>(
-    (initialStorefrontSettings.banner_items ?? []).map((banner) => ({
-      ...banner,
-      cta_label: null,
-      cta_href: null,
-    })),
+    initialStorefrontSettings.banner_items ?? [],
   );
   const [bannerUploadState, setBannerUploadState] = useState<
     Record<string, { pending?: boolean; message?: string | null }>
@@ -303,11 +299,7 @@ export function TenantBannerForm({
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          banner_items: bannerItems.map((banner) => ({
-            ...banner,
-            cta_label: null,
-            cta_href: null,
-          })),
+          banner_items: bannerItems,
         }),
       });
 
@@ -319,13 +311,7 @@ export function TenantBannerForm({
       }
 
       if (result.storefrontSettings?.banner_items) {
-        setBannerItems(
-          (result.storefrontSettings.banner_items as BannerItem[]).map((banner) => ({
-            ...banner,
-            cta_label: null,
-            cta_href: null,
-          })),
-        );
+        setBannerItems(result.storefrontSettings.banner_items as BannerItem[]);
       }
 
       setSaveMessage("Banner ayarları kaydedildi.");
@@ -478,8 +464,7 @@ export function TenantBannerForm({
                             : "Banner görselini bilgisayarınızdan yükleyin"}
                         </p>
                         <p className="mt-1 text-sm text-slate-500">
-                          Harici link gerekmez • Sadece 1200x400 px • PNG, JPEG veya WEBP •
-                          Maksimum 2MB
+                          Sadece 1200x400 px • PNG, JPEG veya WEBP • Maksimum 2MB
                         </p>
                         {bannerUploadState[banner.id]?.message ? (
                           <p className="mt-2 text-sm text-emerald-700">
@@ -489,6 +474,19 @@ export function TenantBannerForm({
                       </div>
                     </div>
                   </label>
+                  <div>
+                    <Input
+                      type="url"
+                      value={banner.cta_href ?? ""}
+                      onChange={(event) =>
+                        updateBannerField(banner.id, "cta_href", event.target.value || null)
+                      }
+                      placeholder="https://... (opsiyonel — banner'a tıklanınca açılacak link)"
+                    />
+                    <p className="mt-1 text-xs text-slate-500">
+                      Boş bırakılırsa banner tıklanamaz olur.
+                    </p>
+                  </div>
                   <div className="grid gap-3 md:grid-cols-2">
                     <Input
                       value={banner.background_color ?? ""}

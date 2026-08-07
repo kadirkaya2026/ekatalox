@@ -130,7 +130,7 @@ export const bannerItemSchema = z
       .transform((value) => value || null),
     image_url: optionalUrlSchema,
     cta_label: droppedBannerActionSchema,
-    cta_href: droppedBannerActionSchema,
+    cta_href: optionalUrlSchema,
     background_color: optionalColorSchema,
   })
   .refine(

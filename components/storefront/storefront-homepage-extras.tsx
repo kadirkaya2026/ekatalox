@@ -27,11 +27,14 @@ function ClusterBox({
   title: string;
 }) {
   const { t } = useStorefrontLocale();
+  const href = banner.cta_href?.trim() || null;
+  const Wrapper = href ? "a" : "div";
 
   return (
-    <div
+    <Wrapper
+      {...(href ? { href } : {})}
       className={cn(
-        "relative w-full overflow-hidden rounded-[1.75rem]",
+        "relative block w-full overflow-hidden rounded-[1.75rem]",
         large ? "aspect-[3/2] sm:aspect-[16/10]" : "aspect-[16/9] sm:aspect-auto sm:h-full",
       )}
       style={{
@@ -66,7 +69,7 @@ function ClusterBox({
           {t("catalog.discoverCta")}
         </span>
       </div>
-    </div>
+    </Wrapper>
   );
 }
 

@@ -597,11 +597,15 @@ function renderBannerItem(
   theme: StorefrontTheme,
   t: TranslateFn,
 ) {
+  const href = banner.cta_href?.trim() || null;
+  const Wrapper = href ? "a" : "div";
+
   return (
-    <div
+    <Wrapper
       key={banner.id}
+      {...(href ? { href } : {})}
       className={cn(
-        "relative w-full overflow-hidden rounded-[2.5rem]",
+        "relative block w-full overflow-hidden rounded-[2.5rem]",
         theme.border,
         theme.surface,
         theme.elevation1,
@@ -649,7 +653,7 @@ function renderBannerItem(
           </div>
         )}
       </div>
-    </div>
+    </Wrapper>
   );
 }
 
