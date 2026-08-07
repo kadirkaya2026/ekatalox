@@ -342,54 +342,50 @@ export function ProductsTable({
                 ))}
                 <td
                   className={cn(
-                    "sticky right-0 z-10 border-l border-border bg-card px-4 py-3 align-top",
+                    "sticky right-0 z-10 border-l border-border bg-card px-3 py-3 align-top",
                     draggedProductId === product.id && "bg-emerald-50/60",
                   )}
                 >
-                  <div className="ml-auto grid w-[13rem] grid-cols-2 gap-2">
+                  <div className="ml-auto flex items-center justify-end gap-1.5">
                     <Button
                       variant="secondary"
-                      className="h-9 w-full justify-center gap-1.5 px-2 text-xs font-semibold"
+                      className="size-9 shrink-0 p-0"
                       onClick={() => onOpenVariantMatrix(product)}
                       title="Model matrisini düzenle"
                       aria-label="Model matrisini düzenle"
                     >
-                      <Layers className="size-3.5" />
-                      Model
+                      <Layers className="size-4" />
                     </Button>
                     <Button
                       variant="secondary"
-                      className="h-9 w-full justify-center gap-1.5 px-2 text-xs font-semibold"
+                      className="size-9 shrink-0 p-0"
                       onClick={() => onToggleStock(product)}
                       title={product.is_in_stock ? "Stoğu kapat" : "Stoğu aç"}
                       aria-label={product.is_in_stock ? "Stoğu kapat" : "Stoğu aç"}
                     >
                       {product.is_in_stock ? (
-                        <PackageX className="size-3.5" />
+                        <PackageX className="size-4" />
                       ) : (
-                        <PackageCheck className="size-3.5" />
+                        <PackageCheck className="size-4" />
                       )}
-                      {product.is_in_stock ? "Stoğu Kapat" : "Stoğu Aç"}
                     </Button>
                     <Button
                       variant="secondary"
-                      className="h-9 w-full justify-center gap-1.5 px-2 text-xs font-semibold"
+                      className="size-9 shrink-0 p-0"
                       onClick={() => onOpenEdit(product)}
                       title="Ürünü düzenle"
                       aria-label="Ürünü düzenle"
                     >
-                      <PencilLine className="size-3.5" />
-                      Düzenle
+                      <PencilLine className="size-4" />
                     </Button>
                     <Button
                       variant="secondary"
-                      className="h-9 w-full justify-center gap-1.5 border-red-200 px-2 text-xs font-semibold text-red-700 hover:bg-red-50"
+                      className="size-9 shrink-0 border-red-200 p-0 text-red-700 hover:bg-red-50"
                       onClick={() => onRequestDelete(product)}
                       title="Ürünü kalıcı olarak sil"
                       aria-label="Ürünü kalıcı olarak sil"
                     >
-                      <Trash2 className="size-3.5" />
-                      Sil
+                      <Trash2 className="size-4" />
                     </Button>
                   </div>
                 </td>
