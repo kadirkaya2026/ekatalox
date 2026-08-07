@@ -2187,15 +2187,31 @@ export function StorefrontClient({
         open={Boolean(previewProduct)}
         onClose={closeProductDetail}
         title={t("productModal.title")}
+        sheet
+        closeButtonPosition="left"
         panelClassName={theme.modalPanel}
         headerClassName={theme.modalHeaderBorder}
         titleClassName={theme.modalTitle}
         closeButtonClassName={theme.modalCloseButton}
         footerClassName={theme.modalFooterBorder}
         handleClassName={theme.modalHandle}
+        footer={
+          <Button
+            type="button"
+            onClick={() => openAddToCartFromDetail(previewProduct)}
+            disabled={!previewProduct.is_in_stock}
+            className={cn(
+              "h-12 w-full rounded-full text-base font-bold",
+              theme.primaryButton,
+              !previewProduct.is_in_stock && "cursor-not-allowed opacity-50",
+            )}
+          >
+            {previewProduct.is_in_stock ? t("product.addToCart") : t("product.soldOut")}
+          </Button>
+        }
       >
         <div className="grid gap-4">
-          <div className={cn("relative aspect-square overflow-hidden rounded-[1.75rem]", theme.productImageWrap)}>
+          <div className={cn("relative h-52 shrink-0 overflow-hidden rounded-[1.75rem] sm:h-64", theme.productImageWrap)}>
             <DiscountSticker product={previewProduct} />
             {activePreviewImage ? (
               <StorefrontImage
@@ -2257,22 +2273,9 @@ export function StorefrontClient({
             ))}
           </div>
 
-          <div className={cn("min-h-[160px] max-h-[40vh] overflow-y-auto", theme.modalSurface)}>
+          <div className={cn("min-h-[70px] max-h-[30vh] overflow-y-auto", theme.modalSurface)}>
             {tabContent}
           </div>
-
-          <Button
-            type="button"
-            onClick={() => openAddToCartFromDetail(previewProduct)}
-            disabled={!previewProduct.is_in_stock}
-            className={cn(
-              "h-12 w-full rounded-full text-base font-bold",
-              theme.primaryButton,
-              !previewProduct.is_in_stock && "cursor-not-allowed opacity-50",
-            )}
-          >
-            {previewProduct.is_in_stock ? t("product.addToCart") : t("product.soldOut")}
-          </Button>
         </div>
       </Modal>
     );

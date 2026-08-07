@@ -20,6 +20,7 @@ export function Modal({
   footerClassName,
   handleClassName,
   sheet = false,
+  closeButtonPosition = "right",
 }: {
   open: boolean;
   onClose: () => void;
@@ -36,6 +37,7 @@ export function Modal({
   footerClassName?: string;
   handleClassName?: string;
   sheet?: boolean;
+  closeButtonPosition?: "left" | "right";
 }) {
   useBodyScrollLock(open);
 
@@ -83,23 +85,49 @@ export function Modal({
 
         <div
           className={cn(
-            "flex shrink-0 items-center justify-between px-4 pb-2 pt-1 sm:px-5 sm:py-4 sm:pt-4",
+            "flex shrink-0 items-center gap-3 px-4 pb-2 pt-1 sm:px-5 sm:py-4 sm:pt-4",
+            closeButtonPosition === "left" ? "justify-start" : "justify-between",
             headerClassName ?? "border-b border-slate-100 dark:border-slate-800",
           )}
         >
-          <h3 id="modal-title" className={cn("text-lg font-semibold text-foreground", titleClassName)}>
-            {title}
-          </h3>
-          <button
-            type="button"
-            onClick={onClose}
+          {closeButtonPosition === "left" ? (
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label="Kapat"
+              className={cn(
+                "rounded-full p-2 text-muted-foreground transition hover:bg-muted hover:text-foreground",
+                closeButtonClassName,
+              )}
+            >
+              <X className="size-5" />
+            </button>
+          ) : null}
+          <h3
+            id="modal-title"
             className={cn(
-              "rounded-full p-2 text-muted-foreground transition hover:bg-muted hover:text-foreground",
-              closeButtonClassName,
+              "text-lg font-semibold text-foreground",
+              closeButtonPosition === "left" && "flex-1 text-center",
+              titleClassName,
             )}
           >
-            <X className="size-5" />
-          </button>
+            {title}
+          </h3>
+          {closeButtonPosition === "left" ? (
+            <span className="size-9" aria-hidden="true" />
+          ) : (
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label="Kapat"
+              className={cn(
+                "rounded-full p-2 text-muted-foreground transition hover:bg-muted hover:text-foreground",
+                closeButtonClassName,
+              )}
+            >
+              <X className="size-5" />
+            </button>
+          )}
         </div>
 
         <div
