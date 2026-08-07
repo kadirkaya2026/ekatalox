@@ -361,6 +361,9 @@ export const maxBannerFileSizeBytes = 2 * 1024 * 1024;
 export const requiredBannerWidth = 1200;
 export const requiredBannerHeight = 400;
 
+export const requiredCategoryTileWidth = 600;
+export const requiredCategoryTileHeight = 600;
+
 export const allowedHeroImageMimeTypes = [
   "image/png",
   "image/jpeg",

@@ -207,13 +207,14 @@ export async function DELETE(request: Request) {
 
   const { data: categoryToDelete } = await supabase
     .from("categories")
-    .select("banner_item")
+    .select("banner_item, tile_image_url")
     .eq("id", id)
     .eq("tenant_id", session.tenant!.id)
     .maybeSingle();
 
   const bannerItem = categoryToDelete?.banner_item as BannerItem | null;
   const bannerImageUrl = bannerItem?.image_url ?? null;
+  const tileImageUrl = (categoryToDelete?.tile_image_url as string | null) ?? null;
 
   const { error } = await supabase
     .from("categories")
@@ -227,6 +228,14 @@ export async function DELETE(request: Request) {
 
   if (bannerImageUrl) {
     const objectPath = getBannerObjectPath(bannerImageUrl);
+
+    if (objectPath?.startsWith(`${session.tenant!.id}/`)) {
+      await supabase.storage.from(STOREFRONT_BANNERS_BUCKET).remove([objectPath]);
+    }
+  }
+
+  if (tileImageUrl) {
+    const objectPath = getBannerObjectPath(tileImageUrl);
 
     if (objectPath?.startsWith(`${session.tenant!.id}/`)) {
       await supabase.storage.from(STOREFRONT_BANNERS_BUCKET).remove([objectPath]);

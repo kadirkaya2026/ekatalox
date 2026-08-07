@@ -144,6 +144,7 @@ export interface Category {
   parent_id: string | null;
   display_order: number;
   banner_item: BannerItem | null;
+  tile_image_url: string | null;
   created_at: string;
 }
 

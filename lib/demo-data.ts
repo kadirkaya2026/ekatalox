@@ -87,6 +87,7 @@ export const demoCategories: Category[] = [
     parent_id: null,
     display_order: 1,
     banner_item: null,
+    tile_image_url: null,
     created_at: new Date("2026-01-01").toISOString(),
   },
   {
@@ -96,6 +97,7 @@ export const demoCategories: Category[] = [
     parent_id: "cat-phone",
     display_order: 2,
     banner_item: null,
+    tile_image_url: null,
     created_at: new Date("2026-01-01T12:00:00").toISOString(),
   },
   {
@@ -105,6 +107,7 @@ export const demoCategories: Category[] = [
     parent_id: null,
     display_order: 3,
     banner_item: null,
+    tile_image_url: null,
     created_at: new Date("2026-01-02").toISOString(),
   },
 ];

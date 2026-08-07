@@ -190,10 +190,10 @@ export function StorefrontCategoryTiles({
   }
 
   const tiles = categories.slice(0, 8).map((category, index) => {
-    // Tenant "Kategoriler" ekranında bu kategori için özel bir görsel
-    // yüklediyse (kategori banner'ı) onu kullan; yoksa kategorideki ilk
-    // ürünün fotoğrafına düş.
-    const customImage = category.banner_item?.image_url ?? null;
+    // Öncelik: kare kutucuk için özel yüklenen görsel (tile_image_url) →
+    // kategori sayfasının geniş banner'ı (kırpılarak) → kategorideki bir
+    // ürünün fotoğrafı.
+    const customImage = category.tile_image_url ?? category.banner_item?.image_url ?? null;
     const representativeProduct = products.find((product) => product.category_id === category.id);
     return { category, image: customImage ?? representativeProduct?.image_url ?? null, index };
   });

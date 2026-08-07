@@ -536,6 +536,7 @@ export async function getTenantCategories(tenantId: string): Promise<Category[]>
   return ((data as Category[] | null) ?? []).map((category) => ({
     ...category,
     banner_item: category.banner_item ?? null,
+    tile_image_url: category.tile_image_url ?? null,
   }));
 }
 

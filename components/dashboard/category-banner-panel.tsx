@@ -12,6 +12,8 @@ import {
   maxBannerFileSizeBytes,
   requiredBannerHeight,
   requiredBannerWidth,
+  requiredCategoryTileHeight,
+  requiredCategoryTileWidth,
 } from "@/lib/validators/storefront-settings";
 
 function loadImageDimensions(file: File) {
@@ -65,6 +67,12 @@ export function CategoryBannerPanel({
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
   const [savePending, startSaveTransition] = useTransition();
   const [removePending, startRemoveTransition] = useTransition();
+  const [tileImageUrl, setTileImageUrl] = useState<string | null>(
+    category.tile_image_url ?? null,
+  );
+  const [tileUploadMessage, setTileUploadMessage] = useState<string | null>(null);
+  const [tileUploadPending, setTileUploadPending] = useState(false);
+  const [tileRemovePending, startTileRemoveTransition] = useTransition();
   const router = useRouter();
 
   function updateBannerField<K extends keyof BannerItem>(key: K, value: BannerItem[K]) {
@@ -131,6 +139,88 @@ export function CategoryBannerPanel({
 
     updateBannerField("image_url", result.image_url as string);
     setUploadMessage("Banner görseli yüklendi.");
+  }
+
+  async function handleTileFileChange(file: File | null) {
+    if (!file) return;
+
+    if (!allowedBannerMimeTypes.includes(file.type as (typeof allowedBannerMimeTypes)[number])) {
+      setTileUploadMessage("Görsel yalnız PNG, JPEG veya WEBP olabilir.");
+      return;
+    }
+
+    if (file.size > maxBannerFileSizeBytes) {
+      setTileUploadMessage("Görsel en fazla 2MB olabilir.");
+      return;
+    }
+
+    try {
+      const dimensions = await loadImageDimensions(file);
+
+      if (
+        dimensions.width !== requiredCategoryTileWidth ||
+        dimensions.height !== requiredCategoryTileHeight
+      ) {
+        setTileUploadMessage(
+          `Görsel tam olarak ${requiredCategoryTileWidth}x${requiredCategoryTileHeight}px olmalıdır.`,
+        );
+        return;
+      }
+    } catch (error) {
+      setTileUploadMessage(
+        error instanceof Error ? error.message : "Görselin çözünürlüğü okunamadı.",
+      );
+      return;
+    }
+
+    setTileUploadPending(true);
+    setTileUploadMessage(null);
+
+    const formData = new FormData();
+    formData.set("image", file);
+    formData.set("category_id", category.id);
+
+    const response = await fetch("/api/tenant/categories/tile-image", {
+      method: "POST",
+      body: formData,
+    });
+
+    const result = await response.json();
+    setTileUploadPending(false);
+
+    if (!response.ok) {
+      setTileUploadMessage(result.error ?? "Görsel yüklenemedi.");
+      return;
+    }
+
+    setTileImageUrl(result.category.tile_image_url as string);
+    setTileUploadMessage("Kutucuk görseli yüklendi.");
+    onSaved(result.category as Category);
+    router.refresh();
+  }
+
+  function removeTileImage() {
+    setTileUploadMessage(null);
+
+    startTileRemoveTransition(async () => {
+      const response = await fetch("/api/tenant/categories/tile-image", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ category_id: category.id }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        setTileUploadMessage(result.error ?? "Görsel kaldırılamadı.");
+        return;
+      }
+
+      setTileImageUrl(null);
+      setTileUploadMessage("Kutucuk görseli kaldırıldı.");
+      onSaved(result.category as Category);
+      router.refresh();
+    });
   }
 
   function save(event: React.FormEvent<HTMLFormElement>) {
@@ -302,6 +392,75 @@ export function CategoryBannerPanel({
           placeholder="#0f172a"
           disabled={disabled || savePending || removePending}
         />
+      </div>
+
+      <div className="mt-5 border-t border-violet-100 pt-4">
+        <div className="mb-3 flex items-start justify-between gap-3">
+          <div>
+            <p className="text-sm font-semibold text-slate-900">
+              Anasayfa kutucuğu görseli (kare)
+            </p>
+            <p className="mt-1 text-xs text-slate-600">
+              Anasayfadaki kategori kutucuğunda bu kare görsel kullanılır — yukarıdaki geniş
+              banner kırpılmadan, ayrı olarak yüklenir. Zorunlu ölçü: {requiredCategoryTileWidth}
+              x{requiredCategoryTileHeight} px • Maksimum 2MB
+            </p>
+          </div>
+          {tileImageUrl ? (
+            <Button
+              type="button"
+              variant="secondary"
+              className="h-8 shrink-0 gap-1.5 px-3 text-xs text-red-600 hover:bg-red-50 hover:text-red-700"
+              onClick={removeTileImage}
+              disabled={disabled || tileRemovePending || tileUploadPending}
+            >
+              <Trash2 className="size-3" />
+              {tileRemovePending ? "Kaldırılıyor..." : "Kaldır"}
+            </Button>
+          ) : null}
+        </div>
+
+        <label className="block cursor-pointer rounded-2xl border border-dashed border-slate-200 bg-white p-4 transition hover:border-emerald-300 hover:bg-emerald-50/40">
+          <input
+            type="file"
+            accept="image/png,image/jpeg,image/webp"
+            className="hidden"
+            disabled={disabled || tileUploadPending || tileRemovePending}
+            onChange={(event) => {
+              void handleTileFileChange(event.target.files?.[0] ?? null);
+              event.target.value = "";
+            }}
+          />
+          <div className="grid gap-4 md:grid-cols-[96px_minmax(0,1fr)] md:items-center">
+            <div className="relative aspect-square size-24 overflow-hidden rounded-2xl border border-slate-200 bg-white">
+              {tileImageUrl ? (
+                <Image
+                  src={tileImageUrl}
+                  alt={`${category.name} kutucuk önizleme`}
+                  fill
+                  className="object-cover"
+                  sizes="96px"
+                  unoptimized
+                />
+              ) : (
+                <div className="flex h-full items-center justify-center text-center text-[10px] text-slate-400">
+                  {requiredCategoryTileWidth}x{requiredCategoryTileHeight}
+                </div>
+              )}
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-slate-900">
+                {tileUploadPending
+                  ? "Görsel yükleniyor..."
+                  : "Kutucuk görselini bilgisayarınızdan yükleyin"}
+              </p>
+              <p className="mt-1 text-sm text-slate-500">Yüklenince anında kaydedilir.</p>
+              {tileUploadMessage ? (
+                <p className="mt-2 text-sm text-emerald-700">{tileUploadMessage}</p>
+              ) : null}
+            </div>
+          </div>
+        </label>
       </div>
 
       <div className="mt-4 flex flex-wrap items-center justify-end gap-2">
