@@ -165,9 +165,14 @@ export function StorefrontFooter({
   const hasQuickLinksColumn = footerStyle === "columns";
   const hasFooterMainContent = hasContactColumn || hasSocialColumn || hasQuickLinksColumn;
   const showMainColumns = footerStyle !== "minimal" && hasFooterMainContent;
+  const columnsPresentCount = [hasQuickLinksColumn, hasContactColumn, hasSocialColumn].filter(
+    Boolean,
+  ).length;
+  const columnsGridColsClass =
+    columnsPresentCount >= 3 ? "md:grid-cols-3" : columnsPresentCount === 2 ? "md:grid-cols-2" : "md:grid-cols-1";
   const gridClassName =
     footerStyle === "columns"
-      ? "flex flex-col gap-4 md:grid md:grid-cols-3 md:items-start md:gap-x-8"
+      ? cn("flex flex-col gap-4 md:grid md:items-start md:gap-x-8", columnsGridColsClass)
       : "flex flex-col gap-4 md:grid md:grid-cols-2 md:items-start md:gap-x-10 lg:gap-x-16";
 
   let mobileDividerIndex = 0;
