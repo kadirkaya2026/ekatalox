@@ -168,6 +168,7 @@ export function StorefrontFooter({
   const columnsPresentCount = [hasQuickLinksColumn, hasContactColumn, hasSocialColumn].filter(
     Boolean,
   ).length;
+  const isContactLastColumn = hasContactColumn && !hasSocialColumn && columnsPresentCount > 1;
   const columnsGridColsClass =
     columnsPresentCount >= 3 ? "md:grid-cols-3" : columnsPresentCount === 2 ? "md:grid-cols-2" : "md:grid-cols-1";
   const gridClassName =
@@ -178,7 +179,7 @@ export function StorefrontFooter({
   let mobileDividerIndex = 0;
 
   return (
-    <footer className={theme.footerShell}>
+    <footer className={cn("mt-auto", theme.footerShell)}>
       <div className="mx-auto max-w-7xl px-4 pt-5 pb-0 md:py-7">
         {showMainColumns ? (
           <div className={gridClassName}>
@@ -201,8 +202,16 @@ export function StorefrontFooter({
             ) : null}
 
             {hasContactColumn ? (
-              <MobileSection showDivider={mobileDividerIndex++ > 0}>
-                <div className={cn("flex flex-col items-center text-center", footerStyle === "columns" ? "md:items-start md:text-left" : "md:items-start md:text-left")}>
+              <MobileSection
+                showDivider={mobileDividerIndex++ > 0}
+                className={isContactLastColumn ? "md:justify-self-end" : undefined}
+              >
+                <div
+                  className={cn(
+                    "flex flex-col items-center text-center",
+                    isContactLastColumn ? "md:items-end md:text-right" : "md:items-start md:text-left",
+                  )}
+                >
                   <FooterSectionHeading>{t("footer.contact")}</FooterSectionHeading>
                   <div className="space-y-1">
                     {locationText ? (

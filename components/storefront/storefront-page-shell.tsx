@@ -30,7 +30,7 @@ function StorefrontPageShellInner({
       data-storefront
       data-branded={style ? "true" : undefined}
       style={style}
-      className={cn(theme.page, fontClassName, className)}
+      className={cn("flex min-h-screen flex-col", theme.page, fontClassName, className)}
     >
       {children}
       <StorefrontPoweredByBar />
