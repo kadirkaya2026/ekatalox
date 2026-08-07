@@ -35,8 +35,8 @@ export const STOREFRONT_THEME_PRESETS: StorefrontThemePreset[] = [
     description:
       "Telefon, aksesuar ve teknoloji toptancıları için kurumsal mavi tema, geniş banner ve görsel odaklı ürün kartları.",
     demoSubdomain: "demo-elektronik",
-    thumbnailDesktop: "/temalar/elektronik-desktop.png",
-    thumbnailMobile: "/temalar/elektronik-mobile.png",
+    thumbnailDesktop: "/temalar/elektronik-desktop.jpg",
+    thumbnailMobile: "/temalar/elektronik-mobile.jpg",
     settings: {
       theme_key: "pro-blue",
       layout_key: "classic-grid",
@@ -54,8 +54,8 @@ export const STOREFRONT_THEME_PRESETS: StorefrontThemePreset[] = [
     description:
       "Nalbur, hırdavat ve yapı market toptancıları için sade, yoğun grid ve minimal başlık düzeni.",
     demoSubdomain: "demo-yapimarket",
-    thumbnailDesktop: "/temalar/yapimarket-desktop.png",
-    thumbnailMobile: "/temalar/yapimarket-mobile.png",
+    thumbnailDesktop: "/temalar/yapimarket-desktop.jpg",
+    thumbnailMobile: "/temalar/yapimarket-mobile.jpg",
     settings: {
       theme_key: "industrial",
       layout_key: "catalog-dense",
@@ -73,8 +73,8 @@ export const STOREFRONT_THEME_PRESETS: StorefrontThemePreset[] = [
     description:
       "Market ve gıda toptancıları için canlı turuncu tema, kategori kenar çubuğu ve tek satır yoğun başlık.",
     demoSubdomain: "demo-gida",
-    thumbnailDesktop: "/temalar/gida-desktop.png",
-    thumbnailMobile: "/temalar/gida-mobile.png",
+    thumbnailDesktop: "/temalar/gida-desktop.jpg",
+    thumbnailMobile: "/temalar/gida-mobile.jpg",
     settings: {
       theme_key: "market",
       layout_key: "sidebar-pro",
@@ -92,8 +92,8 @@ export const STOREFRONT_THEME_PRESETS: StorefrontThemePreset[] = [
     description:
       "Tekstil ve konfeksiyon toptancıları için zarif premium tema, ortalanmış başlık ve büyük vitrin görseli.",
     demoSubdomain: "demo-giyim",
-    thumbnailDesktop: "/temalar/giyim-desktop.png",
-    thumbnailMobile: "/temalar/giyim-mobile.png",
+    thumbnailDesktop: "/temalar/giyim-desktop.jpg",
+    thumbnailMobile: "/temalar/giyim-mobile.jpg",
     settings: {
       theme_key: "premium",
       layout_key: "classic-grid",
@@ -111,8 +111,8 @@ export const STOREFRONT_THEME_PRESETS: StorefrontThemePreset[] = [
     description:
       "Kozmetik ve kişisel bakım toptancıları için nötr, temiz tema ve görsel eşlikli tanıtım alanı.",
     demoSubdomain: "demo-kozmetik",
-    thumbnailDesktop: "/temalar/kozmetik-desktop.png",
-    thumbnailMobile: "/temalar/kozmetik-mobile.png",
+    thumbnailDesktop: "/temalar/kozmetik-desktop.jpg",
+    thumbnailMobile: "/temalar/kozmetik-mobile.jpg",
     settings: {
       theme_key: "neutral",
       layout_key: "classic-grid",
@@ -130,8 +130,8 @@ export const STOREFRONT_THEME_PRESETS: StorefrontThemePreset[] = [
     description:
       "Ev tekstili, mobilya ve dekorasyon toptancıları için turkuaz Vitrin Pro teması ve kenar çubuklu kategori gezinme.",
     demoSubdomain: "demo-evyasam",
-    thumbnailDesktop: "/temalar/evyasam-desktop.png",
-    thumbnailMobile: "/temalar/evyasam-mobile.png",
+    thumbnailDesktop: "/temalar/evyasam-desktop.jpg",
+    thumbnailMobile: "/temalar/evyasam-mobile.jpg",
     settings: {
       theme_key: "vitrin-pro",
       layout_key: "sidebar-pro",
