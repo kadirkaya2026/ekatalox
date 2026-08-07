@@ -2,25 +2,37 @@ import type { HomepageBlock, HomepageBlockId } from "@/lib/types";
 
 export const HOMEPAGE_BLOCK_IDS = [
   "hero",
+  "heroCluster",
+  "promoTiles",
+  "categoryTiles",
   "banner",
   "campaigns",
   "showcase",
+  "banner2",
   "catalog",
 ] as const satisfies readonly HomepageBlockId[];
 
 export const DEFAULT_HOMEPAGE_BLOCKS: HomepageBlock[] = [
   { id: "hero", visible: true, order: 1 },
-  { id: "banner", visible: true, order: 2 },
-  { id: "campaigns", visible: true, order: 3 },
-  { id: "showcase", visible: true, order: 4 },
-  { id: "catalog", visible: true, order: 5 },
+  { id: "heroCluster", visible: true, order: 2 },
+  { id: "categoryTiles", visible: true, order: 3 },
+  { id: "promoTiles", visible: true, order: 4 },
+  { id: "banner", visible: true, order: 5 },
+  { id: "campaigns", visible: true, order: 6 },
+  { id: "showcase", visible: true, order: 7 },
+  { id: "banner2", visible: true, order: 8 },
+  { id: "catalog", visible: true, order: 9 },
 ];
 
 export const HOMEPAGE_BLOCK_LABELS: Record<HomepageBlockId, string> = {
   hero: "Hero metin alanı",
+  heroCluster: "Büyük banner + yan kutucuklar",
+  promoTiles: "İndirimli ürün kutucukları",
+  categoryTiles: "Kategori kutucukları",
   banner: "Anasayfa banner alanı",
   campaigns: "Kampanya barları",
   showcase: "Vitrin bölümleri",
+  banner2: "İkinci banner alanı (alt)",
   catalog: "Tam ürün kataloğu",
 };
 

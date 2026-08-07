@@ -113,6 +113,11 @@ import {
 } from "@/lib/storefront/homepage-blocks";
 import { StorefrontHeader } from "@/components/storefront/storefront-header";
 import { StorefrontHeroBlock } from "@/components/storefront/storefront-hero-block";
+import {
+  StorefrontCategoryTiles,
+  StorefrontHeroCluster,
+  StorefrontPromoTiles,
+} from "@/components/storefront/storefront-homepage-extras";
 import { getStorefrontLayout } from "@/lib/storefront/layouts";
 
 function getCartStorageKey(tenantId: string) {
@@ -1156,6 +1161,14 @@ export function StorefrontClient({
   const currentBanner = bannerItems[activeBannerIndex] ?? null;
   const showSections =
     showHomeBanner && sections.length > 0 && isHomepageBlockVisible(homepageBlocks, "showcase");
+  const showHeroCluster =
+    showHomeBanner && bannerItems.length >= 2 && isHomepageBlockVisible(homepageBlocks, "heroCluster");
+  const showPromoTiles =
+    showHomeBanner && isHomepageBlockVisible(homepageBlocks, "promoTiles");
+  const showCategoryTilesBlock =
+    showHomeBanner && topCategories.length > 0 && isHomepageBlockVisible(homepageBlocks, "categoryTiles");
+  const showBanner2Section =
+    showHomeBanner && bannerItems.length > 0 && isHomepageBlockVisible(homepageBlocks, "banner2");
   const showHeroBlock =
     showHomeBanner && isHomepageBlockVisible(homepageBlocks, "hero");
   const showCatalogBlock =
@@ -2337,6 +2350,33 @@ export function StorefrontClient({
               ) : null;
             }
 
+            if (block.id === "heroCluster") {
+              return showHeroCluster ? (
+                <StorefrontHeroCluster
+                  key="heroCluster"
+                  bannerItems={bannerItems}
+                  storefrontTitle={storefrontTitle}
+                />
+              ) : null;
+            }
+
+            if (block.id === "categoryTiles") {
+              return showCategoryTilesBlock ? (
+                <StorefrontCategoryTiles
+                  key="categoryTiles"
+                  categories={topCategories}
+                  products={products}
+                  onCategoryChange={handleCategoryChange}
+                />
+              ) : null;
+            }
+
+            if (block.id === "promoTiles") {
+              return showPromoTiles ? (
+                <StorefrontPromoTiles key="promoTiles" products={products} />
+              ) : null;
+            }
+
             if (block.id === "banner") {
               return showBannerSection ? (
                 <section key="banner" className="mb-5 sm:mb-10 w-full">
@@ -2453,6 +2493,22 @@ export function StorefrontClient({
                     );
                   })}
                 </div>
+              ) : null;
+            }
+
+            if (block.id === "banner2") {
+              return showBanner2Section && currentBanner ? (
+                <section key="banner2" className="mb-5 sm:mb-10 w-full">
+                  <div className="w-full space-y-4">
+                    {renderBannerItem(
+                      currentBanner,
+                      activeBannerIndex + 1,
+                      selectedCategory?.name ?? storefrontTitle,
+                      theme,
+                      t,
+                    )}
+                  </div>
+                </section>
               ) : null;
             }
 

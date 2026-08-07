@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { DEFAULT_INSTALLMENT_OPTIONS } from "@/lib/storefront/cart";
-import { DEFAULT_HOMEPAGE_BLOCKS } from "@/lib/storefront/homepage-blocks";
+import { DEFAULT_HOMEPAGE_BLOCKS, HOMEPAGE_BLOCK_IDS } from "@/lib/storefront/homepage-blocks";
 
 export const storefrontThemeKeySchema = z.enum([
   "minimal",
@@ -51,9 +51,13 @@ export const storefrontDefaultLocaleSchema = z.enum(["tr", "de", "en", "ru"]);
 
 export const homepageBlockIdSchema = z.enum([
   "hero",
+  "heroCluster",
+  "promoTiles",
+  "categoryTiles",
   "banner",
   "campaigns",
   "showcase",
+  "banner2",
   "catalog",
 ]);
 
@@ -66,7 +70,7 @@ export const homepageBlockSchema = z.object({
 export const homepageBlocksSchema = z
   .array(homepageBlockSchema)
   .min(1)
-  .max(5)
+  .max(HOMEPAGE_BLOCK_IDS.length)
   .default(DEFAULT_HOMEPAGE_BLOCKS);
 
 const optionalUrlSchema = z

@@ -147,6 +147,8 @@ export const storefrontDictionary: Record<StorefrontLocale, StorefrontDictionary
     "catalog.bannerImageMissingHint": "Yönetim panelinden bu segmente banner görseli yükleyebilirsiniz.",
     "catalog.bannerEmpty": "Banner alanı şu an boş",
     "catalog.bannerEmptyHint": "Admin panelindeki vitrin ayarlarından kampanya banner'ları ekleyebilirsiniz.",
+    "catalog.discoverCta": "Keşfet",
+    "catalog.viewProduct": "İncele",
     "catalog.home": "Anasayfa",
 
     "stickyCart.continue": "Devam >",
@@ -339,6 +341,8 @@ export const storefrontDictionary: Record<StorefrontLocale, StorefrontDictionary
     "catalog.bannerImageMissingHint": "Sie können im Admin-Bereich ein Bannerbild für dieses Segment hochladen.",
     "catalog.bannerEmpty": "Der Bannerbereich ist derzeit leer",
     "catalog.bannerEmptyHint": "Sie können Kampagnenbanner in den Vitrineneinstellungen im Admin-Bereich hinzufügen.",
+    "catalog.discoverCta": "Entdecken",
+    "catalog.viewProduct": "Ansehen",
     "catalog.home": "Startseite",
 
     "stickyCart.continue": "Weiter >",
@@ -531,6 +535,8 @@ export const storefrontDictionary: Record<StorefrontLocale, StorefrontDictionary
     "catalog.bannerImageMissingHint": "You can upload a banner image for this segment from the admin panel.",
     "catalog.bannerEmpty": "Banner area is currently empty",
     "catalog.bannerEmptyHint": "You can add campaign banners from the showcase settings in the admin panel.",
+    "catalog.discoverCta": "Discover",
+    "catalog.viewProduct": "View",
     "catalog.home": "Home",
 
     "stickyCart.continue": "Continue >",
@@ -722,6 +728,8 @@ export const storefrontDictionary: Record<StorefrontLocale, StorefrontDictionary
     "catalog.bannerImageMissingHint": "Вы можете загрузить изображение баннера для этого раздела в панели управления.",
     "catalog.bannerEmpty": "Область баннера сейчас пуста",
     "catalog.bannerEmptyHint": "Вы можете добавить рекламные баннеры в настройках витрины в панели управления.",
+    "catalog.discoverCta": "Открыть",
+    "catalog.viewProduct": "Смотреть",
     "catalog.home": "Главная",
 
     "stickyCart.continue": "Продолжить >",

@@ -30,7 +30,16 @@ export type StorefrontProductCardStyle = "standard" | "compact" | "image-forward
 export type StorefrontHeaderStyleKey = "standard" | "centered" | "minimal" | "split";
 export type StorefrontFooterStyleKey = "standard" | "minimal" | "columns";
 export type StorefrontHeroStyleKey = "text" | "image-split" | "full-bleed";
-export type HomepageBlockId = "hero" | "banner" | "campaigns" | "showcase" | "catalog";
+export type HomepageBlockId =
+  | "hero"
+  | "heroCluster"
+  | "promoTiles"
+  | "categoryTiles"
+  | "banner"
+  | "campaigns"
+  | "showcase"
+  | "banner2"
+  | "catalog";
 
 export interface HomepageBlock {
   id: HomepageBlockId;
