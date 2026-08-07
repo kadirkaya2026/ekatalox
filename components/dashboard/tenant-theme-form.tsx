@@ -286,7 +286,7 @@ export function TenantThemeForm({
                   footer ve hero görünümü tek tıkla birlikte değişir. Uyguladıktan sonra diğer
                   sekmelerden ince ayar yapabilirsiniz.
                 </p>
-                <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+                <div className="grid grid-cols-1 gap-6">
                   {STOREFRONT_THEME_PRESETS.map((preset) => {
                     const isSelected =
                       form.theme_key === preset.settings.theme_key &&
