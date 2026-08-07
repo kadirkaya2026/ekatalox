@@ -32,7 +32,7 @@ function ClusterBox({
     <div
       className={cn(
         "relative w-full overflow-hidden rounded-[1.75rem]",
-        large ? "aspect-[3/2] sm:aspect-[16/10]" : "aspect-[16/9]",
+        large ? "aspect-[3/2] sm:aspect-[16/10]" : "aspect-[16/9] sm:aspect-auto sm:h-full",
       )}
       style={{
         background: banner.background_color ?? CLUSTER_GRADIENTS[index % CLUSTER_GRADIENTS.length],
@@ -87,7 +87,12 @@ export function StorefrontHeroCluster({
   return (
     <section className="mb-5 grid grid-cols-1 gap-3 sm:mb-8 sm:grid-cols-[1.6fr_1fr] sm:gap-4">
       <ClusterBox banner={main} index={0} large title={storefrontTitle} />
-      <div className={cn("grid gap-3", sideItems.length > 1 ? "grid-cols-1 sm:grid-rows-2" : "grid-cols-1")}>
+      <div
+        className={cn(
+          "grid gap-3 sm:h-full",
+          sideItems.length > 1 ? "grid-cols-1 sm:grid-rows-2" : "grid-cols-1",
+        )}
+      >
         {sideItems.map((banner, index) => (
           <ClusterBox key={banner.id} banner={banner} index={index + 1} title={storefrontTitle} />
         ))}
