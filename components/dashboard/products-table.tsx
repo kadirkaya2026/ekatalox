@@ -216,7 +216,9 @@ export function ProductsTable({
                   {getPriceListDisplayName(list)}
                 </th>
               ))}
-              <th className="px-4 py-3 text-right">Aksiyon</th>
+              <th className="sticky right-0 z-10 border-l border-border bg-muted/60 px-4 py-3 text-right">
+                Aksiyon
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -338,7 +340,12 @@ export function ProductsTable({
                     {renderProductListPrice(product, list.id)}
                   </td>
                 ))}
-                <td className="px-4 py-3 align-top">
+                <td
+                  className={cn(
+                    "sticky right-0 z-10 border-l border-border bg-card px-4 py-3 align-top",
+                    draggedProductId === product.id && "bg-emerald-50/60",
+                  )}
+                >
                   <div className="ml-auto grid w-[13rem] grid-cols-2 gap-2">
                     <Button
                       variant="secondary"
