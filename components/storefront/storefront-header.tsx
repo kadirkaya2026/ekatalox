@@ -18,7 +18,11 @@ export interface StorefrontHeaderProps {
   headerStyleKey: StorefrontHeaderStyleKey;
   storefrontSettings: Pick<
     TenantStorefrontSettings,
-    "logo_url" | "storefront_title" | "is_price_update_date_visible" | "price_update_date"
+    | "logo_url"
+    | "storefront_title"
+    | "is_price_update_date_visible"
+    | "price_update_date"
+    | "is_theme_toggle_visible"
   >;
   storefrontTitle: string;
   tenantId: string;
@@ -85,7 +89,7 @@ function HeaderActions({
         />
       ) : null}
       <StorefrontLanguageSwitcher />
-      <StorefrontThemeToggle />
+      {props.storefrontSettings.is_theme_toggle_visible ? <StorefrontThemeToggle /> : null}
       <button
         type="button"
         onClick={props.onOpenCart}

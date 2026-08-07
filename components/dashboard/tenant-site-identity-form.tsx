@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { CalendarDays, Globe, ImageUp, LoaderCircle, Store } from "lucide-react";
+import { CalendarDays, Globe, ImageUp, LoaderCircle, Moon, Store } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -28,7 +28,13 @@ const STOREFRONT_LOCALE_LABELS: Record<StorefrontLocale, string> = {
   ru: "Rusça (Русский)",
 };
 
-type SiteIdentityTab = "brand" | "tabTitle" | "locale" | "favicon" | "priceDate";
+type SiteIdentityTab =
+  | "brand"
+  | "tabTitle"
+  | "locale"
+  | "favicon"
+  | "priceDate"
+  | "themeToggle";
 
 const SITE_IDENTITY_TABS: Array<{ key: SiteIdentityTab; label: string }> = [
   { key: "brand", label: "Logo, Başlık ve Açıklama" },
@@ -36,6 +42,7 @@ const SITE_IDENTITY_TABS: Array<{ key: SiteIdentityTab; label: string }> = [
   { key: "locale", label: "Vitrin Dili" },
   { key: "favicon", label: "Favicon" },
   { key: "priceDate", label: "Fiyat Güncelleme Tarihi" },
+  { key: "themeToggle", label: "Gece/Gündüz Modu" },
 ];
 
 export function TenantSiteIdentityForm({
@@ -66,12 +73,16 @@ export function TenantSiteIdentityForm({
   const [isPriceUpdateDateVisible, setIsPriceUpdateDateVisible] = useState(
     initialStorefrontSettings.is_price_update_date_visible ?? false,
   );
+  const [isThemeToggleVisible, setIsThemeToggleVisible] = useState(
+    initialStorefrontSettings.is_theme_toggle_visible ?? true,
+  );
   const [logoPending, startLogoTransition] = useTransition();
   const [storefrontSavePending, startStorefrontSaveTransition] = useTransition();
   const [faviconPending, startFaviconTransition] = useTransition();
   const [savePending, startSaveTransition] = useTransition();
   const [localePending, startLocaleTransition] = useTransition();
   const [priceDateSavePending, startPriceDateSaveTransition] = useTransition();
+  const [themeTogglePending, startThemeToggleTransition] = useTransition();
   const router = useRouter();
   const [logoMessage, setLogoMessage] = useState<string | null>(null);
   const [storefrontSaveMessage, setStorefrontSaveMessage] = useState<string | null>(null);
@@ -79,6 +90,7 @@ export function TenantSiteIdentityForm({
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
   const [localeMessage, setLocaleMessage] = useState<string | null>(null);
   const [priceDateSaveMessage, setPriceDateSaveMessage] = useState<string | null>(null);
+  const [themeToggleSaveMessage, setThemeToggleSaveMessage] = useState<string | null>(null);
   const [logoError, setLogoError] = useState<string | null>(null);
   const [faviconError, setFaviconError] = useState<string | null>(null);
   const [storefrontTitleError, setStorefrontTitleError] = useState<string | null>(null);
@@ -329,6 +341,34 @@ export function TenantSiteIdentityForm({
       }
 
       setPriceDateSaveMessage("Vitrin ayarları kaydedildi.");
+      router.refresh();
+    });
+  }
+
+  function saveThemeToggleVisible(nextValue: boolean) {
+    setIsThemeToggleVisible(nextValue);
+    setThemeToggleSaveMessage(null);
+
+    startThemeToggleTransition(async () => {
+      const response = await fetch("/api/tenant/settings", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ is_theme_toggle_visible: nextValue }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        setThemeToggleSaveMessage(result.error ?? "Ayar kaydedilemedi.");
+        setIsThemeToggleVisible(!nextValue);
+        return;
+      }
+
+      if (result.storefrontSettings) {
+        setIsThemeToggleVisible(result.storefrontSettings.is_theme_toggle_visible ?? true);
+      }
+
+      setThemeToggleSaveMessage("Ayar kaydedildi.");
       router.refresh();
     });
   }
@@ -710,6 +750,59 @@ export function TenantSiteIdentityForm({
             </Button>
           </div>
         </form>
+      </div>
+      ) : null}
+
+      {activeTab === "themeToggle" ? (
+      <div>
+        <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-slate-900">
+          <Moon className="size-4 text-emerald-700" />
+          <span>Gece/Gündüz Modu</span>
+        </div>
+        <p className="mb-4 text-sm text-slate-500">
+          Vitrin üst menüsünde müşterilerin gece/gündüz modu arasında geçiş yapabildiği
+          butonu açıp kapatabilirsiniz.
+        </p>
+
+        <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="text-sm font-semibold text-slate-900">Vitrinde göster</p>
+              <p className="mt-1 text-sm text-slate-500">
+                Açıkken müşteriler vitrin üst menüsünden tema değiştirebilir.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => saveThemeToggleVisible(!isThemeToggleVisible)}
+              disabled={themeTogglePending}
+              aria-pressed={isThemeToggleVisible}
+              className={`relative inline-flex h-7 w-12 shrink-0 rounded-full transition ${
+                isThemeToggleVisible ? "bg-emerald-600" : "bg-slate-300"
+              }`}
+            >
+              <span
+                className={`absolute top-0.5 size-6 rounded-full bg-white shadow transition ${
+                  isThemeToggleVisible ? "left-5" : "left-0.5"
+                }`}
+              />
+            </button>
+          </div>
+        </div>
+
+        <div className="min-h-6 mt-3">
+          {themeToggleSaveMessage ? (
+            <p
+              className={`text-sm ${
+                themeToggleSaveMessage.includes("kaydedildi")
+                  ? "text-emerald-700"
+                  : "text-amber-700"
+              }`}
+            >
+              {themeToggleSaveMessage}
+            </p>
+          ) : null}
+        </div>
       </div>
       ) : null}
       </div>

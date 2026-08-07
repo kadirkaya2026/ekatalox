@@ -100,6 +100,7 @@ export default async function StorefrontPage(props: PageProps<"/store/[subdomain
           subdomain={subdomain}
           companyName={tenant.company_name}
           themeKey={settings.theme_key}
+          isThemeToggleVisible={settings.is_theme_toggle_visible}
         />
       </StorefrontPageShell>
     );

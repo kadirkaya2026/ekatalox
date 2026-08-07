@@ -135,6 +135,7 @@ export function getDefaultTenantStorefrontSettings(
     card_campaign_tiers: [],
     price_update_date: null,
     is_price_update_date_visible: false,
+    is_theme_toggle_visible: true,
     is_footer_visible: false,
     is_footer_logo_visible: true,
     is_footer_social_visible: false,

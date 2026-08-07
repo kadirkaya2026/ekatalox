@@ -242,6 +242,7 @@ export interface TenantStorefrontSettings {
   card_campaign_tiers: CardCampaignTier[];
   price_update_date: string | null;
   is_price_update_date_visible: boolean;
+  is_theme_toggle_visible: boolean;
   is_footer_visible: boolean;
   is_footer_logo_visible: boolean;
   is_footer_social_visible: boolean;

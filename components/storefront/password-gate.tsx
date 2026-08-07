@@ -75,17 +75,19 @@ export function PasswordGate({
   subdomain,
   companyName,
   themeKey = "minimal",
+  isThemeToggleVisible = true,
 }: {
   subdomain: string;
   companyName: string;
   themeKey?: StorefrontThemeKey | string;
+  isThemeToggleVisible?: boolean;
 }) {
   return (
     <StorefrontThemeProvider themeKey={themeKey}>
       <div data-storefront className="relative min-h-screen">
         <div className="absolute right-4 top-4 z-10 flex items-center gap-2 sm:right-6 sm:top-6">
           <StorefrontLanguageSwitcher />
-          <StorefrontThemeToggle />
+          {isThemeToggleVisible ? <StorefrontThemeToggle /> : null}
         </div>
         <PasswordGateForm subdomain={subdomain} companyName={companyName} />
       </div>

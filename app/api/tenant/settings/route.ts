@@ -78,7 +78,7 @@ export async function PATCH(request: Request) {
     const { data } = await supabase
       .from("tenant_storefront_settings")
       .select(
-        "tenant_id, theme_key, layout_key, logo_url, storefront_title, storefront_description, banner_items, site_tab_title, site_favicon_url, announcement_title, announcement_body, is_active, version, max_display_count, card_installment_options, is_cash_discount_active, cash_discount_note, is_card_campaign_active, card_campaign_note, cash_discount_tiers, card_campaign_tiers, price_update_date, is_price_update_date_visible, is_footer_visible, is_footer_logo_visible, is_footer_social_visible, is_footer_location_visible, is_footer_copyright_visible, footer_location, footer_copyright, footer_instagram_url, footer_youtube_url, footer_x_url, footer_facebook_url, footer_whatsapp, is_footer_instagram_visible, is_footer_youtube_visible, is_footer_x_visible, is_footer_facebook_visible, is_footer_whatsapp_visible, footer_website_url, is_footer_website_visible, footer_phone, footer_email, is_footer_contact_visible, recommendation_mode, default_locale",
+        "tenant_id, theme_key, layout_key, logo_url, storefront_title, storefront_description, banner_items, site_tab_title, site_favicon_url, announcement_title, announcement_body, is_active, version, max_display_count, card_installment_options, is_cash_discount_active, cash_discount_note, is_card_campaign_active, card_campaign_note, cash_discount_tiers, card_campaign_tiers, price_update_date, is_price_update_date_visible, is_theme_toggle_visible, is_footer_visible, is_footer_logo_visible, is_footer_social_visible, is_footer_location_visible, is_footer_copyright_visible, footer_location, footer_copyright, footer_instagram_url, footer_youtube_url, footer_x_url, footer_facebook_url, footer_whatsapp, is_footer_instagram_visible, is_footer_youtube_visible, is_footer_x_visible, is_footer_facebook_visible, is_footer_whatsapp_visible, footer_website_url, is_footer_website_visible, footer_phone, footer_email, is_footer_contact_visible, recommendation_mode, default_locale",
       )
       .eq("tenant_id", session.tenant!.id)
       .maybeSingle();
@@ -180,6 +180,8 @@ export async function PATCH(request: Request) {
     is_price_update_date_visible:
       body.is_price_update_date_visible ??
       existingSettings.is_price_update_date_visible,
+    is_theme_toggle_visible:
+      body.is_theme_toggle_visible ?? existingSettings.is_theme_toggle_visible,
     is_footer_visible: body.is_footer_visible ?? existingSettings.is_footer_visible,
     is_footer_logo_visible:
       body.is_footer_logo_visible ?? existingSettings.is_footer_logo_visible,
@@ -300,6 +302,7 @@ export async function PATCH(request: Request) {
         card_campaign_tiers: parsed.data.card_campaign_tiers,
         price_update_date: parsed.data.price_update_date,
         is_price_update_date_visible: parsed.data.is_price_update_date_visible,
+        is_theme_toggle_visible: parsed.data.is_theme_toggle_visible,
         is_footer_visible: parsed.data.is_footer_visible,
         is_footer_logo_visible: parsed.data.is_footer_logo_visible,
         is_footer_social_visible: parsed.data.is_footer_social_visible,
@@ -390,6 +393,7 @@ export async function PATCH(request: Request) {
     card_campaign_tiers: parsed.data.card_campaign_tiers,
     price_update_date: parsed.data.price_update_date,
     is_price_update_date_visible: parsed.data.is_price_update_date_visible,
+    is_theme_toggle_visible: parsed.data.is_theme_toggle_visible,
     is_footer_visible: parsed.data.is_footer_visible,
     is_footer_logo_visible: parsed.data.is_footer_logo_visible,
     is_footer_social_visible: parsed.data.is_footer_social_visible,

@@ -85,6 +85,7 @@ export default async function StorefrontGatePage(
         subdomain={subdomain}
         companyName={tenant.company_name}
         themeKey={settings.theme_key}
+        isThemeToggleVisible={settings.is_theme_toggle_visible}
       />
     </StorefrontPageShell>
   );
