@@ -119,7 +119,7 @@ function MobileSection({
       className={cn(
         "w-full",
         showDivider &&
-          cn("pt-4 md:pt-0", theme.sectionDivider),
+          cn("pt-4 md:border-t-0 md:pt-0", theme.sectionDivider),
         className,
       )}
     >
