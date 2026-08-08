@@ -185,62 +185,85 @@ function normalizeProductRows(rows: Array<Record<string, unknown>> | null | unde
   return (rows ?? []).map((product) => normalizeProductRecord(product));
 }
 
+// PostgREST caps rows per request at db.max_rows (Supabase default 1000), so a
+// tenant with more products than that would otherwise get silently truncated
+// results. Page through with .range() until a page comes back short.
+const PRODUCT_FETCH_PAGE_SIZE = 1000;
+
+async function fetchAllTenantProductRows(
+  supabase: AdminClient,
+  select: string,
+  tenantId: string,
+) {
+  const rows: Array<Record<string, unknown>> = [];
+  let from = 0;
+
+  while (true) {
+    const { data, error } = await supabase
+      .from("products")
+      .select(select)
+      .eq("tenant_id", tenantId)
+      .order("display_order", { ascending: true })
+      .order("created_at", { ascending: false })
+      .range(from, from + PRODUCT_FETCH_PAGE_SIZE - 1);
+
+    if (error) {
+      return { data: null, error };
+    }
+
+    const page = (data as unknown as Array<Record<string, unknown>> | null) ?? [];
+    rows.push(...page);
+
+    if (page.length < PRODUCT_FETCH_PAGE_SIZE) {
+      break;
+    }
+
+    from += PRODUCT_FETCH_PAGE_SIZE;
+  }
+
+  return { data: rows, error: null };
+}
+
 async function fetchTenantProductsWithOptionalVariants(
   supabase: AdminClient,
   tenantId: string,
 ) {
-  const withVariants = await supabase
-    .from("products")
-    .select(productWithVariantsSelect)
-    .eq("tenant_id", tenantId)
-    .order("display_order", { ascending: true })
-    .order("created_at", { ascending: false });
+  const withVariants = await fetchAllTenantProductRows(supabase, productWithVariantsSelect, tenantId);
 
   if (!withVariants.error) {
-    return normalizeProductRows(withVariants.data as Array<Record<string, unknown>> | null);
+    return normalizeProductRows(withVariants.data);
   }
 
-  const fallback = await supabase
-    .from("products")
-    .select("*")
-    .eq("tenant_id", tenantId)
-    .order("display_order", { ascending: true })
-    .order("created_at", { ascending: false });
+  const fallback = await fetchAllTenantProductRows(supabase, "*", tenantId);
 
   if (fallback.error) {
     return [];
   }
 
-  return normalizeProductRows(fallback.data as Array<Record<string, unknown>> | null);
+  return normalizeProductRows(fallback.data);
 }
 
 async function fetchStorefrontTenantProductsWithOptionalVariants(
   supabase: AdminClient,
   tenantId: string,
 ) {
-  const withVariants = await supabase
-    .from("products")
-    .select(storefrontProductWithVariantsSelect)
-    .eq("tenant_id", tenantId)
-    .order("display_order", { ascending: true })
-    .order("created_at", { ascending: false });
+  const withVariants = await fetchAllTenantProductRows(
+    supabase,
+    storefrontProductWithVariantsSelect,
+    tenantId,
+  );
 
   if (!withVariants.error) {
-    return normalizeProductRows(withVariants.data as Array<Record<string, unknown>> | null);
+    return normalizeProductRows(withVariants.data);
   }
 
-  const fallback = await supabase
-    .from("products")
-    .select(storefrontProductListColumns)
-    .eq("tenant_id", tenantId)
-    .order("display_order", { ascending: true })
-    .order("created_at", { ascending: false });
+  const fallback = await fetchAllTenantProductRows(supabase, storefrontProductListColumns, tenantId);
 
   if (fallback.error) {
     return [];
   }
 
-  return normalizeProductRows(fallback.data as Array<Record<string, unknown>> | null);
+  return normalizeProductRows(fallback.data);
 }
 
 async function fetchStorefrontSectionRowsWithOptionalVariants(
