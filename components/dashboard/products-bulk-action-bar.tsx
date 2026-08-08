@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, Trash2 } from "lucide-react";
+import { Check, PackageCheck, PackageX, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { CategoryNode } from "@/lib/categories/tree";
 
@@ -10,6 +10,7 @@ export function ProductsBulkActionBar({
   bulkCategoryId,
   onBulkCategoryChange,
   onApplyBulkCategory,
+  onBulkSetStock,
   onRequestBulkDelete,
   pending,
 }: {
@@ -18,6 +19,7 @@ export function ProductsBulkActionBar({
   bulkCategoryId: string;
   onBulkCategoryChange: (categoryId: string) => void;
   onApplyBulkCategory: () => void;
+  onBulkSetStock: (is_in_stock: boolean) => void;
   onRequestBulkDelete: () => void;
   pending: boolean;
 }) {
@@ -53,19 +55,37 @@ export function ProductsBulkActionBar({
         </div>
       </div>
 
-      <div className="flex flex-col gap-3 rounded-xl border border-red-100 bg-red-50 px-4 py-4 md:flex-row md:items-center md:justify-between">
-        <p className="text-sm font-semibold text-red-800">
-          {selectedCount} ürün seçildi. Bu işlem geri alınamaz.
-        </p>
-        <Button
-          variant="secondary"
-          className="border-red-200 bg-card text-red-700 hover:bg-red-100"
-          onClick={onRequestBulkDelete}
-          disabled={pending}
-        >
-          <Trash2 className="size-4" />
-          Seçilenleri Sil
-        </Button>
+      <div className="flex flex-col gap-3 rounded-xl border border-border bg-muted/40 px-4 py-4 md:flex-row md:items-center md:justify-between">
+        <p className="text-sm font-semibold text-foreground">{selectedCount} ürün seçildi</p>
+        <div className="flex flex-wrap gap-2">
+          <Button
+            variant="secondary"
+            className="border-emerald-200 bg-card text-emerald-700 hover:bg-emerald-50"
+            onClick={() => onBulkSetStock(true)}
+            disabled={pending}
+          >
+            <PackageCheck className="size-4" />
+            Stoğu Aç
+          </Button>
+          <Button
+            variant="secondary"
+            className="border-slate-200 bg-card text-muted-foreground hover:bg-slate-100"
+            onClick={() => onBulkSetStock(false)}
+            disabled={pending}
+          >
+            <PackageX className="size-4" />
+            Stoğu Kapat
+          </Button>
+          <Button
+            variant="secondary"
+            className="border-red-200 bg-card text-red-700 hover:bg-red-100"
+            onClick={onRequestBulkDelete}
+            disabled={pending}
+          >
+            <Trash2 className="size-4" />
+            Seçilenleri Sil
+          </Button>
+        </div>
       </div>
     </div>
   );

@@ -4,6 +4,7 @@ import {
   PRODUCT_IMAGES_BUCKET,
 } from "@/lib/storage/product-images";
 import { getStorageObjectPathFromPublicUrl } from "@/lib/storage/storage-helpers";
+import { compactProductDisplayOrder } from "@/lib/products/reorder";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { ensureTenantAdminResponse } from "@/lib/tenancy/guards";
 import { productBulkDeleteSchema } from "@/lib/validators/product";
@@ -77,6 +78,8 @@ export async function POST(request: Request) {
   if (deleteError) {
     return NextResponse.json({ error: deleteError.message }, { status: 400 });
   }
+
+  await compactProductDisplayOrder(supabase, tenant.id);
 
   return NextResponse.json({ deletedIds: deletableIds });
 }

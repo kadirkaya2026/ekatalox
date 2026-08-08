@@ -219,6 +219,11 @@ export const productBulkCategoryUpdateSchema = z.object({
   category_id: z.string().uuid("Geçerli bir kategori seçin."),
 });
 
+export const productBulkStockUpdateSchema = z.object({
+  productIds: z.array(z.string().uuid()).min(1, "En az bir ürün seçin."),
+  is_in_stock: z.boolean(),
+});
+
 export const productVariantBulkUpdateSchema = z.object({
   productId: z.string().uuid("Geçerli bir ürün seçin."),
   variants: z.array(

@@ -12,6 +12,7 @@ import {
 import { getStorageObjectPathFromPublicUrl } from "@/lib/storage/storage-helpers";
 import { getSessionContext } from "@/lib/auth/session";
 import { hasPlanFeature } from "@/lib/billing/plans";
+import { compactProductDisplayOrder } from "@/lib/products/reorder";
 import { ensureTenantAdminResponse } from "@/lib/tenancy/guards";
 import { productCreateSchema } from "@/lib/validators/product";
 
@@ -277,6 +278,8 @@ export async function DELETE(
   if (deleteError) {
     return NextResponse.json({ error: deleteError.message }, { status: 400 });
   }
+
+  await compactProductDisplayOrder(supabase, tenant.id);
 
   return NextResponse.json({ deletedId: id });
 }

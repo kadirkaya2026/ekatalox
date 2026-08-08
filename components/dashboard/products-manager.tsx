@@ -424,6 +424,37 @@ export function ProductsManager({
     });
   }
 
+  function handleBulkSetStock(is_in_stock: boolean) {
+    if (!selectedProductIds.length) {
+      return;
+    }
+
+    setMessage(null);
+    startTransition(async () => {
+      const response = await fetch("/api/tenant/products/bulk-toggle-stock", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ productIds: selectedProductIds, is_in_stock }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        setMessage(result.error ?? "Stok güncellenemedi.");
+        return;
+      }
+
+      const updatedMap = new Map<string, Product>(
+        (result.updatedProducts as Product[]).map((p) => [p.id, p]),
+      );
+      syncProducts(products.map((item) => updatedMap.get(item.id) ?? item));
+      setSelectedProductIds([]);
+      setMessage(
+        `${result.updatedProducts.length} ürünün stoğu ${is_in_stock ? "açıldı" : "kapatıldı"}.`,
+      );
+    });
+  }
+
   function handleBulkCategoryUpdate() {
     if (!selectedProductIds.length || !bulkCategoryId) {
       return;
@@ -522,6 +553,7 @@ export function ProductsManager({
               bulkCategoryId={bulkCategoryId}
               onBulkCategoryChange={setBulkCategoryId}
               onApplyBulkCategory={handleBulkCategoryUpdate}
+              onBulkSetStock={handleBulkSetStock}
               onRequestBulkDelete={() => setBulkDeleteOpen(true)}
               pending={pending}
             />
