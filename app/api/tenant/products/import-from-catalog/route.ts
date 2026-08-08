@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { revalidateStorefrontCache } from "@/lib/storefront/cache";
+import { ensureDefaultPriceListsForTenant, upsertProductPrices } from "@/lib/price-lists/data";
+import { getPricedLists } from "@/lib/price-lists/records";
 import { compactProductDisplayOrder } from "@/lib/products/reorder";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { getSessionContext } from "@/lib/auth/session";
@@ -47,7 +49,7 @@ export async function POST(request: Request) {
 
   const { data: catalogRows, error: catalogError } = await supabase
     .from("market_catalog_products")
-    .select("sku_code, product_name, category_name, image_url")
+    .select("sku_code, product_name, category_name, image_url, reference_price")
     .in("sku_code", skuCodes);
 
   if (catalogError) {
@@ -60,7 +62,11 @@ export async function POST(request: Request) {
       product_name: string;
       category_name: string;
       image_url: string;
+      reference_price: number | null;
     }> | null) ?? [];
+  const referencePriceBySku = new Map(
+    catalog.map((row) => [row.sku_code, row.reference_price]),
+  );
 
   if (!catalog.length) {
     return NextResponse.json(
@@ -154,13 +160,36 @@ export async function POST(request: Request) {
   const { error: upsertError, data: upserted } = await supabase
     .from("products")
     .upsert(payload, { onConflict: "tenant_id,sku_code", ignoreDuplicates: true })
-    .select("id");
+    .select("id, sku_code");
 
   if (upsertError) {
     return NextResponse.json({ error: upsertError.message }, { status: 400 });
   }
 
+  const insertedProducts =
+    (upserted as Array<{ id: string; sku_code: string }> | null) ?? [];
+
+  // Master katalogdaki referans fiyat varsa, tenant'ın fiyat listelerine
+  // başlangıç önerisi olarak yazılır — admin dilerse Düzenle'den değiştirir.
+  const pricedLists = getPricedLists(await ensureDefaultPriceListsForTenant(supabase, tenant.id));
+
+  if (pricedLists.length) {
+    for (const product of insertedProducts) {
+      const referencePrice = referencePriceBySku.get(product.sku_code);
+
+      if (typeof referencePrice !== "number") {
+        continue;
+      }
+
+      await upsertProductPrices(
+        supabase,
+        product.id,
+        pricedLists.map((list) => ({ price_list_id: list.id, price: referencePrice })),
+      );
+    }
+  }
+
   revalidateStorefrontCache({ tenantId: tenant.id, subdomain: tenant.subdomain });
 
-  return NextResponse.json({ importedCount: upserted?.length ?? 0 });
+  return NextResponse.json({ importedCount: insertedProducts.length });
 }

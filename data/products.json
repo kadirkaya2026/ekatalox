@@ -1,0 +1,758 @@
+[
+  {
+    "source": "migros_export",
+    "sku_code": "10019073",
+    "product_name": "Altınkılıç Tam Yağlı Olgunlaştırılmış İnek Peyniri 500 G",
+    "brand": "Altınkılıç",
+    "category_name": "Süt & Kahvaltılık",
+    "image_url": "https://images.migrosone.com/sanalmarket/product/10019073/10019073_1-da598d.jpg",
+    "reference_price": 398.9
+  },
+  {
+    "source": "migros_export",
+    "sku_code": "11011520",
+    "product_name": "Migros %3 Yağlı Uht Süt 1 L",
+    "brand": "Migros",
+    "category_name": "Süt & Kahvaltılık",
+    "image_url": "https://images.migrosone.com/sanalmarket/product/11011520/11011520-0da5c0.jpg",
+    "reference_price": 49.95
+  },
+  {
+    "source": "migros_export",
+    "sku_code": "20000040",
+    "product_name": "Keskinoglu 15'li L Büyük Boy Yumurta (63-72 G)",
+    "brand": "Keskinoğlu",
+    "category_name": "Süt & Kahvaltılık",
+    "image_url": "https://images.migrosone.com/sanalmarket/product/20000040/20000040_1-b5e0aa.jpg",
+    "reference_price": 84.95
+  },
+  {
+    "source": "migros_export",
+    "sku_code": "20000243",
+    "product_name": "Güres M - Orta Boy Yumurta 30'lu ( 53 - 63 G)",
+    "brand": "Güres",
+    "category_name": "Süt & Kahvaltılık",
+    "image_url": "https://images.migrosone.com/sanalmarket/product/20000243/20000243_1-84f770.jpg",
+    "reference_price": 149.95
+  },
+  {
+    "source": "migros_export",
+    "sku_code": "10100129",
+    "product_name": "Bahçıvan Kaşar Peyniri Taze 700 G",
+    "brand": "Bahçıvan",
+    "category_name": "Süt & Kahvaltılık",
+    "image_url": "https://images.migrosone.com/sanalmarket/product/10100129/10100129_1-a9d07e.jpg",
+    "reference_price": 575.95
+  },
+  {
+    "source": "migros_export",
+    "sku_code": "12501957",
+    "product_name": "Migros Tam Yağlı Homojenize Yoğurt 3000 G",
+    "brand": "Migros",
+    "category_name": "Süt & Kahvaltılık",
+    "image_url": "https://images.migrosone.com/sanalmarket/product/12501957/12501957-e57f90.jpg",
+    "reference_price": 191.95
+  },
+  {
+    "source": "migros_export",
+    "sku_code": "11010066",
+    "product_name": "İçim Rahat Laktozsuz Süt 1 L",
+    "brand": "İçim",
+    "category_name": "Süt & Kahvaltılık",
+    "image_url": "https://images.migrosone.com/sanalmarket/product/11010066/11010066-90d964.jpg",
+    "reference_price": 79.5
+  },
+  {
+    "source": "migros_export",
+    "sku_code": "12500380",
+    "product_name": "Sütaş Kaymaksız Yoğurt 1000 G",
+    "brand": "Sütaş",
+    "category_name": "Süt & Kahvaltılık",
+    "image_url": "https://images.migrosone.com/sanalmarket/product/12500380/12500380-e81483.jpg",
+    "reference_price": 89.95
+  },
+  {
+    "source": "migros_export",
+    "sku_code": "12017028",
+    "product_name": "Migros Tereyağı 1 Kg",
+    "brand": "Migros",
+    "category_name": "Süt & Kahvaltılık",
+    "image_url": "https://images.migrosone.com/sanalmarket/product/12017028/12017028_1-824cb2.jpg",
+    "reference_price": 479
+  },
+  {
+    "source": "migros_export",
+    "sku_code": "12500986",
+    "product_name": "Sütaş Tava Yoğurt 1000 G",
+    "brand": "Sütaş",
+    "category_name": "Süt & Kahvaltılık",
+    "image_url": "https://images.migrosone.com/sanalmarket/product/12500986/12500986-39f50e.jpg",
+    "reference_price": 129.95
+  },
+  {
+    "source": "migros_export",
+    "sku_code": "11011501",
+    "product_name": "Migros Yarım Yağlı Uht Süt 1 L",
+    "brand": "Migros",
+    "category_name": "Süt & Kahvaltılık",
+    "image_url": "https://images.migrosone.com/sanalmarket/product/11011501/11011501-6e817e.jpg",
+    "reference_price": 40.75
+  },
+  {
+    "source": "migros_export",
+    "sku_code": "11011540",
+    "product_name": "Migros Yarım Yağlı Uht Süt 1 L",
+    "brand": "Migros",
+    "category_name": "Süt & Kahvaltılık",
+    "image_url": "https://images.migrosone.com/sanalmarket/product/11011540/11011540-7a5dc6.jpg",
+    "reference_price": 40.75
+  },
+  {
+    "source": "migros_export",
+    "sku_code": "10019052",
+    "product_name": "Pınar Süzme Peynir 500 G",
+    "brand": "Pınar",
+    "category_name": "Süt & Kahvaltılık",
+    "image_url": "https://images.migrosone.com/sanalmarket/product/10019052/10019052-0f7953.jpg",
+    "reference_price": 190.9
+  },
+  {
+    "source": "migros_export",
+    "sku_code": "20001943",
+    "product_name": "M Life Organik 10'lu M - Orta Boy Yumurta (53-62 G)",
+    "brand": "M Life",
+    "category_name": "Süt & Kahvaltılık",
+    "image_url": "https://images.migrosone.com/sanalmarket/product/20001943/20001943-9d9116.jpg",
+    "reference_price": 149.95
+  },
+  {
+    "source": "migros_export",
+    "sku_code": "12501956",
+    "product_name": "Migros Tam Yağlı Homojenize Yoğurt 1500 G",
+    "brand": "Migros",
+    "category_name": "Süt & Kahvaltılık",
+    "image_url": "https://images.migrosone.com/sanalmarket/product/12501956/12501956-df360a.jpg",
+    "reference_price": 97.5
+  },
+  {
+    "source": "migros_export",
+    "sku_code": "20001940",
+    "product_name": "Orvital Organik 10'lu M Orta Boy Yumurta (53-62 G)",
+    "brand": "Orvital",
+    "category_name": "Süt & Kahvaltılık",
+    "image_url": "https://images.migrosone.com/sanalmarket/product/20001940/orvital-organik-10-lu-m-orta-boy-yumurta-53-62-gr-51e514.jpg",
+    "reference_price": 149.95
+  },
+  {
+    "source": "migros_export",
+    "sku_code": "11010167",
+    "product_name": "Migros Yarım Yağlı Laktozsuz Uht Süt 1 L",
+    "brand": "Migros",
+    "category_name": "Süt & Kahvaltılık",
+    "image_url": "https://images.migrosone.com/sanalmarket/product/11010167/11010167-f9b511.jpg",
+    "reference_price": 59.5
+  },
+  {
+    "source": "migros_export",
+    "sku_code": "10108647",
+    "product_name": "İçim Taze Kaşar Peyniri 700 G",
+    "brand": "İçim",
+    "category_name": "Süt & Kahvaltılık",
+    "image_url": "https://images.migrosone.com/sanalmarket/product/10108647/10108647_1-f1b223.jpg",
+    "reference_price": 425.9
+  },
+  {
+    "source": "migros_export",
+    "sku_code": "46054277",
+    "product_name": "Naturaköy Gezen 15'li Yumurta M Orta Boy (53-62) G",
+    "brand": "Naturaköy",
+    "category_name": "Süt & Kahvaltılık",
+    "image_url": "https://images.migrosone.com/sanalmarket/product/46054277/46054277-c36b51.jpg",
+    "reference_price": 169.95
+  },
+  {
+    "source": "migros_export",
+    "sku_code": "10302093",
+    "product_name": "Pınar Beyaz 180 G",
+    "brand": "Pınar",
+    "category_name": "Süt & Kahvaltılık",
+    "image_url": "https://images.migrosone.com/sanalmarket/product/10302093/10302093-56888b.jpg",
+    "reference_price": 113.9
+  },
+  {
+    "source": "migros_export",
+    "sku_code": "12500199",
+    "product_name": "Activia İyi Hisset Probiyotik Bowl Yaban Mersini 150 G",
+    "brand": "Activia",
+    "category_name": "Süt & Kahvaltılık",
+    "image_url": "https://images.migrosone.com/sanalmarket/product/12500199/12500199_1-01b4a4.jpg",
+    "reference_price": 64
+  },
+  {
+    "source": "migros_export",
+    "sku_code": "07080167",
+    "product_name": "Migros Tahin 600 G",
+    "brand": "Migros",
+    "category_name": "Süt & Kahvaltılık",
+    "image_url": "https://images.migrosone.com/sanalmarket/product/07080167/07080167-3f4876.jpg",
+    "reference_price": 100
+  },
+  {
+    "source": "migros_export",
+    "sku_code": "46051868",
+    "product_name": "Eker Yarım Yağlı Kaymaksız Yoğurt 1500 G",
+    "brand": "Eker",
+    "category_name": "Süt & Kahvaltılık",
+    "image_url": "https://images.migrosone.com/sanalmarket/product/46051868/46051868_1-ce512b.png",
+    "reference_price": 129.95
+  },
+  {
+    "source": "migros_export",
+    "sku_code": "20000077",
+    "product_name": "M Life Kafessiz M Boy Tavuk Yumurtası 10'lu 53-62 G",
+    "brand": "M Life",
+    "category_name": "Süt & Kahvaltılık",
+    "image_url": "https://images.migrosone.com/sanalmarket/product/20000077/20000077_1-4453f4.jpg",
+    "reference_price": 84.95
+  },
+  {
+    "source": "migros_export",
+    "sku_code": "12501082",
+    "product_name": "Sütaş Kaymak Gibi Kaymaksız Yoğurt 1250 G",
+    "brand": "Sütaş",
+    "category_name": "Süt & Kahvaltılık",
+    "image_url": "https://images.migrosone.com/sanalmarket/product/12501082/12501082-801c76.jpg",
+    "reference_price": 127.5
+  },
+  {
+    "source": "migros_export",
+    "sku_code": "10019130",
+    "product_name": "Taciroğlu 3 Dilimli Keçi - Koyun - İnek Peyniri 450 G",
+    "brand": "Taciroğlu",
+    "category_name": "Süt & Kahvaltılık",
+    "image_url": "https://images.migrosone.com/sanalmarket/product/10019130/10019130_1-a8e096.jpg",
+    "reference_price": 554.9
+  },
+  {
+    "source": "migros_export",
+    "sku_code": "12500197",
+    "product_name": "Activia İyi Hisset Probiyotik Bowl Ahududu Yulaf Ceviz 150g",
+    "brand": "Activia",
+    "category_name": "Süt & Kahvaltılık",
+    "image_url": "https://images.migrosone.com/sanalmarket/product/12500197/12500197_1-21049e.jpg",
+    "reference_price": 64
+  },
+  {
+    "source": "migros_export",
+    "sku_code": "10302082",
+    "product_name": "Pınar Labne 3x180 G",
+    "brand": "Pınar",
+    "category_name": "Süt & Kahvaltılık",
+    "image_url": "https://images.migrosone.com/sanalmarket/product/10302082/10302082-5decd8.jpg",
+    "reference_price": 259.9
+  },
+  {
+    "source": "migros_export",
+    "sku_code": "10302098",
+    "product_name": "Pınar Labne 180 G",
+    "brand": "Pınar",
+    "category_name": "Süt & Kahvaltılık",
+    "image_url": "https://images.migrosone.com/sanalmarket/product/10302098/10302098-c06992.jpg",
+    "reference_price": 94.95
+  },
+  {
+    "source": "migros_export",
+    "sku_code": "12509688",
+    "product_name": "Pınar Yoğurt 2 Kg",
+    "brand": "Pınar",
+    "category_name": "Süt & Kahvaltılık",
+    "image_url": "https://images.migrosone.com/sanalmarket/product/12509688/12509688-7df2c9.jpg",
+    "reference_price": 215
+  },
+  {
+    "source": "migros_crawl",
+    "sku_code": "27202000",
+    "product_name": "Kavun Kırkağaç Kg",
+    "brand": "Reyondan",
+    "category_name": "Meyve",
+    "image_url": "https://images.migrosone.com/sanalmarket/product/27202000/27202000_1-8df405.jpg",
+    "reference_price": 24.95
+  },
+  {
+    "source": "migros_crawl",
+    "sku_code": "01010084",
+    "product_name": "Yayla Yerli Pirinç Osmancık Bölgesi Mahsulü 2 Kg",
+    "brand": "Yayla",
+    "category_name": "Pirinç",
+    "image_url": "https://images.migrosone.com/sanalmarket/product/01010084/01010084_1-270e94.jpg",
+    "reference_price": 244.95
+  },
+  {
+    "source": "migros_crawl",
+    "sku_code": "01010085",
+    "product_name": "Yayla Basmati Pirinç 1 Kg",
+    "brand": "Yayla",
+    "category_name": "Pirinç",
+    "image_url": "https://images.migrosone.com/sanalmarket/product/01010085/01010085_1-634e4e.jpg",
+    "reference_price": 99.95
+  },
+  {
+    "source": "migros_crawl",
+    "sku_code": "01010101",
+    "product_name": "Reis Gönen Baldo 2,5 Kg",
+    "brand": "Reis",
+    "category_name": "Pirinç",
+    "image_url": "https://images.migrosone.com/sanalmarket/product/01010101/1010101-7bac22.jpg",
+    "reference_price": 326.21
+  },
+  {
+    "source": "migros_crawl",
+    "sku_code": "1010086",
+    "product_name": "Yayla Aşurelik Buğday 1 Kg",
+    "brand": "Yayla",
+    "category_name": "Bakliyat",
+    "image_url": "https://images.migrosone.com/sanalmarket/product/1010086/1010086-2958da.jpg",
+    "reference_price": 63.95
+  },
+  {
+    "source": "migros_crawl",
+    "sku_code": "01010091",
+    "product_name": "Yayla Osmancık Bölgesi Mahsulü Yerli Pirinç 1 Kg",
+    "brand": "Yayla",
+    "category_name": "Pirinç",
+    "image_url": "https://images.migrosone.com/sanalmarket/product/01010091/1010091-c43a1d.jpg",
+    "reference_price": 121.95
+  },
+  {
+    "source": "migros_crawl",
+    "sku_code": "1010110",
+    "product_name": "M Life Chia Tohumu 500 G",
+    "brand": "M Life",
+    "category_name": "Süper Gıdalar",
+    "image_url": "https://images.migrosone.com/sanalmarket/product/1010110/1010110-d9c471.jpg",
+    "reference_price": 152.95
+  },
+  {
+    "source": "migros_crawl",
+    "sku_code": "01010102",
+    "product_name": "Reis Osmancık Pirinç 2,5 Kg",
+    "brand": "Reis",
+    "category_name": "Pirinç",
+    "image_url": "https://images.migrosone.com/sanalmarket/product/01010102/1010102-c4afa0.jpg",
+    "reference_price": 401.95
+  },
+  {
+    "source": "migros_crawl",
+    "sku_code": "01010109",
+    "product_name": "M Life Beyaz Kinoa 500 G",
+    "brand": "M Life",
+    "category_name": "Süper Gıdalar",
+    "image_url": "https://images.migrosone.com/sanalmarket/product/01010109/01010109-b7c73f.jpg",
+    "reference_price": 124.95
+  },
+  {
+    "source": "migros_crawl",
+    "sku_code": "01010144",
+    "product_name": "Tilda Yasemin Pirinci 1 Kg",
+    "brand": "Tilda",
+    "category_name": "Pirinç",
+    "image_url": "https://images.migrosone.com/sanalmarket/product/01010144/01010144-13e614.jpg",
+    "reference_price": 282.5
+  },
+  {
+    "source": "migros_crawl",
+    "sku_code": "01010143",
+    "product_name": "M Life Bio Organik Pirinç 1 Kg",
+    "brand": "M Life",
+    "category_name": "Pirinç",
+    "image_url": "https://images.migrosone.com/sanalmarket/product/01010143/01010143-5de0f0.jpg",
+    "reference_price": 188.95
+  },
+  {
+    "source": "migros_crawl",
+    "sku_code": "01010142",
+    "product_name": "Yayla Uzun Tane Pirinç 2 Kg",
+    "brand": "Yayla",
+    "category_name": "Pirinç",
+    "image_url": "https://images.migrosone.com/sanalmarket/product/01010142/01010142-61cda7.jpg",
+    "reference_price": 186.95
+  },
+  {
+    "source": "migros_crawl",
+    "sku_code": "01010155",
+    "product_name": "Yayla Tane Tane Pirinç 1 Kg",
+    "brand": "Yayla",
+    "category_name": "Pirinç",
+    "image_url": "https://images.migrosone.com/sanalmarket/product/01010155/1010155-418e90.jpg",
+    "reference_price": 129.95
+  },
+  {
+    "source": "migros_crawl",
+    "sku_code": "01010145",
+    "product_name": "Doyum Organik Pirinç 1 Kg",
+    "brand": "Doyum",
+    "category_name": "Pirinç",
+    "image_url": "https://images.migrosone.com/sanalmarket/product/01010145/01010145-4d4d1b.jpg",
+    "reference_price": 244.95
+  },
+  {
+    "source": "migros_crawl",
+    "sku_code": "01010154",
+    "product_name": "Yayla Tane Tane Pirinç 2 Kg",
+    "brand": "Yayla",
+    "category_name": "Pirinç",
+    "image_url": "https://images.migrosone.com/sanalmarket/product/01010154/1010154-cf2831.jpg",
+    "reference_price": 249.95
+  },
+  {
+    "source": "migros_crawl",
+    "sku_code": "01010178",
+    "product_name": "Tat Osmancık Pirinç 1 Kg",
+    "brand": "Tat",
+    "category_name": "Pirinç",
+    "image_url": "https://images.migrosone.com/sanalmarket/product/01010178/1010178_1-cf0a97.jpg",
+    "reference_price": 124.95
+  },
+  {
+    "source": "migros_crawl",
+    "sku_code": "01010176",
+    "product_name": "Tat Baldo Pirinç 1 Kg",
+    "brand": "Tat",
+    "category_name": "Pirinç",
+    "image_url": "https://images.migrosone.com/sanalmarket/product/01010176/1010176_1-d3e68c.jpg",
+    "reference_price": 164.95
+  },
+  {
+    "source": "migros_crawl",
+    "sku_code": "01010179",
+    "product_name": "Tat Osmancık Pirinç 2 Kg",
+    "brand": "Tat",
+    "category_name": "Pirinç",
+    "image_url": "https://images.migrosone.com/sanalmarket/product/01010179/1010179_1-e1eb35.jpg",
+    "reference_price": 239.95
+  },
+  {
+    "source": "migros_crawl",
+    "sku_code": "01010208",
+    "product_name": "M Life Basmati Pirinç 500 G",
+    "brand": "M Life",
+    "category_name": "Pirinç",
+    "image_url": "https://images.migrosone.com/sanalmarket/product/01010208/1010208_1-9d40f3.jpg",
+    "reference_price": 74.95
+  },
+  {
+    "source": "migros_crawl",
+    "sku_code": "01010210",
+    "product_name": "Tat Basmati Pirinç 1 Kg",
+    "brand": "Tat",
+    "category_name": "Pirinç",
+    "image_url": "https://images.migrosone.com/sanalmarket/product/01010210/1010210_1-1ab019.jpg",
+    "reference_price": 169.95
+  },
+  {
+    "source": "migros_crawl",
+    "sku_code": "01010211",
+    "product_name": "Tat Yasemin Pirinç 1 Kg",
+    "brand": "Tat",
+    "category_name": "Pirinç",
+    "image_url": "https://images.migrosone.com/sanalmarket/product/01010211/1010211_1-562aeb.jpg",
+    "reference_price": 134.95
+  },
+  {
+    "source": "migros_crawl",
+    "sku_code": "01010232",
+    "product_name": "Reis Jasmin Pirinç 1 Kg",
+    "brand": "Reis",
+    "category_name": "Pirinç",
+    "image_url": "https://images.migrosone.com/sanalmarket/product/01010232/01010232-2bb21f.jpg",
+    "reference_price": 259.95
+  },
+  {
+    "source": "migros_crawl",
+    "sku_code": "01010233",
+    "product_name": "Reis Basmati Pirinç 1 Kg",
+    "brand": "Reis",
+    "category_name": "Pirinç",
+    "image_url": "https://images.migrosone.com/sanalmarket/product/01010233/01010233-e98506.jpg",
+    "reference_price": 279.95
+  },
+  {
+    "source": "migros_crawl",
+    "sku_code": "01010234",
+    "product_name": "Reis Osmancık Pirinç 1 Kg",
+    "brand": "Reis",
+    "category_name": "Pirinç",
+    "image_url": "https://images.migrosone.com/sanalmarket/product/01010234/01010234-e77e94.jpg",
+    "reference_price": 179.95
+  },
+  {
+    "source": "migros_crawl",
+    "sku_code": "01010241",
+    "product_name": "Migros Osmancık Pirinç 2.5 Kg",
+    "brand": "Migros",
+    "category_name": "Pirinç",
+    "image_url": "https://images.migrosone.com/sanalmarket/product/01010241/01010241_1-7399c2.jpg",
+    "reference_price": 159
+  },
+  {
+    "source": "migros_crawl",
+    "sku_code": "01010235",
+    "product_name": "Reis Gönen Baldo Pirinç 1 Kg",
+    "brand": "Reis",
+    "category_name": "Pirinç",
+    "image_url": "https://images.migrosone.com/sanalmarket/product/01010235/01010235-31a74a.jpg",
+    "reference_price": 153.71
+  },
+  {
+    "source": "migros_crawl",
+    "sku_code": "01010248",
+    "product_name": "Migros Baldo Pirinç 2,5 Kg",
+    "brand": "Migros",
+    "category_name": "Pirinç",
+    "image_url": "https://images.migrosone.com/sanalmarket/product/01010248/1010248_1-10a750.jpg",
+    "reference_price": 199.95
+  },
+  {
+    "source": "migros_crawl",
+    "sku_code": "01010250",
+    "product_name": "Tilda Basmati Pirinç Kahverengi 1 Kg",
+    "brand": "Tilda",
+    "category_name": "Pirinç",
+    "image_url": "https://images.migrosone.com/sanalmarket/product/01010250/01010250-6ee45f.jpg",
+    "reference_price": 305.9
+  },
+  {
+    "source": "migros_crawl",
+    "sku_code": "01010260",
+    "product_name": "Migros Kırık Pirinç 1 Kg",
+    "brand": "Migros",
+    "category_name": "Pirinç",
+    "image_url": "https://images.migrosone.com/sanalmarket/product/01010260/01010260_1-daaf8e.jpg",
+    "reference_price": 16.95
+  },
+  {
+    "source": "migros_crawl",
+    "sku_code": "01010259",
+    "product_name": "Migros Baldo Pirinç 1 Kg",
+    "brand": "Migros",
+    "category_name": "Pirinç",
+    "image_url": "https://images.migrosone.com/sanalmarket/product/01010259/1010259_1-0e0f87.jpg",
+    "reference_price": 84.5
+  },
+  {
+    "source": "migros_crawl",
+    "sku_code": "01010269",
+    "product_name": "Hasata Basmati Pirinç 1 Kg",
+    "brand": "Hasata",
+    "category_name": "Pirinç",
+    "image_url": "https://images.migrosone.com/sanalmarket/product/01010269/01010269-c768c2.jpg",
+    "reference_price": 199.95
+  },
+  {
+    "source": "migros_crawl",
+    "sku_code": "01010333",
+    "product_name": "Anadolu Lezzetleri Gönen Baldo Pirinç 1 Kg",
+    "brand": "Anadolu Lezzetleri",
+    "category_name": "Pirinç",
+    "image_url": "https://images.migrosone.com/sanalmarket/product/01010333/1010333_1-f95ba3.jpg",
+    "reference_price": 109.95
+  },
+  {
+    "source": "migros_crawl",
+    "sku_code": "01010271",
+    "product_name": "Migros Osmancık Pirinç 1 Kg",
+    "brand": "Migros",
+    "category_name": "Pirinç",
+    "image_url": "https://images.migrosone.com/sanalmarket/product/01010271/01010271_1-734bc0.jpg",
+    "reference_price": 80.95
+  },
+  {
+    "source": "migros_crawl",
+    "sku_code": "01010334",
+    "product_name": "Anadolu Lezzetleri İpsala Baldo Pirinç 1 Kg",
+    "brand": "Anadolu Lezzetleri",
+    "category_name": "Pirinç",
+    "image_url": "https://images.migrosone.com/sanalmarket/product/01010334/01010334_1-a0685e.jpg",
+    "reference_price": 129.95
+  },
+  {
+    "source": "migros_crawl",
+    "sku_code": "01010609",
+    "product_name": "Reis Royal Kepekli Pirinç 500 G",
+    "brand": "Reis",
+    "category_name": "Pirinç",
+    "image_url": "https://images.migrosone.com/sanalmarket/product/01010609/01010609-86585d.jpg",
+    "reference_price": 159.95
+  },
+  {
+    "source": "migros_crawl",
+    "sku_code": "01011131",
+    "product_name": "Yayla Gurme Sushi Pirinci 500 G",
+    "brand": "Yayla",
+    "category_name": "Pirinç",
+    "image_url": "https://images.migrosone.com/sanalmarket/product/01011131/1011131-21d64f.jpg",
+    "reference_price": 60.17
+  },
+  {
+    "source": "migros_crawl",
+    "sku_code": "01011182",
+    "product_name": "Migros Osmancık Pirinç 2,5 Kg",
+    "brand": "Migros",
+    "category_name": "Pirinç",
+    "image_url": "https://images.migrosone.com/sanalmarket/product/01011182/01011182_1-7399c2.jpg",
+    "reference_price": 159
+  },
+  {
+    "source": "migros_crawl",
+    "sku_code": "01011610",
+    "product_name": "Yayla Kırık Pirinç 1 Kg",
+    "brand": "Yayla",
+    "category_name": "Pirinç",
+    "image_url": "https://images.migrosone.com/sanalmarket/product/01011610/1011610-48e087.jpg",
+    "reference_price": 49.95
+  },
+  {
+    "source": "migros_crawl",
+    "sku_code": "01011180",
+    "product_name": "Migros Osmancık Pirinç 1000 G",
+    "brand": "Migros",
+    "category_name": "Pirinç",
+    "image_url": "https://images.migrosone.com/sanalmarket/product/01011180/01011180_1-35051a.jpg",
+    "reference_price": 80.95
+  },
+  {
+    "source": "migros_crawl",
+    "sku_code": "01011907",
+    "product_name": "Hasata Osmancık Pirinç 1 Kg",
+    "brand": "Hasata",
+    "category_name": "Pirinç",
+    "image_url": "https://images.migrosone.com/sanalmarket/product/01011907/1011907-d68cf7.jpg",
+    "reference_price": 149.95
+  },
+  {
+    "source": "migros_crawl",
+    "sku_code": "01011611",
+    "product_name": "Yayla Gurme Jasmine Pirinç 500 G",
+    "brand": "Yayla",
+    "category_name": "Pirinç",
+    "image_url": "https://images.migrosone.com/sanalmarket/product/01011611/1011611-cf7d7e.jpg",
+    "reference_price": 48.97
+  },
+  {
+    "source": "migros_crawl",
+    "sku_code": "01011612",
+    "product_name": "Yayla Gurme Basmati Pirinç 500 G",
+    "brand": "Yayla",
+    "category_name": "Pirinç",
+    "image_url": "https://images.migrosone.com/sanalmarket/product/01011612/1011612-117d60.jpg",
+    "reference_price": 64.37
+  },
+  {
+    "source": "migros_crawl",
+    "sku_code": "01011909",
+    "product_name": "Hasata Gönen Baldo Pirinç 2 Kg",
+    "brand": "Hasata",
+    "category_name": "Pirinç",
+    "image_url": "https://images.migrosone.com/sanalmarket/product/01011909/01011909_1-5a1219.jpg",
+    "reference_price": 331.95
+  },
+  {
+    "source": "migros_crawl",
+    "sku_code": "01011933",
+    "product_name": "Yayla Gurme Siyah Pirinç 500 G",
+    "brand": "Yayla",
+    "category_name": "Pirinç",
+    "image_url": "https://images.migrosone.com/sanalmarket/product/01011933/1011933-116ea4.jpg",
+    "reference_price": 69.97
+  },
+  {
+    "source": "migros_crawl",
+    "sku_code": "01011908",
+    "product_name": "Hasata Osmancık Pirinç 2 Kg",
+    "brand": "Hasata",
+    "category_name": "Pirinç",
+    "image_url": "https://images.migrosone.com/sanalmarket/product/01011908/01011908_1-6550c6.jpg",
+    "reference_price": 294.95
+  },
+  {
+    "source": "migros_crawl",
+    "sku_code": "01011969",
+    "product_name": "Reis Royal Börülce 500 G",
+    "brand": "Reis",
+    "category_name": "Bakliyat",
+    "image_url": "https://images.migrosone.com/sanalmarket/product/01011969/01011969-cb127f.jpg",
+    "reference_price": 169.95
+  },
+  {
+    "source": "migros_crawl",
+    "sku_code": "01011936",
+    "product_name": "Yayla Gurme Kepekli Pirinç 500 G",
+    "brand": "Yayla",
+    "category_name": "Pirinç",
+    "image_url": "https://images.migrosone.com/sanalmarket/product/01011936/1011936-4fb0d6.jpg",
+    "reference_price": 47.57
+  },
+  {
+    "source": "migros_crawl",
+    "sku_code": "01011934",
+    "product_name": "Yayla Gurme Risotto Pirinç 500 G",
+    "brand": "Yayla",
+    "category_name": "Pirinç",
+    "image_url": "https://images.migrosone.com/sanalmarket/product/01011934/1011934-8df8b2.jpg",
+    "reference_price": 90.97
+  },
+  {
+    "source": "migros_crawl",
+    "sku_code": "01011972",
+    "product_name": "Reis Arborio Risotto Vakumlu Pirinç 500 G",
+    "brand": "Reis",
+    "category_name": "Pirinç",
+    "image_url": "https://images.migrosone.com/sanalmarket/product/01011972/01011972-26a47f.jpg",
+    "reference_price": 282.95
+  },
+  {
+    "source": "migros_crawl",
+    "sku_code": "01011999",
+    "product_name": "Hasata Gönen Baldo Pirinç 1 Kg",
+    "brand": "Hasata",
+    "category_name": "Pirinç",
+    "image_url": "https://images.migrosone.com/sanalmarket/product/01011999/1011999-3b927b.jpg",
+    "reference_price": 169.95
+  },
+  {
+    "source": "migros_crawl",
+    "sku_code": "01011996",
+    "product_name": "Reis Royal Jasmine Pirinç (Premium) 500 G",
+    "brand": "Reis",
+    "category_name": "Pirinç",
+    "image_url": "https://images.migrosone.com/sanalmarket/product/01011996/01011996-14f5cc.jpg",
+    "reference_price": 209.95
+  },
+  {
+    "source": "migros_crawl",
+    "sku_code": "01012304",
+    "product_name": "Reis Royal Basmati Pirinç (Superior) 500 G",
+    "brand": "Reis",
+    "category_name": "Pirinç",
+    "image_url": "https://images.migrosone.com/sanalmarket/product/01012304/01012304-821d63.jpg",
+    "reference_price": 209.95
+  },
+  {
+    "source": "migros_crawl",
+    "sku_code": "01012311",
+    "product_name": "Reis Royal Siyah Pirinç 500 G",
+    "brand": "Reis",
+    "category_name": "Pirinç",
+    "image_url": "https://images.migrosone.com/sanalmarket/product/01012311/01012311-ba11a4.jpg",
+    "reference_price": 219.95
+  },
+  {
+    "source": "migros_crawl",
+    "sku_code": "01012030",
+    "product_name": "Yayla Baldo Pirinç Gönen Bölgesi Mahsulü 2 Kg",
+    "brand": "Yayla",
+    "category_name": "Pirinç",
+    "image_url": "https://images.migrosone.com/sanalmarket/product/01012030/01012030_1-4ecf48.jpg",
+    "reference_price": 319.95
+  }
+]

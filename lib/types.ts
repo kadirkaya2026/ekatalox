@@ -102,6 +102,7 @@ export interface MarketCatalogProduct {
   brand: string | null;
   category_name: string;
   image_url: string;
+  reference_price: number | null;
   created_at: string;
 }
 
@@ -171,6 +172,7 @@ export interface MarketCatalogProduct {
   brand: string | null;
   category_name: string;
   image_url: string;
+  reference_price: number | null;
   created_at: string;
 }
 

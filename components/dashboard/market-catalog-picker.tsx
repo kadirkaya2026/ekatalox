@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import type { MarketCatalogProduct } from "@/lib/types";
-import { cn } from "@/lib/utils";
+import { cn, formatCurrency } from "@/lib/utils";
 
 interface Usage {
   total: number;
@@ -156,6 +156,7 @@ export function MarketCatalogPicker({
                 <th className="px-4 py-3">Ürün</th>
                 <th className="px-4 py-3">Kategori</th>
                 <th className="px-4 py-3">Marka</th>
+                <th className="px-4 py-3">Referans Fiyat</th>
                 <th className="px-4 py-3">Durum</th>
               </tr>
             </thead>
@@ -191,6 +192,11 @@ export function MarketCatalogPicker({
                     </td>
                     <td className="px-4 py-3 text-slate-600">{item.category_name}</td>
                     <td className="px-4 py-3 text-slate-600">{item.brand ?? "-"}</td>
+                    <td className="px-4 py-3 text-slate-600">
+                      {typeof item.reference_price === "number"
+                        ? formatCurrency(item.reference_price)
+                        : "-"}
+                    </td>
                     <td className="px-4 py-3">
                       {isImported ? (
                         <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-500">
@@ -207,7 +213,7 @@ export function MarketCatalogPicker({
               })}
               {!filtered.length ? (
                 <tr>
-                  <td colSpan={5} className="px-4 py-10 text-center text-slate-400">
+                  <td colSpan={6} className="px-4 py-10 text-center text-slate-400">
                     Aramanızla eşleşen ürün bulunamadı.
                   </td>
                 </tr>
