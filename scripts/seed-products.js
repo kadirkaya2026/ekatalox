@@ -14,7 +14,8 @@
 //       "brand": "...",              // opsiyonel
 //       "category_name": "...",      // zorunlu
 //       "image_url": "https://...",  // zorunlu
-//       "reference_price": 24.95     // opsiyonel, TL cinsinden
+//       "reference_price": 24.95,    // opsiyonel, TL cinsinden
+//       "description": "..."         // opsiyonel
 //     }
 //   ]
 
@@ -78,6 +79,8 @@ function loadProducts() {
       typeof item.reference_price === "number" && Number.isFinite(item.reference_price)
         ? item.reference_price
         : null;
+    const description =
+      typeof item.description === "string" && item.description.trim() ? item.description.trim() : null;
 
     if (!skuCode || !productName || !categoryName || !imageUrl) {
       throw new Error(
@@ -93,6 +96,7 @@ function loadProducts() {
       category_name: categoryName,
       image_url: imageUrl,
       reference_price: referencePrice,
+      description,
     };
   });
 }

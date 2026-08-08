@@ -49,7 +49,7 @@ export async function POST(request: Request) {
 
   const { data: catalogRows, error: catalogError } = await supabase
     .from("market_catalog_products")
-    .select("sku_code, product_name, category_name, image_url, reference_price")
+    .select("sku_code, product_name, category_name, image_url, reference_price, description")
     .in("sku_code", skuCodes);
 
   if (catalogError) {
@@ -63,6 +63,7 @@ export async function POST(request: Request) {
       category_name: string;
       image_url: string;
       reference_price: number | null;
+      description: string | null;
     }> | null) ?? [];
   const referencePriceBySku = new Map(
     catalog.map((row) => [row.sku_code, row.reference_price]),
@@ -153,6 +154,7 @@ export async function POST(request: Request) {
     sku_code: row.sku_code,
     product_name: row.product_name,
     image_url: row.image_url,
+    description: row.description,
     is_in_stock: false,
     display_order: nextProductDisplayOrder++,
   }));

@@ -103,6 +103,7 @@ export interface MarketCatalogProduct {
   category_name: string;
   image_url: string;
   reference_price: number | null;
+  description: string | null;
   created_at: string;
 }
 
@@ -173,6 +174,7 @@ export interface MarketCatalogProduct {
   category_name: string;
   image_url: string;
   reference_price: number | null;
+  description: string | null;
   created_at: string;
 }
 
