@@ -185,7 +185,7 @@ function SortableCategoryRow(props: RowProps) {
 
       {/* Main row */}
       <div
-        className={`flex flex-col gap-3 rounded-xl border p-4 transition-colors md:flex-row md:items-center md:justify-between ${
+        className={`flex flex-col gap-3 rounded-xl border p-4 transition-colors md:flex-row md:flex-wrap md:items-center md:justify-between ${
           isReparentTarget
             ? "border-emerald-400 bg-emerald-50 ring-2 ring-emerald-300"
             : "border-slate-100 bg-slate-50"
