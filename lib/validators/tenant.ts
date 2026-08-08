@@ -37,6 +37,8 @@ const maxProductLimitSchema = z.union([
   z.literal(5000),
 ]);
 
+const businessTypeSchema = z.enum(["general", "market"]);
+
 export const tenantSchema = z
   .object({
     company_name: z.string().min(2, "Firma adı zorunludur."),
@@ -54,6 +56,7 @@ export const tenantSchema = z
     tenant_admin_email: z.email("Geçerli bir tenant admin e-postası girin."),
     tenant_admin_full_name: z.string().min(2, "Tenant admin adı zorunludur.").optional(),
     is_trial: z.boolean().optional(),
+    business_type: businessTypeSchema.optional(),
   })
   .transform((data) => ({
     ...data,
@@ -68,6 +71,7 @@ export const tenantUpdateSchema = z
   .object({
     status: z.enum(["active", "suspended"]).optional(),
     plan: tenantPlanSchema.optional(),
+    business_type: businessTypeSchema.optional(),
     max_product_limit: maxProductLimitSchema.optional(),
     visitor_limit_addon: z.number().int().min(0).optional(),
     product_limit_addon: z.number().int().min(0).optional(),

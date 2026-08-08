@@ -17,12 +17,14 @@ interface NewTenantForm {
   full_name: string;
   whatsapp_number: string;
   subdomain: string;
+  business_type: "general" | "market";
 }
 
 const defaultForm: NewTenantForm = {
   full_name: "",
   whatsapp_number: "",
   subdomain: "",
+  business_type: "general",
 };
 
 function getSubdomainMessage(value: string) {
@@ -98,6 +100,7 @@ export function AdminNewTenantForm() {
           tenant_admin_email: deriveEmail(form.subdomain),
           tenant_admin_full_name: form.full_name.trim(),
           is_trial: false,
+          business_type: form.business_type,
         }),
       });
 
@@ -152,6 +155,39 @@ export function AdminNewTenantForm() {
             />
             {subdomainMessage ? (
               <p className="mt-1.5 text-xs text-rose-600">{subdomainMessage}</p>
+            ) : null}
+          </div>
+
+          <div className="md:col-span-2">
+            <p className="mb-1.5 text-sm font-medium text-slate-700">İşletme türü</p>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setForm((current) => ({ ...current, business_type: "general" }))}
+                className={`rounded-xl border px-3 py-2 text-left text-sm transition ${
+                  form.business_type === "general"
+                    ? "border-emerald-500 bg-emerald-50 font-semibold text-emerald-800"
+                    : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+                }`}
+              >
+                Genel
+              </button>
+              <button
+                type="button"
+                onClick={() => setForm((current) => ({ ...current, business_type: "market" }))}
+                className={`rounded-xl border px-3 py-2 text-left text-sm transition ${
+                  form.business_type === "market"
+                    ? "border-emerald-500 bg-emerald-50 font-semibold text-emerald-800"
+                    : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+                }`}
+              >
+                Market
+              </button>
+            </div>
+            {form.business_type === "market" ? (
+              <p className="mt-1.5 text-xs text-slate-500">
+                Tenant detay sayfasından hazır market kataloğunu (stoğu kapalı) yükleyebileceksin.
+              </p>
             ) : null}
           </div>
 

@@ -97,6 +97,7 @@ export async function POST(request: Request) {
       visitor_quota_exceeded: false,
       product_limit_addon: 0,
       is_demo: false,
+      business_type: parsed.data.business_type ?? "general",
     };
     const profile: Profile = {
       id: crypto.randomUUID(),
@@ -124,6 +125,7 @@ export async function POST(request: Request) {
     max_product_limit: parsed.data.max_product_limit,
     whatsapp_number: parsed.data.whatsapp_number,
     status: "active",
+    business_type: parsed.data.business_type ?? "general",
     // Kolonu yalnızca deneme hesabında gönder: 0041 migration'ı henüz
     // uygulanmamış bir ortamda normal tenant oluşturma etkilenmesin.
     ...(parsed.data.is_trial ? { trial_ends_at: getTrialEndDate() } : {}),

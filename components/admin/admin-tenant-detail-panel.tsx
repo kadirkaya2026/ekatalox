@@ -60,6 +60,8 @@ export function AdminTenantDetailPanel({ tenant: initialTenant }: { tenant: Tena
     kind: "reset" | "create";
   } | null>(null);
   const [pending, startTransition] = useTransition();
+  const [marketCatalogMessage, setMarketCatalogMessage] = useState<string | null>(null);
+  const [marketCatalogPending, startMarketCatalogTransition] = useTransition();
 
   const hasPendingChanges = useMemo(
     () =>
@@ -195,6 +197,49 @@ export function AdminTenantDetailPanel({ tenant: initialTenant }: { tenant: Tena
 
       setTenant((current) => ({ ...current, status: result.tenant.status }));
       setMessage("Tenant durumu güncellendi.");
+    });
+  }
+
+  function toggleBusinessType(nextType: "general" | "market") {
+    setMessage(null);
+
+    startTransition(async () => {
+      const response = await fetch(`/api/admin/tenants/${tenant.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ business_type: nextType }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        setMessage(result.error ?? "İşletme türü güncellenemedi.");
+        return;
+      }
+
+      setTenant((current) => ({ ...current, business_type: result.tenant.business_type }));
+      setMessage(nextType === "market" ? "İşletme türü Market yapıldı." : "İşletme türü Genel yapıldı.");
+    });
+  }
+
+  function seedMarketCatalog() {
+    setMarketCatalogMessage(null);
+
+    startMarketCatalogTransition(async () => {
+      const response = await fetch(`/api/admin/tenants/${tenant.id}/seed-market-catalog`, {
+        method: "POST",
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        setMarketCatalogMessage(result.error ?? "Market kataloğu yüklenemedi.");
+        return;
+      }
+
+      setMarketCatalogMessage(
+        `${result.insertedCount} yeni ürün eklendi (kataloğun toplamı: ${result.totalCatalogSize}). Zaten eklenmiş olanlar tekrar eklenmedi.`,
+      );
     });
   }
 
@@ -439,6 +484,9 @@ export function AdminTenantDetailPanel({ tenant: initialTenant }: { tenant: Tena
                 {tenant.status === "active" ? "Aktif" : "Askıda"}
               </Badge>
               {trialBadge ? <Badge className={trialBadge.className}>{trialBadge.label}</Badge> : null}
+              {tenant.business_type === "market" ? (
+                <Badge className="bg-violet-50 text-violet-700">Market</Badge>
+              ) : null}
             </div>
             <p className="mt-2 text-sm text-slate-600">
               {tenant.subdomain}.ekatalox.com
@@ -476,6 +524,16 @@ export function AdminTenantDetailPanel({ tenant: initialTenant }: { tenant: Tena
             </Button>
             <Button
               variant="secondary"
+              onClick={() =>
+                toggleBusinessType(tenant.business_type === "market" ? "general" : "market")
+              }
+              disabled={pending}
+              className="border-violet-200 text-violet-700 hover:bg-violet-50 hover:text-violet-800"
+            >
+              {tenant.business_type === "market" ? "Genel işletme yap" : "Market yap"}
+            </Button>
+            <Button
+              variant="secondary"
               onClick={deleteTenant}
               disabled={pending}
               className="border-rose-200 text-rose-700 hover:bg-rose-50 hover:text-rose-800"
@@ -485,6 +543,32 @@ export function AdminTenantDetailPanel({ tenant: initialTenant }: { tenant: Tena
           </div>
         </div>
       </Card>
+
+      {tenant.business_type === "market" ? (
+        <Card className="p-5 border-violet-200 bg-violet-50/40">
+          <p className="text-sm font-semibold text-slate-900">Market Kataloğu</p>
+          <p className="mt-1 text-sm text-slate-600">
+            Türkiye&apos;de satılan market ürünlerinden oluşan hazır kataloğu (isim, barkod,
+            kategori, görsel) bu tenant&apos;ın ürünler sayfasına <strong>stoğu kapalı</strong>{" "}
+            olarak ekler. Tenant admin sadece istediği ürünlerde &quot;Stok Aç&quot; deyip fiyat
+            girerek satışa başlayabilir. Zaten eklenmiş ürünler tekrar eklenmez, yani bu butona
+            güvenle birden fazla kez basılabilir.
+          </p>
+          <div className="mt-4 flex flex-wrap items-center gap-3">
+            <Button
+              variant="secondary"
+              onClick={seedMarketCatalog}
+              disabled={marketCatalogPending}
+              className="border-violet-200 text-violet-700 hover:bg-violet-100"
+            >
+              {marketCatalogPending ? "Yükleniyor..." : "Market Kataloğunu Yükle"}
+            </Button>
+            {marketCatalogMessage ? (
+              <p className="text-sm text-emerald-700">{marketCatalogMessage}</p>
+            ) : null}
+          </div>
+        </Card>
+      ) : null}
 
       {tenant.has_tenant_admin ? (
         <Card className="p-5">

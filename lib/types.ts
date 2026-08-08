@@ -88,6 +88,20 @@ export interface Tenant {
   visitor_quota_exceeded: boolean;
   product_limit_addon: number;
   is_demo: boolean;
+  business_type: TenantBusinessType;
+  created_at: string;
+}
+
+export type TenantBusinessType = "general" | "market";
+
+export interface MarketCatalogProduct {
+  id: string;
+  source: string;
+  sku_code: string;
+  product_name: string;
+  brand: string | null;
+  category_name: string;
+  image_url: string;
   created_at: string;
 }
 
