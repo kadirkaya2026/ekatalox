@@ -27,6 +27,7 @@ import { EkataloxLogo } from "@/components/brand/ekatalox-logo";
 import { SidebarLogoutButton } from "@/components/dashboard/sidebar-logout-button";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { hasPlanFeature, type PlanFeature, type TenantPlan } from "@/lib/billing/plans";
+import type { TenantBusinessType } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 interface SubLink {
@@ -34,6 +35,7 @@ interface SubLink {
   label: string;
   icon: React.ComponentType<{ className?: string }>;
   requiredFeature?: PlanFeature;
+  requiredBusinessType?: TenantBusinessType;
   group?: string;
 }
 
@@ -54,6 +56,12 @@ const tenantLinks: SidebarLink[] = [
     children: [
       { href: "/products/add", label: "Ürün Ekle", icon: PlusCircle },
       { href: "/products/bulk", label: "Toplu Ürün Ekleme", icon: UploadCloud },
+      {
+        href: "/products/market-catalog",
+        label: "Master Katalog",
+        icon: Store,
+        requiredBusinessType: "market",
+      },
       {
         href: "/products/showcase",
         label: "Öne Çıkan Bölümler",
@@ -130,7 +138,11 @@ const adminLinks: SidebarLink[] = [
   { href: "/logs", label: "Giriş Logları", icon: ScrollText },
 ];
 
-function filterLinksForPlan(links: SidebarLink[], plan: TenantPlan): SidebarLink[] {
+function filterLinksForTenant(
+  links: SidebarLink[],
+  plan: TenantPlan,
+  businessType: TenantBusinessType,
+): SidebarLink[] {
   return links
     .filter((link) => !link.requiredFeature || hasPlanFeature(plan, link.requiredFeature))
     .map((link) => {
@@ -139,7 +151,9 @@ function filterLinksForPlan(links: SidebarLink[], plan: TenantPlan): SidebarLink
       }
 
       const children = link.children.filter(
-        (child) => !child.requiredFeature || hasPlanFeature(plan, child.requiredFeature),
+        (child) =>
+          (!child.requiredFeature || hasPlanFeature(plan, child.requiredFeature)) &&
+          (!child.requiredBusinessType || child.requiredBusinessType === businessType),
       );
 
       return { ...link, children };
@@ -151,15 +165,17 @@ export function Sidebar({
   title,
   subtitle,
   plan = "baslangic",
+  businessType = "general",
 }: {
   mode: "admin" | "tenant";
   title: string;
   subtitle: string;
   plan?: TenantPlan;
+  businessType?: TenantBusinessType;
 }) {
   const pathname = usePathname();
   const links =
-    mode === "admin" ? adminLinks : filterLinksForPlan(tenantLinks, plan);
+    mode === "admin" ? adminLinks : filterLinksForTenant(tenantLinks, plan, businessType);
 
   function isActive(href: string) {
     if (href === "/") {

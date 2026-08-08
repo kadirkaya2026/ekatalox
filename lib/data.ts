@@ -28,6 +28,7 @@ import type {
   AdminLoginLogEntry,
   Category,
   DashboardSummary,
+  MarketCatalogProduct,
   PriceList,
   Product,
   Profile,
@@ -539,6 +540,22 @@ export async function getTenantCategories(tenantId: string): Promise<Category[]>
     banner_item: category.banner_item ?? null,
     tile_image_url: category.tile_image_url ?? null,
   }));
+}
+
+export async function getMarketCatalogProducts(): Promise<MarketCatalogProduct[]> {
+  const supabase = createSupabaseAdminClient();
+
+  if (!supabase) {
+    return [];
+  }
+
+  const { data } = await supabase
+    .from("market_catalog_products")
+    .select("*")
+    .order("category_name", { ascending: true })
+    .order("product_name", { ascending: true });
+
+  return (data as MarketCatalogProduct[] | null) ?? [];
 }
 
 export async function getTenantStorefrontSettings(

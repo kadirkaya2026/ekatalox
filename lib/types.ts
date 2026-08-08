@@ -163,6 +163,17 @@ export interface Category {
   created_at: string;
 }
 
+export interface MarketCatalogProduct {
+  id: string;
+  source: string;
+  sku_code: string;
+  product_name: string;
+  brand: string | null;
+  category_name: string;
+  image_url: string;
+  created_at: string;
+}
+
 export interface BannerItem {
   id: string;
   title: string | null;

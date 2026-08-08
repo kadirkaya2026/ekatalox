@@ -35,6 +35,7 @@ export default async function DashboardLayout({
         title={tenant?.company_name ?? "Tenant Paneli"}
         subtitle={tenant?.subdomain ?? "yönetim"}
         plan={plan}
+        businessType={tenant?.business_type}
       />
       <div className="hidden md:block md:h-screen">
         <Sidebar
@@ -42,6 +43,7 @@ export default async function DashboardLayout({
           title={tenant?.company_name ?? "Tenant Paneli"}
           subtitle={tenant?.subdomain ?? "yönetim"}
           plan={plan}
+          businessType={tenant?.business_type}
         />
       </div>
       <main className="container-shell py-6 md:h-screen md:overflow-y-auto">

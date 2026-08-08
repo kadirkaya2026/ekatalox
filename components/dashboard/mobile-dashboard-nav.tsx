@@ -8,17 +8,20 @@ import { EkataloxLogo } from "@/components/brand/ekatalox-logo";
 import { Sidebar } from "@/components/dashboard/sidebar";
 import { useBodyScrollLock } from "@/lib/hooks/use-body-scroll-lock";
 import type { TenantPlan } from "@/lib/billing/plans";
+import type { TenantBusinessType } from "@/lib/types";
 
 export function MobileDashboardNav({
   mode,
   title,
   subtitle,
   plan,
+  businessType,
 }: {
   mode: "admin" | "tenant";
   title: string;
   subtitle: string;
   plan?: TenantPlan;
+  businessType?: TenantBusinessType;
 }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
@@ -66,7 +69,13 @@ export function MobileDashboardNav({
             >
               <X className="size-4" />
             </button>
-            <Sidebar mode={mode} title={title} subtitle={subtitle} plan={plan} />
+            <Sidebar
+              mode={mode}
+              title={title}
+              subtitle={subtitle}
+              plan={plan}
+              businessType={businessType}
+            />
           </div>
         </div>
       ) : null}

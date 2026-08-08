@@ -9,7 +9,8 @@
     "lint": "eslint",
     "export:lucatech": "node lucatech-export.mjs",
     "generate:sales-html": "node scripts/generate-package-presentation-html.mjs",
-    "verify:order-receipt-pdf": "node scripts/verify-order-receipt-pdf.mjs"
+    "verify:order-receipt-pdf": "node scripts/verify-order-receipt-pdf.mjs",
+    "seed:products": "node scripts/seed-products.js"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
