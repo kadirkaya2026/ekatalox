@@ -893,10 +893,14 @@ export function StorefrontClient({
   const analyticsSubdomain = subdomain ?? tenant.subdomain;
   const { t } = useStorefrontLocale();
 
-  const theme = useResolvedStorefrontTheme(storefrontSettings.theme_key, {
-    brand_primary_color: storefrontSettings.brand_primary_color,
-    brand_accent_color: storefrontSettings.brand_accent_color,
-  });
+  const theme = useResolvedStorefrontTheme(
+    storefrontSettings.theme_key,
+    {
+      brand_primary_color: storefrontSettings.brand_primary_color,
+      brand_accent_color: storefrontSettings.brand_accent_color,
+    },
+    storefrontSettings.product_image_background,
+  );
   const layout = getStorefrontLayout(storefrontSettings.layout_key ?? "classic-grid");
   const productCardStyle = getProductCardStyleClasses(storefrontSettings.product_card_style);
   const homepageBlocks = useMemo(
