@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { revalidateStorefrontCache } from "@/lib/storefront/cache";
+import { compactProductDisplayOrder } from "@/lib/products/reorder";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { getSessionContext } from "@/lib/auth/session";
 import { ensureTenantAdminResponse } from "@/lib/tenancy/guards";
@@ -67,6 +68,11 @@ export async function POST(request: Request) {
       { status: 400 },
     );
   }
+
+  // Önceki silmelerden kalan display_order boşluklarını kapatmadan
+  // "en yüksek sıra + 1"den devam edersek yeni ürünler gerçek sayıdan çok
+  // daha yüksek bir sıra numarasıyla başlar (ör. 60'tan başlaması gibi).
+  await compactProductDisplayOrder(supabase, tenant.id);
 
   const { data: existingRows } = await supabase
     .from("products")
