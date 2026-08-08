@@ -52,6 +52,11 @@ const nextConfig: NextConfig = {
         hostname: "placehold.co",
         pathname: "/**",
       },
+      {
+        protocol: "https",
+        hostname: "images.migrosone.com",
+        pathname: "/**",
+      },
     ],
   },
 };
