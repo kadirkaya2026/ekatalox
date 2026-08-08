@@ -2,7 +2,13 @@ import { NextResponse } from "next/server";
 import { getSessionContext } from "@/lib/auth/session";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { ensureTenantAdminResponse } from "@/lib/tenancy/guards";
+import { chunkArray } from "@/lib/utils";
 import { productBulkCategoryUpdateSchema } from "@/lib/validators/product";
+
+// Yüzlerce id'yi tek bir .in() filtresine sıkıştırmak istek URL'sini
+// reverse proxy'lerin izin verdiği uzunluğun üstüne çıkarıp Bad Request
+// verdiriyor — bu yüzden id listesini parçalara bölüp işliyoruz.
+const ID_CHUNK_SIZE = 200;
 
 export async function POST(request: Request) {
   const guard = await ensureTenantAdminResponse({ blockDemoWrite: true });
@@ -49,15 +55,21 @@ export async function POST(request: Request) {
   }
 
   // Ürünlerin tenanta ait olduğunu kontrol ederek güncelle
-  const { data: updatedProducts, error: updateError } = await supabase
-    .from("products")
-    .update({ category_id })
-    .eq("tenant_id", tenant.id)
-    .in("id", productIds)
-    .select();
+  const updatedProducts: Array<Record<string, unknown>> = [];
 
-  if (updateError) {
-    return NextResponse.json({ error: updateError.message }, { status: 400 });
+  for (const idsChunk of chunkArray(productIds, ID_CHUNK_SIZE)) {
+    const { data, error: updateError } = await supabase
+      .from("products")
+      .update({ category_id })
+      .eq("tenant_id", tenant.id)
+      .in("id", idsChunk)
+      .select();
+
+    if (updateError) {
+      return NextResponse.json({ error: updateError.message }, { status: 400 });
+    }
+
+    updatedProducts.push(...(data ?? []));
   }
 
   return NextResponse.json({ updatedProducts });

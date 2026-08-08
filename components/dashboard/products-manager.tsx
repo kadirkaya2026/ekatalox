@@ -23,6 +23,11 @@ import {
 } from "@/lib/hooks/use-product-form";
 import type { Category, PriceList, Product, Tenant } from "@/lib/types";
 
+// Büyük kataloglarda (binlerce ürün) filtrelenmiş listenin tamamını tek
+// seferde DOM'a basmak sayfayı kilitliyordu — bu yüzden sadece bir sayfalık
+// satırı render ediyoruz.
+const PRODUCTS_PAGE_SIZE = 100;
+
 function reorderProducts(products: Product[], fromIndex: number, toIndex: number) {
   const nextProducts = [...products];
   const [movedProduct] = nextProducts.splice(fromIndex, 1);
@@ -77,6 +82,7 @@ export function ProductsManager({
   const [bulkCategoryId, setBulkCategoryId] = useState<string>("");
   const [message, setMessage] = useState<string | null>(null);
   const [isOrderSaving, setIsOrderSaving] = useState(false);
+  const [page, setPage] = useState(1);
   const [pending, startTransition] = useTransition();
   const router = useRouter();
   const products = controlledProducts ?? internalProducts;
@@ -149,6 +155,22 @@ export function ProductsManager({
       );
     });
   }, [categories, products, searchTerm, selectedCategoryProductIds]);
+
+  const pageCount = Math.max(1, Math.ceil(filteredProducts.length / PRODUCTS_PAGE_SIZE));
+
+  // Filtre değişince sayfayı 1'e sıfırla. Bir effect yerine render sırasında
+  // yapılıyor (React'in "adjusting state during render" deseni) — bkz.
+  // https://react.dev/learn/you-might-not-need-an-effect#adjusting-some-state-when-a-prop-changes
+  const filterKey = `${searchTerm}|${selectedCategoryIds.join(",")}`;
+  const [lastFilterKey, setLastFilterKey] = useState(filterKey);
+  if (filterKey !== lastFilterKey) {
+    setLastFilterKey(filterKey);
+    setPage(1);
+  }
+
+  const currentPage = Math.min(page, pageCount);
+  const pageStartIndex = (currentPage - 1) * PRODUCTS_PAGE_SIZE;
+  const pagedProducts = filteredProducts.slice(pageStartIndex, pageStartIndex + PRODUCTS_PAGE_SIZE);
 
   const categoryNameMap = useMemo(
     () => new Map(categories.map((category) => [category.id, category.name])),
@@ -562,7 +584,9 @@ export function ProductsManager({
 
         <ProductsTable
           products={products}
-          filteredProducts={filteredProducts}
+          filteredProducts={pagedProducts}
+          pageStartIndex={pageStartIndex}
+          totalFilteredCount={filteredProducts.length}
           pricedLists={pricedLists}
           flatCategories={flatCategories}
           categoryNameMap={categoryNameMap}
@@ -587,6 +611,37 @@ export function ProductsManager({
           onOpenEdit={openEdit}
           onRequestDelete={setDeleteTarget}
         />
+
+        {filteredProducts.length ? (
+          <div className="flex flex-col items-center justify-between gap-3 border-t border-border px-5 py-4 sm:flex-row">
+            <p className="text-sm text-muted-foreground">
+              {pageStartIndex + 1}-{Math.min(pageStartIndex + PRODUCTS_PAGE_SIZE, filteredProducts.length)}
+              {" / "}
+              {filteredProducts.length} ürün
+            </p>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="secondary"
+                className="h-8 px-3 text-xs"
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={currentPage <= 1}
+              >
+                Önceki
+              </Button>
+              <span className="text-sm text-muted-foreground">
+                Sayfa {currentPage} / {pageCount}
+              </span>
+              <Button
+                variant="secondary"
+                className="h-8 px-3 text-xs"
+                onClick={() => setPage((p) => Math.min(pageCount, p + 1))}
+                disabled={currentPage >= pageCount}
+              >
+                Sonraki
+              </Button>
+            </div>
+          </div>
+        ) : null}
       </Card>
 
       {editingProduct ? (

@@ -39,6 +39,20 @@ export function formatDateSlashTr(value: string) {
   return `${day}/${month}/${year}`;
 }
 
+// Supabase/PostgREST filters like .in("id", ids) get embedded in the request
+// URL's query string — a few hundred UUIDs can push it past proxy URL-length
+// limits and fail with a generic Bad Request. Chunk large id lists before
+// issuing such queries.
+export function chunkArray<T>(items: T[], size: number): T[][] {
+  const chunks: T[][] = [];
+
+  for (let i = 0; i < items.length; i += size) {
+    chunks.push(items.slice(i, i + size));
+  }
+
+  return chunks;
+}
+
 export function toSlug(value: string) {
   return value
     .toLowerCase()

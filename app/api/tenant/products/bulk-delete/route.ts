@@ -7,7 +7,13 @@ import { getStorageObjectPathFromPublicUrl } from "@/lib/storage/storage-helpers
 import { compactProductDisplayOrder } from "@/lib/products/reorder";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { ensureTenantAdminResponse } from "@/lib/tenancy/guards";
+import { chunkArray } from "@/lib/utils";
 import { productBulkDeleteSchema } from "@/lib/validators/product";
+
+// Yüzlerce id'yi tek bir .in() filtresine sıkıştırmak istek URL'sini
+// reverse proxy'lerin izin verdiği uzunluğun üstüne çıkarıp Bad Request
+// verdiriyor — bu yüzden id listesini parçalara bölüp işliyoruz.
+const ID_CHUNK_SIZE = 200;
 
 export async function POST(request: Request) {
   const guard = await ensureTenantAdminResponse({ blockDemoWrite: true });
@@ -35,17 +41,28 @@ export async function POST(request: Request) {
     );
   }
 
-  const { data: products, error: productsError } = await supabase
-    .from("products")
-    .select("id, image_url, image_url_2, image_url_3")
-    .eq("tenant_id", tenant.id)
-    .in("id", parsed.data.productIds);
+  const products: Array<{
+    id: string;
+    image_url: string | null;
+    image_url_2: string | null;
+    image_url_3: string | null;
+  }> = [];
 
-  if (productsError) {
-    return NextResponse.json({ error: productsError.message }, { status: 400 });
+  for (const idsChunk of chunkArray(parsed.data.productIds, ID_CHUNK_SIZE)) {
+    const { data, error: productsError } = await supabase
+      .from("products")
+      .select("id, image_url, image_url_2, image_url_3")
+      .eq("tenant_id", tenant.id)
+      .in("id", idsChunk);
+
+    if (productsError) {
+      return NextResponse.json({ error: productsError.message }, { status: 400 });
+    }
+
+    products.push(...(data ?? []));
   }
 
-  if (!products?.length) {
+  if (!products.length) {
     return NextResponse.json({ error: "Silinecek ürün bulunamadı." }, { status: 404 });
   }
 
@@ -69,14 +86,17 @@ export async function POST(request: Request) {
   }
 
   const deletableIds = products.map((product) => product.id);
-  const { error: deleteError } = await supabase
-    .from("products")
-    .delete()
-    .eq("tenant_id", tenant.id)
-    .in("id", deletableIds);
 
-  if (deleteError) {
-    return NextResponse.json({ error: deleteError.message }, { status: 400 });
+  for (const idsChunk of chunkArray(deletableIds, ID_CHUNK_SIZE)) {
+    const { error: deleteError } = await supabase
+      .from("products")
+      .delete()
+      .eq("tenant_id", tenant.id)
+      .in("id", idsChunk);
+
+    if (deleteError) {
+      return NextResponse.json({ error: deleteError.message }, { status: 400 });
+    }
   }
 
   await compactProductDisplayOrder(supabase, tenant.id);
