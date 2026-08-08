@@ -327,8 +327,9 @@ export function TenantBannerForm({
             <h2 className="text-lg font-semibold text-slate-900">Banner / kampanya alanı</h2>
             <p className="mt-1 text-sm text-slate-600">
               Carousel alanı için kampanya, duyuru veya indirim kartları ekleyin. Buraya
-              eklediğiniz görseller; anasayfa banner carousel&apos;ında, açıksa büyük banner +
-              yan kutucuklar bölümünde ve sayfanın altındaki ikinci banner alanında kullanılır.
+              eklediğiniz görseller; anasayfa banner carousel&apos;ında ve sayfanın altındaki
+              ikinci banner alanında kullanılır. Büyük banner + yan kutucuklar bölümü aşağıda
+              ayrı yönetilir (farklı bir en-boy oranı kullanır).
             </p>
           </div>
           <Button

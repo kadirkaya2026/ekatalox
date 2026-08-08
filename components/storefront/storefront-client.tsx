@@ -633,7 +633,7 @@ function renderBannerItem(
           "bg-[linear-gradient(135deg,rgba(255,255,255,0.05),transparent_60%)]",
         )}
       />
-      <div className="relative aspect-[3/1] bg-transparent md:min-h-[340px] md:aspect-auto lg:min-h-[400px]">
+      <div className="relative aspect-[3/1] bg-transparent">
         {banner.image_url ? (
           <StorefrontImage
             src={banner.image_url}
@@ -1187,10 +1187,13 @@ export function StorefrontClient({
       ? [categoryBanner]
       : (storefrontSettings.banner_items ?? []);
   const currentBanner = bannerItems[activeBannerIndex] ?? null;
+  const heroClusterItems = storefrontSettings.hero_cluster_items ?? [];
   const showSections =
     showHomeBanner && sections.length > 0 && isHomepageBlockVisible(homepageBlocks, "showcase");
   const showHeroCluster =
-    showHomeBanner && bannerItems.length >= 2 && isHomepageBlockVisible(homepageBlocks, "heroCluster");
+    showHomeBanner &&
+    heroClusterItems.length >= 2 &&
+    isHomepageBlockVisible(homepageBlocks, "heroCluster");
   const showPromoTiles =
     showHomeBanner && isHomepageBlockVisible(homepageBlocks, "promoTiles");
   const showCategoryTilesBlock =
@@ -2396,8 +2399,9 @@ export function StorefrontClient({
               return showHeroCluster ? (
                 <StorefrontHeroCluster
                   key="heroCluster"
-                  bannerItems={bannerItems}
+                  heroClusterItems={heroClusterItems}
                   storefrontTitle={storefrontTitle}
+                  isVisibleOnMobile={storefrontSettings.is_hero_cluster_visible_on_mobile}
                 />
               ) : null;
             }

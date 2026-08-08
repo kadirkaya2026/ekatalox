@@ -35,7 +35,7 @@ function ClusterBox({
       {...(href ? { href } : {})}
       className={cn(
         "relative block w-full overflow-hidden rounded-[1.75rem]",
-        large ? "aspect-[3/2] sm:aspect-[16/10]" : "aspect-[16/9] sm:aspect-auto sm:h-full",
+        large ? "aspect-[3/2]" : "aspect-[16/9]",
       )}
       style={{
         background: banner.background_color ?? CLUSTER_GRADIENTS[index % CLUSTER_GRADIENTS.length],
@@ -74,28 +74,30 @@ function ClusterBox({
 }
 
 export function StorefrontHeroCluster({
-  bannerItems,
+  heroClusterItems,
   storefrontTitle,
+  isVisibleOnMobile = true,
 }: {
-  bannerItems: BannerItem[];
+  heroClusterItems: BannerItem[];
   storefrontTitle: string;
+  isVisibleOnMobile?: boolean;
 }) {
-  if (bannerItems.length < 2) {
+  if (heroClusterItems.length < 2) {
     return null;
   }
 
-  const [main, ...rest] = bannerItems;
+  const [main, ...rest] = heroClusterItems;
   const sideItems = rest.slice(0, 2);
 
   return (
-    <section className="mb-5 grid grid-cols-1 gap-3 sm:mb-8 sm:grid-cols-[1.6fr_1fr] sm:gap-4">
+    <section
+      className={cn(
+        "mb-5 grid-cols-1 gap-3 sm:mb-8 sm:grid sm:grid-cols-[1.6fr_1fr] sm:gap-4",
+        isVisibleOnMobile ? "grid" : "hidden sm:grid",
+      )}
+    >
       <ClusterBox banner={main} index={0} large title={storefrontTitle} />
-      <div
-        className={cn(
-          "grid gap-3 sm:h-full",
-          sideItems.length > 1 ? "grid-cols-1 sm:grid-rows-2" : "grid-cols-1",
-        )}
-      >
+      <div className="grid grid-cols-1 gap-3">
         {sideItems.map((banner, index) => (
           <ClusterBox key={banner.id} banner={banner} index={index + 1} title={storefrontTitle} />
         ))}

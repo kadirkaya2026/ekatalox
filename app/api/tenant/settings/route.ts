@@ -78,7 +78,7 @@ export async function PATCH(request: Request) {
     const { data } = await supabase
       .from("tenant_storefront_settings")
       .select(
-        "tenant_id, theme_key, layout_key, logo_url, storefront_title, storefront_description, hero_heading, hero_cta_label, hero_image_url, hero_style_key, is_hero_visible, brand_primary_color, brand_accent_color, font_key, product_card_style, product_image_background, header_style_key, footer_style_key, homepage_blocks, banner_items, site_tab_title, site_favicon_url, announcement_title, announcement_body, is_active, version, max_display_count, card_installment_options, is_cash_discount_active, cash_discount_note, is_card_campaign_active, card_campaign_note, cash_discount_tiers, card_campaign_tiers, price_update_date, is_price_update_date_visible, is_theme_toggle_visible, is_footer_visible, is_footer_logo_visible, is_footer_social_visible, is_footer_location_visible, is_footer_copyright_visible, footer_location, footer_copyright, footer_instagram_url, footer_youtube_url, footer_x_url, footer_facebook_url, footer_whatsapp, is_footer_instagram_visible, is_footer_youtube_visible, is_footer_x_visible, is_footer_facebook_visible, is_footer_whatsapp_visible, footer_website_url, is_footer_website_visible, footer_phone, footer_email, is_footer_contact_visible, recommendation_mode, default_locale",
+        "tenant_id, theme_key, layout_key, logo_url, storefront_title, storefront_description, hero_heading, hero_cta_label, hero_image_url, hero_style_key, is_hero_visible, brand_primary_color, brand_accent_color, font_key, product_card_style, product_image_background, header_style_key, footer_style_key, homepage_blocks, banner_items, hero_cluster_items, is_hero_cluster_visible_on_mobile, site_tab_title, site_favicon_url, announcement_title, announcement_body, is_active, version, max_display_count, card_installment_options, is_cash_discount_active, cash_discount_note, is_card_campaign_active, card_campaign_note, cash_discount_tiers, card_campaign_tiers, price_update_date, is_price_update_date_visible, is_theme_toggle_visible, is_footer_visible, is_footer_logo_visible, is_footer_social_visible, is_footer_location_visible, is_footer_copyright_visible, footer_location, footer_copyright, footer_instagram_url, footer_youtube_url, footer_x_url, footer_facebook_url, footer_whatsapp, is_footer_instagram_visible, is_footer_youtube_visible, is_footer_x_visible, is_footer_facebook_visible, is_footer_whatsapp_visible, footer_website_url, is_footer_website_visible, footer_phone, footer_email, is_footer_contact_visible, recommendation_mode, default_locale",
       )
       .eq("tenant_id", session.tenant!.id)
       .maybeSingle();
@@ -153,6 +153,9 @@ export async function PATCH(request: Request) {
     footer_style_key: body.footer_style_key ?? existingSettings.footer_style_key,
     homepage_blocks: body.homepage_blocks ?? existingSettings.homepage_blocks,
     banner_items: body.banner_items ?? existingSettings.banner_items,
+    hero_cluster_items: body.hero_cluster_items ?? existingSettings.hero_cluster_items,
+    is_hero_cluster_visible_on_mobile:
+      body.is_hero_cluster_visible_on_mobile ?? existingSettings.is_hero_cluster_visible_on_mobile,
     theme_key: body.theme_key ?? existingSettings.theme_key,
     layout_key: body.layout_key ?? existingSettings.layout_key,
     site_tab_title: body.site_tab_title ?? existingSettings.site_tab_title,
@@ -289,6 +292,8 @@ export async function PATCH(request: Request) {
         footer_style_key: parsed.data.footer_style_key,
         homepage_blocks: parsed.data.homepage_blocks,
         banner_items: parsed.data.banner_items,
+        hero_cluster_items: parsed.data.hero_cluster_items,
+        is_hero_cluster_visible_on_mobile: parsed.data.is_hero_cluster_visible_on_mobile,
         site_tab_title: parsed.data.site_tab_title,
         site_favicon_url: parsed.data.site_favicon_url,
         announcement_title: parsed.data.announcement_title,
@@ -349,13 +354,13 @@ export async function PATCH(request: Request) {
   }
 
   const previousManagedBannerPaths = new Set(
-    (existingSettings.banner_items ?? [])
+    [...(existingSettings.banner_items ?? []), ...(existingSettings.hero_cluster_items ?? [])]
       .map((item) => getBannerObjectPath(item.image_url))
       .filter((path): path is string => typeof path === "string")
       .filter((path) => path.startsWith(`${session.tenant!.id}/`)),
   );
   const nextManagedBannerPaths = new Set(
-    parsed.data.banner_items
+    [...parsed.data.banner_items, ...parsed.data.hero_cluster_items]
       .map((item) => getBannerObjectPath(item.image_url))
       .filter((path): path is string => typeof path === "string")
       .filter((path) => path.startsWith(`${session.tenant!.id}/`)),
@@ -381,6 +386,8 @@ export async function PATCH(request: Request) {
     footer_style_key: parsed.data.footer_style_key,
     homepage_blocks: parsed.data.homepage_blocks,
     banner_items: parsed.data.banner_items,
+    hero_cluster_items: parsed.data.hero_cluster_items,
+    is_hero_cluster_visible_on_mobile: parsed.data.is_hero_cluster_visible_on_mobile,
     site_tab_title: parsed.data.site_tab_title,
     site_favicon_url: parsed.data.site_favicon_url,
     announcement_title: parsed.data.announcement_title,

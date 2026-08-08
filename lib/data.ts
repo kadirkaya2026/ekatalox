@@ -120,6 +120,8 @@ export function getDefaultTenantStorefrontSettings(
     footer_style_key: "standard",
     homepage_blocks: DEFAULT_HOMEPAGE_BLOCKS,
     banner_items: [],
+    hero_cluster_items: [],
+    is_hero_cluster_visible_on_mobile: true,
     site_tab_title: null,
     site_favicon_url: null,
     announcement_title: null,

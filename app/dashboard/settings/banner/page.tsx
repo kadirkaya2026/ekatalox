@@ -1,4 +1,5 @@
 import { Header } from "@/components/dashboard/header";
+import { HeroClusterBannerForm } from "@/components/dashboard/hero-cluster-banner-form";
 import { PlanFeatureGate } from "@/components/dashboard/plan-feature-gate";
 import { TenantBannerForm } from "@/components/dashboard/tenant-banner-form";
 import { requireTenantAdminPage } from "@/lib/auth/session";
@@ -18,7 +19,10 @@ export default async function TenantBannerSettingsPage() {
       />
 
       <PlanFeatureGate feature="banner_settings" plan={tenant.plan} companyName={tenant.company_name}>
-        <TenantBannerForm initialStorefrontSettings={storefrontSettings} />
+        <div className="space-y-6">
+          <TenantBannerForm initialStorefrontSettings={storefrontSettings} />
+          <HeroClusterBannerForm initialStorefrontSettings={storefrontSettings} />
+        </div>
       </PlanFeatureGate>
     </div>
   );

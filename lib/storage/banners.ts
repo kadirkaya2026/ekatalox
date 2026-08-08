@@ -42,6 +42,16 @@ export function buildTenantBannerPath(params: {
   return `${params.tenantId}/banner_${Date.now()}.${extension}`;
 }
 
+export function buildHeroClusterImagePath(params: {
+  tenantId: string;
+  slot: "large" | "side";
+  fileName?: string | null;
+  contentType?: string | null;
+}) {
+  const extension = getBannerFileExtension(params);
+  return `${params.tenantId}/hero_cluster_${params.slot}_${Date.now()}.${extension}`;
+}
+
 export function buildCategoryBannerPath(params: {
   tenantId: string;
   categoryId: string;

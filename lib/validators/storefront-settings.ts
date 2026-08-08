@@ -189,6 +189,11 @@ export const storefrontSettingsSchema = z
       .array(bannerItemSchema)
       .max(6, "En fazla 6 banner ekleyebilirsiniz.")
       .default([]),
+    hero_cluster_items: z
+      .array(bannerItemSchema)
+      .max(3, "En fazla 3 görsel ekleyebilirsiniz.")
+      .default([]),
+    is_hero_cluster_visible_on_mobile: z.boolean().default(true),
     theme_key: storefrontThemeKeySchema,
     layout_key: storefrontLayoutKeySchema.default("classic-grid"),
     site_tab_title: z
@@ -366,6 +371,16 @@ export const requiredBannerHeight = 400;
 
 export const requiredCategoryTileWidth = 600;
 export const requiredCategoryTileHeight = 600;
+
+// "Büyük banner + yan kutucuklar" (heroCluster) bloğu, anasayfa banner
+// carousel'ından (1200x400, 3:1) farklı bir oran kullanıyor — bu yüzden
+// kendi ayrı görsellerini, kendi oranına (3:2 / 16:9) uygun boyutlarda
+// istiyor. Bu oranlar CSS'te de sabit tutulur (mobil/masaüstü arasında
+// değişmez), böylece doğru boyutta yüklenen görsel hiçbir yerde kırpılmaz.
+export const requiredHeroClusterLargeWidth = 1200;
+export const requiredHeroClusterLargeHeight = 800;
+export const requiredHeroClusterSideWidth = 800;
+export const requiredHeroClusterSideHeight = 450;
 
 export const allowedHeroImageMimeTypes = [
   "image/png",
