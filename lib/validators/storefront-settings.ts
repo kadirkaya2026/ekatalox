@@ -34,6 +34,8 @@ export const storefrontProductCardStyleSchema = z.enum([
   "image-forward",
 ]);
 
+export const productImageBackgroundSchema = z.enum(["theme", "white", "transparent"]);
+
 export const storefrontHeaderStyleKeySchema = z.enum([
   "standard",
   "centered",
@@ -179,6 +181,7 @@ export const storefrontSettingsSchema = z
     brand_accent_color: optionalColorSchema,
     font_key: storefrontFontKeySchema.default("inter"),
     product_card_style: storefrontProductCardStyleSchema.default("standard"),
+    product_image_background: productImageBackgroundSchema.default("theme"),
     header_style_key: storefrontHeaderStyleKeySchema.default("standard"),
     footer_style_key: storefrontFooterStyleKeySchema.default("standard"),
     homepage_blocks: homepageBlocksSchema,

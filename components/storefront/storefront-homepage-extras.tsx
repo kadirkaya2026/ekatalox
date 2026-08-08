@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronRight, Store, Tag } from "lucide-react";
+import { Store, Tag } from "lucide-react";
 import type { CategoryNode } from "@/lib/categories/tree";
 import type { BannerItem, StorefrontProduct } from "@/lib/types";
 import { STOREFRONT_BANNER_SIZES, STOREFRONT_PRODUCT_GRID_SIZES } from "@/lib/storefront/image-sizes";
@@ -228,16 +228,6 @@ export function StorefrontCategoryTiles({
             </span>
           </button>
         ))}
-        <button
-          type="button"
-          onClick={() => onCategoryChange("all")}
-          className="flex w-20 shrink-0 flex-col items-center justify-center gap-1.5 sm:w-auto"
-        >
-          <div className={cn("flex size-16 items-center justify-center rounded-2xl sm:size-20", theme.border, theme.surfaceMuted)}>
-            <ChevronRight className={cn("size-6", theme.textMuted)} />
-          </div>
-          <span className={cn("text-center text-[11px] font-semibold", theme.textMuted)}>Tümü</span>
-        </button>
       </div>
     </section>
   );

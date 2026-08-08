@@ -1,5 +1,6 @@
 import { DEFAULT_HOMEPAGE_BLOCKS } from "@/lib/storefront/homepage-blocks";
 import type {
+  ProductImageBackgroundKey,
   StorefrontFooterStyleKey,
   StorefrontHeaderStyleKey,
   StorefrontLayoutKey,
@@ -29,6 +30,24 @@ export const PRODUCT_CARD_STYLE_OPTIONS: AppearanceOption<StorefrontProductCardS
     key: "image-forward",
     title: "Görsel Odaklı",
     description: "Büyük ürün görseli, minimal metin.",
+  },
+];
+
+export const PRODUCT_IMAGE_BACKGROUND_OPTIONS: AppearanceOption<ProductImageBackgroundKey>[] = [
+  {
+    key: "theme",
+    title: "Tema varsayılanı",
+    description: "Seçili temanın kendi hafif gradyan arka planı.",
+  },
+  {
+    key: "white",
+    title: "Beyaz",
+    description: "Tüm ürün görsellerinin arkası düz beyaz olur.",
+  },
+  {
+    key: "transparent",
+    title: "Şeffaf",
+    description: "Arka plan yok; görselin kendi (varsa şeffaf) alanı görünür.",
   },
 ];
 
@@ -80,6 +99,7 @@ export const DEFAULT_STOREFRONT_APPEARANCE = {
   brand_accent_color: null,
   font_key: "inter",
   product_card_style: "standard",
+  product_image_background: "theme",
   header_style_key: "standard",
   footer_style_key: "standard",
   homepage_blocks: DEFAULT_HOMEPAGE_BLOCKS,
@@ -91,6 +111,7 @@ export const DEFAULT_STOREFRONT_APPEARANCE = {
   | "brand_accent_color"
   | "font_key"
   | "product_card_style"
+  | "product_image_background"
   | "header_style_key"
   | "footer_style_key"
   | "homepage_blocks"

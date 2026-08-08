@@ -2327,6 +2327,7 @@ export function StorefrontClient({
       themeKey={storefrontSettings.theme_key}
       brandPrimaryColor={storefrontSettings.brand_primary_color}
       brandAccentColor={storefrontSettings.brand_accent_color}
+      productImageBackground={storefrontSettings.product_image_background}
     >
     <StorefrontLayoutProvider layoutKey={storefrontSettings.layout_key ?? "classic-grid"}>
     <div className="contents">

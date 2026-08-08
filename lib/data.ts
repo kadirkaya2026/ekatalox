@@ -114,6 +114,7 @@ export function getDefaultTenantStorefrontSettings(
     brand_accent_color: null,
     font_key: smartDefaults?.font_key ?? "inter",
     product_card_style: "standard",
+    product_image_background: "theme",
     header_style_key: "standard",
     footer_style_key: "standard",
     homepage_blocks: DEFAULT_HOMEPAGE_BLOCKS,

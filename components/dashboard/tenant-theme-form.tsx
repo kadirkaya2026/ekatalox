@@ -10,6 +10,7 @@ import { PlanFeatureGate } from "@/components/dashboard/plan-feature-gate";
 import { StorefrontThemePreview } from "@/components/dashboard/storefront-theme-preview";
 import { StorefrontThemeShowcase } from "@/components/dashboard/storefront-theme-showcase";
 import type {
+  ProductImageBackgroundKey,
   RecommendationMode,
   StorefrontFooterStyleKey,
   StorefrontHeaderStyleKey,
@@ -29,6 +30,7 @@ import {
   FOOTER_STYLE_OPTIONS,
   HEADER_STYLE_OPTIONS,
   PRODUCT_CARD_STYLE_OPTIONS,
+  PRODUCT_IMAGE_BACKGROUND_OPTIONS,
 } from "@/lib/storefront/appearance-catalog";
 import { hasPlanFeature } from "@/lib/billing/plans";
 import { cn } from "@/lib/utils";
@@ -40,6 +42,7 @@ interface ThemeFormState {
   brand_accent_color: string;
   font_key: TenantStorefrontSettings["font_key"];
   product_card_style: StorefrontProductCardStyle;
+  product_image_background: ProductImageBackgroundKey;
   header_style_key: StorefrontHeaderStyleKey;
   footer_style_key: StorefrontFooterStyleKey;
   recommendation_mode: RecommendationMode;
@@ -68,6 +71,7 @@ function toThemeFormState(settings: TenantStorefrontSettings): ThemeFormState {
     brand_accent_color: settings.brand_accent_color ?? "",
     font_key: settings.font_key ?? "inter",
     product_card_style: settings.product_card_style ?? "standard",
+    product_image_background: settings.product_image_background ?? "theme",
     header_style_key: settings.header_style_key ?? "standard",
     footer_style_key: settings.footer_style_key ?? "standard",
     recommendation_mode: settings.recommendation_mode ?? "auto",
@@ -90,6 +94,7 @@ function buildAppearancePayload(
       ? {
           font_key: form.font_key,
           product_card_style: form.product_card_style,
+          product_image_background: form.product_image_background,
           header_style_key: form.header_style_key,
           footer_style_key: form.footer_style_key,
         }
@@ -105,6 +110,7 @@ function toDefaultThemeFormState(): ThemeFormState {
     brand_accent_color: "",
     font_key: DEFAULT_STOREFRONT_APPEARANCE.font_key,
     product_card_style: DEFAULT_STOREFRONT_APPEARANCE.product_card_style,
+    product_image_background: DEFAULT_STOREFRONT_APPEARANCE.product_image_background,
     header_style_key: DEFAULT_STOREFRONT_APPEARANCE.header_style_key,
     footer_style_key: DEFAULT_STOREFRONT_APPEARANCE.footer_style_key,
     recommendation_mode: "auto",
@@ -601,6 +607,17 @@ export function TenantThemeForm({
                       value={form.product_card_style}
                       onChange={(value) =>
                         updateField("product_card_style", value as StorefrontProductCardStyle)
+                      }
+                    />
+                    <OptionPicker
+                      label="Ürün görseli arka planı"
+                      options={PRODUCT_IMAGE_BACKGROUND_OPTIONS}
+                      value={form.product_image_background}
+                      onChange={(value) =>
+                        updateField(
+                          "product_image_background",
+                          value as ProductImageBackgroundKey,
+                        )
                       }
                     />
                     <OptionPicker

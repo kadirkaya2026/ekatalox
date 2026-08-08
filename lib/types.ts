@@ -27,6 +27,7 @@ export type StorefrontFontKey =
   | "source-sans"
   | "playfair";
 export type StorefrontProductCardStyle = "standard" | "compact" | "image-forward";
+export type ProductImageBackgroundKey = "theme" | "white" | "transparent";
 export type StorefrontHeaderStyleKey = "standard" | "centered" | "minimal" | "split";
 export type StorefrontFooterStyleKey = "standard" | "minimal" | "columns";
 export type StorefrontHeroStyleKey = "text" | "image-split" | "full-bleed";
@@ -220,6 +221,7 @@ export interface TenantStorefrontSettings {
   brand_accent_color: string | null;
   font_key: StorefrontFontKey;
   product_card_style: StorefrontProductCardStyle;
+  product_image_background: ProductImageBackgroundKey;
   header_style_key: StorefrontHeaderStyleKey;
   footer_style_key: StorefrontFooterStyleKey;
   homepage_blocks: HomepageBlock[];

@@ -57,6 +57,7 @@ export function StorefrontPageShell({
     | "font_key"
     | "default_locale"
     | "is_theme_toggle_visible"
+    | "product_image_background"
   >;
   themeKey?: string;
   subdomain: string;
@@ -83,6 +84,7 @@ export function StorefrontPageShell({
         themeKey={resolvedThemeKey}
         brandPrimaryColor={brandPrimaryColor}
         brandAccentColor={brandAccentColor}
+        productImageBackground={storefrontSettings?.product_image_background}
       >
         <StorefrontPageShellInner
           className={className}
