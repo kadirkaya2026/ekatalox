@@ -27,6 +27,17 @@ const PROJECT_ROOT = path.join(__dirname, "..");
 const DATA_FILE = path.join(PROJECT_ROOT, "data", "products.json");
 const BATCH_SIZE = 500;
 
+// Migros'un ürün açıklamalarının sonuna eklediği, kendi adını ("Migros
+// Ticaret A.Ş.") geçiren yasal metin — bize ait bir mağazada görünmemeli.
+const MIGROS_DISCLAIMER_MARKER = "Ürün Bilgilerini Kullanma Hakkında";
+
+function stripMigrosDisclaimer(description) {
+  const markerIndex = description.indexOf(MIGROS_DISCLAIMER_MARKER);
+  if (markerIndex === -1) return description;
+  const cleaned = description.slice(0, markerIndex).trim();
+  return cleaned || null;
+}
+
 function loadDotEnvLocal() {
   const fileName = process.env.USE_PROD_ENV === "1" ? path.join(".vercel", ".env.production.local") : ".env.local";
   const envPath = path.join(PROJECT_ROOT, fileName);
@@ -79,8 +90,9 @@ function loadProducts() {
       typeof item.reference_price === "number" && Number.isFinite(item.reference_price)
         ? item.reference_price
         : null;
-    const description =
+    const rawDescription =
       typeof item.description === "string" && item.description.trim() ? item.description.trim() : null;
+    const description = rawDescription ? stripMigrosDisclaimer(rawDescription) : null;
 
     if (!skuCode || !productName || !categoryName || !imageUrl) {
       throw new Error(
