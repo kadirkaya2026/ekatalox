@@ -26,6 +26,38 @@ export async function PATCH(request: Request) {
   const tenant = session.tenant!;
   const supabase = createSupabaseAdminClient();
 
+  // Şifre koruması kapatılırken ziyaretçiye hangi fiyat listesinden
+  // gösterileceği zorunlu — belirtilmezse ürünler otomatik en ucuz/rastgele
+  // (ya da katalog-only, fiyatsız) listeye düşerdi.
+  let publicPriceListId: string | null | undefined;
+
+  if (body.is_password_protected === false) {
+    if (typeof body.public_price_list_id !== "string" || !body.public_price_list_id) {
+      return NextResponse.json(
+        { error: "Şifreyi kapatmak için hangi fiyat listesinin gösterileceğini seçmelisiniz." },
+        { status: 400 },
+      );
+    }
+
+    if (supabase) {
+      const { data: list } = await supabase
+        .from("price_lists")
+        .select("id, is_catalog_only")
+        .eq("id", body.public_price_list_id)
+        .eq("tenant_id", tenant.id)
+        .maybeSingle();
+
+      if (!list || list.is_catalog_only) {
+        return NextResponse.json(
+          { error: "Geçersiz fiyat listesi seçimi." },
+          { status: 400 },
+        );
+      }
+    }
+
+    publicPriceListId = body.public_price_list_id;
+  }
+
   if (!supabase) {
     if (!shouldAllowDemoFallback()) {
       return NextResponse.json(
@@ -37,13 +69,20 @@ export async function PATCH(request: Request) {
     revalidateStorefrontCache({ tenantId: tenant.id, subdomain: tenant.subdomain });
 
     return NextResponse.json({
-      tenant: { ...tenant, is_password_protected: body.is_password_protected },
+      tenant: {
+        ...tenant,
+        is_password_protected: body.is_password_protected,
+        ...(publicPriceListId !== undefined ? { public_price_list_id: publicPriceListId } : {}),
+      },
     });
   }
 
   const { data, error } = await supabase
     .from("tenants")
-    .update({ is_password_protected: body.is_password_protected })
+    .update({
+      is_password_protected: body.is_password_protected,
+      ...(publicPriceListId !== undefined ? { public_price_list_id: publicPriceListId } : {}),
+    })
     .eq("id", tenant.id)
     .select("*")
     .single();

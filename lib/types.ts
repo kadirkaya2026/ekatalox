@@ -90,6 +90,7 @@ export interface Tenant {
   is_demo: boolean;
   business_type: TenantBusinessType;
   is_password_protected: boolean;
+  public_price_list_id: string | null;
   created_at: string;
 }
 

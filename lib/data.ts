@@ -17,7 +17,7 @@ import { getCurrentMonthVisitorCountsByTenant } from "@/lib/analytics/queries";
 import { normalizeProductDescription } from "@/lib/products/description-html";
 import { normalizeProductRecord } from "@/lib/products/records";
 import { productWithVariantsAndPricesSelect } from "@/lib/products/queries";
-import { normalizePriceListRecord, sortPriceLists } from "@/lib/price-lists/records";
+import { getPricedLists, normalizePriceListRecord, sortPriceLists } from "@/lib/price-lists/records";
 import { getPriceListDisplayName } from "@/lib/price-lists/constants";
 import { ensureDefaultPriceListsForTenant, fetchTenantPriceLists } from "@/lib/price-lists/data";
 import { DEFAULT_HOMEPAGE_BLOCKS, normalizeHomepageBlocks } from "@/lib/storefront/homepage-blocks";
@@ -661,20 +661,31 @@ export async function getTenantPriceLists(tenantId: string): Promise<PriceList[]
 
 /**
  * Şifresiz vitrin modunda (tenant.is_password_protected === false) ziyaretçiye
- * hangi fiyat listesinin uygulanacağını belirler — erişim kodu girilmediği
- * için ilk (sort_order'a göre) fiyat listesi otomatik seçilir.
+ * hangi fiyat listesinin uygulanacağını belirler. Tenant admin "Şifre
+ * kullanma"yı kapatırken bir fiyat listesi seçer (tenants.public_price_list_id);
+ * o seçim geçerliyse kullanılır. Seçim yoksa/artık geçerli değilse ilk FİYATLI
+ * (katalog-only olmayan) listeye düşülür — sort_order'a göre ilk sıradaki her
+ * zaman katalog-only ("Katalog") listesi olduğu için, eskiden buraya düşülünce
+ * ürünler fiyatsız görünüyordu.
  */
 export async function resolveDefaultPriceListForTenant(
   tenantId: string,
+  publicPriceListId?: string | null,
 ): Promise<{ priceListId: string; isCatalogOnly: boolean } | null> {
   const priceLists = await getTenantPriceLists(tenantId);
-  const first = priceLists[0];
 
-  if (!first) {
+  const chosen = publicPriceListId
+    ? priceLists.find((list) => list.id === publicPriceListId && !list.is_catalog_only)
+    : undefined;
+
+  const fallback = getPricedLists(priceLists)[0];
+  const target = chosen ?? fallback;
+
+  if (!target) {
     return null;
   }
 
-  return { priceListId: first.id, isCatalogOnly: first.is_catalog_only };
+  return { priceListId: target.id, isCatalogOnly: target.is_catalog_only };
 }
 
 export async function getTenantAccessCodes(

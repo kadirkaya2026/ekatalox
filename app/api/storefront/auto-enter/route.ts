@@ -20,7 +20,7 @@ export async function GET(request: Request) {
     return NextResponse.redirect(new URL(redirectTo, url.origin));
   }
 
-  const priceList = await resolveDefaultPriceListForTenant(tenant.id);
+  const priceList = await resolveDefaultPriceListForTenant(tenant.id, tenant.public_price_list_id);
 
   if (!priceList) {
     return NextResponse.redirect(new URL(redirectTo, url.origin));

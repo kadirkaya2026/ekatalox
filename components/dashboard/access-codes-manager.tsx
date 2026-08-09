@@ -28,19 +28,27 @@ export function AccessCodesManager({
   const [priceListMessage, setPriceListMessage] = useState<string | null>(null);
   const [isPasswordProtected, setIsPasswordProtected] = useState(tenant.is_password_protected);
   const [passwordModeMessage, setPasswordModeMessage] = useState<string | null>(null);
+  const [showDisablePicker, setShowDisablePicker] = useState(false);
+  const pricedPriceLists = initialPriceLists.filter((list) => !list.is_catalog_only);
+  const [pendingPublicPriceListId, setPendingPublicPriceListId] = useState(
+    tenant.public_price_list_id ?? pricedPriceLists[0]?.id ?? "",
+  );
   const [pending, startTransition] = useTransition();
   const [priceListPending, startPriceListTransition] = useTransition();
   const [passwordModePending, startPasswordModeTransition] = useTransition();
   const router = useRouter();
 
-  function togglePasswordProtection(nextValue: boolean) {
+  function togglePasswordProtection(nextValue: boolean, publicPriceListId?: string) {
     setPasswordModeMessage(null);
 
     startPasswordModeTransition(async () => {
       const response = await fetch("/api/tenant/access-codes", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ is_password_protected: nextValue }),
+        body: JSON.stringify({
+          is_password_protected: nextValue,
+          ...(publicPriceListId ? { public_price_list_id: publicPriceListId } : {}),
+        }),
       });
 
       const result = await response.json();
@@ -51,6 +59,7 @@ export function AccessCodesManager({
       }
 
       setIsPasswordProtected(nextValue);
+      setShowDisablePicker(false);
       setPasswordModeMessage(
         nextValue
           ? "Şifre koruması açıldı. Müşteriler artık erişim kodu girmeden mağazaya giremez."
@@ -58,6 +67,25 @@ export function AccessCodesManager({
       );
       router.refresh();
     });
+  }
+
+  // "Şifre kullanma" kutusu işaretlenince (checked=true) koruma kapanacak —
+  // önce hangi fiyat listesinin gösterileceğini sormadan doğrudan kapatmıyoruz.
+  function handleProtectionCheckboxChange(checked: boolean) {
+    setPasswordModeMessage(null);
+
+    if (checked) {
+      setShowDisablePicker(true);
+      return;
+    }
+
+    setShowDisablePicker(false);
+    togglePasswordProtection(true);
+  }
+
+  function confirmDisableProtection() {
+    if (!pendingPublicPriceListId) return;
+    togglePasswordProtection(false, pendingPublicPriceListId);
   }
 
   // Fiyatsız katalog (is_catalog_only) şifreleri bir fiyat seviyesi
@@ -181,7 +209,7 @@ export function AccessCodesManager({
             <input
               type="checkbox"
               checked={!isPasswordProtected}
-              onChange={(event) => togglePasswordProtection(!event.target.checked)}
+              onChange={(event) => handleProtectionCheckboxChange(event.target.checked)}
               disabled={passwordModePending}
               className="size-4 accent-violet-600"
             />
@@ -191,6 +219,48 @@ export function AccessCodesManager({
 
         {passwordModeMessage ? (
           <p className="mt-3 text-sm text-emerald-700">{passwordModeMessage}</p>
+        ) : null}
+
+        {showDisablePicker && isPasswordProtected ? (
+          <div className="mt-4 rounded-xl border border-violet-200 bg-white px-4 py-4">
+            <p className="text-sm font-medium text-slate-900">
+              Şifresiz ziyaretçilere ürünler hangi fiyat listesinden gösterilsin?
+            </p>
+            {pricedPriceLists.length ? (
+              <>
+                <select
+                  value={pendingPublicPriceListId}
+                  onChange={(event) => setPendingPublicPriceListId(event.target.value)}
+                  className="mt-3 w-full rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900"
+                >
+                  {pricedPriceLists.map((list) => (
+                    <option key={list.id} value={list.id}>
+                      {getPriceListDisplayName(list)}
+                    </option>
+                  ))}
+                </select>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <Button
+                    onClick={confirmDisableProtection}
+                    disabled={passwordModePending || !pendingPublicPriceListId}
+                  >
+                    {passwordModePending ? "Kaydediliyor..." : "Onayla ve şifreyi kapat"}
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    onClick={() => setShowDisablePicker(false)}
+                    disabled={passwordModePending}
+                  >
+                    Vazgeç
+                  </Button>
+                </div>
+              </>
+            ) : (
+              <p className="mt-3 text-sm text-amber-700">
+                Önce aşağıdan en az bir fiyatlı liste oluşturmalısınız.
+              </p>
+            )}
+          </div>
         ) : null}
 
         {!isPasswordProtected ? (
