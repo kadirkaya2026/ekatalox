@@ -574,13 +574,28 @@ export async function getMarketCatalogProducts(): Promise<MarketCatalogProduct[]
     return [];
   }
 
-  const { data } = await supabase
-    .from("market_catalog_products")
-    .select("*")
-    .order("category_name", { ascending: true })
-    .order("product_name", { ascending: true });
+  // PostgREST caps every response at its db-max-rows setting (1000 here)
+  // regardless of an explicit .range() — the catalog is well past that now,
+  // so a single select silently truncated to the first 1000 rows. Page
+  // through in batches until a page comes back short.
+  const PAGE_SIZE = 1000;
+  const all: MarketCatalogProduct[] = [];
 
-  return (data as MarketCatalogProduct[] | null) ?? [];
+  for (let from = 0; ; from += PAGE_SIZE) {
+    const { data } = await supabase
+      .from("market_catalog_products")
+      .select("*")
+      .order("category_name", { ascending: true })
+      .order("product_name", { ascending: true })
+      .range(from, from + PAGE_SIZE - 1);
+
+    const page = (data as MarketCatalogProduct[] | null) ?? [];
+    all.push(...page);
+
+    if (page.length < PAGE_SIZE) break;
+  }
+
+  return all;
 }
 
 export async function getTenantStorefrontSettings(
