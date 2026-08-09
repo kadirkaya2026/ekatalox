@@ -1175,6 +1175,35 @@ export function StorefrontClient({
     [productsById],
   );
 
+  // Paket/koli adedi (veya model seçeneği) girilmemiş ürünlerde ilk "+"
+  // tıklaması Getir'deki gibi doğrudan 1 adet ekler ve kartın üstünde
+  // +/- steppera geçer — seçim gerektiren bir şey yoksa modalı atlıyoruz.
+  // Paket/koli/model seçeneği olan ürünlerde davranış değişmiyor: modal açılır.
+  const handleQuickAddOrOpenModal = useCallback(
+    (productId: string) => {
+      const product = productsById.get(productId);
+
+      if (!product || !product.is_in_stock) {
+        return;
+      }
+
+      const needsSelection =
+        product.has_variants || Boolean(product.package_quantity) || Boolean(product.carton_quantity);
+
+      if (needsSelection) {
+        handleOpenAddToCartModal(productId);
+        return;
+      }
+
+      setCart((current) => addToCart(current, product, 1));
+
+      if (analyticsSubdomain) {
+        trackStorefrontCartAdd(analyticsSubdomain, product.id);
+      }
+    },
+    [productsById, handleOpenAddToCartModal, analyticsSubdomain],
+  );
+
   const visibleProducts = filteredProducts.slice(0, visibleCount);
   const selectedCategory =
     selectedCategoryId === "all"
@@ -2154,7 +2183,7 @@ export function StorefrontClient({
           compact
           onIncrease={handleIncreaseCartItem}
           onDecrease={handleDecreaseCartItem}
-          onOpenAddToCart={handleOpenAddToCartModal}
+          onOpenAddToCart={handleQuickAddOrOpenModal}
         />
 
         <div className={cn("relative h-28 overflow-hidden rounded-[1.15rem]", theme.productImageWrap)}>
@@ -2534,7 +2563,7 @@ export function StorefrontClient({
                           onOpenDetail={handleOpenProductDetail}
                           onIncrease={handleIncreaseCartItem}
                           onDecrease={handleDecreaseCartItem}
-                          onOpenAddToCart={handleOpenAddToCartModal}
+                          onOpenAddToCart={handleQuickAddOrOpenModal}
                         />
 
                         {hasMore && sectionHref ? (
@@ -2609,7 +2638,7 @@ export function StorefrontClient({
                       onOpenDetail={handleOpenProductDetail}
                       onIncrease={handleIncreaseCartItem}
                       onDecrease={handleDecreaseCartItem}
-                      onOpenAddToCart={handleOpenAddToCartModal}
+                      onOpenAddToCart={handleQuickAddOrOpenModal}
                     />
                   ) : (
                     <Card className={cn("rounded-[2rem] border-0 p-10 text-center", theme.surfaceMuted)}>
