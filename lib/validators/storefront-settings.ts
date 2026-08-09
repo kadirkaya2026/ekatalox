@@ -134,6 +134,7 @@ export const bannerItemSchema = z
     cta_label: droppedBannerActionSchema,
     cta_href: optionalUrlSchema,
     background_color: optionalColorSchema,
+    is_visible_on_mobile: z.boolean().default(true),
   })
   .refine(
     (value) => Boolean(value.title || value.description || value.image_url),

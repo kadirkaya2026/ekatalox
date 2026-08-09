@@ -188,6 +188,7 @@ export interface BannerItem {
   cta_label: string | null;
   cta_href: string | null;
   background_color: string | null;
+  is_visible_on_mobile?: boolean;
 }
 
 export interface Profile {

@@ -876,6 +876,15 @@ export function StorefrontClient({
   const [visibleCount, setVisibleCount] = useState(STOREFRONT_PAGE_SIZE);
   const [hoveredCategoryId, setHoveredCategoryId] = useState<string | null>(null);
   const [activeBannerIndex, setActiveBannerIndex] = useState(0);
+  const [isMobileViewport, setIsMobileViewport] = useState(false);
+
+  useEffect(() => {
+    const query = window.matchMedia("(max-width: 639px)");
+    const update = () => setIsMobileViewport(query.matches);
+    update();
+    query.addEventListener("change", update);
+    return () => query.removeEventListener("change", update);
+  }, []);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<"cash" | "card" | null>(null);
   const [selectedInstallmentCount, setSelectedInstallmentCount] = useState<number | null>(null);
   const [paymentMethodError, setPaymentMethodError] = useState<string | null>(null);
@@ -1182,10 +1191,15 @@ export function StorefrontClient({
   const showBannerSection =
     (showHomeBanner || showCategoryBanner) &&
     (showCategoryBanner || isHomepageBlockVisible(homepageBlocks, "banner"));
-  const bannerItems =
+  const allBannerItems =
     showCategoryBanner && categoryBanner
       ? [categoryBanner]
       : (storefrontSettings.banner_items ?? []);
+  // Her banner kendi "mobilde göster" ayarını taşır — mobil ziyaretçide
+  // carousel sadece o banner'ları döner, masaüstünde hepsi görünür.
+  const bannerItems = isMobileViewport
+    ? allBannerItems.filter((banner) => banner.is_visible_on_mobile !== false)
+    : allBannerItems;
   const currentBanner = bannerItems[activeBannerIndex] ?? null;
   const heroClusterItems = storefrontSettings.hero_cluster_items ?? [];
   const showSections =
@@ -1515,6 +1529,10 @@ export function StorefrontClient({
   }, [selectedCategoryId, showCategoryBanner]);
 
   useEffect(() => {
+    // Mobil/masaüstü geçişinde filtrelenmiş liste kısalabilir; index'i
+    // sınırların dışında bırakmamak için sıfırlıyoruz.
+    setActiveBannerIndex(0);
+
     if (bannerItems.length <= 1) {
       return;
     }

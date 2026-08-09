@@ -46,6 +46,7 @@ function createEmptyBanner(index: number): BannerItem {
     cta_label: null,
     cta_href: null,
     background_color: index % 2 === 0 ? "#0f172a" : "#065f46",
+    is_visible_on_mobile: true,
   };
 }
 
@@ -396,6 +397,11 @@ export function TenantBannerForm({
                       </p>
                       <p className="text-xs text-slate-500">
                         Zorunlu ölçü: 1200x400 px • Maksimum dosya boyutu: 2MB
+                        {banner.is_visible_on_mobile === false ? (
+                          <span className="ml-2 rounded-full bg-amber-100 px-2 py-0.5 font-medium text-amber-700">
+                            Mobilde gizli
+                          </span>
+                        ) : null}
                       </p>
                     </div>
                     <ChevronDown
@@ -497,6 +503,17 @@ export function TenantBannerForm({
                       placeholder="#0f172a"
                     />
                   </div>
+                  <label className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white p-3 text-sm text-slate-700">
+                    <input
+                      type="checkbox"
+                      checked={banner.is_visible_on_mobile ?? true}
+                      onChange={(event) =>
+                        updateBannerField(banner.id, "is_visible_on_mobile", event.target.checked)
+                      }
+                      className="size-4 accent-emerald-600"
+                    />
+                    Bu banner mobilde de görünsün
+                  </label>
                 </div>
                 ) : null}
               </div>
