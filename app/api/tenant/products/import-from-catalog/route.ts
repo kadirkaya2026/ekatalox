@@ -1,15 +1,73 @@
 import { NextResponse } from "next/server";
 import { revalidateStorefrontCache } from "@/lib/storefront/cache";
-import { ensureDefaultPriceListsForTenant, upsertProductPrices } from "@/lib/price-lists/data";
+import { ensureDefaultPriceListsForTenant } from "@/lib/price-lists/data";
 import { getPricedLists } from "@/lib/price-lists/records";
 import { compactProductDisplayOrder } from "@/lib/products/reorder";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { getSessionContext } from "@/lib/auth/session";
 import { ensureTenantAdminResponse } from "@/lib/tenancy/guards";
 import { getEffectiveProductLimit } from "@/lib/billing/plans";
+import { chunkArray } from "@/lib/utils";
+import type { SupabaseClient } from "@supabase/supabase-js";
+
+// PostgREST caps a single request's URL (and thus an .in() filter's value
+// list) well below what a few thousand selected sku_codes need — a bulk
+// import from the (now 5000+ row) market catalog was blowing past that and
+// coming back as a bare "Bad Request". Chunking keeps each request small.
+const CATALOG_LOOKUP_CHUNK_SIZE = 300;
+const UPSERT_CHUNK_SIZE = 500;
 
 function normalizeCategoryName(name: string) {
   return name.trim().toLocaleLowerCase("tr-TR");
+}
+
+async function fetchCatalogRowsBySku(supabase: SupabaseClient, skuCodes: string[]) {
+  const rows: Array<{
+    sku_code: string;
+    product_name: string;
+    category_name: string;
+    image_url: string;
+    reference_price: number | null;
+    description: string | null;
+  }> = [];
+
+  for (const batch of chunkArray(skuCodes, CATALOG_LOOKUP_CHUNK_SIZE)) {
+    const { data, error } = await supabase
+      .from("market_catalog_products")
+      .select("sku_code, product_name, category_name, image_url, reference_price, description")
+      .in("sku_code", batch);
+
+    if (error) {
+      throw error;
+    }
+
+    rows.push(...(data ?? []));
+  }
+
+  return rows;
+}
+
+// Same db-max-rows ceiling applies to plain selects — a tenant sitting above
+// 1000 products (the 5000-product plans allow that) would otherwise only see
+// its first 1000 rows here, undercounting existingSkuSet and letting the
+// product-limit check pass when it shouldn't.
+async function fetchAllTenantProducts(supabase: SupabaseClient, tenantId: string) {
+  const rows: Array<{ sku_code: string; display_order: number }> = [];
+  const PAGE_SIZE = 1000;
+
+  for (let from = 0; ; from += PAGE_SIZE) {
+    const { data } = await supabase
+      .from("products")
+      .select("sku_code, display_order")
+      .eq("tenant_id", tenantId)
+      .range(from, from + PAGE_SIZE - 1);
+
+    const page = data ?? [];
+    rows.push(...page);
+    if (page.length < PAGE_SIZE) break;
+  }
+
+  return rows;
 }
 
 export async function POST(request: Request) {
@@ -47,24 +105,22 @@ export async function POST(request: Request) {
     );
   }
 
-  const { data: catalogRows, error: catalogError } = await supabase
-    .from("market_catalog_products")
-    .select("sku_code, product_name, category_name, image_url, reference_price, description")
-    .in("sku_code", skuCodes);
+  let catalog: Array<{
+    sku_code: string;
+    product_name: string;
+    category_name: string;
+    image_url: string;
+    reference_price: number | null;
+    description: string | null;
+  }>;
 
-  if (catalogError) {
-    return NextResponse.json({ error: catalogError.message }, { status: 400 });
+  try {
+    catalog = await fetchCatalogRowsBySku(supabase, skuCodes);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Katalog sorgusu başarısız oldu.";
+    return NextResponse.json({ error: message }, { status: 400 });
   }
 
-  const catalog =
-    (catalogRows as Array<{
-      sku_code: string;
-      product_name: string;
-      category_name: string;
-      image_url: string;
-      reference_price: number | null;
-      description: string | null;
-    }> | null) ?? [];
   const referencePriceBySku = new Map(
     catalog.map((row) => [row.sku_code, row.reference_price]),
   );
@@ -81,13 +137,7 @@ export async function POST(request: Request) {
   // daha yüksek bir sıra numarasıyla başlar (ör. 60'tan başlaması gibi).
   await compactProductDisplayOrder(supabase, tenant.id);
 
-  const { data: existingRows } = await supabase
-    .from("products")
-    .select("sku_code, display_order")
-    .eq("tenant_id", tenant.id);
-
-  const existingProducts =
-    (existingRows as Array<{ sku_code: string; display_order: number }> | null) ?? [];
+  const existingProducts = await fetchAllTenantProducts(supabase, tenant.id);
   const existingSkuSet = new Set(existingProducts.map((row) => row.sku_code));
 
   const newSkuCount = catalog.filter((row) => !existingSkuSet.has(row.sku_code)).length;
@@ -159,35 +209,49 @@ export async function POST(request: Request) {
     display_order: nextProductDisplayOrder++,
   }));
 
-  const { error: upsertError, data: upserted } = await supabase
-    .from("products")
-    .upsert(payload, { onConflict: "tenant_id,sku_code", ignoreDuplicates: true })
-    .select("id, sku_code");
+  const insertedProducts: Array<{ id: string; sku_code: string }> = [];
 
-  if (upsertError) {
-    return NextResponse.json({ error: upsertError.message }, { status: 400 });
+  for (const batch of chunkArray(payload, UPSERT_CHUNK_SIZE)) {
+    const { error: upsertError, data: upserted } = await supabase
+      .from("products")
+      .upsert(batch, { onConflict: "tenant_id,sku_code", ignoreDuplicates: true })
+      .select("id, sku_code");
+
+    if (upsertError) {
+      return NextResponse.json(
+        { error: `${upsertError.message} (${insertedProducts.length} ürün eklendikten sonra durdu)` },
+        { status: 400 },
+      );
+    }
+
+    insertedProducts.push(...(upserted ?? []));
   }
-
-  const insertedProducts =
-    (upserted as Array<{ id: string; sku_code: string }> | null) ?? [];
 
   // Master katalogdaki referans fiyat varsa, tenant'ın fiyat listelerine
   // başlangıç önerisi olarak yazılır — admin dilerse Düzenle'den değiştirir.
   const pricedLists = getPricedLists(await ensureDefaultPriceListsForTenant(supabase, tenant.id));
 
   if (pricedLists.length) {
-    for (const product of insertedProducts) {
+    const priceRows = insertedProducts.flatMap((product) => {
       const referencePrice = referencePriceBySku.get(product.sku_code);
-
       if (typeof referencePrice !== "number") {
-        continue;
+        return [];
       }
+      return pricedLists.map((list) => ({
+        product_id: product.id,
+        price_list_id: list.id,
+        price: referencePrice,
+      }));
+    });
 
-      await upsertProductPrices(
-        supabase,
-        product.id,
-        pricedLists.map((list) => ({ price_list_id: list.id, price: referencePrice })),
-      );
+    for (const batch of chunkArray(priceRows, UPSERT_CHUNK_SIZE)) {
+      const { error: priceError } = await supabase
+        .from("product_prices")
+        .upsert(batch, { onConflict: "product_id,price_list_id" });
+
+      if (priceError) {
+        return NextResponse.json({ error: priceError.message }, { status: 400 });
+      }
     }
   }
 
