@@ -40,6 +40,8 @@ function getTrialBadge(trialEndsAt: string | null | undefined) {
 export function AdminTenantDetailPanel({ tenant: initialTenant }: { tenant: TenantWithRelations }) {
   const router = useRouter();
   const [tenant, setTenant] = useState(initialTenant);
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [companyNameDraft, setCompanyNameDraft] = useState(tenant.company_name);
   const [planDraft, setPlanDraft] = useState<TenantPlan>(tenant.plan ?? "baslangic");
   const [visitorAddonDraft, setVisitorAddonDraft] = useState(tenant.visitor_limit_addon ?? 0);
   const [productAddonDraft, setProductAddonDraft] = useState(tenant.product_limit_addon ?? 0);
@@ -128,6 +130,42 @@ export function AdminTenantDetailPanel({ tenant: initialTenant }: { tenant: Tena
       setCustomDomainDraft(result.tenant.custom_domain ?? "");
       setMessage("Özel alan adı güncellendi.");
     });
+  }
+
+  function saveCompanyName() {
+    const value = companyNameDraft.trim();
+
+    if (!value) {
+      setMessage("Firma adı boş olamaz.");
+      return;
+    }
+
+    setMessage(null);
+
+    startTransition(async () => {
+      const response = await fetch(`/api/admin/tenants/${tenant.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ company_name: value }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        setMessage(result.error ?? "Firma adı kaydedilemedi.");
+        return;
+      }
+
+      setTenant((current) => ({ ...current, company_name: result.tenant.company_name }));
+      setCompanyNameDraft(result.tenant.company_name);
+      setIsEditingName(false);
+      setMessage("Firma adı güncellendi.");
+    });
+  }
+
+  function cancelEditingCompanyName() {
+    setCompanyNameDraft(tenant.company_name);
+    setIsEditingName(false);
   }
 
   function addGiftMonths() {
@@ -473,7 +511,44 @@ export function AdminTenantDetailPanel({ tenant: initialTenant }: { tenant: Tena
         <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
           <div>
             <div className="flex flex-wrap items-center gap-3">
-              <h2 className="text-lg font-semibold text-slate-900">{tenant.company_name}</h2>
+              {isEditingName ? (
+                <div className="flex flex-wrap items-center gap-2">
+                  <Input
+                    type="text"
+                    value={companyNameDraft}
+                    onChange={(event) => setCompanyNameDraft(event.target.value)}
+                    className="h-9 max-w-[260px] py-2"
+                    aria-label="Firma adı"
+                    autoFocus
+                  />
+                  <Button
+                    className="px-3 py-2"
+                    onClick={saveCompanyName}
+                    disabled={pending || !companyNameDraft.trim()}
+                  >
+                    Kaydet
+                  </Button>
+                  <Button
+                    className="px-3 py-2"
+                    variant="secondary"
+                    onClick={cancelEditingCompanyName}
+                    disabled={pending}
+                  >
+                    İptal
+                  </Button>
+                </div>
+              ) : (
+                <>
+                  <h2 className="text-lg font-semibold text-slate-900">{tenant.company_name}</h2>
+                  <button
+                    type="button"
+                    onClick={() => setIsEditingName(true)}
+                    className="text-sm text-slate-400 transition hover:text-slate-900"
+                  >
+                    Düzenle
+                  </button>
+                </>
+              )}
               <Badge
                 className={cn(
                   tenant.status === "active"

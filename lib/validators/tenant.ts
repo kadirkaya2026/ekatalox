@@ -69,6 +69,7 @@ export const tenantSchema = z
 
 export const tenantUpdateSchema = z
   .object({
+    company_name: z.string().min(2, "Firma adı zorunludur.").optional(),
     status: z.enum(["active", "suspended"]).optional(),
     plan: tenantPlanSchema.optional(),
     business_type: businessTypeSchema.optional(),
