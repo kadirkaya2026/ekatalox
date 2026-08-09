@@ -2,15 +2,42 @@ import { NextResponse } from "next/server";
 import { revalidateStorefrontCache } from "@/lib/storefront/cache";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { ensureSuperAdminResponse } from "@/lib/tenancy/guards";
+import { chunkArray } from "@/lib/utils";
+import { resolveCategoryPath } from "@/lib/market-catalog/category-taxonomy";
+import { buildCategoryCache, ensureCategoryPath } from "@/lib/categories/ensure-hierarchy";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 const INSERT_CHUNK_SIZE = 200;
 
-function chunk<T>(items: T[], size: number): T[][] {
-  const result: T[][] = [];
-  for (let i = 0; i < items.length; i += size) {
-    result.push(items.slice(i, i + size));
+// PostgREST caps every response at its db-max-rows setting (1000) — the
+// catalog is well past that now, so an unpaginated select here would only
+// ever seed a new tenant with the first 1000 rows.
+async function fetchFullCatalog(supabase: SupabaseClient) {
+  const rows: Array<{
+    sku_code: string;
+    product_name: string;
+    brand: string | null;
+    category_name: string;
+    image_url: string;
+  }> = [];
+  const PAGE_SIZE = 1000;
+
+  for (let from = 0; ; from += PAGE_SIZE) {
+    const { data, error } = await supabase
+      .from("market_catalog_products")
+      .select("sku_code, product_name, brand, category_name, image_url")
+      .range(from, from + PAGE_SIZE - 1);
+
+    if (error) {
+      throw error;
+    }
+
+    const page = data ?? [];
+    rows.push(...page);
+    if (page.length < PAGE_SIZE) break;
   }
-  return result;
+
+  return rows;
 }
 
 export async function POST(
@@ -49,22 +76,14 @@ export async function POST(
     );
   }
 
-  const { data: catalogRows, error: catalogError } = await supabase
-    .from("market_catalog_products")
-    .select("sku_code, product_name, brand, category_name, image_url");
+  let catalog: Awaited<ReturnType<typeof fetchFullCatalog>>;
 
-  if (catalogError) {
-    return NextResponse.json({ error: catalogError.message }, { status: 400 });
+  try {
+    catalog = await fetchFullCatalog(supabase);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Katalog sorgusu başarısız oldu.";
+    return NextResponse.json({ error: message }, { status: 400 });
   }
-
-  const catalog =
-    (catalogRows as Array<{
-      sku_code: string;
-      product_name: string;
-      brand: string | null;
-      category_name: string;
-      image_url: string;
-    }> | null) ?? [];
 
   if (!catalog.length) {
     return NextResponse.json(
@@ -74,35 +93,47 @@ export async function POST(
   }
 
   // Tenant'ın market kataloğundaki kategori isimleriyle eşleşen kategorileri
-  // yoksa oluştur; tenant admin bu kategorileri daha sonra kendi ürünleri
-  // için de kullanabilir.
-  const categoryNames = Array.from(new Set(catalog.map((row) => row.category_name)));
-  const categoryPayload = categoryNames.map((name) => ({ tenant_id: tenantId, name }));
-
-  const { error: categoryUpsertError } = await supabase
+  // yoksa oluştur (üst kategorileriyle birlikte); tenant admin bu
+  // kategorileri daha sonra kendi ürünleri için de kullanabilir.
+  const { data: existingCategoryRows } = await supabase
     .from("categories")
-    .upsert(categoryPayload, { onConflict: "tenant_id,name", ignoreDuplicates: true });
+    .select("id, name, parent_id")
+    .eq("tenant_id", tenantId);
 
-  if (categoryUpsertError) {
-    return NextResponse.json({ error: categoryUpsertError.message }, { status: 400 });
-  }
-
-  const { data: categoryRows, error: categoryFetchError } = await supabase
+  const { data: lastCategory } = await supabase
     .from("categories")
-    .select("id, name")
+    .select("display_order")
     .eq("tenant_id", tenantId)
-    .in("name", categoryNames);
+    .order("display_order", { ascending: false })
+    .limit(1)
+    .maybeSingle();
 
-  if (categoryFetchError) {
-    return NextResponse.json({ error: categoryFetchError.message }, { status: 400 });
-  }
-
-  const categoryIdByName = new Map(
-    ((categoryRows as Array<{ id: string; name: string }> | null) ?? []).map((row) => [
-      row.name,
-      row.id,
-    ]),
+  const nextCategoryDisplayOrder = { value: (lastCategory?.display_order ?? 0) + 1 };
+  const categoryCache = buildCategoryCache(
+    (existingCategoryRows as Array<{ id: string; name: string; parent_id: string | null }> | null) ?? [],
   );
+
+  const categoryNames = Array.from(new Set(catalog.map((row) => row.category_name)));
+  const categoryIdByName = new Map<string, string>();
+
+  for (const rawName of categoryNames) {
+    try {
+      const leafId = await ensureCategoryPath(
+        supabase,
+        tenantId,
+        categoryCache,
+        resolveCategoryPath(rawName),
+        nextCategoryDisplayOrder,
+      );
+      categoryIdByName.set(rawName, leafId);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "bilinmeyen hata";
+      return NextResponse.json(
+        { error: `"${rawName}" kategorisi oluşturulamadı: ${message}` },
+        { status: 400 },
+      );
+    }
+  }
 
   const { data: maxOrderRow } = await supabase
     .from("products")
@@ -134,7 +165,7 @@ export async function POST(
 
   let insertedCount = 0;
 
-  for (const batch of chunk(productPayload, INSERT_CHUNK_SIZE)) {
+  for (const batch of chunkArray(productPayload, INSERT_CHUNK_SIZE)) {
     const { data, error } = await supabase
       .from("products")
       .upsert(batch, { onConflict: "tenant_id,sku_code", ignoreDuplicates: true })

@@ -8,6 +8,12 @@ import { getSessionContext } from "@/lib/auth/session";
 import { ensureTenantAdminResponse } from "@/lib/tenancy/guards";
 import { getEffectiveProductLimit } from "@/lib/billing/plans";
 import { chunkArray } from "@/lib/utils";
+import { resolveCategoryPath } from "@/lib/market-catalog/category-taxonomy";
+import {
+  buildCategoryCache,
+  ensureCategoryPath,
+  normalizeCategoryName,
+} from "@/lib/categories/ensure-hierarchy";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 // PostgREST caps a single request's URL (and thus an .in() filter's value
@@ -16,10 +22,6 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 // coming back as a bare "Bad Request". Chunking keeps each request small.
 const CATALOG_LOOKUP_CHUNK_SIZE = 300;
 const UPSERT_CHUNK_SIZE = 500;
-
-function normalizeCategoryName(name: string) {
-  return name.trim().toLocaleLowerCase("tr-TR");
-}
 
 async function fetchCatalogRowsBySku(supabase: SupabaseClient, skuCodes: string[]) {
   const rows: Array<{
@@ -152,7 +154,7 @@ export async function POST(request: Request) {
 
   const { data: categoryRows } = await supabase
     .from("categories")
-    .select("id, name")
+    .select("id, name, parent_id")
     .eq("tenant_id", tenant.id);
   const { data: lastCategory } = await supabase
     .from("categories")
@@ -161,36 +163,32 @@ export async function POST(request: Request) {
     .order("display_order", { ascending: false })
     .limit(1)
     .maybeSingle();
-  let nextCategoryDisplayOrder = (lastCategory?.display_order ?? 0) + 1;
+  const nextCategoryDisplayOrder = { value: (lastCategory?.display_order ?? 0) + 1 };
 
-  const categoryCache = new Map<string, string>(
-    ((categoryRows as Array<{ id: string; name: string }> | null) ?? []).map((row) => [
-      normalizeCategoryName(row.name),
-      row.id,
-    ]),
+  const categoryCache = buildCategoryCache(
+    (categoryRows as Array<{ id: string; name: string; parent_id: string | null }> | null) ?? [],
   );
 
   const uniqueCategoryNames = [...new Set(catalog.map((row) => row.category_name.trim()))];
+  const leafCategoryIdByName = new Map<string, string>();
 
   for (const rawName of uniqueCategoryNames) {
-    const key = normalizeCategoryName(rawName);
-    if (categoryCache.has(key)) continue;
-
-    const { data: newCategory, error: createError } = await supabase
-      .from("categories")
-      .insert({ tenant_id: tenant.id, name: rawName, display_order: nextCategoryDisplayOrder })
-      .select("id, name")
-      .single();
-
-    if (createError || !newCategory) {
+    try {
+      const leafId = await ensureCategoryPath(
+        supabase,
+        tenant.id,
+        categoryCache,
+        resolveCategoryPath(rawName),
+        nextCategoryDisplayOrder,
+      );
+      leafCategoryIdByName.set(normalizeCategoryName(rawName), leafId);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "bilinmeyen hata";
       return NextResponse.json(
-        { error: `"${rawName}" kategorisi oluşturulamadı: ${createError?.message ?? "bilinmeyen hata"}` },
+        { error: `"${rawName}" kategorisi oluşturulamadı: ${message}` },
         { status: 400 },
       );
     }
-
-    categoryCache.set(key, (newCategory as { id: string; name: string }).id);
-    nextCategoryDisplayOrder += 1;
   }
 
   let nextProductDisplayOrder =
@@ -200,7 +198,7 @@ export async function POST(request: Request) {
   // bu yüzden onlara verilen display_order'ın gerçek sırayı bozması sorun değil.
   const payload = catalog.map((row) => ({
     tenant_id: tenant.id,
-    category_id: categoryCache.get(normalizeCategoryName(row.category_name))!,
+    category_id: leafCategoryIdByName.get(normalizeCategoryName(row.category_name))!,
     sku_code: row.sku_code,
     product_name: row.product_name,
     image_url: row.image_url,
