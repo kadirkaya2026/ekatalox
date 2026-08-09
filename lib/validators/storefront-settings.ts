@@ -194,7 +194,6 @@ export const storefrontSettingsSchema = z
       .array(bannerItemSchema)
       .max(3, "En fazla 3 görsel ekleyebilirsiniz.")
       .default([]),
-    is_hero_cluster_visible_on_mobile: z.boolean().default(true),
     theme_key: storefrontThemeKeySchema,
     layout_key: storefrontLayoutKeySchema.default("classic-grid"),
     site_tab_title: z

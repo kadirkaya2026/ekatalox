@@ -259,7 +259,6 @@ export interface TenantStorefrontSettings {
   homepage_blocks: HomepageBlock[];
   banner_items: BannerItem[];
   hero_cluster_items: BannerItem[];
-  is_hero_cluster_visible_on_mobile: boolean;
   site_tab_title: string | null;
   site_favicon_url: string | null;
   announcement_title: string | null;

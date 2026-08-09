@@ -2419,7 +2419,6 @@ export function StorefrontClient({
                   key="heroCluster"
                   heroClusterItems={heroClusterItems}
                   storefrontTitle={storefrontTitle}
-                  isVisibleOnMobile={storefrontSettings.is_hero_cluster_visible_on_mobile}
                 />
               ) : null;
             }

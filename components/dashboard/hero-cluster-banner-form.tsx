@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { Trash2 } from "lucide-react";
+import { ChevronDown, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -61,6 +61,7 @@ function createEmptyHeroClusterItem(index: number): BannerItem {
     cta_label: null,
     cta_href: null,
     background_color: index === 0 ? "#0f172a" : "#1d4ed8",
+    is_visible_on_mobile: true,
   };
 }
 
@@ -75,9 +76,7 @@ export function HeroClusterBannerForm({
     initialItems[1] ?? null,
     initialItems[2] ?? null,
   ]);
-  const [isVisibleOnMobile, setIsVisibleOnMobile] = useState(
-    initialStorefrontSettings.is_hero_cluster_visible_on_mobile,
-  );
+  const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
   const [uploadState, setUploadState] = useState<
     Record<number, { pending?: boolean; message?: string | null }>
   >({});
@@ -98,30 +97,40 @@ export function HeroClusterBannerForm({
     setSaveMessage(null);
   }
 
-  async function removeImage(index: number) {
+  // Trash2 sadece görseli değil, tüm alanı sıfırlar — aksi halde başlık/
+  // açıklama gibi eski veriler kalıp "silinmedi" izlenimi veriyordu.
+  async function clearSlot(index: number) {
     const current = items[index];
-    if (!current?.image_url?.startsWith("http")) {
-      updateField(index, "image_url", "");
-      return;
+
+    if (current?.image_url?.startsWith("http")) {
+      setUploadStatus(index, { pending: true, message: null });
+
+      const response = await fetch("/api/tenant/settings/hero-cluster-image", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ image_url: current.image_url }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        setUploadStatus(index, { pending: false, message: result.error ?? "Görsel silinemedi." });
+        return;
+      }
     }
 
-    setUploadStatus(index, { pending: true, message: null });
-
-    const response = await fetch("/api/tenant/settings/hero-cluster-image", {
-      method: "DELETE",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ image_url: current.image_url }),
+    setItems((currentItems) => {
+      const next = [...currentItems];
+      next[index] = null;
+      return next;
     });
-
-    const result = await response.json();
-
-    if (!response.ok) {
-      setUploadStatus(index, { pending: false, message: result.error ?? "Görsel silinemedi." });
-      return;
-    }
-
-    updateField(index, "image_url", "");
-    setUploadStatus(index, { pending: false, message: null });
+    setUploadState((current) => {
+      const next = { ...current };
+      delete next[index];
+      return next;
+    });
+    setExpandedIndex((current) => (current === index ? null : current));
+    setSaveMessage(null);
   }
 
   async function handleFileChange(index: number, slot: Slot, file: File | null) {
@@ -195,7 +204,6 @@ export function HeroClusterBannerForm({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           hero_cluster_items: heroClusterItems,
-          is_hero_cluster_visible_on_mobile: isVisibleOnMobile,
         }),
       });
 
@@ -221,7 +229,8 @@ export function HeroClusterBannerForm({
           <p className="mt-1 text-sm text-slate-600">
             Bu bölüm, anasayfa banner carousel&apos;ından farklı bir oran kullanır — bu yüzden
             kendi görsellerini ayrıca yüklemeniz gerekir. En az 2 görsel (büyük + 1 küçük)
-            yüklendiğinde bölüm anasayfada görünür.
+            yüklendiğinde bölüm anasayfada görünür. Her görselin kendi mobil görünürlüğünü
+            aşağıdan ayrı ayrı ayarlayabilirsiniz.
           </p>
         </div>
 
@@ -229,20 +238,62 @@ export function HeroClusterBannerForm({
           {SLOTS.map(({ slot, label, aspect }, index) => {
             const item = items[index];
             const required = requiredDimensionsForSlot(slot);
+            const isExpanded = expandedIndex === index;
 
             return (
               <div key={index} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
                 <div className="flex items-center justify-between gap-3">
-                  <p className="text-sm font-semibold text-slate-900">
-                    {label}
-                    <span className="ml-2 font-normal text-slate-500">
-                      Zorunlu ölçü: {required.width}x{required.height}px
-                    </span>
-                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setExpandedIndex((current) => (current === index ? null : index))}
+                    aria-expanded={isExpanded}
+                    className="flex min-w-0 flex-1 items-center gap-3 text-left"
+                  >
+                    <div
+                      className={cn(
+                        "relative size-12 shrink-0 overflow-hidden rounded-xl border border-slate-200 bg-white",
+                      )}
+                    >
+                      {item?.image_url ? (
+                        <Image
+                          src={item.image_url}
+                          alt={`${label} önizleme`}
+                          fill
+                          className="object-cover"
+                          sizes="48px"
+                          unoptimized
+                        />
+                      ) : null}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-semibold text-slate-900">
+                        {label}
+                        {item?.title ? (
+                          <span className="ml-2 truncate font-normal text-slate-500">
+                            {item.title}
+                          </span>
+                        ) : null}
+                        {item?.is_visible_on_mobile === false ? (
+                          <span className="ml-2 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700">
+                            Mobilde gizli
+                          </span>
+                        ) : null}
+                      </p>
+                      <p className="text-xs text-slate-500">
+                        Zorunlu ölçü: {required.width}x{required.height}px
+                      </p>
+                    </div>
+                    <ChevronDown
+                      className={cn(
+                        "size-4 shrink-0 text-slate-400 transition-transform",
+                        isExpanded && "rotate-180",
+                      )}
+                    />
+                  </button>
                   {item?.image_url ? (
                     <button
                       type="button"
-                      onClick={() => { void removeImage(index); }}
+                      onClick={() => { void clearSlot(index); }}
                       className="shrink-0 rounded-xl border border-red-200 px-3 py-2 text-sm font-semibold text-red-700 transition hover:bg-red-50"
                     >
                       <Trash2 className="size-4" />
@@ -250,6 +301,7 @@ export function HeroClusterBannerForm({
                   ) : null}
                 </div>
 
+                {isExpanded ? (
                 <div className="mt-4 grid gap-3">
                   <Input
                     value={item?.title ?? ""}
@@ -323,24 +375,23 @@ export function HeroClusterBannerForm({
                     onChange={(event) => updateField(index, "background_color", event.target.value)}
                     placeholder="#0f172a"
                   />
+                  <label className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white p-3 text-sm text-slate-700">
+                    <input
+                      type="checkbox"
+                      checked={item?.is_visible_on_mobile ?? true}
+                      onChange={(event) =>
+                        updateField(index, "is_visible_on_mobile", event.target.checked)
+                      }
+                      className="size-4 accent-emerald-600"
+                    />
+                    Bu görsel mobilde de görünsün
+                  </label>
                 </div>
+                ) : null}
               </div>
             );
           })}
         </div>
-
-        <label className="mt-6 flex items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
-          <input
-            type="checkbox"
-            checked={isVisibleOnMobile}
-            onChange={(event) => {
-              setIsVisibleOnMobile(event.target.checked);
-              setSaveMessage(null);
-            }}
-            className="size-4 accent-emerald-600"
-          />
-          Mobilde de göster
-        </label>
 
         <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="min-h-6">

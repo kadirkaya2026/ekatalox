@@ -36,6 +36,7 @@ function ClusterBox({
       className={cn(
         "relative block w-full overflow-hidden rounded-[1.75rem]",
         large ? "aspect-[3/2]" : "aspect-[16/9]",
+        banner.is_visible_on_mobile === false && "hidden sm:block",
       )}
       style={{
         background: banner.background_color ?? CLUSTER_GRADIENTS[index % CLUSTER_GRADIENTS.length],
@@ -76,11 +77,9 @@ function ClusterBox({
 export function StorefrontHeroCluster({
   heroClusterItems,
   storefrontTitle,
-  isVisibleOnMobile = true,
 }: {
   heroClusterItems: BannerItem[];
   storefrontTitle: string;
-  isVisibleOnMobile?: boolean;
 }) {
   if (heroClusterItems.length < 2) {
     return null;
@@ -88,12 +87,17 @@ export function StorefrontHeroCluster({
 
   const [main, ...rest] = heroClusterItems;
   const sideItems = rest.slice(0, 2);
+  // Her görsel kendi mobil görünürlüğünü taşır (bkz. ClusterBox); hepsi
+  // mobilde gizliyse bölümün boş grid boşluğu (margin) da kalmasın.
+  const noneVisibleOnMobile = [main, ...sideItems].every(
+    (banner) => banner.is_visible_on_mobile === false,
+  );
 
   return (
     <section
       className={cn(
-        "mb-5 grid-cols-1 gap-3 sm:mb-8 sm:grid sm:grid-cols-[1.6fr_1fr] sm:gap-4",
-        isVisibleOnMobile ? "grid" : "hidden sm:grid",
+        "grid-cols-1 gap-3 sm:mb-8 sm:grid sm:grid-cols-[1.6fr_1fr] sm:gap-4",
+        noneVisibleOnMobile ? "hidden sm:grid" : "mb-5 grid",
       )}
     >
       <ClusterBox banner={main} index={0} large title={storefrontTitle} />
