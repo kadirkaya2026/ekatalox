@@ -644,6 +644,24 @@ export async function getTenantPriceLists(tenantId: string): Promise<PriceList[]
   return lists.sort(sortPriceLists);
 }
 
+/**
+ * Şifresiz vitrin modunda (tenant.is_password_protected === false) ziyaretçiye
+ * hangi fiyat listesinin uygulanacağını belirler — erişim kodu girilmediği
+ * için ilk (sort_order'a göre) fiyat listesi otomatik seçilir.
+ */
+export async function resolveDefaultPriceListForTenant(
+  tenantId: string,
+): Promise<{ priceListId: string; isCatalogOnly: boolean } | null> {
+  const priceLists = await getTenantPriceLists(tenantId);
+  const first = priceLists[0];
+
+  if (!first) {
+    return null;
+  }
+
+  return { priceListId: first.id, isCatalogOnly: first.is_catalog_only };
+}
+
 export async function getTenantAccessCodes(
   tenantId: string,
 ): Promise<AccessCode[]> {

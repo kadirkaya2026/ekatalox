@@ -26,9 +26,39 @@ export function AccessCodesManager({
   const [newPriceListName, setNewPriceListName] = useState("");
   const [message, setMessage] = useState<string | null>(null);
   const [priceListMessage, setPriceListMessage] = useState<string | null>(null);
+  const [isPasswordProtected, setIsPasswordProtected] = useState(tenant.is_password_protected);
+  const [passwordModeMessage, setPasswordModeMessage] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const [priceListPending, startPriceListTransition] = useTransition();
+  const [passwordModePending, startPasswordModeTransition] = useTransition();
   const router = useRouter();
+
+  function togglePasswordProtection(nextValue: boolean) {
+    setPasswordModeMessage(null);
+
+    startPasswordModeTransition(async () => {
+      const response = await fetch("/api/tenant/access-codes", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ is_password_protected: nextValue }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        setPasswordModeMessage(result.error ?? "Ayar güncellenemedi.");
+        return;
+      }
+
+      setIsPasswordProtected(nextValue);
+      setPasswordModeMessage(
+        nextValue
+          ? "Şifre koruması açıldı. Müşteriler artık erişim kodu girmeden mağazaya giremez."
+          : "Şifre koruması kapatıldı. Müşteriler artık kod girmeden doğrudan mağazaya girebilir.",
+      );
+      router.refresh();
+    });
+  }
 
   // Fiyatsız katalog (is_catalog_only) şifreleri bir fiyat seviyesi
   // göstermediği için paket kotasına dahil edilmez — bkz.
@@ -136,10 +166,51 @@ export function AccessCodesManager({
   }
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
-      <div className="space-y-6">
-      <Card className="p-5">
-        <h2 className="text-lg font-semibold text-slate-900">Fiyat listeleri</h2>
+    <div className="space-y-6">
+      <Card className="p-5 border-violet-200 bg-violet-50/40">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h2 className="text-lg font-semibold text-slate-900">Şifre kullanma</h2>
+            <p className="mt-1 max-w-xl text-sm text-slate-600">
+              Demo veya tanıtım amaçlı paylaştığınız mağazalarda müşterilerin erişim kodu
+              girmesine gerek kalmadan doğrudan girebilmesini istiyorsanız açın. Açıkken
+              aşağıdaki şifre yönetimi devre dışı kalır ve mağaza herkese açık olur.
+            </p>
+          </div>
+          <label className="flex shrink-0 items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700">
+            <input
+              type="checkbox"
+              checked={!isPasswordProtected}
+              onChange={(event) => togglePasswordProtection(!event.target.checked)}
+              disabled={passwordModePending}
+              className="size-4 accent-violet-600"
+            />
+            Şifre kullanma
+          </label>
+        </div>
+
+        {passwordModeMessage ? (
+          <p className="mt-3 text-sm text-emerald-700">{passwordModeMessage}</p>
+        ) : null}
+
+        {!isPasswordProtected ? (
+          <div className="mt-4 rounded-xl border border-violet-200 bg-white px-4 py-3 text-sm text-violet-800">
+            Şifre koruması şu anda kapalı — mağaza şifresiz açık. Aşağıdan tekrar
+            açabilirsiniz.
+          </div>
+        ) : null}
+      </Card>
+
+      <div
+        aria-disabled={!isPasswordProtected}
+        className={
+          !isPasswordProtected ? "pointer-events-none opacity-50" : undefined
+        }
+      >
+        <div className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
+          <div className="space-y-6">
+          <Card className="p-5">
+            <h2 className="text-lg font-semibold text-slate-900">Fiyat listeleri</h2>
         <p className="mt-1 text-sm text-slate-600">
           Yeni bir fiyatlı seviye (ör. &quot;4.Liste&quot;, &quot;VIP Bayi&quot;) oluşturun,
           ardından aşağıdan bu listeye bağlı bir şifre ekleyin.
@@ -272,6 +343,8 @@ export function AccessCodesManager({
           })}
         </div>
       </Card>
+        </div>
+      </div>
     </div>
   );
 }

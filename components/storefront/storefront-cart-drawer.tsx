@@ -1,8 +1,10 @@
 "use client";
 
-import { useState, type Dispatch, ReactNode, SetStateAction } from "react";
+import { useRef, useState, type Dispatch, ReactNode, SetStateAction } from "react";
 import {
   Banknote,
+  ChevronLeft,
+  ChevronRight,
   CreditCard,
   Minus,
   Plus,
@@ -122,6 +124,14 @@ export function StorefrontCartDrawer({
   const theme = useStorefrontTheme();
   const { t } = useStorefrontLocale();
   const [copyFeedback, setCopyFeedback] = useState<string | null>(null);
+  const crossSellScrollRef = useRef<HTMLDivElement>(null);
+
+  function scrollCrossSell(direction: "left" | "right") {
+    const container = crossSellScrollRef.current;
+    if (!container) return;
+    const amount = Math.round(container.clientWidth * 0.8) * (direction === "left" ? -1 : 1);
+    container.scrollBy({ left: amount, behavior: "smooth" });
+  }
 
   function updateCartItemQuantity(productId: string, value: string) {
     if (value === "") {
@@ -487,8 +497,44 @@ export function StorefrontCartDrawer({
                       </h3>
                     </div>
 
-                    <div className="scrollbar-hide -mx-1 -mt-2 flex gap-3 overflow-x-auto px-1 pb-1 pt-2">
-                      {recommendedProducts.map((product) => renderCrossSellCard(product))}
+                    <div className="relative">
+                      <div
+                        ref={crossSellScrollRef}
+                        onWheel={(event) => {
+                          if (Math.abs(event.deltaY) <= Math.abs(event.deltaX)) return;
+                          event.currentTarget.scrollBy({ left: event.deltaY });
+                          event.preventDefault();
+                        }}
+                        className="scrollbar-hide -mx-1 -mt-2 flex gap-3 overflow-x-auto px-1 pb-1 pt-2"
+                      >
+                        {recommendedProducts.map((product) => renderCrossSellCard(product))}
+                      </div>
+                      {recommendedProducts.length > 2 ? (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => scrollCrossSell("left")}
+                            aria-label={t("cart.scrollLeft")}
+                            className={cn(
+                              theme.cartDrawerCloseButton,
+                              "absolute left-0 top-1/2 hidden -translate-x-1/2 -translate-y-1/2 shadow-md sm:flex",
+                            )}
+                          >
+                            <ChevronLeft className="size-5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => scrollCrossSell("right")}
+                            aria-label={t("cart.scrollRight")}
+                            className={cn(
+                              theme.cartDrawerCloseButton,
+                              "absolute right-0 top-1/2 hidden -translate-y-1/2 translate-x-1/2 shadow-md sm:flex",
+                            )}
+                          >
+                            <ChevronRight className="size-5" />
+                          </button>
+                        </>
+                      ) : null}
                     </div>
                   </section>
                 ) : null}

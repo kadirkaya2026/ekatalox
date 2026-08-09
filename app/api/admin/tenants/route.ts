@@ -98,6 +98,7 @@ export async function POST(request: Request) {
       product_limit_addon: 0,
       is_demo: false,
       business_type: parsed.data.business_type ?? "general",
+      is_password_protected: true,
     };
     const profile: Profile = {
       id: crypto.randomUUID(),

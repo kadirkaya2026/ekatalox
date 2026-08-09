@@ -57,6 +57,7 @@ export const demoTenants: Tenant[] = [
     product_limit_addon: 0,
     is_demo: false,
     business_type: "general",
+    is_password_protected: true,
     created_at: new Date("2026-01-01").toISOString(),
   },
   {
@@ -77,6 +78,7 @@ export const demoTenants: Tenant[] = [
     product_limit_addon: 0,
     is_demo: false,
     business_type: "general",
+    is_password_protected: true,
     created_at: new Date("2026-01-05").toISOString(),
   },
 ];

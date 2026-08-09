@@ -3,7 +3,7 @@ export const revalidate = 0;
 
 import type { Metadata } from "next";
 import { headers } from "next/headers";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { PasswordGate } from "@/components/storefront/password-gate";
 import { StoreClosedNotice } from "@/components/storefront/store-closed-notice";
 import { StorefrontSuspendedNotice } from "@/components/storefront/storefront-suspended-notice";
@@ -23,6 +23,7 @@ import {
   getRequestHostFromHeaders,
   isTenantCustomDomainHost,
 } from "@/lib/tenancy/request-host";
+import { getStorefrontHomePath } from "@/lib/storefront/paths";
 import {
   isStorefrontPriceListStateValid,
   readStorefrontPriceList,
@@ -92,6 +93,12 @@ export default async function StorefrontPage(props: PageProps<"/store/[subdomain
     !priceListState ||
     !isStorefrontPriceListStateValid({ cookieState: priceListState, tenant })
   ) {
+    if (!tenant.is_password_protected) {
+      redirect(
+        `/api/storefront/auto-enter?subdomain=${encodeURIComponent(subdomain)}&redirectTo=${encodeURIComponent(getStorefrontHomePath())}`,
+      );
+    }
+
     const settings = await getTenantStorefrontSettings(tenant.id);
 
     return (

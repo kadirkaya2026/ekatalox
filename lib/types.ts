@@ -89,6 +89,7 @@ export interface Tenant {
   product_limit_addon: number;
   is_demo: boolean;
   business_type: TenantBusinessType;
+  is_password_protected: boolean;
   created_at: string;
 }
 

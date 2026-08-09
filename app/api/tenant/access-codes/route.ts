@@ -4,7 +4,61 @@ import { shouldAllowDemoFallback } from "@/lib/env";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { getSessionContext } from "@/lib/auth/session";
 import { ensureAccessCodeLimitResponse, ensureTenantAdminResponse } from "@/lib/tenancy/guards";
+import { revalidateStorefrontCache } from "@/lib/storefront/cache";
 import { accessCodeSchema } from "@/lib/validators/access-code";
+
+export async function PATCH(request: Request) {
+  const guard = await ensureTenantAdminResponse({ blockDemoWrite: true });
+  if (guard) {
+    return guard;
+  }
+
+  const session = await getSessionContext();
+  const body = await request.json();
+
+  if (typeof body.is_password_protected !== "boolean") {
+    return NextResponse.json(
+      { error: "is_password_protected alanı zorunludur." },
+      { status: 400 },
+    );
+  }
+
+  const tenant = session.tenant!;
+  const supabase = createSupabaseAdminClient();
+
+  if (!supabase) {
+    if (!shouldAllowDemoFallback()) {
+      return NextResponse.json(
+        { error: "Supabase production yapılandırması eksik." },
+        { status: 500 },
+      );
+    }
+
+    revalidateStorefrontCache({ tenantId: tenant.id, subdomain: tenant.subdomain });
+
+    return NextResponse.json({
+      tenant: { ...tenant, is_password_protected: body.is_password_protected },
+    });
+  }
+
+  const { data, error } = await supabase
+    .from("tenants")
+    .update({ is_password_protected: body.is_password_protected })
+    .eq("id", tenant.id)
+    .select("*")
+    .single();
+
+  if (error) {
+    return NextResponse.json(
+      { error: "Şifre ayarı güncellenemedi." },
+      { status: 400 },
+    );
+  }
+
+  revalidateStorefrontCache({ tenantId: tenant.id, subdomain: tenant.subdomain });
+
+  return NextResponse.json({ tenant: data });
+}
 
 export async function POST(request: Request) {
   const guard = await ensureTenantAdminResponse({ blockDemoWrite: true });

@@ -57,6 +57,8 @@ export const storefrontDictionary: Record<StorefrontLocale, StorefrontDictionary
     "cart.orderNotePlaceholder": "Sipariş notu (opsiyonel)",
     "cart.suggestedProducts": "Sepetine Uygun Ürünler",
     "cart.youMayAlsoLike": "Bunları da Beğenebilirsiniz",
+    "cart.scrollLeft": "Sola kaydır",
+    "cart.scrollRight": "Sağa kaydır",
     "cart.emptyTitle": "Sepetiniz şu an boş.",
     "cart.emptyHint":
       "Ürünleri inceleyip birkaç kalemi sepete eklediğinizde sipariş özeti burada premium bir şekilde listelenecek.",
@@ -251,6 +253,8 @@ export const storefrontDictionary: Record<StorefrontLocale, StorefrontDictionary
     "cart.orderNotePlaceholder": "Bestellhinweis (optional)",
     "cart.suggestedProducts": "Passend zu Ihrem Warenkorb",
     "cart.youMayAlsoLike": "Das könnte Ihnen auch gefallen",
+    "cart.scrollLeft": "Nach links scrollen",
+    "cart.scrollRight": "Nach rechts scrollen",
     "cart.emptyTitle": "Ihr Warenkorb ist derzeit leer.",
     "cart.emptyHint":
       "Sobald Sie Produkte durchstöbern und einige Artikel in den Warenkorb legen, wird hier eine übersichtliche Bestellzusammenfassung angezeigt.",
@@ -445,6 +449,8 @@ export const storefrontDictionary: Record<StorefrontLocale, StorefrontDictionary
     "cart.orderNotePlaceholder": "Order note (optional)",
     "cart.suggestedProducts": "Suggested For Your Cart",
     "cart.youMayAlsoLike": "You May Also Like",
+    "cart.scrollLeft": "Scroll left",
+    "cart.scrollRight": "Scroll right",
     "cart.emptyTitle": "Your cart is currently empty.",
     "cart.emptyHint":
       "Once you browse products and add a few items to your cart, your order summary will be shown here.",
@@ -638,6 +644,8 @@ export const storefrontDictionary: Record<StorefrontLocale, StorefrontDictionary
     "cart.orderNotePlaceholder": "Примечание к заказу (необязательно)",
     "cart.suggestedProducts": "Рекомендуем к вашей корзине",
     "cart.youMayAlsoLike": "Вам также может понравиться",
+    "cart.scrollLeft": "Прокрутить влево",
+    "cart.scrollRight": "Прокрутить вправо",
     "cart.emptyTitle": "Ваша корзина пока пуста.",
     "cart.emptyHint":
       "Как только вы просмотрите товары и добавите несколько позиций в корзину, здесь появится сводка заказа.",
