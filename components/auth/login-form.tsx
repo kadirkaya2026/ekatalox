@@ -119,12 +119,14 @@ export function LoginForm({ target }: { target?: string }) {
         <form onSubmit={submit} className="mt-6 space-y-4">
           <Input
             type="email"
+            aria-label="E-posta"
             placeholder="E-posta"
             value={email}
             onChange={(event) => setEmail(event.target.value)}
           />
           <Input
             type="password"
+            aria-label="Şifre"
             placeholder="Şifre"
             value={password}
             onChange={(event) => setPassword(event.target.value)}

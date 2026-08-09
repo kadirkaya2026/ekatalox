@@ -183,14 +183,14 @@ function HeaderBrand({
         )}
       </div>
       <div className={cn("min-w-0", centered && "text-center")}>
-        <p
+        <h1
           className={cn(
             theme.headerTitle,
             compact ? "text-base sm:text-lg" : "text-lg sm:text-xl lg:text-[1.65rem]",
           )}
         >
           {props.storefrontTitle}
-        </p>
+        </h1>
         {props.storefrontSettings.is_price_update_date_visible &&
         props.storefrontSettings.price_update_date ? (
           <p className={cn("mt-0.5 truncate text-[10px] leading-4 sm:text-[11px]", theme.headerMuted)}>

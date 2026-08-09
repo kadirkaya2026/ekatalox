@@ -56,6 +56,7 @@ function PasswordGateForm({
         <form onSubmit={submit} className="mt-6 space-y-4">
           <Input
             inputMode="numeric"
+            aria-label={t("gate.passwordPlaceholder")}
             placeholder={t("gate.passwordPlaceholder")}
             value={code}
             onChange={(event) => setCode(event.target.value)}

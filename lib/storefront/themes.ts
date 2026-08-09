@@ -194,6 +194,7 @@ function resolveAccent(
       | "soft"
       | "softText"
       | "titleHover"
+      | "price"
       | "priceOriginal"
       | "chipActiveBgDark"
       | "chipActiveTextDark"
@@ -210,7 +211,8 @@ function resolveAccent(
       soft: "bg-emerald-950/50",
       softText: "text-emerald-300",
       titleHover: "group-hover:text-emerald-300",
-      priceOriginal: "text-neutral-500",
+      price: "text-emerald-300",
+      priceOriginal: "text-neutral-300",
       chipActiveBgDark: "bg-emerald-900/70",
       chipActiveTextDark: "text-white",
       pageGradientDark:
@@ -228,7 +230,8 @@ function resolveAccent(
       soft: "bg-blue-950/50",
       softText: "text-blue-300",
       titleHover: "group-hover:text-blue-300",
-      priceOriginal: "text-neutral-500",
+      price: "text-blue-300",
+      priceOriginal: "text-neutral-300",
       chipActiveBgDark: "bg-blue-900/70",
       chipActiveTextDark: "text-white",
       pageGradientDark:
@@ -246,7 +249,8 @@ function resolveAccent(
       soft: "bg-neutral-800",
       softText: "text-neutral-300",
       titleHover: "group-hover:text-neutral-200",
-      priceOriginal: "text-neutral-500",
+      price: "text-neutral-100",
+      priceOriginal: "text-neutral-300",
       chipActiveBgDark: "bg-neutral-500",
       chipActiveTextDark: "text-neutral-50",
       pageGradientDark:
@@ -264,7 +268,8 @@ function resolveAccent(
       soft: "bg-zinc-800",
       softText: "text-zinc-300",
       titleHover: "group-hover:text-zinc-200",
-      priceOriginal: "text-neutral-500",
+      price: "text-zinc-300",
+      priceOriginal: "text-neutral-300",
       chipActiveBgDark: "bg-zinc-700",
       chipActiveTextDark: "text-white",
       pageGradientDark:
@@ -282,7 +287,8 @@ function resolveAccent(
       soft: "bg-stone-800",
       softText: "text-stone-300",
       titleHover: "group-hover:text-stone-200",
-      priceOriginal: "text-neutral-500",
+      price: "text-stone-300",
+      priceOriginal: "text-neutral-300",
       chipActiveBgDark: "bg-stone-700",
       chipActiveTextDark: "text-white",
       pageGradientDark:
@@ -300,7 +306,8 @@ function resolveAccent(
       soft: "bg-slate-800",
       softText: "text-slate-300",
       titleHover: "group-hover:text-slate-200",
-      priceOriginal: "text-neutral-500",
+      price: "text-slate-300",
+      priceOriginal: "text-neutral-300",
       chipActiveBgDark: "bg-slate-700",
       chipActiveTextDark: "text-white",
       pageGradientDark:
@@ -318,7 +325,8 @@ function resolveAccent(
       soft: "bg-orange-950/50",
       softText: "text-orange-300",
       titleHover: "group-hover:text-orange-300",
-      priceOriginal: "text-neutral-500",
+      price: "text-orange-300",
+      priceOriginal: "text-neutral-300",
       chipActiveBgDark: "bg-orange-900/70",
       chipActiveTextDark: "text-white",
       pageGradientDark:
@@ -336,7 +344,8 @@ function resolveAccent(
       soft: "bg-teal-950/50",
       softText: "text-teal-300",
       titleHover: "group-hover:text-teal-300",
-      priceOriginal: "text-neutral-500",
+      price: "text-teal-300",
+      priceOriginal: "text-neutral-300",
       chipActiveBgDark: "bg-teal-900/70",
       chipActiveTextDark: "text-white",
       pageGradientDark:
@@ -375,11 +384,11 @@ function buildTheme(
     ? "text-neutral-300 hover:bg-neutral-700"
     : "text-slate-700 hover:bg-slate-50";
   const sidebarChildInactive = isDark
-    ? "text-neutral-400 hover:bg-neutral-700 hover:text-neutral-100"
+    ? "text-neutral-300 hover:bg-neutral-700 hover:text-neutral-100"
     : "text-slate-600 hover:bg-slate-50 hover:text-slate-900";
   const chipInactiveText = isDark ? "text-neutral-300" : "text-slate-700";
   const chipInactiveHover = isDark ? "hover:bg-neutral-700" : "hover:bg-slate-50";
-  const modalInactiveText = isDark ? "text-neutral-400" : "text-slate-600";
+  const modalInactiveText = isDark ? "text-neutral-300" : "text-slate-600";
   const stepperButton = isDark
     ? "text-neutral-200 transition hover:bg-neutral-700 disabled:cursor-not-allowed disabled:hover:bg-transparent"
     : "text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:hover:bg-transparent";
@@ -387,7 +396,7 @@ function buildTheme(
     ? "flex size-10 items-center justify-center rounded-full border-0 bg-neutral-600 text-neutral-300 transition hover:bg-neutral-500"
     : "flex size-10 items-center justify-center rounded-full border border-slate-200 bg-slate-50 text-slate-600 transition hover:border-slate-300 hover:bg-slate-100";
   const modalClose = isDark
-    ? "rounded-full p-2 text-neutral-400 transition hover:bg-neutral-700 hover:text-neutral-100"
+    ? "rounded-full p-2 text-neutral-300 transition hover:bg-neutral-700 hover:text-neutral-100"
     : "rounded-full p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-900";
   const drawerHandle = isDark ? "h-1.5 w-14 rounded-full bg-neutral-600" : "h-1.5 w-14 rounded-full bg-slate-200";
   const productCardHover = isDark ? "hover:brightness-105" : "hover:border-slate-300";
@@ -439,10 +448,10 @@ function buildTheme(
   const indicatorInactive = isDark
     ? "bg-neutral-500 hover:bg-neutral-400"
     : "bg-slate-300 hover:bg-slate-400";
-  const cartSummaryMuted = isDark ? "text-neutral-400" : neutrals.textMuted;
-  const textTertiary = isDark ? "text-neutral-500" : "text-slate-500";
+  const cartSummaryMuted = isDark ? "text-neutral-300" : neutrals.textMuted;
+  const textTertiary = isDark ? "text-neutral-300" : "text-slate-500";
   const proseBlockquote = isDark
-    ? "border-0 text-neutral-400"
+    ? "border-0 text-neutral-300"
     : "border-slate-200 text-slate-500";
   const proseTableHead = isDark
     ? "border-0 bg-neutral-600"
@@ -452,7 +461,7 @@ function buildTheme(
     ? "[&_h2]:text-neutral-50 [&_h3]:text-neutral-50"
     : "[&_h2]:text-slate-900 [&_h3]:text-slate-900";
   const proseBlockquoteBlock = isDark
-    ? "[&_blockquote]:border-0 [&_blockquote]:border-l-0 [&_blockquote]:pl-3 [&_blockquote]:text-neutral-400"
+    ? "[&_blockquote]:border-0 [&_blockquote]:border-l-0 [&_blockquote]:pl-3 [&_blockquote]:text-neutral-300"
     : "[&_blockquote]:border-l-4 [&_blockquote]:border-slate-200 [&_blockquote]:text-slate-500";
   const proseTableHeadBlock = isDark
     ? "[&_th]:border-0 [&_th]:bg-neutral-600"
@@ -464,7 +473,7 @@ function buildTheme(
   const structuralBorder = isDark ? "border-0" : neutrals.border;
   const stickyBarBorder = isDark ? "border-0" : accent.stickyBarBorder;
   const formField = isDark
-    ? "border-0 bg-neutral-600 text-neutral-50 placeholder:text-neutral-400 focus-visible:ring-1 focus-visible:ring-emerald-500/40 focus-visible:ring-offset-0 dark:border-0"
+    ? "border-0 bg-neutral-600 text-neutral-50 placeholder:text-neutral-300 focus-visible:ring-1 focus-visible:ring-emerald-500/40 focus-visible:ring-offset-0 dark:border-0"
     : "";
   const bannerOverlay = isDark ? "hidden" : "absolute inset-0 hidden md:block";
   const sectionDivider = isDark ? "" : cn("border-t", neutrals.headerRailBorder);
@@ -811,9 +820,9 @@ const minimalNeutrals: ThemeNeutrals = {
 };
 
 const minimalAccent: ThemeAccent = {
-  primary: "bg-emerald-600",
-  primaryHover: "hover:bg-emerald-700",
-  primaryActive: "active:bg-emerald-800",
+  primary: "bg-emerald-700",
+  primaryHover: "hover:bg-emerald-800",
+  primaryActive: "active:bg-emerald-900",
   primaryForeground: "text-white",
   soft: "bg-emerald-50",
   softText: "text-emerald-700",
@@ -827,13 +836,13 @@ const minimalAccent: ThemeAccent = {
     "border border-emerald-400/30 bg-[linear-gradient(180deg,rgba(16,185,129,0.98)_0%,rgba(5,150,105,0.96)_100%)] text-white shadow-[0_18px_40px_rgba(5,150,105,0.34)] backdrop-blur",
   stickyBar: "bg-slate-900 text-white",
   stickyBarBorder: "border-white/10",
-  stickyButton: "bg-emerald-600 hover:bg-emerald-700 text-white",
-  stickyButtonHover: "hover:bg-emerald-700",
+  stickyButton: "bg-emerald-700 hover:bg-emerald-800 text-white",
+  stickyButtonHover: "hover:bg-emerald-800",
   navMobileActive: "border-emerald-600",
-  subChipActive: "border-emerald-600 bg-emerald-600 text-white",
-  floatingAddBorder: "border-emerald-600",
-  floatingAddBg: "bg-emerald-500",
-  floatingAddHover: "hover:border-emerald-500 hover:bg-emerald-400",
+  subChipActive: "border-emerald-700 bg-emerald-700 text-white",
+  floatingAddBorder: "border-emerald-700",
+  floatingAddBg: "bg-emerald-700",
+  floatingAddHover: "hover:border-emerald-800 hover:bg-emerald-800",
   chipActiveBgDark: "",
   chipActiveTextDark: "",
   pageGradientDark: "",
@@ -956,7 +965,7 @@ const darkNeutrals: ThemeNeutrals = {
   surfaceMuted: "bg-neutral-600",
   border: "border-0",
   text: "text-neutral-50",
-  textMuted: "text-neutral-400",
+  textMuted: "text-neutral-300",
   chipActiveBg: "bg-neutral-500",
   chipActiveText: "text-neutral-50",
   chipInactive: "text-neutral-300 hover:bg-neutral-600",
@@ -1061,14 +1070,14 @@ const catalogFirstAccent: ThemeAccent = {
 // dokunulmadı — bu iki tema tamamen ek seçenek.
 const marketNeutrals: ThemeNeutrals = {
   ...minimalNeutrals,
-  chipActiveBg: "bg-orange-600 text-white",
+  chipActiveBg: "bg-orange-700 text-white",
   imageGradient: "bg-[linear-gradient(180deg,#fff7ed_0%,#fef2e8_100%)]",
 };
 
 const marketAccent: ThemeAccent = {
-  primary: "bg-orange-500",
-  primaryHover: "hover:bg-orange-600",
-  primaryActive: "active:bg-orange-700",
+  primary: "bg-orange-700",
+  primaryHover: "hover:bg-orange-800",
+  primaryActive: "active:bg-orange-900",
   primaryForeground: "text-white",
   soft: "bg-orange-50",
   softText: "text-orange-700",
@@ -1082,13 +1091,13 @@ const marketAccent: ThemeAccent = {
     "border border-orange-400/30 bg-[linear-gradient(180deg,rgba(249,115,22,0.98)_0%,rgba(234,88,12,0.96)_100%)] text-white shadow-[0_18px_40px_rgba(234,88,12,0.3)] backdrop-blur",
   stickyBar: "bg-slate-900 text-white",
   stickyBarBorder: "border-white/10",
-  stickyButton: "bg-orange-500 hover:bg-orange-600 text-white",
-  stickyButtonHover: "hover:bg-orange-600",
+  stickyButton: "bg-orange-700 hover:bg-orange-800 text-white",
+  stickyButtonHover: "hover:bg-orange-800",
   navMobileActive: "border-orange-500",
-  subChipActive: "border-orange-500 bg-orange-500 text-white",
-  floatingAddBorder: "border-orange-500",
-  floatingAddBg: "bg-orange-500",
-  floatingAddHover: "hover:border-orange-400 hover:bg-orange-400",
+  subChipActive: "border-orange-700 bg-orange-700 text-white",
+  floatingAddBorder: "border-orange-700",
+  floatingAddBg: "bg-orange-700",
+  floatingAddHover: "hover:border-orange-800 hover:bg-orange-800",
   chipActiveBgDark: "",
   chipActiveTextDark: "",
   pageGradientDark: "",
@@ -1115,9 +1124,9 @@ const vitrinProNeutrals: ThemeNeutrals = {
 };
 
 const vitrinProAccent: ThemeAccent = {
-  primary: "bg-teal-600",
-  primaryHover: "hover:bg-teal-700",
-  primaryActive: "active:bg-teal-800",
+  primary: "bg-teal-700",
+  primaryHover: "hover:bg-teal-800",
+  primaryActive: "active:bg-teal-900",
   primaryForeground: "text-white",
   soft: "bg-teal-50",
   softText: "text-teal-700",
@@ -1131,13 +1140,13 @@ const vitrinProAccent: ThemeAccent = {
     "border border-teal-400/30 bg-[linear-gradient(180deg,rgba(13,148,136,0.98)_0%,rgba(15,118,110,0.96)_100%)] text-white shadow-[0_18px_40px_rgba(15,118,110,0.3)] backdrop-blur",
   stickyBar: "bg-slate-900 text-white",
   stickyBarBorder: "border-white/10",
-  stickyButton: "bg-teal-600 hover:bg-teal-700 text-white",
-  stickyButtonHover: "hover:bg-teal-700",
+  stickyButton: "bg-teal-700 hover:bg-teal-800 text-white",
+  stickyButtonHover: "hover:bg-teal-800",
   navMobileActive: "border-teal-600",
-  subChipActive: "border-teal-600 bg-teal-600 text-white",
-  floatingAddBorder: "border-teal-600",
-  floatingAddBg: "bg-teal-500",
-  floatingAddHover: "hover:border-teal-500 hover:bg-teal-400",
+  subChipActive: "border-teal-700 bg-teal-700 text-white",
+  floatingAddBorder: "border-teal-700",
+  floatingAddBg: "bg-teal-700",
+  floatingAddHover: "hover:border-teal-800 hover:bg-teal-800",
   chipActiveBgDark: "",
   chipActiveTextDark: "",
   pageGradientDark: "",

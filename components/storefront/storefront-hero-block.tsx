@@ -43,9 +43,9 @@ function TextHero({ settings }: { settings: HeroSettings }) {
       )}
     >
       {heading ? (
-        <h1 className={cn("text-2xl font-bold tracking-tight sm:text-4xl", theme.text)}>
+        <h2 className={cn("text-2xl font-bold tracking-tight sm:text-4xl", theme.text)}>
           {heading}
-        </h1>
+        </h2>
       ) : null}
       {description ? (
         <p className={cn("mt-3 max-w-3xl text-sm leading-7 sm:text-base", theme.textMuted)}>
@@ -79,9 +79,9 @@ function ImageSplitHero({ settings }: { settings: HeroSettings }) {
     >
       <div className="flex flex-col justify-center px-6 py-8 sm:px-10 sm:py-10">
         {heading ? (
-          <h1 className={cn("text-2xl font-bold tracking-tight sm:text-4xl", theme.text)}>
+          <h2 className={cn("text-2xl font-bold tracking-tight sm:text-4xl", theme.text)}>
             {heading}
-          </h1>
+          </h2>
         ) : null}
         {description ? (
           <p className={cn("mt-3 max-w-md text-sm leading-7 sm:text-base", theme.textMuted)}>
@@ -129,7 +129,7 @@ function FullBleedHero({ settings }: { settings: HeroSettings }) {
       <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/30 to-black/10" />
       <div className="relative flex h-full min-h-[280px] flex-col justify-end px-6 py-8 sm:min-h-[380px] sm:px-10 sm:py-10">
         {heading ? (
-          <h1 className="text-2xl font-bold tracking-tight text-white sm:text-4xl">{heading}</h1>
+          <h2 className="text-2xl font-bold tracking-tight text-white sm:text-4xl">{heading}</h2>
         ) : null}
         {description ? (
           <p className="mt-3 max-w-2xl text-sm leading-7 text-white/85 sm:text-base">
