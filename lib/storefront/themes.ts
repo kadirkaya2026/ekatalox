@@ -366,8 +366,8 @@ function resolveAccent(
       titleHover: "group-hover:text-amber-300",
       price: "text-amber-300",
       priceOriginal: "text-neutral-300",
-      chipActiveBgDark: "bg-amber-700/70",
-      chipActiveTextDark: "text-neutral-950",
+      chipActiveBgDark: "bg-amber-600",
+      chipActiveTextDark: "text-white",
       pageGradientDark:
         "bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,rgba(217,168,103,0.1),transparent)]",
       campaignBarQualifiedDark:
