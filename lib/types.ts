@@ -14,7 +14,8 @@ export type StorefrontThemeKey =
   | "premium"
   | "catalog-first"
   | "market"
-  | "vitrin-pro";
+  | "vitrin-pro"
+  | "noir";
 export type StorefrontLayoutKey =
   | "classic-grid"
   | "catalog-dense"

@@ -359,6 +359,25 @@ function resolveAccent(
       campaignLabelQualifiedDark: "text-teal-400",
       campaignLabelPendingDark: "text-amber-400",
     },
+    noir: {
+      soft: "bg-amber-950/50",
+      softText: "text-amber-300",
+      titleHover: "group-hover:text-amber-300",
+      price: "text-amber-300",
+      priceOriginal: "text-neutral-300",
+      chipActiveBgDark: "bg-amber-700/70",
+      chipActiveTextDark: "text-neutral-950",
+      pageGradientDark:
+        "bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,rgba(217,168,103,0.1),transparent)]",
+      campaignBarQualifiedDark:
+        "border-0 bg-[radial-gradient(circle_at_top_right,rgba(217,168,103,0.16),transparent_42%),linear-gradient(135deg,rgba(30,22,10,0.96)_0%,rgba(10,10,10,0.98)_50%,rgba(28,20,8,0.96)_100%)]",
+      campaignBarPendingDark:
+        "border-0 bg-[radial-gradient(circle_at_top_right,rgba(251,191,36,0.1),transparent_42%),linear-gradient(135deg,rgba(30,20,10,0.96)_0%,rgba(10,10,10,0.98)_48%,rgba(15,25,35,0.96)_100%)]",
+      campaignIconQualifiedDark: "bg-amber-950/60 text-amber-300",
+      campaignIconPendingDark: "bg-amber-950/50 text-amber-300",
+      campaignLabelQualifiedDark: "text-amber-400",
+      campaignLabelPendingDark: "text-amber-400",
+    },
   };
 
   if (colorScheme === "light") {
@@ -1166,6 +1185,77 @@ const vitrinProAccent: ThemeAccent = {
   campaignLabelPendingLight: "text-amber-700",
 };
 
+// "noir" — tekel/içki butikleri için koyu, minimal bir tema. Diğer temaların
+// aksine "light" (varsayılan) görünümü de zaten koyu/siyah — ürün fotoğrafı
+// kartın üstünde arka plansız (imageGradient boş) "yüzsün" diye tasarlandı.
+const noirNeutrals: ThemeNeutrals = {
+  page: "bg-neutral-950",
+  pageText: "text-neutral-50",
+  header: "bg-neutral-950",
+  headerBorder: "border-neutral-800",
+  headerRailBorder: "border-neutral-800",
+  surface: "bg-neutral-900",
+  surfaceMuted: "bg-neutral-800",
+  border: "border-neutral-800",
+  text: "text-neutral-50",
+  textMuted: "text-neutral-400",
+  chipActiveBg: "bg-amber-600 text-neutral-950",
+  chipActiveText: "text-neutral-950",
+  chipInactive: "text-neutral-300 hover:bg-neutral-800",
+  chipInactiveBorder: "border-neutral-800",
+  imageGradient: "",
+  cartSummary: "bg-neutral-900",
+  cartSummaryText: "text-neutral-50",
+  modalSurface: "bg-neutral-900",
+  gatePage: "bg-neutral-950 text-neutral-50",
+};
+
+const noirAccent: ThemeAccent = {
+  primary: "bg-amber-600",
+  primaryHover: "hover:bg-amber-500",
+  primaryActive: "active:bg-amber-700",
+  primaryForeground: "text-neutral-950",
+  soft: "bg-amber-950/40",
+  softText: "text-amber-300",
+  softBorder: "border-amber-700/30",
+  ring: "focus:ring-2 focus:ring-amber-500/30",
+  borderFocus: "focus:border-amber-500",
+  titleHover: "group-hover:text-amber-400",
+  price: "text-amber-400",
+  priceOriginal: "text-neutral-500",
+  stepper:
+    "border-0 bg-amber-600 text-neutral-950 shadow-[0_18px_40px_rgba(217,168,103,0.25)]",
+  stickyBar: "bg-neutral-900 text-white",
+  stickyBarBorder: "border-neutral-800",
+  stickyButton: "bg-amber-600 hover:bg-amber-500 text-neutral-950",
+  stickyButtonHover: "hover:bg-amber-500",
+  navMobileActive: "border-amber-500",
+  subChipActive: "border-amber-600 bg-amber-600 text-neutral-950",
+  floatingAddBorder: "border-amber-600",
+  floatingAddBg: "bg-amber-600",
+  floatingAddHover: "hover:border-amber-500 hover:bg-amber-500",
+  chipActiveBgDark: "bg-amber-600",
+  chipActiveTextDark: "text-neutral-950",
+  pageGradientDark:
+    "bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,rgba(217,168,103,0.08),transparent)]",
+  campaignBarQualifiedDark:
+    "border-0 bg-[radial-gradient(circle_at_top_right,rgba(217,168,103,0.14),transparent_42%),linear-gradient(135deg,rgba(30,22,10,0.96)_0%,rgba(10,10,10,0.98)_50%,rgba(28,20,8,0.96)_100%)]",
+  campaignBarPendingDark:
+    "border-0 bg-[radial-gradient(circle_at_top_right,rgba(251,191,36,0.1),transparent_42%),linear-gradient(135deg,rgba(30,20,10,0.96)_0%,rgba(10,10,10,0.98)_48%,rgba(15,25,35,0.96)_100%)]",
+  campaignIconQualifiedDark: "bg-amber-950/60 text-amber-300",
+  campaignIconPendingDark: "bg-amber-950/50 text-amber-300",
+  campaignLabelQualifiedDark: "text-amber-400",
+  campaignLabelPendingDark: "text-amber-400",
+  campaignBarQualifiedLight:
+    "border-amber-800/40 bg-[radial-gradient(circle_at_top_right,rgba(217,168,103,0.16),transparent_42%),linear-gradient(135deg,rgba(23,23,23,0.98)_0%,rgba(10,10,10,0.99)_50%,rgba(20,17,10,0.98)_100%)]",
+  campaignBarPendingLight:
+    "border-amber-800/30 bg-[radial-gradient(circle_at_top_right,rgba(251,191,36,0.12),transparent_42%),linear-gradient(135deg,rgba(23,23,23,0.98)_0%,rgba(10,10,10,0.99)_48%,rgba(20,20,25,0.98)_100%)]",
+  campaignIconQualifiedLight: "bg-amber-950/50 text-amber-300",
+  campaignIconPendingLight: "bg-amber-950/40 text-amber-300",
+  campaignLabelQualifiedLight: "text-amber-400",
+  campaignLabelPendingLight: "text-amber-400",
+};
+
 function buildStorefrontThemes(
   colorScheme: StorefrontColorScheme,
 ): Record<StorefrontThemeKey, StorefrontTheme> {
@@ -1211,6 +1301,11 @@ function buildStorefrontThemes(
     "vitrin-pro": buildTheme(
       neutralsFor(vitrinProNeutrals),
       resolveAccent(vitrinProAccent, colorScheme, "vitrin-pro"),
+      colorScheme,
+    ),
+    noir: buildTheme(
+      neutralsFor(noirNeutrals),
+      resolveAccent(noirAccent, colorScheme, "noir"),
       colorScheme,
     ),
   };

@@ -47,4 +47,9 @@ export const THEME_OPTIONS: StorefrontThemeOption[] = [
     title: "Vitrin Pro",
     description: "Kurumsal e-ticaret sitesi hissi veren temiz, düzenli vitrin.",
   },
+  {
+    key: "noir",
+    title: "Noir",
+    description: "Tekel & içki butikleri için koyu tema; ürün görseli arka plansız kartın üstünde durur.",
+  },
 ];
