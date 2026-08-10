@@ -727,9 +727,7 @@ function buildTheme(
             ? cn("border", chipActiveBg, chipActiveText)
             : cn("border", neutrals.chipInactiveBorder, neutrals.surface, modalInactiveText),
       ),
-    floatingCartStepper: isDark
-      ? "border-0 bg-neutral-600 text-white shadow-none"
-      : accent.stepper,
+    floatingCartStepper: accent.stepper,
     floatingCartAddButton: cn(
       "flex items-center justify-center rounded-xl text-white shadow-[0_14px_30px_rgba(15,23,42,0.18)] transition-all duration-200",
       isDark

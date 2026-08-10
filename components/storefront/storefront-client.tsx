@@ -2695,20 +2695,17 @@ export function StorefrontClient({
               transition={{ duration: 0.24, ease: "easeOut" }}
               className={cn(
                 theme.stickyCart,
-                "!static w-full rounded-[1.8rem] px-4 py-3 text-left shadow-[0_18px_44px_rgba(15,23,42,0.22)]",
+                "!static w-full rounded-[1.5rem] px-3 py-2.5 text-left shadow-[0_18px_44px_rgba(15,23,42,0.22)]",
               )}
             >
               <button type="button" onClick={openCartDrawer} className="w-full text-left">
-                <div className="flex items-center gap-3.5">
-                  <div className={cn("flex size-11 shrink-0 items-center justify-center rounded-2xl", theme.surfaceMuted)}>
-                    <ShoppingCart className="size-5" />
+                <div className="flex items-center gap-3">
+                  <div className={cn("flex size-9 shrink-0 items-center justify-center rounded-xl", theme.surfaceMuted)}>
+                    <ShoppingCart className="size-4" />
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="text-[13px] font-semibold tracking-tight text-white">
                       {t("cart.orderSummary")}
-                    </p>
-                    <p className="mt-0.5 text-[11px] text-slate-300">
-                      {t("cart.lineSummary", { distinct: cartDistinctCount, count: cartItemCount })}
                     </p>
                   </div>
                   <div className="min-w-0 text-right">
