@@ -50,6 +50,6 @@ export const THEME_OPTIONS: StorefrontThemeOption[] = [
   {
     key: "noir",
     title: "Noir",
-    description: "İçki & butik market vitrinleri için koyu tema; ürün görseli arka plansız kartın üstünde durur.",
+    description: "Koyu renkli, minimal tema; ürün görseli arka plansız kartın üstünde durur.",
   },
 ];
