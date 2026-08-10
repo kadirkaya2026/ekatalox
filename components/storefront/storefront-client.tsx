@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  Fragment,
   useCallback,
   useEffect,
   useMemo,
@@ -1249,6 +1250,13 @@ export function StorefrontClient({
     selectedCategoryId !== "all" ||
     searchInput.trim().length > 0 ||
     isHomepageBlockVisible(homepageBlocks, "catalog");
+  // Noir'de mobil anasayfa saf bir kategori seçim ekranı olsun — ürünler
+  // sadece bir kategoriye (veya aramaya) girildiğinde görünsün. Masaüstünde
+  // ve diğer temalarda davranış aynen korunur.
+  const isNoirTheme = storefrontSettings.theme_key === "noir";
+  const hideHomeProductsOnMobile = isNoirTheme && isMobileViewport && showHomeBanner;
+  const showCategoryTilesOnMobileAfterBanner =
+    isNoirTheme && isMobileViewport && showCategoryTilesBlock;
   const recommendedProducts = useMemo(() => {
     const cartIds = new Set(cart.map((item) => item.product_id));
     const availableProducts = dedupeProducts([
@@ -2451,7 +2459,10 @@ export function StorefrontClient({
             }
 
             if (block.id === "categoryTiles") {
-              return showCategoryTilesBlock ? (
+              // Noir mobilde bu blok bannerın altına taşınıyor (aşağıda
+              // "banner" bloğunun render'ına bakın) — burada tekrar
+              // gösterilmesin.
+              return showCategoryTilesBlock && !showCategoryTilesOnMobileAfterBanner ? (
                 <StorefrontCategoryTiles
                   key="categoryTiles"
                   categories={topCategories}
@@ -2464,14 +2475,15 @@ export function StorefrontClient({
             }
 
             if (block.id === "promoTiles") {
-              return showPromoTiles ? (
+              return showPromoTiles && !hideHomeProductsOnMobile ? (
                 <StorefrontPromoTiles key="promoTiles" products={products} />
               ) : null;
             }
 
             if (block.id === "banner") {
               return showBannerSection ? (
-                <section key="banner" className="mb-5 sm:mb-10 w-full">
+                <Fragment key="banner">
+                <section className="mb-5 sm:mb-10 w-full">
                   {bannerItems.length ? (
                     <div className="w-full space-y-4">
                       {currentBanner
@@ -2511,6 +2523,19 @@ export function StorefrontClient({
                     </div>
                   )}
                 </section>
+                {showCategoryTilesOnMobileAfterBanner ? (
+                  <div className="mb-5 sm:hidden">
+                    <StorefrontCategoryTiles
+                      categories={topCategories}
+                      flatCategories={categories}
+                      selectedCategoryId={selectedCategoryId}
+                      products={products}
+                      onCategoryChange={handleCategoryChange}
+                      layout="grid3"
+                    />
+                  </div>
+                ) : null}
+                </Fragment>
               ) : null;
             }
 
@@ -2523,7 +2548,7 @@ export function StorefrontClient({
             }
 
             if (block.id === "showcase") {
-              return showSections ? (
+              return showSections && !hideHomeProductsOnMobile ? (
                 <div key="showcase" className="mb-10 space-y-10">
                   {sections.map((section) => {
                     const visibleSectionProducts = section.products.slice(0, 8);
@@ -2605,7 +2630,7 @@ export function StorefrontClient({
             }
 
             if (block.id === "catalog") {
-              return showCatalogBlock ? (
+              return showCatalogBlock && !hideHomeProductsOnMobile ? (
                 <section key="catalog" id="catalog-grid" className="scroll-mt-28 pt-1">
                   <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
                     <div>

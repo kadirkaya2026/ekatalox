@@ -187,18 +187,22 @@ export function StorefrontCategoryTiles({
   selectedCategoryId,
   products,
   onCategoryChange,
+  layout = "scroll",
 }: {
   categories: CategoryNode[];
   flatCategories: Category[];
   selectedCategoryId: string;
   products: StorefrontProduct[];
   onCategoryChange: (categoryId: string) => void;
+  layout?: "scroll" | "grid3";
 }) {
   const theme = useStorefrontTheme();
 
   if (!categories.length) {
     return null;
   }
+
+  const isGrid3 = layout === "grid3";
 
   const tiles = categories.slice(0, 8).map((category, index) => {
     // Öncelik: kare kutucuk için özel yüklenen görsel (tile_image_url) →
@@ -213,18 +217,30 @@ export function StorefrontCategoryTiles({
   });
 
   return (
-    <section className="mb-5 sm:mb-8">
-      <div className="scrollbar-hide -mx-4 flex gap-3 overflow-x-auto px-4 sm:mx-0 sm:grid sm:grid-cols-4 sm:gap-4 sm:overflow-visible sm:px-0 lg:grid-cols-8">
+    <section className={isGrid3 ? "" : "mb-5 sm:mb-8"}>
+      <div
+        className={
+          isGrid3
+            ? "grid grid-cols-3 gap-3"
+            : "scrollbar-hide -mx-4 flex gap-3 overflow-x-auto px-4 sm:mx-0 sm:grid sm:grid-cols-4 sm:gap-4 sm:overflow-visible sm:px-0 lg:grid-cols-8"
+        }
+      >
         {tiles.map(({ category, image, index, isActive }) => (
           <button
             key={category.id}
             type="button"
             onClick={() => onCategoryChange(category.id)}
-            className="group flex w-20 shrink-0 flex-col items-center gap-1.5 sm:w-auto"
+            className={
+              isGrid3
+                ? "group flex flex-col items-center gap-2"
+                : "group flex w-20 shrink-0 flex-col items-center gap-1.5 sm:w-auto"
+            }
           >
             <div
               className={cn(
-                "relative flex size-16 items-center justify-center overflow-hidden rounded-2xl shadow-sm transition group-hover:scale-105 sm:size-20",
+                isGrid3
+                  ? "relative flex aspect-square w-full items-center justify-center overflow-hidden rounded-2xl shadow-sm transition group-hover:scale-105"
+                  : "relative flex size-16 items-center justify-center overflow-hidden rounded-2xl shadow-sm transition group-hover:scale-105 sm:size-20",
                 isActive && theme.activeTileBg,
               )}
               style={isActive ? undefined : { background: TILE_GRADIENTS[index % TILE_GRADIENTS.length] }}
@@ -234,13 +250,19 @@ export function StorefrontCategoryTiles({
                   src={image}
                   alt={category.name}
                   className="object-cover"
-                  sizes="80px"
+                  sizes={isGrid3 ? "33vw" : "80px"}
                 />
               ) : (
-                <Store className={cn("size-6", isActive ? theme.activeTileText : "text-white/90")} />
+                <Store className={cn(isGrid3 ? "size-8" : "size-6", isActive ? theme.activeTileText : "text-white/90")} />
               )}
             </div>
-            <span className={cn("line-clamp-2 text-center text-[11px] font-semibold leading-tight", theme.text)}>
+            <span
+              className={cn(
+                "line-clamp-2 text-center font-semibold leading-tight",
+                isGrid3 ? "text-[13px]" : "text-[11px]",
+                theme.text,
+              )}
+            >
               {category.name}
             </span>
           </button>
