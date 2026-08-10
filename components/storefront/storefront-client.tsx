@@ -2273,6 +2273,7 @@ export function StorefrontClient({
         onClose={closeProductDetail}
         title={t("productModal.title")}
         sheet
+        contentScroll={false}
         closeButtonPosition="left"
         panelClassName={theme.modalPanel}
         headerClassName={theme.modalHeaderBorder}
@@ -2295,7 +2296,7 @@ export function StorefrontClient({
           </Button>
         }
       >
-        <div className="grid gap-4">
+        <div className="flex min-h-0 flex-1 flex-col gap-4">
           <div className={cn("relative h-52 shrink-0 overflow-hidden rounded-[1.75rem] sm:h-64", theme.productImageWrap)}>
             <DiscountSticker product={previewProduct} />
             {activePreviewImage ? (
@@ -2313,7 +2314,7 @@ export function StorefrontClient({
           </div>
 
           {previewImages.length > 1 ? (
-            <div className="flex items-center justify-center gap-2">
+            <div className="flex shrink-0 items-center justify-center gap-2">
               {previewImages.map((imageUrl, index) => (
                 <button
                   key={imageUrl}
@@ -2338,14 +2339,14 @@ export function StorefrontClient({
             </div>
           ) : null}
 
-          <div className="space-y-1">
+          <div className="shrink-0 space-y-1">
             <ProductPrice product={previewProduct} size="modal" />
             <h3 className={cn("text-lg font-semibold leading-6", theme.text)}>
               {previewProduct.product_name}
             </h3>
           </div>
 
-          <div className="scrollbar-hide -mx-1 flex gap-2 overflow-x-auto px-1">
+          <div className="scrollbar-hide -mx-1 flex shrink-0 gap-2 overflow-x-auto px-1">
             {tabItems.map((tab) => (
               <button
                 key={tab.key}
@@ -2358,7 +2359,7 @@ export function StorefrontClient({
             ))}
           </div>
 
-          <div className={cn("min-h-[70px] max-h-[30vh] overflow-y-auto", theme.modalSurface)}>
+          <div className={cn("min-h-0 flex-1 overflow-y-auto overscroll-y-contain", theme.modalSurface)}>
             {tabContent}
           </div>
         </div>
