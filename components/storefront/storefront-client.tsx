@@ -2198,14 +2198,14 @@ export function StorefrontClient({
         </div>
 
         <div className="mt-3 space-y-1.5">
-          <p className={cn("line-clamp-2 text-sm font-semibold leading-5", theme.productTitle)}>
+          <p className={cn("line-clamp-2 text-sm font-semibold leading-5", theme.productThumbText)}>
             {product.product_name}
           </p>
-          <p className={cn("text-[11px]", theme.productMeta)}>
+          <p className={cn("text-[11px]", theme.productThumbMeta)}>
             {formatProductModelNo(product.sku_code)}
           </p>
           {getUnitSummary(product, t) ? (
-            <p className={cn("line-clamp-2 text-[11px] leading-4", theme.productMeta)}>
+            <p className={cn("line-clamp-2 text-[11px] leading-4", theme.productThumbMeta)}>
               {getUnitSummary(product, t)}
             </p>
           ) : null}

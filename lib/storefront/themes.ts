@@ -36,6 +36,8 @@ export interface StorefrontTheme {
   productMeta: string;
   productPrice: string;
   productPriceOriginal: string;
+  productThumbText: string;
+  productThumbMeta: string;
   productOutOverlay: string;
   stockBadgeIn: string;
   stockBadgeOut: string;
@@ -649,6 +651,8 @@ function buildTheme(
     productMeta: cn("min-w-0 text-xs line-clamp-2", neutrals.textMuted),
     productPrice: cn("min-w-0 font-extrabold tracking-tight", accent.price),
     productPriceOriginal: cn("font-medium line-through", accent.priceOriginal),
+    productThumbText: neutrals.text,
+    productThumbMeta: neutrals.textMuted,
     productOutOverlay: "absolute inset-x-0 bottom-0 z-10 bg-slate-950/72 px-2 py-1.5 text-center backdrop-blur-sm",
     stockBadgeIn: cn(
       "inline-flex items-center rounded-full px-3 py-1 text-[11px] font-semibold",
@@ -1329,14 +1333,16 @@ function buildNoirTheme(): StorefrontTheme {
 
   return {
     ...theme,
-    productCard: cn(theme.productCard, "bg-white"),
+    // Ürün kartının kendisi koyu/şeffaf kalır (sayfayla kaynaşır) — sadece
+    // ürün görselinin durduğu kutu beyaz (Getir tarzı: fotoğraf beyaz kare
+    // içinde, ürün adı/fiyatı kutunun DIŞINDA, koyu arka plan üzerinde).
     productImageWrap: cn(theme.productImageWrap, "bg-white"),
-    productTitle: cn(theme.productTitle, "text-slate-900 group-hover:text-amber-700"),
-    productMeta: cn(theme.productMeta, "text-slate-500"),
-    productPrice: cn(theme.productPrice, "text-amber-600"),
-    productPriceOriginal: cn(theme.productPriceOriginal, "text-slate-400"),
     emptyImage: cn(theme.emptyImage, "bg-white"),
+    // Sepet çekmecesindeki "Bunları da Beğenebilirsiniz" kartları ayrı bir
+    // düzen — o kartların TAMAMI beyaz olduğu için metinleri koyu tutulur.
     productThumbSurface: "bg-white",
+    productThumbText: "text-slate-900",
+    productThumbMeta: "text-slate-500",
     cartPaymentCashActive: "border-0 bg-amber-600 text-white",
     cartPaymentCardActive: "border-0 bg-amber-600 text-white",
     cartInstallmentActive: "border-0 bg-amber-600 text-white",
