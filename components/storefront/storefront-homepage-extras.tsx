@@ -204,7 +204,7 @@ export function StorefrontCategoryTiles({
 
   const isGrid3 = layout === "grid3";
 
-  const tiles = categories.slice(0, 8).map((category, index) => {
+  const tiles = categories.map((category, index) => {
     // Öncelik: kare kutucuk için özel yüklenen görsel (tile_image_url) →
     // kategori sayfasının geniş banner'ı (kırpılarak) → kategorideki bir
     // ürünün fotoğrafı.
