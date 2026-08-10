@@ -1185,7 +1185,7 @@ const vitrinProAccent: ThemeAccent = {
   campaignLabelPendingLight: "text-amber-700",
 };
 
-// "noir" — tekel/içki butikleri için koyu, minimal bir tema. Diğer temaların
+// "noir" — içki butikleri için koyu, minimal bir tema. Diğer temaların
 // aksine "light" (varsayılan) görünümü de zaten koyu/siyah — ürün fotoğrafı
 // kartın üstünde arka plansız (imageGradient boş) "yüzsün" diye tasarlandı.
 const noirNeutrals: ThemeNeutrals = {

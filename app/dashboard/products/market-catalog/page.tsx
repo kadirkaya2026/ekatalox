@@ -3,7 +3,7 @@ import { Card } from "@/components/ui/card";
 import { MarketCatalogPicker } from "@/components/dashboard/market-catalog-picker";
 import { requireTenantAdminPage } from "@/lib/auth/session";
 import { getEffectiveProductLimit } from "@/lib/billing/plans";
-import { getMarketCatalogProducts, getTenantProducts } from "@/lib/data";
+import { getMarketCatalogProductsPage, getTenantProducts } from "@/lib/data";
 
 export default async function MarketCatalogPage() {
   const session = await requireTenantAdminPage();
@@ -24,8 +24,8 @@ export default async function MarketCatalogPage() {
     );
   }
 
-  const [catalog, products] = await Promise.all([
-    getMarketCatalogProducts(),
+  const [catalogPage, products] = await Promise.all([
+    getMarketCatalogProductsPage({ page: 1 }),
     getTenantProducts(tenant.id),
   ]);
 
@@ -45,7 +45,8 @@ export default async function MarketCatalogPage() {
         description="eKatalox'un ortak market ürün havuzundan kendi mağazanıza ürün seçip aktarın. Aktarılan ürünler stoksuz olarak eklenir; fiyat ve stok bilgisini siz düzenlersiniz."
       />
       <MarketCatalogPicker
-        catalog={catalog}
+        initialCatalog={catalogPage.products}
+        initialTotal={catalogPage.total}
         importedSkuCodes={[...importedSkuCodes]}
         usage={usage}
       />

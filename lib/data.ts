@@ -567,35 +567,46 @@ export async function getTenantCategories(tenantId: string): Promise<Category[]>
   }));
 }
 
-export async function getMarketCatalogProducts(): Promise<MarketCatalogProduct[]> {
+export const MARKET_CATALOG_PAGE_SIZE = 50;
+
+// Katalog binlerce satıra çıktığından tek seferde tamamını çekip render
+// etmek (eski davranış) tarayıcıyı kilitliyordu — sunucu tarafında hem
+// sayfalanıyor hem de arama terimi TÜM tabloda (sadece o an ekrandaki
+// sayfada değil) aranıyor.
+export async function getMarketCatalogProductsPage(params: {
+  page: number;
+  search?: string;
+}): Promise<{ products: MarketCatalogProduct[]; total: number }> {
   const supabase = createSupabaseAdminClient();
 
   if (!supabase) {
-    return [];
+    return { products: [], total: 0 };
   }
 
-  // PostgREST caps every response at its db-max-rows setting (1000 here)
-  // regardless of an explicit .range() — the catalog is well past that now,
-  // so a single select silently truncated to the first 1000 rows. Page
-  // through in batches until a page comes back short.
-  const PAGE_SIZE = 1000;
-  const all: MarketCatalogProduct[] = [];
+  const page = Math.max(1, params.page);
+  const from = (page - 1) * MARKET_CATALOG_PAGE_SIZE;
+  const to = from + MARKET_CATALOG_PAGE_SIZE - 1;
+  const term = params.search?.trim().replace(/[,%]/g, " ").trim();
 
-  for (let from = 0; ; from += PAGE_SIZE) {
-    const { data } = await supabase
-      .from("market_catalog_products")
-      .select("*")
-      .order("category_name", { ascending: true })
-      .order("product_name", { ascending: true })
-      .range(from, from + PAGE_SIZE - 1);
+  let query = supabase
+    .from("market_catalog_products")
+    .select("*", { count: "exact" })
+    .order("category_name", { ascending: true })
+    .order("product_name", { ascending: true })
+    .range(from, to);
 
-    const page = (data as MarketCatalogProduct[] | null) ?? [];
-    all.push(...page);
-
-    if (page.length < PAGE_SIZE) break;
+  if (term) {
+    query = query.or(
+      `product_name.ilike.%${term}%,category_name.ilike.%${term}%,brand.ilike.%${term}%`,
+    );
   }
 
-  return all;
+  const { data, count } = await query;
+
+  return {
+    products: (data as MarketCatalogProduct[] | null) ?? [],
+    total: count ?? 0,
+  };
 }
 
 export async function getTenantStorefrontSettings(
