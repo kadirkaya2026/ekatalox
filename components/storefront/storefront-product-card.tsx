@@ -323,9 +323,11 @@ export const StorefrontProductCard = memo(function StorefrontProductCard({
         <p className={cn("line-clamp-2 text-[11px] leading-4 sm:text-[13px] sm:leading-5", theme.productTitle)}>
           {product.product_name}
         </p>
-        <p className={cn("truncate text-[10px] leading-4 sm:text-[11px]", theme.productMeta)}>
-          {formatProductModelNo(product.sku_code)}
-        </p>
+        {theme.showProductModelNo ? (
+          <p className={cn("truncate text-[10px] leading-4 sm:text-[11px]", theme.productMeta)}>
+            {formatProductModelNo(product.sku_code)}
+          </p>
+        ) : null}
         {product.has_variants ? (
           <div className="flex flex-wrap gap-1 pt-1">
             <Badge className={theme.variantBadge}>

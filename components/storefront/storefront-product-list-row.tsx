@@ -176,9 +176,11 @@ export const StorefrontProductListRow = memo(function StorefrontProductListRow({
         <p className={cn("line-clamp-2 text-[13px] font-semibold leading-5 sm:text-sm", theme.productTitle)}>
           {product.product_name}
         </p>
-        <p className={cn("truncate text-[11px]", theme.productMeta)}>
-          {formatProductModelNo(product.sku_code)}
-        </p>
+        {theme.showProductModelNo ? (
+          <p className={cn("truncate text-[11px]", theme.productMeta)}>
+            {formatProductModelNo(product.sku_code)}
+          </p>
+        ) : null}
         <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
           {product.is_in_stock ? (
             <span className={cn("inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold", theme.stockBadgeIn)}>

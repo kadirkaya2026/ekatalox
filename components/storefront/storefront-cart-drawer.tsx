@@ -280,9 +280,11 @@ export function StorefrontCartDrawer({
                                 {t("cart.modelPrefix")} {item.variant_name}
                               </p>
                             ) : null}
-                            <p className={cn("mt-0.5 text-xs", theme.textMuted)}>
-                              {formatProductModelNo(item.sku_code)}
-                            </p>
+                            {theme.showProductModelNo ? (
+                              <p className={cn("mt-0.5 text-xs", theme.textMuted)}>
+                                {formatProductModelNo(item.sku_code)}
+                              </p>
+                            ) : null}
                           </div>
                           <button
                             type="button"

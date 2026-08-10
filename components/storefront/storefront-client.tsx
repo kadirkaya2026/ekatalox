@@ -2201,9 +2201,11 @@ export function StorefrontClient({
           <p className={cn("line-clamp-2 text-sm font-semibold leading-5", theme.productThumbText)}>
             {product.product_name}
           </p>
-          <p className={cn("text-[11px]", theme.productThumbMeta)}>
-            {formatProductModelNo(product.sku_code)}
-          </p>
+          {theme.showProductModelNo ? (
+            <p className={cn("text-[11px]", theme.productThumbMeta)}>
+              {formatProductModelNo(product.sku_code)}
+            </p>
+          ) : null}
           {getUnitSummary(product, t) ? (
             <p className={cn("line-clamp-2 text-[11px] leading-4", theme.productThumbMeta)}>
               {getUnitSummary(product, t)}
@@ -2923,9 +2925,11 @@ export function StorefrontClient({
                   >
                     {selectedProduct.product_name}
                   </p>
-                  <p className={cn("mt-0.5 truncate text-[11px]", theme.textMuted)}>
-                    {formatProductModelNo(selectedProduct.sku_code)}
-                  </p>
+                  {theme.showProductModelNo ? (
+                    <p className={cn("mt-0.5 truncate text-[11px]", theme.textMuted)}>
+                      {formatProductModelNo(selectedProduct.sku_code)}
+                    </p>
+                  ) : null}
                   {!selectedProduct.has_variants && getUnitSummary(selectedProduct, t) ? (
                     <p className={cn("mt-0.5 text-[11px]", theme.textMuted)}>
                       {getUnitSummary(selectedProduct, t)}

@@ -36,6 +36,7 @@ export interface StorefrontTheme {
   productMeta: string;
   productPrice: string;
   productPriceOriginal: string;
+  showProductModelNo: boolean;
   productThumbText: string;
   productThumbMeta: string;
   productOutOverlay: string;
@@ -653,6 +654,7 @@ function buildTheme(
     productPriceOriginal: cn("font-medium line-through", accent.priceOriginal),
     productThumbText: neutrals.text,
     productThumbMeta: neutrals.textMuted,
+    showProductModelNo: true,
     productOutOverlay: "absolute inset-x-0 bottom-0 z-10 bg-slate-950/72 px-2 py-1.5 text-center backdrop-blur-sm",
     stockBadgeIn: cn(
       "inline-flex items-center rounded-full px-3 py-1 text-[11px] font-semibold",
@@ -1337,6 +1339,10 @@ function buildNoirTheme(): StorefrontTheme {
     // DIŞINDA, koyu arka plan üzerinde).
     productCard: cn(theme.productCard, "bg-transparent"),
     productImageWrap: cn(theme.productImageWrap, "bg-white"),
+    // Model numarası bu temada gösterilmiyor; ürün adı bir tık küçültülerek
+    // uzun isimlerin satır kesilmeden daha fazlasının görünmesi sağlanıyor.
+    productTitle: cn(theme.productTitle, "sm:text-[13px] text-[12px]"),
+    showProductModelNo: false,
     emptyImage: cn(theme.emptyImage, "bg-white"),
     // Sepet çekmecesindeki "Bunları da Beğenebilirsiniz" kartları ayrı bir
     // düzen — o kartların TAMAMI beyaz olduğu için metinleri koyu tutulur.
