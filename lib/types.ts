@@ -165,6 +165,7 @@ export interface Category {
   display_order: number;
   banner_item: BannerItem | null;
   tile_image_url: string | null;
+  is_discount_category: boolean;
   created_at: string;
 }
 

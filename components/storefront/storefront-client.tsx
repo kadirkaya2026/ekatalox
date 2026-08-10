@@ -936,6 +936,13 @@ export function StorefrontClient({
 
     return new Set(getDescendantCategoryIds(categories, selectedCategoryId));
   }, [categories, selectedCategoryId]);
+  // "İndirimli Ürünler" gibi bir kategori is_discount_category=true ise,
+  // kategoriye elle atanmış ürünler yerine mağazadaki gerçekten indirimde
+  // olan TÜM ürünler otomatik listelenir.
+  const isDiscountCategorySelected = useMemo(
+    () => categories.find((category) => category.id === selectedCategoryId)?.is_discount_category ?? false,
+    [categories, selectedCategoryId],
+  );
   const selectedCategoryLineage = useMemo(
     () =>
       selectedCategoryId === "all" ? [] : getCategoryLineage(categories, selectedCategoryId),
@@ -1084,8 +1091,9 @@ export function StorefrontClient({
 
     return productSearchIndex
       .filter(({ product, normalizedName, normalizedSku, normalizedLineage }) => {
-        const matchesCategory =
-          !selectedCategoryIds || selectedCategoryIds.has(product.category_id);
+        const matchesCategory = isDiscountCategorySelected
+          ? (product.discount_percentage ?? 0) > 0
+          : !selectedCategoryIds || selectedCategoryIds.has(product.category_id);
         const matchesSearch =
           !normalizedSearch ||
           normalizedName.includes(normalizedSearch) ||
@@ -1095,7 +1103,7 @@ export function StorefrontClient({
         return matchesCategory && matchesSearch;
       })
       .map(({ product }) => product);
-  }, [debouncedSearchTerm, productSearchIndex, selectedCategoryIds]);
+  }, [debouncedSearchTerm, productSearchIndex, selectedCategoryIds, isDiscountCategorySelected]);
 
   const productsById = useMemo(
     () => new Map(products.map((product) => [product.id, product])),
