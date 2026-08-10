@@ -11,6 +11,7 @@ export const storefrontThemeKeySchema = z.enum([
   "catalog-first",
   "market",
   "vitrin-pro",
+  "noir",
 ]);
 
 export const storefrontLayoutKeySchema = z.enum([
