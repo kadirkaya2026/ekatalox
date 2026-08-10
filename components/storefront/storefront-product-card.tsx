@@ -293,7 +293,7 @@ export const StorefrontProductCard = memo(function StorefrontProductCard({
       <div
         className={cn(
           productImageWrapClassName,
-          "overflow-hidden rounded-t-[1.2rem] p-2.5 sm:p-4",
+          "overflow-hidden rounded-[1.2rem] p-2.5 sm:p-4",
         )}
       >
         <DiscountSticker product={product} />

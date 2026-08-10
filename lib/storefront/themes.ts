@@ -1324,18 +1324,18 @@ function buildStorefrontThemes(
 // header ikonları, sekmeler, arama kutusu vb.). Çözüm: colorScheme'i her
 // zaman "dark" olarak sabitle — bu dallar zaten diğer temaların paylaşılan
 // gece modu için koyu-arka-plana-uygun kontrastlı gri tonlarıyla
-// tasarlanmıştı, Noir'e de doğrudan uyuyor. Ürün kartı ayrıca BEYAZ
-// (fotoğraflar beyaz stüdyo arka planıyla geldiği için), o yüzden kart içi
-// metinler ayrıca koyuya çevriliyor (cn = tailwind-merge, son sınıf öncekini
-// ezer).
+// tasarlanmıştı, Noir'e de doğrudan uyuyor.
 function buildNoirTheme(): StorefrontTheme {
   const theme = buildTheme(noirNeutrals, resolveAccent(noirAccent, "dark", "noir"), "dark");
 
   return {
     ...theme,
-    // Ürün kartının kendisi koyu/şeffaf kalır (sayfayla kaynaşır) — sadece
-    // ürün görselinin durduğu kutu beyaz (Getir tarzı: fotoğraf beyaz kare
-    // içinde, ürün adı/fiyatı kutunun DIŞINDA, koyu arka plan üzerinde).
+    // Ürün kartının kendisinde görünür bir arka plan/gölge yok (sayfayla
+    // tamamen kaynaşır, "genel çerçeve" hissi vermesin) — sadece ürün
+    // görselinin durduğu kutu beyaz ve dört köşesi yuvarlak (Getir tarzı:
+    // fotoğraf bağımsız beyaz bir kare içinde, ürün adı/fiyatı kutunun
+    // DIŞINDA, koyu arka plan üzerinde).
+    productCard: cn(theme.productCard, "bg-transparent"),
     productImageWrap: cn(theme.productImageWrap, "bg-white"),
     emptyImage: cn(theme.emptyImage, "bg-white"),
     // Sepet çekmecesindeki "Bunları da Beğenebilirsiniz" kartları ayrı bir
