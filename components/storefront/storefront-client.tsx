@@ -2452,6 +2452,8 @@ export function StorefrontClient({
                 <StorefrontCategoryTiles
                   key="categoryTiles"
                   categories={topCategories}
+                  flatCategories={categories}
+                  selectedCategoryId={selectedCategoryId}
                   products={products}
                   onCategoryChange={handleCategoryChange}
                 />

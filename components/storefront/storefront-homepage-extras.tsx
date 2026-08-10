@@ -2,7 +2,8 @@
 
 import { Store, Tag } from "lucide-react";
 import type { CategoryNode } from "@/lib/categories/tree";
-import type { BannerItem, StorefrontProduct } from "@/lib/types";
+import { getDescendantCategoryIds } from "@/lib/categories/tree";
+import type { BannerItem, Category, StorefrontProduct } from "@/lib/types";
 import { STOREFRONT_BANNER_SIZES, STOREFRONT_PRODUCT_GRID_SIZES } from "@/lib/storefront/image-sizes";
 import { useStorefrontTheme } from "@/lib/storefront/theme-context";
 import { useStorefrontLocale } from "@/lib/storefront/locale-context";
@@ -182,10 +183,14 @@ const TILE_GRADIENTS = [
 
 export function StorefrontCategoryTiles({
   categories,
+  flatCategories,
+  selectedCategoryId,
   products,
   onCategoryChange,
 }: {
   categories: CategoryNode[];
+  flatCategories: Category[];
+  selectedCategoryId: string;
   products: StorefrontProduct[];
   onCategoryChange: (categoryId: string) => void;
 }) {
@@ -201,13 +206,16 @@ export function StorefrontCategoryTiles({
     // ürünün fotoğrafı.
     const customImage = category.tile_image_url ?? category.banner_item?.image_url ?? null;
     const representativeProduct = products.find((product) => product.category_id === category.id);
-    return { category, image: customImage ?? representativeProduct?.image_url ?? null, index };
+    const isActive =
+      selectedCategoryId === category.id ||
+      getDescendantCategoryIds(flatCategories, category.id).includes(selectedCategoryId);
+    return { category, image: customImage ?? representativeProduct?.image_url ?? null, index, isActive };
   });
 
   return (
     <section className="mb-5 sm:mb-8">
       <div className="scrollbar-hide -mx-4 flex gap-3 overflow-x-auto px-4 sm:mx-0 sm:grid sm:grid-cols-4 sm:gap-4 sm:overflow-visible sm:px-0 lg:grid-cols-8">
-        {tiles.map(({ category, image, index }) => (
+        {tiles.map(({ category, image, index, isActive }) => (
           <button
             key={category.id}
             type="button"
@@ -215,8 +223,11 @@ export function StorefrontCategoryTiles({
             className="group flex w-20 shrink-0 flex-col items-center gap-1.5 sm:w-auto"
           >
             <div
-              className="relative flex size-16 items-center justify-center overflow-hidden rounded-2xl shadow-sm transition group-hover:scale-105 sm:size-20"
-              style={{ background: TILE_GRADIENTS[index % TILE_GRADIENTS.length] }}
+              className={cn(
+                "relative flex size-16 items-center justify-center overflow-hidden rounded-2xl shadow-sm transition group-hover:scale-105 sm:size-20",
+                isActive && theme.activeTileBg,
+              )}
+              style={isActive ? undefined : { background: TILE_GRADIENTS[index % TILE_GRADIENTS.length] }}
             >
               {image ? (
                 <StorefrontImage
@@ -226,7 +237,7 @@ export function StorefrontCategoryTiles({
                   sizes="80px"
                 />
               ) : (
-                <Store className="size-6 text-white/90" />
+                <Store className={cn("size-6", isActive ? theme.activeTileText : "text-white/90")} />
               )}
             </div>
             <span className={cn("line-clamp-2 text-center text-[11px] font-semibold leading-tight", theme.text)}>

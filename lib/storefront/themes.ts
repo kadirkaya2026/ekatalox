@@ -72,6 +72,8 @@ export interface StorefrontTheme {
   surface: string;
   surfaceMuted: string;
   productThumbSurface: string;
+  activeTileBg: string;
+  activeTileText: string;
   border: string;
   text: string;
   textMuted: string;
@@ -562,7 +564,7 @@ function buildTheme(
         "shrink-0 px-1 pb-3 text-sm font-semibold transition duration-200",
         isDark
           ? active
-            ? cn("rounded-lg bg-neutral-600 px-2 font-bold", chipActiveText)
+            ? cn("rounded-lg px-2 font-bold", chipActiveBg, chipActiveText)
             : neutrals.textMuted
           : active
             ? cn("border-b-2 font-bold", accent.navMobileActive, neutrals.text)
@@ -745,6 +747,8 @@ function buildTheme(
     surface: neutrals.surface,
     surfaceMuted: neutrals.surfaceMuted,
     productThumbSurface: neutrals.surface,
+    activeTileBg: chipActiveBg,
+    activeTileText: chipActiveText,
     border: structuralBorder,
     text: neutrals.text,
     textMuted: neutrals.textMuted,
