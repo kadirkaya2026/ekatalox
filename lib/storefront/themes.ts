@@ -1335,9 +1335,9 @@ function buildNoirTheme(): StorefrontTheme {
     productPriceOriginal: cn(theme.productPriceOriginal, "text-slate-400"),
     emptyImage: cn(theme.emptyImage, "bg-white"),
     productThumbSurface: "bg-white",
-    cartPaymentCashActive: "border-0 bg-amber-950/40 text-amber-300",
-    cartPaymentCardActive: "border-0 bg-amber-950/40 text-amber-300",
-    cartInstallmentActive: "border-0 bg-amber-950/40 text-amber-300",
+    cartPaymentCashActive: "border-0 bg-amber-600 text-white",
+    cartPaymentCardActive: "border-0 bg-amber-600 text-white",
+    cartInstallmentActive: "border-0 bg-amber-600 text-white",
   };
 }
 

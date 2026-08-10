@@ -2172,11 +2172,6 @@ export function StorefrontClient({
         key={product.id}
         className={cn("relative overflow-visible min-w-[182px] max-w-[182px] rounded-[1.5rem] p-3", theme.border, theme.productThumbSurface, theme.elevation1, theme.surfaceRing)}
       >
-        <div className="absolute left-3 right-14 top-3 z-10 flex">
-          <span className={cn("truncate rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] shadow-sm", theme.surfaceMuted, theme.textMuted)}>
-            {categoryNameMap.get(product.category_id) || t("product.generalCategory")}
-          </span>
-        </div>
         <StorefrontFloatingCartAction
           product={product}
           cartQuantity={cartQuantity}
