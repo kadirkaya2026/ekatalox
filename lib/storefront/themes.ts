@@ -1303,23 +1303,25 @@ function buildStorefrontThemes(
       resolveAccent(vitrinProAccent, colorScheme, "vitrin-pro"),
       colorScheme,
     ),
-    noir: buildNoirTheme(colorScheme, neutralsFor),
+    noir: buildNoirTheme(),
   };
 }
 
-// Noir'de sayfa/başlık/sepet koyu kalırken ürün kartları tam BEYAZ: ürün
-// fotoğrafları beyaz stüdyo arka planıyla geldiği için karta kusursuz
-// karışıyor. Kart içi metinler de beyaz zeminde okunsun diye koyuya
-// çevriliyor (cn = tailwind-merge, sondaki sınıf öncekini ezer).
-function buildNoirTheme(
-  colorScheme: StorefrontColorScheme,
-  neutralsFor: (lightNeutrals: ThemeNeutrals) => ThemeNeutrals,
-): StorefrontTheme {
-  const theme = buildTheme(
-    neutralsFor(noirNeutrals),
-    resolveAccent(noirAccent, colorScheme, "noir"),
-    colorScheme,
-  );
+// Noir her zaman koyu görünmeli — ziyaretçinin site-geneli açık/koyu mod
+// anahtarından bağımsız olarak. buildTheme() içindeki ~30 "isDark ? X : Y"
+// dalı, colorScheme parametresine göre seçiliyor; colorScheme="light"
+// verilseydi (Noir'in "doğal" hali teknik olarak "light" çağrısıydı) bu
+// dallar AÇIK tema metinlerini (ör. text-slate-700) seçiyordu — bunlar
+// Noir'in siyah/koyu yüzeylerinde neredeyse görünmez kalıyordu (dropdown'lar,
+// header ikonları, sekmeler, arama kutusu vb.). Çözüm: colorScheme'i her
+// zaman "dark" olarak sabitle — bu dallar zaten diğer temaların paylaşılan
+// gece modu için koyu-arka-plana-uygun kontrastlı gri tonlarıyla
+// tasarlanmıştı, Noir'e de doğrudan uyuyor. Ürün kartı ayrıca BEYAZ
+// (fotoğraflar beyaz stüdyo arka planıyla geldiği için), o yüzden kart içi
+// metinler ayrıca koyuya çevriliyor (cn = tailwind-merge, son sınıf öncekini
+// ezer).
+function buildNoirTheme(): StorefrontTheme {
+  const theme = buildTheme(noirNeutrals, resolveAccent(noirAccent, "dark", "noir"), "dark");
 
   return {
     ...theme,
