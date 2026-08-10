@@ -2531,7 +2531,7 @@ export function StorefrontClient({
                       selectedCategoryId={selectedCategoryId}
                       products={products}
                       onCategoryChange={handleCategoryChange}
-                      layout="grid3"
+                      layout="grid4"
                     />
                   </div>
                 ) : null}
