@@ -62,6 +62,17 @@ function HeaderActions({
 
   return (
     <div className={cn("flex items-center justify-end gap-3", compact ? "gap-2" : "lg:gap-4")}>
+      {props.subdomain && props.storefrontSettings.is_logout_button_visible !== false ? (
+        <StorefrontLogoutButton
+          subdomain={props.subdomain}
+          tenantId={props.tenantId}
+          className="hidden lg:inline-flex"
+        />
+      ) : null}
+      <StorefrontLanguageSwitcher />
+      {props.storefrontSettings.is_theme_toggle_visible !== false ? (
+        <StorefrontThemeToggle />
+      ) : null}
       <div className="hidden text-right sm:block">
         <p className={cn("text-[10px] uppercase tracking-[0.22em]", theme.cartTotalLabel)}>
           {t("header.cartTotal")}
@@ -82,17 +93,6 @@ function HeaderActions({
           )}
         </div>
       </div>
-      {props.subdomain && props.storefrontSettings.is_logout_button_visible !== false ? (
-        <StorefrontLogoutButton
-          subdomain={props.subdomain}
-          tenantId={props.tenantId}
-          className="hidden lg:inline-flex"
-        />
-      ) : null}
-      <StorefrontLanguageSwitcher />
-      {props.storefrontSettings.is_theme_toggle_visible !== false ? (
-        <StorefrontThemeToggle />
-      ) : null}
       <button
         type="button"
         onClick={props.onOpenCart}
