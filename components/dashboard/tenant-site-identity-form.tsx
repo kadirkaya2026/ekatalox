@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { CalendarDays, Globe, ImageUp, LoaderCircle, Moon, Store } from "lucide-react";
+import { CalendarDays, Globe, ImageUp, LoaderCircle, LogOut, Moon, Store } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -34,7 +34,8 @@ type SiteIdentityTab =
   | "locale"
   | "favicon"
   | "priceDate"
-  | "themeToggle";
+  | "themeToggle"
+  | "logoutButton";
 
 const SITE_IDENTITY_TABS: Array<{ key: SiteIdentityTab; label: string }> = [
   { key: "brand", label: "Logo, Başlık ve Açıklama" },
@@ -43,6 +44,7 @@ const SITE_IDENTITY_TABS: Array<{ key: SiteIdentityTab; label: string }> = [
   { key: "favicon", label: "Favicon" },
   { key: "priceDate", label: "Fiyat Güncelleme Tarihi" },
   { key: "themeToggle", label: "Gece/Gündüz Modu" },
+  { key: "logoutButton", label: "Çıkış Butonu" },
 ];
 
 export function TenantSiteIdentityForm({
@@ -76,6 +78,9 @@ export function TenantSiteIdentityForm({
   const [isThemeToggleVisible, setIsThemeToggleVisible] = useState(
     initialStorefrontSettings.is_theme_toggle_visible ?? true,
   );
+  const [isLogoutButtonVisible, setIsLogoutButtonVisible] = useState(
+    initialStorefrontSettings.is_logout_button_visible ?? true,
+  );
   const [logoPending, startLogoTransition] = useTransition();
   const [storefrontSavePending, startStorefrontSaveTransition] = useTransition();
   const [faviconPending, startFaviconTransition] = useTransition();
@@ -83,6 +88,7 @@ export function TenantSiteIdentityForm({
   const [localePending, startLocaleTransition] = useTransition();
   const [priceDateSavePending, startPriceDateSaveTransition] = useTransition();
   const [themeTogglePending, startThemeToggleTransition] = useTransition();
+  const [logoutButtonPending, startLogoutButtonTransition] = useTransition();
   const router = useRouter();
   const [logoMessage, setLogoMessage] = useState<string | null>(null);
   const [storefrontSaveMessage, setStorefrontSaveMessage] = useState<string | null>(null);
@@ -91,6 +97,7 @@ export function TenantSiteIdentityForm({
   const [localeMessage, setLocaleMessage] = useState<string | null>(null);
   const [priceDateSaveMessage, setPriceDateSaveMessage] = useState<string | null>(null);
   const [themeToggleSaveMessage, setThemeToggleSaveMessage] = useState<string | null>(null);
+  const [logoutButtonSaveMessage, setLogoutButtonSaveMessage] = useState<string | null>(null);
   const [logoError, setLogoError] = useState<string | null>(null);
   const [faviconError, setFaviconError] = useState<string | null>(null);
   const [storefrontTitleError, setStorefrontTitleError] = useState<string | null>(null);
@@ -369,6 +376,34 @@ export function TenantSiteIdentityForm({
       }
 
       setThemeToggleSaveMessage("Ayar kaydedildi.");
+      router.refresh();
+    });
+  }
+
+  function saveLogoutButtonVisible(nextValue: boolean) {
+    setIsLogoutButtonVisible(nextValue);
+    setLogoutButtonSaveMessage(null);
+
+    startLogoutButtonTransition(async () => {
+      const response = await fetch("/api/tenant/settings", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ is_logout_button_visible: nextValue }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        setLogoutButtonSaveMessage(result.error ?? "Ayar kaydedilemedi.");
+        setIsLogoutButtonVisible(!nextValue);
+        return;
+      }
+
+      if (result.storefrontSettings) {
+        setIsLogoutButtonVisible(result.storefrontSettings.is_logout_button_visible ?? true);
+      }
+
+      setLogoutButtonSaveMessage("Ayar kaydedildi.");
       router.refresh();
     });
   }
@@ -800,6 +835,59 @@ export function TenantSiteIdentityForm({
               }`}
             >
               {themeToggleSaveMessage}
+            </p>
+          ) : null}
+        </div>
+      </div>
+      ) : null}
+
+      {activeTab === "logoutButton" ? (
+      <div>
+        <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-slate-900">
+          <LogOut className="size-4 text-emerald-700" />
+          <span>Çıkış Butonu</span>
+        </div>
+        <p className="mb-4 text-sm text-slate-500">
+          Vitrin üst menüsünde müşterilerin oturumdan çıkış yapabildiği butonu açıp
+          kapatabilirsiniz.
+        </p>
+
+        <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="text-sm font-semibold text-slate-900">Vitrinde göster</p>
+              <p className="mt-1 text-sm text-slate-500">
+                Açıkken müşteriler vitrin üst menüsünden "Çıkış" butonunu görür.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => saveLogoutButtonVisible(!isLogoutButtonVisible)}
+              disabled={logoutButtonPending}
+              aria-pressed={isLogoutButtonVisible}
+              className={`relative inline-flex h-7 w-12 shrink-0 rounded-full transition ${
+                isLogoutButtonVisible ? "bg-emerald-600" : "bg-slate-300"
+              }`}
+            >
+              <span
+                className={`absolute top-0.5 size-6 rounded-full bg-white shadow transition ${
+                  isLogoutButtonVisible ? "left-5" : "left-0.5"
+                }`}
+              />
+            </button>
+          </div>
+        </div>
+
+        <div className="min-h-6 mt-3">
+          {logoutButtonSaveMessage ? (
+            <p
+              className={`text-sm ${
+                logoutButtonSaveMessage.includes("kaydedildi")
+                  ? "text-emerald-700"
+                  : "text-amber-700"
+              }`}
+            >
+              {logoutButtonSaveMessage}
             </p>
           ) : null}
         </div>

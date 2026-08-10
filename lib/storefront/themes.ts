@@ -71,6 +71,7 @@ export interface StorefrontTheme {
   gateError: string;
   surface: string;
   surfaceMuted: string;
+  productThumbSurface: string;
   border: string;
   text: string;
   textMuted: string;
@@ -743,6 +744,7 @@ function buildTheme(
     gateError: neutrals.textMuted,
     surface: neutrals.surface,
     surfaceMuted: neutrals.surfaceMuted,
+    productThumbSurface: neutrals.surface,
     border: structuralBorder,
     text: neutrals.text,
     textMuted: neutrals.textMuted,
@@ -1199,8 +1201,8 @@ const noirNeutrals: ThemeNeutrals = {
   border: "border-neutral-800",
   text: "text-neutral-50",
   textMuted: "text-neutral-300",
-  chipActiveBg: "bg-amber-600 text-neutral-950",
-  chipActiveText: "text-neutral-950",
+  chipActiveBg: "bg-amber-600 text-white",
+  chipActiveText: "text-white",
   chipInactive: "text-neutral-300 hover:bg-neutral-800",
   chipInactiveBorder: "border-neutral-800",
   imageGradient: "",
@@ -1214,7 +1216,7 @@ const noirAccent: ThemeAccent = {
   primary: "bg-amber-600",
   primaryHover: "hover:bg-amber-500",
   primaryActive: "active:bg-amber-700",
-  primaryForeground: "text-neutral-950",
+  primaryForeground: "text-white",
   soft: "bg-amber-950/40",
   softText: "text-amber-300",
   softBorder: "border-amber-700/30",
@@ -1224,18 +1226,18 @@ const noirAccent: ThemeAccent = {
   price: "text-amber-400",
   priceOriginal: "text-neutral-500",
   stepper:
-    "border-0 bg-amber-600 text-neutral-950 shadow-[0_18px_40px_rgba(217,168,103,0.25)]",
+    "border-0 bg-amber-600 text-white shadow-[0_18px_40px_rgba(217,168,103,0.25)]",
   stickyBar: "bg-neutral-900 text-white",
   stickyBarBorder: "border-neutral-800",
-  stickyButton: "bg-amber-600 hover:bg-amber-500 text-neutral-950",
+  stickyButton: "bg-amber-600 hover:bg-amber-500 text-white",
   stickyButtonHover: "hover:bg-amber-500",
   navMobileActive: "border-amber-500",
-  subChipActive: "border-amber-600 bg-amber-600 text-neutral-950",
+  subChipActive: "border-amber-600 bg-amber-600 text-white",
   floatingAddBorder: "border-amber-600",
   floatingAddBg: "bg-amber-600",
   floatingAddHover: "hover:border-amber-500 hover:bg-amber-500",
   chipActiveBgDark: "bg-amber-600",
-  chipActiveTextDark: "text-neutral-950",
+  chipActiveTextDark: "text-white",
   pageGradientDark:
     "bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,rgba(217,168,103,0.08),transparent)]",
   campaignBarQualifiedDark:
@@ -1332,6 +1334,10 @@ function buildNoirTheme(): StorefrontTheme {
     productPrice: cn(theme.productPrice, "text-amber-600"),
     productPriceOriginal: cn(theme.productPriceOriginal, "text-slate-400"),
     emptyImage: cn(theme.emptyImage, "bg-white"),
+    productThumbSurface: "bg-white",
+    cartPaymentCashActive: "border-0 bg-amber-950/40 text-amber-300",
+    cartPaymentCardActive: "border-0 bg-amber-950/40 text-amber-300",
+    cartInstallmentActive: "border-0 bg-amber-950/40 text-amber-300",
   };
 }
 

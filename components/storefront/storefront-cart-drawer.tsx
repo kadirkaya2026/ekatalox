@@ -254,7 +254,7 @@ export function StorefrontCartDrawer({
                     className={theme.cartDrawerItem}
                   >
                     <div className="flex gap-3">
-                      <div className={cn("relative h-[4.5rem] w-[4.5rem] shrink-0 overflow-hidden rounded-[1.15rem] sm:h-20 sm:w-20 sm:rounded-[1.35rem]", theme.border, theme.surface)}>
+                      <div className={cn("relative h-[4.5rem] w-[4.5rem] shrink-0 overflow-hidden rounded-[1.15rem] sm:h-20 sm:w-20 sm:rounded-[1.35rem]", theme.border, theme.productThumbSurface)}>
                         {item.image_url ? (
                           <StorefrontImage
                             src={item.image_url}

@@ -267,6 +267,7 @@ export const storefrontSettingsSchema = z
       .transform((value) => (typeof value === "string" && value ? value : null)),
     is_price_update_date_visible: z.boolean().default(false),
     is_theme_toggle_visible: z.boolean().default(true),
+    is_logout_button_visible: z.boolean().default(true),
     is_footer_visible: z.boolean().default(false),
     is_footer_logo_visible: z.boolean().default(true),
     is_footer_social_visible: z.boolean().default(false),

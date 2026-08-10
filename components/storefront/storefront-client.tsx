@@ -2170,7 +2170,7 @@ export function StorefrontClient({
     return (
       <article
         key={product.id}
-        className={cn("relative overflow-visible min-w-[182px] max-w-[182px] rounded-[1.5rem] p-3", theme.border, theme.surface, theme.elevation1, theme.surfaceRing)}
+        className={cn("relative overflow-visible min-w-[182px] max-w-[182px] rounded-[1.5rem] p-3", theme.border, theme.productThumbSurface, theme.elevation1, theme.surfaceRing)}
       >
         <div className="absolute left-3 right-14 top-3 z-10 flex">
           <span className={cn("truncate rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] shadow-sm", theme.surfaceMuted, theme.textMuted)}>
@@ -2203,14 +2203,14 @@ export function StorefrontClient({
         </div>
 
         <div className="mt-3 space-y-1.5">
-          <p className={cn("line-clamp-2 text-sm font-semibold leading-5", theme.text)}>
+          <p className={cn("line-clamp-2 text-sm font-semibold leading-5", theme.productTitle)}>
             {product.product_name}
           </p>
-          <p className={cn("text-[11px]", theme.textMuted)}>
+          <p className={cn("text-[11px]", theme.productMeta)}>
             {formatProductModelNo(product.sku_code)}
           </p>
           {getUnitSummary(product, t) ? (
-            <p className={cn("line-clamp-2 text-[11px] leading-4", theme.textMuted)}>
+            <p className={cn("line-clamp-2 text-[11px] leading-4", theme.productMeta)}>
               {getUnitSummary(product, t)}
             </p>
           ) : null}

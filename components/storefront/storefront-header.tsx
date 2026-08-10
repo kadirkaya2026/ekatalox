@@ -23,6 +23,7 @@ export interface StorefrontHeaderProps {
     | "is_price_update_date_visible"
     | "price_update_date"
     | "is_theme_toggle_visible"
+    | "is_logout_button_visible"
   >;
   storefrontTitle: string;
   tenantId: string;
@@ -81,7 +82,7 @@ function HeaderActions({
           )}
         </div>
       </div>
-      {props.subdomain ? (
+      {props.subdomain && props.storefrontSettings.is_logout_button_visible !== false ? (
         <StorefrontLogoutButton
           subdomain={props.subdomain}
           tenantId={props.tenantId}
@@ -362,7 +363,7 @@ function StorefrontHeaderTopBar({ props }: { props: StorefrontHeaderProps }) {
       <div className="container-shell space-y-4 py-4">
         <div className="flex items-start justify-between gap-3">
           <div className="flex-1 lg:hidden">
-            {props.subdomain ? (
+            {props.subdomain && props.storefrontSettings.is_logout_button_visible !== false ? (
               <StorefrontLogoutButton
                 subdomain={props.subdomain}
                 tenantId={props.tenantId}
@@ -417,7 +418,7 @@ function StorefrontHeaderTopBar({ props }: { props: StorefrontHeaderProps }) {
       <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(260px,420px)_auto] lg:items-center">
         <div className="col-span-2 flex min-w-0 items-start gap-2 sm:gap-3 lg:col-span-1 lg:items-center lg:gap-4">
           <HeaderBrand props={props} />
-          {props.subdomain ? (
+          {props.subdomain && props.storefrontSettings.is_logout_button_visible !== false ? (
             <StorefrontLogoutButton
               subdomain={props.subdomain}
               tenantId={props.tenantId}
