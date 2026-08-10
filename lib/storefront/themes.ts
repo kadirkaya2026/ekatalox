@@ -1198,7 +1198,7 @@ const noirNeutrals: ThemeNeutrals = {
   surfaceMuted: "bg-neutral-800",
   border: "border-neutral-800",
   text: "text-neutral-50",
-  textMuted: "text-neutral-400",
+  textMuted: "text-neutral-300",
   chipActiveBg: "bg-amber-600 text-neutral-950",
   chipActiveText: "text-neutral-950",
   chipInactive: "text-neutral-300 hover:bg-neutral-800",

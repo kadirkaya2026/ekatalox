@@ -157,7 +157,7 @@ export function StorefrontPromoTiles({ products }: { products: StorefrontProduct
                   {formatCurrency(product.price, product.currency)}
                 </span>
                 {product.original_price ? (
-                  <span className="text-[11px] font-medium text-slate-400 line-through">
+                  <span className={cn("text-[11px] font-medium line-through", theme.textMuted)}>
                     {formatCurrency(product.original_price, product.currency)}
                   </span>
                 ) : null}
