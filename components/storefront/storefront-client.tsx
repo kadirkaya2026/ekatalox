@@ -2548,7 +2548,10 @@ export function StorefrontClient({
             }
 
             if (block.id === "showcase") {
-              return showSections && !hideHomeProductsOnMobile ? (
+              // Noir mobilde tüm ürün blokları gizli olsa da vitrin
+              // (admin'in seçtiği "öne çıkan ürünler") kategori kutucuklarının
+              // hemen altında görünmeye devam etsin.
+              return showSections ? (
                 <div key="showcase" className="mb-10 space-y-10">
                   {sections.map((section) => {
                     const visibleSectionProducts = section.products.slice(0, 8);
