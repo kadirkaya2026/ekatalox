@@ -1303,11 +1303,33 @@ function buildStorefrontThemes(
       resolveAccent(vitrinProAccent, colorScheme, "vitrin-pro"),
       colorScheme,
     ),
-    noir: buildTheme(
-      neutralsFor(noirNeutrals),
-      resolveAccent(noirAccent, colorScheme, "noir"),
-      colorScheme,
-    ),
+    noir: buildNoirTheme(colorScheme, neutralsFor),
+  };
+}
+
+// Noir'de sayfa/başlık/sepet koyu kalırken ürün kartları tam BEYAZ: ürün
+// fotoğrafları beyaz stüdyo arka planıyla geldiği için karta kusursuz
+// karışıyor. Kart içi metinler de beyaz zeminde okunsun diye koyuya
+// çevriliyor (cn = tailwind-merge, sondaki sınıf öncekini ezer).
+function buildNoirTheme(
+  colorScheme: StorefrontColorScheme,
+  neutralsFor: (lightNeutrals: ThemeNeutrals) => ThemeNeutrals,
+): StorefrontTheme {
+  const theme = buildTheme(
+    neutralsFor(noirNeutrals),
+    resolveAccent(noirAccent, colorScheme, "noir"),
+    colorScheme,
+  );
+
+  return {
+    ...theme,
+    productCard: cn(theme.productCard, "bg-white"),
+    productImageWrap: cn(theme.productImageWrap, "bg-white"),
+    productTitle: cn(theme.productTitle, "text-slate-900 group-hover:text-amber-700"),
+    productMeta: cn(theme.productMeta, "text-slate-500"),
+    productPrice: cn(theme.productPrice, "text-amber-600"),
+    productPriceOriginal: cn(theme.productPriceOriginal, "text-slate-400"),
+    emptyImage: cn(theme.emptyImage, "bg-white"),
   };
 }
 
