@@ -564,7 +564,7 @@ function buildTheme(
         "shrink-0 px-1 pb-3 text-sm font-semibold transition duration-200",
         isDark
           ? active
-            ? cn("rounded-lg px-2 font-bold", chipActiveBg, chipActiveText)
+            ? cn("rounded-lg px-3 py-1.5 font-bold", chipActiveBg, chipActiveText)
             : neutrals.textMuted
           : active
             ? cn("border-b-2 font-bold", accent.navMobileActive, neutrals.text)
