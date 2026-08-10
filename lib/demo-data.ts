@@ -95,6 +95,7 @@ export const demoCategories: Category[] = [
     banner_item: null,
     tile_image_url: null,
     is_discount_category: false,
+    is_hidden_from_storefront: false,
     created_at: new Date("2026-01-01").toISOString(),
   },
   {
@@ -106,6 +107,7 @@ export const demoCategories: Category[] = [
     banner_item: null,
     tile_image_url: null,
     is_discount_category: false,
+    is_hidden_from_storefront: false,
     created_at: new Date("2026-01-01T12:00:00").toISOString(),
   },
   {
@@ -117,6 +119,7 @@ export const demoCategories: Category[] = [
     banner_item: null,
     tile_image_url: null,
     is_discount_category: false,
+    is_hidden_from_storefront: false,
     created_at: new Date("2026-01-02").toISOString(),
   },
 ];

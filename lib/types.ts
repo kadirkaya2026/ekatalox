@@ -166,6 +166,7 @@ export interface Category {
   banner_item: BannerItem | null;
   tile_image_url: string | null;
   is_discount_category: boolean;
+  is_hidden_from_storefront: boolean;
   created_at: string;
 }
 

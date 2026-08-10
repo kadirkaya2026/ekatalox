@@ -89,6 +89,34 @@ export function getDescendantCategoryIds(categories: Category[], categoryId: str
   return [...result];
 }
 
+// "is_hidden_from_storefront" kategoriler (ör. toplu içe aktarımdan kalan,
+// henüz elle kategorilendirilmemiş "Kategorisiz" ürünlerin geçici olarak
+// tutulduğu kova) storefront'ta hiçbir yerde (navigasyon, "Tüm Ürünler",
+// arama) görünmesin — ama tenant admin panelinde ürün yönetimi bunları
+// olduğu gibi görmeye devam eder (bu filtre sadece storefront sayfalarında
+// uygulanır, bkz. app/store/[subdomain]/page.tsx).
+export function filterHiddenCategoriesAndProducts<P extends { category_id: string }>(
+  categories: Category[],
+  products: P[],
+): { categories: Category[]; products: P[] } {
+  const hiddenRootIds = categories
+    .filter((category) => category.is_hidden_from_storefront)
+    .map((category) => category.id);
+
+  if (!hiddenRootIds.length) {
+    return { categories, products };
+  }
+
+  const hiddenIds = new Set(
+    hiddenRootIds.flatMap((id) => getDescendantCategoryIds(categories, id)),
+  );
+
+  return {
+    categories: categories.filter((category) => !hiddenIds.has(category.id)),
+    products: products.filter((product) => !hiddenIds.has(product.category_id)),
+  };
+}
+
 export function getCategoryLineage(categories: Category[], categoryId: string) {
   const categoryMap = new Map(categories.map((category) => [category.id, category]));
   const lineage: Category[] = [];

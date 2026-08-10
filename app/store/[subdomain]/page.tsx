@@ -23,6 +23,7 @@ import {
   getRequestHostFromHeaders,
   isTenantCustomDomainHost,
 } from "@/lib/tenancy/request-host";
+import { filterHiddenCategoriesAndProducts } from "@/lib/categories/tree";
 import { getStorefrontHomePath } from "@/lib/storefront/paths";
 import {
   isStorefrontPriceListStateValid,
@@ -113,7 +114,7 @@ export default async function StorefrontPage(props: PageProps<"/store/[subdomain
     );
   }
 
-  const [products, categories, storefrontSettings, sections] = await Promise.all([
+  const [rawProducts, rawCategories, storefrontSettings, sections] = await Promise.all([
     getStorefrontProducts({
       tenantId: tenant.id,
       priceListId: priceListState.priceListId,
@@ -127,6 +128,10 @@ export default async function StorefrontPage(props: PageProps<"/store/[subdomain
       priceListState.isCatalogOnly,
     ),
   ]);
+  const { categories, products } = filterHiddenCategoriesAndProducts(
+    rawCategories,
+    rawProducts,
+  );
   const footerVisible = storefrontSettings.is_footer_visible;
   const headersList = await headers();
   const requestHost = getRequestHostFromHeaders(headersList);

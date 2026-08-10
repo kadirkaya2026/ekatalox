@@ -20,6 +20,7 @@ import {
   getTenantStorefrontSettings,
 } from "@/lib/data";
 import { getStorefrontHomePath, getStorefrontSectionPath } from "@/lib/storefront/paths";
+import { filterHiddenCategoriesAndProducts } from "@/lib/categories/tree";
 import {
   getRequestHostFromHeaders,
   isTenantCustomDomainHost,
@@ -100,7 +101,7 @@ export default async function SectionDetailPage(props: {
     );
   }
 
-  const [sections, categories, storefrontSettings] = await Promise.all([
+  const [sections, rawCategories, storefrontSettings] = await Promise.all([
     getStorefrontSections(
       tenant.id,
       priceListState.priceListId,
@@ -115,6 +116,11 @@ export default async function SectionDetailPage(props: {
   if (!section) {
     notFound();
   }
+
+  const { categories, products: sectionProducts } = filterHiddenCategoriesAndProducts(
+    rawCategories,
+    section.products,
+  );
 
   const footerVisible = storefrontSettings.is_footer_visible;
   const headersList = await headers();
@@ -139,7 +145,7 @@ export default async function SectionDetailPage(props: {
       <StorefrontClient
         tenant={tenant}
         categories={categories}
-        products={section.products}
+        products={sectionProducts}
         storefrontSettings={storefrontSettings}
         sections={[]}
         subdomain={subdomain}
