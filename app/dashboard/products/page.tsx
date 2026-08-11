@@ -1,12 +1,12 @@
 import { Header } from "@/components/dashboard/header";
 import { ProductsPageShell } from "@/components/dashboard/products-page-shell";
 import { requireTenantAdminPage } from "@/lib/auth/session";
-import { getTenantCategories, getTenantPriceLists, getTenantProducts } from "@/lib/data";
+import { getTenantCategories, getTenantPriceLists, getTenantProductsPage } from "@/lib/data";
 
 export default async function TenantProductsPage() {
   const session = await requireTenantAdminPage();
-  const [products, categories, priceLists] = await Promise.all([
-    getTenantProducts(session.tenant!.id),
+  const [firstPage, categories, priceLists] = await Promise.all([
+    getTenantProductsPage({ tenantId: session.tenant!.id, page: 1 }),
     getTenantCategories(session.tenant!.id),
     getTenantPriceLists(session.tenant!.id),
   ]);
@@ -20,7 +20,8 @@ export default async function TenantProductsPage() {
       />
       <ProductsPageShell
         tenant={session.tenant!}
-        initialProducts={products}
+        initialProducts={firstPage.products}
+        initialTotal={firstPage.total}
         initialCategories={categories}
         priceLists={priceLists}
       />

@@ -135,7 +135,7 @@ function renderVariantCountBadge(product: Product) {
 }
 
 export function ProductsTable({
-  products,
+  grandTotal,
   filteredProducts,
   pageStartIndex = 0,
   totalFilteredCount,
@@ -163,7 +163,7 @@ export function ProductsTable({
   onOpenEdit,
   onRequestDelete,
 }: {
-  products: Product[];
+  grandTotal: number;
   filteredProducts: Product[];
   pageStartIndex?: number;
   totalFilteredCount?: number;
@@ -257,7 +257,7 @@ export function ProductsTable({
                     <div>
                       <ProductOrderInput
                         displayOrder={product.display_order}
-                        maxOrder={products.length}
+                        maxOrder={grandTotal}
                         disabled={isOrderSaving}
                         productName={product.product_name}
                         onCommit={(targetOrder) => onSetOrder(product.id, targetOrder)}
@@ -266,7 +266,7 @@ export function ProductsTable({
                         <button
                           type="button"
                           onClick={() => onMoveProduct(product.id, "up")}
-                          disabled={pageStartIndex + index === 0 || isOrderSaving}
+                          disabled={index === 0 || isOrderSaving}
                           className="rounded-md border border-border px-2 py-1 text-muted-foreground transition hover:bg-muted/60 disabled:opacity-40"
                           aria-label={`${product.product_name} yukarı taşı`}
                         >
@@ -275,7 +275,7 @@ export function ProductsTable({
                         <button
                           type="button"
                           onClick={() => onMoveProduct(product.id, "down")}
-                          disabled={pageStartIndex + index === resolvedTotalCount - 1 || isOrderSaving}
+                          disabled={index === filteredProducts.length - 1 || isOrderSaving}
                           className="rounded-md border border-border px-2 py-1 text-muted-foreground transition hover:bg-muted/60 disabled:opacity-40"
                           aria-label={`${product.product_name} aşağı taşı`}
                         >
@@ -436,7 +436,7 @@ export function ProductsTable({
                 <span className="shrink-0">Sıra</span>
                 <ProductOrderInput
                   displayOrder={product.display_order}
-                  maxOrder={products.length}
+                  maxOrder={grandTotal}
                   disabled={isOrderSaving}
                   productName={product.product_name}
                   onCommit={(targetOrder) => onSetOrder(product.id, targetOrder)}
@@ -502,7 +502,7 @@ export function ProductsTable({
               <button
                 type="button"
                 onClick={() => onMoveProduct(product.id, "up")}
-                disabled={pageStartIndex + index === 0 || isOrderSaving}
+                disabled={index === 0 || isOrderSaving}
                 className="flex-1 rounded-lg border border-border px-3 py-2 text-sm font-medium text-muted-foreground disabled:opacity-40"
               >
                 Yukarı taşı
@@ -510,7 +510,7 @@ export function ProductsTable({
               <button
                 type="button"
                 onClick={() => onMoveProduct(product.id, "down")}
-                disabled={pageStartIndex + index === resolvedTotalCount - 1 || isOrderSaving}
+                disabled={index === filteredProducts.length - 1 || isOrderSaving}
                 className="flex-1 rounded-lg border border-border px-3 py-2 text-sm font-medium text-muted-foreground disabled:opacity-40"
               >
                 Aşağı taşı

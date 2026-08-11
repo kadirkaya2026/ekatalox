@@ -13,6 +13,32 @@ import { getSessionContext } from "@/lib/auth/session";
 import { getEffectiveProductLimit, hasPlanFeature } from "@/lib/billing/plans";
 import { ensureTenantAdminResponse } from "@/lib/tenancy/guards";
 import { productCreateSchema } from "@/lib/validators/product";
+import { getTenantProductsPage } from "@/lib/data";
+
+export async function GET(request: Request) {
+  const guard = await ensureTenantAdminResponse();
+  if (guard) {
+    return guard;
+  }
+
+  const session = await getSessionContext();
+  const tenant = session.tenant!;
+  const url = new URL(request.url);
+  const page = Number.parseInt(url.searchParams.get("page") ?? "1", 10) || 1;
+  const search = url.searchParams.get("q") ?? undefined;
+  const categoryIds = url.searchParams.get("categoryIds")?.split(",").filter(Boolean);
+  const matchCategoryIds = url.searchParams.get("matchCategoryIds")?.split(",").filter(Boolean);
+
+  const { products, total } = await getTenantProductsPage({
+    tenantId: tenant.id,
+    page,
+    search,
+    categoryIds,
+    matchCategoryIds,
+  });
+
+  return NextResponse.json({ products, total });
+}
 
 async function fetchCreatedProduct(
   supabase: NonNullable<ReturnType<typeof createSupabaseAdminClient>>,

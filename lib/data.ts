@@ -543,6 +543,110 @@ export async function getTenantProducts(tenantId: string): Promise<Product[]> {
   return fetchTenantProductsWithOptionalVariants(supabase, tenantId);
 }
 
+export async function getTenantProductCount(tenantId: string): Promise<number> {
+  const supabase = createSupabaseAdminClient();
+
+  if (!supabase) {
+    if (!shouldAllowDemoFallback()) {
+      return 0;
+    }
+
+    return demoProducts.filter((product) => product.tenant_id === tenantId).length;
+  }
+
+  const { count } = await supabase
+    .from("products")
+    .select("id", { count: "exact", head: true })
+    .eq("tenant_id", tenantId);
+
+  return count ?? 0;
+}
+
+export const TENANT_PRODUCTS_PAGE_SIZE = 100;
+
+// The "Ürünler" admin page used to load a tenant's entire product table on
+// every visit (lib/data.ts's old getTenantProducts call there) — fine for a
+// few hundred rows, but tenants that imported the full market catalog sit at
+// 10-20k+ products, and shipping/holding all of them client-side is what was
+// making the page unusably slow. This mirrors getMarketCatalogProductsPage's
+// server-side search+pagination instead.
+export async function getTenantProductsPage(params: {
+  tenantId: string;
+  page: number;
+  search?: string;
+  categoryIds?: string[];
+  matchCategoryIds?: string[];
+}): Promise<{ products: Product[]; total: number }> {
+  const supabase = createSupabaseAdminClient();
+
+  const page = Math.max(1, params.page);
+  const from = (page - 1) * TENANT_PRODUCTS_PAGE_SIZE;
+  const to = from + TENANT_PRODUCTS_PAGE_SIZE - 1;
+  const term = params.search?.trim().replace(/[,%]/g, " ").trim();
+
+  if (!supabase) {
+    if (!shouldAllowDemoFallback()) {
+      return { products: [], total: 0 };
+    }
+
+    const categoryIdSet = params.categoryIds?.length ? new Set(params.categoryIds) : null;
+    const normalizedTerm = term?.toLowerCase();
+    const filtered = demoProducts.filter((product) => {
+      if (product.tenant_id !== params.tenantId) return false;
+      if (categoryIdSet && !categoryIdSet.has(product.category_id)) return false;
+      if (!normalizedTerm) return true;
+      return (
+        product.product_name.toLowerCase().includes(normalizedTerm) ||
+        product.sku_code.toLowerCase().includes(normalizedTerm)
+      );
+    });
+
+    return { products: filtered.slice(from, to + 1), total: filtered.length };
+  }
+
+  const orFilter = term
+    ? (() => {
+        const escapedTerm = term.replace(/[()]/g, "");
+        const categoryMatch = params.matchCategoryIds?.length
+          ? `,category_id.in.(${params.matchCategoryIds.join(",")})`
+          : "";
+        return `product_name.ilike.%${escapedTerm}%,sku_code.ilike.%${escapedTerm}%${categoryMatch}`;
+      })()
+    : null;
+
+  let primaryQuery = supabase
+    .from("products")
+    .select(productWithVariantsSelect, { count: "exact" })
+    .eq("tenant_id", params.tenantId);
+  if (params.categoryIds?.length) primaryQuery = primaryQuery.in("category_id", params.categoryIds);
+  if (orFilter) primaryQuery = primaryQuery.or(orFilter);
+  primaryQuery = primaryQuery
+    .order("display_order", { ascending: true })
+    .order("created_at", { ascending: false })
+    .range(from, to);
+
+  const { data, error, count } = await primaryQuery;
+
+  if (!error) {
+    return { products: normalizeProductRows(data), total: count ?? 0 };
+  }
+
+  let fallbackQuery = supabase
+    .from("products")
+    .select("*", { count: "exact" })
+    .eq("tenant_id", params.tenantId);
+  if (params.categoryIds?.length) fallbackQuery = fallbackQuery.in("category_id", params.categoryIds);
+  if (orFilter) fallbackQuery = fallbackQuery.or(orFilter);
+  fallbackQuery = fallbackQuery
+    .order("display_order", { ascending: true })
+    .order("created_at", { ascending: false })
+    .range(from, to);
+
+  const fallback = await fallbackQuery;
+
+  return { products: normalizeProductRows(fallback.data), total: fallback.count ?? 0 };
+}
+
 export async function getTenantCategories(tenantId: string): Promise<Category[]> {
   const supabase = createSupabaseAdminClient();
 

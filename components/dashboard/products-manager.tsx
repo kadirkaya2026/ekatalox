@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { AlertTriangle, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -23,45 +23,23 @@ import {
 } from "@/lib/hooks/use-product-form";
 import type { Category, PriceList, Product, Tenant } from "@/lib/types";
 
-// Büyük kataloglarda (binlerce ürün) filtrelenmiş listenin tamamını tek
-// seferde DOM'a basmak sayfayı kilitliyordu — bu yüzden sadece bir sayfalık
-// satırı render ediyoruz.
+// Büyük kataloglarda (binlerce ürün) tüm tabloyu her sayfa açılışında
+// sunucudan çekip tarayıcıda tutmak sayfayı kilitliyordu — bu yüzden arama,
+// kategori filtresi ve sayfalama artık sunucu tarafında (bkz.
+// getTenantProductsPage), her seferinde sadece bir sayfalık satır geliyor.
 const PRODUCTS_PAGE_SIZE = 100;
-
-function reorderProducts(products: Product[], fromIndex: number, toIndex: number) {
-  const nextProducts = [...products];
-  const [movedProduct] = nextProducts.splice(fromIndex, 1);
-  nextProducts.splice(toIndex, 0, movedProduct);
-
-  return nextProducts.map((product, index) => ({
-    ...product,
-    display_order: index + 1,
-  }));
-}
-
-function sortProductsByDisplayOrder(productList: Product[]) {
-  return [...productList].sort((left, right) => {
-    if (left.display_order !== right.display_order) {
-      return left.display_order - right.display_order;
-    }
-
-    return left.product_name.localeCompare(right.product_name, "tr-TR");
-  });
-}
-
+const SEARCH_DEBOUNCE_MS = 350;
 
 export function ProductsManager({
   tenant,
-  products: controlledProducts,
-  onProductsUpdated,
   initialProducts,
+  initialTotal,
   initialCategories,
   priceLists,
 }: {
   tenant: Tenant;
-  products?: Product[];
-  onProductsUpdated?: (products: Product[]) => void;
   initialProducts: Product[];
+  initialTotal: number;
   initialCategories: Category[];
   priceLists: PriceList[];
 }) {
@@ -69,8 +47,12 @@ export function ProductsManager({
     () => priceLists.filter((list) => !list.is_catalog_only),
     [priceLists],
   );
-  const [internalProducts, setInternalProducts] = useState(initialProducts);
-  const [searchTerm, setSearchTerm] = useState("");
+  const [products, setProducts] = useState(initialProducts);
+  const [total, setTotal] = useState(initialTotal);
+  const [grandTotal, setGrandTotal] = useState(initialTotal);
+  const [isLoading, setIsLoading] = useState(false);
+  const [searchTerm, setSearchTermRaw] = useState("");
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [variantMatrixProduct, setVariantMatrixProduct] = useState<Product | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Product | null>(null);
@@ -85,105 +67,114 @@ export function ProductsManager({
   const [page, setPage] = useState(1);
   const [pending, startTransition] = useTransition();
   const router = useRouter();
-  const products = controlledProducts ?? internalProducts;
-  const applyProducts = onProductsUpdated ?? setInternalProducts;
-  // After persisting a change, also refresh the route so the server payload
-  // (used when this page is revisited from the router cache) is up to date.
-  // Local component state isn't reset by refresh(), so the open page won't flicker.
-  const syncProducts = (next: Product[]) => {
-    applyProducts(next);
-    router.refresh();
-  };
   const categories = initialCategories;
   const categoryTree = useMemo(() => buildCategoryTree(categories), [categories]);
   const flatCategories = useMemo(() => flattenCategoryTree(categoryTree), [categoryTree]);
-  const selectedCategoryProductIds = useMemo(() => {
-    if (!selectedCategoryIds.length) {
-      return null;
-    }
 
-    const categoryIds = new Set(
-      selectedCategoryIds.flatMap((categoryId) =>
-        getDescendantCategoryIds(categories, categoryId),
-      ),
+  const expandedCategoryIds = useMemo(() => {
+    if (!selectedCategoryIds.length) return [];
+    const ids = new Set(
+      selectedCategoryIds.flatMap((categoryId) => getDescendantCategoryIds(categories, categoryId)),
     );
-
-    return categoryIds;
+    return Array.from(ids);
   }, [categories, selectedCategoryIds]);
+
+  // Arama metni bir kategori adıyla eşleşiyorsa (ör. "viski") o kategorideki
+  // ürünler de sonuca dahil olsun — bkz. getTenantProductsPage'in
+  // matchCategoryIds parametresi.
+  const matchCategoryIds = useMemo(() => {
+    const term = debouncedSearchTerm.trim().toLowerCase();
+    if (!term) return [];
+    return categories.filter((category) => category.name.toLowerCase().includes(term)).map((c) => c.id);
+  }, [categories, debouncedSearchTerm]);
+
+  useEffect(() => {
+    const timeout = setTimeout(() => setDebouncedSearchTerm(searchTerm), SEARCH_DEBOUNCE_MS);
+    return () => clearTimeout(timeout);
+  }, [searchTerm]);
 
   const usage = useMemo(() => {
     const limit = getEffectiveProductLimit(tenant.plan ?? "baslangic", tenant.product_limit_addon);
     return {
-      total: products.length,
+      total: grandTotal,
       limit,
-      remaining: Math.max(limit - products.length, 0),
+      remaining: Math.max(limit - grandTotal, 0),
       giftAddon: tenant.product_limit_addon ?? 0,
     };
-  }, [products.length, tenant.plan, tenant.product_limit_addon]);
+  }, [grandTotal, tenant.plan, tenant.product_limit_addon]);
 
-  const filteredProducts = useMemo(() => {
-    const normalizedSearch = searchTerm.trim().toLowerCase();
-    const categoryMap = new Map(
-      categories.map((category) => [category.id, category.name.toLowerCase()]),
-    );
+  async function fetchPage(targetPage: number) {
+    setIsLoading(true);
+    try {
+      const params = new URLSearchParams();
+      params.set("page", String(targetPage));
+      if (debouncedSearchTerm.trim()) params.set("q", debouncedSearchTerm.trim());
+      if (expandedCategoryIds.length) params.set("categoryIds", expandedCategoryIds.join(","));
+      if (matchCategoryIds.length) params.set("matchCategoryIds", matchCategoryIds.join(","));
 
-    const orderedProducts = [...products].sort((left, right) => {
-      if (left.display_order !== right.display_order) {
-        return left.display_order - right.display_order;
+      const response = await fetch(`/api/tenant/products?${params.toString()}`);
+      const result = await response.json();
+
+      if (!response.ok) {
+        setMessage(result.error ?? "Ürünler yüklenemedi.");
+        return;
       }
 
-      return left.product_name.localeCompare(right.product_name, "tr-TR");
-    });
+      setProducts(result.products as Product[]);
+      setTotal(result.total as number);
+    } finally {
+      setIsLoading(false);
+    }
+  }
 
-    return orderedProducts.filter((product) => {
-      const matchesCategory =
-        !selectedCategoryProductIds || selectedCategoryProductIds.has(product.category_id);
+  const isFirstRender = useRef(true);
+  const categoryFilterKey = expandedCategoryIds.join(",");
+  const matchCategoryKey = matchCategoryIds.join(",");
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+    void fetchPage(page);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, debouncedSearchTerm, categoryFilterKey, matchCategoryKey]);
 
-      if (!matchesCategory) {
-        return false;
-      }
-
-      if (!normalizedSearch) {
-        return true;
-      }
-
-      return (
-        product.product_name.toLowerCase().includes(normalizedSearch) ||
-        product.sku_code.toLowerCase().includes(normalizedSearch) ||
-        product.currency.toLowerCase().includes(normalizedSearch) ||
-        categoryMap.get(product.category_id)?.includes(normalizedSearch)
-      );
-    });
-  }, [categories, products, searchTerm, selectedCategoryProductIds]);
-
-  const pageCount = Math.max(1, Math.ceil(filteredProducts.length / PRODUCTS_PAGE_SIZE));
-
-  // Filtre değişince sayfayı 1'e sıfırla. Bir effect yerine render sırasında
-  // yapılıyor (React'in "adjusting state during render" deseni) — bkz.
-  // https://react.dev/learn/you-might-not-need-an-effect#adjusting-some-state-when-a-prop-changes
-  const filterKey = `${searchTerm}|${selectedCategoryIds.join(",")}`;
-  const [lastFilterKey, setLastFilterKey] = useState(filterKey);
-  if (filterKey !== lastFilterKey) {
-    setLastFilterKey(filterKey);
+  function setSearchTerm(value: string) {
+    setSearchTermRaw(value);
     setPage(1);
   }
 
+  function toggleCategoryFilter(categoryId: string) {
+    setSelectedCategoryIds((current) =>
+      current.includes(categoryId)
+        ? current.filter((id) => id !== categoryId)
+        : [...current, categoryId],
+    );
+    setPage(1);
+  }
+
+  function clearCategoryFilters() {
+    setSelectedCategoryIds([]);
+    setPage(1);
+  }
+
+  const pageCount = Math.max(1, Math.ceil(total / PRODUCTS_PAGE_SIZE));
   const currentPage = Math.min(page, pageCount);
   const pageStartIndex = (currentPage - 1) * PRODUCTS_PAGE_SIZE;
-  const pagedProducts = filteredProducts.slice(pageStartIndex, pageStartIndex + PRODUCTS_PAGE_SIZE);
 
   const categoryNameMap = useMemo(
     () => new Map(categories.map((category) => [category.id, category.name])),
     [categories],
   );
   const isLimitFull = usage.remaining <= 0;
-  const filteredProductIds = filteredProducts.map((product) => product.id);
-  const allFilteredSelected =
-    filteredProductIds.length > 0 &&
-    filteredProductIds.every((id) => selectedProductIds.includes(id));
-  const someFilteredSelected =
-    filteredProductIds.some((id) => selectedProductIds.includes(id)) &&
-    !allFilteredSelected;
+  const pageProductIds = products.map((product) => product.id);
+  // "Tümünü seç" burada sadece o an yüklü olan sayfayı kapsar — binlerce
+  // ürünü tek seferde belleğe çekmeden filtreye uyan HER şeyi seçtirmek
+  // ayrı bir uçtan-uca sorgu gerektirir, şimdilik sayfa sayfa seçim yeterli.
+  const allPageSelected =
+    pageProductIds.length > 0 && pageProductIds.every((id) => selectedProductIds.includes(id));
+  const somePageSelected =
+    pageProductIds.some((id) => selectedProductIds.includes(id)) && !allPageSelected;
 
   function openEdit(product: Product) {
     setEditingProduct(product);
@@ -216,17 +207,14 @@ export function ProductsManager({
         return;
       }
 
-      syncProducts(
-        products.map((item) =>
-          item.id === product.id
-            ? { ...item, is_in_stock: result.product.is_in_stock }
-            : item,
+      setProducts((current) =>
+        current.map((item) =>
+          item.id === product.id ? { ...item, is_in_stock: result.product.is_in_stock } : item,
         ),
       );
       setMessage("Stok durumu güncellendi.");
     });
   }
-
 
   function toggleSelectProduct(productId: string) {
     setSelectedProductIds((current) =>
@@ -236,26 +224,14 @@ export function ProductsManager({
     );
   }
 
-  function toggleSelectAllFiltered() {
+  function toggleSelectAllOnPage() {
     setSelectedProductIds((current) => {
-      if (allFilteredSelected) {
-        return current.filter((id) => !filteredProductIds.includes(id));
+      if (allPageSelected) {
+        return current.filter((id) => !pageProductIds.includes(id));
       }
 
-      return Array.from(new Set([...current, ...filteredProductIds]));
+      return Array.from(new Set([...current, ...pageProductIds]));
     });
-  }
-
-  function toggleCategoryFilter(categoryId: string) {
-    setSelectedCategoryIds((current) =>
-      current.includes(categoryId)
-        ? current.filter((id) => id !== categoryId)
-        : [...current, categoryId],
-    );
-  }
-
-  function clearCategoryFilters() {
-    setSelectedCategoryIds([]);
   }
 
   function handleDeleteProduct(product: Product) {
@@ -271,11 +247,13 @@ export function ProductsManager({
         return;
       }
 
-      const updatedProducts = products.filter((item) => item.id !== product.id);
-      syncProducts(updatedProducts);
+      setProducts((current) => current.filter((item) => item.id !== product.id));
+      setTotal((current) => Math.max(0, current - 1));
+      setGrandTotal((current) => Math.max(0, current - 1));
       setSelectedProductIds((current) => current.filter((id) => id !== product.id));
       setDeleteTarget(null);
       setMessage("Ürün kalıcı olarak silindi.");
+      router.refresh();
     });
   }
 
@@ -298,24 +276,18 @@ export function ProductsManager({
         return;
       }
 
-      const deletedIds = new Set<string>(result.deletedIds ?? []);
-      const updatedProducts = products.filter((item) => !deletedIds.has(item.id));
-      syncProducts(updatedProducts);
+      const deletedCount = (result.deletedIds ?? []).length;
+      setTotal((current) => Math.max(0, current - deletedCount));
+      setGrandTotal((current) => Math.max(0, current - deletedCount));
       setSelectedProductIds([]);
       setBulkDeleteOpen(false);
-      setMessage(`${deletedIds.size} ürün kalıcı olarak silindi.`);
+      setMessage(`${deletedCount} ürün kalıcı olarak silindi.`);
+      await fetchPage(currentPage);
+      router.refresh();
     });
   }
 
-  async function saveProductOrder(
-    nextProducts: Product[],
-    payload:
-      | { productId: string; targetOrder: number }
-      | { productIds: string[] },
-  ) {
-    const previousProducts = products;
-
-    syncProducts(nextProducts);
+  async function moveProductToOrder(productId: string, targetOrder: number) {
     setMessage(null);
     setIsOrderSaving(true);
 
@@ -323,20 +295,18 @@ export function ProductsManager({
       const response = await fetch("/api/tenant/products/reorder", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({ productId, targetOrder }),
       });
       const result = await response.json();
 
       if (!response.ok) {
-        syncProducts(previousProducts);
         setMessage(result.error ?? "Ürün sıralaması kaydedilemedi.");
         return;
       }
 
       setMessage("Ürün katalog sırası güncellendi.");
-      router.refresh();
+      await fetchPage(currentPage);
     } catch {
-      syncProducts(previousProducts);
       setMessage("Ürün sıralaması kaydedilemedi.");
     } finally {
       setIsOrderSaving(false);
@@ -344,52 +314,21 @@ export function ProductsManager({
   }
 
   function handleSetProductOrder(productId: string, targetOrder: number) {
-    const sorted = sortProductsByDisplayOrder(products);
-    const sourceIndex = sorted.findIndex((product) => product.id === productId);
-
-    if (sourceIndex < 0) {
-      return;
-    }
-
-    const targetIndex =
-      Math.min(Math.max(1, Math.floor(targetOrder)), sorted.length) - 1;
-
-    if (targetIndex === sourceIndex) {
-      return;
-    }
-
-    const nextProducts = reorderProducts(sorted, sourceIndex, targetIndex);
-    void saveProductOrder(nextProducts, {
-      productId,
-      targetOrder: targetIndex + 1,
-    });
+    const clamped = Math.min(Math.max(1, Math.floor(targetOrder)), grandTotal);
+    void moveProductToOrder(productId, clamped);
   }
 
+  // Yukarı/aşağı oklar ve sürükle-bırak, sadece o an yüklü sayfa içindeki
+  // komşu ürünle yer değiştirir — sayfa sınırının dışına (bir önceki/sonraki
+  // sayfaya) taşımak için "Sıra" kutusuna hedef pozisyonu yazmak gerekir.
   function handleMoveProduct(productId: string, direction: "up" | "down") {
-    const visibleIndex = filteredProducts.findIndex((product) => product.id === productId);
+    const index = products.findIndex((product) => product.id === productId);
+    if (index < 0) return;
 
-    if (visibleIndex < 0) {
-      return;
-    }
+    const neighbor = products[direction === "up" ? index - 1 : index + 1];
+    if (!neighbor) return;
 
-    const targetVisibleIndex = direction === "up" ? visibleIndex - 1 : visibleIndex + 1;
-
-    if (targetVisibleIndex < 0 || targetVisibleIndex >= filteredProducts.length) {
-      return;
-    }
-
-    const targetProductId = filteredProducts[targetVisibleIndex]?.id;
-    const sourceIndex = products.findIndex((product) => product.id === productId);
-    const targetIndex = products.findIndex((product) => product.id === targetProductId);
-
-    if (sourceIndex < 0 || targetIndex < 0) {
-      return;
-    }
-
-    const nextProducts = reorderProducts(products, sourceIndex, targetIndex);
-    void saveProductOrder(nextProducts, {
-      productIds: nextProducts.map((product) => product.id),
-    });
+    void moveProductToOrder(productId, neighbor.display_order);
   }
 
   function handleProductDrop(targetProductId: string) {
@@ -398,19 +337,11 @@ export function ProductsManager({
       return;
     }
 
-    const sourceIndex = products.findIndex((product) => product.id === draggedProductId);
-    const targetIndex = products.findIndex((product) => product.id === targetProductId);
-
-    if (sourceIndex < 0 || targetIndex < 0) {
-      setDraggedProductId(null);
-      return;
-    }
-
-    const nextProducts = reorderProducts(products, sourceIndex, targetIndex);
+    const target = products.find((product) => product.id === targetProductId);
     setDraggedProductId(null);
-    void saveProductOrder(nextProducts, {
-      productIds: nextProducts.map((product) => product.id),
-    });
+    if (!target) return;
+
+    void moveProductToOrder(draggedProductId, target.display_order);
   }
 
   function handleInlineCategoryChange(product: Product, newCategoryId: string) {
@@ -437,11 +368,9 @@ export function ProductsManager({
         return;
       }
 
-      syncProducts(
-        products.map((item) =>
-          item.id === product.id ? (result.product as Product) : item,
-        ),
-      );
+      // Aktif bir kategori filtresi varsa ürün artık listeden düşmüş
+      // olabilir — sayfayı yeniden çekmek en güvenilir yol.
+      await fetchPage(currentPage);
       setMessage("Kategori güncellendi.");
     });
   }
@@ -466,14 +395,11 @@ export function ProductsManager({
         return;
       }
 
-      const updatedMap = new Map<string, Product>(
-        (result.updatedProducts as Product[]).map((p) => [p.id, p]),
-      );
-      syncProducts(products.map((item) => updatedMap.get(item.id) ?? item));
       setSelectedProductIds([]);
       setMessage(
         `${result.updatedProducts.length} ürünün stoğu ${is_in_stock ? "açıldı" : "kapatıldı"}.`,
       );
+      await fetchPage(currentPage);
     });
   }
 
@@ -497,13 +423,10 @@ export function ProductsManager({
         return;
       }
 
-      const updatedMap = new Map<string, Product>(
-        (result.updatedProducts as Product[]).map((p) => [p.id, p]),
-      );
-      syncProducts(products.map((item) => updatedMap.get(item.id) ?? item));
       setSelectedProductIds([]);
       setBulkCategoryId("");
       setMessage(`${result.updatedProducts.length} ürünün kategorisi güncellendi.`);
+      await fetchPage(currentPage);
     });
   }
 
@@ -583,23 +506,23 @@ export function ProductsManager({
         </div>
 
         <ProductsTable
-          products={products}
-          filteredProducts={pagedProducts}
+          grandTotal={grandTotal}
+          filteredProducts={products}
           pageStartIndex={pageStartIndex}
-          totalFilteredCount={filteredProducts.length}
+          totalFilteredCount={total}
           pricedLists={pricedLists}
           flatCategories={flatCategories}
           categoryNameMap={categoryNameMap}
           selectedProductIds={selectedProductIds}
           onToggleSelect={toggleSelectProduct}
-          allFilteredSelected={allFilteredSelected}
-          someFilteredSelected={someFilteredSelected}
-          onToggleSelectAllFiltered={toggleSelectAllFiltered}
+          allFilteredSelected={allPageSelected}
+          someFilteredSelected={somePageSelected}
+          onToggleSelectAllFiltered={toggleSelectAllOnPage}
           draggedProductId={draggedProductId}
           onDragStart={setDraggedProductId}
           onDragEnd={() => setDraggedProductId(null)}
           onDrop={handleProductDrop}
-          isOrderSaving={isOrderSaving}
+          isOrderSaving={isOrderSaving || isLoading}
           onSetOrder={handleSetProductOrder}
           onMoveProduct={handleMoveProduct}
           inlineCategoryProductId={inlineCategoryProductId}
@@ -612,19 +535,20 @@ export function ProductsManager({
           onRequestDelete={setDeleteTarget}
         />
 
-        {filteredProducts.length ? (
+        {total ? (
           <div className="flex flex-col items-center justify-between gap-3 border-t border-border px-5 py-4 sm:flex-row">
             <p className="text-sm text-muted-foreground">
-              {pageStartIndex + 1}-{Math.min(pageStartIndex + PRODUCTS_PAGE_SIZE, filteredProducts.length)}
+              {pageStartIndex + 1}-{Math.min(pageStartIndex + PRODUCTS_PAGE_SIZE, total)}
               {" / "}
-              {filteredProducts.length} ürün
+              {total} ürün
+              {isLoading ? " · yükleniyor…" : ""}
             </p>
             <div className="flex items-center gap-2">
               <Button
                 variant="secondary"
                 className="h-8 px-3 text-xs"
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
-                disabled={currentPage <= 1}
+                disabled={currentPage <= 1 || isLoading}
               >
                 Önceki
               </Button>
@@ -635,7 +559,7 @@ export function ProductsManager({
                 variant="secondary"
                 className="h-8 px-3 text-xs"
                 onClick={() => setPage((p) => Math.min(pageCount, p + 1))}
-                disabled={currentPage >= pageCount}
+                disabled={currentPage >= pageCount || isLoading}
               >
                 Sonraki
               </Button>
@@ -652,7 +576,7 @@ export function ProductsManager({
           tenant={tenant}
           onClose={() => setEditingProduct(null)}
           onSaved={(updated) => {
-            syncProducts(products.map((item) => (item.id === updated.id ? updated : item)));
+            setProducts((current) => current.map((item) => (item.id === updated.id ? updated : item)));
             setEditingProduct(null);
             setMessage("Ürün güncellendi.");
           }}
@@ -667,7 +591,7 @@ export function ProductsManager({
           pricedLists={pricedLists}
           onClose={closeVariantMatrix}
           onSaved={(updated) => {
-            syncProducts(products.map((item) => (item.id === updated.id ? updated : item)));
+            setProducts((current) => current.map((item) => (item.id === updated.id ? updated : item)));
             setMessage("Varyant matrisi güncellendi.");
             closeVariantMatrix();
           }}
