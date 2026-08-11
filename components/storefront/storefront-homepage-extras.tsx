@@ -222,7 +222,7 @@ export function StorefrontCategoryTiles({
         className={
           isGrid4
             ? "grid grid-cols-4 gap-2.5"
-            : "scrollbar-hide -mx-4 flex gap-3 overflow-x-auto px-4 sm:mx-0 sm:grid sm:grid-cols-4 sm:gap-4 sm:overflow-visible sm:px-0 lg:grid-cols-8"
+            : "scrollbar-hide -mx-4 flex gap-3 overflow-x-auto px-4 sm:mx-0 sm:grid sm:grid-cols-6 sm:gap-3 sm:overflow-visible sm:px-0 lg:grid-cols-10"
         }
       >
         {tiles.map(({ category, image, index, isActive }) => (
@@ -240,7 +240,7 @@ export function StorefrontCategoryTiles({
               className={cn(
                 isGrid4
                   ? "relative flex aspect-square w-full items-center justify-center overflow-hidden rounded-2xl shadow-sm transition group-hover:scale-105"
-                  : "relative flex size-16 items-center justify-center overflow-hidden rounded-2xl shadow-sm transition group-hover:scale-105 sm:size-20",
+                  : "relative flex size-16 items-center justify-center overflow-hidden rounded-2xl shadow-sm transition group-hover:scale-105 sm:size-16",
                 isActive && theme.activeTileBg,
               )}
               style={isActive ? undefined : { background: TILE_GRADIENTS[index % TILE_GRADIENTS.length] }}
@@ -250,7 +250,7 @@ export function StorefrontCategoryTiles({
                   src={image}
                   alt={category.name}
                   className="object-cover"
-                  sizes={isGrid4 ? "33vw" : "80px"}
+                  sizes={isGrid4 ? "33vw" : "64px"}
                 />
               ) : (
                 <Store className={cn(isGrid4 ? "size-8" : "size-6", isActive ? theme.activeTileText : "text-white/90")} />
