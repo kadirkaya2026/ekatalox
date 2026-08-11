@@ -32,6 +32,7 @@ import {
   buildCategoryTree,
   getCategoryLineage,
   getDescendantCategoryIds,
+  sortCategoriesByOrder,
 } from "@/lib/categories/tree";
 import { supportedCurrencyCodes, formatProductModelNo } from "@/lib/products/constants";
 import {
@@ -974,6 +975,18 @@ export function StorefrontClient({
       name: child.name,
     }));
   }, [selectedTopCategory]);
+  // 3. seviye alt kategoriler (ör. Alkol > Biralar > Efes) — sadece mobilde,
+  // 2. seviye bir kategori (ör. Biralar) seçiliyken bir sonraki satırda listelenir.
+  const mobileSubSubcategories = useMemo(() => {
+    const secondLevelCategory = selectedCategoryLineage[1];
+    if (!secondLevelCategory) {
+      return [];
+    }
+
+    return sortCategoriesByOrder(
+      categories.filter((category) => category.parent_id === secondLevelCategory.id),
+    ).map((child) => ({ id: child.id, name: child.name }));
+  }, [categories, selectedCategoryLineage]);
 
   const cartTotal = useMemo(() => getCartTotal(cart), [cart]);
   const cartCurrency = useMemo(() => getCartCurrency(cart), [cart]);
@@ -2421,6 +2434,7 @@ export function StorefrontClient({
         selectedTopCategoryId={selectedTopCategoryId}
         selectedCategoryLabel={selectedCategoryLabel}
         mobileSubcategories={mobileSubcategories}
+        mobileSubSubcategories={mobileSubSubcategories}
         hoveredCategoryId={hoveredCategoryId}
         onHoverCategory={setHoveredCategoryId}
         onCategoryChange={handleCategoryChange}

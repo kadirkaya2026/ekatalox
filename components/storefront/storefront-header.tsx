@@ -44,6 +44,7 @@ export interface StorefrontHeaderProps {
   selectedTopCategoryId: string;
   selectedCategoryLabel: string;
   mobileSubcategories: Array<{ id: string; name: string }>;
+  mobileSubSubcategories: Array<{ id: string; name: string }>;
   hoveredCategoryId: string | null;
   onHoverCategory: (categoryId: string | null) => void;
   onCategoryChange: (categoryId: string) => void;
@@ -348,6 +349,25 @@ function StorefrontHeaderCategoryNav({ props }: { props: StorefrontHeaderProps }
                       className={theme.categorySubChip(isActive)}
                     >
                       {subcategory.name}
+                    </button>
+                  );
+                })}
+              </div>
+            ) : null}
+
+            {props.mobileSubSubcategories.length ? (
+              <div className="scrollbar-hide -mx-4 mt-2 flex gap-2 overflow-x-auto px-4 pb-1">
+                {props.mobileSubSubcategories.map((subSubcategory) => {
+                  const isActive = props.selectedCategoryId === subSubcategory.id;
+
+                  return (
+                    <button
+                      key={subSubcategory.id}
+                      type="button"
+                      onClick={() => props.onCategoryChange(subSubcategory.id)}
+                      className={theme.categorySubChip(isActive)}
+                    >
+                      {subSubcategory.name}
                     </button>
                   );
                 })}
