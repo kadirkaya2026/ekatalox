@@ -259,7 +259,11 @@ function StorefrontHeaderCategoryNav({ props }: { props: StorefrontHeaderProps }
                 {category.children.length && isOpen ? (
                   <div className="absolute left-0 top-full z-30 pt-1">
                     <div className={theme.categoryDropdown}>
-                      <div className="space-y-0.5">
+                      {/* 10'dan fazla alt kategori varsa yeni sütun aşağı
+                          değil sağa doğru eklensin diye sabit 10 satırlık
+                          grid — az sayıda alt kategoride tek sütun gibi
+                          davranır. */}
+                      <div className="grid grid-flow-col grid-rows-[repeat(10,minmax(0,auto))] gap-x-1.5 gap-y-0.5">
                         {category.children.map((child) => (
                           <button
                             key={child.id}
