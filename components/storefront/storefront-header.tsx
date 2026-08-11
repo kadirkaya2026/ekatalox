@@ -213,7 +213,8 @@ function StorefrontHeaderCategoryNav({ props }: { props: StorefrontHeaderProps }
       <div className="container-shell">
         <nav
           className={cn(
-            "relative hidden md:flex md:flex-wrap md:items-center md:justify-center md:gap-2 md:py-3",
+            "relative hidden md:flex md:flex-wrap md:items-center md:justify-center md:py-3",
+            theme.categoryNavGap,
             props.usesSidebarNav && "md:hidden",
           )}
           aria-label={t("header.mainCategoriesAria")}

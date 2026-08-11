@@ -16,6 +16,7 @@ export interface StorefrontTheme {
   cartTotalValue: string;
   cartTotalEmpty: string;
   categoryRailBorder: string;
+  categoryNavGap: string;
   categoryNavChip: (active: boolean) => string;
   categoryNavMobile: (active: boolean) => string;
   categorySubChip: (active: boolean) => string;
@@ -555,6 +556,7 @@ function buildTheme(
     cartTotalValue: cn("text-sm font-bold", neutrals.text),
     cartTotalEmpty: cn("text-sm font-bold", neutrals.textMuted),
     categoryRailBorder: neutrals.headerRailBorder,
+    categoryNavGap: "md:gap-2",
     categoryNavChip: (active) =>
       cn(
         "inline-flex items-center gap-2 rounded-full px-4 py-2.5 text-[13px] font-semibold transition duration-200",
@@ -1352,6 +1354,16 @@ function buildNoirTheme(): StorefrontTheme {
     cartPaymentCashActive: "border-0 bg-amber-600 text-white",
     cartPaymentCardActive: "border-0 bg-amber-600 text-white",
     cartInstallmentActive: "border-0 bg-amber-600 text-white",
+    // 20+ kategori tek üst menüde sığması için varsayılandan daha sıkı
+    // boşluk/dolgu — 3 satır yerine 2 satıra sığsın.
+    categoryNavGap: "md:gap-1",
+    categoryNavChip: (active) =>
+      cn(
+        "inline-flex items-center gap-1 rounded-full px-2.5 py-1.5 text-[12px] font-semibold transition duration-200",
+        active
+          ? cn("scale-[1.02] font-bold shadow-sm", theme.activeTileBg, theme.activeTileText)
+          : noirNeutrals.chipInactive,
+      ),
   };
 }
 
