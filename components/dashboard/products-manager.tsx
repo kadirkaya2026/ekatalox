@@ -30,6 +30,67 @@ import type { Category, PriceList, Product, Tenant } from "@/lib/types";
 const PRODUCTS_PAGE_SIZE = 100;
 const SEARCH_DEBOUNCE_MS = 350;
 
+// Yüzlerce sayfalık bir kataloğu tek tek "Sonraki" ile gezmek yerine, sayfa
+// numarasını yazıp doğrudan o sayfaya atlamak için.
+function PageJumpInput({
+  currentPage,
+  pageCount,
+  disabled,
+  onJump,
+}: {
+  currentPage: number;
+  pageCount: number;
+  disabled?: boolean;
+  onJump: (page: number) => void;
+}) {
+  const [draft, setDraft] = useState(String(currentPage));
+  const [isEditing, setIsEditing] = useState(false);
+
+  if (!isEditing && draft !== String(currentPage)) {
+    setDraft(String(currentPage));
+  }
+
+  function commit() {
+    const parsed = Number.parseInt(draft, 10);
+    setIsEditing(false);
+
+    if (!Number.isFinite(parsed) || parsed < 1 || parsed > pageCount) {
+      setDraft(String(currentPage));
+      return;
+    }
+
+    if (parsed !== currentPage) {
+      onJump(parsed);
+    }
+  }
+
+  return (
+    <input
+      type="number"
+      min={1}
+      max={pageCount}
+      inputMode="numeric"
+      value={draft}
+      disabled={disabled}
+      aria-label="Sayfa numarasına git"
+      onChange={(event) => setDraft(event.target.value)}
+      onFocus={() => setIsEditing(true)}
+      onBlur={commit}
+      onKeyDown={(event) => {
+        if (event.key === "Enter") {
+          event.preventDefault();
+          commit();
+        }
+        if (event.key === "Escape") {
+          setDraft(String(currentPage));
+          setIsEditing(false);
+        }
+      }}
+      className="w-16 rounded-md border border-border bg-card px-2 py-1 text-center text-sm font-semibold text-foreground focus:outline-none focus:ring-2 focus:ring-emerald-400 disabled:cursor-not-allowed disabled:opacity-40"
+    />
+  );
+}
+
 export function ProductsManager({
   tenant,
   initialProducts,
@@ -547,13 +608,28 @@ export function ProductsManager({
               <Button
                 variant="secondary"
                 className="h-8 px-3 text-xs"
+                onClick={() => setPage(1)}
+                disabled={currentPage <= 1 || isLoading}
+              >
+                İlk
+              </Button>
+              <Button
+                variant="secondary"
+                className="h-8 px-3 text-xs"
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 disabled={currentPage <= 1 || isLoading}
               >
                 Önceki
               </Button>
-              <span className="text-sm text-muted-foreground">
-                Sayfa {currentPage} / {pageCount}
+              <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                Sayfa
+                <PageJumpInput
+                  currentPage={currentPage}
+                  pageCount={pageCount}
+                  disabled={isLoading}
+                  onJump={(target) => setPage(target)}
+                />
+                / {pageCount}
               </span>
               <Button
                 variant="secondary"
@@ -562,6 +638,14 @@ export function ProductsManager({
                 disabled={currentPage >= pageCount || isLoading}
               >
                 Sonraki
+              </Button>
+              <Button
+                variant="secondary"
+                className="h-8 px-3 text-xs"
+                onClick={() => setPage(pageCount)}
+                disabled={currentPage >= pageCount || isLoading}
+              >
+                Son
               </Button>
             </div>
           </div>
