@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState, type Dispatch, ReactNode, SetStateAction } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import {
   Banknote,
   ChevronLeft,
@@ -212,19 +213,29 @@ export function StorefrontCartDrawer({
   const canCompleteWhatsAppOrder =
     cart.length > 0 && !isGeneratingOrderPdf && isMinCartAmountMet;
 
-  if (!isOpen) {
-    return null;
-  }
-
   return (
-    <div className={theme.cartDrawerOverlay}>
-      <button
-        type="button"
-        aria-label={t("cart.closeAria")}
-        className="absolute inset-0 h-full w-full"
-        onClick={onClose}
-      />
-      <div className={theme.cartDrawerPanel}>
+    <AnimatePresence>
+      {isOpen ? (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.18, ease: "easeOut" }}
+          className={theme.cartDrawerOverlay}
+        >
+          <button
+            type="button"
+            aria-label={t("cart.closeAria")}
+            className="absolute inset-0 h-full w-full"
+            onClick={onClose}
+          />
+          <motion.div
+            initial={{ opacity: 0, y: 28 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 28 }}
+            transition={{ duration: 0.24, ease: [0.16, 1, 0.3, 1] }}
+            className={theme.cartDrawerPanel}
+          >
         <div className="flex h-full max-h-[94dvh] flex-col lg:max-h-none">
           <div className="flex justify-center pt-3 lg:hidden">
             <span className={theme.cartDrawerHandle} />
@@ -847,7 +858,9 @@ export function StorefrontCartDrawer({
             </div>
           </div>
         </div>
-      </div>
-    </div>
+          </motion.div>
+        </motion.div>
+      ) : null}
+    </AnimatePresence>
   );
 }

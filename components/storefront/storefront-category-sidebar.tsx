@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import { X } from "lucide-react";
 import type { CategoryNode } from "@/lib/categories/tree";
 import { getDescendantCategoryIds } from "@/lib/categories/tree";
@@ -172,56 +173,71 @@ export function StorefrontCategoryDrawer({
     onClose();
   }
 
-  if (!isOpen) {
-    return null;
-  }
-
   return (
-    <div className={theme.cartDrawerOverlay}>
-      <button
-        type="button"
-        aria-label="Kategorileri kapat"
-        className="absolute inset-0 h-full w-full"
-        onClick={onClose}
-      />
-      <div className={theme.cartDrawerPanel} role="dialog" aria-modal="true" aria-label="Kategoriler">
-        <div className="flex max-h-[94dvh] flex-col">
-          <div className="flex justify-center pt-3">
-            <span className={theme.cartDrawerHandle} />
-          </div>
-
-          <div className={cn(theme.cartDrawerHeaderBorder, "px-4 pb-3 pt-3 sm:px-5")}>
-            <div className="flex items-center justify-between gap-3">
-              <div className="min-w-0">
-                <h2 className={theme.cartDrawerTitle}>Kategoriler</h2>
-                <p className={cn("truncate text-xs font-medium sm:text-sm", theme.cartDrawerMuted)}>
-                  Kategori seçerek ürünleri filtreleyin
-                </p>
+    <AnimatePresence>
+      {isOpen ? (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.18, ease: "easeOut" }}
+          className={theme.cartDrawerOverlay}
+        >
+          <button
+            type="button"
+            aria-label="Kategorileri kapat"
+            className="absolute inset-0 h-full w-full"
+            onClick={onClose}
+          />
+          <motion.div
+            initial={{ opacity: 0, y: 28 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 28 }}
+            transition={{ duration: 0.24, ease: [0.16, 1, 0.3, 1] }}
+            className={theme.cartDrawerPanel}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Kategoriler"
+          >
+            <div className="flex max-h-[94dvh] flex-col">
+              <div className="flex justify-center pt-3">
+                <span className={theme.cartDrawerHandle} />
               </div>
-              <button
-                type="button"
-                onClick={onClose}
-                className={theme.cartDrawerCloseButton}
-                aria-label="Kategorileri kapat"
-              >
-                <X className="size-5" />
-              </button>
-            </div>
-          </div>
 
-          <div className="safe-bottom-padding max-h-[min(72dvh,560px)] overflow-y-auto px-4 py-4 sm:px-5">
-            <StorefrontCategoryTree
-              categories={categories}
-              categoryTree={categoryTree}
-              selectedCategoryId={selectedCategoryId}
-              homeHref={homeHref}
-              onCategoryChange={handleCategorySelect}
-              onHomeNavigate={onClose}
-            />
-          </div>
-        </div>
-      </div>
-    </div>
+              <div className={cn(theme.cartDrawerHeaderBorder, "px-4 pb-3 pt-3 sm:px-5")}>
+                <div className="flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <h2 className={theme.cartDrawerTitle}>Kategoriler</h2>
+                    <p className={cn("truncate text-xs font-medium sm:text-sm", theme.cartDrawerMuted)}>
+                      Kategori seçerek ürünleri filtreleyin
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={onClose}
+                    className={theme.cartDrawerCloseButton}
+                    aria-label="Kategorileri kapat"
+                  >
+                    <X className="size-5" />
+                  </button>
+                </div>
+              </div>
+
+              <div className="safe-bottom-padding max-h-[min(72dvh,560px)] overflow-y-auto px-4 py-4 sm:px-5">
+                <StorefrontCategoryTree
+                  categories={categories}
+                  categoryTree={categoryTree}
+                  selectedCategoryId={selectedCategoryId}
+                  homeHref={homeHref}
+                  onCategoryChange={handleCategorySelect}
+                  onHomeNavigate={onClose}
+                />
+              </div>
+            </div>
+          </motion.div>
+        </motion.div>
+      ) : null}
+    </AnimatePresence>
   );
 }
 

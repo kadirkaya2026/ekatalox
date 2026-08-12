@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Banknote, CreditCard, Globe, Plus, Trash2, ShoppingCart, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { InlineAlert } from "@/components/ui/inline-alert";
 import { Input } from "@/components/ui/input";
 import { PlanFeatureGate } from "@/components/dashboard/plan-feature-gate";
 import type { TenantPlan } from "@/lib/billing/plans";
@@ -563,15 +564,11 @@ export function TenantPaymentSettingsForm({
 
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="min-h-6">
-            {message ? (
-              <p
-                className={`text-sm ${
-                  message.includes("kaydedildi") ? "text-emerald-700" : "text-rose-600"
-                }`}
-              >
-                {message}
-              </p>
-            ) : null}
+            <InlineAlert
+              message={message}
+              tone={message?.includes("kaydedildi") ? "success" : "error"}
+              onExpire={() => setMessage(null)}
+            />
           </div>
           <Button type="submit" disabled={pending}>
             {pending ? "Kaydediliyor..." : "Ödeme ayarlarını kaydet"}

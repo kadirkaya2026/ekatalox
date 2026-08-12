@@ -92,7 +92,7 @@ const Page = () => {
           <p className="text-center text-slate-400 mb-12">{filtered.length} sonuç</p>
           <div className="space-y-2">
             {filtered.map((f, i) => (
-              <motion.div key={f.q} initial={{ opacity: 0, y: 10 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: false }} transition={{ delay: i * 0.03 }} className="rounded-2xl border border-white/10 bg-white/[0.02] overflow-hidden">
+              <motion.div key={f.q} initial={{ opacity: 0, y: 10 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.03 }} className="rounded-2xl border border-white/10 bg-white/[0.02] overflow-hidden">
                 <button onClick={() => setOpen(open === i ? -1 : i)} className="w-full flex items-center justify-between gap-3 p-5 text-left hover:bg-white/[0.02] transition-colors">
                   <span className="text-sm md:text-base text-white font-medium">{f.q}</span>
                   <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform ${open === i ? 'rotate-180' : ''}`} />

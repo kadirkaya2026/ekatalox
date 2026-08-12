@@ -71,7 +71,7 @@ const Page = () => {
                   rel="noopener noreferrer"
                   initial={{ opacity: 0, y: 24 }}
                   whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: false, amount: 0.2 }}
+                  viewport={{ once: true, amount: 0.2 }}
                   transition={{ duration: 0.6, delay: (i % 3) * 0.08 }}
                   whileHover={{ y: -6 }}
                   className="group relative flex flex-col overflow-hidden rounded-3xl border border-white/10 bg-white/[0.02] hover:border-white/25 transition-colors"

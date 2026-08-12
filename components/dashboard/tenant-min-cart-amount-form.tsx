@@ -6,6 +6,7 @@ import { Wallet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { InlineAlert } from "@/components/ui/inline-alert";
 import type { TenantStorefrontSettings } from "@/lib/types";
 
 export function TenantMinCartAmountForm({
@@ -134,8 +135,8 @@ export function TenantMinCartAmountForm({
 
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="min-h-6">
-            {message ? <p className="text-sm text-emerald-700">{message}</p> : null}
-            {error ? <p className="text-sm text-amber-700">{error}</p> : null}
+            <InlineAlert message={message} onExpire={() => setMessage(null)} />
+            <InlineAlert message={error} tone="error" onExpire={() => setError(null)} />
           </div>
           <Button type="submit" disabled={pending}>
             {pending ? "Kaydediliyor..." : "Minimum tutarı kaydet"}

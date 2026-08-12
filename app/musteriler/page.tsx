@@ -55,7 +55,7 @@ const Page = () => {
         <div className="max-w-6xl mx-auto">
           <div className="grid grid-cols-3 md:grid-cols-6 gap-3 md:gap-4">
             {logos.map((l, i) => (
-              <motion.div key={l} initial={{ opacity: 0, scale: 0.9 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: false, amount: 0.3 }} transition={{ delay: i * 0.04, duration: 0.5 }}
+              <motion.div key={l} initial={{ opacity: 0, scale: 0.9 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true, amount: 0.3 }} transition={{ delay: i * 0.04, duration: 0.5 }}
                 className="aspect-[2/1] rounded-xl border border-white/10 bg-white/[0.02] flex items-center justify-center hover:border-white/20 hover:bg-white/[0.04] transition-colors">
                 <span className="text-sm md:text-base text-slate-400 font-semibold tracking-tight">{l}</span>
               </motion.div>
@@ -66,11 +66,11 @@ const Page = () => {
 
       <section className="px-6 pb-24">
         <div className="max-w-7xl mx-auto">
-          <motion.h2 initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: false, amount: 0.3 }} className="text-3xl md:text-5xl font-bold tracking-tight text-center mb-3" style={{ letterSpacing: '-0.04em' }}>Müşteri Deneyimleri</motion.h2>
+          <motion.h2 initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.3 }} className="text-3xl md:text-5xl font-bold tracking-tight text-center mb-3" style={{ letterSpacing: '-0.04em' }}>Müşteri Deneyimleri</motion.h2>
           <p className="text-center text-slate-400 mb-14">Rakamları gerçek müşterilerimizden duyun.</p>
           <div className="space-y-5">
             {cases.map((c, i) => (
-              <motion.div key={c.company} initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: false, amount: 0.2 }} transition={{ duration: 0.7, delay: i * 0.08 }} className="relative rounded-3xl border border-white/10 bg-gradient-to-b from-white/[0.04] to-transparent p-7 md:p-10 overflow-hidden">
+              <motion.div key={c.company} initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.2 }} transition={{ duration: 0.7, delay: i * 0.08 }} className="relative rounded-3xl border border-white/10 bg-gradient-to-b from-white/[0.04] to-transparent p-7 md:p-10 overflow-hidden">
                 <div className="absolute -top-20 -right-20 w-60 h-60 rounded-full bg-[#10b981]/10 blur-3xl pointer-events-none" />
                 <div className="grid md:grid-cols-[1.5fr_1fr] gap-8 relative">
                   <div>
@@ -102,10 +102,10 @@ const Page = () => {
 
       <section className="px-6 pb-24">
         <div className="max-w-6xl mx-auto">
-          <motion.h2 initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: false, amount: 0.3 }} className="text-3xl md:text-5xl font-bold tracking-tight text-center mb-3" style={{ letterSpacing: '-0.04em' }}>Müşterilerimiz neler diyor?</motion.h2>
+          <motion.h2 initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.3 }} className="text-3xl md:text-5xl font-bold tracking-tight text-center mb-3" style={{ letterSpacing: '-0.04em' }}>Müşterilerimiz neler diyor?</motion.h2>
           <div className="mt-12 grid md:grid-cols-2 lg:grid-cols-3 gap-4">
             {testimonials.map((t, i) => (
-              <motion.div key={i} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: false }} transition={{ delay: i * 0.05 }} whileHover={{ y: -4 }} className="p-6 rounded-2xl border border-white/10 bg-white/[0.02] hover:border-white/20 transition-colors">
+              <motion.div key={i} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.05 }} whileHover={{ y: -4 }} className="p-6 rounded-2xl border border-white/10 bg-white/[0.02] hover:border-white/20 transition-colors">
                 <div className="flex gap-0.5 mb-3">
                   {[1,2,3,4,5].map(s => <Star key={s} className="w-3.5 h-3.5 fill-[#10b981] text-[#10b981]" />)}
                 </div>

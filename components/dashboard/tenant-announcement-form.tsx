@@ -6,6 +6,7 @@ import { Megaphone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { InlineAlert } from "@/components/ui/inline-alert";
 import { Textarea } from "@/components/ui/textarea";
 import type { TenantStorefrontSettings } from "@/lib/types";
 
@@ -229,9 +230,10 @@ export function TenantAnnouncementForm({
 
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="min-h-6">
-            {announcementMessage ? (
-              <p className="text-sm text-emerald-700">{announcementMessage}</p>
-            ) : null}
+            <InlineAlert
+              message={announcementMessage}
+              onExpire={() => setAnnouncementMessage(null)}
+            />
           </div>
           <Button type="submit" disabled={announcementPending}>
             {announcementPending ? "Kaydediliyor..." : "Duyuruyu kaydet"}

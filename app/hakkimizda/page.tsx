@@ -49,7 +49,7 @@ const Page = () => {
             { icon: Target, label: 'Misyonumuz', title: 'Her toptancıya 1 dakikada dijital vitrin.', desc: 'Karmaşık panellerle, pahalı ajanslarla, aylar süren projelerle uğraşmadan; her işletmenin dakikalar içinde profesyonel bir B2B vitrine sahip olmasını sağlıyoruz.' },
             { icon: Eye, label: 'Vizyonumuz', title: 'Toptan ticaretin global standardı.', desc: 'Dünya üzerindeki her toptancının ilk tercihi olmak. Bir gün "e-ticaret" demek yerine "katalog" diyebilmek için çalışıyoruz.' },
           ].map((c, i) => (
-            <motion.div key={i} initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: false, amount: 0.3 }} transition={{ duration: 0.7, delay: i * 0.1 }} className="p-8 rounded-3xl border border-white/10 bg-gradient-to-b from-white/[0.04] to-transparent">
+            <motion.div key={i} initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.3 }} transition={{ duration: 0.7, delay: i * 0.1 }} className="p-8 rounded-3xl border border-white/10 bg-gradient-to-b from-white/[0.04] to-transparent">
               <c.icon className="w-7 h-7 text-[#10b981]" />
               <div className="mt-4 text-xs uppercase tracking-widest text-slate-500">{c.label}</div>
               <h3 className="mt-2 text-2xl md:text-3xl font-semibold text-white">{c.title}</h3>
@@ -62,7 +62,7 @@ const Page = () => {
       <section className="px-6 pb-24">
         <div className="max-w-6xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-4">
           {stats.map((s, i) => (
-            <motion.div key={s.l} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: false }} transition={{ duration: 0.5, delay: i * 0.08 }} className="p-6 rounded-2xl border border-white/10 bg-white/[0.02] text-center">
+            <motion.div key={s.l} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5, delay: i * 0.08 }} className="p-6 rounded-2xl border border-white/10 bg-white/[0.02] text-center">
               <div className="text-3xl md:text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-[#10b981] to-[#00ff87]">{s.v}</div>
               <div className="text-[11px] text-slate-500 uppercase tracking-widest mt-2">{s.l}</div>
             </motion.div>
@@ -72,11 +72,11 @@ const Page = () => {
 
       <section className="px-6 pb-24">
         <div className="max-w-6xl mx-auto">
-          <motion.h2 initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: false, amount: 0.3 }} className="text-3xl md:text-5xl font-bold tracking-tight text-center" style={{ letterSpacing: '-0.04em' }}>Değerlerimiz</motion.h2>
+          <motion.h2 initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.3 }} className="text-3xl md:text-5xl font-bold tracking-tight text-center" style={{ letterSpacing: '-0.04em' }}>Değerlerimiz</motion.h2>
           <p className="text-center text-slate-400 mt-3 max-w-xl mx-auto">Her satır kodu, her piksel, her kelime; bu dört değere göre yazılır.</p>
           <div className="mt-12 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {values.map((v, i) => (
-              <motion.div key={v.title} initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: false, amount: 0.3 }} transition={{ duration: 0.6, delay: i * 0.08 }} whileHover={{ y: -4 }} className="p-6 rounded-2xl border border-white/10 bg-white/[0.02] hover:border-white/20 transition-colors">
+              <motion.div key={v.title} initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.3 }} transition={{ duration: 0.6, delay: i * 0.08 }} whileHover={{ y: -4 }} className="p-6 rounded-2xl border border-white/10 bg-white/[0.02] hover:border-white/20 transition-colors">
                 <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#10b981]/20 to-[#00ff87]/20 flex items-center justify-center mb-4">
                   <v.icon className="w-5 h-5 text-[#10b981]" />
                 </div>
@@ -90,12 +90,12 @@ const Page = () => {
 
       <section className="px-6 pb-24">
         <div className="max-w-3xl mx-auto">
-          <motion.h2 initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: false, amount: 0.3 }} className="text-3xl md:text-5xl font-bold tracking-tight text-center mb-8" style={{ letterSpacing: '-0.04em' }}>Hikayemiz</motion.h2>
+          <motion.h2 initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.3 }} className="text-3xl md:text-5xl font-bold tracking-tight text-center mb-8" style={{ letterSpacing: '-0.04em' }}>Hikayemiz</motion.h2>
 
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: false, amount: 0.3 }}
+            viewport={{ once: true, amount: 0.3 }}
             transition={{ duration: 0.7 }}
             className="relative mb-16 rounded-3xl border border-white/10 bg-gradient-to-b from-white/[0.04] to-transparent p-8 md:p-10"
           >
@@ -111,7 +111,7 @@ const Page = () => {
           <div className="relative space-y-8">
             <div className="absolute left-4 top-2 bottom-2 w-px bg-gradient-to-b from-[#10b981]/40 via-[#00ff87]/40 to-transparent" />
             {timeline.map(([year, label, desc], i) => (
-              <motion.div key={year} initial={{ opacity: 0, x: 20 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: false, amount: 0.4 }} transition={{ duration: 0.5, delay: i * 0.1 }} className="relative pl-12">
+              <motion.div key={year} initial={{ opacity: 0, x: 20 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true, amount: 0.4 }} transition={{ duration: 0.5, delay: i * 0.1 }} className="relative pl-12">
                 <div className="absolute left-2 top-1.5 w-5 h-5 rounded-full bg-gradient-to-br from-[#10b981] to-[#00ff87] flex items-center justify-center">
                   <div className="w-1.5 h-1.5 rounded-full bg-white" />
                 </div>
@@ -128,11 +128,11 @@ const Page = () => {
 
       <section className="px-6 pb-32">
         <div className="max-w-6xl mx-auto">
-          <motion.h2 initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: false, amount: 0.3 }} className="text-3xl md:text-5xl font-bold tracking-tight text-center" style={{ letterSpacing: '-0.04em' }}>Takımımız</motion.h2>
+          <motion.h2 initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.3 }} className="text-3xl md:text-5xl font-bold tracking-tight text-center" style={{ letterSpacing: '-0.04em' }}>Takımımız</motion.h2>
           <p className="text-center text-slate-400 mt-3">Toptancıların hayatını kolaylaştıran küçük ama hızlı bir ekip.</p>
           <div className="mt-12 grid grid-cols-2 md:grid-cols-4 gap-4">
             {team.map((m, i) => (
-              <motion.div key={m.name} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: false }} transition={{ delay: i * 0.08 }} className="p-6 rounded-2xl border border-white/10 bg-white/[0.02] text-center hover:border-white/20 transition-colors">
+              <motion.div key={m.name} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.08 }} className="p-6 rounded-2xl border border-white/10 bg-white/[0.02] text-center hover:border-white/20 transition-colors">
                 <div className="w-16 h-16 mx-auto rounded-full bg-gradient-to-br from-[#10b981]/30 to-[#00ff87]/30 border border-white/10 flex items-center justify-center text-white text-xl font-semibold">
                   {m.name.split(' ').map(n => n[0]).join('')}
                 </div>

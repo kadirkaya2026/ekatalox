@@ -2929,25 +2929,32 @@ export function StorefrontClient({
         </div>
       </main>
 
-      {hasVisibleHomeCampaignBars ? (
-        <motion.div
-          initial={{ opacity: 0, y: 14, scale: 0.97 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          transition={{ duration: 0.24, ease: "easeOut" }}
-          className="fixed left-4 right-4 z-40 space-y-2 xl:hidden"
-          style={{ bottom: "calc(env(safe-area-inset-bottom) + 6.5rem)" }}
-        >
-          {renderCampaignBarsForSurface("home", true)}
-        </motion.div>
-      ) : null}
+      <AnimatePresence>
+        {hasVisibleHomeCampaignBars ? (
+          <motion.div
+            initial={{ opacity: 0, y: 14, scale: 0.97 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 14, scale: 0.97 }}
+            transition={{ duration: 0.24, ease: "easeOut" }}
+            className="fixed left-4 right-4 z-40 space-y-2 xl:hidden"
+            style={{ bottom: "calc(env(safe-area-inset-bottom) + 6.5rem)" }}
+          >
+            {renderCampaignBarsForSurface("home", true)}
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
 
-      {isMounted && cart.length && !isStickyCartBarDismissed && !isCartOpen ? (
-        <div className="fixed safe-bottom-offset left-4 right-4 z-40 mx-auto max-w-lg xl:hidden">
+      <AnimatePresence>
+        {isMounted && cart.length && !isStickyCartBarDismissed && !isCartOpen ? (
+          <motion.div
+            initial={{ opacity: 0, y: 18, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 18, scale: 0.96 }}
+            transition={{ duration: 0.24, ease: "easeOut" }}
+            className="fixed safe-bottom-offset left-4 right-4 z-40 mx-auto max-w-lg xl:hidden"
+          >
           <div className="relative">
-            <motion.div
-              initial={{ opacity: 0, y: 18, scale: 0.96 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              transition={{ duration: 0.24, ease: "easeOut" }}
+            <div
               className={cn(
                 theme.stickyCart,
                 "!static w-full rounded-[1.5rem] px-3 py-2.5 text-left shadow-[0_18px_44px_rgba(15,23,42,0.22)]",
@@ -3020,7 +3027,7 @@ export function StorefrontClient({
                   </span>
                 </div>
               </button>
-            </motion.div>
+            </div>
             <button
               type="button"
               aria-label={t("stickyCart.closeAria")}
@@ -3036,8 +3043,9 @@ export function StorefrontClient({
               <X className="size-4" />
             </button>
           </div>
-        </div>
-      ) : null}
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
 
       {usesSidebarNav ? (
         <StorefrontCategoryDrawer
