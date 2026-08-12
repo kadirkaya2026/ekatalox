@@ -562,6 +562,38 @@ export async function getTenantProductCount(tenantId: string): Promise<number> {
   return count ?? 0;
 }
 
+// Master Katalog sayfası sadece "bu sku zaten aktarılmış mı" rozetini
+// göstermek için tenant'ın sku_code'larına ihtiyaç duyuyordu ama tüm ürün
+// satırlarını (varyant/fiyat dahil) çekiyordu — burada da sadece sku_code
+// yeterli.
+export async function getTenantProductSkuCodes(tenantId: string): Promise<string[]> {
+  const supabase = createSupabaseAdminClient();
+
+  if (!supabase) {
+    if (!shouldAllowDemoFallback()) {
+      return [];
+    }
+
+    return demoProducts.filter((product) => product.tenant_id === tenantId).map((p) => p.sku_code);
+  }
+
+  const skuCodes: string[] = [];
+  const pageSize = 1000;
+  for (let from = 0; ; from += pageSize) {
+    const { data, error } = await supabase
+      .from("products")
+      .select("sku_code")
+      .eq("tenant_id", tenantId)
+      .range(from, from + pageSize - 1);
+
+    if (error || !data) break;
+    skuCodes.push(...data.map((row) => row.sku_code as string));
+    if (data.length < pageSize) break;
+  }
+
+  return skuCodes;
+}
+
 export const TENANT_PRODUCTS_PAGE_SIZE = 100;
 
 // The "Ürünler" admin page used to load a tenant's entire product table on
@@ -856,11 +888,15 @@ export async function getTenantAccessCodes(
 export async function getTenantDashboardSummary(
   tenant: Tenant,
 ): Promise<DashboardSummary> {
-  const products = await getTenantProducts(tenant.id);
+  // Genel Bakış sadece bir sayı gösteriyor — tüm ürün tablosunu (varyantlarla
+  // birlikte) çekip .length almak, tam da Ürünler sayfasını yavaşlatan aynı
+  // hataydı, ve bu sayfa girişten sonra ilk açılan sayfa olduğu için etkisi
+  // daha da büyüktü.
+  const productCount = await getTenantProductCount(tenant.id);
 
   return {
     tenant,
-    productCount: products.length,
+    productCount,
   };
 }
 

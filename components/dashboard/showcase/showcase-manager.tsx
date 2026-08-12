@@ -18,13 +18,13 @@ interface SectionWithProducts extends StorefrontSection {
 interface ShowcaseManagerProps {
   tenantId: string;
   initialSections: StorefrontSection[];
-  allProducts: Product[];
   allCategories: Category[];
 }
 
+const SEARCH_DEBOUNCE_MS = 300;
+
 export function ShowcaseManager({
   initialSections,
-  allProducts,
   allCategories,
 }: ShowcaseManagerProps) {
   const [sections, setSections] = useState<SectionWithProducts[]>(
@@ -43,26 +43,43 @@ export function ShowcaseManager({
   const [addProductSection, setAddProductSection] = useState<SectionWithProducts | null>(null);
   const [productSearch, setProductSearch] = useState("");
   const [addLoading, setAddLoading] = useState<string | null>(null);
+  const [searchResults, setSearchResults] = useState<Product[]>([]);
+  const [searchLoading, setSearchLoading] = useState(false);
 
   const categoryNameMap = useMemo(
     () => new Map(allCategories.map((c) => [c.id, c.name])),
     [allCategories],
   );
 
+  // Katalog binlerce ürüne çıkınca hepsini önceden çekip istemcide filtrelemek
+  // (eski davranış) sayfayı kilitliyordu — arama artık sunucuda çalışıyor,
+  // bkz. /api/tenant/products (Ürünler sayfasının da kullandığı uç nokta).
+  useEffect(() => {
+    if (!addProductSection) {
+      setSearchResults([]);
+      return;
+    }
+
+    const timeout = setTimeout(() => {
+      setSearchLoading(true);
+      const params = new URLSearchParams({ page: "1" });
+      if (productSearch.trim()) params.set("q", productSearch.trim());
+
+      fetch(`/api/tenant/products?${params.toString()}`)
+        .then((res) => res.json())
+        .then((json) => setSearchResults((json.products as Product[]) ?? []))
+        .finally(() => setSearchLoading(false));
+    }, SEARCH_DEBOUNCE_MS);
+
+    return () => clearTimeout(timeout);
+  }, [addProductSection, productSearch]);
+
   const filteredProducts = useMemo(() => {
-    const q = productSearch.trim().toLocaleLowerCase("tr-TR");
     const alreadyInSection = new Set(
       (addProductSection?.products ?? []).map((p) => p.id),
     );
-    return allProducts.filter((p) => {
-      if (alreadyInSection.has(p.id)) return false;
-      if (!q) return true;
-      return (
-        p.product_name.toLocaleLowerCase("tr-TR").includes(q) ||
-        (p.sku_code ?? "").toLocaleLowerCase("tr-TR").includes(q)
-      );
-    });
-  }, [allProducts, addProductSection, productSearch]);
+    return searchResults.filter((p) => !alreadyInSection.has(p.id));
+  }, [searchResults, addProductSection]);
 
   // Load section products on mount
   useEffect(() => {
@@ -383,9 +400,11 @@ export function ShowcaseManager({
           </div>
 
           <div className="max-h-[420px] overflow-y-auto">
-            {filteredProducts.length === 0 ? (
+            {searchLoading ? (
+              <p className="py-8 text-center text-sm text-slate-400">Aranıyor…</p>
+            ) : filteredProducts.length === 0 ? (
               <p className="py-8 text-center text-sm text-slate-400">
-                {productSearch ? "Eşleşen ürün bulunamadı." : "Tüm ürünler zaten bu bölümde."}
+                {productSearch ? "Eşleşen ürün bulunamadı." : "Ürün bulunamadı."}
               </p>
             ) : (
               <div className="space-y-1.5">

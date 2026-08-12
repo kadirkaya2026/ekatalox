@@ -3,7 +3,7 @@ import { Card } from "@/components/ui/card";
 import { MarketCatalogPicker } from "@/components/dashboard/market-catalog-picker";
 import { requireTenantAdminPage } from "@/lib/auth/session";
 import { getEffectiveProductLimit } from "@/lib/billing/plans";
-import { getMarketCatalogProductsPage, getTenantProducts } from "@/lib/data";
+import { getMarketCatalogProductsPage, getTenantProductCount, getTenantProductSkuCodes } from "@/lib/data";
 
 export default async function MarketCatalogPage() {
   const session = await requireTenantAdminPage();
@@ -24,17 +24,17 @@ export default async function MarketCatalogPage() {
     );
   }
 
-  const [catalogPage, products] = await Promise.all([
+  const [catalogPage, skuCodes, productCount] = await Promise.all([
     getMarketCatalogProductsPage({ page: 1 }),
-    getTenantProducts(tenant.id),
+    getTenantProductSkuCodes(tenant.id),
+    getTenantProductCount(tenant.id),
   ]);
 
-  const importedSkuCodes = new Set(products.map((product) => product.sku_code));
   const limit = getEffectiveProductLimit(tenant.plan, tenant.product_limit_addon);
   const usage = {
-    total: products.length,
+    total: productCount,
     limit,
-    remaining: Math.max(limit - products.length, 0),
+    remaining: Math.max(limit - productCount, 0),
   };
 
   return (
@@ -47,7 +47,7 @@ export default async function MarketCatalogPage() {
       <MarketCatalogPicker
         initialCatalog={catalogPage.products}
         initialTotal={catalogPage.total}
-        importedSkuCodes={[...importedSkuCodes]}
+        importedSkuCodes={skuCodes}
         usage={usage}
       />
     </div>

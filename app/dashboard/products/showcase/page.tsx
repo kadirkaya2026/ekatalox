@@ -3,7 +3,7 @@ import { PlanFeatureGate } from "@/components/dashboard/plan-feature-gate";
 import { ShowcaseManager } from "@/components/dashboard/showcase/showcase-manager";
 import { requireTenantAdminPage } from "@/lib/auth/session";
 import { hasPlanFeature } from "@/lib/billing/plans";
-import { getTenantCategories, getTenantProducts, getTenantStorefrontSections } from "@/lib/data";
+import { getTenantCategories, getTenantStorefrontSections } from "@/lib/data";
 
 export default async function ShowcasePage() {
   const session = await requireTenantAdminPage();
@@ -11,13 +11,12 @@ export default async function ShowcasePage() {
   const tenantId = tenant.id;
   const canUseShowcase = hasPlanFeature(tenant.plan, "showcase_products");
 
-  const [sections, products, categories] = canUseShowcase
+  const [sections, categories] = canUseShowcase
     ? await Promise.all([
         getTenantStorefrontSections(tenantId),
-        getTenantProducts(tenantId),
         getTenantCategories(tenantId),
       ])
-    : [[], [], []];
+    : [[], []];
 
   return (
     <div className="space-y-6">
@@ -34,7 +33,6 @@ export default async function ShowcasePage() {
         <ShowcaseManager
           tenantId={tenantId}
           initialSections={sections}
-          allProducts={products}
           allCategories={categories}
         />
       </PlanFeatureGate>
