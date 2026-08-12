@@ -347,12 +347,22 @@ export function buildAppliedCampaignBenefitNotes(summary: CartPaymentSummary): s
 export function buildWhatsAppMessage(params: {
   tenantName: string;
   customerReferenceName: string;
+  customerAddress?: string;
+  customerPhone?: string;
   pdfUrl?: string | null;
 }) {
   const lines = [
     `Merhaba, ${params.tenantName} için sipariş oluşturmak istiyorum`,
     `👤 Müşteri/cari : ${params.customerReferenceName.trim()}`,
   ];
+
+  if (params.customerAddress?.trim()) {
+    lines.push(`📍 Adres : ${params.customerAddress.trim()}`);
+  }
+
+  if (params.customerPhone?.trim()) {
+    lines.push(`📞 Telefon : ${params.customerPhone.trim()}`);
+  }
 
   if (params.pdfUrl?.trim()) {
     lines.push(`📄 Sipariş Fişi : ${params.pdfUrl.trim()}`);

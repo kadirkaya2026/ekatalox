@@ -866,6 +866,14 @@ export function StorefrontClient({
   const [customerReferenceNameError, setCustomerReferenceNameError] = useState<string | null>(
     null,
   );
+  const [customerAddress, setCustomerAddress] = useState("");
+  const [customerAddressError, setCustomerAddressError] = useState<string | null>(null);
+  const [customerPhone, setCustomerPhone] = useState("");
+  const [customerPhoneError, setCustomerPhoneError] = useState<string | null>(null);
+  // "Market" tipi tenant'larda sipariş verebilmek için ödeme yöntemi, müşteri
+  // adı, adresi ve telefonu zorunlu tutulur — teslimat yapan tekel/marketlerin
+  // WhatsApp mesajında bu bilgiler olmadan sipariş alması istenmiyor.
+  const isMarketTenant = tenant.business_type === "market";
   const [searchInput, setSearchInput] = useState("");
   const debouncedSearchTerm = useDebouncedValue(searchInput, 250);
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>("all");
@@ -1374,10 +1382,12 @@ export function StorefrontClient({
       return buildWhatsAppMessage({
         tenantName: tenant.company_name,
         customerReferenceName,
+        customerAddress: isMarketTenant ? customerAddress : undefined,
+        customerPhone: isMarketTenant ? customerPhone : undefined,
         pdfUrl,
       });
     },
-    [customerReferenceName, tenant.company_name],
+    [customerReferenceName, customerAddress, customerPhone, isMarketTenant, tenant.company_name],
   );
 
   const clearWhatsappHandoff = useCallback(() => {
@@ -1388,11 +1398,47 @@ export function StorefrontClient({
   useEffect(() => {
     setWhatsappHandoff(null);
     setOrderPdfError(null);
-  }, [cart, customerReferenceName, note, selectedInstallmentCount, selectedPaymentMethod]);
+  }, [
+    cart,
+    customerReferenceName,
+    customerAddress,
+    customerPhone,
+    note,
+    selectedInstallmentCount,
+    selectedPaymentMethod,
+  ]);
 
   const handleWhatsAppOrder = useCallback(async () => {
     if (!cart.length || !isMinCartAmountMet) {
       return;
+    }
+
+    if (isMarketTenant) {
+      let hasValidationError = false;
+
+      if (!selectedPaymentMethod) {
+        setPaymentMethodError(t("cart.paymentMethodRequiredError"));
+        hasValidationError = true;
+      }
+
+      if (!customerReferenceName.trim()) {
+        setCustomerReferenceNameError(t("cart.customerNameRequiredError"));
+        hasValidationError = true;
+      }
+
+      if (!customerAddress.trim()) {
+        setCustomerAddressError(t("cart.customerAddressRequiredError"));
+        hasValidationError = true;
+      }
+
+      if (!customerPhone.trim()) {
+        setCustomerPhoneError(t("cart.customerPhoneRequiredError"));
+        hasValidationError = true;
+      }
+
+      if (hasValidationError) {
+        return;
+      }
     }
 
     const requestId = crypto.randomUUID();
@@ -1450,6 +1496,8 @@ export function StorefrontClient({
     buildWhatsAppOrderMessage,
     cart,
     customerReferenceName,
+    customerAddress,
+    customerPhone,
     note,
     selectedInstallmentCount,
     selectedPaymentMethod,
@@ -1462,6 +1510,8 @@ export function StorefrontClient({
     tenant.whatsapp_number,
     isCatalogOnly,
     isMinCartAmountMet,
+    isMarketTenant,
+    t,
   ]);
   const cartItemCount = useMemo(
     () => cart.reduce((total, item) => total + item.quantity, 0),
@@ -3021,6 +3071,15 @@ export function StorefrontClient({
         setCustomerReferenceName={setCustomerReferenceName}
         customerReferenceNameError={customerReferenceNameError}
         setCustomerReferenceNameError={setCustomerReferenceNameError}
+        customerAddress={customerAddress}
+        setCustomerAddress={setCustomerAddress}
+        customerAddressError={customerAddressError}
+        setCustomerAddressError={setCustomerAddressError}
+        customerPhone={customerPhone}
+        setCustomerPhone={setCustomerPhone}
+        customerPhoneError={customerPhoneError}
+        setCustomerPhoneError={setCustomerPhoneError}
+        isMarketTenant={isMarketTenant}
         recommendedProducts={recommendedProducts}
         cartPaymentSummary={cartPaymentSummary}
         cartDiscountSummary={cartDiscountSummary}
