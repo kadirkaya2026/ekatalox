@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronDown, Search, ShoppingCart, Store } from "lucide-react";
+import { ChevronDown, ChevronRight, Search, ShoppingCart, Store } from "lucide-react";
 import type { CategoryNode } from "@/lib/categories/tree";
 import { getDescendantCategoryIds } from "@/lib/categories/tree";
 import type { Category } from "@/lib/types";
@@ -259,13 +259,14 @@ function StorefrontHeaderCategoryNav({ props }: { props: StorefrontHeaderProps }
                 </button>
 
                 {category.children.length && isOpen ? (
-                  <div className="absolute left-0 top-full z-30 pt-1">
+                  <div className="absolute left-0 top-full z-30 pt-1.5">
                     <div className={theme.categoryDropdown}>
+                      <p className={theme.categoryDropdownHeader}>{category.name}</p>
                       {/* 10'dan fazla alt kategori varsa yeni sütun aşağı
                           değil sağa doğru eklensin diye sabit 10 satırlık
                           grid — az sayıda alt kategoride tek sütun gibi
                           davranır. */}
-                      <div className="grid grid-flow-col grid-rows-[repeat(10,minmax(0,auto))] gap-x-1.5 gap-y-0.5">
+                      <div className="grid grid-flow-col grid-rows-[repeat(10,minmax(0,auto))] gap-x-1 gap-y-0.5">
                         {category.children.map((child) => (
                           <button
                             key={child.id}
@@ -273,7 +274,13 @@ function StorefrontHeaderCategoryNav({ props }: { props: StorefrontHeaderProps }
                             onClick={() => props.onCategoryChange(child.id)}
                             className={theme.categoryDropdownItem}
                           >
-                            {child.name}
+                            <span className="truncate">{child.name}</span>
+                            <ChevronRight
+                              className={cn(
+                                "size-3.5 shrink-0 -translate-x-1 text-current opacity-0 transition-all duration-150 group-hover:translate-x-0 group-hover:opacity-100",
+                                theme.categoryDropdownItemIcon,
+                              )}
+                            />
                           </button>
                         ))}
                       </div>

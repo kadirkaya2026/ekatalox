@@ -21,7 +21,9 @@ export interface StorefrontTheme {
   categoryNavMobile: (active: boolean) => string;
   categorySubChip: (active: boolean) => string;
   categoryDropdown: string;
+  categoryDropdownHeader: string;
   categoryDropdownItem: string;
+  categoryDropdownItemIcon: string;
   categoryRail: string;
   categoryChip: (active: boolean) => string;
   categorySidebar: string;
@@ -403,9 +405,12 @@ function buildTheme(
   const iconButtonInteractive = isDark
     ? "text-neutral-200 hover:bg-neutral-600"
     : "text-slate-700 hover:border-slate-300 hover:bg-slate-50";
-  const dropdownItem = isDark
-    ? "w-full rounded-xl px-4 py-2.5 text-left text-sm text-neutral-200 transition hover:bg-neutral-700"
-    : "w-full rounded-xl px-4 py-2.5 text-left text-sm text-slate-700 transition hover:bg-slate-50";
+  const dropdownItem = cn(
+    "group flex w-full items-center justify-between gap-2 rounded-xl px-3.5 py-2.5 text-left text-sm font-medium transition-colors",
+    isDark
+      ? "text-neutral-200 hover:bg-white/[0.06] hover:text-white"
+      : "text-slate-700 hover:bg-slate-900/[0.04] hover:text-slate-900",
+  );
   const sidebarItemInactive = isDark
     ? "text-neutral-300 hover:bg-neutral-700"
     : "text-slate-700 hover:bg-slate-50";
@@ -587,10 +592,15 @@ function buildTheme(
             : cn("border", neutrals.chipInactiveBorder, neutrals.surface, chipInactiveText),
       ),
     categoryDropdown: cn(
-      "min-w-[220px] rounded-2xl p-2 shadow-xl",
-      isDark ? cn("border-0", neutrals.surface) : cn("border", neutrals.border, neutrals.surface),
+      "animate-sidebar-submenu min-w-[240px] overflow-hidden rounded-2xl p-2 shadow-2xl ring-1",
+      isDark ? cn(neutrals.surface, "ring-white/10") : cn(neutrals.surface, "ring-slate-900/[0.06]"),
+    ),
+    categoryDropdownHeader: cn(
+      "px-3 pb-1.5 pt-1 text-[11px] font-bold uppercase tracking-[0.14em]",
+      neutrals.textMuted,
     ),
     categoryDropdownItem: dropdownItem,
+    categoryDropdownItemIcon: accent.titleHover,
     categoryRail:
       "flex max-w-full gap-2 overflow-x-auto pb-3 pt-1 scrollbar-none whitespace-nowrap lg:flex-wrap lg:overflow-visible lg:whitespace-normal",
     categoryChip: (active) =>
