@@ -169,6 +169,8 @@ export function getDefaultTenantStorefrontSettings(
     default_locale: "tr",
     is_always_open: true,
     business_hours: DEFAULT_BUSINESS_HOURS,
+    is_min_cart_amount_active: false,
+    min_cart_amount: 0,
     updated_at: now,
   };
 }

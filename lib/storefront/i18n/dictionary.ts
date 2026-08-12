@@ -70,6 +70,8 @@ export const storefrontDictionary: Record<StorefrontLocale, StorefrontDictionary
     "cart.total": "Toplam",
     "cart.multiCurrencyWarning":
       "Sepetinizde birden fazla para birimi var ({currencies}). Sipariş fişi tek para birimiyle oluşturulabilir; lütfen tek para birimindeki ürünlerle sipariş verin.",
+    "cart.minAmountNotice":
+      "Sipariş verebilmek için sepetinize {remaining} daha ürün eklemelisiniz.",
     "cart.whatsappReadyPdf": "Sipariş fişiniz hazır. WhatsApp'ta göndermek için butona dokunun.",
     "cart.whatsappReadyText": "Sipariş metniniz hazır. WhatsApp'ta göndermek için butona dokunun.",
     "cart.orderPdfErrorSuffix": "Yine de sipariş metnini gönderebilirsiniz.",
@@ -279,6 +281,8 @@ export const storefrontDictionary: Record<StorefrontLocale, StorefrontDictionary
     "cart.total": "Summe",
     "cart.multiCurrencyWarning":
       "Ihr Warenkorb enthält mehrere Währungen ({currencies}). Der Bestellbeleg kann nur in einer Währung erstellt werden; bitte bestellen Sie nur Produkte in derselben Währung.",
+    "cart.minAmountNotice":
+      "Um zu bestellen, fügen Sie Ihrem Warenkorb noch {remaining} hinzu.",
     "cart.whatsappReadyPdf": "Ihr Bestellbeleg ist fertig. Tippen Sie auf den Button, um ihn per WhatsApp zu senden.",
     "cart.whatsappReadyText": "Ihr Bestelltext ist fertig. Tippen Sie auf den Button, um ihn per WhatsApp zu senden.",
     "cart.orderPdfErrorSuffix": "Sie können den Bestelltext trotzdem senden.",
@@ -488,6 +492,7 @@ export const storefrontDictionary: Record<StorefrontLocale, StorefrontDictionary
     "cart.total": "Total",
     "cart.multiCurrencyWarning":
       "Your cart contains multiple currencies ({currencies}). The order receipt can only be generated in a single currency; please order products in the same currency.",
+    "cart.minAmountNotice": "Add {remaining} more to your cart to place an order.",
     "cart.whatsappReadyPdf": "Your order receipt is ready. Tap the button to send it via WhatsApp.",
     "cart.whatsappReadyText": "Your order text is ready. Tap the button to send it via WhatsApp.",
     "cart.orderPdfErrorSuffix": "You can still send the order text.",
@@ -696,6 +701,7 @@ export const storefrontDictionary: Record<StorefrontLocale, StorefrontDictionary
     "cart.total": "Итого",
     "cart.multiCurrencyWarning":
       "В вашей корзине несколько валют ({currencies}). Чек заказа можно оформить только в одной валюте; пожалуйста, заказывайте товары в одной валюте.",
+    "cart.minAmountNotice": "Добавьте в корзину ещё {remaining}, чтобы оформить заказ.",
     "cart.whatsappReadyPdf": "Ваш чек заказа готов. Нажмите кнопку, чтобы отправить его через WhatsApp.",
     "cart.whatsappReadyText": "Текст вашего заказа готов. Нажмите кнопку, чтобы отправить его через WhatsApp.",
     "cart.orderPdfErrorSuffix": "Вы всё равно можете отправить текст заказа.",

@@ -62,6 +62,8 @@ export type StorefrontCartDrawerProps = {
   cartTotalEntries: Array<{ currency: string; total: number }>;
   cartTotal: number;
   cartCurrency: string;
+  isMinCartAmountMet: boolean;
+  minCartAmountRemaining: number;
   onWhatsAppOrder: () => void | Promise<void>;
   isGeneratingOrderPdf: boolean;
   orderPdfError: string | null;
@@ -105,6 +107,8 @@ export function StorefrontCartDrawer({
   cartTotalEntries,
   cartTotal,
   cartCurrency,
+  isMinCartAmountMet,
+  minCartAmountRemaining,
   onWhatsAppOrder,
   isGeneratingOrderPdf,
   orderPdfError,
@@ -181,13 +185,14 @@ export function StorefrontCartDrawer({
   }
 
   async function handleWhatsAppOrder() {
-    if (!cart.length) return;
+    if (!cart.length || !isMinCartAmountMet) return;
     setCopyFeedback(null);
 
     await onWhatsAppOrder();
   }
 
-  const canCompleteWhatsAppOrder = cart.length > 0 && !isGeneratingOrderPdf;
+  const canCompleteWhatsAppOrder =
+    cart.length > 0 && !isGeneratingOrderPdf && isMinCartAmountMet;
 
   if (!isOpen) {
     return null;
@@ -691,6 +696,13 @@ export function StorefrontCartDrawer({
                 <p className="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-center text-xs font-medium leading-5 text-amber-700">
                   {t("cart.multiCurrencyWarning", {
                     currencies: cartTotalEntries.map((entry) => entry.currency).join(", "),
+                  })}
+                </p>
+              ) : null}
+              {!isCatalogOnly && cart.length > 0 && !isMinCartAmountMet ? (
+                <p className="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-center text-xs font-medium leading-5 text-amber-700">
+                  {t("cart.minAmountNotice", {
+                    remaining: formatCurrency(minCartAmountRemaining, cartCurrency),
                   })}
                 </p>
               ) : null}

@@ -23,6 +23,7 @@ import {
   Store,
   UploadCloud,
   UserCircle,
+  Wallet,
 } from "lucide-react";
 import { EkataloxLogo } from "@/components/brand/ekatalox-logo";
 import { SidebarLogoutButton } from "@/components/dashboard/sidebar-logout-button";
@@ -115,6 +116,12 @@ const tenantLinks: SidebarLink[] = [
         href: "/settings/hours",
         label: "Çalışma Saatleri",
         icon: Clock,
+        group: "İçerik & İletişim",
+      },
+      {
+        href: "/settings/min-order",
+        label: "Minimum Sepet Tutarı",
+        icon: Wallet,
         group: "İçerik & İletişim",
       },
       {

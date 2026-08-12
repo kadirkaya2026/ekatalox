@@ -1056,6 +1056,17 @@ export function StorefrontClient({
   const cartTotal = useMemo(() => getCartTotal(cart), [cart]);
   const cartCurrency = useMemo(() => getCartCurrency(cart), [cart]);
   const cartTotalsByCurrency = useMemo(() => getCartTotalsByCurrency(cart), [cart]);
+  // Minimum sepet tutarı yalnızca tek para birimli sepetlerde uygulanır —
+  // birden fazla para birimi karışmışsa (nadir bir durum) hangi tutara göre
+  // ölçüleceği belirsiz olacağından zorunluluk devre dışı bırakılır.
+  const isMinCartAmountMet =
+    !storefrontSettings.is_min_cart_amount_active ||
+    Object.keys(cartTotalsByCurrency).length > 1 ||
+    cartTotal >= storefrontSettings.min_cart_amount;
+  const minCartAmountRemaining = Math.max(
+    0,
+    (storefrontSettings.min_cart_amount ?? 0) - cartTotal,
+  );
   const cartDiscountSummary = useMemo(
     () =>
       getCartDiscountSummary(cart, {
@@ -1380,7 +1391,7 @@ export function StorefrontClient({
   }, [cart, customerReferenceName, note, selectedInstallmentCount, selectedPaymentMethod]);
 
   const handleWhatsAppOrder = useCallback(async () => {
-    if (!cart.length) {
+    if (!cart.length || !isMinCartAmountMet) {
       return;
     }
 
@@ -1450,6 +1461,7 @@ export function StorefrontClient({
     tenant.is_whatsapp_order_direct,
     tenant.whatsapp_number,
     isCatalogOnly,
+    isMinCartAmountMet,
   ]);
   const cartItemCount = useMemo(
     () => cart.reduce((total, item) => total + item.quantity, 0),
@@ -3015,6 +3027,8 @@ export function StorefrontClient({
         cartTotalEntries={cartTotalEntries}
         cartTotal={cartTotal}
         cartCurrency={cartCurrency}
+        isMinCartAmountMet={isMinCartAmountMet}
+        minCartAmountRemaining={minCartAmountRemaining}
         onWhatsAppOrder={handleWhatsAppOrder}
         isGeneratingOrderPdf={isGeneratingOrderPdf}
         orderPdfError={orderPdfError}

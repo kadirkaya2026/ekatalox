@@ -331,6 +331,10 @@ export const storefrontSettingsSchema = z
     default_locale: storefrontDefaultLocaleSchema.default("tr"),
     is_always_open: z.boolean().default(true),
     business_hours: businessHoursSchema.default(DEFAULT_BUSINESS_HOURS),
+    is_min_cart_amount_active: z.boolean().default(false),
+    min_cart_amount: z.coerce
+      .number()
+      .min(0, "Minimum sepet tutarı negatif olamaz."),
   })
   .superRefine((value, ctx) => {
     if (!value.is_always_open && !WEEKDAY_ORDER.some((day) => value.business_hours[day].is_open)) {
@@ -338,6 +342,14 @@ export const storefrontSettingsSchema = z
         code: "custom",
         path: ["business_hours"],
         message: "En az bir gün açık olmalıdır.",
+      });
+    }
+
+    if (value.is_min_cart_amount_active && value.min_cart_amount <= 0) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["min_cart_amount"],
+        message: "Minimum sepet tutarını aktif etmek için 0'dan büyük bir tutar girin.",
       });
     }
 

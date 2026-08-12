@@ -319,6 +319,8 @@ export interface TenantStorefrontSettings {
   default_locale: StorefrontLocale;
   is_always_open: boolean;
   business_hours: BusinessHours;
+  is_min_cart_amount_active: boolean;
+  min_cart_amount: number;
   created_at: string;
   updated_at: string;
 }
