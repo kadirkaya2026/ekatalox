@@ -137,8 +137,8 @@ const Page = () => {
             <h3 className="mt-4 text-2xl md:text-3xl font-bold tracking-tight" style={{ letterSpacing: '-0.04em' }}>Bir yenilik kaçırmayın.</h3>
             <p className="mt-3 text-slate-400 max-w-md mx-auto">Yeni sürüm notlarını ayda bir kez doğrudan gelen kutunuza alın.</p>
             <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-3">
-              <Link href="/#waitlist" className="px-6 py-3 rounded-full bg-white text-black text-sm font-medium hover:scale-105 transition-transform inline-flex items-center gap-2">
-                Bültene Katıl <ArrowRight className="w-4 h-4" />
+              <Link href="/iletisim" className="px-6 py-3 rounded-full bg-white text-black text-sm font-medium hover:scale-105 transition-transform inline-flex items-center gap-2">
+                Bize Ulaşın <ArrowRight className="w-4 h-4" />
               </Link>
               <Link href="/yardim" className="text-sm text-slate-400 hover:text-white">Tüm geçmişi görün →</Link>
             </div>

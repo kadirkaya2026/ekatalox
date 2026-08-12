@@ -143,7 +143,7 @@ export const StorefrontProductListRow = memo(function StorefrontProductListRow({
         }
       }}
       className={cn(
-        "grid cursor-pointer grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 rounded-2xl p-2.5 transition sm:grid-cols-[auto_minmax(0,1fr)_auto_auto] sm:gap-4 sm:p-3",
+        "grid cursor-pointer grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 rounded-2xl p-2.5 outline-none transition focus-visible:ring-2 focus-visible:ring-current/50 sm:grid-cols-[auto_minmax(0,1fr)_auto_auto] sm:gap-4 sm:p-3",
         theme.border,
         theme.surface,
         theme.elevation1,

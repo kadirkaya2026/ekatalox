@@ -1,32 +1,91 @@
 'use client'
 
+import { useState } from 'react'
 import Link from 'next/link'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
+import { Menu, X } from 'lucide-react'
 import { EkataloxLogo } from '@/components/brand/ekatalox-logo'
 
-export const SiteNavbar = () => (
-  <nav className="fixed top-0 left-0 right-0 z-50">
-    <div className="backdrop-blur-xl bg-[#090d16]/70 border-b border-white/5">
-      <div className="max-w-7xl mx-auto px-6 h-14 flex items-center justify-between">
-        <Link href="/#top" className="flex items-center gap-2">
-          <EkataloxLogo className="h-8 w-[148px]" priority />
-        </Link>
-        <div className="hidden md:flex items-center gap-7 text-sm text-slate-300">
-          <Link href="/temalar" className="hover:text-white transition-colors">Temalar</Link>
-          <Link href="/#demo" className="hover:text-white transition-colors">Özellikler</Link>
-          <Link href="/musteriler" className="hover:text-white transition-colors">Müşteriler</Link>
-          <Link href="/#fiyatlandirma" className="hover:text-white transition-colors">Fiyatlandırma</Link>
-          <Link href="/yenilikler" className="hover:text-white transition-colors">Yenilikler</Link>
-          <Link href="/iletisim" className="hover:text-white transition-colors">İletişim</Link>
-        </div>
-        <div className="flex items-center gap-3">
-          <Link href="/login" className="hidden sm:inline text-sm text-slate-300 hover:text-white">Giriş</Link>
-          <Link href="/kayit" className="px-4 py-1.5 rounded-full bg-white text-black text-sm font-medium hover:scale-105 transition-transform">Ücretsiz Başla</Link>
+const NAV_LINKS = [
+  ['Temalar', '/temalar'],
+  ['Özellikler', '/#ozellikler'],
+  ['Müşteriler', '/musteriler'],
+  ['Fiyatlandırma', '/#fiyatlandirma'],
+  ['Yenilikler', '/yenilikler'],
+  ['İletişim', '/iletisim'],
+]
+
+export const SiteNavbar = () => {
+  const [isMenuOpen, setIsMenuOpen] = useState(false)
+
+  return (
+    <nav className="fixed top-0 left-0 right-0 z-50">
+      <div className="backdrop-blur-xl bg-[#090d16]/70 border-b border-white/5">
+        <div className="max-w-7xl mx-auto px-6 h-14 flex items-center justify-between">
+          <Link href="/#top" className="flex items-center gap-2" onClick={() => setIsMenuOpen(false)}>
+            <EkataloxLogo className="h-8 w-[148px]" priority />
+          </Link>
+          <div className="hidden md:flex items-center gap-7 text-sm text-slate-300">
+            {NAV_LINKS.map(([label, href]) => (
+              <Link key={label} href={href} className="hover:text-white transition-colors">{label}</Link>
+            ))}
+          </div>
+          <div className="flex items-center gap-3">
+            <Link href="/login" className="hidden sm:inline text-sm text-slate-300 hover:text-white">Giriş</Link>
+            <Link href="/kayit" className="hidden sm:inline-flex px-4 py-1.5 rounded-full bg-white text-black text-sm font-medium hover:scale-105 transition-transform">Ücretsiz Başla</Link>
+            <button
+              type="button"
+              onClick={() => setIsMenuOpen((open) => !open)}
+              className="md:hidden flex items-center justify-center size-10 rounded-full border border-white/10 bg-white/5 text-slate-200"
+              aria-label={isMenuOpen ? 'Menüyü kapat' : 'Menüyü aç'}
+              aria-expanded={isMenuOpen}
+            >
+              {isMenuOpen ? <X className="size-5" /> : <Menu className="size-5" />}
+            </button>
+          </div>
         </div>
       </div>
-    </div>
-  </nav>
-)
+      <AnimatePresence>
+        {isMenuOpen ? (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.2, ease: 'easeOut' }}
+            className="md:hidden overflow-hidden bg-[#090d16] border-b border-white/5"
+          >
+            <div className="max-w-7xl mx-auto px-6 py-4 flex flex-col gap-1 text-sm">
+              {NAV_LINKS.map(([label, href]) => (
+                <Link
+                  key={label}
+                  href={href}
+                  onClick={() => setIsMenuOpen(false)}
+                  className="py-2.5 text-slate-300 hover:text-white transition-colors"
+                >
+                  {label}
+                </Link>
+              ))}
+              <Link
+                href="/login"
+                onClick={() => setIsMenuOpen(false)}
+                className="py-2.5 text-slate-300 hover:text-white transition-colors sm:hidden"
+              >
+                Giriş
+              </Link>
+              <Link
+                href="/kayit"
+                onClick={() => setIsMenuOpen(false)}
+                className="mt-2 px-4 py-2.5 rounded-full bg-white text-black text-sm font-medium text-center sm:hidden"
+              >
+                Ücretsiz Başla
+              </Link>
+            </div>
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
+    </nav>
+  )
+}
 
 export const SiteFooter = () => (
   <footer className="relative border-t border-white/5 bg-[#090d16]">
@@ -47,9 +106,9 @@ export const SiteFooter = () => (
         </div>
         <FooterCol title="Ürün" items={[
           ['Temalar', '/temalar'],
-          ['Özellikler', '/#demo'],
+          ['Özellikler', '/#ozellikler'],
           ['Fiyatlandırma', '/#fiyatlandirma'],
-          ['Demo', '/#demo'],
+          ['Örnek Katalog', 'https://demo.ekatalox.com'],
           ['Yenilikler', '/yenilikler'],
         ]} />
         <FooterCol title="Şirket" items={[

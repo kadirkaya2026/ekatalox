@@ -638,9 +638,7 @@ function buildTheme(
       "relative rounded-2xl shadow-sm",
       isDark ? "border-0 bg-neutral-700" : cn("border", neutrals.border, neutrals.surface),
     ),
-    searchInput: isDark
-      ? "rounded-2xl focus-visible:ring-0"
-      : cn("rounded-2xl", accent.ring, accent.borderFocus),
+    searchInput: cn("rounded-2xl", accent.ring, accent.borderFocus),
     searchIcon: cn("absolute left-4 top-1/2 -translate-y-1/2 size-5", neutrals.textMuted),
     productCard: cn(
       "group min-w-0 flex h-full flex-col overflow-hidden rounded-[1.75rem] transition duration-300 hover:-translate-y-1",

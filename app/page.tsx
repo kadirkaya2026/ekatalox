@@ -9,7 +9,7 @@ import {
   Check, Zap, Globe, ShieldCheck, BarChart3, Layers,
   HelpCircle, Plus,
   Rocket, TrendingUp, Building2, Crown, Users, Package, CircleCheck, CreditCard,
-  X, MessageCircle, Smartphone, PenTool
+  X, MessageCircle, Smartphone, PenTool, Menu
 } from 'lucide-react'
 import { formatPlanCapacityFeature, formatVisitorLimit, NEW_PLAN_OPTIONS, PLAN_PRICING } from '@/lib/billing/plans'
 
@@ -125,7 +125,7 @@ const Hero = () => {
 // ----------------------------- STOREFRONT MOCKUP ------------------------------
 const StorefrontMockup = () => {
   return (
-    <div className="relative rounded-2xl md:rounded-3xl border border-white/10 bg-gradient-to-b from-slate-900/90 to-[#090d16] shadow-[0_30px_120px_-20px_rgba(16, 185, 129,0.35)] overflow-hidden">
+    <div className="relative rounded-2xl md:rounded-3xl border border-white/10 bg-gradient-to-b from-slate-900/90 to-[#090d16] shadow-[0_30px_120px_-20px_rgba(16,185,129,0.35)] overflow-hidden">
       {/* Browser chrome */}
       <div className="flex items-center gap-2 px-5 py-3 border-b border-white/5 bg-black/20">
         <div className="flex gap-1.5">
@@ -728,7 +728,7 @@ const PricingCard = ({ plan, index, billing }) => {
           href={`/kayit?plan=${plan.id}&billing=${billing}`}
           className={`mt-8 inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-full font-medium text-sm transition-all duration-300 ${
             plan.featured
-              ? 'bg-white text-black hover:scale-[1.02] shadow-[0_0_40px_rgba(16, 185, 129,0.3)]'
+              ? 'bg-white text-black hover:scale-[1.02] shadow-[0_0_40px_rgba(16,185,129,0.3)]'
               : 'glass text-white hover:bg-white/10'
           }`}
         >
@@ -824,29 +824,101 @@ const FooterCol = ({ title, items }) => (
 )
 
 // ----------------------------- NAVBAR ----------------------------------------
-const Navbar = () => (
-  <nav className="fixed top-0 left-0 right-0 z-50">
-    <div className="backdrop-blur-xl bg-[#090d16]/60 border-b border-white/5">
-      <div className="max-w-7xl mx-auto px-6 h-14 flex items-center justify-between">
-        <Link href="/#top" className="flex items-center gap-2">
-          <EkataloxLogo className="h-8 w-[148px]" priority />
-        </Link>
-        <div className="hidden md:flex items-center gap-8 text-sm text-slate-300">
-          <Link href="/temalar" className="hover:text-white transition-colors">Temalar</Link>
-          <a href="#ozellikler" className="hover:text-white transition-colors">Özellikler</a>
-          <Link href="/musteriler" className="hover:text-white transition-colors">Müşteriler</Link>
-          <a href="#fiyatlandirma" className="hover:text-white transition-colors">Fiyatlandırma</a>
-          <a href="#faq" className="hover:text-white transition-colors">SSS</a>
-          <Link href="/iletisim" className="hover:text-white transition-colors">İletişim</Link>
-        </div>
-        <div className="flex items-center gap-3">
-          <Link href="/login" className="text-sm text-slate-300 hover:text-white">Giriş</Link>
-          <Link href="/kayit" className="px-4 py-1.5 rounded-full bg-white text-black text-sm font-medium hover:scale-105 transition-transform">Başla</Link>
+const NAVBAR_LINKS = [
+  ['Temalar', '/temalar', false],
+  ['Özellikler', '#ozellikler', true],
+  ['Müşteriler', '/musteriler', false],
+  ['Fiyatlandırma', '#fiyatlandirma', true],
+  ['SSS', '#faq', true],
+  ['İletişim', '/iletisim', false],
+] as const
+
+const Navbar = () => {
+  const [isMenuOpen, setIsMenuOpen] = useState(false)
+
+  return (
+    <nav className="fixed top-0 left-0 right-0 z-50">
+      <div className="backdrop-blur-xl bg-[#090d16]/60 border-b border-white/5">
+        <div className="max-w-7xl mx-auto px-6 h-14 flex items-center justify-between">
+          <Link href="/#top" className="flex items-center gap-2" onClick={() => setIsMenuOpen(false)}>
+            <EkataloxLogo className="h-8 w-[148px]" priority />
+          </Link>
+          <div className="hidden md:flex items-center gap-8 text-sm text-slate-300">
+            {NAVBAR_LINKS.map(([label, href, isAnchor]) =>
+              isAnchor ? (
+                <a key={label} href={href} className="hover:text-white transition-colors">{label}</a>
+              ) : (
+                <Link key={label} href={href} className="hover:text-white transition-colors">{label}</Link>
+              ),
+            )}
+          </div>
+          <div className="flex items-center gap-3">
+            <Link href="/login" className="hidden sm:inline text-sm text-slate-300 hover:text-white">Giriş</Link>
+            <Link href="/kayit" className="hidden sm:inline-flex px-4 py-1.5 rounded-full bg-white text-black text-sm font-medium hover:scale-105 transition-transform">Başla</Link>
+            <button
+              type="button"
+              onClick={() => setIsMenuOpen((open) => !open)}
+              className="md:hidden flex items-center justify-center size-10 rounded-full border border-white/10 bg-white/5 text-slate-200"
+              aria-label={isMenuOpen ? 'Menüyü kapat' : 'Menüyü aç'}
+              aria-expanded={isMenuOpen}
+            >
+              {isMenuOpen ? <X className="size-5" /> : <Menu className="size-5" />}
+            </button>
+          </div>
         </div>
       </div>
-    </div>
-  </nav>
-)
+      <AnimatePresence>
+        {isMenuOpen ? (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.2, ease: 'easeOut' }}
+            className="md:hidden overflow-hidden bg-[#090d16] border-b border-white/5"
+          >
+            <div className="max-w-7xl mx-auto px-6 py-4 flex flex-col gap-1 text-sm">
+              {NAVBAR_LINKS.map(([label, href, isAnchor]) =>
+                isAnchor ? (
+                  <a
+                    key={label}
+                    href={href}
+                    onClick={() => setIsMenuOpen(false)}
+                    className="py-2.5 text-slate-300 hover:text-white transition-colors"
+                  >
+                    {label}
+                  </a>
+                ) : (
+                  <Link
+                    key={label}
+                    href={href}
+                    onClick={() => setIsMenuOpen(false)}
+                    className="py-2.5 text-slate-300 hover:text-white transition-colors"
+                  >
+                    {label}
+                  </Link>
+                ),
+              )}
+              <Link
+                href="/login"
+                onClick={() => setIsMenuOpen(false)}
+                className="py-2.5 text-slate-300 hover:text-white transition-colors sm:hidden"
+              >
+                Giriş
+              </Link>
+              <Link
+                href="/kayit"
+                onClick={() => setIsMenuOpen(false)}
+                className="mt-2 px-4 py-2.5 rounded-full bg-white text-black text-sm font-medium text-center sm:hidden"
+              >
+                Başla
+              </Link>
+            </div>
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
+    </nav>
+  )
+}
 
 // ----------------------------- ROOT ------------------------------------------
 // Arama motorları için yapılandırılmış veri; client bileşeni de olsa SSR

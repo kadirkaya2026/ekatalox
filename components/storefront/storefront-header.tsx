@@ -132,7 +132,7 @@ function HeaderSearch({
         onChange={(event) => props.onSearchChange(event.target.value)}
         className={cn(
           theme.searchInput,
-          "h-10 w-full rounded-full border-0 bg-transparent py-2 pl-10 pr-4 text-[16px] focus-visible:ring-0 focus:ring-0 lg:h-11",
+          "h-10 w-full rounded-full border-0 bg-transparent py-2 pl-10 pr-4 text-[16px] lg:h-11",
         )}
       />
     </div>

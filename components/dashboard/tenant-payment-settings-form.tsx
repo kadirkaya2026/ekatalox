@@ -207,7 +207,7 @@ export function TenantPaymentSettingsForm({
             )}
           </div>
           <div className="space-y-4">
-            <div className="rounded-2xl border border-border bg-muted/60/60 p-4">
+            <div className="rounded-2xl border border-border bg-muted/60 p-4">
               <div className="mb-3 flex items-center justify-between">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
                   Nakit İskonto Barajları
@@ -289,7 +289,7 @@ export function TenantPaymentSettingsForm({
             </div>
 
             {/* Şart notu */}
-            <div className="rounded-2xl border border-border bg-muted/60/60 p-4">
+            <div className="rounded-2xl border border-border bg-muted/60 p-4">
               <label className="mb-2 block text-sm font-medium text-slate-700">
                 Şart notu{" "}
                 <span className="font-normal text-muted-foreground">(opsiyonel)</span>
@@ -305,7 +305,7 @@ export function TenantPaymentSettingsForm({
             </div>
 
             {/* Toggle */}
-            <div className="flex items-start justify-between gap-4 rounded-2xl border border-border bg-muted/60/60 px-4 py-3">
+            <div className="flex items-start justify-between gap-4 rounded-2xl border border-border bg-muted/60 px-4 py-3">
               <div>
                 <p className="text-sm font-semibold text-foreground">Nakit kampanyasını aktif et</p>
                 <p className="mt-0.5 text-xs text-slate-500">
@@ -345,7 +345,7 @@ export function TenantPaymentSettingsForm({
           </div>
           <div className="space-y-4">
             {/* 0 Komisyon barajları */}
-            <div className="rounded-2xl border border-border bg-muted/60/60 p-4">
+            <div className="rounded-2xl border border-border bg-muted/60 p-4">
               <div className="mb-3 flex items-center justify-between">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
                   0 Komisyon Barajları
@@ -436,7 +436,7 @@ export function TenantPaymentSettingsForm({
             </div>
 
             {/* Şart notu */}
-            <div className="rounded-2xl border border-border bg-muted/60/60 p-4">
+            <div className="rounded-2xl border border-border bg-muted/60 p-4">
               <label className="mb-2 block text-sm font-medium text-slate-700">
                 Şart notu{" "}
                 <span className="font-normal text-muted-foreground">(opsiyonel)</span>
@@ -452,7 +452,7 @@ export function TenantPaymentSettingsForm({
             </div>
 
             {/* Toggle */}
-            <div className="flex items-start justify-between gap-4 rounded-2xl border border-border bg-muted/60/60 px-4 py-3">
+            <div className="flex items-start justify-between gap-4 rounded-2xl border border-border bg-muted/60 px-4 py-3">
               <div>
                 <p className="text-sm font-semibold text-foreground">Kart kampanyasını aktif et</p>
                 <p className="mt-0.5 text-xs text-slate-500">

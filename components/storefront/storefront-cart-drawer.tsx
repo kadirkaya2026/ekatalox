@@ -346,7 +346,7 @@ export function StorefrontCartDrawer({
                             updateCartItemQuantity(item.id, event.target.value)
                           }
                           className={cn(
-                            "h-8 w-11 bg-transparent py-0 text-center text-[16px] font-bold leading-none outline-none focus-visible:ring-0 sm:h-9 sm:w-14",
+                            "h-8 w-11 rounded-md bg-transparent py-0 text-center text-[16px] font-bold leading-none outline-none focus-visible:ring-2 focus-visible:ring-current/40 sm:h-9 sm:w-14",
                             theme.text,
                           )}
                           style={{ fontSize: "16px" }}

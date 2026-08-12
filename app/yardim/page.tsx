@@ -7,12 +7,12 @@ import { Search, ChevronDown, BookOpen, Zap, CreditCard, Settings, Users, Code, 
 import { SiteNavbar, SiteFooter, PageHero } from '@/components/site-chrome'
 
 const categories = [
-  { icon: Zap, title: 'Başlarken', desc: 'İlk vitrininizi 1 dakikada yayına alın', count: 12 },
-  { icon: FileText, title: 'Excel Yükleme', desc: 'Format, kolonlar ve ipuçları', count: 18 },
-  { icon: Settings, title: 'Vitrin Yönetimi', desc: 'Banner, kategori, sıralama', count: 24 },
-  { icon: CreditCard, title: 'Fiyatlandırma & Ödeme', desc: 'Faturalama ve plan değişimi', count: 9 },
-  { icon: Users, title: 'B2B Özellikler', desc: 'Bayi, MOQ, anlaşmalı fiyatlar', count: 15 },
-  { icon: Code, title: 'API & Geliştiriciler', desc: 'Webhook, REST API, SDK', count: 22 },
+  { icon: Zap, title: 'Başlarken', desc: 'İlk vitrininizi 1 dakikada yayına alın', count: 12, searchTerm: 'vitrin' },
+  { icon: FileText, title: 'Excel Yükleme', desc: 'Format, kolonlar ve ipuçları', count: 18, searchTerm: 'excel' },
+  { icon: Settings, title: 'Vitrin Yönetimi', desc: 'Banner, kategori, sıralama', count: 24, searchTerm: 'banner' },
+  { icon: CreditCard, title: 'Fiyatlandırma & Ödeme', desc: 'Faturalama ve plan değişimi', count: 9, searchTerm: 'fiyat' },
+  { icon: Users, title: 'B2B Özellikler', desc: 'Bayi, MOQ, anlaşmalı fiyatlar', count: 15, searchTerm: 'müşteri' },
+  { icon: Code, title: 'API & Geliştiriciler', desc: 'Webhook, REST API, SDK', count: 22, searchTerm: 'api' },
 ]
 
 const faqs = [
@@ -37,6 +37,11 @@ const Page = () => {
     f.a.toLowerCase().includes(query.toLowerCase())
   )
 
+  function openCategory(searchTerm: string) {
+    setQuery(searchTerm)
+    document.getElementById('faq')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
+
   return (
     <main className="relative min-h-screen bg-[#090d16] text-white overflow-hidden">
       <SiteNavbar />
@@ -57,23 +62,33 @@ const Page = () => {
       <section className="px-6 pb-16">
         <div className="max-w-6xl mx-auto grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
           {categories.map((c, i) => (
-            <motion.div key={c.title} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: false }} transition={{ delay: i * 0.05 }} whileHover={{ y: -3 }} className="p-5 md:p-6 rounded-2xl border border-white/10 bg-white/[0.02] hover:border-white/20 hover:bg-white/[0.04] transition-all cursor-pointer">
+            <motion.button
+              key={c.title}
+              type="button"
+              onClick={() => openCategory(c.searchTerm)}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: i * 0.05 }}
+              whileHover={{ y: -3 }}
+              className="p-5 md:p-6 rounded-2xl border border-white/10 bg-white/[0.02] hover:border-white/20 hover:bg-white/[0.04] transition-all text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#10b981]/60"
+            >
               <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#10b981]/15 to-[#00ff87]/15 flex items-center justify-center mb-3">
                 <c.icon className="w-5 h-5 text-[#10b981]" />
               </div>
               <div className="flex items-center justify-between">
                 <div className="text-base text-white font-semibold">{c.title}</div>
-                <span className="text-[10px] text-slate-500">{c.count} makale</span>
+                <span className="text-[11px] text-slate-500">{c.count} makale</span>
               </div>
               <div className="text-xs text-slate-500 mt-1">{c.desc}</div>
-            </motion.div>
+            </motion.button>
           ))}
         </div>
       </section>
 
-      <section className="px-6 pb-24">
+      <section id="faq" className="px-6 pb-24 scroll-mt-20">
         <div className="max-w-3xl mx-auto">
-          <motion.h2 initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: false, amount: 0.3 }} className="text-3xl md:text-5xl font-bold tracking-tight text-center mb-3" style={{ letterSpacing: '-0.04em' }}>Sıkça Sorulan Sorular</motion.h2>
+          <motion.h2 initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.3 }} className="text-3xl md:text-5xl font-bold tracking-tight text-center mb-3" style={{ letterSpacing: '-0.04em' }}>Sıkça Sorulan Sorular</motion.h2>
           <p className="text-center text-slate-400 mb-12">{filtered.length} sonuç</p>
           <div className="space-y-2">
             {filtered.map((f, i) => (

@@ -206,7 +206,7 @@ const KayitForm = () => {
                     </div>
 
                     {apiError && <div className="text-sm text-red-400 text-center">{apiError}</div>}
-                    <button type="submit" disabled={sending} className="w-full inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-full bg-white text-black font-medium text-sm hover:scale-[1.01] transition-transform shadow-[0_0_40px_rgba(16, 185, 129,0.2)] mt-2 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:scale-100">
+                    <button type="submit" disabled={sending} className="w-full inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-full bg-white text-black font-medium text-sm hover:scale-[1.01] transition-transform shadow-[0_0_40px_rgba(16,185,129,0.2)] mt-2 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:scale-100">
                       {sending ? 'Lütfen bekleyin…' : <><span>Ücretsiz Hesap Aç</span><ArrowRight className="w-4 h-4" /></>}
                     </button>
 
