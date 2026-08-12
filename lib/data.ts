@@ -1056,28 +1056,53 @@ export async function validateAccessCode(params: {
   };
 }
 
+// Tenants that imported the full market catalog sit at 20k+ products —
+// re-fetching every row (with variants/prices) from Postgres on every single
+// storefront visit, with zero caching (the page itself is force-dynamic for
+// the per-visitor price-list cookie), was making the public storefront
+// "felaket yavaş" for every customer, on every load. The row fetch is the
+// expensive, visitor-independent part, so it's what gets cached; pricing
+// (which depends on the visitor's price list) is still computed fresh per
+// request in the map() below.
+//
+// Not every product-mutating route calls revalidateStorefrontCache yet (only
+// import-from-catalog does today), so this can't be tag-only — a bounded
+// revalidate window is the safety net that keeps edits from other routes
+// from going stale indefinitely.
+async function getCachedStorefrontProductRows(tenantId: string): Promise<Product[]> {
+  if (!createSupabaseAdminClient()) {
+    if (!shouldAllowDemoFallback()) {
+      return [];
+    }
+
+    return demoProducts
+      .filter((product) => product.tenant_id === tenantId)
+      .map(({ description: _description, ...product }) => product);
+  }
+
+  // The Supabase client is created *inside* the cached callback (matching
+  // getTenantStorefrontSettings below) — unstable_cache derives its cache
+  // key from the arguments passed to the wrapped function, so a non-
+  // serializable client instance can't be one of them.
+  const readProductRows = unstable_cache(
+    async (resolvedTenantId: string) => {
+      const admin = createSupabaseAdminClient();
+      if (!admin) return [];
+      return fetchStorefrontTenantProductsWithOptionalVariants(admin, resolvedTenantId);
+    },
+    [tenantId],
+    { tags: [`storefront_${tenantId}`], revalidate: 60 },
+  );
+
+  return readProductRows(tenantId);
+}
+
 export async function getStorefrontProducts(params: {
   tenantId: string;
   priceListId: string;
   isCatalogOnly: boolean;
 }): Promise<StorefrontProduct[]> {
-  const supabaseAdmin = createSupabaseAdminClient();
-  let products: Product[] = [];
-
-  if (!supabaseAdmin) {
-    if (!shouldAllowDemoFallback()) {
-      return [];
-    }
-
-    products = demoProducts
-      .filter((product) => product.tenant_id === params.tenantId)
-      .map(({ description: _description, ...product }) => product);
-  } else {
-    products = await fetchStorefrontTenantProductsWithOptionalVariants(
-      supabaseAdmin,
-      params.tenantId,
-    );
-  }
+  const products = await getCachedStorefrontProductRows(params.tenantId);
 
   return products.map((product) =>
     toStorefrontProduct(product, params.priceListId, params.isCatalogOnly),
