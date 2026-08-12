@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import {
   BarChart3,
   Building2,
+  Clock,
   CreditCard,
   FolderTree,
   Globe,
@@ -109,6 +110,12 @@ const tenantLinks: SidebarLink[] = [
         label: "Anasayfa Banner'ı",
         icon: ImageIcon,
         group: "Marka & Görünüm",
+      },
+      {
+        href: "/settings/hours",
+        label: "Çalışma Saatleri",
+        icon: Clock,
+        group: "İçerik & İletişim",
       },
       {
         href: "/settings/announcement",

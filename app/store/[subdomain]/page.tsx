@@ -6,6 +6,7 @@ import { headers } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import { PasswordGate } from "@/components/storefront/password-gate";
 import { StoreClosedNotice } from "@/components/storefront/store-closed-notice";
+import { StoreOutsideHoursNotice } from "@/components/storefront/store-outside-hours-notice";
 import { StorefrontSuspendedNotice } from "@/components/storefront/storefront-suspended-notice";
 import { StorefrontPageShell } from "@/components/storefront/storefront-page-shell";
 import { StorefrontClient } from "@/components/storefront/storefront-client";
@@ -26,6 +27,7 @@ import {
   isTenantCustomDomainHost,
 } from "@/lib/tenancy/request-host";
 import { getHiddenStorefrontCategoryIds } from "@/lib/categories/tree";
+import { getNextOpening, isStoreOpenNow } from "@/lib/storefront/business-hours";
 import { getStorefrontHomePath } from "@/lib/storefront/paths";
 import {
   isStorefrontPriceListStateValid,
@@ -86,6 +88,16 @@ export default async function StorefrontPage(props: PageProps<"/store/[subdomain
     return (
       <StorefrontLocaleProvider subdomain={subdomain} initialLocale={settings.default_locale}>
         <StoreClosedNotice />
+      </StorefrontLocaleProvider>
+    );
+  }
+
+  const hoursSettings = await getTenantStorefrontSettings(tenant.id);
+
+  if (!isStoreOpenNow(hoursSettings)) {
+    return (
+      <StorefrontLocaleProvider subdomain={subdomain} initialLocale={hoursSettings.default_locale}>
+        <StoreOutsideHoursNotice nextOpening={getNextOpening(hoursSettings)} />
       </StorefrontLocaleProvider>
     );
   }

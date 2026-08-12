@@ -121,6 +121,8 @@ import {
   StorefrontPromoTiles,
 } from "@/components/storefront/storefront-homepage-extras";
 import { getStorefrontLayout } from "@/lib/storefront/layouts";
+import { getNextOpening, isStoreOpenNow, type NextOpening } from "@/lib/storefront/business-hours";
+import { StoreClosedOverlay } from "@/components/storefront/store-closed-overlay";
 
 function getCartStorageKey(tenantId: string) {
   return `ekatalox_cart_${tenantId}`;
@@ -907,6 +909,36 @@ export function StorefrontClient({
     query.addEventListener("change", update);
     return () => query.removeEventListener("change", update);
   }, []);
+
+  // Sayfa sunucuda render edildiğinde mağaza açıktı (kapalıysa page.tsx zaten
+  // StoreOutsideHoursNotice döndürüp bu bileşeni hiç render etmez). Belirli
+  // saatler ayarlıysa, sekme açık kalırken kapanış saati gelirse müşteriye
+  // haber vermek için burada da periyodik kontrol yapılır.
+  const [isClosedNow, setIsClosedNow] = useState(false);
+  const [closedNowNextOpening, setClosedNowNextOpening] = useState<NextOpening | null>(null);
+
+  useEffect(() => {
+    if (storefrontSettings.is_always_open) {
+      return;
+    }
+
+    const checkStoreHours = () => {
+      if (!isStoreOpenNow(storefrontSettings)) {
+        setIsClosedNow(true);
+        setClosedNowNextOpening(getNextOpening(storefrontSettings));
+      }
+    };
+
+    checkStoreHours();
+    const intervalId = window.setInterval(checkStoreHours, 60_000);
+    document.addEventListener("visibilitychange", checkStoreHours);
+
+    return () => {
+      window.clearInterval(intervalId);
+      document.removeEventListener("visibilitychange", checkStoreHours);
+    };
+  }, [storefrontSettings]);
+
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<"cash" | "card" | null>(null);
   const [selectedInstallmentCount, setSelectedInstallmentCount] = useState<number | null>(null);
   const [paymentMethodError, setPaymentMethodError] = useState<string | null>(null);
@@ -2520,6 +2552,7 @@ export function StorefrontClient({
     >
     <StorefrontLayoutProvider layoutKey={storefrontSettings.layout_key ?? "classic-grid"}>
     <div className="contents">
+      {isClosedNow ? <StoreClosedOverlay nextOpening={closedNowNextOpening} /> : null}
       <StorefrontHeader
         headerStyleKey={storefrontSettings.header_style_key ?? "standard"}
         storefrontSettings={storefrontSettings}

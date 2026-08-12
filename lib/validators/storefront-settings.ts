@@ -1,6 +1,27 @@
 import { z } from "zod";
 import { DEFAULT_INSTALLMENT_OPTIONS } from "@/lib/storefront/cart";
 import { DEFAULT_HOMEPAGE_BLOCKS, HOMEPAGE_BLOCK_IDS } from "@/lib/storefront/homepage-blocks";
+import { DEFAULT_BUSINESS_HOURS, WEEKDAY_ORDER } from "@/lib/storefront/business-hours";
+
+const timeOfDaySchema = z
+  .string()
+  .regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Saat SS:DD biçiminde olmalıdır.");
+
+const businessDayHoursSchema = z.object({
+  is_open: z.boolean(),
+  open_time: timeOfDaySchema,
+  close_time: timeOfDaySchema,
+});
+
+export const businessHoursSchema = z.object({
+  mon: businessDayHoursSchema,
+  tue: businessDayHoursSchema,
+  wed: businessDayHoursSchema,
+  thu: businessDayHoursSchema,
+  fri: businessDayHoursSchema,
+  sat: businessDayHoursSchema,
+  sun: businessDayHoursSchema,
+});
 
 export const storefrontThemeKeySchema = z.enum([
   "minimal",
@@ -308,8 +329,18 @@ export const storefrontSettingsSchema = z
     is_footer_contact_visible: z.boolean().default(false),
     recommendation_mode: recommendationModeSchema.default("auto"),
     default_locale: storefrontDefaultLocaleSchema.default("tr"),
+    is_always_open: z.boolean().default(true),
+    business_hours: businessHoursSchema.default(DEFAULT_BUSINESS_HOURS),
   })
   .superRefine((value, ctx) => {
+    if (!value.is_always_open && !WEEKDAY_ORDER.some((day) => value.business_hours[day].is_open)) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["business_hours"],
+        message: "En az bir gün açık olmalıdır.",
+      });
+    }
+
     if (value.is_active) {
       if (!value.announcement_title) {
         ctx.addIssue({

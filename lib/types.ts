@@ -239,6 +239,16 @@ export interface InstallmentOption {
   surchargePercentage: number;
 }
 
+export type WeekdayKey = "mon" | "tue" | "wed" | "thu" | "fri" | "sat" | "sun";
+
+export interface BusinessDayHours {
+  is_open: boolean;
+  open_time: string;
+  close_time: string;
+}
+
+export type BusinessHours = Record<WeekdayKey, BusinessDayHours>;
+
 export interface TenantStorefrontSettings {
   id: string;
   tenant_id: string;
@@ -307,6 +317,8 @@ export interface TenantStorefrontSettings {
   is_footer_contact_visible: boolean;
   recommendation_mode: RecommendationMode;
   default_locale: StorefrontLocale;
+  is_always_open: boolean;
+  business_hours: BusinessHours;
   created_at: string;
   updated_at: string;
 }

@@ -23,9 +23,11 @@ import { ensureDefaultPriceListsForTenant, fetchTenantPriceLists } from "@/lib/p
 import { DEFAULT_HOMEPAGE_BLOCKS, normalizeHomepageBlocks } from "@/lib/storefront/homepage-blocks";
 import { toStorefrontProduct } from "@/lib/storefront/pricing";
 import { getSmartDefaultAppearance } from "@/lib/storefront/smart-defaults";
+import { DEFAULT_BUSINESS_HOURS, WEEKDAY_ORDER } from "@/lib/storefront/business-hours";
 import type {
   AccessCode,
   AdminLoginLogEntry,
+  BusinessHours,
   Category,
   DashboardSummary,
   MarketCatalogProduct,
@@ -165,8 +167,21 @@ export function getDefaultTenantStorefrontSettings(
     is_footer_contact_visible: false,
     recommendation_mode: "auto",
     default_locale: "tr",
+    is_always_open: true,
+    business_hours: DEFAULT_BUSINESS_HOURS,
     updated_at: now,
   };
+}
+
+function normalizeBusinessHours(
+  value: Partial<BusinessHours> | null | undefined,
+): BusinessHours {
+  const merged = { ...DEFAULT_BUSINESS_HOURS, ...(value ?? {}) };
+
+  return WEEKDAY_ORDER.reduce((acc, day) => {
+    acc[day] = { ...DEFAULT_BUSINESS_HOURS[day], ...(merged[day] ?? {}) };
+    return acc;
+  }, {} as BusinessHours);
 }
 
 function normalizeStorefrontSettings(
@@ -181,6 +196,7 @@ function normalizeStorefrontSettings(
   return {
     ...merged,
     homepage_blocks: normalizeHomepageBlocks(merged.homepage_blocks),
+    business_hours: normalizeBusinessHours(merged.business_hours),
   };
 }
 
