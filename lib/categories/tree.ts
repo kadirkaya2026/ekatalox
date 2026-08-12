@@ -95,21 +95,32 @@ export function getDescendantCategoryIds(categories: Category[], categoryId: str
 // arama) görünmesin — ama tenant admin panelinde ürün yönetimi bunları
 // olduğu gibi görmeye devam eder (bu filtre sadece storefront sayfalarında
 // uygulanır, bkz. app/store/[subdomain]/page.tsx).
-export function filterHiddenCategoriesAndProducts<P extends { category_id: string }>(
-  categories: Category[],
-  products: P[],
-): { categories: Category[]; products: P[] } {
+// "is_hidden_from_storefront" kök kategorilerinin kendisi + tüm alt
+// kategorileri — storefront'un ürün sorgularında hariç tutması gereken tam
+// id kümesi. Hem eski (tüm kategori/ürün listesini elde tutup filtreleyen)
+// hem yeni (sunucu taraflı sayfalanmış sorgu, bu kümeyi WHERE'e ekleyen)
+// yollarda aynı mantığı paylaşmak için ayrı bir fonksiyon.
+export function getHiddenStorefrontCategoryIds(categories: Category[]): string[] {
   const hiddenRootIds = categories
     .filter((category) => category.is_hidden_from_storefront)
     .map((category) => category.id);
 
   if (!hiddenRootIds.length) {
-    return { categories, products };
+    return [];
   }
 
-  const hiddenIds = new Set(
-    hiddenRootIds.flatMap((id) => getDescendantCategoryIds(categories, id)),
-  );
+  return [...new Set(hiddenRootIds.flatMap((id) => getDescendantCategoryIds(categories, id)))];
+}
+
+export function filterHiddenCategoriesAndProducts<P extends { category_id: string }>(
+  categories: Category[],
+  products: P[],
+): { categories: Category[]; products: P[] } {
+  const hiddenIds = new Set(getHiddenStorefrontCategoryIds(categories));
+
+  if (!hiddenIds.size) {
+    return { categories, products };
+  }
 
   return {
     categories: categories.filter((category) => !hiddenIds.has(category.id)),

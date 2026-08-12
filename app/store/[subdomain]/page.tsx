@@ -13,7 +13,9 @@ import { StorefrontFooter } from "@/components/storefront/storefront-footer";
 import { StorefrontLocaleProvider } from "@/lib/storefront/locale-context";
 import { isTrialExpired } from "@/lib/billing/trial";
 import {
-  getStorefrontProducts,
+  getStorefrontProductsPage,
+  getStorefrontPromoProducts,
+  getStorefrontRecommendationPool,
   getStorefrontSections,
   getStorefrontTenant,
   getTenantCategories,
@@ -23,7 +25,7 @@ import {
   getRequestHostFromHeaders,
   isTenantCustomDomainHost,
 } from "@/lib/tenancy/request-host";
-import { filterHiddenCategoriesAndProducts } from "@/lib/categories/tree";
+import { getHiddenStorefrontCategoryIds } from "@/lib/categories/tree";
 import { getStorefrontHomePath } from "@/lib/storefront/paths";
 import {
   isStorefrontPriceListStateValid,
@@ -114,24 +116,28 @@ export default async function StorefrontPage(props: PageProps<"/store/[subdomain
     );
   }
 
-  const [rawProducts, rawCategories, storefrontSettings, sections] = await Promise.all([
-    getStorefrontProducts({
-      tenantId: tenant.id,
-      priceListId: priceListState.priceListId,
-      isCatalogOnly: priceListState.isCatalogOnly,
-    }),
-    getTenantCategories(tenant.id),
-    getTenantStorefrontSettings(tenant.id),
-    getStorefrontSections(
-      tenant.id,
-      priceListState.priceListId,
-      priceListState.isCatalogOnly,
-    ),
-  ]);
-  const { categories, products } = filterHiddenCategoriesAndProducts(
-    rawCategories,
-    rawProducts,
-  );
+  const rawCategories = await getTenantCategories(tenant.id);
+  const hiddenCategoryIds = getHiddenStorefrontCategoryIds(rawCategories);
+  const categories = rawCategories.filter((category) => !hiddenCategoryIds.includes(category.id));
+
+  const pricingParams = {
+    tenantId: tenant.id,
+    priceListId: priceListState.priceListId,
+    isCatalogOnly: priceListState.isCatalogOnly,
+  };
+
+  const [firstPage, storefrontSettings, sections, promoProducts, recommendationPool] =
+    await Promise.all([
+      getStorefrontProductsPage({ ...pricingParams, page: 1, excludeCategoryIds: hiddenCategoryIds }),
+      getTenantStorefrontSettings(tenant.id),
+      getStorefrontSections(
+        tenant.id,
+        priceListState.priceListId,
+        priceListState.isCatalogOnly,
+      ),
+      getStorefrontPromoProducts({ ...pricingParams, excludeCategoryIds: hiddenCategoryIds }),
+      getStorefrontRecommendationPool({ ...pricingParams, excludeCategoryIds: hiddenCategoryIds }),
+    ]);
   const footerVisible = storefrontSettings.is_footer_visible;
   const headersList = await headers();
   const requestHost = getRequestHostFromHeaders(headersList);
@@ -148,7 +154,10 @@ export default async function StorefrontPage(props: PageProps<"/store/[subdomain
       <StorefrontClient
         tenant={tenant}
         categories={categories}
-        products={products}
+        initialProducts={firstPage.products}
+        initialProductTotal={firstPage.total}
+        promoProducts={promoProducts}
+        recommendationPool={recommendationPool}
         storefrontSettings={storefrontSettings}
         sections={sections}
         subdomain={subdomain}

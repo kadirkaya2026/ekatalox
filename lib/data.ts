@@ -246,29 +246,6 @@ async function fetchTenantProductsWithOptionalVariants(
   return normalizeProductRows(fallback.data);
 }
 
-async function fetchStorefrontTenantProductsWithOptionalVariants(
-  supabase: AdminClient,
-  tenantId: string,
-) {
-  const withVariants = await fetchAllTenantProductRows(
-    supabase,
-    storefrontProductWithVariantsSelect,
-    tenantId,
-  );
-
-  if (!withVariants.error) {
-    return normalizeProductRows(withVariants.data);
-  }
-
-  const fallback = await fetchAllTenantProductRows(supabase, storefrontProductListColumns, tenantId);
-
-  if (fallback.error) {
-    return [];
-  }
-
-  return normalizeProductRows(fallback.data);
-}
-
 async function fetchStorefrontSectionRowsWithOptionalVariants(
   supabase: AdminClient,
   sectionIds: string[],
@@ -1057,56 +1034,290 @@ export async function validateAccessCode(params: {
 }
 
 // Tenants that imported the full market catalog sit at 20k+ products —
-// re-fetching every row (with variants/prices) from Postgres on every single
-// storefront visit, with zero caching (the page itself is force-dynamic for
-// the per-visitor price-list cookie), was making the public storefront
-// "felaket yavaş" for every customer, on every load. The row fetch is the
-// expensive, visitor-independent part, so it's what gets cached; pricing
-// (which depends on the visitor's price list) is still computed fresh per
-// request in the map() below.
-//
-// Not every product-mutating route calls revalidateStorefrontCache yet (only
-// import-from-catalog does today), so this can't be tag-only — a bounded
-// revalidate window is the safety net that keeps edits from other routes
-// from going stale indefinitely.
-async function getCachedStorefrontProductRows(tenantId: string): Promise<Product[]> {
-  if (!createSupabaseAdminClient()) {
-    if (!shouldAllowDemoFallback()) {
-      return [];
-    }
+export const STOREFRONT_PRODUCTS_PAGE_SIZE = 60;
 
-    return demoProducts
-      .filter((product) => product.tenant_id === tenantId)
-      .map(({ description: _description, ...product }) => product);
-  }
-
-  // The Supabase client is created *inside* the cached callback (matching
-  // getTenantStorefrontSettings below) — unstable_cache derives its cache
-  // key from the arguments passed to the wrapped function, so a non-
-  // serializable client instance can't be one of them.
-  const readProductRows = unstable_cache(
-    async (resolvedTenantId: string) => {
-      const admin = createSupabaseAdminClient();
-      if (!admin) return [];
-      return fetchStorefrontTenantProductsWithOptionalVariants(admin, resolvedTenantId);
-    },
-    [tenantId],
-    { tags: [`storefront_${tenantId}`], revalidate: 60 },
-  );
-
-  return readProductRows(tenantId);
+interface StorefrontProductRowFilter {
+  tenantId: string;
+  page: number;
+  search?: string;
+  categoryIds?: string[];
+  matchCategoryIds?: string[];
+  excludeCategoryIds?: string[];
+  discountOnly?: boolean;
 }
 
-export async function getStorefrontProducts(params: {
+function applyStorefrontProductFilters<
+  Q extends { in: Function; not: Function; or: Function; eq: Function },
+>(query: Q, filter: StorefrontProductRowFilter, orFilter: string | null): Q {
+  let q = query;
+  if (filter.discountOnly) {
+    q = q.eq("is_discount_active", true);
+  } else if (filter.categoryIds?.length) {
+    q = q.in("category_id", filter.categoryIds);
+  }
+  if (filter.excludeCategoryIds?.length) {
+    q = q.not("category_id", "in", `(${filter.excludeCategoryIds.join(",")})`);
+  }
+  if (orFilter) {
+    q = q.or(orFilter);
+  }
+  return q;
+}
+
+// Sunucu taraflı sayfalanmış+aranmış+filtrelenmiş satır çekimi — asıl
+// getCachedStorefrontProductRows (tüm katalog) fonksiyonunun 16MB'lık
+// sayfayı üreten kaynağıydı. Satırlar (fiyattan bağımsız kısım) burada
+// önbelleklenir; fiyat, ziyaretçinin fiyat listesine göre çağıran tarafta
+// hesaplanır — böylece aynı sayfa/filtre önbelleği tüm fiyat listeleri
+// arasında paylaşılabilir.
+async function getCachedStorefrontProductRowsPage(
+  filter: StorefrontProductRowFilter,
+): Promise<{ products: Product[]; total: number }> {
+  const page = Math.max(1, filter.page);
+
+  if (!createSupabaseAdminClient()) {
+    if (!shouldAllowDemoFallback()) {
+      return { products: [], total: 0 };
+    }
+
+    const from = (page - 1) * STOREFRONT_PRODUCTS_PAGE_SIZE;
+    const categoryIdSet = filter.categoryIds?.length ? new Set(filter.categoryIds) : null;
+    const excludeSet = filter.excludeCategoryIds?.length ? new Set(filter.excludeCategoryIds) : null;
+    const term = filter.search?.trim().toLocaleLowerCase("tr-TR");
+    const filtered = demoProducts.filter((product) => {
+      if (product.tenant_id !== filter.tenantId) return false;
+      if (excludeSet?.has(product.category_id)) return false;
+      if (filter.discountOnly) return product.is_discount_active;
+      if (categoryIdSet && !categoryIdSet.has(product.category_id)) return false;
+      if (!term) return true;
+      return product.product_name.toLocaleLowerCase("tr-TR").includes(term);
+    });
+
+    return {
+      products: filtered.slice(from, from + STOREFRONT_PRODUCTS_PAGE_SIZE),
+      total: filtered.length,
+    };
+  }
+
+  const readPage = unstable_cache(
+    async (
+      resolvedTenantId: string,
+      resolvedPage: number,
+      search: string,
+      categoryIds: string[],
+      matchCategoryIds: string[],
+      excludeCategoryIds: string[],
+      discountOnly: boolean,
+    ) => {
+      const admin = createSupabaseAdminClient();
+      if (!admin) return { products: [] as Product[], total: 0 };
+
+      const from = (resolvedPage - 1) * STOREFRONT_PRODUCTS_PAGE_SIZE;
+      const to = from + STOREFRONT_PRODUCTS_PAGE_SIZE - 1;
+      const term = search.trim().replace(/[,%]/g, " ").trim();
+      const resolvedFilter: StorefrontProductRowFilter = {
+        tenantId: resolvedTenantId,
+        page: resolvedPage,
+        categoryIds,
+        excludeCategoryIds,
+        discountOnly,
+      };
+
+      const orFilter = term
+        ? (() => {
+            const escapedTerm = term.replace(/[()]/g, "");
+            const categoryMatch = matchCategoryIds.length
+              ? `,category_id.in.(${matchCategoryIds.join(",")})`
+              : "";
+            return `product_name.ilike.%${escapedTerm}%,sku_code.ilike.%${escapedTerm}%${categoryMatch}`;
+          })()
+        : null;
+
+      let primaryQuery = applyStorefrontProductFilters(
+        admin
+          .from("products")
+          .select(productWithVariantsSelect, { count: "exact" })
+          .eq("tenant_id", resolvedTenantId),
+        resolvedFilter,
+        orFilter,
+      );
+      primaryQuery = primaryQuery
+        .order("display_order", { ascending: true })
+        .order("created_at", { ascending: false })
+        .range(from, to);
+
+      const { data, error, count } = await primaryQuery;
+      if (!error) {
+        return { products: normalizeProductRows(data), total: count ?? 0 };
+      }
+
+      let fallbackQuery = applyStorefrontProductFilters(
+        admin.from("products").select("*", { count: "exact" }).eq("tenant_id", resolvedTenantId),
+        resolvedFilter,
+        orFilter,
+      );
+      fallbackQuery = fallbackQuery
+        .order("display_order", { ascending: true })
+        .order("created_at", { ascending: false })
+        .range(from, to);
+
+      const fallback = await fallbackQuery;
+      return { products: normalizeProductRows(fallback.data), total: fallback.count ?? 0 };
+    },
+    [filter.tenantId],
+    { tags: [`storefront_${filter.tenantId}`], revalidate: 60 },
+  );
+
+  return readPage(
+    filter.tenantId,
+    page,
+    filter.search ?? "",
+    filter.categoryIds ?? [],
+    filter.matchCategoryIds ?? [],
+    filter.excludeCategoryIds ?? [],
+    filter.discountOnly ?? false,
+  );
+}
+
+export async function getStorefrontProductsPage(params: {
   tenantId: string;
   priceListId: string;
   isCatalogOnly: boolean;
-}): Promise<StorefrontProduct[]> {
-  const products = await getCachedStorefrontProductRows(params.tenantId);
+  page: number;
+  search?: string;
+  categoryIds?: string[];
+  matchCategoryIds?: string[];
+  excludeCategoryIds?: string[];
+  discountOnly?: boolean;
+}): Promise<{ products: StorefrontProduct[]; total: number }> {
+  const { products, total } = await getCachedStorefrontProductRowsPage(params);
 
-  return products.map((product) =>
-    toStorefrontProduct(product, params.priceListId, params.isCatalogOnly),
+  return {
+    products: products.map((product) =>
+      toStorefrontProduct(product, params.priceListId, params.isCatalogOnly),
+    ),
+    total,
+  };
+}
+
+// Sepet çekmecesindeki "Bunlar da ilginizi çekebilir" önerileri artık tüm
+// katalog yerine küçük, sabit boyutlu bir havuzdan besleniyor: elle
+// önerilen (is_recommended) ürünler + kategoriler arası çeşitlilik için
+// rastgele bir örneklem. Gerçek sıralama/çapraz-satış mantığı hâlâ
+// istemci tarafında (sepet içeriğine göre) çalışıyor, sadece aday havuzu
+// artık 20k+ değil birkaç yüz ürün.
+export async function getStorefrontRecommendationPool(params: {
+  tenantId: string;
+  priceListId: string;
+  isCatalogOnly: boolean;
+  excludeCategoryIds?: string[];
+}): Promise<StorefrontProduct[]> {
+  const supabaseAdmin = createSupabaseAdminClient();
+
+  if (!supabaseAdmin) {
+    if (!shouldAllowDemoFallback()) return [];
+    return demoProducts
+      .filter((product) => product.tenant_id === params.tenantId)
+      .slice(0, 300)
+      .map((product) => toStorefrontProduct(product, params.priceListId, params.isCatalogOnly));
+  }
+
+  const readPool = unstable_cache(
+    async (tenantId: string, excludeCategoryIds: string[]) => {
+      const admin = createSupabaseAdminClient();
+      if (!admin) return [] as Product[];
+
+      let recommendedQuery = admin
+        .from("products")
+        .select(productWithVariantsSelect)
+        .eq("tenant_id", tenantId)
+        .eq("is_recommended", true)
+        .eq("is_in_stock", true)
+        .limit(200);
+      if (excludeCategoryIds.length) {
+        recommendedQuery = recommendedQuery.not("category_id", "in", `(${excludeCategoryIds.join(",")})`);
+      }
+      const { data: recommendedRows } = await recommendedQuery;
+      const recommended = normalizeProductRows(recommendedRows);
+
+      // Elle işaretlenmiş öneri havuzu küçükse (ya da tenant hiç kullanmıyorsa)
+      // rastgele bir örneklemle tamamla, böylece çapraz satış önerisi tek bir
+      // kategoriye sıkışıp kalmaz.
+      if (recommended.length >= 200) {
+        return recommended;
+      }
+
+      let sampleQuery = admin
+        .from("products")
+        .select(productWithVariantsSelect)
+        .eq("tenant_id", tenantId)
+        .eq("is_in_stock", true)
+        .order("display_order", { ascending: true })
+        .limit(300);
+      if (excludeCategoryIds.length) {
+        sampleQuery = sampleQuery.not("category_id", "in", `(${excludeCategoryIds.join(",")})`);
+      }
+      const { data: sampleRows } = await sampleQuery;
+      const sample = normalizeProductRows(sampleRows);
+
+      const seen = new Set(recommended.map((p) => p.id));
+      return [...recommended, ...sample.filter((p) => !seen.has(p.id))];
+    },
+    [params.tenantId],
+    { tags: [`storefront_${params.tenantId}`], revalidate: 60 },
   );
+
+  const rows = await readPool(params.tenantId, params.excludeCategoryIds ?? []);
+  return rows.map((product) => toStorefrontProduct(product, params.priceListId, params.isCatalogOnly));
+}
+
+// Anasayfadaki "indirimli ürünler" karo şeridi için — tüm katalogdan
+// indirimdeki birkaç ürünü bulmak amacıyla artık 20k+ ürünü taramak yerine
+// doğrudan is_discount_active=true üzerinden küçük bir sorgu çalışıyor.
+export async function getStorefrontPromoProducts(params: {
+  tenantId: string;
+  priceListId: string;
+  isCatalogOnly: boolean;
+  excludeCategoryIds?: string[];
+  limit?: number;
+}): Promise<StorefrontProduct[]> {
+  const supabaseAdmin = createSupabaseAdminClient();
+  const limit = params.limit ?? 12;
+
+  if (!supabaseAdmin) {
+    if (!shouldAllowDemoFallback()) return [];
+    return demoProducts
+      .filter((product) => product.tenant_id === params.tenantId && product.is_discount_active)
+      .slice(0, limit)
+      .map((product) => toStorefrontProduct(product, params.priceListId, params.isCatalogOnly));
+  }
+
+  const readPromo = unstable_cache(
+    async (tenantId: string, excludeCategoryIds: string[], resolvedLimit: number) => {
+      const admin = createSupabaseAdminClient();
+      if (!admin) return [] as Product[];
+
+      let query = admin
+        .from("products")
+        .select(productWithVariantsSelect)
+        .eq("tenant_id", tenantId)
+        .eq("is_discount_active", true)
+        .eq("is_in_stock", true)
+        .order("display_order", { ascending: true })
+        .limit(resolvedLimit);
+      if (excludeCategoryIds.length) {
+        query = query.not("category_id", "in", `(${excludeCategoryIds.join(",")})`);
+      }
+
+      const { data } = await query;
+      return normalizeProductRows(data);
+    },
+    [params.tenantId],
+    { tags: [`storefront_${params.tenantId}`], revalidate: 60 },
+  );
+
+  const rows = await readPromo(params.tenantId, params.excludeCategoryIds ?? [], limit);
+  return rows.map((product) => toStorefrontProduct(product, params.priceListId, params.isCatalogOnly));
 }
 
 export async function getStorefrontProductDescription(

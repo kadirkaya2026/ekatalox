@@ -806,8 +806,6 @@ function getAnnouncementVisibility(params: {
   return storedViews < params.activeAnnouncement.maxDisplayCount;
 }
 
-const STOREFRONT_PAGE_SIZE = 24;
-
 const salesUnits: Array<{ value: SalesUnit; label: string }> = [
   { value: "adet", label: "Adet" },
   { value: "paket", label: "Paket" },
@@ -817,7 +815,10 @@ const salesUnits: Array<{ value: SalesUnit; label: string }> = [
 export function StorefrontClient({
   tenant,
   categories,
-  products,
+  initialProducts,
+  initialProductTotal,
+  promoProducts,
+  recommendationPool,
   storefrontSettings,
   sections = [],
   subdomain,
@@ -825,10 +826,14 @@ export function StorefrontClient({
   homeHref,
   hasPageFooter = false,
   isCatalogOnly = false,
+  sectionMode = false,
 }: {
   tenant: Tenant;
   categories: Category[];
-  products: StorefrontProduct[];
+  initialProducts: StorefrontProduct[];
+  initialProductTotal: number;
+  promoProducts: StorefrontProduct[];
+  recommendationPool: StorefrontProduct[];
   storefrontSettings: TenantStorefrontSettings;
   sections?: StorefrontSectionWithProducts[];
   subdomain?: string;
@@ -836,6 +841,11 @@ export function StorefrontClient({
   homeHref?: string;
   hasPageFooter?: boolean;
   isCatalogOnly?: boolean;
+  // Küratörlü bölüm sayfası (bkz. app/store/[subdomain]/section/[sectionId])
+  // her zaman zaten küçük, sabit bir ürün listesiyle çalışır — burada arama/
+  // kategori filtresi /api/storefront/products'a (tüm katalog) gitmemeli,
+  // sadece initialProducts üzerinde istemci taraflı filtrelenmeli.
+  sectionMode?: boolean;
 }) {
   const [cart, setCart] = useState<CartItem[]>(() => {
     if (typeof window === "undefined") {
@@ -875,7 +885,17 @@ export function StorefrontClient({
   const [quantityError, setQuantityError] = useState<string | null>(null);
   const [variantSelections, setVariantSelections] = useState<VariantSelectionState[]>([]);
   const [variantSearchTerm, setVariantSearchTerm] = useState("");
-  const [visibleCount, setVisibleCount] = useState(STOREFRONT_PAGE_SIZE);
+  // Katalog artık sunucu taraflı sayfalanıyor (arama/kategori/"Devamını
+  // Göster" hepsi /api/storefront/products'a gidiyor) — büyük kataloglarda
+  // (20k+ ürün) tüm listeyi tek seferde istemciye gönderip orada filtrelemek
+  // sayfayı ~16MB'a çıkarıp her ziyaretçi için saniyeler süren yüklemeye yol
+  // açıyordu. `products` burada "şu ana kadar yüklenen" birikimli listedir;
+  // arama/kategori değişince sıfırlanır, "Devamını Göster" ile büyür.
+  const [products, setProducts] = useState<StorefrontProduct[]>(initialProducts);
+  const [productTotal, setProductTotal] = useState(initialProductTotal);
+  const [productPage, setProductPage] = useState(1);
+  const [isLoadingProducts, setIsLoadingProducts] = useState(false);
+  const isFirstProductFetch = useRef(true);
   const [hoveredCategoryId, setHoveredCategoryId] = useState<string | null>(null);
   const [activeBannerIndex, setActiveBannerIndex] = useState(0);
   const [isMobileViewport, setIsMobileViewport] = useState(false);
@@ -944,6 +964,19 @@ export function StorefrontClient({
     () => categories.find((category) => category.id === selectedCategoryId)?.is_discount_category ?? false,
     [categories, selectedCategoryId],
   );
+  // Arama artık sunucuda çalışıyor — kategori adı eşleşmesini de arama
+  // sorgusuna dahil etmek için (ör. "bira" yazınca "Biralar" kategorisindeki
+  // ürünlerin de gelmesi) isim eşleşen kategori id'lerini burada, elimizdeki
+  // kategori listesinden çıkarıp API'ye ayrıca gönderiyoruz.
+  const matchCategoryIds = useMemo(() => {
+    const normalizedSearch = debouncedSearchTerm.trim().toLocaleLowerCase("tr-TR");
+    if (!normalizedSearch) {
+      return [] as string[];
+    }
+    return categories
+      .filter((category) => category.name.toLocaleLowerCase("tr-TR").includes(normalizedSearch))
+      .map((category) => category.id);
+  }, [categories, debouncedSearchTerm]);
   const selectedCategoryLineage = useMemo(
     () =>
       selectedCategoryId === "all" ? [] : getCategoryLineage(categories, selectedCategoryId),
@@ -1057,12 +1090,37 @@ export function StorefrontClient({
     () => new Map(cart.map((item) => [item.id, item.quantity])),
     [cart],
   );
+  // Sayfa üzerinde herhangi bir yerde (ana katalog sayfası, öne çıkan
+  // bölümler, promosyon şeridi, öneri widget'ı) gösterilen ürünler artık
+  // ayrı, küçük sunucu sorgularından geliyor — `products` yalnızca ana
+  // kataloğun o ana kadar yüklenmiş sayfasını tutuyor. Detay modalı/sepete
+  // ekleme gibi id ile arama yapan her şey bu kaynakların BİRLEŞİMİNE
+  // bakmalı, yoksa örn. bir öneri kartına tıklamak sessizce hiçbir şey
+  // yapmaz (ürün ana grid'de yüklü değilse).
+  const productsById = useMemo(() => {
+    const map = new Map<string, StorefrontProduct>();
+    for (const product of products) {
+      map.set(product.id, product);
+    }
+    for (const section of sections) {
+      for (const product of section.products) {
+        map.set(product.id, product);
+      }
+    }
+    for (const product of promoProducts) {
+      map.set(product.id, product);
+    }
+    for (const product of recommendationPool) {
+      map.set(product.id, product);
+    }
+    return map;
+  }, [products, sections, promoProducts, recommendationPool]);
   const cartVariantCountByProductId = useMemo(
     () =>
       new Map(
-        products.map((product) => [product.id, getCartVariantCount(cart, product.id)]),
+        [...productsById.keys()].map((productId) => [productId, getCartVariantCount(cart, productId)]),
       ),
-    [cart, products],
+    [cart, productsById],
   );
   const cartTotalEntries = useMemo(
     () =>
@@ -1085,43 +1143,6 @@ export function StorefrontClient({
   const selectedQuantityValue = parseUnitCount(selectedQuantity);
   const selectedPackageCountValue = parseUnitCount(selectedPackageCount);
   const selectedCartonCountValue = parseUnitCount(selectedCartonCount);
-
-  const productSearchIndex = useMemo(
-    () =>
-      products.map((product) => ({
-        product,
-        normalizedName: product.product_name.toLocaleLowerCase("tr-TR"),
-        normalizedSku: product.sku_code?.toLocaleLowerCase("tr-TR") ?? "",
-        normalizedLineage: getCategoryLineage(categories, product.category_id)
-          .map((item) => item.name.toLocaleLowerCase("tr-TR"))
-          .join(" "),
-      })),
-    [categories, products],
-  );
-
-  const filteredProducts = useMemo(() => {
-    const normalizedSearch = debouncedSearchTerm.trim().toLocaleLowerCase("tr-TR");
-
-    return productSearchIndex
-      .filter(({ product, normalizedName, normalizedSku, normalizedLineage }) => {
-        const matchesCategory = isDiscountCategorySelected
-          ? (product.discount_percentage ?? 0) > 0
-          : !selectedCategoryIds || selectedCategoryIds.has(product.category_id);
-        const matchesSearch =
-          !normalizedSearch ||
-          normalizedName.includes(normalizedSearch) ||
-          normalizedSku.includes(normalizedSearch) ||
-          normalizedLineage.includes(normalizedSearch);
-
-        return matchesCategory && matchesSearch;
-      })
-      .map(({ product }) => product);
-  }, [debouncedSearchTerm, productSearchIndex, selectedCategoryIds, isDiscountCategorySelected]);
-
-  const productsById = useMemo(
-    () => new Map(products.map((product) => [product.id, product])),
-    [products],
-  );
 
   const handleOpenProductDetail = useCallback(
     (productId: string) => {
@@ -1226,7 +1247,7 @@ export function StorefrontClient({
     [productsById, handleOpenAddToCartModal, analyticsSubdomain],
   );
 
-  const visibleProducts = filteredProducts.slice(0, visibleCount);
+  const visibleProducts = products;
   const selectedCategory =
     selectedCategoryId === "all"
       ? null
@@ -1282,7 +1303,7 @@ export function StorefrontClient({
     const cartIds = new Set(cart.map((item) => item.product_id));
     const availableProducts = dedupeProducts([
       ...sections.flatMap((section) => section.products),
-      ...products,
+      ...recommendationPool,
     ]).filter((product) => product.is_in_stock && !cartIds.has(product.id));
 
     if (storefrontSettings.recommendation_mode === "manual") {
@@ -1304,7 +1325,7 @@ export function StorefrontClient({
     const rest = shuffled.filter((product) => !cartCategoryIds.has(product.category_id));
 
     return [...crossSell, ...rest].slice(0, 10);
-  }, [cart, products, sections, storefrontSettings.recommendation_mode, recommendationSeed]);
+  }, [cart, recommendationPool, sections, storefrontSettings.recommendation_mode, recommendationSeed]);
   const buildWhatsAppOrderMessage = useCallback(
     (pdfUrl?: string | null) => {
       return buildWhatsAppMessage({
@@ -1559,12 +1580,12 @@ export function StorefrontClient({
 
     trackStorefrontSearch(tenant.id, analyticsSubdomain, {
       query: normalizedSearch,
-      resultCount: filteredProducts.length,
+      resultCount: productTotal,
     });
   }, [
     analyticsSubdomain,
     debouncedSearchTerm,
-    filteredProducts.length,
+    productTotal,
     isMounted,
     tenant.id,
   ]);
@@ -1659,15 +1680,102 @@ export function StorefrontClient({
     return () => window.removeEventListener("keydown", handleEscape);
   }, [activeAnnouncement, closeAnnouncementModal, isAnnouncementEligible]);
 
+  const fetchProductsPage = useCallback(
+    async (targetPage: number, mode: "replace" | "append") => {
+      if (!analyticsSubdomain) {
+        return;
+      }
+
+      setIsLoadingProducts(true);
+      try {
+        const params = new URLSearchParams();
+        params.set("subdomain", analyticsSubdomain);
+        params.set("page", String(targetPage));
+
+        if (debouncedSearchTerm.trim()) {
+          params.set("q", debouncedSearchTerm.trim());
+        }
+
+        if (isDiscountCategorySelected) {
+          params.set("discountOnly", "1");
+        } else if (selectedCategoryIds) {
+          params.set("categoryIds", [...selectedCategoryIds].join(","));
+        }
+
+        if (matchCategoryIds.length) {
+          params.set("matchCategoryIds", matchCategoryIds.join(","));
+        }
+
+        const response = await fetch(`/api/storefront/products?${params.toString()}`);
+
+        if (!response.ok) {
+          return;
+        }
+
+        const result = (await response.json()) as { products: StorefrontProduct[]; total: number };
+        setProducts((current) =>
+          mode === "append" ? [...current, ...result.products] : result.products,
+        );
+        setProductTotal(result.total);
+        setProductPage(targetPage);
+      } finally {
+        setIsLoadingProducts(false);
+      }
+    },
+    [analyticsSubdomain, debouncedSearchTerm, isDiscountCategorySelected, selectedCategoryIds, matchCategoryIds],
+  );
+
+  useEffect(() => {
+    if (isFirstProductFetch.current) {
+      isFirstProductFetch.current = false;
+      return;
+    }
+
+    if (sectionMode) {
+      const normalizedSearch = debouncedSearchTerm.trim().toLocaleLowerCase("tr-TR");
+      const filtered = initialProducts.filter((product) => {
+        const matchesCategory = isDiscountCategorySelected
+          ? (product.discount_percentage ?? 0) > 0
+          : !selectedCategoryIds || selectedCategoryIds.has(product.category_id);
+
+        if (!matchesCategory) {
+          return false;
+        }
+
+        if (!normalizedSearch) {
+          return true;
+        }
+
+        const normalizedName = product.product_name.toLocaleLowerCase("tr-TR");
+        const normalizedSku = product.sku_code?.toLocaleLowerCase("tr-TR") ?? "";
+
+        return normalizedName.includes(normalizedSearch) || normalizedSku.includes(normalizedSearch);
+      });
+
+      setProducts(filtered);
+      setProductTotal(filtered.length);
+      return;
+    }
+
+    void fetchProductsPage(1, "replace");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [debouncedSearchTerm, selectedCategoryId]);
+
+  const handleLoadMoreProducts = useCallback(() => {
+    if (sectionMode) {
+      return;
+    }
+
+    void fetchProductsPage(productPage + 1, "append");
+  }, [fetchProductsPage, productPage, sectionMode]);
+
   function handleCategoryChange(categoryId: string) {
     setSelectedCategoryId(categoryId);
     setHoveredCategoryId(null);
-    setVisibleCount(STOREFRONT_PAGE_SIZE);
   }
 
   function handleSearchChange(value: string) {
     setSearchInput(value);
-    setVisibleCount(STOREFRONT_PAGE_SIZE);
   }
 
   function openAddToCartFromDetail(product: StorefrontProduct) {
@@ -2498,7 +2606,7 @@ export function StorefrontClient({
 
             if (block.id === "promoTiles") {
               return showPromoTiles && !hideHomeProductsOnMobile ? (
-                <StorefrontPromoTiles key="promoTiles" products={products} />
+                <StorefrontPromoTiles key="promoTiles" products={promoProducts} />
               ) : null;
             }
 
@@ -2667,7 +2775,7 @@ export function StorefrontClient({
                     </div>
                     <div className="flex flex-wrap items-center gap-2.5 sm:gap-3">
                       <div className={cn("rounded-full px-4 py-2.5 text-sm shadow-sm", theme.border, theme.surface, theme.textMuted)}>
-                        <span className={cn("font-semibold", theme.text)}>{filteredProducts.length}</span>{" "}
+                        <span className={cn("font-semibold", theme.text)}>{productTotal}</span>{" "}
                         {t("catalog.foundSuffix")}
                       </div>
                       <div className={cn("rounded-full px-4 py-2.5 text-sm", theme.border, theme.surfaceMuted, theme.textMuted)}>
@@ -2677,7 +2785,7 @@ export function StorefrontClient({
                     </div>
                   </div>
 
-                  {filteredProducts.length ? (
+                  {productTotal ? (
                     <StorefrontProductListing
                       products={visibleProducts}
                       cartQuantityByProductId={cartQuantityByProductId}
@@ -2699,21 +2807,20 @@ export function StorefrontClient({
                     </Card>
                   )}
 
-                  {filteredProducts.length > visibleCount ? (
+                  {products.length < productTotal ? (
                     <div className="mt-8 flex justify-center">
                       <button
                         type="button"
-                        onClick={() =>
-                          setVisibleCount((prev) => prev + STOREFRONT_PAGE_SIZE)
-                        }
+                        onClick={handleLoadMoreProducts}
+                        disabled={isLoadingProducts}
                         className={cn(
-                          "rounded-full px-8 py-3 text-sm font-semibold shadow-sm transition hover:opacity-90 hover:shadow",
+                          "rounded-full px-8 py-3 text-sm font-semibold shadow-sm transition hover:opacity-90 hover:shadow disabled:opacity-60",
                           theme.border,
                           theme.surface,
                           theme.textMuted,
                         )}
                       >
-                        {t("catalog.showMore", { count: filteredProducts.length - visibleCount })}
+                        {t("catalog.showMore", { count: productTotal - products.length })}
                       </button>
                     </div>
                   ) : null}

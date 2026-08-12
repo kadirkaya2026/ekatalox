@@ -145,7 +145,10 @@ export default async function SectionDetailPage(props: {
       <StorefrontClient
         tenant={tenant}
         categories={categories}
-        products={sectionProducts}
+        initialProducts={sectionProducts}
+        initialProductTotal={sectionProducts.length}
+        promoProducts={[]}
+        recommendationPool={sectionProducts}
         storefrontSettings={storefrontSettings}
         sections={[]}
         subdomain={subdomain}
@@ -153,6 +156,7 @@ export default async function SectionDetailPage(props: {
         homeHref={getStorefrontHomePath()}
         hasPageFooter={footerVisible}
         isCatalogOnly={priceListState.isCatalogOnly}
+        sectionMode
       />
       {footerVisible ? (
         <StorefrontFooter
