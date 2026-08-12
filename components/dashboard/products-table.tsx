@@ -202,6 +202,7 @@ export function ProductsTable({
               <th className="px-4 py-3">
                 <input
                   type="checkbox"
+                  className="size-5 cursor-pointer accent-emerald-600"
                   checked={allFilteredSelected}
                   ref={(element) => {
                     if (element) {
@@ -244,6 +245,7 @@ export function ProductsTable({
                 <td className="px-4 py-3">
                   <input
                     type="checkbox"
+                    className="size-5 cursor-pointer accent-emerald-600"
                     checked={selectedProductIds.includes(product.id)}
                     onChange={() => onToggleSelect(product.id)}
                     aria-label={`${product.product_name} seç`}
@@ -355,7 +357,7 @@ export function ProductsTable({
                   <div className="ml-auto grid w-[9.5rem] grid-cols-2 gap-1">
                     <Button
                       variant="secondary"
-                      className="h-11 w-full flex-col justify-center gap-0.5 px-0.5 text-[9px] font-semibold leading-[1.1]"
+                      className="h-11 w-full flex-col justify-center gap-0.5 px-0.5 text-[11px] font-semibold leading-[1.1]"
                       onClick={() => onOpenVariantMatrix(product)}
                       title="Model matrisini düzenle"
                       aria-label="Model matrisini düzenle"
@@ -365,7 +367,7 @@ export function ProductsTable({
                     </Button>
                     <Button
                       variant="secondary"
-                      className="h-11 w-full flex-col justify-center gap-0.5 px-0.5 text-[9px] font-semibold leading-[1.1]"
+                      className="h-11 w-full flex-col justify-center gap-0.5 px-0.5 text-[11px] font-semibold leading-[1.1]"
                       onClick={() => onToggleStock(product)}
                       title={product.is_in_stock ? "Stoğu kapat" : "Stoğu aç"}
                       aria-label={product.is_in_stock ? "Stoğu kapat" : "Stoğu aç"}
@@ -381,7 +383,7 @@ export function ProductsTable({
                     </Button>
                     <Button
                       variant="secondary"
-                      className="h-11 w-full flex-col justify-center gap-0.5 px-0.5 text-[9px] font-semibold leading-[1.1]"
+                      className="h-11 w-full flex-col justify-center gap-0.5 px-0.5 text-[11px] font-semibold leading-[1.1]"
                       onClick={() => onOpenEdit(product)}
                       title="Ürünü düzenle"
                       aria-label="Ürünü düzenle"
@@ -391,7 +393,7 @@ export function ProductsTable({
                     </Button>
                     <Button
                       variant="secondary"
-                      className="h-11 w-full flex-col justify-center gap-0.5 border-red-200 px-0.5 text-[9px] font-semibold leading-[1.1] text-red-700 hover:bg-red-50"
+                      className="h-11 w-full flex-col justify-center gap-0.5 border-red-200 px-0.5 text-[11px] font-semibold leading-[1.1] text-red-700 hover:bg-red-50"
                       onClick={() => onRequestDelete(product)}
                       title="Ürünü kalıcı olarak sil"
                       aria-label="Ürünü kalıcı olarak sil"
@@ -426,6 +428,7 @@ export function ProductsTable({
               <label className="flex items-center gap-2 text-sm text-muted-foreground">
                 <input
                   type="checkbox"
+                  className="size-5 cursor-pointer accent-emerald-600"
                   checked={selectedProductIds.includes(product.id)}
                   onChange={() => onToggleSelect(product.id)}
                 />

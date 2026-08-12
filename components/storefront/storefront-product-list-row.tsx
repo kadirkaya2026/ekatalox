@@ -57,7 +57,7 @@ function StorefrontInlineCartAction({
               onOpenAddToCart(product.id);
             }
           }}
-          className={cn("flex size-8 items-center justify-center rounded-lg transition", theme.quantityStepperButton)}
+          className={cn("flex size-10 items-center justify-center rounded-lg transition", theme.quantityStepperButton)}
           aria-label={cartQuantity === 1 && !product.has_variants ? t("listRow.removeAria") : t("listRow.decreaseAria")}
         >
           {!product.has_variants && cartQuantity === 1 ? (
@@ -80,7 +80,7 @@ function StorefrontInlineCartAction({
             }
           }}
           className={cn(
-            "flex size-8 items-center justify-center rounded-lg text-white transition",
+            "flex size-10 items-center justify-center rounded-lg text-white transition",
             theme.primaryButton,
           )}
           aria-label={t("listRow.increaseAria")}
@@ -99,7 +99,7 @@ function StorefrontInlineCartAction({
         onOpenAddToCart(product.id);
       }}
       className={cn(
-        "flex size-9 shrink-0 items-center justify-center rounded-xl text-white transition",
+        "flex size-10 shrink-0 items-center justify-center rounded-xl text-white transition",
         theme.floatingCartAddButton,
       )}
       aria-label={t("listRow.addAria")}

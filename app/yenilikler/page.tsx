@@ -108,7 +108,7 @@ const Page = () => {
                     <div className="flex flex-wrap items-center gap-3 mb-4">
                       <span className="text-[#10b981] font-mono text-sm tracking-wider">{r.version}</span>
                       <span className="text-xs text-slate-500">{r.date}</span>
-                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium uppercase tracking-wider ${badgeStyles[r.badge]}`}>
+                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium uppercase tracking-wider ${badgeStyles[r.badge]}`}>
                         {r.badge === 'major' && <Sparkles className="w-2.5 h-2.5" />}
                         {badgeLabel[r.badge]}
                       </span>

@@ -92,16 +92,16 @@ const Page = () => {
                   <h2 className="text-2xl md:text-3xl font-semibold">Mesaj gönderin</h2>
                   <p className="text-sm text-slate-400">Formu doldurun, ekibimiz 24 saat içinde dönüş sağlasın.</p>
                   <div className="grid sm:grid-cols-2 gap-4 pt-2">
-                    <FormField label="Ad Soyad" placeholder="Ahmet Yılmaz" value={form.name} onChange={set('name')} error={errors.name} />
-                    <FormField label="Şirket" placeholder="Toptan A.Ş." value={form.company} onChange={set('company')} />
+                    <FormField id="contact-name" label="Ad Soyad" placeholder="Ahmet Yılmaz" value={form.name} onChange={set('name')} error={errors.name} />
+                    <FormField id="contact-company" label="Şirket" placeholder="Toptan A.Ş." value={form.company} onChange={set('company')} />
                   </div>
                   <div className="grid sm:grid-cols-2 gap-4">
-                    <FormField label="E-posta" type="email" placeholder="isim@firmaniz.com" value={form.email} onChange={set('email')} error={errors.email} />
-                    <FormField label="Telefon" placeholder="+90 …" value={form.phone} onChange={set('phone')} />
+                    <FormField id="contact-email" label="E-posta" type="email" placeholder="isim@firmaniz.com" value={form.email} onChange={set('email')} error={errors.email} />
+                    <FormField id="contact-phone" label="Telefon" placeholder="+90 …" value={form.phone} onChange={set('phone')} />
                   </div>
                   <div>
-                    <label className="text-xs text-slate-400 mb-1.5 block uppercase tracking-wider">Konu</label>
-                    <select value={form.subject} onChange={set('subject')} className="w-full px-4 py-3 rounded-xl bg-black/30 border border-white/10 text-sm text-white outline-none focus:border-[#10b981]/60">
+                    <label htmlFor="contact-subject" className="text-xs text-slate-400 mb-1.5 block uppercase tracking-wider">Konu</label>
+                    <select id="contact-subject" value={form.subject} onChange={set('subject')} className="w-full px-4 py-3 rounded-xl bg-black/30 border border-white/10 text-sm text-white outline-none focus:border-[#10b981]/60">
                       <option value="demo">Demo Talep Etmek İstiyorum</option>
                       <option value="satis">Satış / Fiyat Teklifi</option>
                       <option value="destek">Teknik Destek</option>
@@ -110,8 +110,8 @@ const Page = () => {
                     </select>
                   </div>
                   <div>
-                    <label className="text-xs text-slate-400 mb-1.5 block uppercase tracking-wider">Mesajınız</label>
-                    <textarea rows={5} placeholder="Bize biraz daha bahsedin…" value={form.message} onChange={set('message')}
+                    <label htmlFor="contact-message" className="text-xs text-slate-400 mb-1.5 block uppercase tracking-wider">Mesajınız</label>
+                    <textarea id="contact-message" rows={5} placeholder="Bize biraz daha bahsedin…" value={form.message} onChange={set('message')}
                       className={`w-full px-4 py-3 rounded-xl bg-black/30 border text-sm text-white placeholder:text-slate-600 outline-none transition-colors resize-none ${
                         errors.message ? 'border-red-500/60' : 'border-white/10 focus:border-[#10b981]/60'
                       }`} />
@@ -145,15 +145,18 @@ const Page = () => {
 const InfoTile = ({ icon: Icon, label, value }) => (
   <div className="p-4 rounded-xl border border-white/10 bg-white/[0.02]">
     <Icon className="w-4 h-4 text-[#10b981]" />
-    <div className="mt-2 text-[10px] uppercase tracking-widest text-slate-500">{label}</div>
+    <div className="mt-2 text-[11px] uppercase tracking-widest text-slate-500">{label}</div>
     <div className="text-sm text-white mt-0.5">{value}</div>
   </div>
 )
 
-const FormField = ({ label, type = 'text', placeholder, value, onChange, error }) => (
+const FormField = ({ id, label, type = 'text', placeholder, value, onChange, error }: {
+  id: string; label: string; type?: string; placeholder: string; value: string;
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void; error?: string
+}) => (
   <div>
-    <label className="text-xs text-slate-400 mb-1.5 block uppercase tracking-wider">{label}</label>
-    <input type={type} placeholder={placeholder} value={value} onChange={onChange}
+    <label htmlFor={id} className="text-xs text-slate-400 mb-1.5 block uppercase tracking-wider">{label}</label>
+    <input id={id} type={type} placeholder={placeholder} value={value} onChange={onChange}
       className={`w-full px-4 py-3 rounded-xl bg-black/30 border text-sm text-white placeholder:text-slate-600 outline-none transition-colors ${error ? 'border-red-500/60' : 'border-white/10 focus:border-[#10b981]/60'}`} />
     {error && <div className="mt-1 text-[11px] text-red-400">{error}</div>}
   </div>

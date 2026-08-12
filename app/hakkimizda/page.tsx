@@ -138,7 +138,7 @@ const Page = () => {
                 </div>
                 <div className="mt-4 text-white font-semibold text-sm">{m.name}</div>
                 <div className="text-xs text-slate-500">{m.role}</div>
-                <div className="mt-3 inline-block px-2 py-0.5 rounded-full bg-[#10b981]/10 text-[9px] text-[#10b981] uppercase tracking-widest">{m.tag}</div>
+                <div className="mt-3 inline-block px-2 py-0.5 rounded-full bg-[#10b981]/10 text-[11px] text-[#10b981] uppercase tracking-widest">{m.tag}</div>
               </motion.div>
             ))}
           </div>

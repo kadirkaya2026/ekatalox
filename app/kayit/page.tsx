@@ -149,11 +149,11 @@ const KayitForm = () => {
                       <p className="mt-1 text-sm text-slate-400">14 gün ücretsiz · İstediğiniz an iptal edebilirsiniz</p>
                     </div>
 
-                    <Field label="Ad Soyad" placeholder="Ahmet Yılmaz" value={form.fullName} onChange={set('fullName')} error={errors.fullName} />
-                    <Field label="Şirket Adı" placeholder="Toptan A.Ş." value={form.company} onChange={set('company')} error={errors.company} />
-                    <Field label="Kurumsal E-posta" type="email" placeholder="isim@firmaniz.com" value={form.email} onChange={set('email')} error={errors.email} />
-                    <Field label="Telefon" type="tel" placeholder="+90 5XX XXX XX XX" value={form.phone} onChange={set('phone')} />
-                    <Field label="Şifre" type="password" placeholder="En az 6 karakter" value={form.password} onChange={set('password')} error={errors.password} />
+                    <Field id="signup-fullname" label="Ad Soyad" placeholder="Ahmet Yılmaz" value={form.fullName} onChange={set('fullName')} error={errors.fullName} />
+                    <Field id="signup-company" label="Şirket Adı" placeholder="Toptan A.Ş." value={form.company} onChange={set('company')} error={errors.company} />
+                    <Field id="signup-email" label="Kurumsal E-posta" type="email" placeholder="isim@firmaniz.com" value={form.email} onChange={set('email')} error={errors.email} />
+                    <Field id="signup-phone" label="Telefon" type="tel" placeholder="+90 5XX XXX XX XX" value={form.phone} onChange={set('phone')} />
+                    <Field id="signup-password" label="Şifre" type="password" placeholder="En az 6 karakter" value={form.password} onChange={set('password')} error={errors.password} />
 
                     <div>
                       <div className="flex items-center justify-between">
@@ -190,7 +190,7 @@ const KayitForm = () => {
                                 <span className="absolute inset-x-0 top-0 h-[2px] rounded-t-xl bg-gradient-to-r from-[#10b981] to-[#00ff87]" />
                               )}
                               {p.featured && !selected && (
-                                <span className="absolute -top-2 left-1/2 -translate-x-1/2 px-1.5 py-0.5 rounded-full bg-gradient-to-r from-[#10b981] to-[#00ff87] text-[8px] text-white font-medium uppercase tracking-wider">Popüler</span>
+                                <span className="absolute -top-2 left-1/2 -translate-x-1/2 px-1.5 py-0.5 rounded-full bg-gradient-to-r from-[#10b981] to-[#00ff87] text-[11px] text-white font-medium uppercase tracking-wider">Popüler</span>
                               )}
                               {selected && (
                                 <span className="absolute top-2 right-2">
@@ -198,7 +198,7 @@ const KayitForm = () => {
                                 </span>
                               )}
                               <div className={`text-[11px] ${selected ? 'text-white' : 'text-slate-400'}`}>{p.name}</div>
-                              <div className="text-sm text-white font-semibold mt-1">{p.price}<span className="text-[10px] text-slate-500 font-normal ml-1">{p.unit}</span></div>
+                              <div className="text-sm text-white font-semibold mt-1">{p.price}<span className="text-[11px] text-slate-500 font-normal ml-1">{p.unit}</span></div>
                             </button>
                           )
                         })}
@@ -251,13 +251,13 @@ const KayitForm = () => {
   )
 }
 
-const Field = ({ label, type = 'text', placeholder, value, onChange, error }: {
-  label: string; type?: string; placeholder: string; value: string;
+const Field = ({ id, label, type = 'text', placeholder, value, onChange, error }: {
+  id: string; label: string; type?: string; placeholder: string; value: string;
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void; error?: string
 }) => (
   <div>
-    <label className="text-xs text-slate-400 mb-1.5 block uppercase tracking-wider">{label}</label>
-    <input type={type} placeholder={placeholder} value={value} onChange={onChange}
+    <label htmlFor={id} className="text-xs text-slate-400 mb-1.5 block uppercase tracking-wider">{label}</label>
+    <input id={id} type={type} placeholder={placeholder} value={value} onChange={onChange}
       className={`w-full px-4 py-3 rounded-xl bg-black/30 border text-sm text-white placeholder:text-slate-600 outline-none transition-colors ${
         error ? 'border-red-500/60' : 'border-white/10 focus:border-[#10b981]/60'
       }`} />

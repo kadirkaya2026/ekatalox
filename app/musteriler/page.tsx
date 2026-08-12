@@ -89,7 +89,7 @@ const Page = () => {
                     {c.metrics.map(([v, l]) => (
                       <div key={l} className="p-4 rounded-xl border border-white/10 bg-white/[0.02] text-center">
                         <div className="text-xl md:text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-[#10b981] to-[#00ff87]">{v}</div>
-                        <div className="text-[10px] text-slate-500 uppercase tracking-widest mt-1">{l}</div>
+                        <div className="text-[11px] text-slate-500 uppercase tracking-widest mt-1">{l}</div>
                       </div>
                     ))}
                   </div>

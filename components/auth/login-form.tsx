@@ -2,13 +2,42 @@
 
 import Link from "next/link";
 import { useState, useTransition } from "react";
+import { motion } from "framer-motion";
 import { EkataloxLogo } from "@/components/brand/ekatalox-logo";
-import { ThemeToggle } from "@/components/theme/theme-toggle";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { translateAuthError } from "@/lib/auth/translate-error";
+
+function Field({
+  id,
+  label,
+  type = "text",
+  placeholder,
+  value,
+  onChange,
+}: {
+  id: string;
+  label: string;
+  type?: string;
+  placeholder: string;
+  value: string;
+  onChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
+}) {
+  return (
+    <div>
+      <label htmlFor={id} className="mb-1.5 block text-xs uppercase tracking-wider text-slate-400">
+        {label}
+      </label>
+      <input
+        id={id}
+        type={type}
+        placeholder={placeholder}
+        value={value}
+        onChange={onChange}
+        className="w-full rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white outline-none transition-colors placeholder:text-slate-600 focus:border-[#10b981]/60"
+      />
+    </div>
+  );
+}
 
 export function LoginForm({ target }: { target?: string }) {
   const [email, setEmail] = useState("");
@@ -101,57 +130,68 @@ export function LoginForm({ target }: { target?: string }) {
   }
 
   return (
-    <div className="relative container-shell flex min-h-screen items-center justify-center py-10">
-      <div className="absolute right-4 top-4 sm:right-6 sm:top-6">
-        <ThemeToggle variant="floating" />
-      </div>
-      <Card className="w-full max-w-md p-6">
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#090d16] px-6 py-10">
+      <div className="pointer-events-none absolute -top-40 left-1/2 h-[600px] w-[900px] -translate-x-1/2 rounded-full bg-[#10b981]/15 blur-[160px]" />
+      <div className="pointer-events-none absolute right-0 top-40 h-[500px] w-[500px] rounded-full bg-[#00ff87]/15 blur-[140px]" />
+
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+        className="relative w-full max-w-md overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-b from-white/[0.04] to-white/[0.01] p-7 backdrop-blur-xl md:p-9"
+      >
         <Link href="/#top" className="inline-flex">
           <EkataloxLogo variant="light" className="h-10 w-[176px]" priority />
         </Link>
-        <h1 className="mt-3 text-2xl font-semibold text-foreground">
+        <h1 className="mt-5 text-2xl font-semibold text-white" style={{ letterSpacing: "-0.02em" }}>
           Yönetim paneline erişin
         </h1>
-        <p className="mt-2 text-sm leading-6 text-muted-foreground">
+        <p className="mt-2 text-sm leading-6 text-slate-400">
           Supabase Auth ile süper admin veya tenant admin hesabınızla giriş yapın.
         </p>
 
         <form onSubmit={submit} className="mt-6 space-y-4">
-          <Input
+          <Field
+            id="login-email"
             type="email"
-            aria-label="E-posta"
-            placeholder="E-posta"
+            label="E-posta"
+            placeholder="ornek@sirketiniz.com"
             value={email}
             onChange={(event) => setEmail(event.target.value)}
           />
-          <Input
+          <Field
+            id="login-password"
             type="password"
-            aria-label="Şifre"
-            placeholder="Şifre"
+            label="Şifre"
+            placeholder="••••••••"
             value={password}
             onChange={(event) => setPassword(event.target.value)}
           />
-          <Button type="submit" className="w-full" disabled={pending}>
+          <button
+            type="submit"
+            disabled={pending}
+            className="mt-2 flex w-full items-center justify-center gap-2 rounded-full bg-white px-6 py-3.5 text-sm font-medium text-black transition-transform hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:scale-100"
+          >
             {pending ? "Giriş yapılıyor..." : "Giriş yap"}
-          </Button>
+          </button>
         </form>
 
         {!supabase && canUseDemoFallback ? (
-          <div className="mt-4 rounded-xl border border-border bg-muted p-4 text-sm text-muted-foreground">
+          <div className="mt-4 rounded-xl border border-white/10 bg-white/5 p-4 text-sm text-slate-400">
             Supabase değişkenleri tanımlı değil. Demo gezinimi için doğrudan
-            <a href="https://admin.ekatalox.com/" className="mx-1 font-semibold text-foreground">
+            <a href="https://admin.ekatalox.com/" className="mx-1 font-semibold text-white">
               admin
             </a>
             veya
-            <a href="https://app.ekatalox.com/" className="ml-1 font-semibold text-foreground">
+            <a href="https://app.ekatalox.com/" className="ml-1 font-semibold text-white">
               tenant paneline
             </a>
             geçebilirsiniz.
           </div>
         ) : null}
 
-        {error ? <p className="mt-4 text-sm text-muted-foreground">{error}</p> : null}
-      </Card>
+        {error ? <p className="mt-4 text-sm text-rose-400">{error}</p> : null}
+      </motion.div>
     </div>
   );
 }

@@ -164,7 +164,7 @@ const StorefrontMockup = () => {
         <div className="aspect-[3/1] rounded-xl overflow-hidden relative bg-gradient-to-br from-[#10b981]/20 via-slate-800 to-[#00ff87]/30 border border-white/5">
           <div className="absolute inset-0 bg-grid opacity-30" />
           <div className="absolute inset-0 flex flex-col justify-center px-8">
-            <span className="text-[10px] text-[#10b981] uppercase tracking-widest font-semibold">Yaz Kampanyası</span>
+            <span className="text-[11px] text-[#10b981] uppercase tracking-widest font-semibold">Yaz Kampanyası</span>
             <span className="text-xl md:text-3xl font-bold text-white mt-1">Aksesuar Kategorisinde %30'a Varan İndirim</span>
           </div>
           <div className="absolute right-6 top-1/2 -translate-y-1/2 w-24 h-24 md:w-32 md:h-32 rounded-full bg-[#10b981]/40 blur-2xl" />
@@ -186,12 +186,12 @@ const StorefrontMockup = () => {
                   <Layers className="w-5 h-5 text-slate-500" />
                 </div>
               </div>
-              <div className="absolute top-2 right-2 px-1.5 py-0.5 rounded-md bg-[#10b981]/15 text-[9px] text-[#10b981] font-medium">{p.stock}</div>
+              <div className="absolute top-2 right-2 px-1.5 py-0.5 rounded-md bg-[#10b981]/15 text-[11px] text-[#10b981] font-medium">{p.stock}</div>
             </div>
             <div className="text-[11px] text-white font-medium truncate">{p.n}</div>
             <div className="flex items-center justify-between mt-1">
               <span className="text-xs text-[#10b981] font-semibold">{p.p}</span>
-              <span className="text-[9px] text-slate-500">1. Fiyat</span>
+              <span className="text-[11px] text-slate-500">1. Fiyat</span>
             </div>
           </div>
         ))}
@@ -672,7 +672,7 @@ const PricingCard = ({ plan, index, billing }) => {
 
       <div className={`relative rounded-3xl bg-[#090d16] p-6 md:p-7 h-full flex flex-col`}>
         <div className="relative flex items-center justify-between mb-4">
-          <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-medium uppercase tracking-wider ${
+          <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium uppercase tracking-wider ${
             plan.featured
               ? 'bg-gradient-to-r from-[#10b981] to-[#00ff87] text-white'
               : 'bg-white/5 text-slate-400'
