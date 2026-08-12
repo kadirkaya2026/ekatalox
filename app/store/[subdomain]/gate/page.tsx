@@ -10,6 +10,7 @@ import { StoreClosedNotice } from "@/components/storefront/store-closed-notice";
 import { StorefrontSuspendedNotice } from "@/components/storefront/storefront-suspended-notice";
 import { StorefrontPageShell } from "@/components/storefront/storefront-page-shell";
 import { StorefrontLocaleProvider } from "@/lib/storefront/locale-context";
+import { getAppearanceFromSettings } from "@/lib/storefront/theme-context";
 import { isTrialExpired } from "@/lib/billing/trial";
 import { getStorefrontTenantCached, getTenantStorefrontSettings } from "@/lib/data";
 import { getStorefrontHomePath } from "@/lib/storefront/paths";
@@ -63,7 +64,7 @@ export default async function StorefrontGatePage(
 
     return (
       <StorefrontLocaleProvider subdomain={subdomain} initialLocale={settings.default_locale}>
-        <StorefrontSuspendedNotice />
+        <StorefrontSuspendedNotice appearance={getAppearanceFromSettings(settings)} />
       </StorefrontLocaleProvider>
     );
   }
@@ -73,7 +74,7 @@ export default async function StorefrontGatePage(
 
     return (
       <StorefrontLocaleProvider subdomain={subdomain} initialLocale={settings.default_locale}>
-        <StoreClosedNotice />
+        <StoreClosedNotice appearance={getAppearanceFromSettings(settings)} />
       </StorefrontLocaleProvider>
     );
   }

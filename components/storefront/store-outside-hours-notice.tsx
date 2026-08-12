@@ -1,7 +1,8 @@
 "use client";
 
 import { useStorefrontLocale } from "@/lib/storefront/locale-context";
-import { StorefrontLanguageSwitcher } from "@/components/storefront/storefront-language-switcher";
+import { StorefrontNoticeScreen } from "@/components/storefront/storefront-notice-screen";
+import type { StorefrontAppearanceSettings } from "@/lib/storefront/theme-context";
 import type { NextOpening } from "@/lib/storefront/business-hours";
 
 /**
@@ -10,7 +11,13 @@ import type { NextOpening } from "@/lib/storefront/business-hours";
  * varsa bir sonraki açılış zamanı da metne eklenir (bkz.
  * lib/storefront/business-hours.ts -> getNextOpening).
  */
-export function StoreOutsideHoursNotice({ nextOpening }: { nextOpening: NextOpening | null }) {
+export function StoreOutsideHoursNotice({
+  nextOpening,
+  appearance,
+}: {
+  nextOpening: NextOpening | null;
+  appearance?: StorefrontAppearanceSettings;
+}) {
   const { t } = useStorefrontLocale();
 
   const when =
@@ -28,14 +35,10 @@ export function StoreOutsideHoursNotice({ nextOpening }: { nextOpening: NextOpen
       : t("notice.hoursClosedBodyGeneric");
 
   return (
-    <div data-storefront className="relative container-shell flex min-h-screen items-center justify-center py-8">
-      <div className="absolute right-4 top-4 sm:right-6 sm:top-6">
-        <StorefrontLanguageSwitcher />
-      </div>
-      <div className="max-w-lg rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-sm">
-        <h1 className="text-2xl font-semibold text-slate-900">{t("notice.hoursClosedTitle")}</h1>
-        <p className="mt-3 text-sm leading-6 text-slate-600">{body}</p>
-      </div>
-    </div>
+    <StorefrontNoticeScreen
+      title={t("notice.hoursClosedTitle")}
+      body={body}
+      appearance={appearance}
+    />
   );
 }

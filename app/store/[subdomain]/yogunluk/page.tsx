@@ -8,6 +8,7 @@ import { notFound } from "next/navigation";
 import { VisitorQuotaNotice } from "@/components/storefront/visitor-quota-notice";
 import { getStorefrontTenantCached, getTenantStorefrontSettings } from "@/lib/data";
 import { StorefrontLocaleProvider } from "@/lib/storefront/locale-context";
+import { getAppearanceFromSettings } from "@/lib/storefront/theme-context";
 
 export function generateStaticParams() {
   return [];
@@ -57,7 +58,7 @@ export default async function StorefrontVisitorQuotaPage(
 
   return (
     <StorefrontLocaleProvider subdomain={subdomain} initialLocale={settings.default_locale}>
-      <VisitorQuotaNotice />
+      <VisitorQuotaNotice appearance={getAppearanceFromSettings(settings)} />
     </StorefrontLocaleProvider>
   );
 }

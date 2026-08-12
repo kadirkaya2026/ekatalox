@@ -13,6 +13,7 @@ import { StorefrontClient } from "@/components/storefront/storefront-client";
 import { StorefrontFooter } from "@/components/storefront/storefront-footer";
 import { StorefrontSectionBreadcrumb } from "@/components/storefront/storefront-section-breadcrumb";
 import { StorefrontLocaleProvider } from "@/lib/storefront/locale-context";
+import { getAppearanceFromSettings } from "@/lib/storefront/theme-context";
 import { isTrialExpired } from "@/lib/billing/trial";
 import {
   getStorefrontSections,
@@ -62,7 +63,7 @@ export default async function SectionDetailPage(props: {
 
     return (
       <StorefrontLocaleProvider subdomain={subdomain} initialLocale={settings.default_locale}>
-        <StorefrontSuspendedNotice />
+        <StorefrontSuspendedNotice appearance={getAppearanceFromSettings(settings)} />
       </StorefrontLocaleProvider>
     );
   }
@@ -72,7 +73,7 @@ export default async function SectionDetailPage(props: {
 
     return (
       <StorefrontLocaleProvider subdomain={subdomain} initialLocale={settings.default_locale}>
-        <StoreClosedNotice />
+        <StoreClosedNotice appearance={getAppearanceFromSettings(settings)} />
       </StorefrontLocaleProvider>
     );
   }
@@ -82,7 +83,10 @@ export default async function SectionDetailPage(props: {
   if (!isStoreOpenNow(hoursSettings)) {
     return (
       <StorefrontLocaleProvider subdomain={subdomain} initialLocale={hoursSettings.default_locale}>
-        <StoreOutsideHoursNotice nextOpening={getNextOpening(hoursSettings)} />
+        <StoreOutsideHoursNotice
+          nextOpening={getNextOpening(hoursSettings)}
+          appearance={getAppearanceFromSettings(hoursSettings)}
+        />
       </StorefrontLocaleProvider>
     );
   }
