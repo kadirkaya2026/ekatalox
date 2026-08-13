@@ -1,39 +1,52 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronDown, ChevronUp } from "lucide-react";
+import { ArrowLeft, ChevronRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import { cn, formatCurrency, formatDate } from "@/lib/utils";
+import { formatCurrency, formatDate } from "@/lib/utils";
+import type { CurrencyCode } from "@/lib/products/constants";
 import type { StorefrontCustomerWithStats, StorefrontOrder } from "@/lib/types";
+
+function formatOrderTotal(order: StorefrontOrder) {
+  return order.currency === "CATALOG"
+    ? "Fiyatsız katalog"
+    : formatCurrency(order.total_amount, order.currency as CurrencyCode);
+}
 
 function formatCustomerTotals(totals: Record<string, number>) {
   const entries = Object.entries(totals).filter(([currency]) => currency !== "CATALOG");
-
   if (!entries.length) {
     return null;
   }
 
-  return entries.map(([currency, amount]) => (
-    <Badge key={currency} className="bg-emerald-50 text-emerald-700">
-      {formatCurrency(amount, currency)}
-    </Badge>
-  ));
+  return entries.map(([currency, amount]) => formatCurrency(amount, currency as CurrencyCode)).join(" + ");
 }
 
-function OrderHistoryRow({ order }: { order: StorefrontOrder }) {
+function BackButton({ label, onClick }: { label: string; onClick: () => void }) {
   return (
-    <div className="rounded-xl border border-slate-100 bg-white p-3 text-sm">
+    <button
+      type="button"
+      onClick={onClick}
+      className="mb-4 flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-slate-800"
+    >
+      <ArrowLeft className="size-4" />
+      {label}
+    </button>
+  );
+}
+
+function OrderDetailView({ order, onBack }: { order: StorefrontOrder; onBack: () => void }) {
+  return (
+    <div>
+      <BackButton label="Siparişlere dön" onClick={onBack} />
+
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <span className="font-medium text-slate-900">{order.order_number}</span>
-        <span className="text-slate-500">{formatDate(order.created_at)}</span>
+        <h3 className="text-base font-semibold text-slate-900">{order.order_number}</h3>
+        <span className="text-sm text-slate-500">{formatDate(order.created_at)}</span>
       </div>
-      <div className="mt-1 flex flex-wrap items-center gap-2 text-slate-600">
-        <span>
-          {order.currency === "CATALOG" ? "Fiyatsız katalog" : formatCurrency(order.total_amount, order.currency)}
-        </span>
-        <span className="text-slate-300">•</span>
-        <span>{order.item_count} kalem</span>
+      <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-slate-600">
+        <span className="font-semibold text-slate-900">{formatOrderTotal(order)}</span>
         {order.payment_method ? (
           <>
             <span className="text-slate-300">•</span>
@@ -41,16 +54,86 @@ function OrderHistoryRow({ order }: { order: StorefrontOrder }) {
           </>
         ) : null}
       </div>
-      {order.items.length ? (
-        <ul className="mt-2 space-y-1 text-xs text-slate-500">
-          {order.items.map((item, index) => (
-            <li key={`${order.id}-${index}`}>
-              {item.quantity}x {item.product_name}
-              {item.price !== null ? ` — ${formatCurrency(item.price, item.currency)}` : ""}
-            </li>
-          ))}
-        </ul>
+
+      {order.note ? (
+        <p className="mt-3 rounded-xl bg-slate-50 p-3 text-sm text-slate-600">
+          <span className="font-medium text-slate-700">Not: </span>
+          {order.note}
+        </p>
       ) : null}
+
+      <div className="mt-4 space-y-2">
+        {order.items.map((item, index) => (
+          <div
+            key={`${order.id}-${index}`}
+            className="flex items-center justify-between gap-3 rounded-xl border border-slate-100 bg-slate-50 px-4 py-2.5 text-sm"
+          >
+            <div>
+              <p className="font-medium text-slate-900">{item.product_name}</p>
+              <p className="text-slate-500">{item.quantity} adet</p>
+            </div>
+            {item.price !== null ? (
+              <p className="font-medium text-slate-700">
+                {formatCurrency(item.price * item.quantity, item.currency as CurrencyCode)}
+              </p>
+            ) : null}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function CustomerOrdersView({
+  customer,
+  orders,
+  loading,
+  onBack,
+  onSelectOrder,
+}: {
+  customer: StorefrontCustomerWithStats;
+  orders: StorefrontOrder[] | undefined;
+  loading: boolean;
+  onBack: () => void;
+  onSelectOrder: (order: StorefrontOrder) => void;
+}) {
+  return (
+    <div>
+      <BackButton label="Müşterilere dön" onClick={onBack} />
+
+      <div>
+        <h3 className="text-base font-semibold text-slate-900">{customer.full_name}</h3>
+        <p className="text-sm text-slate-500">{customer.phone}</p>
+        <p className="mt-0.5 text-sm text-slate-400">{customer.address}</p>
+      </div>
+
+      <div className="mt-4 space-y-2">
+        {loading ? (
+          <p className="text-sm text-slate-500">Yükleniyor...</p>
+        ) : !orders?.length ? (
+          <p className="text-sm text-slate-500">Sipariş geçmişi bulunamadı.</p>
+        ) : (
+          orders.map((order) => (
+            <button
+              key={order.id}
+              type="button"
+              onClick={() => onSelectOrder(order)}
+              className="flex w-full items-center justify-between gap-3 rounded-xl border border-slate-100 bg-slate-50 px-4 py-3 text-left text-sm hover:border-slate-200 hover:bg-white"
+            >
+              <div>
+                <p className="font-medium text-slate-900">{order.order_number}</p>
+                <p className="mt-0.5 text-slate-500">
+                  {formatDate(order.created_at)} • {order.item_count} kalem
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="font-semibold text-slate-800">{formatOrderTotal(order)}</span>
+                <ChevronRight className="size-4 text-slate-400" />
+              </div>
+            </button>
+          ))
+        )}
+      </div>
     </div>
   );
 }
@@ -62,29 +145,26 @@ export function CustomersManager({
   initialCustomers: StorefrontCustomerWithStats[];
   ordersEndpointBase?: string;
 }) {
-  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [selectedCustomer, setSelectedCustomer] = useState<StorefrontCustomerWithStats | null>(null);
+  const [selectedOrder, setSelectedOrder] = useState<StorefrontOrder | null>(null);
   const [ordersByCustomer, setOrdersByCustomer] = useState<Record<string, StorefrontOrder[]>>({});
   const [loadingId, setLoadingId] = useState<string | null>(null);
 
-  async function toggleExpand(customerId: string) {
-    if (expandedId === customerId) {
-      setExpandedId(null);
+  async function openCustomer(customer: StorefrontCustomerWithStats) {
+    setSelectedCustomer(customer);
+    setSelectedOrder(null);
+
+    if (ordersByCustomer[customer.id]) {
       return;
     }
 
-    setExpandedId(customerId);
-
-    if (ordersByCustomer[customerId]) {
-      return;
-    }
-
-    setLoadingId(customerId);
+    setLoadingId(customer.id);
     try {
-      const response = await fetch(`${ordersEndpointBase}/${customerId}/orders`);
+      const response = await fetch(`${ordersEndpointBase}/${customer.id}/orders`);
       const result = await response.json();
       setOrdersByCustomer((current) => ({
         ...current,
-        [customerId]: response.ok ? (result.orders as StorefrontOrder[]) : [],
+        [customer.id]: response.ok ? (result.orders as StorefrontOrder[]) : [],
       }));
     } finally {
       setLoadingId(null);
@@ -101,50 +181,44 @@ export function CustomersManager({
 
   return (
     <Card className="p-5">
-      <div className="space-y-3">
-        {initialCustomers.map((customer) => {
-          const isExpanded = expandedId === customer.id;
-          const totals = formatCustomerTotals(customer.totals_by_currency);
+      {selectedOrder ? (
+        <OrderDetailView order={selectedOrder} onBack={() => setSelectedOrder(null)} />
+      ) : selectedCustomer ? (
+        <CustomerOrdersView
+          customer={selectedCustomer}
+          orders={ordersByCustomer[selectedCustomer.id]}
+          loading={loadingId === selectedCustomer.id}
+          onBack={() => setSelectedCustomer(null)}
+          onSelectOrder={setSelectedOrder}
+        />
+      ) : (
+        <div className="space-y-2">
+          {initialCustomers.map((customer) => {
+            const totalsLabel = formatCustomerTotals(customer.totals_by_currency);
 
-          return (
-            <div key={customer.id} className="rounded-2xl border border-slate-200">
+            return (
               <button
+                key={customer.id}
                 type="button"
-                onClick={() => toggleExpand(customer.id)}
-                className="flex w-full flex-col gap-2 p-4 text-left md:flex-row md:items-center md:justify-between"
+                onClick={() => openCustomer(customer)}
+                className="flex w-full items-center justify-between gap-3 rounded-xl border border-slate-100 px-4 py-3 text-left hover:border-slate-200 hover:bg-slate-50"
               >
                 <div>
                   <p className="text-base font-semibold text-slate-900">{customer.full_name}</p>
                   <p className="mt-0.5 text-sm text-slate-500">{customer.phone}</p>
-                  <p className="mt-0.5 max-w-md truncate text-sm text-slate-400">{customer.address}</p>
                 </div>
-                <div className="flex flex-wrap items-center gap-2 md:flex-col md:items-end">
-                  <Badge className="bg-slate-100 text-slate-700">{customer.orders_count} sipariş</Badge>
-                  <div className="flex flex-wrap gap-1.5">{totals}</div>
-                  <span className="flex items-center gap-1 text-xs text-slate-400">
-                    Son sipariş: {formatDate(customer.last_order_at)}
-                    {isExpanded ? <ChevronUp className="size-3.5" /> : <ChevronDown className="size-3.5" />}
-                  </span>
+                <div className="flex items-center gap-2">
+                  <div className="text-right">
+                    <Badge className="bg-slate-100 text-slate-700">{customer.orders_count} sipariş</Badge>
+                    {totalsLabel ? <p className="mt-1 text-xs text-slate-500">{totalsLabel}</p> : null}
+                  </div>
+                  <ChevronRight className="size-4 text-slate-400" />
                 </div>
               </button>
-
-              {isExpanded ? (
-                <div className={cn("space-y-2 border-t border-slate-100 p-4")}>
-                  {loadingId === customer.id ? (
-                    <p className="text-sm text-slate-500">Yükleniyor...</p>
-                  ) : (ordersByCustomer[customer.id]?.length ?? 0) === 0 ? (
-                    <p className="text-sm text-slate-500">Sipariş geçmişi bulunamadı.</p>
-                  ) : (
-                    ordersByCustomer[customer.id]!.map((order) => (
-                      <OrderHistoryRow key={order.id} order={order} />
-                    ))
-                  )}
-                </div>
-              ) : null}
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
+      )}
     </Card>
   );
 }
