@@ -454,6 +454,31 @@ export function StorefrontCartDrawer({
                   ) : null}
                     </>
                   ) : null}
+                  {isMarketTenant ? (
+                    <div className="mt-3">
+                      <div className="mb-2 flex items-center justify-between gap-3">
+                        <span className={cn("text-sm font-semibold", theme.text)}>{t("cart.customerPhone")}</span>
+                        <span className={cn("rounded-full px-3 py-1 text-[11px] font-semibold", theme.surfaceMuted, theme.textMuted)}>
+                          {t("cart.required")}
+                        </span>
+                      </div>
+                      <Input
+                        type="tel"
+                        value={customerPhone}
+                        onChange={(event) => {
+                          setCustomerPhone(event.target.value);
+                          setCustomerPhoneError(null);
+                        }}
+                        placeholder={t("cart.customerPhonePlaceholder")}
+                        className={cn("rounded-[1.1rem] text-[16px]", theme.formField, theme.text)}
+                      />
+                      {customerPhoneError ? (
+                        <p className={cn("mt-2 text-xs font-medium", theme.dangerText)}>{customerPhoneError}</p>
+                      ) : null}
+                      <p className={cn("mt-2 text-xs", theme.textMuted)}>{t("cart.customerPhoneAutofillHint")}</p>
+                    </div>
+                  ) : null}
+
                   <div className="mt-3">
                     <div className="mb-2 flex items-center justify-between gap-3">
                       <span className={cn("text-sm font-semibold", theme.text)}>{t("cart.customerReferenceName")}</span>
@@ -476,50 +501,26 @@ export function StorefrontCartDrawer({
                   </div>
 
                   {isMarketTenant ? (
-                    <>
-                      <div className="mt-3">
-                        <div className="mb-2 flex items-center justify-between gap-3">
-                          <span className={cn("text-sm font-semibold", theme.text)}>{t("cart.customerAddress")}</span>
-                          <span className={cn("rounded-full px-3 py-1 text-[11px] font-semibold", theme.surfaceMuted, theme.textMuted)}>
-                            {t("cart.required")}
-                          </span>
-                        </div>
-                        <Textarea
-                          value={customerAddress}
-                          onChange={(event) => {
-                            setCustomerAddress(event.target.value);
-                            setCustomerAddressError(null);
-                          }}
-                          placeholder={t("cart.customerAddressPlaceholder")}
-                          className={cn("rounded-[1.1rem] text-[16px]", theme.formField, theme.text)}
-                        />
-                        {customerAddressError ? (
-                          <p className={cn("mt-2 text-xs font-medium", theme.dangerText)}>{customerAddressError}</p>
-                        ) : null}
+                    <div className="mt-3">
+                      <div className="mb-2 flex items-center justify-between gap-3">
+                        <span className={cn("text-sm font-semibold", theme.text)}>{t("cart.customerAddress")}</span>
+                        <span className={cn("rounded-full px-3 py-1 text-[11px] font-semibold", theme.surfaceMuted, theme.textMuted)}>
+                          {t("cart.required")}
+                        </span>
                       </div>
-
-                      <div className="mt-3">
-                        <div className="mb-2 flex items-center justify-between gap-3">
-                          <span className={cn("text-sm font-semibold", theme.text)}>{t("cart.customerPhone")}</span>
-                          <span className={cn("rounded-full px-3 py-1 text-[11px] font-semibold", theme.surfaceMuted, theme.textMuted)}>
-                            {t("cart.required")}
-                          </span>
-                        </div>
-                        <Input
-                          type="tel"
-                          value={customerPhone}
-                          onChange={(event) => {
-                            setCustomerPhone(event.target.value);
-                            setCustomerPhoneError(null);
-                          }}
-                          placeholder={t("cart.customerPhonePlaceholder")}
-                          className={cn("rounded-[1.1rem] text-[16px]", theme.formField, theme.text)}
-                        />
-                        {customerPhoneError ? (
-                          <p className={cn("mt-2 text-xs font-medium", theme.dangerText)}>{customerPhoneError}</p>
-                        ) : null}
-                      </div>
-                    </>
+                      <Textarea
+                        value={customerAddress}
+                        onChange={(event) => {
+                          setCustomerAddress(event.target.value);
+                          setCustomerAddressError(null);
+                        }}
+                        placeholder={t("cart.customerAddressPlaceholder")}
+                        className={cn("rounded-[1.1rem] text-[16px]", theme.formField, theme.text)}
+                      />
+                      {customerAddressError ? (
+                        <p className={cn("mt-2 text-xs font-medium", theme.dangerText)}>{customerAddressError}</p>
+                      ) : null}
+                    </div>
                   ) : null}
                   {!isCatalogOnly
                     ? selectedPaymentMethod === "card" && (() => {
