@@ -215,6 +215,16 @@ export const storefrontDictionary: Record<StorefrontLocale, StorefrontDictionary
     "gate.submit": "Mağaza'ya Gir",
     "gate.defaultError": "Şifre doğrulanamadı.",
 
+    "ageGate.eyebrow": "Yaş Doğrulama",
+    "ageGate.description":
+      "Bu mağazadaki içeriği görüntülemek için 18 yaşından büyük olduğunuzu onaylamanız gerekmektedir.",
+    "ageGate.confirmYes": "Evet, 18 yaşından büyüğüm",
+    "ageGate.confirmNo": "Hayır, 18 yaşından küçüğüm",
+    "ageGate.verifying": "Yönlendiriliyor...",
+    "ageGate.blockedTitle": "Üzgünüz",
+    "ageGate.blockedDescription": "Bu içeriğe yalnızca 18 yaş ve üzeri ziyaretçiler erişebilir.",
+    "ageGate.defaultError": "Bir hata oluştu, lütfen tekrar deneyin.",
+
     "notice.closedTitle": "Geçici olarak mağazamız kapalıdır",
     "notice.closedBody":
       "Kısa süre içinde tekrar hizmetinizde olacağız. Anlayışınız için teşekkür ederiz.",
@@ -443,6 +453,16 @@ export const storefrontDictionary: Record<StorefrontLocale, StorefrontDictionary
     "gate.submit": "Zum Shop",
     "gate.defaultError": "Passwort konnte nicht verifiziert werden.",
 
+    "ageGate.eyebrow": "Altersverifikation",
+    "ageGate.description":
+      "Um den Inhalt dieses Shops anzuzeigen, müssen Sie bestätigen, dass Sie über 18 Jahre alt sind.",
+    "ageGate.confirmYes": "Ja, ich bin über 18",
+    "ageGate.confirmNo": "Nein, ich bin unter 18",
+    "ageGate.verifying": "Wird weitergeleitet...",
+    "ageGate.blockedTitle": "Es tut uns leid",
+    "ageGate.blockedDescription": "Dieser Inhalt ist nur für Besucher ab 18 Jahren zugänglich.",
+    "ageGate.defaultError": "Ein Fehler ist aufgetreten, bitte versuchen Sie es erneut.",
+
     "notice.closedTitle": "Unser Shop ist vorübergehend geschlossen",
     "notice.closedBody":
       "Wir sind in Kürze wieder für Sie da. Vielen Dank für Ihr Verständnis.",
@@ -670,6 +690,16 @@ export const storefrontDictionary: Record<StorefrontLocale, StorefrontDictionary
     "gate.submit": "Enter Store",
     "gate.defaultError": "Password could not be verified.",
 
+    "ageGate.eyebrow": "Age Verification",
+    "ageGate.description":
+      "To view the content of this store, you must confirm that you are over 18 years old.",
+    "ageGate.confirmYes": "Yes, I am over 18",
+    "ageGate.confirmNo": "No, I am under 18",
+    "ageGate.verifying": "Redirecting...",
+    "ageGate.blockedTitle": "We're sorry",
+    "ageGate.blockedDescription": "This content is only accessible to visitors aged 18 and over.",
+    "ageGate.defaultError": "Something went wrong, please try again.",
+
     "notice.closedTitle": "Our store is temporarily closed",
     "notice.closedBody": "We'll be back shortly. Thank you for your understanding.",
     "notice.quotaTitle": "Currently unavailable due to high demand",
@@ -895,6 +925,16 @@ export const storefrontDictionary: Record<StorefrontLocale, StorefrontDictionary
     "gate.verifying": "Проверка...",
     "gate.submit": "Войти в магазин",
     "gate.defaultError": "Не удалось подтвердить пароль.",
+
+    "ageGate.eyebrow": "Проверка возраста",
+    "ageGate.description":
+      "Чтобы просмотреть содержимое этого магазина, подтвердите, что вам исполнилось 18 лет.",
+    "ageGate.confirmYes": "Да, мне больше 18",
+    "ageGate.confirmNo": "Нет, мне меньше 18",
+    "ageGate.verifying": "Перенаправление...",
+    "ageGate.blockedTitle": "Извините",
+    "ageGate.blockedDescription": "Этот контент доступен только посетителям старше 18 лет.",
+    "ageGate.defaultError": "Произошла ошибка, попробуйте еще раз.",
 
     "notice.closedTitle": "Наш магазин временно закрыт",
     "notice.closedBody": "Скоро мы снова будем к вашим услугам. Благодарим за понимание.",

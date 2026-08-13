@@ -964,6 +964,51 @@ export function StorefrontClient({
   const analyticsSubdomain = subdomain ?? tenant.subdomain;
   const { t } = useStorefrontLocale();
 
+  // Daha önce sipariş vermiş bir müşteri telefon numarasını tekrar
+  // yazdığında isim/adresi otomatik doldurur (bkz. /api/storefront/customer-lookup).
+  // Sadece market tenant'larda ve sadece boş alanlar doldurulur — müşteri
+  // manuel bir şey yazdıysa üzerine yazılmaz.
+  const debouncedCustomerPhoneForLookup = useDebouncedValue(customerPhone, 500);
+  const lastLookedUpPhoneRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (!isMarketTenant) {
+      return;
+    }
+
+    const trimmedPhone = debouncedCustomerPhoneForLookup.trim();
+    if (trimmedPhone.replace(/\D/g, "").length < 10) {
+      return;
+    }
+
+    if (lastLookedUpPhoneRef.current === trimmedPhone) {
+      return;
+    }
+    lastLookedUpPhoneRef.current = trimmedPhone;
+
+    const controller = new AbortController();
+
+    fetch(
+      `/api/storefront/customer-lookup?subdomain=${encodeURIComponent(analyticsSubdomain)}&phone=${encodeURIComponent(trimmedPhone)}`,
+      { signal: controller.signal },
+    )
+      .then((response) => (response.ok ? response.json() : null))
+      .then((data: { customer?: { full_name: string; address: string } | null } | null) => {
+        const customer = data?.customer;
+        if (!customer) {
+          return;
+        }
+
+        setCustomerReferenceName((current) => (current.trim() ? current : customer.full_name));
+        setCustomerAddress((current) => (current.trim() ? current : customer.address));
+      })
+      .catch(() => {
+        // Autofill best-effort; sessizce yut.
+      });
+
+    return () => controller.abort();
+  }, [debouncedCustomerPhoneForLookup, isMarketTenant, analyticsSubdomain]);
+
   const theme = useResolvedStorefrontTheme(
     storefrontSettings.theme_key,
     {
@@ -1457,6 +1502,8 @@ export function StorefrontClient({
           items: cart,
           note,
           customer_reference_name: customerReferenceName.trim(),
+          customer_phone: isMarketTenant ? customerPhone.trim() : "",
+          customer_address: isMarketTenant ? customerAddress.trim() : "",
           paymentMethod: isCatalogOnly ? null : selectedPaymentMethod,
           selectedInstallmentCount: isCatalogOnly ? null : selectedInstallmentCount,
           cashDiscountTiers: storefrontSettings.cash_discount_tiers ?? [],

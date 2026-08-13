@@ -59,6 +59,7 @@ export const demoTenants: Tenant[] = [
     business_type: "general",
     is_password_protected: true,
     public_price_list_id: null,
+    age_verification_required: false,
     created_at: new Date("2026-01-01").toISOString(),
   },
   {
@@ -81,6 +82,7 @@ export const demoTenants: Tenant[] = [
     business_type: "general",
     is_password_protected: true,
     public_price_list_id: null,
+    age_verification_required: false,
     created_at: new Date("2026-01-05").toISOString(),
   },
 ];

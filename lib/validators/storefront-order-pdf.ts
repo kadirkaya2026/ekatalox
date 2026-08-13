@@ -48,6 +48,8 @@ export const storefrontOrderPdfSchema = z
     catalog_mode: z.boolean().optional().default(false),
     items: z.array(storefrontOrderPdfCartItemSchema).min(1, "Sepet boş olamaz."),
     customer_reference_name: z.string().trim().max(200).optional().default(""),
+    customer_phone: z.string().trim().max(40).optional().default(""),
+    customer_address: z.string().trim().max(500).optional().default(""),
     note: z.string().max(500).nullable().optional(),
     paymentMethod: z.enum(["cash", "card"]).nullable().optional(),
     selectedInstallmentCount: z.number().int().positive().nullable().optional(),

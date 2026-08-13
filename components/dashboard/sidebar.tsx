@@ -7,6 +7,7 @@ import {
   BarChart3,
   Building2,
   Clock,
+  Contact,
   CreditCard,
   FolderTree,
   Globe,
@@ -20,6 +21,7 @@ import {
   PlusCircle,
   ScrollText,
   Settings,
+  ShieldCheck,
   Star,
   Store,
   UploadCloud,
@@ -47,6 +49,7 @@ interface SidebarLink {
   label: string;
   icon: React.ComponentType<{ className?: string }>;
   requiredFeature?: PlanFeature;
+  requiredBusinessType?: TenantBusinessType;
   children?: SubLink[];
 }
 
@@ -76,6 +79,12 @@ const tenantLinks: SidebarLink[] = [
   { href: "/categories", label: "Kategoriler", icon: FolderTree },
   { href: "/access-codes", label: "Şifreler", icon: KeyRound },
   { href: "/reports", label: "Raporlar", icon: BarChart3 },
+  {
+    href: "/customers",
+    label: "Müşteriler",
+    icon: Contact,
+    requiredBusinessType: "market",
+  },
   {
     href: "/settings",
     label: "Ayarlar",
@@ -132,6 +141,13 @@ const tenantLinks: SidebarLink[] = [
         group: "İçerik & İletişim",
       },
       {
+        href: "/settings/age-verification",
+        label: "Yaş Doğrulama (18+)",
+        icon: ShieldCheck,
+        group: "İçerik & İletişim",
+        requiredBusinessType: "market",
+      },
+      {
         href: "/settings/footer",
         label: "Footer (Sayfa Altı)",
         icon: PanelBottom,
@@ -159,7 +175,11 @@ function filterLinksForTenant(
   businessType: TenantBusinessType,
 ): SidebarLink[] {
   return links
-    .filter((link) => !link.requiredFeature || hasPlanFeature(plan, link.requiredFeature))
+    .filter(
+      (link) =>
+        (!link.requiredFeature || hasPlanFeature(plan, link.requiredFeature)) &&
+        (!link.requiredBusinessType || link.requiredBusinessType === businessType),
+    )
     .map((link) => {
       if (!link.children) {
         return link;

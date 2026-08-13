@@ -3,7 +3,10 @@ import { NextResponse } from "next/server";
 import { getStorefrontTenant, getTenantByCustomDomain } from "@/lib/data";
 import { appEnv } from "@/lib/env";
 import { toPublicStorefrontPath } from "@/lib/storefront/paths";
-import { getStorefrontTierCookieName } from "@/lib/storefront/tier-cookie";
+import {
+  getStorefrontAgeCookieName,
+  getStorefrontTierCookieName,
+} from "@/lib/storefront/tier-cookie";
 import type { Tenant } from "@/lib/types";
 import {
   getInternalPathFromResolution,
@@ -239,6 +242,25 @@ export async function proxy(request: NextRequest) {
       const quotaResponse = NextResponse.rewrite(quotaUrl);
       quotaResponse.headers.set("X-Robots-Tag", "noindex, nofollow");
       return quotaResponse;
+    }
+
+    // Market tipi tenant 18+ doğrulamayı açtıysa, fiyat/şifre gate'inden
+    // ÖNCE bu kontrolden geçilmesi gerekir; ayrı bir çerezle takip edilir ki
+    // fiyat listesi seçimiyle karışmasın (bkz. tier-cookie.ts).
+    if (tenant?.business_type === "market" && tenant.age_verification_required) {
+      const hasAgeCookie = request.cookies.has(
+        getStorefrontAgeCookieName(hostResolution.subdomain),
+      );
+
+      if (!hasAgeCookie) {
+        const ageGateUrl = request.nextUrl.clone();
+        ageGateUrl.pathname = `/store/${hostResolution.subdomain}/yas-dogrulama`;
+        ageGateUrl.search = "";
+
+        const ageGateResponse = NextResponse.rewrite(ageGateUrl);
+        ageGateResponse.headers.set("X-Robots-Tag", "noindex, nofollow");
+        return ageGateResponse;
+      }
     }
 
     const hasTierCookie = request.cookies.has(

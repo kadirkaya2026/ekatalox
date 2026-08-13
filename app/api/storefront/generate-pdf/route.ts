@@ -14,6 +14,7 @@ import {
   uploadOrderReceiptPdf,
 } from "@/lib/storage/order-receipts";
 import { recordStorefrontOrderStat } from "@/lib/analytics/record-stats";
+import { recordStorefrontOrder } from "@/lib/storefront/orders";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { getPublicOrigin } from "@/lib/tenancy/request-host";
 import { storefrontOrderPdfSchema } from "@/lib/validators/storefront-order-pdf";
@@ -158,6 +159,19 @@ export async function POST(request: Request) {
       });
 
       await recordStorefrontOrderStat(supabase, tenant.id, { catalogMode: true });
+      await recordStorefrontOrder({
+        supabase,
+        tenantId: tenant.id,
+        customerName: parsed.data.customer_reference_name,
+        customerPhone: parsed.data.customer_phone,
+        customerAddress: parsed.data.customer_address,
+        orderNumber,
+        currency: "CATALOG",
+        totalAmount: 0,
+        paymentMethod: null,
+        items,
+        note: parsed.data.note,
+      });
 
       const pdfUrl = buildSecureOrderReceiptUrl(securePdfId, getPublicOrigin(request));
       return NextResponse.json({ pdfUrl, orderNumber, securePdfId, requestId });
@@ -284,6 +298,19 @@ export async function POST(request: Request) {
       catalogMode: false,
       currency: paymentSummary.currency,
       totalAmount: paymentSummary.finalTotal,
+    });
+    await recordStorefrontOrder({
+      supabase,
+      tenantId: tenant.id,
+      customerName: parsed.data.customer_reference_name,
+      customerPhone: parsed.data.customer_phone,
+      customerAddress: parsed.data.customer_address,
+      orderNumber,
+      currency: paymentSummary.currency,
+      totalAmount: paymentSummary.finalTotal,
+      paymentMethod,
+      items,
+      note: parsed.data.note,
     });
 
     const pdfUrl = buildSecureOrderReceiptUrl(securePdfId, getPublicOrigin(request));

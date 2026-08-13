@@ -2,9 +2,12 @@ import { cookies } from "next/headers";
 import type { NextResponse } from "next/server";
 import type { Tenant } from "@/lib/types";
 
-import { getStorefrontTierCookieName } from "@/lib/storefront/tier-cookie";
+import {
+  getStorefrontAgeCookieName,
+  getStorefrontTierCookieName,
+} from "@/lib/storefront/tier-cookie";
 
-export { getStorefrontTierCookieName };
+export { getStorefrontAgeCookieName, getStorefrontTierCookieName };
 
 export interface StorefrontPriceListCookieValue {
   tenantId: string;
@@ -111,6 +114,39 @@ export function clearStorefrontPriceListCookie(params: {
 }) {
   params.response.cookies.set(getStorefrontTierCookieName(params.subdomain), "", {
     ...getStorefrontTierCookieOptions(params.secure),
+    maxAge: 0,
+  });
+}
+
+function getStorefrontAgeCookieOptions(secure: boolean) {
+  return {
+    httpOnly: true,
+    sameSite: "lax" as const,
+    secure,
+    path: "/",
+    maxAge: 60 * 60 * 24 * 30,
+  };
+}
+
+export function setStorefrontAgeVerifiedCookie(params: {
+  response: NextResponse;
+  subdomain: string;
+  secure: boolean;
+}) {
+  params.response.cookies.set(
+    getStorefrontAgeCookieName(params.subdomain),
+    "1",
+    getStorefrontAgeCookieOptions(params.secure),
+  );
+}
+
+export function clearStorefrontAgeVerifiedCookie(params: {
+  response: NextResponse;
+  subdomain: string;
+  secure: boolean;
+}) {
+  params.response.cookies.set(getStorefrontAgeCookieName(params.subdomain), "", {
+    ...getStorefrontAgeCookieOptions(params.secure),
     maxAge: 0,
   });
 }

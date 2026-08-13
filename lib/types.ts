@@ -92,10 +92,53 @@ export interface Tenant {
   business_type: TenantBusinessType;
   is_password_protected: boolean;
   public_price_list_id: string | null;
+  age_verification_required: boolean;
   created_at: string;
 }
 
 export type TenantBusinessType = "general" | "market";
+
+export interface StorefrontCustomer {
+  id: string;
+  tenant_id: string;
+  phone: string;
+  full_name: string;
+  address: string;
+  first_order_at: string;
+  last_order_at: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface StorefrontOrderItemSnapshot {
+  product_name: string;
+  sku_code?: string | null;
+  quantity: number;
+  price: number | null;
+  currency: string;
+}
+
+export interface StorefrontOrder {
+  id: string;
+  tenant_id: string;
+  customer_id: string | null;
+  order_number: string;
+  customer_name: string;
+  customer_phone: string;
+  customer_address: string;
+  currency: string;
+  total_amount: number;
+  payment_method: "cash" | "card" | null;
+  item_count: number;
+  items: StorefrontOrderItemSnapshot[];
+  note: string | null;
+  created_at: string;
+}
+
+export interface StorefrontCustomerWithStats extends StorefrontCustomer {
+  orders_count: number;
+  totals_by_currency: Record<string, number>;
+}
 
 export interface MarketCatalogProduct {
   id: string;
