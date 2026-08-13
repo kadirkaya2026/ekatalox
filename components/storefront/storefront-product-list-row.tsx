@@ -1,6 +1,7 @@
 "use client";
 
 import { memo } from "react";
+import { motion } from "framer-motion";
 import { Minus, Plus, Store, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import type { StorefrontProduct } from "@/lib/types";
@@ -47,8 +48,9 @@ function StorefrontInlineCartAction({
           theme.surface,
         )}
       >
-        <button
+        <motion.button
           type="button"
+          whileTap={{ scale: 0.88 }}
           onClick={(event) => {
             event.stopPropagation();
             if (!product.has_variants) {
@@ -65,12 +67,13 @@ function StorefrontInlineCartAction({
           ) : (
             <Minus className="size-4" />
           )}
-        </button>
+        </motion.button>
         <span className={cn("min-w-7 text-center text-sm font-bold", theme.text)}>
           {product.has_variants ? `${cartQuantity}M` : cartQuantity}
         </span>
-        <button
+        <motion.button
           type="button"
+          whileTap={{ scale: 0.88 }}
           onClick={(event) => {
             event.stopPropagation();
             if (!product.has_variants) {
@@ -86,14 +89,15 @@ function StorefrontInlineCartAction({
           aria-label={t("listRow.increaseAria")}
         >
           <Plus className="size-4" />
-        </button>
+        </motion.button>
       </div>
     );
   }
 
   return (
-    <button
+    <motion.button
       type="button"
+      whileTap={{ scale: 0.88 }}
       onClick={(event) => {
         event.stopPropagation();
         onOpenAddToCart(product.id);
@@ -105,7 +109,7 @@ function StorefrontInlineCartAction({
       aria-label={t("listRow.addAria")}
     >
       <Plus className="size-4" strokeWidth={2.8} />
-    </button>
+    </motion.button>
   );
 }
 

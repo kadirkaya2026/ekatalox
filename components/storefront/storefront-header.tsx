@@ -1,5 +1,6 @@
 "use client";
 
+import { AnimatePresence, motion } from "framer-motion";
 import { ChevronDown, ChevronRight, Search, ShoppingCart, Store } from "lucide-react";
 import type { CategoryNode } from "@/lib/categories/tree";
 import { getDescendantCategoryIds } from "@/lib/categories/tree";
@@ -101,7 +102,20 @@ function HeaderActions({
         aria-label={t("header.openCartAria")}
       >
         <ShoppingCart className="size-5" />
-        {props.cartLength ? <span className={theme.cartBadge}>{props.cartItemCount}</span> : null}
+        <AnimatePresence>
+          {props.cartLength ? (
+            <motion.span
+              key={props.cartItemCount}
+              initial={{ scale: 0.5, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.5, opacity: 0 }}
+              transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
+              className={theme.cartBadge}
+            >
+              {props.cartItemCount}
+            </motion.span>
+          ) : null}
+        </AnimatePresence>
       </button>
     </div>
   );
