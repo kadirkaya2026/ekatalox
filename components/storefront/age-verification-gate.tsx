@@ -71,7 +71,7 @@ function AgeVerificationForm({
           </Button>
           <Button
             type="button"
-            variant="outline"
+            variant="secondary"
             className="w-full"
             disabled={pending}
             onClick={() => setBlocked(true)}

@@ -1,0 +1,699 @@
+"use client";
+
+import {
+  useCallback,
+  useMemo,
+  useRef,
+  useState,
+  type ChangeEvent,
+  type DragEvent,
+} from "react";
+import { useRouter } from "next/navigation";
+import { AlertTriangle, CheckCircle2, Loader2, Search, Upload } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Select } from "@/components/ui/select";
+import {
+  guessFieldForHeader,
+  mapRawRowsToSourceRows,
+  parseStockImportSpreadsheet,
+  type ColumnMapping,
+  type StockImportFieldKey,
+  type StockImportRawTable,
+  type StockImportSourceRow,
+} from "@/lib/csv/parse-stock-import";
+import type { StockImportMatchResult } from "@/lib/products/stock-import-matching";
+import { cn } from "@/lib/utils";
+import type { PriceList } from "@/lib/types";
+
+type WizardStep = "upload" | "mapping" | "review";
+type RowDecisionAction = "approved" | "reassigned" | "skipped" | "pending";
+
+interface RowDecision {
+  rowNumber: number;
+  action: RowDecisionAction;
+  productId: string | null;
+  price: number | null;
+}
+
+interface ProductPoolEntry {
+  id: string;
+  sku_code: string;
+  product_name: string;
+}
+
+interface MatchResponse {
+  productPool: ProductPoolEntry[];
+  results: StockImportMatchResult[];
+  summary: {
+    totalRows: number;
+    matchedExact: number;
+    matchedFuzzyHigh: number;
+    needsReview: number;
+    noMatch: number;
+  };
+}
+
+const FIELD_OPTIONS: Array<{ value: StockImportFieldKey; label: string }> = [
+  { value: "barcode", label: "Barkod / Stok Kodu" },
+  { value: "product_name", label: "Ürün Adı" },
+  { value: "price", label: "Fiyat" },
+  { value: "ignore", label: "Yoksay" },
+];
+
+function Dropzone({ onFile, disabled }: { onFile: (file: File) => void; disabled?: boolean }) {
+  const [isDragging, setIsDragging] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const handleDrop = useCallback(
+    (event: DragEvent<HTMLDivElement>) => {
+      event.preventDefault();
+      setIsDragging(false);
+      const file = event.dataTransfer.files?.[0];
+      if (file) onFile(file);
+    },
+    [onFile],
+  );
+
+  const handleChange = useCallback(
+    (event: ChangeEvent<HTMLInputElement>) => {
+      const file = event.target.files?.[0];
+      if (file) onFile(file);
+      if (inputRef.current) inputRef.current.value = "";
+    },
+    [onFile],
+  );
+
+  return (
+    <div
+      role="button"
+      tabIndex={0}
+      aria-label="Stok listesi dosyası yükle"
+      onDragOver={(event) => {
+        event.preventDefault();
+        setIsDragging(true);
+      }}
+      onDragLeave={() => setIsDragging(false)}
+      onDrop={handleDrop}
+      onClick={() => !disabled && inputRef.current?.click()}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          if (!disabled) inputRef.current?.click();
+        }
+      }}
+      className={cn(
+        "flex cursor-pointer flex-col items-center gap-3 rounded-xl border-2 border-dashed px-6 py-10 text-center transition",
+        isDragging
+          ? "border-emerald-400 bg-emerald-50"
+          : "border-slate-200 bg-slate-50 hover:border-emerald-300 hover:bg-emerald-50/50",
+        disabled && "cursor-not-allowed opacity-60",
+      )}
+    >
+      <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-100 text-emerald-600">
+        <Upload className="size-5" />
+      </div>
+      <div>
+        <p className="text-sm font-semibold text-slate-900">Stok listesi dosyasını sürükleyin veya seçin</p>
+        <p className="mt-1 text-xs text-slate-500">.xlsx, .xls veya .csv</p>
+      </div>
+      <input
+        ref={inputRef}
+        type="file"
+        accept=".csv,.xlsx,.xls"
+        className="hidden"
+        onChange={handleChange}
+        disabled={disabled}
+      />
+    </div>
+  );
+}
+
+function initialDecisionsFromResults(
+  results: StockImportMatchResult[],
+  sourceRowsByRowNumber: Map<number, StockImportSourceRow>,
+): Map<number, RowDecision> {
+  const decisions = new Map<number, RowDecision>();
+
+  for (const result of results) {
+    const sourcePrice = sourceRowsByRowNumber.get(result.rowNumber)?.price ?? null;
+    const hasPriceMissingWarning = result.warnings.includes("price_missing");
+    const isAutoMatch = result.status === "matched_exact" || result.status === "matched_fuzzy_high";
+
+    decisions.set(result.rowNumber, {
+      rowNumber: result.rowNumber,
+      action: isAutoMatch && !hasPriceMissingWarning ? "approved" : "pending",
+      productId: isAutoMatch ? result.matchedProductId : null,
+      price: sourcePrice,
+    });
+  }
+
+  return decisions;
+}
+
+function ProductPicker({
+  productPool,
+  onSelect,
+}: {
+  productPool: ProductPoolEntry[];
+  onSelect: (product: ProductPoolEntry) => void;
+}) {
+  const [query, setQuery] = useState("");
+
+  const matches = useMemo(() => {
+    const normalized = query.trim().toLocaleLowerCase("tr-TR");
+    if (!normalized) return [];
+
+    return productPool
+      .filter(
+        (product) =>
+          product.product_name.toLocaleLowerCase("tr-TR").includes(normalized) ||
+          product.sku_code.toLocaleLowerCase("tr-TR").includes(normalized),
+      )
+      .slice(0, 8);
+  }, [productPool, query]);
+
+  return (
+    <div className="mt-2">
+      <div className="relative">
+        <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
+        <Input
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          placeholder="Ürün adı veya barkod ile ara..."
+          className="pl-9"
+        />
+      </div>
+      {matches.length ? (
+        <div className="mt-2 max-h-48 space-y-1 overflow-y-auto rounded-lg border border-slate-100 p-1">
+          {matches.map((product) => (
+            <button
+              key={product.id}
+              type="button"
+              onClick={() => onSelect(product)}
+              className="flex w-full items-center justify-between gap-2 rounded-md px-2.5 py-1.5 text-left text-sm hover:bg-slate-50"
+            >
+              <span className="truncate font-medium text-slate-800">{product.product_name}</span>
+              <span className="shrink-0 text-xs text-slate-400">{product.sku_code}</span>
+            </button>
+          ))}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function ReviewRow({
+  result,
+  sourceRow,
+  decision,
+  productById,
+  productPool,
+  onDecisionChange,
+}: {
+  result: StockImportMatchResult;
+  sourceRow: StockImportSourceRow;
+  decision: RowDecision;
+  productById: Map<string, ProductPoolEntry>;
+  productPool: ProductPoolEntry[];
+  onDecisionChange: (next: RowDecision) => void;
+}) {
+  const [showPicker, setShowPicker] = useState(false);
+  const matchedProduct = decision.productId ? productById.get(decision.productId) : null;
+  const isPending = decision.action === "pending" || decision.action === "skipped";
+
+  return (
+    <div
+      className={cn(
+        "rounded-2xl border p-4",
+        decision.action === "skipped"
+          ? "border-slate-100 bg-slate-50/60 opacity-70"
+          : isPending
+            ? "border-amber-200 bg-amber-50/40"
+            : "border-emerald-100 bg-emerald-50/30",
+      )}
+    >
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <p className="text-sm font-semibold text-slate-900">
+            {sourceRow.productName ?? "(ürün adı yok)"}
+          </p>
+          <p className="mt-0.5 text-xs text-slate-500">
+            Satır {sourceRow.rowNumber} • Barkod: {sourceRow.barcode ?? "yok"}
+          </p>
+          {result.warnings.includes("price_missing") ? (
+            <p className="mt-1 flex items-center gap-1 text-xs font-medium text-amber-700">
+              <AlertTriangle className="size-3.5" /> Dosyada fiyat girilmemiş
+            </p>
+          ) : null}
+          {result.warnings.includes("duplicate_barcode_in_file") ? (
+            <p className="mt-1 flex items-center gap-1 text-xs font-medium text-amber-700">
+              <AlertTriangle className="size-3.5" /> Bu barkod dosyada birden fazla kez geçiyor
+            </p>
+          ) : null}
+        </div>
+        <Badge
+          className={
+            decision.action === "approved" || decision.action === "reassigned"
+              ? "bg-emerald-100 text-emerald-700"
+              : decision.action === "skipped"
+                ? "bg-slate-200 text-slate-600"
+                : "bg-amber-100 text-amber-800"
+          }
+        >
+          {decision.action === "approved" && "Onaylı"}
+          {decision.action === "reassigned" && "Eşleştirildi"}
+          {decision.action === "skipped" && "Atlandı"}
+          {decision.action === "pending" && "Bekliyor"}
+        </Badge>
+      </div>
+
+      {matchedProduct ? (
+        <div className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-xl bg-white/70 px-3 py-2">
+          <div>
+            <p className="text-sm font-medium text-slate-800">{matchedProduct.product_name}</p>
+            <p className="text-xs text-slate-500">{matchedProduct.sku_code}</p>
+          </div>
+          <Input
+            type="number"
+            min="0"
+            step="0.01"
+            value={decision.price ?? ""}
+            onChange={(event) =>
+              onDecisionChange({
+                ...decision,
+                price: event.target.value === "" ? null : Number(event.target.value),
+              })
+            }
+            placeholder="Fiyat"
+            className="w-28"
+          />
+        </div>
+      ) : null}
+
+      {result.candidates.length && decision.action !== "approved" ? (
+        <div className="mt-3 flex flex-wrap gap-2">
+          {result.candidates
+            .filter((candidate) => candidate.productId !== decision.productId)
+            .map((candidate) => (
+              <button
+                key={candidate.productId}
+                type="button"
+                onClick={() =>
+                  onDecisionChange({
+                    ...decision,
+                    action: "reassigned",
+                    productId: candidate.productId,
+                  })
+                }
+                className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:border-emerald-300 hover:bg-emerald-50"
+              >
+                {candidate.product_name} ({candidate.sku_code}) • %{Math.round(candidate.score * 100)}
+              </button>
+            ))}
+        </div>
+      ) : null}
+
+      <div className="mt-3 flex flex-wrap items-center gap-2">
+        {decision.action !== "approved" && decision.productId ? (
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={() => onDecisionChange({ ...decision, action: "reassigned" })}
+          >
+            Onayla
+          </Button>
+        ) : null}
+        <Button type="button" variant="secondary" onClick={() => setShowPicker((current) => !current)}>
+          Başka ürün seç
+        </Button>
+        {decision.action !== "skipped" ? (
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={() => onDecisionChange({ ...decision, action: "skipped", productId: null })}
+          >
+            Atla
+          </Button>
+        ) : (
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={() => onDecisionChange({ ...decision, action: "pending" })}
+          >
+            Atlamayı geri al
+          </Button>
+        )}
+      </div>
+
+      {showPicker ? (
+        <ProductPicker
+          productPool={productPool}
+          onSelect={(product) => {
+            onDecisionChange({ ...decision, action: "reassigned", productId: product.id });
+            setShowPicker(false);
+          }}
+        />
+      ) : null}
+    </div>
+  );
+}
+
+export function StockImportPanel({ priceLists }: { priceLists: PriceList[] }) {
+  const router = useRouter();
+  const [step, setStep] = useState<WizardStep>("upload");
+  const [error, setError] = useState<string | null>(null);
+  const [isParsing, setIsParsing] = useState(false);
+  const [isMatching, setIsMatching] = useState(false);
+  const [isApplying, setIsApplying] = useState(false);
+  const [applyResult, setApplyResult] = useState<{ updatedCount: number; skippedInvalidCount: number } | null>(
+    null,
+  );
+
+  const [rawTable, setRawTable] = useState<StockImportRawTable | null>(null);
+  const [mapping, setMapping] = useState<ColumnMapping[]>([]);
+  const [selectedPriceListId, setSelectedPriceListId] = useState(priceLists[0]?.id ?? "");
+
+  const [matchResponse, setMatchResponse] = useState<MatchResponse | null>(null);
+  const [sourceRowsByRowNumber, setSourceRowsByRowNumber] = useState<Map<number, StockImportSourceRow>>(
+    new Map(),
+  );
+  const [decisions, setDecisions] = useState<Map<number, RowDecision>>(new Map());
+
+  async function handleFile(file: File) {
+    setError(null);
+    setIsParsing(true);
+    try {
+      const table = await parseStockImportSpreadsheet(file);
+      if (!table.headers.length) {
+        setError("Dosya boş görünüyor.");
+        return;
+      }
+
+      setRawTable(table);
+      setMapping(
+        table.headers.map((header) => ({ sourceHeader: header, field: guessFieldForHeader(header) })),
+      );
+      setStep("mapping");
+    } catch {
+      setError("Dosya okunamadı. Lütfen .xlsx, .xls veya .csv formatında bir dosya yükleyin.");
+    } finally {
+      setIsParsing(false);
+    }
+  }
+
+  const mappedFieldCounts = useMemo(() => {
+    const counts: Record<StockImportFieldKey, number> = { barcode: 0, product_name: 0, price: 0, ignore: 0 };
+    for (const entry of mapping) counts[entry.field] += 1;
+    return counts;
+  }, [mapping]);
+
+  const canRunMatch =
+    (mappedFieldCounts.barcode > 0 || mappedFieldCounts.product_name > 0) &&
+    mappedFieldCounts.price === 1 &&
+    Boolean(selectedPriceListId);
+
+  async function runMatch() {
+    if (!rawTable) return;
+    setError(null);
+    setIsMatching(true);
+
+    try {
+      const sourceRows = mapRawRowsToSourceRows(rawTable, mapping);
+      const response = await fetch("/api/tenant/products/stock-import/match", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ rows: sourceRows }),
+      });
+      const result = await response.json();
+
+      if (!response.ok) {
+        setError(result.error ?? "Eşleştirme başarısız oldu.");
+        return;
+      }
+
+      const byRowNumber = new Map(sourceRows.map((row) => [row.rowNumber, row]));
+      setSourceRowsByRowNumber(byRowNumber);
+      setMatchResponse(result as MatchResponse);
+      setDecisions(initialDecisionsFromResults((result as MatchResponse).results, byRowNumber));
+      setStep("review");
+    } catch {
+      setError("Eşleştirme sırasında bir hata oluştu.");
+    } finally {
+      setIsMatching(false);
+    }
+  }
+
+  const productById = useMemo(() => {
+    return new Map((matchResponse?.productPool ?? []).map((product) => [product.id, product]));
+  }, [matchResponse]);
+
+  const reviewRows = useMemo(() => {
+    if (!matchResponse) return [];
+    return [...matchResponse.results].sort((a, b) => {
+      const decisionA = decisions.get(a.rowNumber);
+      const decisionB = decisions.get(b.rowNumber);
+      const priorityA = decisionA?.action === "approved" ? 1 : 0;
+      const priorityB = decisionB?.action === "approved" ? 1 : 0;
+      return priorityA - priorityB;
+    });
+  }, [matchResponse, decisions]);
+
+  const pendingCount = [...decisions.values()].filter((d) => d.action === "pending").length;
+  const applyCount = [...decisions.values()].filter(
+    (d) => (d.action === "approved" || d.action === "reassigned") && d.productId && d.price !== null,
+  ).length;
+
+  async function applyChanges() {
+    setError(null);
+    setIsApplying(true);
+
+    try {
+      const updates = [...decisions.values()]
+        .filter(
+          (decision) =>
+            (decision.action === "approved" || decision.action === "reassigned") &&
+            decision.productId &&
+            decision.price !== null,
+        )
+        .map((decision) => ({
+          productId: decision.productId!,
+          priceListId: selectedPriceListId,
+          price: decision.price!,
+        }));
+
+      if (!updates.length) {
+        setError("Uygulanacak satır yok.");
+        return;
+      }
+
+      const response = await fetch("/api/tenant/products/stock-import/apply", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ updates }),
+      });
+      const result = await response.json();
+
+      if (!response.ok) {
+        setError(result.error ?? "Uygulama başarısız oldu.");
+        return;
+      }
+
+      setApplyResult({ updatedCount: result.updatedCount, skippedInvalidCount: result.skippedInvalidCount });
+      router.refresh();
+    } catch {
+      setError("Uygulama sırasında bir hata oluştu.");
+    } finally {
+      setIsApplying(false);
+    }
+  }
+
+  function resetAll() {
+    setStep("upload");
+    setRawTable(null);
+    setMapping([]);
+    setMatchResponse(null);
+    setSourceRowsByRowNumber(new Map());
+    setDecisions(new Map());
+    setApplyResult(null);
+    setError(null);
+  }
+
+  if (applyResult) {
+    return (
+      <Card className="p-6">
+        <div className="flex items-center gap-2 text-emerald-700">
+          <CheckCircle2 className="size-5" />
+          <p className="text-base font-semibold">Stok listesi uygulandı</p>
+        </div>
+        <p className="mt-2 text-sm text-slate-600">
+          {applyResult.updatedCount} ürün stoğa açıldı ve fiyatı güncellendi.
+          {applyResult.skippedInvalidCount ? ` ${applyResult.skippedInvalidCount} satır atlandı.` : ""}
+        </p>
+        <div className="mt-4 flex gap-2">
+          <Button onClick={resetAll}>Yeni liste yükle</Button>
+        </div>
+      </Card>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      {error ? (
+        <Card className="border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">{error}</Card>
+      ) : null}
+
+      {step === "upload" ? (
+        <Card className="p-6">
+          <Dropzone onFile={handleFile} disabled={isParsing} />
+          {isParsing ? (
+            <p className="mt-3 flex items-center gap-2 text-sm text-slate-500">
+              <Loader2 className="size-4 animate-spin" /> Dosya okunuyor...
+            </p>
+          ) : null}
+        </Card>
+      ) : null}
+
+      {step === "mapping" && rawTable ? (
+        <Card className="p-6">
+          <h2 className="text-base font-semibold text-slate-900">Sütunları eşleştirin</h2>
+          <p className="mt-1 text-sm text-slate-500">
+            Dosyanızdaki her sütunun ne anlama geldiğini seçin. Sistem tahmin ediyor, gerekirse değiştirin.
+          </p>
+
+          <div className="mt-4 overflow-x-auto">
+            <table className="w-full min-w-[600px] text-sm">
+              <thead>
+                <tr className="text-left text-xs font-semibold uppercase text-slate-400">
+                  <th className="pb-2 pr-4">Dosya sütunu</th>
+                  <th className="pb-2 pr-4">Bu sütun ne?</th>
+                  <th className="pb-2">Örnek</th>
+                </tr>
+              </thead>
+              <tbody>
+                {rawTable.headers.map((header, index) => (
+                  <tr key={`${header}-${index}`} className="border-t border-slate-100">
+                    <td className="py-2 pr-4 font-medium text-slate-800">{header || `Sütun ${index + 1}`}</td>
+                    <td className="py-2 pr-4">
+                      <Select
+                        value={mapping[index]?.field ?? "ignore"}
+                        onChange={(event) => {
+                          const nextField = event.target.value as StockImportFieldKey;
+                          setMapping((current) =>
+                            current.map((entry, entryIndex) =>
+                              entryIndex === index ? { ...entry, field: nextField } : entry,
+                            ),
+                          );
+                        }}
+                      >
+                        {FIELD_OPTIONS.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </Select>
+                    </td>
+                    <td className="py-2 text-slate-500">{rawTable.rows[0]?.[index] ?? ""}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="mt-5 max-w-xs">
+            <label className="mb-2 block text-sm font-medium text-slate-700">
+              Fiyatlar hangi fiyat listesine yazılsın?
+            </label>
+            <Select value={selectedPriceListId} onChange={(event) => setSelectedPriceListId(event.target.value)}>
+              {priceLists.map((list) => (
+                <option key={list.id} value={list.id}>
+                  {list.name}
+                </option>
+              ))}
+            </Select>
+          </div>
+
+          <div className="mt-5 flex flex-wrap items-center gap-3">
+            <Button onClick={runMatch} disabled={!canRunMatch || isMatching}>
+              {isMatching ? "Eşleştiriliyor..." : "Eşleştir"}
+            </Button>
+            <Button type="button" variant="secondary" onClick={resetAll} disabled={isMatching}>
+              Vazgeç
+            </Button>
+            {!canRunMatch ? (
+              <p className="text-xs text-amber-700">
+                En az barkod veya ürün adı, tam olarak bir fiyat sütunu ve fiyat listesi seçin.
+              </p>
+            ) : null}
+          </div>
+        </Card>
+      ) : null}
+
+      {step === "review" && matchResponse ? (
+        <div className="space-y-4">
+          <Card className="p-5">
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge className="bg-emerald-100 text-emerald-700">
+                {matchResponse.summary.matchedExact} barkod eşleşti
+              </Badge>
+              <Badge className="bg-emerald-50 text-emerald-700">
+                {matchResponse.summary.matchedFuzzyHigh} isimle eşleşti
+              </Badge>
+              <Badge className="bg-amber-100 text-amber-800">
+                {matchResponse.summary.needsReview} gözden geçirilmeli
+              </Badge>
+              <Badge className="bg-slate-100 text-slate-700">{matchResponse.summary.noMatch} eşleşmedi</Badge>
+            </div>
+            {pendingCount ? (
+              <p className="mt-2 text-xs text-slate-500">
+                {pendingCount} satır bekliyor — onaylanmadan veya atlanmadan &quot;Uygula&quot;ya dahil edilmez.
+              </p>
+            ) : null}
+          </Card>
+
+          <div className="space-y-2">
+            {reviewRows.map((result) => {
+              const decision = decisions.get(result.rowNumber);
+              const sourceRow = sourceRowsByRowNumber.get(result.rowNumber);
+              if (!decision || !sourceRow) return null;
+
+              return (
+                <ReviewRow
+                  key={result.rowNumber}
+                  result={result}
+                  sourceRow={sourceRow}
+                  decision={decision}
+                  productById={productById}
+                  productPool={matchResponse.productPool}
+                  onDecisionChange={(next) =>
+                    setDecisions((current) => new Map(current).set(next.rowNumber, next))
+                  }
+                />
+              );
+            })}
+          </div>
+
+          <Card className="sticky bottom-4 flex flex-wrap items-center justify-between gap-3 p-4 shadow-lg">
+            <p className="text-sm text-slate-600">
+              {applyCount} ürün stoğa açılıp fiyatı güncellenecek
+              {selectedPriceListId
+                ? ` (${priceLists.find((list) => list.id === selectedPriceListId)?.name ?? ""})`
+                : ""}
+              .
+            </p>
+            <div className="flex gap-2">
+              <Button type="button" variant="secondary" onClick={resetAll} disabled={isApplying}>
+                Vazgeç
+              </Button>
+              <Button onClick={applyChanges} disabled={!applyCount || isApplying}>
+                {isApplying ? "Uygulanıyor..." : "Uygula"}
+              </Button>
+            </div>
+          </Card>
+        </div>
+      ) : null}
+    </div>
+  );
+}

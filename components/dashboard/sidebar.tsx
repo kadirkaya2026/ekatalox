@@ -19,6 +19,7 @@ import {
   PanelBottom,
   Palette,
   PlusCircle,
+  ScanBarcode,
   ScrollText,
   Settings,
   ShieldCheck,
@@ -66,6 +67,12 @@ const tenantLinks: SidebarLink[] = [
         href: "/products/market-catalog",
         label: "Master Katalog",
         icon: Store,
+        requiredBusinessType: "market",
+      },
+      {
+        href: "/products/stock-import",
+        label: "Stok Listesi Yükle",
+        icon: ScanBarcode,
         requiredBusinessType: "market",
       },
       {
