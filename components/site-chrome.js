@@ -115,13 +115,10 @@ export const SiteFooter = () => (
           ['Hakkımızda', '/hakkimizda'],
           ['Müşteriler', '/musteriler'],
           ['İletişim', '/iletisim'],
-          ['Kariyer', '/hakkimizda'],
         ]} />
         <FooterCol title="Destek" items={[
           ['Yardım Merkezi', '/yardim'],
-          ['Dokümantasyon', '/yardim'],
-          ['API', '/yardim'],
-          ['Durum', '/yardim'],
+          ['İletişim', '/iletisim'],
         ]} />
       </div>
       <div className="mt-16 pt-8 border-t border-white/5 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-slate-500">

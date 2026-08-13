@@ -790,9 +790,9 @@ const Footer = () => (
           </div>
         </div>
 
-        <FooterCol title="Ürün" items={[['Temalar','/temalar'], ['Özellikler','#ozellikler'], ['Fiyatlandırma','#fiyatlandirma'], ['Örnek Katalog','https://demo.ekatalox.com'], ['Yenilikler','/yenilikler'], ['Yol Haritası','/yenilikler']]} />
-        <FooterCol title="Şirket" items={[['Hakkımızda','/hakkimizda'], ['Müşteriler','/musteriler'], ['İletişim','/iletisim'], ['Kariyer','/hakkimizda'], ['Basın','/iletisim']]} />
-        <FooterCol title="Destek" items={[['Dokümantasyon','/yardim'], ['Yardım Merkezi','/yardim'], ['API','/yardim'], ['Durum','/yardim'], ['İletişim','/iletisim']]} />
+        <FooterCol title="Ürün" items={[['Temalar','/temalar'], ['Özellikler','#ozellikler'], ['Fiyatlandırma','#fiyatlandirma'], ['Örnek Katalog','https://demo.ekatalox.com'], ['Yenilikler','/yenilikler']]} />
+        <FooterCol title="Şirket" items={[['Hakkımızda','/hakkimizda'], ['Müşteriler','/musteriler'], ['İletişim','/iletisim']]} />
+        <FooterCol title="Destek" items={[['Yardım Merkezi','/yardim'], ['İletişim','/iletisim']]} />
       </div>
 
       <div className="mt-16 pt-8 border-t border-white/5 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-slate-500">
