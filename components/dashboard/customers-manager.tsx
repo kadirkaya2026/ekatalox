@@ -1,10 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowLeft, ChevronRight } from "lucide-react";
+import { ArrowLeft, ChevronRight, Receipt } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import { formatCurrency, formatDate } from "@/lib/utils";
+import { cn, formatCurrency, formatDate } from "@/lib/utils";
 import type { CurrencyCode } from "@/lib/products/constants";
 import type { StorefrontCustomerWithStats, StorefrontOrder } from "@/lib/types";
 
@@ -23,14 +23,39 @@ function formatCustomerTotals(totals: Record<string, number>) {
   return entries.map(([currency, amount]) => formatCurrency(amount, currency as CurrencyCode)).join(" + ");
 }
 
+function getInitials(name: string) {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (!parts.length) {
+    return "?";
+  }
+  return (parts[0]![0]! + (parts[1]?.[0] ?? "")).toUpperCase();
+}
+
+// Tıklanabilir satırların ortak stili: hover'da yükselen kart, kayan ok,
+// klavye odağında görünür halka — liste satırlarının tıklanabilir olduğu
+// tek bakışta anlaşılsın diye.
+const CLICKABLE_ROW_CLASSES = cn(
+  "group flex w-full items-center justify-between gap-3 rounded-2xl border border-slate-100 bg-white",
+  "px-4 py-3.5 text-left transition-all duration-150",
+  "hover:-translate-y-0.5 hover:border-emerald-200 hover:bg-emerald-50/40 hover:shadow-md hover:shadow-emerald-900/5",
+  "active:translate-y-0 active:shadow-sm",
+  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50 focus-visible:ring-offset-2",
+);
+
+function RowChevron() {
+  return (
+    <ChevronRight className="size-4 shrink-0 text-slate-300 transition-transform duration-150 group-hover:translate-x-0.5 group-hover:text-emerald-500" />
+  );
+}
+
 function BackButton({ label, onClick }: { label: string; onClick: () => void }) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className="mb-4 flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-slate-800"
+      className="group mb-4 -ml-2 flex items-center gap-1.5 rounded-full py-1.5 pl-2 pr-3 text-sm font-medium text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50"
     >
-      <ArrowLeft className="size-4" />
+      <ArrowLeft className="size-4 transition-transform duration-150 group-hover:-translate-x-0.5" />
       {label}
     </button>
   );
@@ -101,11 +126,16 @@ function CustomerOrdersView({
     <div>
       <BackButton label="Müşterilere dön" onClick={onBack} />
 
-      <div>
-        <h3 className="text-base font-semibold text-slate-900">{customer.full_name}</h3>
-        <p className="text-sm text-slate-500">{customer.phone}</p>
-        <p className="mt-0.5 text-sm text-slate-400">{customer.address}</p>
+      <div className="flex items-center gap-3">
+        <div className="flex size-11 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-sm font-semibold text-emerald-700">
+          {getInitials(customer.full_name)}
+        </div>
+        <div>
+          <h3 className="text-base font-semibold text-slate-900">{customer.full_name}</h3>
+          <p className="text-sm text-slate-500">{customer.phone}</p>
+        </div>
       </div>
+      <p className="mt-2 text-sm text-slate-400">{customer.address}</p>
 
       <div className="mt-4 space-y-2">
         {loading ? (
@@ -114,21 +144,21 @@ function CustomerOrdersView({
           <p className="text-sm text-slate-500">Sipariş geçmişi bulunamadı.</p>
         ) : (
           orders.map((order) => (
-            <button
-              key={order.id}
-              type="button"
-              onClick={() => onSelectOrder(order)}
-              className="flex w-full items-center justify-between gap-3 rounded-xl border border-slate-100 bg-slate-50 px-4 py-3 text-left text-sm hover:border-slate-200 hover:bg-white"
-            >
-              <div>
-                <p className="font-medium text-slate-900">{order.order_number}</p>
-                <p className="mt-0.5 text-slate-500">
-                  {formatDate(order.created_at)} • {order.item_count} kalem
-                </p>
+            <button key={order.id} type="button" onClick={() => onSelectOrder(order)} className={CLICKABLE_ROW_CLASSES}>
+              <div className="flex items-center gap-3">
+                <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-500 transition-colors group-hover:bg-emerald-100 group-hover:text-emerald-600">
+                  <Receipt className="size-4" />
+                </div>
+                <div>
+                  <p className="font-medium text-slate-900">{order.order_number}</p>
+                  <p className="mt-0.5 text-sm text-slate-500">
+                    {formatDate(order.created_at)} • {order.item_count} kalem
+                  </p>
+                </div>
               </div>
               <div className="flex items-center gap-2">
-                <span className="font-semibold text-slate-800">{formatOrderTotal(order)}</span>
-                <ChevronRight className="size-4 text-slate-400" />
+                <span className="text-sm font-semibold text-slate-800">{formatOrderTotal(order)}</span>
+                <RowChevron />
               </div>
             </button>
           ))
@@ -201,18 +231,23 @@ export function CustomersManager({
                 key={customer.id}
                 type="button"
                 onClick={() => openCustomer(customer)}
-                className="flex w-full items-center justify-between gap-3 rounded-xl border border-slate-100 px-4 py-3 text-left hover:border-slate-200 hover:bg-slate-50"
+                className={CLICKABLE_ROW_CLASSES}
               >
-                <div>
-                  <p className="text-base font-semibold text-slate-900">{customer.full_name}</p>
-                  <p className="mt-0.5 text-sm text-slate-500">{customer.phone}</p>
+                <div className="flex items-center gap-3">
+                  <div className="flex size-11 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-sm font-semibold text-emerald-700">
+                    {getInitials(customer.full_name)}
+                  </div>
+                  <div>
+                    <p className="text-base font-semibold text-slate-900">{customer.full_name}</p>
+                    <p className="mt-0.5 text-sm text-slate-500">{customer.phone}</p>
+                  </div>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="text-right">
                     <Badge className="bg-slate-100 text-slate-700">{customer.orders_count} sipariş</Badge>
                     {totalsLabel ? <p className="mt-1 text-xs text-slate-500">{totalsLabel}</p> : null}
                   </div>
-                  <ChevronRight className="size-4 text-slate-400" />
+                  <RowChevron />
                 </div>
               </button>
             );
