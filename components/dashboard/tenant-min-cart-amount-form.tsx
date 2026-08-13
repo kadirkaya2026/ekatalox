@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Wallet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { SettingsSectionHeader } from "@/components/dashboard/settings-section-header";
 import { Input } from "@/components/ui/input";
 import { InlineAlert } from "@/components/ui/inline-alert";
 import type { TenantStorefrontSettings } from "@/lib/types";
@@ -72,10 +73,7 @@ export function TenantMinCartAmountForm({
 
   return (
     <Card className="p-5">
-      <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-slate-900">
-        <Wallet className="size-4 text-emerald-700" />
-        <span>Minimum sepet tutarı</span>
-      </div>
+      <SettingsSectionHeader icon={Wallet} title="Minimum sepet tutarı" />
       <p className="mb-4 text-sm text-slate-500">
         Aktif ettiğinizde, sepeti bu tutarın altında kalan müşteriler WhatsApp ile sipariş
         tamamlayamaz; sepetlerine kaç TL daha eklemeleri gerektiği vitrinde gösterilir. Kapalıyken

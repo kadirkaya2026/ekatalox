@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { LayoutTemplate } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { SettingsSectionHeader } from "@/components/dashboard/settings-section-header";
 import { Input } from "@/components/ui/input";
 import { DEFAULT_FOOTER_LOCATION } from "@/lib/storefront/footer-links";
 import type { TenantStorefrontSettings } from "@/lib/types";
@@ -187,10 +188,7 @@ export function TenantFooterSettingsForm({
 
   return (
     <Card className="p-5">
-      <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-slate-900">
-        <LayoutTemplate className="size-4 text-emerald-700" />
-        <span>Sayfa Altı Footer</span>
-      </div>
+      <SettingsSectionHeader icon={LayoutTemplate} title="Sayfa Altı Footer" />
       <p className="mb-4 text-sm text-slate-500">
         Vitrin sayfasının en altında görünecek footer alanını, adres, iletişim,
         web sitesi ve sosyal medya bağlantılarını yönetin.

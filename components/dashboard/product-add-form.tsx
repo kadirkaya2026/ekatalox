@@ -6,6 +6,7 @@ import { AlertTriangle, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Select } from "@/components/ui/select";
 import { PlanFeatureGate } from "@/components/dashboard/plan-feature-gate";
 import { ProductDescriptionEditor } from "@/components/dashboard/product-description-editor";
 import { ProductImageFields } from "@/components/dashboard/product-image-fields";
@@ -119,10 +120,9 @@ export function ProductAddForm({
 
         <form onSubmit={handleSubmit} className="mt-5 grid gap-3">
           <div className="grid gap-3 md:grid-cols-2">
-            <select
+            <Select
               value={form.category_id}
               onChange={(event) => updateField("category_id", event.target.value)}
-              className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900"
             >
               <option value="">Kategori seçin</option>
               {flatCategories.map((category) => (
@@ -131,7 +131,7 @@ export function ProductAddForm({
                   {category.name}
                 </option>
               ))}
-            </select>
+            </Select>
             <Input
               placeholder="Model No"
               value={form.sku_code}
@@ -150,17 +150,16 @@ export function ProductAddForm({
           />
 
           <div className="grid gap-3 md:grid-cols-4">
-            <select
+            <Select
               value={form.currency}
               onChange={(event) => updateField("currency", event.target.value)}
-              className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900"
             >
               {supportedCurrencyCodes.map((currency) => (
                 <option key={currency} value={currency}>
                   {currency}
                 </option>
               ))}
-            </select>
+            </Select>
           </div>
 
           <ProductPriceFields

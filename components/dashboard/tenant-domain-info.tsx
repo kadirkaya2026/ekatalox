@@ -1,6 +1,7 @@
 import { Globe } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { SettingsSectionHeader } from "@/components/dashboard/settings-section-header";
 import { buildCustomDomainRequestHref } from "@/lib/billing/plans";
 import type { Tenant } from "@/lib/types";
 
@@ -13,10 +14,7 @@ export function TenantDomainInfo({ tenant }: { tenant: Tenant }) {
 
   return (
     <Card className="p-5">
-      <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-slate-900">
-        <Globe className="size-4 text-emerald-700" />
-        <span>Özel alan adı</span>
-      </div>
+      <SettingsSectionHeader icon={Globe} title="Özel alan adı" />
 
       {tenant.custom_domain ? (
         <p className="mb-4 text-sm text-slate-600">

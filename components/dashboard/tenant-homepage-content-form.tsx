@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { ArrowDown, ArrowUp, ImageOff, Sparkles, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { SettingsSectionHeader } from "@/components/dashboard/settings-section-header";
 import { Input } from "@/components/ui/input";
 import { PlanFeatureGate } from "@/components/dashboard/plan-feature-gate";
 import type {
@@ -233,10 +234,7 @@ export function TenantHomepageContentForm({
         <div className="p-5">
         {activeTab === "hero" ? (
         <div>
-        <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-slate-900">
-          <Sparkles className="size-4 text-emerald-700" />
-          <span>Hero alanı</span>
-        </div>
+        <SettingsSectionHeader icon={Sparkles} title="Hero alanı" />
         <p className="mb-4 text-sm text-slate-500">
           Anasayfanın en üstünde, banner&apos;dan önce gösterilen başlık ve buton. Kısa
           açıklama (Mağaza Kimliği sayfasında) hero alanında da gösterilir.

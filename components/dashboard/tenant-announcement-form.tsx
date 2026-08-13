@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Megaphone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { SettingsSectionHeader } from "@/components/dashboard/settings-section-header";
 import { Input } from "@/components/ui/input";
 import { InlineAlert } from "@/components/ui/inline-alert";
 import { Textarea } from "@/components/ui/textarea";
@@ -107,10 +108,7 @@ export function TenantAnnouncementForm({
 
   return (
     <Card className="p-5">
-      <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-slate-900">
-        <Megaphone className="size-4 text-emerald-700" />
-        <span>Duyuru modalı</span>
-      </div>
+      <SettingsSectionHeader icon={Megaphone} title="Duyuru modalı" />
       <p className="mb-4 text-sm text-slate-500">
         Esnaf anasayfaya girdiğinde gösterilecek duyuruyu yönetin. Yeni duyuruyu
         yayına aldığınızda sürüm otomatik artar ve tarayıcı sayaçları sıfırlanır.

@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Select } from "@/components/ui/select";
 import { Modal } from "@/components/ui/modal";
 import {
   formatEffectiveProductLimit,
@@ -755,17 +756,17 @@ export function AdminTenantDetailPanel({ tenant: initialTenant }: { tenant: Tena
         <div className="mt-4 grid gap-4 md:grid-cols-3">
           <div>
             <label className="text-xs font-medium text-slate-500">Paket</label>
-            <select
+            <Select
               value={planDraft}
               onChange={(event) => setPlanDraft(event.target.value as TenantPlan)}
-              className="mt-1.5 w-full rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900"
+              className="mt-1.5"
             >
               {PLAN_OPTIONS.map((plan) => (
                 <option key={plan.id} value={plan.id}>
                   {plan.name} — {formatProductLimit(plan.maxProductLimit)} ürün
                 </option>
               ))}
-            </select>
+            </Select>
           </div>
 
           <div>
@@ -821,17 +822,16 @@ export function AdminTenantDetailPanel({ tenant: initialTenant }: { tenant: Tena
         </div>
 
         <div className="mt-4 flex flex-col gap-3 border-t border-slate-100 pt-4 sm:flex-row sm:items-center">
-          <select
+          <Select
             value={giftMonths}
             onChange={(event) => setGiftMonths(Number(event.target.value))}
-            className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900"
           >
             {[1, 2, 3, 6, 12].map((months) => (
               <option key={months} value={months}>
                 +{months} ay
               </option>
             ))}
-          </select>
+          </Select>
           <Button
             variant="secondary"
             onClick={addGiftMonths}
@@ -871,7 +871,7 @@ export function AdminTenantDetailPanel({ tenant: initialTenant }: { tenant: Tena
                       }
                       className="sm:max-w-[140px]"
                     />
-                    <select
+                    <Select
                       value={draft.price_list_id}
                       onChange={(event) =>
                         setEditDrafts((current) => ({
@@ -882,14 +882,13 @@ export function AdminTenantDetailPanel({ tenant: initialTenant }: { tenant: Tena
                           },
                         }))
                       }
-                      className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900"
                     >
                       {(tenant.price_lists ?? []).map((list) => (
                         <option key={list.id} value={list.id}>
                           {getPriceListDisplayName(list)}
                         </option>
                       ))}
-                    </select>
+                    </Select>
                     <div className="flex gap-2">
                       <Button
                         className="px-3 py-2"
@@ -946,17 +945,16 @@ export function AdminTenantDetailPanel({ tenant: initialTenant }: { tenant: Tena
           <p className="text-sm font-semibold text-slate-900">Yeni şifre ekle</p>
           <div className="mt-4 grid gap-3">
             <Input placeholder="1111" value={codeDraft} onChange={(event) => setCodeDraft(event.target.value)} />
-            <select
+            <Select
               value={priceListDraft || tenant.price_lists?.[0]?.id || ""}
               onChange={(event) => setPriceListDraft(event.target.value)}
-              className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900"
             >
               {(tenant.price_lists ?? []).map((list) => (
                 <option key={list.id} value={list.id}>
                   {getPriceListDisplayName(list)}
                 </option>
               ))}
-            </select>
+            </Select>
             <Button onClick={createAccessCode} disabled={pending}>
               Şifre kaydet
             </Button>

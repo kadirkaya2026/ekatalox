@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Select } from "@/components/ui/select";
 import { formatPriceListLimit, getPriceListLimit } from "@/lib/billing/plans";
 import { getPriceListDisplayName, normalizePriceListName } from "@/lib/price-lists/constants";
 import type { AccessCode, PriceList, Tenant } from "@/lib/types";
@@ -228,17 +229,17 @@ export function AccessCodesManager({
             </p>
             {pricedPriceLists.length ? (
               <>
-                <select
+                <Select
                   value={pendingPublicPriceListId}
                   onChange={(event) => setPendingPublicPriceListId(event.target.value)}
-                  className="mt-3 w-full rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900"
+                  className="mt-3"
                 >
                   {pricedPriceLists.map((list) => (
                     <option key={list.id} value={list.id}>
                       {getPriceListDisplayName(list)}
                     </option>
                   ))}
-                </select>
+                </Select>
                 <div className="mt-3 flex flex-wrap gap-2">
                   <Button
                     onClick={confirmDisableProtection}
@@ -348,17 +349,16 @@ export function AccessCodesManager({
             value={passwordCode}
             onChange={(event) => setPasswordCode(event.target.value)}
           />
-          <select
+          <Select
             value={priceListId}
             onChange={(event) => setPriceListId(event.target.value)}
-            className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900"
           >
             {priceLists.map((list) => (
               <option key={list.id} value={list.id}>
                 {getPriceListDisplayName(list)}
               </option>
             ))}
-          </select>
+          </Select>
           <Button type="submit" disabled={pending || !priceListId || atCodeLimit}>
             {pending ? "Kaydediliyor..." : "Kodu ekle"}
           </Button>

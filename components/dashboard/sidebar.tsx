@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { AnimatePresence, motion } from "framer-motion";
 import {
   BarChart3,
   Building2,
@@ -254,8 +255,15 @@ export function Sidebar({
                 <span>{link.label}</span>
               </Link>
 
-              {link.children && parentActive ? (
-                <div className="animate-sidebar-submenu ml-1 mt-1.5 space-y-4">
+              <AnimatePresence initial={false}>
+                {link.children && parentActive ? (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: 0.18, ease: "easeOut" }}
+                    className="ml-1 mt-1.5 space-y-4 overflow-hidden"
+                  >
                   {groupChildren(link.children).map((section, sectionIndex) => (
                     <div key={section.group ?? `ungrouped-${sectionIndex}`}>
                       {section.group ? (
@@ -290,8 +298,9 @@ export function Sidebar({
                       </div>
                     </div>
                   ))}
-                </div>
-              ) : null}
+                  </motion.div>
+                ) : null}
+              </AnimatePresence>
             </div>
           );
         })}

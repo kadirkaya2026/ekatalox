@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { SettingsSectionHeader } from "@/components/dashboard/settings-section-header";
 import { Input } from "@/components/ui/input";
 import { InlineAlert } from "@/components/ui/inline-alert";
 import {
@@ -78,10 +79,7 @@ export function TenantBusinessHoursForm({
 
   return (
     <Card className="p-5">
-      <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-slate-900">
-        <Clock className="size-4 text-emerald-700" />
-        <span>Çalışma saatleri</span>
-      </div>
+      <SettingsSectionHeader icon={Clock} title="Çalışma saatleri" />
       <p className="mb-4 text-sm text-slate-500">
         Belirli saatler seçildiğinde, saatler dışında vitrine gelen ziyaretçilere
         &quot;mağazamız şu anda kapalıdır&quot; ekranı gösterilir. Sepetine ürün eklemiş,

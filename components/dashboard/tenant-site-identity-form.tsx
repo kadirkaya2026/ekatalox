@@ -6,6 +6,7 @@ import Image from "next/image";
 import { CalendarDays, Globe, ImageUp, LoaderCircle, LogOut, Moon, Store } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { SettingsSectionHeader } from "@/components/dashboard/settings-section-header";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import type { TenantStorefrontSettings } from "@/lib/types";
@@ -431,10 +432,7 @@ export function TenantSiteIdentityForm({
       <div className="p-5">
       {activeTab === "brand" ? (
       <div>
-        <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-slate-900">
-          <Store className="size-4 text-emerald-700" />
-          <span>Mağaza logosu, başlık ve açıklama</span>
-        </div>
+        <SettingsSectionHeader icon={Store} title="Mağaza logosu, başlık ve açıklama" />
         <p className="mb-4 text-sm text-slate-500">
           Vitrin header&apos;ında görünecek logo, mağaza adı ve kısa tanıtım metni. Tema
           önizlemelerinde de bu bilgiler kullanılır.
@@ -547,10 +545,7 @@ export function TenantSiteIdentityForm({
 
       {activeTab === "tabTitle" ? (
       <div>
-        <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-slate-900">
-          <Globe className="size-4 text-emerald-700" />
-          <span>Tarayıcı sekme başlığı</span>
-        </div>
+        <SettingsSectionHeader icon={Globe} title="Tarayıcı sekme başlığı" />
         <p className="mb-4 text-sm text-slate-500">
           Müşterileriniz mağazanızı açtığında tarayıcı sekmesinde görünecek metin. Boş
           bırakılırsa mağaza başlığı kullanılır.
@@ -590,10 +585,7 @@ export function TenantSiteIdentityForm({
 
       {activeTab === "locale" ? (
       <div>
-        <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-slate-900">
-          <Globe className="size-4 text-emerald-700" />
-          <span>Vitrin dili</span>
-        </div>
+        <SettingsSectionHeader icon={Globe} title="Vitrin dili" />
         <p className="mb-4 text-sm text-slate-500">
           Mağazanıza ilk kez gelen (henüz dil seçmemiş) ziyaretçiye vitrin hangi dilde
           açılsın? Ziyaretçi dilerse header&apos;daki dil seçiciyle kendi tarayıcısında
@@ -632,10 +624,7 @@ export function TenantSiteIdentityForm({
 
       {activeTab === "favicon" ? (
       <div>
-        <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-slate-900">
-          <ImageUp className="size-4 text-emerald-700" />
-          <span>Favicon (sekme ikonu)</span>
-        </div>
+        <SettingsSectionHeader icon={ImageUp} title="Favicon (sekme ikonu)" />
         <p className="mb-4 text-sm text-slate-500">
           Tarayıcı sekmesinde ve yer imlerinde görünecek küçük ikon. PNG, JPEG, WEBP veya
           ICO formatında, en fazla 512KB.
@@ -699,10 +688,7 @@ export function TenantSiteIdentityForm({
 
       {activeTab === "priceDate" ? (
       <div>
-        <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-slate-900">
-          <CalendarDays className="size-4 text-emerald-700" />
-          <span>Fiyat Güncelleme Tarihi</span>
-        </div>
+        <SettingsSectionHeader icon={CalendarDays} title="Fiyat Güncelleme Tarihi" />
         <p className="mb-4 text-sm text-slate-500">
           Vitrin anasayfasında logo yanındaki mağaza adının altında fiyat güncelleme
           tarihini gösterebilirsiniz.
@@ -790,10 +776,7 @@ export function TenantSiteIdentityForm({
 
       {activeTab === "themeToggle" ? (
       <div>
-        <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-slate-900">
-          <Moon className="size-4 text-emerald-700" />
-          <span>Gece/Gündüz Modu</span>
-        </div>
+        <SettingsSectionHeader icon={Moon} title="Gece/Gündüz Modu" />
         <p className="mb-4 text-sm text-slate-500">
           Vitrin üst menüsünde müşterilerin gece/gündüz modu arasında geçiş yapabildiği
           butonu açıp kapatabilirsiniz.
@@ -843,10 +826,7 @@ export function TenantSiteIdentityForm({
 
       {activeTab === "logoutButton" ? (
       <div>
-        <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-slate-900">
-          <LogOut className="size-4 text-emerald-700" />
-          <span>Çıkış Butonu</span>
-        </div>
+        <SettingsSectionHeader icon={LogOut} title="Çıkış Butonu" />
         <p className="mb-4 text-sm text-slate-500">
           Vitrin üst menüsünde müşterilerin oturumdan çıkış yapabildiği butonu açıp
           kapatabilirsiniz.

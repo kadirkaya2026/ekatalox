@@ -217,24 +217,3 @@ section[id] {
   }
 }
 
-@keyframes ek-sidebar-submenu-in {
-  from {
-    opacity: 0;
-    transform: translateY(-4px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.animate-sidebar-submenu {
-  animation: ek-sidebar-submenu-in 0.18s ease-out both;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .animate-sidebar-submenu {
-    animation: none;
-  }
-}
