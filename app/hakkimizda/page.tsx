@@ -39,7 +39,7 @@ const Page = () => {
       <SiteNavbar />
       <PageHero
         tag="Hakkımızda"
-        title={<>Toptancılar için <span className="bg-clip-text text-transparent bg-gradient-to-r from-[#10b981] to-[#00ff87]">sessiz bir devrim.</span></>}
+        title={<>Toptancılar için <span className="bg-clip-text text-transparent bg-gradient-to-r from-[var(--marketing-primary)] to-[var(--marketing-accent)]">sessiz bir devrim.</span></>}
         subtitle="eKatalox, klasik e-ticaretin ağırlığını taşımak istemeyen modern toptancılar için tasarlandı. Bir Excel dosyası kadar sade. Bir Apple ürünü kadar zarif."
       />
 
@@ -50,7 +50,7 @@ const Page = () => {
             { icon: Eye, label: 'Vizyonumuz', title: 'Toptan ticaretin global standardı.', desc: 'Dünya üzerindeki her toptancının ilk tercihi olmak. Bir gün "e-ticaret" demek yerine "katalog" diyebilmek için çalışıyoruz.' },
           ].map((c, i) => (
             <motion.div key={i} initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.3 }} transition={{ duration: 0.7, delay: i * 0.1 }} className="p-8 rounded-3xl border border-white/10 bg-gradient-to-b from-white/[0.04] to-transparent">
-              <c.icon className="w-7 h-7 text-[#10b981]" />
+              <c.icon className="w-7 h-7 text-[var(--marketing-primary)]" />
               <div className="mt-4 text-xs uppercase tracking-widest text-slate-500">{c.label}</div>
               <h3 className="mt-2 text-2xl md:text-3xl font-semibold text-white">{c.title}</h3>
               <p className="mt-4 text-slate-400 leading-relaxed">{c.desc}</p>
@@ -63,7 +63,7 @@ const Page = () => {
         <div className="max-w-6xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-4">
           {stats.map((s, i) => (
             <motion.div key={s.l} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5, delay: i * 0.08 }} className="p-6 rounded-2xl border border-white/10 bg-white/[0.02] text-center">
-              <div className="text-3xl md:text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-[#10b981] to-[#00ff87]">{s.v}</div>
+              <div className="text-3xl md:text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-[var(--marketing-primary)] to-[var(--marketing-accent)]">{s.v}</div>
               <div className="text-[11px] text-slate-500 uppercase tracking-widest mt-2">{s.l}</div>
             </motion.div>
           ))}
@@ -77,8 +77,8 @@ const Page = () => {
           <div className="mt-12 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {values.map((v, i) => (
               <motion.div key={v.title} initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.3 }} transition={{ duration: 0.6, delay: i * 0.08 }} whileHover={{ y: -4 }} className="p-6 rounded-2xl border border-white/10 bg-white/[0.02] hover:border-white/20 transition-colors">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#10b981]/20 to-[#00ff87]/20 flex items-center justify-center mb-4">
-                  <v.icon className="w-5 h-5 text-[#10b981]" />
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[var(--marketing-primary)]/20 to-[var(--marketing-accent)]/20 flex items-center justify-center mb-4">
+                  <v.icon className="w-5 h-5 text-[var(--marketing-primary)]" />
                 </div>
                 <div className="text-lg font-semibold text-white">{v.title}</div>
                 <div className="text-sm text-slate-400 mt-2">{v.desc}</div>
@@ -99,7 +99,7 @@ const Page = () => {
             transition={{ duration: 0.7 }}
             className="relative mb-16 rounded-3xl border border-white/10 bg-gradient-to-b from-white/[0.04] to-transparent p-8 md:p-10"
           >
-            <div className="absolute -top-px left-12 right-12 h-px bg-gradient-to-r from-transparent via-[#10b981]/50 to-transparent" />
+            <div className="absolute -top-px left-12 right-12 h-px bg-gradient-to-r from-transparent via-[var(--marketing-primary)]/50 to-transparent" />
             <p className="text-sm md:text-base text-slate-300 leading-relaxed">
               eKatalox'un fikri, toptan ticaretin gerçek ve tekrar eden bir sorunundan doğdu. Kurucumuz Kadir Kaya, ailesinin toptan ticaret işinde yıllarca aynı tabloyla karşılaştı: her sezon yeniden hazırlanan yüzlerce sayfalık PDF kataloglar, tek bir fiyat değişikliğinde çöpe giden içerikler, WhatsApp yazışmalarında kaybolan sipariş talepleri.
             </p>
@@ -109,14 +109,14 @@ const Page = () => {
           </motion.div>
 
           <div className="relative space-y-8">
-            <div className="absolute left-4 top-2 bottom-2 w-px bg-gradient-to-b from-[#10b981]/40 via-[#00ff87]/40 to-transparent" />
+            <div className="absolute left-4 top-2 bottom-2 w-px bg-gradient-to-b from-[var(--marketing-primary)]/40 via-[var(--marketing-accent)]/40 to-transparent" />
             {timeline.map(([year, label, desc], i) => (
               <motion.div key={year} initial={{ opacity: 0, x: 20 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true, amount: 0.4 }} transition={{ duration: 0.5, delay: i * 0.1 }} className="relative pl-12">
-                <div className="absolute left-2 top-1.5 w-5 h-5 rounded-full bg-gradient-to-br from-[#10b981] to-[#00ff87] flex items-center justify-center">
+                <div className="absolute left-2 top-1.5 w-5 h-5 rounded-full bg-gradient-to-br from-[var(--marketing-primary)] to-[var(--marketing-accent)] flex items-center justify-center">
                   <div className="w-1.5 h-1.5 rounded-full bg-white" />
                 </div>
                 <div className="flex items-baseline gap-3 mb-1">
-                  <span className="text-[#10b981] font-mono text-xs tracking-widest">{year}</span>
+                  <span className="text-[var(--marketing-primary)] font-mono text-xs tracking-widest">{year}</span>
                   <span className="text-lg font-semibold text-white">{label}</span>
                 </div>
                 <p className="text-sm text-slate-400 leading-relaxed">{desc}</p>
@@ -133,12 +133,12 @@ const Page = () => {
           <div className="mt-12 grid grid-cols-2 md:grid-cols-4 gap-4">
             {team.map((m, i) => (
               <motion.div key={m.name} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.08 }} className="p-6 rounded-2xl border border-white/10 bg-white/[0.02] text-center hover:border-white/20 transition-colors">
-                <div className="w-16 h-16 mx-auto rounded-full bg-gradient-to-br from-[#10b981]/30 to-[#00ff87]/30 border border-white/10 flex items-center justify-center text-white text-xl font-semibold">
+                <div className="w-16 h-16 mx-auto rounded-full bg-gradient-to-br from-[var(--marketing-primary)]/30 to-[var(--marketing-accent)]/30 border border-white/10 flex items-center justify-center text-white text-xl font-semibold">
                   {m.name.split(' ').map(n => n[0]).join('')}
                 </div>
                 <div className="mt-4 text-white font-semibold text-sm">{m.name}</div>
                 <div className="text-xs text-slate-500">{m.role}</div>
-                <div className="mt-3 inline-block px-2 py-0.5 rounded-full bg-[#10b981]/10 text-[11px] text-[#10b981] uppercase tracking-widest">{m.tag}</div>
+                <div className="mt-3 inline-block px-2 py-0.5 rounded-full bg-[var(--marketing-primary)]/10 text-[11px] text-[var(--marketing-primary)] uppercase tracking-widest">{m.tag}</div>
               </motion.div>
             ))}
           </div>

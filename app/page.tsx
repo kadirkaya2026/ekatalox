@@ -28,9 +28,9 @@ const Hero = () => {
       {/* Ambient background */}
       <div className="absolute inset-0 bg-[#090d16]" />
       <div className="absolute inset-0 bg-grid mask-radial-fade opacity-60" />
-      <div className="absolute -top-40 left-1/2 -translate-x-1/2 w-[900px] h-[900px] rounded-full bg-[#10b981]/20 blur-[140px] animate-pulse-glow" />
-      <div className="absolute top-40 right-0 w-[600px] h-[600px] rounded-full bg-[#00ff87]/25 blur-[120px]" />
-      <div className="absolute top-60 left-0 w-[500px] h-[500px] rounded-full bg-[#10b981]/10 blur-[120px]" />
+      <div className="absolute -top-40 left-1/2 -translate-x-1/2 w-[900px] h-[900px] rounded-full bg-[var(--marketing-primary)]/20 blur-[140px] animate-pulse-glow" />
+      <div className="absolute top-40 right-0 w-[600px] h-[600px] rounded-full bg-[var(--marketing-accent)]/25 blur-[120px]" />
+      <div className="absolute top-60 left-0 w-[500px] h-[500px] rounded-full bg-[var(--marketing-primary)]/10 blur-[120px]" />
 
       {/* Sticky content */}
       <div className="sticky top-0 h-screen flex flex-col items-center justify-start pt-28 md:pt-36 px-6">
@@ -44,7 +44,7 @@ const Hero = () => {
             transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
             className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full glass text-xs md:text-sm text-slate-300 mb-8"
           >
-            <Rocket className="w-3.5 h-3.5 text-[#10b981]" />
+            <Rocket className="w-3.5 h-3.5 text-[var(--marketing-primary)]" />
             Türkiye&apos;nin Yeni Nesil B2B Dijital Katalog Platformu
           </motion.div>
 
@@ -73,7 +73,7 @@ const Hero = () => {
             transition={{ duration: 0.9, delay: 0.5, ease: [0.16, 1, 0.3, 1] }}
             className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4"
           >
-            <a href="/kayit" className="group relative inline-flex items-center justify-center gap-2 px-8 py-4 rounded-full bg-[#10b981] text-white font-medium text-base hover:scale-[1.03] transition-all duration-300 shadow-[0_0_40px_rgba(16,185,129,0.35)] hover:shadow-[0_0_60px_rgba(16,185,129,0.55)]">
+            <a href="/kayit" className="group relative inline-flex items-center justify-center gap-2 px-8 py-4 rounded-full bg-[var(--marketing-primary)] text-white font-medium text-base hover:scale-[1.03] transition-all duration-300 shadow-[0_0_40px_rgba(var(--marketing-primary-rgb),0.35)] hover:shadow-[0_0_60px_rgba(var(--marketing-primary-rgb),0.55)]">
               14 Gün Ücretsiz Deneyin
               <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
             </a>
@@ -102,7 +102,7 @@ const Hero = () => {
               href="https://app.ekatalox.com"
               target="_blank"
               rel="noreferrer"
-              className="font-medium text-[#10b981] hover:underline"
+              className="font-medium text-[var(--marketing-primary)] hover:underline"
             >
               app.ekatalox.com
             </a>{" "}
@@ -125,7 +125,7 @@ const Hero = () => {
 // ----------------------------- STOREFRONT MOCKUP ------------------------------
 const StorefrontMockup = () => {
   return (
-    <div className="relative rounded-2xl md:rounded-3xl border border-white/10 bg-gradient-to-b from-slate-900/90 to-[#090d16] shadow-[0_30px_120px_-20px_rgba(16,185,129,0.35)] overflow-hidden">
+    <div className="relative rounded-2xl md:rounded-3xl border border-white/10 bg-gradient-to-b from-slate-900/90 to-[#090d16] shadow-[0_30px_120px_-20px_rgba(var(--marketing-primary-rgb),0.35)] overflow-hidden">
       {/* Browser chrome */}
       <div className="flex items-center gap-2 px-5 py-3 border-b border-white/5 bg-black/20">
         <div className="flex gap-1.5">
@@ -144,7 +144,7 @@ const StorefrontMockup = () => {
       {/* Storefront header */}
       <div className="px-6 py-4 flex items-center justify-between border-b border-white/5">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#10b981] to-[#00ff87] flex items-center justify-center text-white font-bold text-sm">T</div>
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[var(--marketing-primary)] to-[var(--marketing-accent)] flex items-center justify-center text-white font-bold text-sm">T</div>
           <span className="text-white font-semibold text-sm">TeknoMarket Toptan</span>
         </div>
         <div className="hidden md:flex items-center gap-6 text-xs text-slate-400">
@@ -161,13 +161,13 @@ const StorefrontMockup = () => {
 
       {/* Banner area */}
       <div className="px-6 pt-5">
-        <div className="aspect-[3/1] rounded-xl overflow-hidden relative bg-gradient-to-br from-[#10b981]/20 via-slate-800 to-[#00ff87]/30 border border-white/5">
+        <div className="aspect-[3/1] rounded-xl overflow-hidden relative bg-gradient-to-br from-[var(--marketing-primary)]/20 via-slate-800 to-[var(--marketing-accent)]/30 border border-white/5">
           <div className="absolute inset-0 bg-grid opacity-30" />
           <div className="absolute inset-0 flex flex-col justify-center px-8">
-            <span className="text-[11px] text-[#10b981] uppercase tracking-widest font-semibold">Yaz Kampanyası</span>
+            <span className="text-[11px] text-[var(--marketing-primary)] uppercase tracking-widest font-semibold">Yaz Kampanyası</span>
             <span className="text-xl md:text-3xl font-bold text-white mt-1">Aksesuar Kategorisinde %30'a Varan İndirim</span>
           </div>
-          <div className="absolute right-6 top-1/2 -translate-y-1/2 w-24 h-24 md:w-32 md:h-32 rounded-full bg-[#10b981]/40 blur-2xl" />
+          <div className="absolute right-6 top-1/2 -translate-y-1/2 w-24 h-24 md:w-32 md:h-32 rounded-full bg-[var(--marketing-primary)]/40 blur-2xl" />
         </div>
       </div>
 
@@ -179,18 +179,18 @@ const StorefrontMockup = () => {
           { n: 'USB-C Kablo 2m', p: '₺79', stock: 'Stokta' },
           { n: 'Powerbank 20.000mAh', p: '₺549', stock: 'Sınırlı' },
         ].map((p, i) => (
-          <div key={i} className="rounded-xl border border-white/5 bg-white/[0.02] p-3 hover:border-[#10b981]/30 transition-colors">
+          <div key={i} className="rounded-xl border border-white/5 bg-white/[0.02] p-3 hover:border-[var(--marketing-primary)]/30 transition-colors">
             <div className="aspect-square rounded-lg bg-gradient-to-br from-slate-700/30 to-slate-900 mb-3 relative overflow-hidden">
               <div className="absolute inset-0 flex items-center justify-center">
                 <div className="w-12 h-12 rounded-lg bg-white/5 flex items-center justify-center">
                   <Layers className="w-5 h-5 text-slate-500" />
                 </div>
               </div>
-              <div className="absolute top-2 right-2 px-1.5 py-0.5 rounded-md bg-[#10b981]/15 text-[11px] text-[#10b981] font-medium">{p.stock}</div>
+              <div className="absolute top-2 right-2 px-1.5 py-0.5 rounded-md bg-[var(--marketing-primary)]/15 text-[11px] text-[var(--marketing-primary)] font-medium">{p.stock}</div>
             </div>
             <div className="text-[11px] text-white font-medium truncate">{p.n}</div>
             <div className="flex items-center justify-between mt-1">
-              <span className="text-xs text-[#10b981] font-semibold">{p.p}</span>
+              <span className="text-xs text-[var(--marketing-primary)] font-semibold">{p.p}</span>
               <span className="text-[11px] text-slate-500">1. Fiyat</span>
             </div>
           </div>
@@ -211,7 +211,7 @@ const ProblemSolution = () => {
 
   return (
     <section className="relative py-28 md:py-40 px-6">
-      <div className="absolute top-1/3 left-0 w-[500px] h-[500px] rounded-full bg-[#10b981]/10 blur-[160px] pointer-events-none" />
+      <div className="absolute top-1/3 left-0 w-[500px] h-[500px] rounded-full bg-[var(--marketing-primary)]/10 blur-[160px] pointer-events-none" />
       <div className="max-w-5xl mx-auto relative">
         <motion.div
           initial={{ opacity: 0, y: 30 }}
@@ -221,7 +221,7 @@ const ProblemSolution = () => {
           className="text-center mb-14 md:mb-16"
         >
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full glass text-xs text-slate-300 mb-6">
-            <Zap className="w-3 h-3 text-[#10b981]" />
+            <Zap className="w-3 h-3 text-[var(--marketing-primary)]" />
             Neden eKatalox?
           </div>
           <h2 className="display-headline text-4xl md:text-6xl text-white text-balance">
@@ -236,8 +236,8 @@ const ProblemSolution = () => {
               <X className="w-4 h-4 text-red-400" />
               <span className="text-sm md:text-base font-semibold text-slate-300">Eski Yöntem</span>
             </div>
-            <div className="px-5 md:px-8 py-4 bg-[#10b981]/10 border-b border-white/10 flex items-center gap-2">
-              <Check className="w-4 h-4 text-[#10b981]" />
+            <div className="px-5 md:px-8 py-4 bg-[var(--marketing-primary)]/10 border-b border-white/10 flex items-center gap-2">
+              <Check className="w-4 h-4 text-[var(--marketing-primary)]" />
               <span className="text-sm md:text-base font-semibold text-white">eKatalox Yolu</span>
             </div>
           </div>
@@ -253,7 +253,7 @@ const ProblemSolution = () => {
               <div className={`px-5 md:px-8 py-5 md:py-6 border-r border-white/10 text-sm md:text-base text-slate-400 ${i < rows.length - 1 ? 'border-b border-white/5' : ''}`}>
                 {bad}
               </div>
-              <div className={`px-5 md:px-8 py-5 md:py-6 bg-[#10b981]/[0.04] text-sm md:text-base text-white ${i < rows.length - 1 ? 'border-b border-white/5' : ''}`}>
+              <div className={`px-5 md:px-8 py-5 md:py-6 bg-[var(--marketing-primary)]/[0.04] text-sm md:text-base text-white ${i < rows.length - 1 ? 'border-b border-white/5' : ''}`}>
                 {good}
               </div>
             </motion.div>
@@ -301,7 +301,7 @@ const Features = () => {
 
   return (
     <section id="ozellikler" className="relative py-28 md:py-40 px-6">
-      <div className="absolute top-1/4 right-0 w-[500px] h-[500px] rounded-full bg-[#00ff87]/10 blur-[140px] pointer-events-none" />
+      <div className="absolute top-1/4 right-0 w-[500px] h-[500px] rounded-full bg-[var(--marketing-accent)]/10 blur-[140px] pointer-events-none" />
       <div className="max-w-7xl mx-auto relative">
         <motion.div
           initial={{ opacity: 0, y: 30 }}
@@ -311,7 +311,7 @@ const Features = () => {
           className="text-center mb-16 md:mb-20"
         >
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full glass text-xs text-slate-300 mb-6">
-            <Sparkles className="w-3 h-3 text-[#10b981]" />
+            <Sparkles className="w-3 h-3 text-[var(--marketing-primary)]" />
             eKatalox Ne Sağlar?
           </div>
           <h2 className="display-headline text-4xl md:text-6xl text-white text-balance">
@@ -329,10 +329,10 @@ const Features = () => {
               viewport={{ once: true, amount: 0.2 }}
               transition={{ duration: 0.6, delay: i * 0.08, ease: [0.16, 1, 0.3, 1] }}
               whileHover={{ y: -4 }}
-              className="group relative p-7 md:p-8 rounded-3xl border border-white/10 bg-gradient-to-b from-white/[0.04] to-white/[0.01] hover:border-[#10b981]/40 transition-all duration-500"
+              className="group relative p-7 md:p-8 rounded-3xl border border-white/10 bg-gradient-to-b from-white/[0.04] to-white/[0.01] hover:border-[var(--marketing-primary)]/40 transition-all duration-500"
             >
-              <div className="w-12 h-12 rounded-2xl bg-[#10b981]/10 flex items-center justify-center mb-5 group-hover:bg-[#10b981]/20 transition-colors">
-                <f.icon className="w-6 h-6 text-[#10b981]" />
+              <div className="w-12 h-12 rounded-2xl bg-[var(--marketing-primary)]/10 flex items-center justify-center mb-5 group-hover:bg-[var(--marketing-primary)]/20 transition-colors">
+                <f.icon className="w-6 h-6 text-[var(--marketing-primary)]" />
               </div>
               <h3 className="text-lg md:text-xl font-semibold text-white">{f.title}</h3>
               <p className="mt-3 text-sm md:text-base text-slate-400 leading-relaxed">{f.desc}</p>
@@ -348,7 +348,7 @@ const Features = () => {
 const ThemesPromo = () => (
   <section className="relative py-24 md:py-32 px-6">
     <div className="max-w-6xl mx-auto relative rounded-3xl border border-white/10 bg-gradient-to-b from-white/[0.04] to-transparent overflow-hidden p-10 md:p-16 text-center">
-      <div className="absolute -top-24 left-1/2 -translate-x-1/2 w-[600px] h-[400px] rounded-full bg-[#10b981]/15 blur-[140px] pointer-events-none" />
+      <div className="absolute -top-24 left-1/2 -translate-x-1/2 w-[600px] h-[400px] rounded-full bg-[var(--marketing-primary)]/15 blur-[140px] pointer-events-none" />
       <motion.div
         initial={{ opacity: 0, y: 24 }}
         whileInView={{ opacity: 1, y: 0 }}
@@ -357,7 +357,7 @@ const ThemesPromo = () => (
         className="relative"
       >
         <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full glass text-xs text-slate-300 mb-6">
-          <Sparkles className="w-3 h-3 text-[#10b981]" />
+          <Sparkles className="w-3 h-3 text-[var(--marketing-primary)]" />
           Sektörünüze özel temalar
         </div>
         <h2 className="display-headline text-3xl md:text-5xl text-white text-balance">
@@ -400,8 +400,8 @@ const FAQ = () => {
 
   return (
     <section id="faq" className="relative py-28 md:py-40 px-6">
-      <div className="absolute top-1/2 left-1/3 w-[500px] h-[500px] rounded-full bg-[#10b981]/10 blur-[160px] pointer-events-none" />
-      <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] rounded-full bg-[#00ff87]/10 blur-[140px] pointer-events-none" />
+      <div className="absolute top-1/2 left-1/3 w-[500px] h-[500px] rounded-full bg-[var(--marketing-primary)]/10 blur-[160px] pointer-events-none" />
+      <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] rounded-full bg-[var(--marketing-accent)]/10 blur-[140px] pointer-events-none" />
       <div className="max-w-3xl mx-auto relative">
         <motion.div
           initial={{ opacity: 0, y: 30 }}
@@ -411,7 +411,7 @@ const FAQ = () => {
           className="text-center mb-14"
         >
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full glass text-xs text-slate-300 mb-6">
-            <HelpCircle className="w-3 h-3 text-[#10b981]" />
+            <HelpCircle className="w-3 h-3 text-[var(--marketing-primary)]" />
             Sıkça Sorulan Sorular
           </div>
           <h2 className="display-headline text-4xl md:text-5xl lg:text-6xl text-white text-balance">
@@ -430,7 +430,7 @@ const FAQ = () => {
               transition={{ duration: 0.5, delay: i * 0.06 }}
               className={`rounded-2xl border bg-gradient-to-b overflow-hidden transition-colors ${
                 open === i
-                  ? 'border-[#10b981]/40 from-[#10b981]/[0.06] to-transparent'
+                  ? 'border-[var(--marketing-primary)]/40 from-[var(--marketing-primary)]/[0.06] to-transparent'
                   : 'border-white/10 from-white/[0.03] to-transparent hover:border-white/20'
               }`}
             >
@@ -443,7 +443,7 @@ const FAQ = () => {
                   animate={{ rotate: open === i ? 45 : 0 }}
                   transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
                   className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 ${
-                    open === i ? 'bg-gradient-to-br from-[#10b981] to-[#00ff87] text-white' : 'bg-white/5 text-slate-400'
+                    open === i ? 'bg-gradient-to-br from-[var(--marketing-primary)] to-[var(--marketing-accent)] text-white' : 'bg-white/5 text-slate-400'
                   }`}
                 >
                   <Plus className="w-3.5 h-3.5" strokeWidth={2.5} />
@@ -475,7 +475,7 @@ const FAQ = () => {
           transition={{ delay: 0.4 }}
           className="mt-12 text-center text-sm text-slate-500"
         >
-          Cevabını bulamadığınız bir sorunuz mu var? <a href="/iletisim" className="text-white hover:text-[#10b981] underline-offset-4 hover:underline">Bizimle iletişime geçin →</a>
+          Cevabını bulamadığınız bir sorunuz mu var? <a href="/iletisim" className="text-white hover:text-[var(--marketing-primary)] underline-offset-4 hover:underline">Bizimle iletişime geçin →</a>
         </motion.div>
       </div>
     </section>
@@ -572,8 +572,8 @@ const Pricing = () => {
 
   return (
     <section id="fiyatlandirma" className="relative py-32 md:py-44 px-6">
-      <div className="absolute top-1/4 right-1/4 w-[500px] h-[500px] rounded-full bg-[#00ff87]/15 blur-[160px] pointer-events-none" />
-      <div className="absolute bottom-0 left-1/4 w-[500px] h-[500px] rounded-full bg-[#10b981]/10 blur-[160px] pointer-events-none" />
+      <div className="absolute top-1/4 right-1/4 w-[500px] h-[500px] rounded-full bg-[var(--marketing-accent)]/15 blur-[160px] pointer-events-none" />
+      <div className="absolute bottom-0 left-1/4 w-[500px] h-[500px] rounded-full bg-[var(--marketing-primary)]/10 blur-[160px] pointer-events-none" />
       <div className="max-w-7xl mx-auto relative">
         <motion.div
           initial={{ opacity: 0, y: 30 }}
@@ -583,7 +583,7 @@ const Pricing = () => {
           className="text-center mb-10 md:mb-12"
         >
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full glass text-xs text-slate-300 mb-6">
-            <DollarSign className="w-3 h-3 text-[#10b981]" />
+            <DollarSign className="w-3 h-3 text-[var(--marketing-primary)]" />
             Fiyatlandırma
           </div>
           <h2 className="display-headline text-4xl md:text-6xl lg:text-7xl text-white text-balance">
@@ -593,8 +593,8 @@ const Pricing = () => {
           <p className="mt-6 text-lg md:text-xl text-slate-400 max-w-2xl mx-auto font-light">
             İhtiyacınıza uygun planı seçin.
           </p>
-          <div className="mt-6 inline-flex items-center gap-2 px-4 py-2 rounded-full border border-[#10b981]/40 bg-[#10b981]/10 text-sm text-white">
-            <CreditCard className="w-4 h-4 text-[#10b981]" />
+          <div className="mt-6 inline-flex items-center gap-2 px-4 py-2 rounded-full border border-[var(--marketing-primary)]/40 bg-[var(--marketing-primary)]/10 text-sm text-white">
+            <CreditCard className="w-4 h-4 text-[var(--marketing-primary)]" />
             Kredi Kartına 12 Aya Varan Taksit İmkanı!
             <span className="text-slate-400 font-light">(3 taksite kadar vade farksız)</span>
           </div>
@@ -662,8 +662,8 @@ const PricingCard = ({ plan, index, billing }) => {
     >
       {plan.featured && (
         <>
-          <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-[#10b981] via-[#00ff87] to-[#10b981] opacity-90" />
-          <div className="absolute -inset-1 rounded-3xl bg-gradient-to-br from-[#10b981]/40 to-[#00ff87]/40 blur-2xl opacity-60 group-hover:opacity-100 transition-opacity duration-500" />
+          <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-[var(--marketing-primary)] via-[var(--marketing-accent)] to-[var(--marketing-primary)] opacity-90" />
+          <div className="absolute -inset-1 rounded-3xl bg-gradient-to-br from-[var(--marketing-primary)]/40 to-[var(--marketing-accent)]/40 blur-2xl opacity-60 group-hover:opacity-100 transition-opacity duration-500" />
         </>
       )}
       {!plan.featured && (
@@ -674,7 +674,7 @@ const PricingCard = ({ plan, index, billing }) => {
         <div className="relative flex items-center justify-between mb-4">
           <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium uppercase tracking-wider ${
             plan.featured
-              ? 'bg-gradient-to-r from-[#10b981] to-[#00ff87] text-white'
+              ? 'bg-gradient-to-r from-[var(--marketing-primary)] to-[var(--marketing-accent)] text-white'
               : 'bg-white/5 text-slate-400'
           }`}>
             {plan.featured && <Sparkles className="w-3 h-3" />}
@@ -683,7 +683,7 @@ const PricingCard = ({ plan, index, billing }) => {
         </div>
 
         <div className="flex items-center gap-2">
-          {Icon && <Icon className={`w-5 h-5 ${plan.featured ? 'text-[#10b981]' : 'text-slate-400'}`} />}
+          {Icon && <Icon className={`w-5 h-5 ${plan.featured ? 'text-[var(--marketing-primary)]' : 'text-slate-400'}`} />}
           <h3 className="text-xl md:text-2xl font-semibold text-white">{plan.name}</h3>
         </div>
         <p className="mt-2 text-sm text-slate-400 min-h-[40px]">{plan.desc}</p>
@@ -697,11 +697,11 @@ const PricingCard = ({ plan, index, billing }) => {
 
         <div className="mt-4 flex flex-wrap gap-2">
           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/5 text-[11px] text-slate-300">
-            <Package className="w-3 h-3 text-[#10b981]" />
+            <Package className="w-3 h-3 text-[var(--marketing-primary)]" />
             {plan.productCapacity}
           </span>
           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/5 text-[11px] text-slate-300">
-            <Users className="w-3 h-3 text-[#10b981]" />
+            <Users className="w-3 h-3 text-[var(--marketing-primary)]" />
             {plan.visitorCapacity}
           </span>
         </div>
@@ -714,9 +714,9 @@ const PricingCard = ({ plan, index, billing }) => {
             return (
               <li key={i} className={`flex items-start gap-2.5 text-sm ${isInherit ? 'text-white font-semibold pt-3 mt-2 border-t border-white/10' : 'text-slate-300'}`}>
                 <div className={`mt-0.5 w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0 ${
-                  isInherit ? 'bg-emerald-500/25' : plan.featured ? 'bg-[#10b981]/20' : 'bg-white/5'
+                  isInherit ? 'bg-emerald-500/25' : plan.featured ? 'bg-[var(--marketing-primary)]/20' : 'bg-white/5'
                 }`}>
-                  <Check className={`w-2.5 h-2.5 ${isInherit ? 'text-emerald-300' : plan.featured ? 'text-[#10b981]' : 'text-emerald-400'}`} strokeWidth={3} />
+                  <Check className={`w-2.5 h-2.5 ${isInherit ? 'text-emerald-300' : plan.featured ? 'text-[var(--marketing-primary)]' : 'text-emerald-400'}`} strokeWidth={3} />
                 </div>
                 {f}
               </li>
@@ -728,7 +728,7 @@ const PricingCard = ({ plan, index, billing }) => {
           href={`/kayit?plan=${plan.id}&billing=${billing}`}
           className={`mt-8 inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-full font-medium text-sm transition-all duration-300 ${
             plan.featured
-              ? 'bg-white text-black hover:scale-[1.02] active:scale-[0.98] shadow-[0_0_40px_rgba(16,185,129,0.3)]'
+              ? 'bg-white text-black hover:scale-[1.02] active:scale-[0.98] shadow-[0_0_40px_rgba(var(--marketing-primary-rgb),0.3)]'
               : 'glass text-white hover:bg-white/10'
           }`}
         >
@@ -744,8 +744,8 @@ const PricingCard = ({ plan, index, billing }) => {
 const FinalCTA = () => (
   <section id="baslat" className="relative py-40 md:py-56 px-6 overflow-hidden">
     <div className="absolute inset-0">
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[900px] h-[900px] rounded-full bg-[#00ff87]/20 blur-[160px]" />
-      <div className="absolute top-1/3 left-1/4 w-[500px] h-[500px] rounded-full bg-[#10b981]/15 blur-[140px]" />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[900px] h-[900px] rounded-full bg-[var(--marketing-accent)]/20 blur-[160px]" />
+      <div className="absolute top-1/3 left-1/4 w-[500px] h-[500px] rounded-full bg-[var(--marketing-primary)]/15 blur-[140px]" />
     </div>
     <motion.div
       initial={{ opacity: 0, y: 50 }}
@@ -762,7 +762,7 @@ const FinalCTA = () => (
         Hemen bugün ücretsiz hesabınızı oluşturun, ürünlerinizi sergilemeye başlayın.
       </p>
       <div className="mt-12 flex flex-col sm:flex-row items-center justify-center gap-4">
-        <a href="/kayit" className="group inline-flex items-center gap-2 px-10 py-5 rounded-full bg-[#10b981] text-white font-medium text-base hover:scale-[1.03] transition-all duration-300 shadow-[0_0_60px_rgba(16,185,129,0.35)] hover:shadow-[0_0_80px_rgba(16,185,129,0.55)]">
+        <a href="/kayit" className="group inline-flex items-center gap-2 px-10 py-5 rounded-full bg-[var(--marketing-primary)] text-white font-medium text-base hover:scale-[1.03] transition-all duration-300 shadow-[0_0_60px_rgba(var(--marketing-primary-rgb),0.35)] hover:shadow-[0_0_80px_rgba(var(--marketing-primary-rgb),0.55)]">
           Ücretsiz Demoyu Başlat
           <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
         </a>

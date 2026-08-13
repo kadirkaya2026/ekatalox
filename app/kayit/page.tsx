@@ -90,20 +90,20 @@ const KayitForm = () => {
     <main className="relative min-h-screen bg-[#090d16] text-white overflow-hidden">
       <SiteNavbar />
 
-      <div className="absolute -top-40 left-1/4 w-[700px] h-[700px] rounded-full bg-[#10b981]/15 blur-[160px] pointer-events-none" />
-      <div className="absolute top-40 right-0 w-[600px] h-[600px] rounded-full bg-[#00ff87]/20 blur-[160px] pointer-events-none" />
+      <div className="absolute -top-40 left-1/4 w-[700px] h-[700px] rounded-full bg-[var(--marketing-primary)]/15 blur-[160px] pointer-events-none" />
+      <div className="absolute top-40 right-0 w-[600px] h-[600px] rounded-full bg-[var(--marketing-accent)]/20 blur-[160px] pointer-events-none" />
 
       <div className="relative pt-32 md:pt-36 pb-24 px-6">
         <div className="max-w-6xl mx-auto grid lg:grid-cols-[1.1fr_1fr] gap-12 lg:gap-16 items-start">
           <div className="lg:sticky lg:top-32">
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7 }}>
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-xs text-slate-300 mb-6">
-                <Sparkles className="w-3 h-3 text-[#10b981]" />
+                <Sparkles className="w-3 h-3 text-[var(--marketing-primary)]" />
                 14 gün ücretsiz · Kart gerekmez
               </div>
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-balance" style={{ letterSpacing: '-0.04em', lineHeight: 1 }}>
                 B2B vitrininizi <br />
-                <span className="bg-clip-text text-transparent bg-gradient-to-r from-[#10b981] to-[#00ff87]">1 dakikada</span> kurun.
+                <span className="bg-clip-text text-transparent bg-gradient-to-r from-[var(--marketing-primary)] to-[var(--marketing-accent)]">1 dakikada</span> kurun.
               </h1>
               <p className="mt-5 text-slate-400 text-base md:text-lg max-w-md font-light">
                 Hesabınızı açın, Excel'inizi yükleyin, müşterilerinize hemen profesyonel bir vitrin sunun.
@@ -117,8 +117,8 @@ const KayitForm = () => {
                   ['7/24 öncelikli destek', 'Ekibimiz yanınızda'],
                 ].map(([t, s]) => (
                   <div key={t} className="flex items-start gap-3">
-                    <div className="mt-0.5 w-5 h-5 rounded-full bg-[#10b981]/15 flex items-center justify-center flex-shrink-0">
-                      <Check className="w-3 h-3 text-[#10b981]" />
+                    <div className="mt-0.5 w-5 h-5 rounded-full bg-[var(--marketing-primary)]/15 flex items-center justify-center flex-shrink-0">
+                      <Check className="w-3 h-3 text-[var(--marketing-primary)]" />
                     </div>
                     <div>
                       <div className="text-sm text-white">{t}</div>
@@ -140,7 +140,7 @@ const KayitForm = () => {
 
           <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.1 }} className="relative">
             <div className="relative rounded-3xl border border-white/10 bg-gradient-to-b from-white/[0.04] to-white/[0.01] p-7 md:p-9 backdrop-blur-xl overflow-hidden">
-              <div className="absolute -top-20 -right-20 w-60 h-60 rounded-full bg-[#00ff87]/20 blur-3xl pointer-events-none" />
+              <div className="absolute -top-20 -right-20 w-60 h-60 rounded-full bg-[var(--marketing-accent)]/20 blur-3xl pointer-events-none" />
               <AnimatePresence mode="wait">
                 {!submitted ? (
                   <motion.form key="form" onSubmit={submit} noValidate initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }} className="relative space-y-5">
@@ -183,18 +183,18 @@ const KayitForm = () => {
                             <button key={p.id} type="button" onClick={() => setForm({ ...form, plan: p.id })}
                               className={`relative p-3 rounded-xl border text-left transition-all duration-200 ${
                                 selected
-                                  ? 'border-[#10b981] ring-1 ring-[#10b981]/30 bg-gradient-to-b from-[#10b981]/15 to-[#00ff87]/10'
+                                  ? 'border-[var(--marketing-primary)] ring-1 ring-[var(--marketing-primary)]/30 bg-gradient-to-b from-[var(--marketing-primary)]/15 to-[var(--marketing-accent)]/10'
                                   : 'border-white/10 bg-white/[0.02] hover:border-white/20'
                               }`}>
                               {selected && (
-                                <span className="absolute inset-x-0 top-0 h-[2px] rounded-t-xl bg-gradient-to-r from-[#10b981] to-[#00ff87]" />
+                                <span className="absolute inset-x-0 top-0 h-[2px] rounded-t-xl bg-gradient-to-r from-[var(--marketing-primary)] to-[var(--marketing-accent)]" />
                               )}
                               {p.featured && !selected && (
-                                <span className="absolute -top-2 left-1/2 -translate-x-1/2 px-1.5 py-0.5 rounded-full bg-gradient-to-r from-[#10b981] to-[#00ff87] text-[11px] text-white font-medium uppercase tracking-wider">Popüler</span>
+                                <span className="absolute -top-2 left-1/2 -translate-x-1/2 px-1.5 py-0.5 rounded-full bg-gradient-to-r from-[var(--marketing-primary)] to-[var(--marketing-accent)] text-[11px] text-white font-medium uppercase tracking-wider">Popüler</span>
                               )}
                               {selected && (
                                 <span className="absolute top-2 right-2">
-                                  <Check className="w-3 h-3 text-[#10b981]" />
+                                  <Check className="w-3 h-3 text-[var(--marketing-primary)]" />
                                 </span>
                               )}
                               <div className={`text-[11px] ${selected ? 'text-white' : 'text-slate-400'}`}>{p.name}</div>
@@ -206,7 +206,7 @@ const KayitForm = () => {
                     </div>
 
                     {apiError && <div className="text-sm text-red-400 text-center">{apiError}</div>}
-                    <button type="submit" disabled={sending} className="w-full inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-full bg-white text-black font-medium text-sm hover:scale-[1.01] active:scale-[0.99] transition-transform shadow-[0_0_40px_rgba(16,185,129,0.2)] mt-2 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:scale-100">
+                    <button type="submit" disabled={sending} className="w-full inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-full bg-white text-black font-medium text-sm hover:scale-[1.01] active:scale-[0.99] transition-transform shadow-[0_0_40px_rgba(var(--marketing-primary-rgb),0.2)] mt-2 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:scale-100">
                       {sending ? 'Lütfen bekleyin…' : <><span>Ücretsiz Hesap Aç</span><ArrowRight className="w-4 h-4" /></>}
                     </button>
 
@@ -215,12 +215,12 @@ const KayitForm = () => {
                     </p>
 
                     <div className="pt-4 border-t border-white/5 text-center text-sm text-slate-400">
-                      Hesabınız var mı? <Link href="/login" className="text-white hover:text-[#10b981]">Giriş yapın</Link>
+                      Hesabınız var mı? <Link href="/login" className="text-white hover:text-[var(--marketing-primary)]">Giriş yapın</Link>
                     </div>
                   </motion.form>
                 ) : (
                   <motion.div key="success" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }} className="relative text-center py-8">
-                    <motion.div initial={{ scale: 0, rotate: -30 }} animate={{ scale: 1, rotate: 0 }} transition={{ delay: 0.15, type: 'spring', stiffness: 200, damping: 14 }} className="relative mx-auto w-24 h-24 rounded-full bg-gradient-to-br from-emerald-500 to-emerald-400 flex items-center justify-center shadow-[0_0_80px_rgba(16,185,129,0.5)]">
+                    <motion.div initial={{ scale: 0, rotate: -30 }} animate={{ scale: 1, rotate: 0 }} transition={{ delay: 0.15, type: 'spring', stiffness: 200, damping: 14 }} className="relative mx-auto w-24 h-24 rounded-full bg-gradient-to-br from-emerald-500 to-emerald-400 flex items-center justify-center shadow-[0_0_80px_rgba(var(--marketing-primary-rgb),0.5)]">
                       <CheckCircle2 className="w-12 h-12 text-white" strokeWidth={2.5} />
                       <motion.div className="absolute inset-0 rounded-full border-2 border-emerald-300" initial={{ scale: 1, opacity: 0.8 }} animate={{ scale: 1.8, opacity: 0 }} transition={{ duration: 1.4, repeat: Infinity }} />
                     </motion.div>
@@ -231,7 +231,7 @@ const KayitForm = () => {
                       Talebiniz alındı. <span className="text-white">{form.email}</span> adresine en kısa sürede dönüş sağlayacağız.
                     </motion.p>
                     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.55 }} className="mt-6 inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-[11px] text-slate-300">
-                      <Sparkles className="w-3 h-3 text-[#10b981]" />
+                      <Sparkles className="w-3 h-3 text-[var(--marketing-primary)]" />
                       Workspace URL: <span className="font-mono text-white">{form.company.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '') || 'firmaniz'}.ekatalox.com</span>
                     </motion.div>
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.7 }} className="mt-8 flex items-center justify-center gap-3">
@@ -259,7 +259,7 @@ const Field = ({ id, label, type = 'text', placeholder, value, onChange, error }
     <label htmlFor={id} className="text-xs text-slate-400 mb-1.5 block uppercase tracking-wider">{label}</label>
     <input id={id} type={type} placeholder={placeholder} value={value} onChange={onChange}
       className={`w-full px-4 py-3 rounded-xl bg-black/30 border text-sm text-white placeholder:text-slate-600 outline-none transition-colors ${
-        error ? 'border-red-500/60' : 'border-white/10 focus:border-[#10b981]/60'
+        error ? 'border-red-500/60' : 'border-white/10 focus:border-[var(--marketing-primary)]/60'
       }`} />
     {error && <div className="mt-1 text-[11px] text-red-400">{error}</div>}
   </div>

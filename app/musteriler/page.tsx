@@ -47,7 +47,7 @@ const Page = () => {
       <SiteNavbar />
       <PageHero
         tag="Müşterilerimiz"
-        title={<>850+ toptancı zaten <span className="bg-clip-text text-transparent bg-gradient-to-r from-[#10b981] to-[#00ff87]">eKatalox’ta.</span></>}
+        title={<>850+ toptancı zaten <span className="bg-clip-text text-transparent bg-gradient-to-r from-[var(--marketing-primary)] to-[var(--marketing-accent)]">eKatalox’ta.</span></>}
         subtitle="Küçük butiklerden çok lokasyonlu distribütörlere kadar; tüm B2B oyuncuları aynı vitrinde buluşturuyoruz."
       />
 
@@ -71,24 +71,24 @@ const Page = () => {
           <div className="space-y-5">
             {cases.map((c, i) => (
               <motion.div key={c.company} initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.2 }} transition={{ duration: 0.7, delay: i * 0.08 }} className="relative rounded-3xl border border-white/10 bg-gradient-to-b from-white/[0.04] to-transparent p-7 md:p-10 overflow-hidden">
-                <div className="absolute -top-20 -right-20 w-60 h-60 rounded-full bg-[#10b981]/10 blur-3xl pointer-events-none" />
+                <div className="absolute -top-20 -right-20 w-60 h-60 rounded-full bg-[var(--marketing-primary)]/10 blur-3xl pointer-events-none" />
                 <div className="grid md:grid-cols-[1.5fr_1fr] gap-8 relative">
                   <div>
                     <div className="flex items-center gap-3 mb-4">
-                      <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-[#10b981]/30 to-[#00ff87]/30 border border-white/10 flex items-center justify-center text-sm font-bold text-white">{c.company[0]}</div>
+                      <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-[var(--marketing-primary)]/30 to-[var(--marketing-accent)]/30 border border-white/10 flex items-center justify-center text-sm font-bold text-white">{c.company[0]}</div>
                       <div>
                         <div className="text-white font-semibold">{c.company}</div>
                         <div className="text-xs text-slate-500">{c.sector}</div>
                       </div>
                     </div>
-                    <Quote className="w-6 h-6 text-[#10b981] mb-2" />
+                    <Quote className="w-6 h-6 text-[var(--marketing-primary)] mb-2" />
                     <p className="text-lg md:text-xl text-white font-light leading-snug max-w-lg">{c.quote}</p>
                     <div className="mt-4 text-sm text-slate-400">— <span className="text-white">{c.author}</span>, {c.role}</div>
                   </div>
                   <div className="grid grid-cols-3 md:grid-cols-1 gap-3">
                     {c.metrics.map(([v, l]) => (
                       <div key={l} className="p-4 rounded-xl border border-white/10 bg-white/[0.02] text-center">
-                        <div className="text-xl md:text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-[#10b981] to-[#00ff87]">{v}</div>
+                        <div className="text-xl md:text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-[var(--marketing-primary)] to-[var(--marketing-accent)]">{v}</div>
                         <div className="text-[11px] text-slate-500 uppercase tracking-widest mt-1">{l}</div>
                       </div>
                     ))}
@@ -107,7 +107,7 @@ const Page = () => {
             {testimonials.map((t, i) => (
               <motion.div key={i} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.05 }} whileHover={{ y: -4 }} className="p-6 rounded-2xl border border-white/10 bg-white/[0.02] hover:border-white/20 transition-colors">
                 <div className="flex gap-0.5 mb-3">
-                  {[1,2,3,4,5].map(s => <Star key={s} className="w-3.5 h-3.5 fill-[#10b981] text-[#10b981]" />)}
+                  {[1,2,3,4,5].map(s => <Star key={s} className="w-3.5 h-3.5 fill-[var(--marketing-primary)] text-[var(--marketing-primary)]" />)}
                 </div>
                 <p className="text-sm text-slate-300 leading-relaxed">“{t.t}”</p>
                 <div className="mt-4 text-xs text-slate-500"><span className="text-white">{t.a}</span> · {t.c}</div>
@@ -119,7 +119,7 @@ const Page = () => {
 
       <section className="px-6 pb-32">
         <div className="max-w-3xl mx-auto text-center">
-          <h3 className="text-3xl md:text-4xl font-bold tracking-tight" style={{ letterSpacing: '-0.04em' }}>Sıradaki başarı hikayesi <span className="bg-clip-text text-transparent bg-gradient-to-r from-[#10b981] to-[#00ff87]">sizinki olsun.</span></h3>
+          <h3 className="text-3xl md:text-4xl font-bold tracking-tight" style={{ letterSpacing: '-0.04em' }}>Sıradaki başarı hikayesi <span className="bg-clip-text text-transparent bg-gradient-to-r from-[var(--marketing-primary)] to-[var(--marketing-accent)]">sizinki olsun.</span></h3>
           <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link href="/kayit" className="inline-flex items-center gap-2 px-7 py-3.5 rounded-full bg-white text-black text-sm font-medium hover:scale-105 transition-transform">14 Gün Ücretsiz Dene <ArrowRight className="w-4 h-4" /></Link>
             <Link href="/iletisim" className="text-sm text-slate-400 hover:text-white">Demo talep et →</Link>

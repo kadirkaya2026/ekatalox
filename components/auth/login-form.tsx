@@ -33,7 +33,7 @@ function Field({
         placeholder={placeholder}
         value={value}
         onChange={onChange}
-        className="w-full rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white outline-none transition-colors placeholder:text-slate-600 focus:border-[#10b981]/60"
+        className="w-full rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white outline-none transition-colors placeholder:text-slate-600 focus:border-[var(--marketing-primary)]/60"
       />
     </div>
   );
@@ -131,8 +131,8 @@ export function LoginForm({ target }: { target?: string }) {
 
   return (
     <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#090d16] px-6 py-10">
-      <div className="pointer-events-none absolute -top-40 left-1/2 h-[600px] w-[900px] -translate-x-1/2 rounded-full bg-[#10b981]/15 blur-[160px]" />
-      <div className="pointer-events-none absolute right-0 top-40 h-[500px] w-[500px] rounded-full bg-[#00ff87]/15 blur-[140px]" />
+      <div className="pointer-events-none absolute -top-40 left-1/2 h-[600px] w-[900px] -translate-x-1/2 rounded-full bg-[var(--marketing-primary)]/15 blur-[160px]" />
+      <div className="pointer-events-none absolute right-0 top-40 h-[500px] w-[500px] rounded-full bg-[var(--marketing-accent)]/15 blur-[140px]" />
 
       <motion.div
         initial={{ opacity: 0, y: 16 }}

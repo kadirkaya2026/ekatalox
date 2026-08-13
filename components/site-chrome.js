@@ -89,7 +89,7 @@ export const SiteNavbar = () => {
 
 export const SiteFooter = () => (
   <footer className="relative border-t border-white/5 bg-[#090d16]">
-    <div className="h-px w-full" style={{ background: 'linear-gradient(90deg, transparent 0%, #10b981 30%, #00ff87 70%, transparent 100%)' }} />
+    <div className="h-px w-full" style={{ background: 'linear-gradient(90deg, transparent 0%, var(--marketing-primary) 30%, var(--marketing-accent) 70%, transparent 100%)' }} />
     <div className="max-w-7xl mx-auto px-6 py-16 md:py-20">
       <div className="grid grid-cols-2 md:grid-cols-5 gap-10">
         <div className="col-span-2">
@@ -147,8 +147,8 @@ const FooterCol = ({ title, items }) => (
 
 export const PageHero = ({ tag, title, subtitle, children }) => (
   <section className="relative pt-36 md:pt-44 pb-16 md:pb-20 px-6 overflow-hidden">
-    <div className="absolute -top-40 left-1/2 -translate-x-1/2 w-[900px] h-[600px] rounded-full bg-[#10b981]/15 blur-[160px] pointer-events-none" />
-    <div className="absolute top-20 right-0 w-[500px] h-[500px] rounded-full bg-[#00ff87]/15 blur-[140px] pointer-events-none" />
+    <div className="absolute -top-40 left-1/2 -translate-x-1/2 w-[900px] h-[600px] rounded-full bg-[var(--marketing-primary)]/15 blur-[160px] pointer-events-none" />
+    <div className="absolute top-20 right-0 w-[500px] h-[500px] rounded-full bg-[var(--marketing-accent)]/15 blur-[140px] pointer-events-none" />
     <div className="relative max-w-5xl mx-auto text-center">
       {tag && (
         <motion.div
@@ -157,7 +157,7 @@ export const PageHero = ({ tag, title, subtitle, children }) => (
           transition={{ duration: 0.6 }}
           className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/5 border border-white/10 backdrop-blur-xl text-xs text-slate-300 mb-6"
         >
-          <span className="w-1.5 h-1.5 rounded-full bg-[#10b981] animate-pulse" />
+          <span className="w-1.5 h-1.5 rounded-full bg-[var(--marketing-primary)] animate-pulse" />
           {tag}
         </motion.div>
       )}

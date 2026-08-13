@@ -47,11 +47,11 @@ const Page = () => {
       <SiteNavbar />
       <PageHero
         tag="Yardım Merkezi"
-        title={<>Sorunuza saniyeler içinde <span className="bg-clip-text text-transparent bg-gradient-to-r from-[#10b981] to-[#00ff87]">cevap.</span></>}
+        title={<>Sorunuza saniyeler içinde <span className="bg-clip-text text-transparent bg-gradient-to-r from-[var(--marketing-primary)] to-[var(--marketing-accent)]">cevap.</span></>}
         subtitle="100+ makale, video rehber ve canlı destek. Ne aradığınızı yazın, biz bulalım."
       >
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3, duration: 0.7 }} className="mt-10 max-w-2xl mx-auto">
-          <div className="flex items-center gap-3 p-2 rounded-full border border-white/10 bg-black/30 backdrop-blur-xl focus-within:border-[#10b981]/60 transition-colors">
+          <div className="flex items-center gap-3 p-2 rounded-full border border-white/10 bg-black/30 backdrop-blur-xl focus-within:border-[var(--marketing-primary)]/60 transition-colors">
             <Search className="w-4 h-4 text-slate-500 ml-3" />
             <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Excel yükleme, banner, fiyatlandırma…" className="flex-1 bg-transparent px-2 py-2 text-sm text-white placeholder:text-slate-500 outline-none" />
             <button className="px-4 py-2 rounded-full bg-white text-black text-xs font-medium">Ara</button>
@@ -71,10 +71,10 @@ const Page = () => {
               viewport={{ once: true }}
               transition={{ delay: i * 0.05 }}
               whileHover={{ y: -3 }}
-              className="p-5 md:p-6 rounded-2xl border border-white/10 bg-white/[0.02] hover:border-white/20 hover:bg-white/[0.04] transition-all text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#10b981]/60"
+              className="p-5 md:p-6 rounded-2xl border border-white/10 bg-white/[0.02] hover:border-white/20 hover:bg-white/[0.04] transition-all text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--marketing-primary)]/60"
             >
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#10b981]/15 to-[#00ff87]/15 flex items-center justify-center mb-3">
-                <c.icon className="w-5 h-5 text-[#10b981]" />
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[var(--marketing-primary)]/15 to-[var(--marketing-accent)]/15 flex items-center justify-center mb-3">
+                <c.icon className="w-5 h-5 text-[var(--marketing-primary)]" />
               </div>
               <div className="flex items-center justify-between">
                 <div className="text-base text-white font-semibold">{c.title}</div>
@@ -115,7 +115,7 @@ const Page = () => {
 
       <section className="px-6 pb-32">
         <div className="max-w-3xl mx-auto rounded-3xl border border-white/10 bg-gradient-to-b from-white/[0.04] to-transparent p-8 md:p-12 text-center">
-          <BookOpen className="w-8 h-8 text-[#10b981] mx-auto" />
+          <BookOpen className="w-8 h-8 text-[var(--marketing-primary)] mx-auto" />
           <h3 className="mt-4 text-2xl md:text-3xl font-bold tracking-tight" style={{ letterSpacing: '-0.04em' }}>Cevabınızı hala bulamadınız mı?</h3>
           <p className="mt-3 text-slate-400">Ekibimiz canlı. Yanıt süremiz ortalama 2 saat.</p>
           <Link href="/iletisim" className="inline-flex items-center gap-2 mt-6 px-6 py-3 rounded-full bg-white text-black text-sm font-medium hover:scale-105 transition-transform">

@@ -33,6 +33,16 @@
   --color-border: transparent;
 }
 
+/* Pazarlama sitesi (marka koyu tema) marka renk token'ları — vitrin
+   temaları (lib/storefront/themes.ts) ve admin panel (@theme inline
+   yukarıda) ile karıştırılmasın diye ayrı, sabit tutuluyor. */
+:root {
+  --marketing-primary: #10b981;
+  --marketing-primary-rgb: 16, 185, 129;
+  --marketing-accent: #00ff87;
+  --marketing-accent-rgb: 0, 255, 135;
+}
+
 * {
   @apply border-border;
 }

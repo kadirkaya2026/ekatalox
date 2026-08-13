@@ -25,7 +25,7 @@ const Page = () => {
         title={
           <>
             Sektörünüze hazır,{' '}
-            <span className="bg-clip-text text-transparent bg-gradient-to-r from-[#10b981] to-[#00ff87]">
+            <span className="bg-clip-text text-transparent bg-gradient-to-r from-[var(--marketing-primary)] to-[var(--marketing-accent)]">
               canlı çalışan
             </span>{' '}
             vitrinler.
@@ -105,7 +105,7 @@ const Page = () => {
                     <p className="mt-2 text-sm leading-relaxed text-slate-400">
                       {preset.description}
                     </p>
-                    <div className="mt-4 inline-flex items-center gap-1.5 text-sm font-medium text-[#10b981]">
+                    <div className="mt-4 inline-flex items-center gap-1.5 text-sm font-medium text-[var(--marketing-primary)]">
                       Canlı demoyu incele
                       <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-1" />
                     </div>
@@ -121,7 +121,7 @@ const Page = () => {
         <div className="max-w-3xl mx-auto text-center">
           <h3 className="text-3xl md:text-4xl font-bold tracking-tight" style={{ letterSpacing: '-0.04em' }}>
             Aradığınız tema burada yoksa,{' '}
-            <span className="bg-clip-text text-transparent bg-gradient-to-r from-[#10b981] to-[#00ff87]">
+            <span className="bg-clip-text text-transparent bg-gradient-to-r from-[var(--marketing-primary)] to-[var(--marketing-accent)]">
               birlikte tasarlayalım.
             </span>
           </h3>

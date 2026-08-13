@@ -52,7 +52,7 @@ const Page = () => {
       <SiteNavbar />
       <PageHero
         tag="İletişim"
-        title={<>Bizimle <span className="bg-clip-text text-transparent bg-gradient-to-r from-[#10b981] to-[#00ff87]">konuşalım.</span></>}
+        title={<>Bizimle <span className="bg-clip-text text-transparent bg-gradient-to-r from-[var(--marketing-primary)] to-[var(--marketing-accent)]">konuşalım.</span></>}
         subtitle="Demo, fiyat teklifi veya genel bir soru — her türlü konuda 24 saat içinde geri dönüş sağlıyoruz."
       />
 
@@ -62,13 +62,13 @@ const Page = () => {
             {departments.map((d, i) => (
               <motion.div key={d.name} initial={{ opacity: 0, x: -20 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true, amount: 0.3 }} transition={{ duration: 0.6, delay: i * 0.1 }}
                 className="flex items-start gap-4 p-5 rounded-2xl border border-white/10 bg-white/[0.02] hover:border-white/20 transition-colors">
-                <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-[#10b981]/20 to-[#00ff87]/20 border border-white/10 flex items-center justify-center flex-shrink-0">
-                  <d.icon className="w-5 h-5 text-[#10b981]" />
+                <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-[var(--marketing-primary)]/20 to-[var(--marketing-accent)]/20 border border-white/10 flex items-center justify-center flex-shrink-0">
+                  <d.icon className="w-5 h-5 text-[var(--marketing-primary)]" />
                 </div>
                 <div>
                   <div className="text-base text-white font-semibold">{d.name}</div>
                   <div className="text-xs text-slate-500 mt-0.5">{d.desc}</div>
-                  <a href={`mailto:${d.email}`} className="text-sm text-[#10b981] hover:text-white transition-colors mt-2 inline-flex items-center gap-1">
+                  <a href={`mailto:${d.email}`} className="text-sm text-[var(--marketing-primary)] hover:text-white transition-colors mt-2 inline-flex items-center gap-1">
                     {d.email} <ArrowRight className="w-3 h-3" />
                   </a>
                 </div>
@@ -85,7 +85,7 @@ const Page = () => {
 
           <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.2 }} transition={{ duration: 0.8 }}
             className="relative rounded-3xl border border-white/10 bg-gradient-to-b from-white/[0.04] to-white/[0.01] p-7 md:p-9 overflow-hidden">
-            <div className="absolute -top-20 -right-20 w-60 h-60 rounded-full bg-[#10b981]/15 blur-3xl pointer-events-none" />
+            <div className="absolute -top-20 -right-20 w-60 h-60 rounded-full bg-[var(--marketing-primary)]/15 blur-3xl pointer-events-none" />
             <AnimatePresence mode="wait">
               {!sent ? (
                 <motion.form key="form" onSubmit={submit} noValidate initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="relative space-y-4">
@@ -101,7 +101,7 @@ const Page = () => {
                   </div>
                   <div>
                     <label htmlFor="contact-subject" className="text-xs text-slate-400 mb-1.5 block uppercase tracking-wider">Konu</label>
-                    <select id="contact-subject" value={form.subject} onChange={set('subject')} className="w-full px-4 py-3 rounded-xl bg-black/30 border border-white/10 text-sm text-white outline-none focus:border-[#10b981]/60">
+                    <select id="contact-subject" value={form.subject} onChange={set('subject')} className="w-full px-4 py-3 rounded-xl bg-black/30 border border-white/10 text-sm text-white outline-none focus:border-[var(--marketing-primary)]/60">
                       <option value="demo">Demo Talep Etmek İstiyorum</option>
                       <option value="satis">Satış / Fiyat Teklifi</option>
                       <option value="destek">Teknik Destek</option>
@@ -113,7 +113,7 @@ const Page = () => {
                     <label htmlFor="contact-message" className="text-xs text-slate-400 mb-1.5 block uppercase tracking-wider">Mesajınız</label>
                     <textarea id="contact-message" rows={5} placeholder="Bize biraz daha bahsedin…" value={form.message} onChange={set('message')}
                       className={`w-full px-4 py-3 rounded-xl bg-black/30 border text-sm text-white placeholder:text-slate-600 outline-none transition-colors resize-none ${
-                        errors.message ? 'border-red-500/60' : 'border-white/10 focus:border-[#10b981]/60'
+                        errors.message ? 'border-red-500/60' : 'border-white/10 focus:border-[var(--marketing-primary)]/60'
                       }`} />
                     {errors.message && <div className="mt-1 text-[11px] text-red-400">{errors.message}</div>}
                   </div>
@@ -125,7 +125,7 @@ const Page = () => {
               ) : (
                 <motion.div key="sent" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="relative text-center py-10">
                   <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring', stiffness: 200, damping: 14, delay: 0.1 }}
-                    className="mx-auto w-20 h-20 rounded-full bg-gradient-to-br from-emerald-500 to-emerald-400 flex items-center justify-center shadow-[0_0_60px_rgba(16,185,129,0.5)]">
+                    className="mx-auto w-20 h-20 rounded-full bg-gradient-to-br from-emerald-500 to-emerald-400 flex items-center justify-center shadow-[0_0_60px_rgba(var(--marketing-primary-rgb),0.5)]">
                     <CheckCircle2 className="w-10 h-10 text-white" strokeWidth={2.5} />
                   </motion.div>
                   <h3 className="mt-6 text-2xl font-semibold">Mesajınız alındı!</h3>
@@ -144,7 +144,7 @@ const Page = () => {
 
 const InfoTile = ({ icon: Icon, label, value }) => (
   <div className="p-4 rounded-xl border border-white/10 bg-white/[0.02]">
-    <Icon className="w-4 h-4 text-[#10b981]" />
+    <Icon className="w-4 h-4 text-[var(--marketing-primary)]" />
     <div className="mt-2 text-[11px] uppercase tracking-widest text-slate-500">{label}</div>
     <div className="text-sm text-white mt-0.5">{value}</div>
   </div>
@@ -157,7 +157,7 @@ const FormField = ({ id, label, type = 'text', placeholder, value, onChange, err
   <div>
     <label htmlFor={id} className="text-xs text-slate-400 mb-1.5 block uppercase tracking-wider">{label}</label>
     <input id={id} type={type} placeholder={placeholder} value={value} onChange={onChange}
-      className={`w-full px-4 py-3 rounded-xl bg-black/30 border text-sm text-white placeholder:text-slate-600 outline-none transition-colors ${error ? 'border-red-500/60' : 'border-white/10 focus:border-[#10b981]/60'}`} />
+      className={`w-full px-4 py-3 rounded-xl bg-black/30 border text-sm text-white placeholder:text-slate-600 outline-none transition-colors ${error ? 'border-red-500/60' : 'border-white/10 focus:border-[var(--marketing-primary)]/60'}`} />
     {error && <div className="mt-1 text-[11px] text-red-400">{error}</div>}
   </div>
 )
