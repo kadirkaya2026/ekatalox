@@ -19,12 +19,27 @@ export interface StockImportSourceRow {
   price: number | null;
 }
 
-// Barkod okuyucu yazılımları vendor'a göre farklı başlıklar kullanabiliyor —
-// bu sözlük sadece dropdown'ları ön-doldurmak için, kullanıcı her zaman
-// elle değiştirebilir (bkz. stock-import-panel.tsx eşleştirme adımı).
+// Barkod okuyucu/market otomasyon yazılımları vendor'a göre farklı başlıklar
+// kullanabiliyor — bu sözlük sadece dropdown'ları ön-doldurmak için, kullanıcı
+// her zaman elle değiştirebilir (bkz. stock-import-panel.tsx eşleştirme adımı).
+// Gerçek bir POS stok raporunda ("Stok Cinsi", "Fiyat"/"Fiyat2".."Fiyat5" gibi
+// birden fazla fiyat sütunu) test edilerek eklendi.
 const STOCK_IMPORT_FIELD_ALIASES: Record<Exclude<StockImportFieldKey, "ignore">, string[]> = {
   barcode: ["barkod", "barcode", "stok kodu", "sku", "model no", "ürün kodu", "urun kodu", "product code", "ean", "code"],
-  product_name: ["ürün adı", "urun adi", "ürün", "urun", "product name", "name", "açıklama", "aciklama", "description", "stok adı", "stok adi"],
+  product_name: [
+    "ürün adı",
+    "urun adi",
+    "ürün",
+    "urun",
+    "product name",
+    "name",
+    "açıklama",
+    "aciklama",
+    "description",
+    "stok adı",
+    "stok adi",
+    "stok cinsi",
+  ],
   price: ["fiyat", "satış fiyatı", "satis fiyati", "price", "unit price", "fiyatı", "fiyati", "birim fiyat"],
 };
 
@@ -35,13 +50,16 @@ function normalizeHeader(header: string): string {
     .replace(/\s+/g, " ");
 }
 
+// Sadece TAM eşleşme kullanılıyor (substring/includes değil) — aksi halde
+// "Fiyat" alias'ı "Fiyat2"/"Fiyat3" gibi numaralı varyantları da yanlışlıkla
+// eşleştirip birden fazla sütunu aynı anda "Fiyat" olarak öneriyordu.
 export function guessFieldForHeader(header: string): StockImportFieldKey {
   const normalized = normalizeHeader(header);
 
   for (const [field, aliases] of Object.entries(STOCK_IMPORT_FIELD_ALIASES) as Array<
     [Exclude<StockImportFieldKey, "ignore">, string[]]
   >) {
-    if (aliases.some((alias) => normalized === alias || normalized.includes(alias))) {
+    if (aliases.includes(normalized)) {
       return field;
     }
   }
