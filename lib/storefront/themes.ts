@@ -125,6 +125,8 @@ export interface StorefrontTheme {
   cartPaymentInactive: string;
   cartInstallmentActive: string;
   modalHandle: string;
+  successText: string;
+  dangerText: string;
 }
 
 interface ThemeAccent {
@@ -437,6 +439,8 @@ function buildTheme(
   const variantBadge = isDark
     ? "bg-blue-950/70 px-2 py-1 text-[10px] text-blue-300"
     : "bg-blue-50 px-2 py-1 text-[10px] text-blue-700";
+  const successText = isDark ? "text-emerald-300" : "text-emerald-700";
+  const dangerText = isDark ? "text-rose-400" : "text-rose-600";
 
   const elevation1 = isDark
     ? "shadow-[0_4px_24px_rgba(0,0,0,0.5)]"
@@ -833,6 +837,8 @@ function buildTheme(
     cartPaymentInactive,
     cartInstallmentActive,
     modalHandle,
+    successText,
+    dangerText,
   };
 }
 

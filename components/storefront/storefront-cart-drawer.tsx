@@ -450,7 +450,7 @@ export function StorefrontCartDrawer({
                     </button>
                   </div>
                   {paymentMethodError ? (
-                    <p className="mt-2 text-xs font-medium text-rose-600">{paymentMethodError}</p>
+                    <p className={cn("mt-2 text-xs font-medium", theme.dangerText)}>{paymentMethodError}</p>
                   ) : null}
                     </>
                   ) : null}
@@ -471,7 +471,7 @@ export function StorefrontCartDrawer({
                       className={cn("rounded-[1.1rem] text-[16px]", theme.formField, theme.text)}
                     />
                     {customerReferenceNameError ? (
-                      <p className="mt-2 text-xs font-medium text-rose-600">{customerReferenceNameError}</p>
+                      <p className={cn("mt-2 text-xs font-medium", theme.dangerText)}>{customerReferenceNameError}</p>
                     ) : null}
                   </div>
 
@@ -494,7 +494,7 @@ export function StorefrontCartDrawer({
                           className={cn("rounded-[1.1rem] text-[16px]", theme.formField, theme.text)}
                         />
                         {customerAddressError ? (
-                          <p className="mt-2 text-xs font-medium text-rose-600">{customerAddressError}</p>
+                          <p className={cn("mt-2 text-xs font-medium", theme.dangerText)}>{customerAddressError}</p>
                         ) : null}
                       </div>
 
@@ -516,7 +516,7 @@ export function StorefrontCartDrawer({
                           className={cn("rounded-[1.1rem] text-[16px]", theme.formField, theme.text)}
                         />
                         {customerPhoneError ? (
-                          <p className="mt-2 text-xs font-medium text-rose-600">{customerPhoneError}</p>
+                          <p className={cn("mt-2 text-xs font-medium", theme.dangerText)}>{customerPhoneError}</p>
                         ) : null}
                       </div>
                     </>
@@ -790,7 +790,7 @@ export function StorefrontCartDrawer({
               ) : null}
               {whatsappHandoff ? (
                 <div className="mt-3 space-y-2">
-                  <p className="text-center text-xs font-medium leading-5 text-emerald-700">
+                  <p className={cn("text-center text-xs font-medium leading-5", theme.successText)}>
                     {whatsappHandoff.pdfIncluded
                       ? t("cart.whatsappReadyPdf")
                       : t("cart.whatsappReadyText")}
@@ -817,7 +817,7 @@ export function StorefrontCartDrawer({
                     {t("cart.copyMessage")}
                   </button>
                   {copyFeedback ? (
-                    <p className="text-center text-xs font-medium text-emerald-700">{copyFeedback}</p>
+                    <p className={cn("text-center text-xs font-medium", theme.successText)}>{copyFeedback}</p>
                   ) : null}
                   <button
                     type="button"
