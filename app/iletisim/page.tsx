@@ -118,7 +118,7 @@ const Page = () => {
                     {errors.message && <div className="mt-1 text-[11px] text-red-400">{errors.message}</div>}
                   </div>
                   {apiError && <div className="text-sm text-red-400 text-center">{apiError}</div>}
-                  <button type="submit" disabled={sending} className="w-full mt-2 inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-full bg-white text-black font-medium text-sm hover:scale-[1.01] transition-transform disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:scale-100">
+                  <button type="submit" disabled={sending} className="w-full mt-2 inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-full bg-white text-black font-medium text-sm hover:scale-[1.01] active:scale-[0.99] transition-transform disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:scale-100">
                     {sending ? 'Gönderiliyor…' : <><span>Mesajı Gönder</span><ArrowRight className="w-4 h-4" /></>}
                   </button>
                 </motion.form>

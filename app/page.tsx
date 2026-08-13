@@ -370,7 +370,7 @@ const ThemesPromo = () => (
         <div className="mt-9">
           <Link
             href="/temalar"
-            className="inline-flex items-center gap-2 px-7 py-3.5 rounded-full bg-white text-black text-sm font-medium hover:scale-105 transition-transform"
+            className="inline-flex items-center gap-2 px-7 py-3.5 rounded-full bg-white text-black text-sm font-medium hover:scale-105 active:scale-95 transition-transform"
           >
             Tüm Temaları İncele <ArrowRight className="w-4 h-4" />
           </Link>
@@ -728,7 +728,7 @@ const PricingCard = ({ plan, index, billing }) => {
           href={`/kayit?plan=${plan.id}&billing=${billing}`}
           className={`mt-8 inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-full font-medium text-sm transition-all duration-300 ${
             plan.featured
-              ? 'bg-white text-black hover:scale-[1.02] shadow-[0_0_40px_rgba(16,185,129,0.3)]'
+              ? 'bg-white text-black hover:scale-[1.02] active:scale-[0.98] shadow-[0_0_40px_rgba(16,185,129,0.3)]'
               : 'glass text-white hover:bg-white/10'
           }`}
         >
@@ -786,7 +786,7 @@ const Footer = () => (
           </p>
           <div className="mt-6 flex gap-3">
             <Link href="/login" className="px-4 py-2 rounded-full glass text-xs text-white hover:bg-white/10 transition-colors">Workspace Giriş</Link>
-            <Link href="/kayit" className="px-4 py-2 rounded-full bg-white text-black text-xs font-medium hover:scale-105 transition-transform">Ücretsiz Başla</Link>
+            <Link href="/kayit" className="px-4 py-2 rounded-full bg-white text-black text-xs font-medium hover:scale-105 active:scale-95 transition-transform">Ücretsiz Başla</Link>
           </div>
         </div>
 
@@ -835,10 +835,16 @@ const NAVBAR_LINKS = [
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const { scrollY } = useScroll()
+  const navBg = useTransform(scrollY, [0, 80], ['rgba(9,13,22,0.6)', 'rgba(9,13,22,0.92)'])
+  const navBorderColor = useTransform(scrollY, [0, 80], ['rgba(255,255,255,0.05)', 'rgba(255,255,255,0.1)'])
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50">
-      <div className="backdrop-blur-xl bg-[#090d16]/60 border-b border-white/5">
+      <motion.div
+        style={{ backgroundColor: navBg, borderBottomColor: navBorderColor }}
+        className="backdrop-blur-xl border-b"
+      >
         <div className="max-w-7xl mx-auto px-6 h-14 flex items-center justify-between">
           <Link href="/#top" className="flex items-center gap-2" onClick={() => setIsMenuOpen(false)}>
             <EkataloxLogo className="h-8 w-[148px]" priority />
@@ -854,7 +860,7 @@ const Navbar = () => {
           </div>
           <div className="flex items-center gap-3">
             <Link href="/login" className="hidden sm:inline text-sm text-slate-300 hover:text-white">Giriş</Link>
-            <Link href="/kayit" className="hidden sm:inline-flex px-4 py-1.5 rounded-full bg-white text-black text-sm font-medium hover:scale-105 transition-transform">Başla</Link>
+            <Link href="/kayit" className="hidden sm:inline-flex px-4 py-1.5 rounded-full bg-white text-black text-sm font-medium hover:scale-105 active:scale-95 transition-transform">Başla</Link>
             <button
               type="button"
               onClick={() => setIsMenuOpen((open) => !open)}
@@ -866,7 +872,7 @@ const Navbar = () => {
             </button>
           </div>
         </div>
-      </div>
+      </motion.div>
       <AnimatePresence>
         {isMenuOpen ? (
           <motion.div

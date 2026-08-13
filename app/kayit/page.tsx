@@ -206,7 +206,7 @@ const KayitForm = () => {
                     </div>
 
                     {apiError && <div className="text-sm text-red-400 text-center">{apiError}</div>}
-                    <button type="submit" disabled={sending} className="w-full inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-full bg-white text-black font-medium text-sm hover:scale-[1.01] transition-transform shadow-[0_0_40px_rgba(16,185,129,0.2)] mt-2 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:scale-100">
+                    <button type="submit" disabled={sending} className="w-full inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-full bg-white text-black font-medium text-sm hover:scale-[1.01] active:scale-[0.99] transition-transform shadow-[0_0_40px_rgba(16,185,129,0.2)] mt-2 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:scale-100">
                       {sending ? 'Lütfen bekleyin…' : <><span>Ücretsiz Hesap Aç</span><ArrowRight className="w-4 h-4" /></>}
                     </button>
 
@@ -235,7 +235,7 @@ const KayitForm = () => {
                       Workspace URL: <span className="font-mono text-white">{form.company.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '') || 'firmaniz'}.ekatalox.com</span>
                     </motion.div>
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.7 }} className="mt-8 flex items-center justify-center gap-3">
-                      <Link href="/" className="px-5 py-2.5 rounded-full bg-white text-black text-sm font-medium hover:scale-105 transition-transform">Ana Sayfaya Dön</Link>
+                      <Link href="/" className="px-5 py-2.5 rounded-full bg-white text-black text-sm font-medium hover:scale-105 active:scale-95 transition-transform">Ana Sayfaya Dön</Link>
                       <Link href="/yardim" className="text-sm text-slate-400 hover:text-white">Yardım Merkezi →</Link>
                     </motion.div>
                   </motion.div>
