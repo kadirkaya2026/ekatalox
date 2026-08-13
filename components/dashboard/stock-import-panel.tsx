@@ -541,6 +541,7 @@ export function StockImportPanel({ priceLists }: { priceLists: PriceList[] }) {
           productId: decision.productId!,
           priceListId: selectedPriceListId,
           price: decision.price!,
+          barcode: sourceRowsByRowNumber.get(decision.rowNumber)?.barcode ?? null,
         }));
 
       if (!updates.length) {

@@ -43,7 +43,7 @@ function normalizeText(value: string): string {
     .trim();
 }
 
-function normalizeCode(value: string): string {
+export function normalizeCode(value: string): string {
   return value.trim().toUpperCase().replace(/\s+/g, "");
 }
 

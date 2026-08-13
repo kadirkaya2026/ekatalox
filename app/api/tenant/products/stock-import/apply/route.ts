@@ -4,6 +4,7 @@ import { getSessionContext } from "@/lib/auth/session";
 import { getTenantPriceLists } from "@/lib/data";
 import { normalizeProductRecord } from "@/lib/products/records";
 import { productWithVariantsAndPricesSelect } from "@/lib/products/queries";
+import { normalizeCode } from "@/lib/products/stock-import-matching";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { ensureTenantAdminResponse } from "@/lib/tenancy/guards";
 import { chunkArray } from "@/lib/utils";
@@ -11,6 +12,7 @@ import { stockImportApplyRequestSchema, type StockImportApplyRowInput } from "@/
 
 const ID_CHUNK_SIZE = 200;
 const UPSERT_CHUNK_SIZE = 500;
+const SKU_REPAIR_CONCURRENCY = 20;
 
 async function fetchAllTenantProductIds(supabase: SupabaseClient, tenantId: string) {
   const ids: string[] = [];
@@ -122,6 +124,73 @@ export async function POST(request: Request) {
 
     if (priceError) {
       return NextResponse.json({ error: priceError.message }, { status: 400 });
+    }
+  }
+
+  // Ürün barkodla değil isimle/manuel eşleştirildiyse (ör. mevcut ürünün
+  // sku_code'u gerçek barkod değil de başka bir kaynaktan gelen kod ise —
+  // bkz. market katalog crawler'ının sku_code'u görsel URL'sinden türetmesi),
+  // burada ürünün sku_code'unu dosyadaki gerçek barkoda düzeltiyoruz. Böylece
+  // bir sonraki stok listesi yüklemesinde bu ürün doğrudan barkodla (tier 1)
+  // eşleşir, tekrar isimle uğraşmaya gerek kalmaz — kendi kendini onaran bir
+  // döngü. Aynı barkodu tenant içinde başka bir ürün zaten kullanıyorsa
+  // (unique(tenant_id, sku_code) çakışması) o satır sessizce atlanır.
+  const barcodeByProductId = new Map<string, string>();
+  for (const update of validUpdates) {
+    if (update.barcode) {
+      barcodeByProductId.set(update.productId, normalizeCode(update.barcode));
+    }
+  }
+
+  if (barcodeByProductId.size) {
+    const productIdsNeedingCheck = [...barcodeByProductId.keys()];
+    const currentSkuByProductId = new Map<string, string>();
+
+    for (const idsChunk of chunkArray(productIdsNeedingCheck, ID_CHUNK_SIZE)) {
+      const { data } = await supabase
+        .from("products")
+        .select("id, sku_code")
+        .eq("tenant_id", tenant.id)
+        .in("id", idsChunk);
+
+      for (const row of data ?? []) {
+        currentSkuByProductId.set(row.id as string, row.sku_code as string);
+      }
+    }
+
+    const candidateBarcodes = [...new Set(barcodeByProductId.values())];
+    const ownerProductIdByBarcode = new Map<string, string>();
+
+    for (const batch of chunkArray(candidateBarcodes, ID_CHUNK_SIZE)) {
+      const { data } = await supabase
+        .from("products")
+        .select("id, sku_code")
+        .eq("tenant_id", tenant.id)
+        .in("sku_code", batch);
+
+      for (const row of data ?? []) {
+        ownerProductIdByBarcode.set(row.sku_code as string, row.id as string);
+      }
+    }
+
+    const skuUpdates = [...barcodeByProductId.entries()].filter(([productId, barcode]) => {
+      if (currentSkuByProductId.get(productId) === barcode) {
+        return false;
+      }
+      const owner = ownerProductIdByBarcode.get(barcode);
+      return !owner || owner === productId;
+    });
+
+    for (const chunk of chunkArray(skuUpdates, SKU_REPAIR_CONCURRENCY)) {
+      await Promise.all(
+        chunk.map(([productId, barcode]) =>
+          supabase
+            .from("products")
+            .update({ sku_code: barcode })
+            .eq("id", productId)
+            .eq("tenant_id", tenant.id),
+        ),
+      );
     }
   }
 

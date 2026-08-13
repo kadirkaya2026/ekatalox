@@ -15,6 +15,11 @@ export const stockImportApplyRowSchema = z.object({
   productId: z.string().uuid("Geçerli bir ürün seçin."),
   priceListId: z.string().uuid("Geçerli bir fiyat listesi seçin."),
   price: z.coerce.number().min(0, "Fiyat sıfırdan küçük olamaz."),
+  // Satırın dosyadaki barkodu — isimle/manuel eşleştirilen ürünlerin
+  // sku_code'unu buna göre düzeltmek için (bkz. apply/route.ts). Barkod
+  // zaten tam eşleştiyse (matched_exact) sku_code=barcode olduğundan bu
+  // bir no-op'tur; asıl fayda isim/manuel eşleşmelerde ortaya çıkar.
+  barcode: z.string().trim().min(1).nullable().optional(),
 });
 
 export const stockImportApplyRequestSchema = z.object({
