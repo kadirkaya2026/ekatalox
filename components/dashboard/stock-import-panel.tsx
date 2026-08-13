@@ -29,7 +29,7 @@ import { cn } from "@/lib/utils";
 import type { PriceList } from "@/lib/types";
 
 type WizardStep = "upload" | "mapping" | "review";
-type RowDecisionAction = "approved" | "reassigned" | "skipped" | "pending";
+type RowDecisionAction = "approved" | "reassigned" | "skipped" | "pending" | "suggested";
 
 interface RowDecision {
   rowNumber: number;
@@ -221,8 +221,40 @@ function ReviewRow({
   onDecisionChange: (next: RowDecision) => void;
 }) {
   const [showPicker, setShowPicker] = useState(false);
+  const [suggestPending, setSuggestPending] = useState(false);
+  const [suggestError, setSuggestError] = useState<string | null>(null);
   const matchedProduct = decision.productId ? productById.get(decision.productId) : null;
   const isPending = decision.action === "pending" || decision.action === "skipped";
+
+  async function suggestProduct() {
+    if (!sourceRow.barcode) return;
+    setSuggestError(null);
+    setSuggestPending(true);
+
+    try {
+      const response = await fetch("/api/tenant/products/product-suggestions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          barcode: sourceRow.barcode,
+          product_name: sourceRow.productName ?? sourceRow.barcode,
+          price: decision.price,
+        }),
+      });
+      const result = await response.json();
+
+      if (!response.ok) {
+        setSuggestError(result.error ?? "Öneri gönderilemedi.");
+        return;
+      }
+
+      onDecisionChange({ ...decision, action: "suggested", productId: null });
+    } catch {
+      setSuggestError("Öneri gönderilemedi.");
+    } finally {
+      setSuggestPending(false);
+    }
+  }
 
   return (
     <div
@@ -230,9 +262,11 @@ function ReviewRow({
         "rounded-2xl border p-4",
         decision.action === "skipped"
           ? "border-slate-100 bg-slate-50/60 opacity-70"
-          : isPending
-            ? "border-amber-200 bg-amber-50/40"
-            : "border-emerald-100 bg-emerald-50/30",
+          : decision.action === "suggested"
+            ? "border-violet-200 bg-violet-50/40"
+            : isPending
+              ? "border-amber-200 bg-amber-50/40"
+              : "border-emerald-100 bg-emerald-50/30",
       )}
     >
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -260,13 +294,16 @@ function ReviewRow({
               ? "bg-emerald-100 text-emerald-700"
               : decision.action === "skipped"
                 ? "bg-slate-200 text-slate-600"
-                : "bg-amber-100 text-amber-800"
+                : decision.action === "suggested"
+                  ? "bg-violet-100 text-violet-700"
+                  : "bg-amber-100 text-amber-800"
           }
         >
           {decision.action === "approved" && "Onaylı"}
           {decision.action === "reassigned" && "Eşleştirildi"}
           {decision.action === "skipped" && "Atlandı"}
           {decision.action === "pending" && "Bekliyor"}
+          {decision.action === "suggested" && "Önerildi"}
         </Badge>
       </div>
 
@@ -316,37 +353,59 @@ function ReviewRow({
         </div>
       ) : null}
 
-      <div className="mt-3 flex flex-wrap items-center gap-2">
-        {decision.action !== "approved" && decision.productId ? (
-          <Button
-            type="button"
-            variant="secondary"
-            onClick={() => onDecisionChange({ ...decision, action: "reassigned" })}
-          >
-            Onayla
-          </Button>
-        ) : null}
-        <Button type="button" variant="secondary" onClick={() => setShowPicker((current) => !current)}>
-          Başka ürün seç
-        </Button>
-        {decision.action !== "skipped" ? (
-          <Button
-            type="button"
-            variant="secondary"
-            onClick={() => onDecisionChange({ ...decision, action: "skipped", productId: null })}
-          >
-            Atla
-          </Button>
-        ) : (
+      {decision.action === "suggested" ? (
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <p className="text-sm text-violet-700">
+            Öneri süper admine iletildi, onaylanınca ürünler sayfanızda bildirim olarak görünecek.
+          </p>
           <Button
             type="button"
             variant="secondary"
             onClick={() => onDecisionChange({ ...decision, action: "pending" })}
           >
-            Atlamayı geri al
+            Geri al
           </Button>
-        )}
-      </div>
+        </div>
+      ) : (
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          {decision.action !== "approved" && decision.productId ? (
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => onDecisionChange({ ...decision, action: "reassigned" })}
+            >
+              Onayla
+            </Button>
+          ) : null}
+          <Button type="button" variant="secondary" onClick={() => setShowPicker((current) => !current)}>
+            Başka ürün seç
+          </Button>
+          {!decision.productId && sourceRow.barcode ? (
+            <Button type="button" variant="secondary" onClick={suggestProduct} disabled={suggestPending}>
+              {suggestPending ? "Gönderiliyor..." : "Listede bulamadım, eklenmesini öner"}
+            </Button>
+          ) : null}
+          {decision.action !== "skipped" ? (
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => onDecisionChange({ ...decision, action: "skipped", productId: null })}
+            >
+              Atla
+            </Button>
+          ) : (
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => onDecisionChange({ ...decision, action: "pending" })}
+            >
+              Atlamayı geri al
+            </Button>
+          )}
+        </div>
+      )}
+
+      {suggestError ? <p className="mt-2 text-xs font-medium text-rose-600">{suggestError}</p> : null}
 
       {showPicker ? (
         <ProductPicker
@@ -634,23 +693,49 @@ export function StockImportPanel({ priceLists }: { priceLists: PriceList[] }) {
       {step === "review" && matchResponse ? (
         <div className="space-y-4">
           <Card className="p-5">
-            <div className="flex flex-wrap items-center gap-2">
-              <Badge className="bg-emerald-100 text-emerald-700">
-                {matchResponse.summary.matchedExact} barkod eşleşti
-              </Badge>
-              <Badge className="bg-emerald-50 text-emerald-700">
-                {matchResponse.summary.matchedFuzzyHigh} isimle eşleşti
-              </Badge>
-              <Badge className="bg-amber-100 text-amber-800">
-                {matchResponse.summary.needsReview} gözden geçirilmeli
-              </Badge>
-              <Badge className="bg-slate-100 text-slate-700">{matchResponse.summary.noMatch} eşleşmedi</Badge>
-            </div>
-            {pendingCount ? (
-              <p className="mt-2 text-xs text-slate-500">
-                {pendingCount} satır bekliyor — onaylanmadan veya atlanmadan &quot;Uygula&quot;ya dahil edilmez.
-              </p>
-            ) : null}
+            {(() => {
+              const total = matchResponse.summary.totalRows || 1;
+              const percent = (count: number) => Math.round((count / total) * 100);
+              const resolvedCount = total - pendingCount;
+              const resolvedPercent = percent(resolvedCount);
+
+              return (
+                <>
+                  <div className="flex items-center justify-between gap-3 text-sm">
+                    <p className="font-medium text-slate-700">
+                      %{resolvedPercent} hazır ({resolvedCount}/{matchResponse.summary.totalRows} satır)
+                    </p>
+                    <p className="text-slate-500">
+                      {pendingCount ? `${pendingCount} satır gözden geçirmeni bekliyor` : "Tüm satırlar karara bağlandı"}
+                    </p>
+                  </div>
+                  <div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-100">
+                    <div
+                      className="h-full rounded-full bg-emerald-500 transition-all"
+                      style={{ width: `${resolvedPercent}%` }}
+                    />
+                  </div>
+
+                  <div className="mt-4 flex flex-wrap items-center gap-2">
+                    <Badge className="bg-emerald-100 text-emerald-700">
+                      %{percent(matchResponse.summary.matchedExact)} barkod eşleşti (
+                      {matchResponse.summary.matchedExact})
+                    </Badge>
+                    <Badge className="bg-emerald-50 text-emerald-700">
+                      %{percent(matchResponse.summary.matchedFuzzyHigh)} isimle eşleşti (
+                      {matchResponse.summary.matchedFuzzyHigh})
+                    </Badge>
+                    <Badge className="bg-amber-100 text-amber-800">
+                      %{percent(matchResponse.summary.needsReview)} gözden geçirilmeli (
+                      {matchResponse.summary.needsReview})
+                    </Badge>
+                    <Badge className="bg-slate-100 text-slate-700">
+                      %{percent(matchResponse.summary.noMatch)} eşleşmedi ({matchResponse.summary.noMatch})
+                    </Badge>
+                  </div>
+                </>
+              );
+            })()}
           </Card>
 
           <div className="space-y-2">

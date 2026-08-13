@@ -237,11 +237,15 @@ export function MarketCatalogPicker({
                       />
                     </td>
                     <td className="flex items-center gap-3 px-4 py-3">
-                      <img
-                        src={item.image_url}
-                        alt={item.product_name}
-                        className="size-10 shrink-0 rounded-lg border border-slate-100 object-cover"
-                      />
+                      {item.image_url ? (
+                        <img
+                          src={item.image_url}
+                          alt={item.product_name}
+                          className="size-10 shrink-0 rounded-lg border border-slate-100 object-cover"
+                        />
+                      ) : (
+                        <div className="size-10 shrink-0 rounded-lg border border-slate-100 bg-slate-50" />
+                      )}
                       <span className="font-medium text-slate-900">{item.product_name}</span>
                     </td>
                     <td className="px-4 py-3 text-slate-600">{item.category_name}</td>

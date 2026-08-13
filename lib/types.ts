@@ -147,10 +147,33 @@ export interface MarketCatalogProduct {
   product_name: string;
   brand: string | null;
   category_name: string;
-  image_url: string;
+  image_url: string | null;
   reference_price: number | null;
   description: string | null;
   created_at: string;
+}
+
+export type ProductSuggestionStatus = "pending" | "approved" | "rejected";
+
+export interface ProductSuggestion {
+  id: string;
+  tenant_id: string;
+  barcode: string;
+  product_name: string;
+  price: number | null;
+  status: ProductSuggestionStatus;
+  category_name: string | null;
+  market_catalog_product_id: string | null;
+  product_id: string | null;
+  reviewed_by: string | null;
+  reviewed_at: string | null;
+  dismissed_at: string | null;
+  created_at: string;
+}
+
+export interface ProductSuggestionWithTenant extends ProductSuggestion {
+  tenant_company_name: string;
+  tenant_subdomain: string;
 }
 
 export interface Product {
@@ -210,19 +233,6 @@ export interface Category {
   tile_image_url: string | null;
   is_discount_category: boolean;
   is_hidden_from_storefront: boolean;
-  created_at: string;
-}
-
-export interface MarketCatalogProduct {
-  id: string;
-  source: string;
-  sku_code: string;
-  product_name: string;
-  brand: string | null;
-  category_name: string;
-  image_url: string;
-  reference_price: number | null;
-  description: string | null;
   created_at: string;
 }
 

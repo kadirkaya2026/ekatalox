@@ -16,6 +16,7 @@ import {
   LayoutDashboard,
   LayoutTemplate,
   Megaphone,
+  PackagePlus,
   PanelBottom,
   Palette,
   PlusCircle,
@@ -173,6 +174,7 @@ const tenantLinks: SidebarLink[] = [
 
 const adminLinks: SidebarLink[] = [
   { href: "/", label: "Tenant Yönetimi", icon: Building2 },
+  { href: "/product-suggestions", label: "Ürün Önerileri", icon: PackagePlus },
   { href: "/logs", label: "Giriş Logları", icon: ScrollText },
 ];
 
