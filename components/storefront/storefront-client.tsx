@@ -808,10 +808,10 @@ function getAnnouncementVisibility(params: {
   return storedViews < params.activeAnnouncement.maxDisplayCount;
 }
 
-const salesUnits: Array<{ value: SalesUnit; label: string }> = [
-  { value: "adet", label: "Adet" },
-  { value: "paket", label: "Paket" },
-  { value: "koli", label: "Koli" },
+const salesUnits: Array<{ value: SalesUnit }> = [
+  { value: "adet" },
+  { value: "paket" },
+  { value: "koli" },
 ];
 
 export function StorefrontClient({

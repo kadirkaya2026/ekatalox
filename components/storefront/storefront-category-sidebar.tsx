@@ -7,6 +7,7 @@ import type { CategoryNode } from "@/lib/categories/tree";
 import { getDescendantCategoryIds } from "@/lib/categories/tree";
 import type { Category } from "@/lib/types";
 import { useStorefrontTheme } from "@/lib/storefront/theme-context";
+import { useStorefrontLocale } from "@/lib/storefront/locale-context";
 import { cn } from "@/lib/utils";
 
 function CategorySidebarNode({
@@ -70,6 +71,7 @@ export function StorefrontCategoryTree({
   className?: string;
 }) {
   const theme = useStorefrontTheme();
+  const { t } = useStorefrontLocale();
 
   return (
     <div className={cn("space-y-1", className)}>
@@ -79,7 +81,7 @@ export function StorefrontCategoryTree({
           onClick={onHomeNavigate}
           className={theme.categorySidebarItem(false)}
         >
-          Tüm Ürünler
+          {t("header.allProducts")}
         </a>
       ) : (
         <button
@@ -87,7 +89,7 @@ export function StorefrontCategoryTree({
           onClick={() => onCategoryChange("all")}
           className={theme.categorySidebarItem(selectedCategoryId === "all")}
         >
-          Tüm Ürünler
+          {t("header.allProducts")}
         </button>
       )}
 
@@ -118,10 +120,11 @@ export function StorefrontCategorySidebar({
   onCategoryChange: (categoryId: string) => void;
 }) {
   const theme = useStorefrontTheme();
+  const { t } = useStorefrontLocale();
 
   return (
-    <aside className={theme.categorySidebar} aria-label="Kategori navigasyonu">
-      <p className={theme.categorySidebarTitle}>Kategoriler</p>
+    <aside className={theme.categorySidebar} aria-label={t("sidebar.categoriesNavAria")}>
+      <p className={theme.categorySidebarTitle}>{t("sidebar.categoriesTitle")}</p>
       <StorefrontCategoryTree
         categories={categories}
         categoryTree={categoryTree}
@@ -151,6 +154,7 @@ export function StorefrontCategoryDrawer({
   onCategoryChange: (categoryId: string) => void;
 }) {
   const theme = useStorefrontTheme();
+  const { t } = useStorefrontLocale();
 
   useEffect(() => {
     if (!isOpen) {
@@ -185,7 +189,7 @@ export function StorefrontCategoryDrawer({
         >
           <button
             type="button"
-            aria-label="Kategorileri kapat"
+            aria-label={t("sidebar.closeCategoriesAria")}
             className="absolute inset-0 h-full w-full"
             onClick={onClose}
           />
@@ -197,7 +201,7 @@ export function StorefrontCategoryDrawer({
             className={theme.cartDrawerPanel}
             role="dialog"
             aria-modal="true"
-            aria-label="Kategoriler"
+            aria-label={t("sidebar.categoriesTitle")}
           >
             <div className="flex max-h-[94dvh] flex-col">
               <div className="flex justify-center pt-3">
@@ -207,16 +211,16 @@ export function StorefrontCategoryDrawer({
               <div className={cn(theme.cartDrawerHeaderBorder, "px-4 pb-3 pt-3 sm:px-5")}>
                 <div className="flex items-center justify-between gap-3">
                   <div className="min-w-0">
-                    <h2 className={theme.cartDrawerTitle}>Kategoriler</h2>
+                    <h2 className={theme.cartDrawerTitle}>{t("sidebar.categoriesTitle")}</h2>
                     <p className={cn("truncate text-xs font-medium sm:text-sm", theme.cartDrawerMuted)}>
-                      Kategori seçerek ürünleri filtreleyin
+                      {t("sidebar.filterDescription")}
                     </p>
                   </div>
                   <button
                     type="button"
                     onClick={onClose}
                     className={theme.cartDrawerCloseButton}
-                    aria-label="Kategorileri kapat"
+                    aria-label={t("sidebar.closeCategoriesAria")}
                   >
                     <X className="size-5" />
                   </button>

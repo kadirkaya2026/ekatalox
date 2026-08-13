@@ -11,7 +11,7 @@ type HeroSettings = Pick<
   "hero_heading" | "hero_cta_label" | "hero_image_url" | "hero_style_key" | "storefront_description"
 >;
 
-function HeroCta({ label }: { label: string }) {
+function HeroCta({ label, tone = "themed" }: { label: string; tone?: "themed" | "onImage" }) {
   const theme = useStorefrontTheme();
 
   return (
@@ -19,7 +19,7 @@ function HeroCta({ label }: { label: string }) {
       href="#catalog-grid"
       className={cn(
         "inline-flex rounded-full px-6 py-3 text-sm font-semibold shadow-sm transition hover:opacity-90",
-        theme.primaryButton,
+        tone === "onImage" ? "bg-white text-slate-900" : theme.primaryButton,
       )}
     >
       {label}
@@ -138,12 +138,7 @@ function FullBleedHero({ settings }: { settings: HeroSettings }) {
         ) : null}
         {ctaLabel ? (
           <div className="mt-6">
-            <a
-              href="#catalog-grid"
-              className="inline-flex rounded-full bg-white px-6 py-3 text-sm font-semibold text-slate-900 shadow-sm transition hover:opacity-90"
-            >
-              {ctaLabel}
-            </a>
+            <HeroCta label={ctaLabel} tone="onImage" />
           </div>
         ) : null}
       </div>

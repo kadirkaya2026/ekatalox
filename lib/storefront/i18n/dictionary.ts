@@ -34,6 +34,11 @@ export const storefrontDictionary: Record<StorefrontLocale, StorefrontDictionary
     "header.poweredBySuffix": "ürünüdür.",
     "header.poweredByAria": "eKatalox web sitesine git",
 
+    "sidebar.categoriesTitle": "Kategoriler",
+    "sidebar.categoriesNavAria": "Kategori navigasyonu",
+    "sidebar.closeCategoriesAria": "Kategorileri kapat",
+    "sidebar.filterDescription": "Kategori seçerek ürünleri filtreleyin",
+
     "logout.label": "Çıkış",
 
     "cart.title": "Sepetim",
@@ -237,6 +242,9 @@ export const storefrontDictionary: Record<StorefrontLocale, StorefrontDictionary
     "unit.carton": "Koli",
 
     "language.switcherAria": "Dil seç",
+
+    "theme.toggleToLight": "Gündüz modu",
+    "theme.toggleToDark": "Gece modu",
   },
   de: {
     "common.close": "Schließen",
@@ -253,6 +261,11 @@ export const storefrontDictionary: Record<StorefrontLocale, StorefrontDictionary
     "header.poweredByPrefix": "Diese Seite ist ein",
     "header.poweredBySuffix": "Produkt.",
     "header.poweredByAria": "Zur eKatalox-Website",
+
+    "sidebar.categoriesTitle": "Kategorien",
+    "sidebar.categoriesNavAria": "Kategorienavigation",
+    "sidebar.closeCategoriesAria": "Kategorien schließen",
+    "sidebar.filterDescription": "Produkte nach Kategorie filtern",
 
     "logout.label": "Abmelden",
 
@@ -457,6 +470,9 @@ export const storefrontDictionary: Record<StorefrontLocale, StorefrontDictionary
     "unit.carton": "Karton",
 
     "language.switcherAria": "Sprache wählen",
+
+    "theme.toggleToLight": "Tagmodus",
+    "theme.toggleToDark": "Nachtmodus",
   },
   en: {
     "common.close": "Close",
@@ -473,6 +489,11 @@ export const storefrontDictionary: Record<StorefrontLocale, StorefrontDictionary
     "header.poweredByPrefix": "This site is an",
     "header.poweredBySuffix": "product.",
     "header.poweredByAria": "Go to eKatalox website",
+
+    "sidebar.categoriesTitle": "Categories",
+    "sidebar.categoriesNavAria": "Category navigation",
+    "sidebar.closeCategoriesAria": "Close categories",
+    "sidebar.filterDescription": "Filter products by category",
 
     "logout.label": "Log out",
 
@@ -675,6 +696,9 @@ export const storefrontDictionary: Record<StorefrontLocale, StorefrontDictionary
     "unit.carton": "Carton",
 
     "language.switcherAria": "Select language",
+
+    "theme.toggleToLight": "Light mode",
+    "theme.toggleToDark": "Dark mode",
   },
   ru: {
     "common.close": "Закрыть",
@@ -691,6 +715,11 @@ export const storefrontDictionary: Record<StorefrontLocale, StorefrontDictionary
     "header.poweredByPrefix": "Этот сайт — продукт",
     "header.poweredBySuffix": "",
     "header.poweredByAria": "Перейти на сайт eKatalox",
+
+    "sidebar.categoriesTitle": "Категории",
+    "sidebar.categoriesNavAria": "Навигация по категориям",
+    "sidebar.closeCategoriesAria": "Закрыть категории",
+    "sidebar.filterDescription": "Фильтровать товары по категории",
 
     "logout.label": "Выйти",
 
@@ -893,5 +922,8 @@ export const storefrontDictionary: Record<StorefrontLocale, StorefrontDictionary
     "unit.carton": "Коробка",
 
     "language.switcherAria": "Выбрать язык",
+
+    "theme.toggleToLight": "Дневной режим",
+    "theme.toggleToDark": "Ночной режим",
   },
 };
