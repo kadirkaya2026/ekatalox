@@ -1,3 +1,4 @@
+import { motion } from "framer-motion";
 import { Check } from "lucide-react";
 import {
   buildPlanChangeHref,
@@ -50,15 +51,20 @@ export function TrialExpiredModal({
 }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-slate-900/80 p-4 backdrop-blur-sm">
-      <div className="my-8 w-full max-w-4xl rounded-2xl bg-white p-6 shadow-2xl md:p-8">
+      <motion.div
+        initial={{ opacity: 0, y: 16, scale: 0.98 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+        className="my-8 w-full max-w-4xl rounded-2xl bg-card p-6 text-card-foreground shadow-2xl md:p-8"
+      >
         <div className="text-center">
-          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-amber-600">
+          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-amber-600 dark:text-amber-400">
             Deneme Süresi Doldu
           </p>
-          <h2 className="mt-3 text-2xl font-bold text-slate-900 md:text-3xl">
+          <h2 className="mt-3 text-2xl font-bold text-foreground md:text-3xl">
             Deneme üyeliğinizin sonuna geldiniz
           </h2>
-          <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-slate-600">
+          <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-muted-foreground">
             {companyName} için 14 günlük deneme süreniz sona erdi. eKatalox'u
             kullanmaya devam edebilmek için bir paket satın almanız gerekmekte.
             Size uygun paketi seçin, dakikalar içinde kaldığınız yerden devam
@@ -76,8 +82,8 @@ export function TrialExpiredModal({
                 key={plan.id}
                 className={
                   featured
-                    ? "relative rounded-2xl border-2 border-emerald-500 bg-emerald-50/50 p-5"
-                    : "rounded-2xl border border-slate-200 p-5"
+                    ? "relative rounded-2xl border-2 border-emerald-500 bg-emerald-50/50 p-5 dark:bg-emerald-950/30"
+                    : "rounded-2xl border border-slate-200 p-5 dark:border-slate-700"
                 }
               >
                 {featured ? (
@@ -85,17 +91,17 @@ export function TrialExpiredModal({
                     Önerilen
                   </span>
                 ) : null}
-                <h3 className="text-lg font-semibold text-slate-900">
+                <h3 className="text-lg font-semibold text-foreground">
                   {plan.name}
                 </h3>
-                <p className="mt-1 text-xs text-slate-500">{pricing.highlight}</p>
+                <p className="mt-1 text-xs text-muted-foreground">{pricing.highlight}</p>
                 <p className="mt-3">
-                  <span className="text-2xl font-bold text-slate-900">
+                  <span className="text-2xl font-bold text-foreground">
                     {pricing.price}
                   </span>
-                  <span className="text-sm text-slate-500"> {pricing.unit}</span>
+                  <span className="text-sm text-muted-foreground"> {pricing.unit}</span>
                 </p>
-                <ul className="mt-4 space-y-2 text-sm text-slate-600">
+                <ul className="mt-4 space-y-2 text-sm text-muted-foreground">
                   <li className="flex items-start gap-2">
                     <Check className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
                     {formatPlanCapacityFeature(plan.id)}
@@ -130,11 +136,11 @@ export function TrialExpiredModal({
           })}
         </div>
 
-        <div className="mt-8 rounded-xl bg-slate-50 p-5 text-center">
-          <p className="text-sm font-medium text-slate-900">
+        <div className="mt-8 rounded-xl bg-muted p-5 text-center">
+          <p className="text-sm font-medium text-foreground">
             Paket satın almak için bizimle iletişime geçin
           </p>
-          <p className="mt-1 text-xs text-slate-500">
+          <p className="mt-1 text-xs text-muted-foreground">
             Aynı gün içinde hesabınızı seçtiğiniz pakete geçirelim.
           </p>
           <div className="mt-4 flex flex-col items-center justify-center gap-3 sm:flex-row">
@@ -146,13 +152,13 @@ export function TrialExpiredModal({
             </a>
             <a
               href="mailto:info@ekatalox.com?subject=Paket%20Sat%C4%B1n%20Alma"
-              className="inline-flex items-center justify-center rounded-lg border border-slate-300 px-6 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
+              className="inline-flex items-center justify-center rounded-lg border border-slate-300 px-6 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-800"
             >
               info@ekatalox.com
             </a>
           </div>
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 }

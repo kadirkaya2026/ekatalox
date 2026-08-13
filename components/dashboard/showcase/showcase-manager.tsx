@@ -371,9 +371,9 @@ export function ShowcaseManager({
               Vazgeç
             </Button>
             <Button
+              variant="danger"
               onClick={handleDeleteSection}
               disabled={deleteLoading}
-              className="bg-rose-600 text-white hover:bg-rose-700"
             >
               {deleteLoading ? "Siliniyor…" : "Evet, Sil"}
             </Button>

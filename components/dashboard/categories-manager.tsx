@@ -312,7 +312,7 @@ function SortableCategoryRow(props: RowProps) {
           <p className="flex-1 text-sm text-red-800">
             <strong>"{props.category.name}"</strong> silinecek. Emin misiniz?
           </p>
-          <Button className="h-8 shrink-0 bg-red-600 px-3 text-xs hover:bg-red-700" onClick={() => props.onConfirmDelete(props.category.id)} disabled={props.pending}>Evet, sil</Button>
+          <Button variant="danger" className="h-8 shrink-0 px-3 text-xs" onClick={() => props.onConfirmDelete(props.category.id)} disabled={props.pending}>Evet, sil</Button>
           <Button variant="secondary" className="h-8 shrink-0 px-3 text-xs" onClick={props.onCancelDelete} disabled={props.pending}>İptal</Button>
         </div>
       ) : null}
