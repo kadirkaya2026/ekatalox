@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { ExternalLink, LayoutGrid, Palette, RotateCcw, Sparkles, Type } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { SettingsTabs } from "@/components/dashboard/settings-tabs";
 import { Input } from "@/components/ui/input";
 import { PlanFeatureGate } from "@/components/dashboard/plan-feature-gate";
 import { StorefrontThemePreview } from "@/components/dashboard/storefront-theme-preview";
@@ -261,24 +262,12 @@ export function TenantThemeForm({
     <form onSubmit={save}>
       <div className="space-y-6">
         <Card className="overflow-hidden p-0">
-          <div className="flex flex-wrap border-b border-slate-100">
-            {THEME_FORM_TABS.map((tab) => (
-              <button
-                key={tab.key}
-                type="button"
-                onClick={() => setActiveTab(tab.key)}
-                className={cn(
-                  "flex items-center gap-2 border-b-2 px-4 py-3 text-sm font-semibold transition sm:px-5",
-                  activeTab === tab.key
-                    ? "border-emerald-500 text-emerald-700"
-                    : "border-transparent text-slate-500 hover:text-slate-700",
-                )}
-              >
-                <tab.icon className="size-4" />
-                {tab.label}
-              </button>
-            ))}
-          </div>
+          <SettingsTabs
+            tabs={THEME_FORM_TABS}
+            activeTab={activeTab}
+            onChange={setActiveTab}
+            layoutId="theme-form-tab-indicator"
+          />
 
           <div className="p-5">
             {activeTab === "presets" ? (

@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { SettingsTabs } from "@/components/dashboard/settings-tabs";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -243,23 +244,12 @@ export function TenantSettingsForm({
 
   return (
     <Card className="overflow-hidden p-0">
-      <div className="flex flex-wrap border-b border-slate-100">
-        {TENANT_SETTINGS_TABS.map((tab) => (
-          <button
-            key={tab.key}
-            type="button"
-            onClick={() => setActiveTab(tab.key)}
-            className={cn(
-              "flex items-center gap-2 border-b-2 px-4 py-3 text-sm font-semibold transition sm:px-5",
-              activeTab === tab.key
-                ? "border-emerald-500 text-emerald-700"
-                : "border-transparent text-slate-500 hover:text-slate-700",
-            )}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
+      <SettingsTabs
+        tabs={TENANT_SETTINGS_TABS}
+        activeTab={activeTab}
+        onChange={setActiveTab}
+        layoutId="tenant-settings-tab-indicator"
+      />
 
       <div className="p-5">
         {activeTab === "membership" ? (

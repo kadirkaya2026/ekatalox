@@ -8,6 +8,7 @@ import { Card } from "@/components/ui/card";
 import { InlineAlert } from "@/components/ui/inline-alert";
 import { Input } from "@/components/ui/input";
 import { PlanFeatureGate } from "@/components/dashboard/plan-feature-gate";
+import { SettingsTabs } from "@/components/dashboard/settings-tabs";
 import type { TenantPlan } from "@/lib/billing/plans";
 import type {
   CashDiscountTier,
@@ -176,23 +177,12 @@ export function TenantPaymentSettingsForm({
 
       <form onSubmit={save} className="space-y-6">
         <Card className="overflow-hidden p-0">
-          <div className="flex flex-wrap border-b border-border">
-            {PAYMENT_SETTINGS_TABS.map((tab) => (
-              <button
-                key={tab.key}
-                type="button"
-                onClick={() => setActiveTab(tab.key)}
-                className={cn(
-                  "flex items-center gap-2 border-b-2 px-4 py-3 text-sm font-semibold transition sm:px-5",
-                  activeTab === tab.key
-                    ? "border-emerald-500 text-emerald-700"
-                    : "border-transparent text-slate-500 hover:text-slate-700",
-                )}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </div>
+          <SettingsTabs
+            tabs={PAYMENT_SETTINGS_TABS}
+            activeTab={activeTab}
+            onChange={setActiveTab}
+            layoutId="payment-settings-tab-indicator"
+          />
 
           <div className="p-5">
         {/* ── NAKİT KAMPANYASI ─────────────────────────────── */}

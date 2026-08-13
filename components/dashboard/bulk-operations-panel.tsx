@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { SettingsTabs } from "@/components/dashboard/settings-tabs";
 import { parseProductsCsv } from "@/lib/csv/parse-products";
 import { buildPackageUpgradeHref } from "@/lib/billing/plans";
 import type { ParsedCsvResult } from "@/lib/csv/parse-products";
@@ -73,6 +74,15 @@ const TURKISH_TEMPLATE_HEADERS = [
 // Types
 // ---------------------------------------------------------------------------
 type TabId = "products" | "images";
+
+const BULK_OPERATIONS_TABS: Array<{
+  key: TabId;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+}> = [
+  { key: "products", label: "Toplu Ürün Ekleme", icon: FileSpreadsheet },
+  { key: "images", label: "Toplu Ürün Resmi Ekleme", icon: Images },
+];
 
 interface CsvState {
   status: "idle" | "parsing" | "ready" | "importing" | "done" | "error";
@@ -1098,34 +1108,12 @@ export function BulkOperationsPanel({
       </div>
 
       {/* Tabs */}
-      <div className="flex border-b border-slate-100">
-        <button
-          type="button"
-          onClick={() => setActiveTab("products")}
-          className={cn(
-            "flex items-center gap-2 border-b-2 px-5 py-3 text-sm font-semibold transition",
-            activeTab === "products"
-              ? "border-emerald-500 text-emerald-700"
-              : "border-transparent text-slate-500 hover:text-slate-700",
-          )}
-        >
-          <FileSpreadsheet className="size-4" />
-          Toplu Ürün Ekleme
-        </button>
-        <button
-          type="button"
-          onClick={() => setActiveTab("images")}
-          className={cn(
-            "flex items-center gap-2 border-b-2 px-5 py-3 text-sm font-semibold transition",
-            activeTab === "images"
-              ? "border-emerald-500 text-emerald-700"
-              : "border-transparent text-slate-500 hover:text-slate-700",
-          )}
-        >
-          <Images className="size-4" />
-          Toplu Ürün Resmi Ekleme
-        </button>
-      </div>
+      <SettingsTabs
+        tabs={BULK_OPERATIONS_TABS}
+        activeTab={activeTab}
+        onChange={setActiveTab}
+        layoutId="bulk-operations-tab-indicator"
+      />
 
       {/* Tab content */}
       <div className="p-5">
