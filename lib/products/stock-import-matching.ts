@@ -34,6 +34,17 @@ export const FUZZY_HIGH_MARGIN = 0.08;
 export const FUZZY_REVIEW_SCORE_THRESHOLD = 0.55;
 export const MAX_CANDIDATES = 3;
 
+// "g", "ml", "süt" gibi binlerce üründe geçen kelimeler token-index'te dev
+// bucket'lar oluşturup satır başına aday havuzunu patlatıyordu (10k+
+// ürünlü bir kataloğa karşı 10k+ satırlık dosyada dakikalarca sürüp zaman
+// aşımına yol açıyordu). İki katmanlı sınırlama uyguluyoruz:
+//   1) aday havuzu kurulurken en nadir (ayırt edici) kelimelerden başlanır,
+//      toplam CANDIDATE_POOL_CAP'e ulaşınca durulur.
+//   2) pahalı Levenshtein hesabı sadece ucuz Jaccard'a göre en iyi
+//      LEVENSHTEIN_STAGE_CAP adaya uygulanır, tüm havuza değil.
+const CANDIDATE_POOL_CAP = 300;
+const LEVENSHTEIN_STAGE_CAP = 25;
+
 function normalizeText(value: string): string {
   return value
     .trim()
@@ -197,18 +208,35 @@ export function matchStockImportRows(
     const rowNormalizedName = normalizeText(row.productName);
     const rowTokens = new Set(tokenize(row.productName));
 
+    // En nadir kelimeden başlayarak aday ekle; havuz dolunca dur. Böylece
+    // yaygın kelimeler (bucket'ı büyük olanlar) tek başına havuzu
+    // doldurmuyor, asıl ayırt edici (nadir) kelimeler önceliklendiriliyor.
+    const tokenBuckets = [...rowTokens]
+      .map((token) => tokenIndex.get(token))
+      .filter((bucket): bucket is Set<string> => Boolean(bucket))
+      .sort((a, b) => a.size - b.size);
+
     const candidateIds = new Set<string>();
-    for (const token of rowTokens) {
-      const bucket = tokenIndex.get(token);
-      if (bucket) {
-        for (const productId of bucket) {
-          candidateIds.add(productId);
-        }
+    for (const bucket of tokenBuckets) {
+      if (candidateIds.size >= CANDIDATE_POOL_CAP) break;
+      for (const productId of bucket) {
+        candidateIds.add(productId);
+        if (candidateIds.size >= CANDIDATE_POOL_CAP) break;
       }
     }
 
-    const scored = [...candidateIds]
-      .map((productId) => {
+    // 1. aşama: ucuz Jaccard skoruna göre havuzu daralt.
+    const jaccardRanked = [...candidateIds]
+      .map((productId) => ({
+        productId,
+        jaccardScore: jaccard(rowTokens, tokensById.get(productId)!),
+      }))
+      .sort((a, b) => b.jaccardScore - a.jaccardScore)
+      .slice(0, LEVENSHTEIN_STAGE_CAP);
+
+    // 2. aşama: sadece daralmış havuzda pahalı Levenshtein hesabı yapılır.
+    const scored = jaccardRanked
+      .map(({ productId }) => {
         const product = productById.get(productId)!;
         const score = scoreNameMatch(
           rowNormalizedName,
