@@ -8,7 +8,7 @@ export const stockImportSourceRowSchema = z.object({
 });
 
 export const stockImportMatchRequestSchema = z.object({
-  rows: z.array(stockImportSourceRowSchema).min(1, "Yüklenecek satır bulunamadı.").max(10_000),
+  rows: z.array(stockImportSourceRowSchema).min(1, "Yüklenecek satır bulunamadı.").max(50_000),
 });
 
 export const stockImportApplyRowSchema = z.object({
@@ -23,7 +23,7 @@ export const stockImportApplyRowSchema = z.object({
 });
 
 export const stockImportApplyRequestSchema = z.object({
-  updates: z.array(stockImportApplyRowSchema).min(1, "Uygulanacak satır seçilmedi.").max(5_000),
+  updates: z.array(stockImportApplyRowSchema).min(1, "Uygulanacak satır seçilmedi.").max(50_000),
 });
 
 export type StockImportSourceRowInput = z.infer<typeof stockImportSourceRowSchema>;
