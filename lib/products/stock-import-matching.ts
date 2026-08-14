@@ -150,6 +150,11 @@ export function matchStockImportRows(
     seenBarcodes.add(normalized);
   }
 
+  // Satır sayısı × ürün sayısı kadar tekrar kurulmasın diye döngü dışında
+  // bir kez oluşturuluyor (büyük katalog + büyük dosyada eskiden burası
+  // eşleştirmenin kendisinden çok daha yavaştı).
+  const productById = new Map(products.map((product) => [product.id, product]));
+
   return rows.map((row): StockImportMatchResult => {
     const warnings: StockImportRowWarning[] = [];
     if (row.price === null) {
@@ -202,7 +207,6 @@ export function matchStockImportRows(
       }
     }
 
-    const productById = new Map(products.map((product) => [product.id, product]));
     const scored = [...candidateIds]
       .map((productId) => {
         const product = productById.get(productId)!;
