@@ -35,6 +35,10 @@ interface RowDecision {
   rowNumber: number;
   action: RowDecisionAction;
   productId: string | null;
+  // Barkodu Master Katalog'da bulunan ama tenant'ta henüz olmayan satırlar
+  // için dolu — productId ile birbirini dışlar (biri set edilince diğeri
+  // temizlenir). Apply isteğinde productId yerine bu gönderilir.
+  masterCatalogSkuCode: string | null;
   price: number | null;
 }
 
@@ -50,6 +54,7 @@ interface MatchResponse {
   summary: {
     totalRows: number;
     matchedExact: number;
+    matchedMasterCatalog: number;
     matchedFuzzyHigh: number;
     needsReview: number;
     noMatch: number;
@@ -140,12 +145,17 @@ function initialDecisionsFromResults(
   for (const result of results) {
     const sourcePrice = sourceRowsByRowNumber.get(result.rowNumber)?.price ?? null;
     const hasPriceMissingWarning = result.warnings.includes("price_missing");
-    const isAutoMatch = result.status === "matched_exact" || result.status === "matched_fuzzy_high";
+    const isAutoMatch =
+      result.status === "matched_exact" ||
+      result.status === "matched_master_catalog" ||
+      result.status === "matched_fuzzy_high";
 
     decisions.set(result.rowNumber, {
       rowNumber: result.rowNumber,
       action: isAutoMatch && !hasPriceMissingWarning ? "approved" : "pending",
       productId: isAutoMatch ? result.matchedProductId : null,
+      masterCatalogSkuCode:
+        isAutoMatch && result.status === "matched_master_catalog" ? (result.masterCatalogMatch?.skuCode ?? null) : null,
       price: sourcePrice,
     });
   }
@@ -223,7 +233,16 @@ function ReviewRow({
   const [showPicker, setShowPicker] = useState(false);
   const [suggestPending, setSuggestPending] = useState(false);
   const [suggestError, setSuggestError] = useState<string | null>(null);
-  const matchedProduct = decision.productId ? productById.get(decision.productId) : null;
+  const matchedProduct = decision.productId
+    ? productById.get(decision.productId)
+    : decision.masterCatalogSkuCode && result.masterCatalogMatch
+      ? {
+          id: "",
+          sku_code: result.masterCatalogMatch.skuCode,
+          product_name: result.masterCatalogMatch.productName,
+        }
+      : null;
+  const hasResolution = Boolean(decision.productId || decision.masterCatalogSkuCode);
   const isPending = decision.action === "pending" || decision.action === "skipped";
 
   async function suggestProduct() {
@@ -288,23 +307,28 @@ function ReviewRow({
             </p>
           ) : null}
         </div>
-        <Badge
-          className={
-            decision.action === "approved" || decision.action === "reassigned"
-              ? "bg-emerald-100 text-emerald-700"
-              : decision.action === "skipped"
-                ? "bg-slate-200 text-slate-600"
-                : decision.action === "suggested"
-                  ? "bg-violet-100 text-violet-700"
-                  : "bg-amber-100 text-amber-800"
-          }
-        >
-          {decision.action === "approved" && "Onaylı"}
-          {decision.action === "reassigned" && "Eşleştirildi"}
-          {decision.action === "skipped" && "Atlandı"}
-          {decision.action === "pending" && "Bekliyor"}
-          {decision.action === "suggested" && "Önerildi"}
-        </Badge>
+        <div className="flex flex-col items-end gap-1.5">
+          <Badge
+            className={
+              decision.action === "approved" || decision.action === "reassigned"
+                ? "bg-emerald-100 text-emerald-700"
+                : decision.action === "skipped"
+                  ? "bg-slate-200 text-slate-600"
+                  : decision.action === "suggested"
+                    ? "bg-violet-100 text-violet-700"
+                    : "bg-amber-100 text-amber-800"
+            }
+          >
+            {decision.action === "approved" && "Onaylı"}
+            {decision.action === "reassigned" && "Eşleştirildi"}
+            {decision.action === "skipped" && "Atlandı"}
+            {decision.action === "pending" && "Bekliyor"}
+            {decision.action === "suggested" && "Önerildi"}
+          </Badge>
+          {result.status === "matched_master_catalog" ? (
+            <Badge className="bg-sky-100 text-sky-700">Master Katalog&apos;dan aktarılacak</Badge>
+          ) : null}
+        </div>
       </div>
 
       {matchedProduct ? (
@@ -343,6 +367,7 @@ function ReviewRow({
                     ...decision,
                     action: "reassigned",
                     productId: candidate.productId,
+                    masterCatalogSkuCode: null,
                   })
                 }
                 className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:border-emerald-300 hover:bg-emerald-50"
@@ -368,7 +393,7 @@ function ReviewRow({
         </div>
       ) : (
         <div className="mt-3 flex flex-wrap items-center gap-2">
-          {decision.action !== "approved" && decision.productId ? (
+          {decision.action !== "approved" && hasResolution ? (
             <Button
               type="button"
               variant="secondary"
@@ -380,7 +405,7 @@ function ReviewRow({
           <Button type="button" variant="secondary" onClick={() => setShowPicker((current) => !current)}>
             Başka ürün seç
           </Button>
-          {!decision.productId && sourceRow.barcode ? (
+          {!hasResolution && sourceRow.barcode ? (
             <Button type="button" variant="secondary" onClick={suggestProduct} disabled={suggestPending}>
               {suggestPending ? "Gönderiliyor..." : "Listede bulamadım, eklenmesini öner"}
             </Button>
@@ -389,7 +414,9 @@ function ReviewRow({
             <Button
               type="button"
               variant="secondary"
-              onClick={() => onDecisionChange({ ...decision, action: "skipped", productId: null })}
+              onClick={() =>
+                onDecisionChange({ ...decision, action: "skipped", productId: null, masterCatalogSkuCode: null })
+              }
             >
               Atla
             </Button>
@@ -411,7 +438,7 @@ function ReviewRow({
         <ProductPicker
           productPool={productPool}
           onSelect={(product) => {
-            onDecisionChange({ ...decision, action: "reassigned", productId: product.id });
+            onDecisionChange({ ...decision, action: "reassigned", productId: product.id, masterCatalogSkuCode: null });
             setShowPicker(false);
           }}
         />
@@ -427,9 +454,12 @@ export function StockImportPanel({ priceLists }: { priceLists: PriceList[] }) {
   const [isParsing, setIsParsing] = useState(false);
   const [isMatching, setIsMatching] = useState(false);
   const [isApplying, setIsApplying] = useState(false);
-  const [applyResult, setApplyResult] = useState<{ updatedCount: number; skippedInvalidCount: number } | null>(
-    null,
-  );
+  const [applyResult, setApplyResult] = useState<{
+    updatedCount: number;
+    skippedInvalidCount: number;
+    importedFromMasterCatalogCount: number;
+    skippedForCatalogLimitCount: number;
+  } | null>(null);
 
   const [rawTable, setRawTable] = useState<StockImportRawTable | null>(null);
   const [mapping, setMapping] = useState<ColumnMapping[]>([]);
@@ -522,7 +552,10 @@ export function StockImportPanel({ priceLists }: { priceLists: PriceList[] }) {
 
   const pendingCount = [...decisions.values()].filter((d) => d.action === "pending").length;
   const applyCount = [...decisions.values()].filter(
-    (d) => (d.action === "approved" || d.action === "reassigned") && d.productId && d.price !== null,
+    (d) =>
+      (d.action === "approved" || d.action === "reassigned") &&
+      (d.productId || d.masterCatalogSkuCode) &&
+      d.price !== null,
   ).length;
 
   async function applyChanges() {
@@ -534,11 +567,12 @@ export function StockImportPanel({ priceLists }: { priceLists: PriceList[] }) {
         .filter(
           (decision) =>
             (decision.action === "approved" || decision.action === "reassigned") &&
-            decision.productId &&
+            (decision.productId || decision.masterCatalogSkuCode) &&
             decision.price !== null,
         )
         .map((decision) => ({
-          productId: decision.productId!,
+          productId: decision.productId,
+          masterCatalogSkuCode: decision.masterCatalogSkuCode,
           priceListId: selectedPriceListId,
           price: decision.price!,
           barcode: sourceRowsByRowNumber.get(decision.rowNumber)?.barcode ?? null,
@@ -561,7 +595,12 @@ export function StockImportPanel({ priceLists }: { priceLists: PriceList[] }) {
         return;
       }
 
-      setApplyResult({ updatedCount: result.updatedCount, skippedInvalidCount: result.skippedInvalidCount });
+      setApplyResult({
+        updatedCount: result.updatedCount,
+        skippedInvalidCount: result.skippedInvalidCount,
+        importedFromMasterCatalogCount: result.importedFromMasterCatalogCount ?? 0,
+        skippedForCatalogLimitCount: result.skippedForCatalogLimitCount ?? 0,
+      });
       router.refresh();
     } catch {
       setError("Uygulama sırasında bir hata oluştu.");
@@ -590,7 +629,13 @@ export function StockImportPanel({ priceLists }: { priceLists: PriceList[] }) {
         </div>
         <p className="mt-2 text-sm text-slate-600">
           {applyResult.updatedCount} ürün stoğa açıldı ve fiyatı güncellendi.
+          {applyResult.importedFromMasterCatalogCount
+            ? ` (${applyResult.importedFromMasterCatalogCount} tanesi Master Katalog'dan yeni aktarıldı)`
+            : ""}
           {applyResult.skippedInvalidCount ? ` ${applyResult.skippedInvalidCount} satır atlandı.` : ""}
+          {applyResult.skippedForCatalogLimitCount
+            ? ` ${applyResult.skippedForCatalogLimitCount} satır ürün limitiniz nedeniyle aktarılamadı.`
+            : ""}
         </p>
         <div className="mt-4 flex gap-2">
           <Button onClick={resetAll}>Yeni liste yükle</Button>
@@ -721,6 +766,10 @@ export function StockImportPanel({ priceLists }: { priceLists: PriceList[] }) {
                     <Badge className="bg-emerald-100 text-emerald-700">
                       %{percent(matchResponse.summary.matchedExact)} barkod eşleşti (
                       {matchResponse.summary.matchedExact})
+                    </Badge>
+                    <Badge className="bg-sky-100 text-sky-700">
+                      %{percent(matchResponse.summary.matchedMasterCatalog)} Master Katalog&apos;da bulundu (
+                      {matchResponse.summary.matchedMasterCatalog})
                     </Badge>
                     <Badge className="bg-emerald-50 text-emerald-700">
                       %{percent(matchResponse.summary.matchedFuzzyHigh)} isimle eşleşti (

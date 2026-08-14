@@ -5,8 +5,10 @@ import { getTenantPriceLists } from "@/lib/data";
 import { normalizeProductRecord } from "@/lib/products/records";
 import { productWithVariantsAndPricesSelect } from "@/lib/products/queries";
 import { normalizeCode } from "@/lib/products/stock-import-matching";
+import { importProductsFromMasterCatalog } from "@/lib/products/import-from-master-catalog";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { ensureTenantAdminResponse } from "@/lib/tenancy/guards";
+import { revalidateStorefrontCache } from "@/lib/storefront/cache";
 import { chunkArray } from "@/lib/utils";
 import { stockImportApplyRequestSchema, type StockImportApplyRowInput } from "@/lib/validators/stock-import";
 
@@ -67,17 +69,62 @@ export async function POST(request: Request) {
     );
   }
 
+  // Barkodu Master Katalog'da bulunan ama tenant'ta henüz olmayan satırlar
+  // önce mağazaya aktarılır; dönen productId'ler aşağıdaki normal
+  // "productId'si olan satır" akışına dahil edilir. Aynı sku_code birden
+  // fazla satırda geçebilir (dosyada tekrar) — tek seferde aktarılır.
+  const masterCatalogRows = parsed.data.updates.filter(
+    (update): update is StockImportApplyRowInput & { masterCatalogSkuCode: string } =>
+      !update.productId && Boolean(update.masterCatalogSkuCode),
+  );
+  const uniqueSkuCodesToImport = [...new Set(masterCatalogRows.map((row) => row.masterCatalogSkuCode))];
+
+  let importedProductIdBySku = new Map<string, string>();
+  let skippedForCatalogLimitCount = 0;
+
+  if (uniqueSkuCodesToImport.length) {
+    const importResult = await importProductsFromMasterCatalog(supabase, tenant, uniqueSkuCodesToImport);
+    if (!importResult.ok) {
+      return NextResponse.json({ error: importResult.error }, { status: 400 });
+    }
+    importedProductIdBySku = new Map(importResult.insertedProducts.map((p) => [p.sku_code, p.id]));
+    skippedForCatalogLimitCount = importResult.skippedForLimitCount;
+  }
+
+  // productId'si olan satırlarla, Master Katalog'dan yeni aktarılıp artık
+  // productId kazanan satırları aynı listede topluyoruz — geri kalan akış
+  // (stok aç, fiyat yaz, sku_code onar) ikisi için de ortak.
+  const resolvedUpdates: StockImportApplyRowInput[] = [];
+  let skippedImportFailedCount = 0;
+
+  for (const update of parsed.data.updates) {
+    if (update.productId) {
+      resolvedUpdates.push(update);
+      continue;
+    }
+    if (update.masterCatalogSkuCode) {
+      const productId = importedProductIdBySku.get(update.masterCatalogSkuCode);
+      if (productId) {
+        resolvedUpdates.push({ ...update, productId, barcode: update.barcode ?? update.masterCatalogSkuCode });
+      } else {
+        skippedImportFailedCount += 1;
+      }
+    }
+  }
+
   // Aynı ürüne iki farklı satır eşleştirilmiş olabilir (ör. aynı barkod
   // dosyada iki kez geçtiyse) — upsert'te aynı çakışma anahtarını iki kez
   // göndermek Postgres hatası verir, bu yüzden son satır kazanır.
   const dedupedByProductId = new Map<string, StockImportApplyRowInput>();
-  for (const update of parsed.data.updates) {
-    dedupedByProductId.set(update.productId, update);
+  for (const update of resolvedUpdates) {
+    dedupedByProductId.set(update.productId!, update);
   }
 
   // product_prices tablosunda tenant_id yok ve admin client RLS'i bypass
   // ediyor — bu yüzden productId/priceListId'nin gerçekten bu tenant'a ait
   // olduğu burada ayrıca doğrulanıyor; ait olmayanlar sessizce atlanıyor.
+  // Az önce Master Katalog'dan aktarılan ürünler de tenant'ın kendi
+  // products tablosuna yazıldığı için bu sorguda otomatik olarak yer alır.
   const [tenantProductIds, tenantPriceLists] = await Promise.all([
     fetchAllTenantProductIds(supabase, tenant.id),
     getTenantPriceLists(tenant.id),
@@ -86,7 +133,7 @@ export async function POST(request: Request) {
   const tenantPriceListIdSet = new Set(tenantPriceLists.map((list) => list.id));
 
   const validUpdates = [...dedupedByProductId.values()].filter(
-    (update) => tenantProductIdSet.has(update.productId) && tenantPriceListIdSet.has(update.priceListId),
+    (update) => tenantProductIdSet.has(update.productId!) && tenantPriceListIdSet.has(update.priceListId),
   );
   const skippedInvalidCount = dedupedByProductId.size - validUpdates.length;
 
@@ -97,7 +144,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const validProductIds = validUpdates.map((update) => update.productId);
+  const validProductIds = validUpdates.map((update) => update.productId!);
 
   for (const idsChunk of chunkArray(validProductIds, ID_CHUNK_SIZE)) {
     const { error: stockError } = await supabase
@@ -112,7 +159,7 @@ export async function POST(request: Request) {
   }
 
   const priceRows = validUpdates.map((update) => ({
-    product_id: update.productId,
+    product_id: update.productId!,
     price_list_id: update.priceListId,
     price: update.price,
   }));
@@ -138,7 +185,7 @@ export async function POST(request: Request) {
   const barcodeByProductId = new Map<string, string>();
   for (const update of validUpdates) {
     if (update.barcode) {
-      barcodeByProductId.set(update.productId, normalizeCode(update.barcode));
+      barcodeByProductId.set(update.productId!, normalizeCode(update.barcode));
     }
   }
 
@@ -209,9 +256,16 @@ export async function POST(request: Request) {
     updatedProducts.push(...((data as Array<Record<string, unknown>> | null) ?? []));
   }
 
+  if (importedProductIdBySku.size) {
+    revalidateStorefrontCache({ tenantId: tenant.id, subdomain: tenant.subdomain });
+  }
+
   return NextResponse.json({
     updatedCount: validUpdates.length,
     skippedInvalidCount,
+    importedFromMasterCatalogCount: importedProductIdBySku.size,
+    skippedForCatalogLimitCount,
+    skippedImportFailedCount,
     updatedProducts: updatedProducts.map((product) => normalizeProductRecord(product)),
   });
 }

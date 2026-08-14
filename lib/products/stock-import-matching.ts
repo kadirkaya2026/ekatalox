@@ -8,6 +8,7 @@ export interface TenantProductForMatching {
 
 export type StockImportMatchStatus =
   | "matched_exact"
+  | "matched_master_catalog"
   | "matched_fuzzy_high"
   | "needs_review"
   | "no_match";
@@ -19,12 +20,25 @@ export interface StockImportCandidate {
   score: number;
 }
 
+// Dosyadaki barkod tenant'ın kendi ürünlerinde yok ama paylaşımlı Master
+// Katalog'da barkodla birebir bulunuyorsa — tenant bu ürünü henüz kendi
+// mağazasına aktarmamış demektir. Barkod eşleşmesi güvenilir olduğu için
+// (isim benzerliğine dayanmıyor) matched_exact ile aynı güvenle otomatik
+// onaylanır; apply aşamasında önce mağazaya aktarılıp sonra stoğa açılır.
+export interface StockImportMasterCatalogMatch {
+  skuCode: string;
+  productName: string;
+  categoryName: string;
+  imageUrl: string;
+}
+
 export type StockImportRowWarning = "price_missing" | "duplicate_barcode_in_file";
 
 export interface StockImportMatchResult {
   rowNumber: number;
   status: StockImportMatchStatus;
   matchedProductId: string | null;
+  masterCatalogMatch: StockImportMasterCatalogMatch | null;
   candidates: StockImportCandidate[];
   warnings: StockImportRowWarning[];
 }
@@ -165,6 +179,7 @@ function scoreNameMatch(rowName: string, candidateName: string, rowTokens: Set<s
 export function matchStockImportRows(
   rows: StockImportSourceRow[],
   products: TenantProductForMatching[],
+  masterCatalogBySkuCode: Map<string, StockImportMasterCatalogMatch> = new Map(),
 ): StockImportMatchResult[] {
   const productBySkuCode = new Map<string, TenantProductForMatching>();
   for (const product of products) {
@@ -222,12 +237,14 @@ export function matchStockImportRows(
     }
 
     if (row.barcode) {
-      const exactMatch = productBySkuCode.get(normalizeCode(row.barcode));
+      const normalizedBarcode = normalizeCode(row.barcode);
+      const exactMatch = productBySkuCode.get(normalizedBarcode);
       if (exactMatch) {
         return {
           rowNumber: row.rowNumber,
           status: "matched_exact",
           matchedProductId: exactMatch.id,
+          masterCatalogMatch: null,
           candidates: [
             {
               productId: exactMatch.id,
@@ -239,6 +256,23 @@ export function matchStockImportRows(
           warnings,
         };
       }
+
+      // Tenant'ın kendi ürünlerinde yok ama barkod paylaşımlı Master
+      // Katalog'da birebir varsa — tenant bu ürünü henüz mağazasına
+      // aktarmamış demektir. İsim benzerliğine güvenmiyoruz (barkod zaten
+      // kesin), bu yüzden matched_exact ile aynı güvenilirlikte kabul edip
+      // isim tabanlı eşleştirmeye hiç düşürmüyoruz.
+      const masterMatch = masterCatalogBySkuCode.get(normalizedBarcode);
+      if (masterMatch) {
+        return {
+          rowNumber: row.rowNumber,
+          status: "matched_master_catalog",
+          matchedProductId: null,
+          masterCatalogMatch: masterMatch,
+          candidates: [],
+          warnings,
+        };
+      }
     }
 
     if (!row.productName) {
@@ -246,6 +280,7 @@ export function matchStockImportRows(
         rowNumber: row.rowNumber,
         status: "no_match",
         matchedProductId: null,
+        masterCatalogMatch: null,
         candidates: [],
         warnings,
       };
@@ -325,6 +360,7 @@ export function matchStockImportRows(
         rowNumber: row.rowNumber,
         status: "matched_fuzzy_high",
         matchedProductId: top.product.id,
+        masterCatalogMatch: null,
         candidates,
         warnings,
       };
@@ -335,6 +371,7 @@ export function matchStockImportRows(
         rowNumber: row.rowNumber,
         status: "needs_review",
         matchedProductId: null,
+        masterCatalogMatch: null,
         candidates,
         warnings,
       };
@@ -344,6 +381,7 @@ export function matchStockImportRows(
       rowNumber: row.rowNumber,
       status: "no_match",
       matchedProductId: null,
+      masterCatalogMatch: null,
       candidates,
       warnings,
     };

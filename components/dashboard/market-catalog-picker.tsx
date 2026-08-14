@@ -145,7 +145,11 @@ export function MarketCatalogPicker({
         throw new Error(body.error ?? "Ürünler aktarılamadı.");
       }
 
-      setSuccessMessage(`${body.importedCount} ürün mağazanıza aktarıldı.`);
+      setSuccessMessage(
+        body.skippedForLimitCount > 0
+          ? `${body.importedCount} ürün mağazanıza aktarıldı. ${body.skippedForLimitCount} ürün paket limitiniz nedeniyle aktarılamadı.`
+          : `${body.importedCount} ürün mağazanıza aktarıldı.`,
+      );
       setSelected(new Set());
       setStatus("idle");
       router.refresh();
