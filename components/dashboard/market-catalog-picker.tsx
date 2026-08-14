@@ -173,7 +173,7 @@ export function MarketCatalogPicker({
         </div>
         <div className="flex flex-wrap items-center gap-4 text-sm text-slate-600">
           <span>
-            Ürün limiti: <strong>{usage.total}</strong> / {usage.limit}{" "}
+            Mağazanızdaki ürün / paket limitiniz: <strong>{usage.total}</strong> / {usage.limit}{" "}
             <span className="text-slate-400">({usage.remaining} kaldı)</span>
           </span>
           <Button
