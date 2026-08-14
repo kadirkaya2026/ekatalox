@@ -66,6 +66,11 @@ export async function ensureCategoryPath(
         name,
         parent_id: parentId,
         display_order: nextDisplayOrder.value++,
+        // "Kategorisiz" — kaynak sitede kategori bilgisi olmayan Master
+        // Katalog ürünlerinin düştüğü kova — storefront'ta hiçbir yerde
+        // (nav, arama) görünmemeli, admin panelinde ürün yönetimi için
+        // olduğu gibi kalır (bkz. lib/categories/tree.ts).
+        is_hidden_from_storefront: key === normalizeCategoryName("Kategorisiz"),
       })
       .select("id")
       .single<{ id: string }>();
