@@ -112,8 +112,54 @@ function levenshteinRatio(a: string, b: string): number {
   return 1 - levenshteinDistance(a, b) / maxLen;
 }
 
+// Barkod okuyucu/POS sistemlerinin stok listelerinde ürün adı genelde
+// kısaltılmış tek-iki kelimedir (ör. "CRAX"), katalogdaki karşılığı ise
+// uzun ve betimleyicidir (ör. "Eti Crax Çubuk Kraker 40 G"). Bu durumda
+// tam string benzerliği (Levenshtein) uzunluk farkı yüzünden haksız
+// yere düşük çıkıyor — satırın kelimelerinin TAMAMI adayda geçiyorsa
+// bunu ayrı bir sinyal olarak değerlendiriyoruz.
+//
+// Ucuz (sadece Set.has, yazım hatası toleranssız) sürüm — büyük aday
+// havuzunu (CANDIDATE_POOL_CAP) daraltan 1. aşamada kullanılır.
+function exactContainmentScore(rowTokens: Set<string>, candidateTokens: Set<string>): number {
+  if (rowTokens.size < 2) return 0;
+
+  let found = 0;
+  for (const token of rowTokens) {
+    if (candidateTokens.has(token)) found += 1;
+  }
+  return found / rowTokens.size;
+}
+
+// Pahalı (yazım hatası toleranslı, token-Levenshtein) sürüm — sadece
+// zaten daraltılmış LEVENSHTEIN_STAGE_CAP büyüklüğündeki kısa listede
+// kullanılır.
+function tokenContainmentScore(rowTokens: Set<string>, candidateTokens: Set<string>): number {
+  if (rowTokens.size < 2) return 0;
+
+  let found = 0;
+  for (const token of rowTokens) {
+    if (candidateTokens.has(token)) {
+      found += 1;
+      continue;
+    }
+    for (const candidateToken of candidateTokens) {
+      if (levenshteinRatio(token, candidateToken) >= 0.85) {
+        found += 1;
+        break;
+      }
+    }
+  }
+  return found / rowTokens.size;
+}
+
 function scoreNameMatch(rowName: string, candidateName: string, rowTokens: Set<string>, candidateTokens: Set<string>) {
-  return 0.5 * jaccard(rowTokens, candidateTokens) + 0.5 * levenshteinRatio(rowName, candidateName);
+  const baseScore = 0.5 * jaccard(rowTokens, candidateTokens) + 0.5 * levenshteinRatio(rowName, candidateName);
+  // 0.75 ile sınırlanıyor: containment tek başına hiçbir zaman otomatik
+  // onay eşiğini (0.9) geçemez, sadece satırı "gözden geçir"e taşıyabilir
+  // — kısa isimlerin yanlışlıkla otomatik onaylanmasını engellemek için.
+  const containmentScore = tokenContainmentScore(rowTokens, candidateTokens) * 0.75;
+  return Math.max(baseScore, containmentScore);
 }
 
 export function matchStockImportRows(
@@ -225,13 +271,24 @@ export function matchStockImportRows(
       }
     }
 
-    // 1. aşama: ucuz Jaccard skoruna göre havuzu daralt.
+    // 1. aşama: ucuz Jaccard + tam-eşleşme içerme skoruna göre havuzu
+    // daralt (exactContainmentScore — yazım hatası toleranssız, sadece
+    // Set.has). Sadece Jaccard kullanılsaydı, kısa stok isimlerinin doğru
+    // (ama uzun) karşılığı bu aşamada elenip 2. aşamaya hiç girmeyebilirdi;
+    // yazım hatası toleransı gerektiren (tokenContainmentScore) daha pahalı
+    // kontrol zaten daraltılmış 2. aşamada yapılıyor, burada değil —
+    // CANDIDATE_POOL_CAP büyüklüğünde bir havuzda satır başına token×token
+    // Levenshtein çok pahalıya çıkıyordu.
     const jaccardRanked = [...candidateIds]
-      .map((productId) => ({
-        productId,
-        jaccardScore: jaccard(rowTokens, tokensById.get(productId)!),
-      }))
-      .sort((a, b) => b.jaccardScore - a.jaccardScore)
+      .map((productId) => {
+        const candidateTokens = tokensById.get(productId)!;
+        const preScore = Math.max(
+          jaccard(rowTokens, candidateTokens),
+          exactContainmentScore(rowTokens, candidateTokens),
+        );
+        return { productId, preScore };
+      })
+      .sort((a, b) => b.preScore - a.preScore)
       .slice(0, LEVENSHTEIN_STAGE_CAP);
 
     // 2. aşama: sadece daralmış havuzda pahalı Levenshtein hesabı yapılır.
