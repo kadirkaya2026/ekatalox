@@ -47,6 +47,13 @@ interface RowDecision {
   // action==="create" iken dosyadaki isim yerine kullanıcının elle
   // düzenleyebildiği ürün adı — boş bırakılamaz (bkz. isRowReadyForApply).
   productName: string | null;
+  // action==="create" iken dosyadaki barkod yerine kullanıcının elle
+  // düzenleyebildiği barkod/SKU — boş bırakılamaz.
+  skuCode: string | null;
+  // action==="create" iken, kullanıcı bir görsel seçip yüklediyse Supabase
+  // Storage'daki public URL'i — opsiyonel, boşsa ürün görselsiz oluşturulur
+  // (ProductImagePlaceholder ürün adını otomatik gösterir).
+  imageUrl: string | null;
   price: number | null;
 }
 
@@ -166,6 +173,8 @@ function initialDecisionsFromResults(
         isAutoMatch && result.status === "matched_master_catalog" ? (result.masterCatalogMatch?.skuCode ?? null) : null,
       categoryId: null,
       productName: null,
+      skuCode: null,
+      imageUrl: null,
       price: sourcePrice,
     });
   }
@@ -179,7 +188,11 @@ function initialDecisionsFromResults(
 function isRowReadyForApply(decision: RowDecision) {
   if (decision.price === null) return false;
   if (decision.action === "create") {
-    return Boolean(decision.categoryId) && Boolean(decision.productName?.trim());
+    return (
+      Boolean(decision.categoryId) &&
+      Boolean(decision.productName?.trim()) &&
+      Boolean(decision.skuCode?.trim())
+    );
   }
   return (
     (decision.action === "approved" || decision.action === "reassigned") &&
@@ -259,6 +272,9 @@ function ReviewRow({
   const [showPicker, setShowPicker] = useState(false);
   const [suggestPending, setSuggestPending] = useState(false);
   const [suggestError, setSuggestError] = useState<string | null>(null);
+  const [imageUploadPending, setImageUploadPending] = useState(false);
+  const [imageUploadError, setImageUploadError] = useState<string | null>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
   const matchedProduct = decision.productId
     ? productById.get(decision.productId)
     : decision.masterCatalogSkuCode && result.masterCatalogMatch
@@ -304,6 +320,36 @@ function ReviewRow({
       setSuggestError("Öneri gönderilemedi.");
     } finally {
       setSuggestPending(false);
+    }
+  }
+
+  async function handleImageSelect(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (imageInputRef.current) imageInputRef.current.value = "";
+    if (!file) return;
+
+    setImageUploadError(null);
+    setImageUploadPending(true);
+
+    try {
+      const formData = new FormData();
+      formData.append("image", file);
+      const response = await fetch("/api/tenant/products/stock-import/upload-image", {
+        method: "POST",
+        body: formData,
+      });
+      const result = await response.json();
+
+      if (!response.ok) {
+        setImageUploadError(result.error ?? "Görsel yüklenemedi.");
+        return;
+      }
+
+      onDecisionChange({ ...decision, imageUrl: result.imageUrl });
+    } catch {
+      setImageUploadError("Görsel yüklenemedi.");
+    } finally {
+      setImageUploadPending(false);
     }
   }
 
@@ -400,8 +446,50 @@ function ReviewRow({
               placeholder="Ürün adı"
               className="min-w-[220px] flex-1"
             />
-            <span className="text-xs text-slate-400">{sourceRow.barcode}</span>
+            <Input
+              value={decision.skuCode ?? ""}
+              onChange={(event) => onDecisionChange({ ...decision, skuCode: event.target.value })}
+              placeholder="Barkod / SKU"
+              className="w-40"
+            />
           </div>
+
+          <div className="flex items-center gap-3">
+            <div className="flex size-14 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-slate-200 bg-slate-50">
+              {decision.imageUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element -- küçük önizleme, next/image optimizasyonuna gerek yok
+                <img src={decision.imageUrl} alt="" className="size-full object-cover" />
+              ) : (
+                <span className="px-1 text-center text-[9px] leading-tight text-slate-400">Görsel yok</span>
+              )}
+            </div>
+            <input
+              ref={imageInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleImageSelect}
+            />
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => imageInputRef.current?.click()}
+              disabled={imageUploadPending}
+            >
+              {imageUploadPending ? "Yükleniyor..." : decision.imageUrl ? "Görseli değiştir" : "Görsel seç"}
+            </Button>
+            {decision.imageUrl ? (
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => onDecisionChange({ ...decision, imageUrl: null })}
+              >
+                Kaldır
+              </Button>
+            ) : null}
+          </div>
+          {imageUploadError ? <p className="text-xs font-medium text-rose-600">{imageUploadError}</p> : null}
+
           <div className="flex flex-wrap items-center gap-2">
             <Select
               value={decision.categoryId ?? ""}
@@ -440,6 +528,8 @@ function ReviewRow({
           </div>
           {!decision.productName?.trim() ? (
             <p className="text-xs font-medium text-amber-700">Ürün adı boş olamaz.</p>
+          ) : !decision.skuCode?.trim() ? (
+            <p className="text-xs font-medium text-amber-700">Barkod/SKU boş olamaz.</p>
           ) : !decision.categoryId ? (
             <p className="text-xs font-medium text-amber-700">Kategori seçilmeden bu ürün oluşturulmaz.</p>
           ) : null}
@@ -507,6 +597,7 @@ function ReviewRow({
                   ...decision,
                   action: "create",
                   productName: decision.productName ?? sourceRow.productName ?? "",
+                  skuCode: decision.skuCode ?? sourceRow.barcode ?? "",
                 })
               }
             >
@@ -701,7 +792,8 @@ export function StockImportPanel({
               ? {
                   categoryId: decision.categoryId!,
                   productName: decision.productName!.trim(),
-                  skuCode: sourceRow?.barcode ?? "",
+                  skuCode: decision.skuCode!.trim(),
+                  imageUrl: decision.imageUrl,
                 }
               : null,
             priceListId: selectedPriceListId,

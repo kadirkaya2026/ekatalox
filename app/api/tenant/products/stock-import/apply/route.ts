@@ -152,6 +152,7 @@ export async function POST(request: Request) {
             category_id: row.newProduct.categoryId,
             sku_code: row.newProduct.skuCode,
             product_name: row.newProduct.productName,
+            image_url: row.newProduct.imageUrl ?? null,
             currency: "TRY",
             is_in_stock: true,
             display_order: nextDisplayOrder++,

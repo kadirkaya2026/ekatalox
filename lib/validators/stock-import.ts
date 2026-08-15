@@ -29,6 +29,9 @@ export const stockImportApplyRowSchema = z
         categoryId: z.string().uuid("Geçerli bir kategori seçin."),
         productName: z.string().trim().min(1, "Ürün adı gerekli."),
         skuCode: z.string().trim().min(1, "Barkod/SKU gerekli."),
+        // Yükleme akışında ayrı bir uploda-image çağrısıyla önceden
+        // yüklenip Supabase Storage public URL'i olarak buraya konur.
+        imageUrl: z.string().trim().url().nullable().optional(),
       })
       .nullable()
       .optional(),
