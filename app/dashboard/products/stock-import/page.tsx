@@ -2,7 +2,7 @@ import { Header } from "@/components/dashboard/header";
 import { Card } from "@/components/ui/card";
 import { StockImportPanel } from "@/components/dashboard/stock-import-panel";
 import { requireTenantAdminPage } from "@/lib/auth/session";
-import { getTenantPriceLists } from "@/lib/data";
+import { getTenantCategories, getTenantPriceLists } from "@/lib/data";
 
 export default async function StockImportPage() {
   const session = await requireTenantAdminPage();
@@ -23,7 +23,10 @@ export default async function StockImportPage() {
     );
   }
 
-  const priceLists = await getTenantPriceLists(tenant.id);
+  const [priceLists, categories] = await Promise.all([
+    getTenantPriceLists(tenant.id),
+    getTenantCategories(tenant.id),
+  ]);
 
   return (
     <div className="space-y-6">
@@ -32,7 +35,7 @@ export default async function StockImportPage() {
         title="Stok Listesi Yükle"
         description="Barkod okuyucu / market otomasyon yazılımınızdan aldığınız Excel/CSV stok listesini yükleyin; sistem ürünlerinizle otomatik eşleştirsin."
       />
-      <StockImportPanel priceLists={priceLists} />
+      <StockImportPanel priceLists={priceLists} categories={categories} />
     </div>
   );
 }

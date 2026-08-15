@@ -20,6 +20,18 @@ export const stockImportApplyRowSchema = z
     // sonra normal akışla (stok aç + fiyat yaz) devam edilir. İkisinden
     // tam olarak biri dolu olmalı (aşağıdaki .refine).
     masterCatalogSkuCode: z.string().trim().min(1).nullable().optional(),
+    // Satır hiçbir mevcut ürünle (tenant'ta veya Master Katalog'da)
+    // eşleşmediğinde, kullanıcı bunu tenant'ta sıfırdan yeni bir ürün olarak
+    // oluşturmayı seçebilir — kategori seçimi UI'da zorunlu kılınır, burada
+    // da şemayla tekrar doğrulanır (bkz. apply/route.ts).
+    newProduct: z
+      .object({
+        categoryId: z.string().uuid("Geçerli bir kategori seçin."),
+        productName: z.string().trim().min(1, "Ürün adı gerekli."),
+        skuCode: z.string().trim().min(1, "Barkod/SKU gerekli."),
+      })
+      .nullable()
+      .optional(),
     priceListId: z.string().uuid("Geçerli bir fiyat listesi seçin."),
     price: z.coerce.number().min(0, "Fiyat sıfırdan küçük olamaz."),
     // Satırın dosyadaki barkodu — isimle/manuel eşleştirilen ürünlerin
@@ -28,9 +40,10 @@ export const stockImportApplyRowSchema = z
     // bir no-op'tur; asıl fayda isim/manuel eşleşmelerde ortaya çıkar.
     barcode: z.string().trim().min(1).nullable().optional(),
   })
-  .refine((row) => Boolean(row.productId) || Boolean(row.masterCatalogSkuCode), {
-    message: "productId veya masterCatalogSkuCode belirtilmeli.",
-  });
+  .refine(
+    (row) => Boolean(row.productId) || Boolean(row.masterCatalogSkuCode) || Boolean(row.newProduct),
+    { message: "productId, masterCatalogSkuCode veya newProduct belirtilmeli." },
+  );
 
 export const stockImportApplyRequestSchema = z.object({
   updates: z.array(stockImportApplyRowSchema).min(1, "Uygulanacak satır seçilmedi.").max(50_000),

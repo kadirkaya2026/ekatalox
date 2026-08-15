@@ -25,11 +25,12 @@ import {
   type StockImportSourceRow,
 } from "@/lib/csv/parse-stock-import";
 import type { StockImportMatchResult } from "@/lib/products/stock-import-matching";
+import { buildCategoryTree, flattenCategoryTree } from "@/lib/categories/tree";
 import { cn } from "@/lib/utils";
-import type { PriceList } from "@/lib/types";
+import type { Category, PriceList } from "@/lib/types";
 
 type WizardStep = "upload" | "mapping" | "review";
-type RowDecisionAction = "approved" | "reassigned" | "skipped" | "pending" | "suggested";
+type RowDecisionAction = "approved" | "reassigned" | "skipped" | "pending" | "suggested" | "create";
 
 interface RowDecision {
   rowNumber: number;
@@ -39,6 +40,10 @@ interface RowDecision {
   // için dolu — productId ile birbirini dışlar (biri set edilince diğeri
   // temizlenir). Apply isteğinde productId yerine bu gönderilir.
   masterCatalogSkuCode: string | null;
+  // action==="create" iken dolu — hiçbir yerde eşleşmeyen satırı tenant'ta
+  // sıfırdan yeni ürün olarak oluşturmak için seçilen kategori. Kategori
+  // seçilmeden bu satır "uygulamaya hazır" sayılmaz (bkz. applyCount).
+  categoryId: string | null;
   price: number | null;
 }
 
@@ -156,11 +161,24 @@ function initialDecisionsFromResults(
       productId: isAutoMatch ? result.matchedProductId : null,
       masterCatalogSkuCode:
         isAutoMatch && result.status === "matched_master_catalog" ? (result.masterCatalogMatch?.skuCode ?? null) : null,
+      categoryId: null,
       price: sourcePrice,
     });
   }
 
   return decisions;
+}
+
+// Bir satırın "Uygula"ya dahil edilip edilmeyeceğini tek yerden karar
+// vermek için — hem özet sayaç (applyCount) hem de gönderilecek payload bu
+// fonksiyona göre filtreleniyor, ikisinin birbirinden sapmasını önler.
+function isRowReadyForApply(decision: RowDecision) {
+  if (decision.price === null) return false;
+  if (decision.action === "create") return Boolean(decision.categoryId);
+  return (
+    (decision.action === "approved" || decision.action === "reassigned") &&
+    Boolean(decision.productId || decision.masterCatalogSkuCode)
+  );
 }
 
 function ProductPicker({
@@ -221,6 +239,7 @@ function ReviewRow({
   decision,
   productById,
   productPool,
+  flatCategories,
   onDecisionChange,
 }: {
   result: StockImportMatchResult;
@@ -228,6 +247,7 @@ function ReviewRow({
   decision: RowDecision;
   productById: Map<string, ProductPoolEntry>;
   productPool: ProductPoolEntry[];
+  flatCategories: Array<{ id: string; name: string; depth: number }>;
   onDecisionChange: (next: RowDecision) => void;
 }) {
   const [showPicker, setShowPicker] = useState(false);
@@ -242,7 +262,11 @@ function ReviewRow({
           product_name: result.masterCatalogMatch.productName,
         }
       : null;
-  const hasResolution = Boolean(decision.productId || decision.masterCatalogSkuCode);
+  const isCreatingNew = decision.action === "create";
+  const hasResolution = Boolean(
+    decision.productId || decision.masterCatalogSkuCode || (isCreatingNew && decision.categoryId),
+  );
+  const canCreateNew = Boolean(sourceRow.productName && sourceRow.barcode);
   const isPending = decision.action === "pending" || decision.action === "skipped";
 
   async function suggestProduct() {
@@ -283,9 +307,11 @@ function ReviewRow({
           ? "border-slate-100 bg-slate-50/60 opacity-70"
           : decision.action === "suggested"
             ? "border-violet-200 bg-violet-50/40"
-            : isPending
-              ? "border-amber-200 bg-amber-50/40"
-              : "border-emerald-100 bg-emerald-50/30",
+            : isCreatingNew
+              ? "border-teal-200 bg-teal-50/40"
+              : isPending
+                ? "border-amber-200 bg-amber-50/40"
+                : "border-emerald-100 bg-emerald-50/30",
       )}
     >
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -316,7 +342,9 @@ function ReviewRow({
                   ? "bg-slate-200 text-slate-600"
                   : decision.action === "suggested"
                     ? "bg-violet-100 text-violet-700"
-                    : "bg-amber-100 text-amber-800"
+                    : decision.action === "create"
+                      ? "bg-teal-100 text-teal-700"
+                      : "bg-amber-100 text-amber-800"
             }
           >
             {decision.action === "approved" && "Onaylı"}
@@ -324,6 +352,7 @@ function ReviewRow({
             {decision.action === "skipped" && "Atlandı"}
             {decision.action === "pending" && "Bekliyor"}
             {decision.action === "suggested" && "Önerildi"}
+            {decision.action === "create" && "Yeni ürün"}
           </Badge>
           {result.status === "matched_master_catalog" ? (
             <Badge className="bg-sky-100 text-sky-700">Master Katalog&apos;dan aktarılacak</Badge>
@@ -354,6 +383,53 @@ function ReviewRow({
         </div>
       ) : null}
 
+      {isCreatingNew ? (
+        <div className="mt-3 space-y-2 rounded-xl border border-dashed border-teal-200 bg-white/70 p-3">
+          <p className="text-sm font-medium text-slate-800">
+            {sourceRow.productName} <span className="font-normal text-slate-400">• {sourceRow.barcode}</span>
+          </p>
+          <div className="flex flex-wrap items-center gap-2">
+            <Select
+              value={decision.categoryId ?? ""}
+              onChange={(event) => onDecisionChange({ ...decision, categoryId: event.target.value || null })}
+              className="min-w-[220px]"
+            >
+              <option value="">Kategori seçin (zorunlu)</option>
+              {flatCategories.map((category) => (
+                <option key={category.id} value={category.id}>
+                  {"— ".repeat(category.depth)}
+                  {category.name}
+                </option>
+              ))}
+            </Select>
+            <Input
+              type="number"
+              min="0"
+              step="0.01"
+              value={decision.price ?? ""}
+              onChange={(event) =>
+                onDecisionChange({
+                  ...decision,
+                  price: event.target.value === "" ? null : Number(event.target.value),
+                })
+              }
+              placeholder="Fiyat"
+              className="w-28"
+            />
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => onDecisionChange({ ...decision, action: "pending", categoryId: null })}
+            >
+              Vazgeç
+            </Button>
+          </div>
+          {!decision.categoryId ? (
+            <p className="text-xs font-medium text-amber-700">Kategori seçilmeden bu ürün oluşturulmaz.</p>
+          ) : null}
+        </div>
+      ) : null}
+
       {result.candidates.length && decision.action !== "approved" ? (
         <div className="mt-3 flex flex-wrap gap-2">
           {result.candidates
@@ -368,6 +444,7 @@ function ReviewRow({
                     action: "reassigned",
                     productId: candidate.productId,
                     masterCatalogSkuCode: null,
+                    categoryId: null,
                   })
                 }
                 className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:border-emerald-300 hover:bg-emerald-50"
@@ -405,6 +482,15 @@ function ReviewRow({
           <Button type="button" variant="secondary" onClick={() => setShowPicker((current) => !current)}>
             Başka ürün seç
           </Button>
+          {!hasResolution && !isCreatingNew && canCreateNew ? (
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => onDecisionChange({ ...decision, action: "create" })}
+            >
+              Yeni ürün olarak oluştur
+            </Button>
+          ) : null}
           {!hasResolution && sourceRow.barcode ? (
             <Button type="button" variant="secondary" onClick={suggestProduct} disabled={suggestPending}>
               {suggestPending ? "Gönderiliyor..." : "Listede bulamadım, eklenmesini öner"}
@@ -415,7 +501,13 @@ function ReviewRow({
               type="button"
               variant="secondary"
               onClick={() =>
-                onDecisionChange({ ...decision, action: "skipped", productId: null, masterCatalogSkuCode: null })
+                onDecisionChange({
+                  ...decision,
+                  action: "skipped",
+                  productId: null,
+                  masterCatalogSkuCode: null,
+                  categoryId: null,
+                })
               }
             >
               Atla
@@ -438,7 +530,13 @@ function ReviewRow({
         <ProductPicker
           productPool={productPool}
           onSelect={(product) => {
-            onDecisionChange({ ...decision, action: "reassigned", productId: product.id, masterCatalogSkuCode: null });
+            onDecisionChange({
+              ...decision,
+              action: "reassigned",
+              productId: product.id,
+              masterCatalogSkuCode: null,
+              categoryId: null,
+            });
             setShowPicker(false);
           }}
         />
@@ -447,7 +545,13 @@ function ReviewRow({
   );
 }
 
-export function StockImportPanel({ priceLists }: { priceLists: PriceList[] }) {
+export function StockImportPanel({
+  priceLists,
+  categories,
+}: {
+  priceLists: PriceList[];
+  categories: Category[];
+}) {
   const router = useRouter();
   const [step, setStep] = useState<WizardStep>("upload");
   const [error, setError] = useState<string | null>(null);
@@ -459,7 +563,11 @@ export function StockImportPanel({ priceLists }: { priceLists: PriceList[] }) {
     skippedInvalidCount: number;
     importedFromMasterCatalogCount: number;
     skippedForCatalogLimitCount: number;
+    createdProductCount: number;
+    skippedForNewProductLimitCount: number;
   } | null>(null);
+
+  const flatCategories = useMemo(() => flattenCategoryTree(buildCategoryTree(categories)), [categories]);
 
   const [rawTable, setRawTable] = useState<StockImportRawTable | null>(null);
   const [mapping, setMapping] = useState<ColumnMapping[]>([]);
@@ -551,12 +659,7 @@ export function StockImportPanel({ priceLists }: { priceLists: PriceList[] }) {
   }, [matchResponse, decisions]);
 
   const pendingCount = [...decisions.values()].filter((d) => d.action === "pending").length;
-  const applyCount = [...decisions.values()].filter(
-    (d) =>
-      (d.action === "approved" || d.action === "reassigned") &&
-      (d.productId || d.masterCatalogSkuCode) &&
-      d.price !== null,
-  ).length;
+  const applyCount = [...decisions.values()].filter((d) => isRowReadyForApply(d)).length;
 
   async function applyChanges() {
     setError(null);
@@ -564,19 +667,26 @@ export function StockImportPanel({ priceLists }: { priceLists: PriceList[] }) {
 
     try {
       const updates = [...decisions.values()]
-        .filter(
-          (decision) =>
-            (decision.action === "approved" || decision.action === "reassigned") &&
-            (decision.productId || decision.masterCatalogSkuCode) &&
-            decision.price !== null,
-        )
-        .map((decision) => ({
-          productId: decision.productId,
-          masterCatalogSkuCode: decision.masterCatalogSkuCode,
-          priceListId: selectedPriceListId,
-          price: decision.price!,
-          barcode: sourceRowsByRowNumber.get(decision.rowNumber)?.barcode ?? null,
-        }));
+        .filter((decision) => isRowReadyForApply(decision))
+        .map((decision) => {
+          const sourceRow = sourceRowsByRowNumber.get(decision.rowNumber);
+          const isCreatingNew = decision.action === "create" && decision.categoryId;
+
+          return {
+            productId: isCreatingNew ? null : decision.productId,
+            masterCatalogSkuCode: isCreatingNew ? null : decision.masterCatalogSkuCode,
+            newProduct: isCreatingNew
+              ? {
+                  categoryId: decision.categoryId!,
+                  productName: sourceRow?.productName ?? sourceRow?.barcode ?? "İsimsiz ürün",
+                  skuCode: sourceRow?.barcode ?? "",
+                }
+              : null,
+            priceListId: selectedPriceListId,
+            price: decision.price!,
+            barcode: sourceRow?.barcode ?? null,
+          };
+        });
 
       if (!updates.length) {
         setError("Uygulanacak satır yok.");
@@ -600,6 +710,8 @@ export function StockImportPanel({ priceLists }: { priceLists: PriceList[] }) {
         skippedInvalidCount: result.skippedInvalidCount,
         importedFromMasterCatalogCount: result.importedFromMasterCatalogCount ?? 0,
         skippedForCatalogLimitCount: result.skippedForCatalogLimitCount ?? 0,
+        createdProductCount: result.createdProductCount ?? 0,
+        skippedForNewProductLimitCount: result.skippedForNewProductLimitCount ?? 0,
       });
       router.refresh();
     } catch {
@@ -632,9 +744,15 @@ export function StockImportPanel({ priceLists }: { priceLists: PriceList[] }) {
           {applyResult.importedFromMasterCatalogCount
             ? ` (${applyResult.importedFromMasterCatalogCount} tanesi Master Katalog'dan yeni aktarıldı)`
             : ""}
+          {applyResult.createdProductCount
+            ? ` ${applyResult.createdProductCount} tanesi yeni ürün olarak oluşturuldu.`
+            : ""}
           {applyResult.skippedInvalidCount ? ` ${applyResult.skippedInvalidCount} satır atlandı.` : ""}
           {applyResult.skippedForCatalogLimitCount
             ? ` ${applyResult.skippedForCatalogLimitCount} satır ürün limitiniz nedeniyle aktarılamadı.`
+            : ""}
+          {applyResult.skippedForNewProductLimitCount
+            ? ` ${applyResult.skippedForNewProductLimitCount} yeni ürün, ürün limitiniz nedeniyle oluşturulamadı.`
             : ""}
         </p>
         <div className="mt-4 flex gap-2">
@@ -802,6 +920,7 @@ export function StockImportPanel({ priceLists }: { priceLists: PriceList[] }) {
                   decision={decision}
                   productById={productById}
                   productPool={matchResponse.productPool}
+                  flatCategories={flatCategories}
                   onDecisionChange={(next) =>
                     setDecisions((current) => new Map(current).set(next.rowNumber, next))
                   }

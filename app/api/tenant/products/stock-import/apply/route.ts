@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getSessionContext } from "@/lib/auth/session";
@@ -6,6 +7,8 @@ import { normalizeProductRecord } from "@/lib/products/records";
 import { productWithVariantsAndPricesSelect } from "@/lib/products/queries";
 import { normalizeCode } from "@/lib/products/stock-import-matching";
 import { importProductsFromMasterCatalog } from "@/lib/products/import-from-master-catalog";
+import { compactProductDisplayOrder } from "@/lib/products/reorder";
+import { getEffectiveProductLimit } from "@/lib/billing/plans";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { ensureTenantAdminResponse } from "@/lib/tenancy/guards";
 import { revalidateStorefrontCache } from "@/lib/storefront/cache";
@@ -91,10 +94,99 @@ export async function POST(request: Request) {
     skippedForCatalogLimitCount = importResult.skippedForLimitCount;
   }
 
+  // Hiçbir yerde eşleşmeyen ve kullanıcının "yeni ürün olarak oluştur"
+  // dediği satırlar — kategori seçimi (categoryId) UI'da zorunlu tutulduğu
+  // için burada sadece gerçekten tenant'a ait bir kategoriye işaret ettiği
+  // tekrar doğrulanıyor. Ürün limiti, tam bu sırada (master katalogdan az
+  // önce aktarılanlar dahil) güncel sayıya göre kontrol edilir.
+  const newProductRows = parsed.data.updates.filter(
+    (
+      update,
+    ): update is StockImportApplyRowInput & {
+      newProduct: NonNullable<StockImportApplyRowInput["newProduct"]>;
+    } => !update.productId && !update.masterCatalogSkuCode && Boolean(update.newProduct),
+  );
+
+  const createdProductRows: Array<StockImportApplyRowInput & { productId: string }> = [];
+  let skippedInvalidCategoryCount = 0;
+  let skippedForNewProductLimitCount = 0;
+
+  if (newProductRows.length) {
+    const { data: categoryRows } = await supabase
+      .from("categories")
+      .select("id")
+      .eq("tenant_id", tenant.id);
+    const validCategoryIds = new Set((categoryRows ?? []).map((row) => row.id as string));
+
+    const eligibleRows = newProductRows.filter((row) => validCategoryIds.has(row.newProduct.categoryId));
+    skippedInvalidCategoryCount = newProductRows.length - eligibleRows.length;
+
+    if (eligibleRows.length) {
+      await compactProductDisplayOrder(supabase, tenant.id);
+
+      const { count: currentProductCount } = await supabase
+        .from("products")
+        .select("*", { count: "exact", head: true })
+        .eq("tenant_id", tenant.id);
+
+      const effectiveLimit = getEffectiveProductLimit(tenant.plan, tenant.product_limit_addon);
+      const remainingCapacity = Math.max(0, effectiveLimit - (currentProductCount ?? 0));
+      const rowsToInsert = eligibleRows.slice(0, remainingCapacity);
+      skippedForNewProductLimitCount = eligibleRows.length - rowsToInsert.length;
+
+      if (rowsToInsert.length) {
+        const { data: lastProduct } = await supabase
+          .from("products")
+          .select("display_order")
+          .eq("tenant_id", tenant.id)
+          .order("display_order", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        let nextDisplayOrder = (lastProduct?.display_order ?? 0) + 1;
+
+        const rowsWithPayload = rowsToInsert.map((row) => ({
+          row,
+          payloadItem: {
+            id: randomUUID(),
+            tenant_id: tenant.id,
+            category_id: row.newProduct.categoryId,
+            sku_code: row.newProduct.skuCode,
+            product_name: row.newProduct.productName,
+            currency: "TRY",
+            is_in_stock: true,
+            display_order: nextDisplayOrder++,
+          },
+        }));
+
+        for (const chunk of chunkArray(rowsWithPayload, UPSERT_CHUNK_SIZE)) {
+          // Aynı barkod aynı anda başka bir yoldan da eklenmiş olabilir
+          // (yarış durumu, ya da dosyada zaten var olan bir sku_code'a denk
+          // gelmesi) — böyle bir çakışma sessizce atlanır, hata verilmez.
+          const { data: inserted } = await supabase
+            .from("products")
+            .upsert(
+              chunk.map((entry) => entry.payloadItem),
+              { onConflict: "tenant_id,sku_code", ignoreDuplicates: true },
+            )
+            .select("id");
+
+          const insertedIds = new Set((inserted ?? []).map((row) => row.id as string));
+
+          for (const entry of chunk) {
+            if (insertedIds.has(entry.payloadItem.id)) {
+              createdProductRows.push({ ...entry.row, productId: entry.payloadItem.id });
+            }
+          }
+        }
+      }
+    }
+  }
+
   // productId'si olan satırlarla, Master Katalog'dan yeni aktarılıp artık
-  // productId kazanan satırları aynı listede topluyoruz — geri kalan akış
-  // (stok aç, fiyat yaz, sku_code onar) ikisi için de ortak.
-  const resolvedUpdates: StockImportApplyRowInput[] = [];
+  // productId kazanan satırları ve yeni oluşturulan ürünleri aynı listede
+  // topluyoruz — geri kalan akış (stok aç, fiyat yaz, sku_code onar) hepsi
+  // için ortak.
+  const resolvedUpdates: StockImportApplyRowInput[] = [...createdProductRows];
   let skippedImportFailedCount = 0;
 
   for (const update of parsed.data.updates) {
@@ -256,7 +348,7 @@ export async function POST(request: Request) {
     updatedProducts.push(...((data as Array<Record<string, unknown>> | null) ?? []));
   }
 
-  if (importedProductIdBySku.size) {
+  if (importedProductIdBySku.size || createdProductRows.length) {
     revalidateStorefrontCache({ tenantId: tenant.id, subdomain: tenant.subdomain });
   }
 
@@ -266,6 +358,9 @@ export async function POST(request: Request) {
     importedFromMasterCatalogCount: importedProductIdBySku.size,
     skippedForCatalogLimitCount,
     skippedImportFailedCount,
+    createdProductCount: createdProductRows.length,
+    skippedInvalidCategoryCount,
+    skippedForNewProductLimitCount,
     updatedProducts: updatedProducts.map((product) => normalizeProductRecord(product)),
   });
 }
