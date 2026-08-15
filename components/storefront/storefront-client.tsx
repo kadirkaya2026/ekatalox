@@ -19,7 +19,6 @@ import {
   Search,
   ShoppingCart,
   Sparkles,
-  Store,
   X,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -93,6 +92,7 @@ import {
 } from "@/lib/storefront/analytics";
 import { StorefrontCartDrawer } from "@/components/storefront/storefront-cart-drawer";
 import { StorefrontImage } from "@/components/storefront/storefront-image";
+import { ProductImagePlaceholder } from "@/components/product-image-placeholder";
 import { StorefrontLogoutButton } from "@/components/storefront/storefront-logout-button";
 import { StorefrontThemeToggle } from "@/components/storefront/storefront-theme-toggle";
 import { ProductDescriptionContent } from "@/components/storefront/product-description-content";
@@ -2470,7 +2470,11 @@ export function StorefrontClient({
             />
           ) : (
             <div className={theme.emptyImage}>
-              <Store className={cn("size-7", theme.textMuted)} />
+              <ProductImagePlaceholder
+                productName={product.product_name}
+                iconClassName={cn("size-6", theme.textMuted)}
+                textClassName={cn("text-[10px]", theme.textMuted)}
+              />
             </div>
           )}
         </div>
@@ -2586,7 +2590,11 @@ export function StorefrontClient({
               />
             ) : (
               <div className={theme.emptyImage}>
-                <Store className={cn("size-12", theme.textMuted)} />
+                <ProductImagePlaceholder
+                  productName={previewProduct.product_name}
+                  iconClassName={cn("size-10", theme.textMuted)}
+                  textClassName={cn("text-sm", theme.textMuted)}
+                />
               </div>
             )}
           </div>

@@ -2,13 +2,14 @@
 
 import { memo } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Minus, Plus, Store, Trash2 } from "lucide-react";
+import { Minus, Plus, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import type { StorefrontProduct } from "@/lib/types";
 import { STOREFRONT_PRODUCT_GRID_SIZES } from "@/lib/storefront/image-sizes";
 import { formatProductModelNo } from "@/lib/products/constants";
 import { cn, formatCurrency } from "@/lib/utils";
 import { StorefrontImage } from "@/components/storefront/storefront-image";
+import { ProductImagePlaceholder } from "@/components/product-image-placeholder";
 import { useStorefrontTheme } from "@/lib/storefront/theme-context";
 import { useStorefrontLocale } from "@/lib/storefront/locale-context";
 
@@ -306,7 +307,11 @@ export const StorefrontProductCard = memo(function StorefrontProductCard({
           />
         ) : (
           <div className={theme.emptyImage}>
-            <Store className={cn("size-7 sm:size-9", theme.textMuted)} />
+            <ProductImagePlaceholder
+              productName={product.product_name}
+              iconClassName={cn("size-6 sm:size-7", theme.textMuted)}
+              textClassName={cn("text-[10px] sm:text-[11px]", theme.textMuted)}
+            />
           </div>
         )}
         {!product.is_in_stock ? (

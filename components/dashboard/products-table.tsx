@@ -21,6 +21,7 @@ import { getPriceListDisplayName } from "@/lib/price-lists/constants";
 import { getProductDisplayPriceForList } from "@/lib/products/variant-pricing";
 import type { PriceList, Product } from "@/lib/types";
 import { cn, formatCurrency } from "@/lib/utils";
+import { ProductImagePlaceholder } from "@/components/product-image-placeholder";
 
 function ProductOrderInput({
   displayOrder,
@@ -299,7 +300,13 @@ export function ProductsTable({
                           sizes="56px"
                           unoptimized
                         />
-                      ) : null}
+                      ) : (
+                        <ProductImagePlaceholder
+                          productName={product.product_name}
+                          icon={false}
+                          textClassName="text-[9px] text-slate-500"
+                        />
+                      )}
                     </div>
                     <div>
                       <p className="font-semibold text-foreground">{product.product_name}</p>
@@ -458,7 +465,13 @@ export function ProductsTable({
                     sizes="80px"
                     unoptimized
                   />
-                ) : null}
+                ) : (
+                  <ProductImagePlaceholder
+                    productName={product.product_name}
+                    icon={false}
+                    textClassName="text-[10px] text-slate-500"
+                  />
+                )}
               </div>
               <div className="min-w-0 flex-1">
                 <p className="font-semibold text-foreground">{product.product_name}</p>

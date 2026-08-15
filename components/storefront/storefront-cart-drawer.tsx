@@ -10,7 +10,6 @@ import {
   Minus,
   Plus,
   ShoppingCart,
-  Store,
   Trash2,
   X,
 } from "lucide-react";
@@ -36,6 +35,7 @@ import { useStorefrontLocale } from "@/lib/storefront/locale-context";
 import type { WhatsAppOrderHandoff } from "@/lib/storefront/whatsapp-order";
 import { STOREFRONT_CART_THUMB_SIZES } from "@/lib/storefront/image-sizes";
 import { StorefrontImage } from "@/components/storefront/storefront-image";
+import { ProductImagePlaceholder } from "@/components/product-image-placeholder";
 
 export type StorefrontCartDrawerProps = {
   isOpen: boolean;
@@ -298,7 +298,11 @@ export function StorefrontCartDrawer({
                           />
                         ) : (
                           <div className={cn("flex h-full w-full items-center justify-center", theme.surfaceMuted)}>
-                            <Store className={cn("size-6", theme.textMuted)} />
+                            <ProductImagePlaceholder
+                              productName={item.product_name}
+                              iconClassName={cn("size-4", theme.textMuted)}
+                              textClassName={cn("text-[8px] leading-[10px]", theme.textMuted)}
+                            />
                           </div>
                         )}
                       </div>

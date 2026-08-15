@@ -2,13 +2,14 @@
 
 import { memo } from "react";
 import { motion } from "framer-motion";
-import { Minus, Plus, Store, Trash2 } from "lucide-react";
+import { Minus, Plus, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import type { StorefrontProduct } from "@/lib/types";
 import { STOREFRONT_CART_THUMB_SIZES } from "@/lib/storefront/image-sizes";
 import { formatProductModelNo } from "@/lib/products/constants";
 import { cn } from "@/lib/utils";
 import { StorefrontImage } from "@/components/storefront/storefront-image";
+import { ProductImagePlaceholder } from "@/components/product-image-placeholder";
 import { useStorefrontTheme } from "@/lib/storefront/theme-context";
 import { useStorefrontLocale } from "@/lib/storefront/locale-context";
 import { ProductPrice } from "@/components/storefront/storefront-product-card";
@@ -170,9 +171,11 @@ export const StorefrontProductListRow = memo(function StorefrontProductListRow({
             sizes={STOREFRONT_CART_THUMB_SIZES}
           />
         ) : (
-          <div className="flex h-full w-full items-center justify-center">
-            <Store className={cn("size-5", theme.logoPlaceholder)} />
-          </div>
+          <ProductImagePlaceholder
+            productName={product.product_name}
+            iconClassName={cn("size-4", theme.logoPlaceholder)}
+            textClassName={cn("text-[8px] leading-[10px]", theme.logoPlaceholder)}
+          />
         )}
       </div>
 
