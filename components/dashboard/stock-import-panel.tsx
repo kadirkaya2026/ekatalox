@@ -44,6 +44,9 @@ interface RowDecision {
   // sıfırdan yeni ürün olarak oluşturmak için seçilen kategori. Kategori
   // seçilmeden bu satır "uygulamaya hazır" sayılmaz (bkz. applyCount).
   categoryId: string | null;
+  // action==="create" iken dosyadaki isim yerine kullanıcının elle
+  // düzenleyebildiği ürün adı — boş bırakılamaz (bkz. isRowReadyForApply).
+  productName: string | null;
   price: number | null;
 }
 
@@ -162,6 +165,7 @@ function initialDecisionsFromResults(
       masterCatalogSkuCode:
         isAutoMatch && result.status === "matched_master_catalog" ? (result.masterCatalogMatch?.skuCode ?? null) : null,
       categoryId: null,
+      productName: null,
       price: sourcePrice,
     });
   }
@@ -174,7 +178,9 @@ function initialDecisionsFromResults(
 // fonksiyona göre filtreleniyor, ikisinin birbirinden sapmasını önler.
 function isRowReadyForApply(decision: RowDecision) {
   if (decision.price === null) return false;
-  if (decision.action === "create") return Boolean(decision.categoryId);
+  if (decision.action === "create") {
+    return Boolean(decision.categoryId) && Boolean(decision.productName?.trim());
+  }
   return (
     (decision.action === "approved" || decision.action === "reassigned") &&
     Boolean(decision.productId || decision.masterCatalogSkuCode)
@@ -264,9 +270,11 @@ function ReviewRow({
       : null;
   const isCreatingNew = decision.action === "create";
   const hasResolution = Boolean(
-    decision.productId || decision.masterCatalogSkuCode || (isCreatingNew && decision.categoryId),
+    decision.productId ||
+      decision.masterCatalogSkuCode ||
+      (isCreatingNew && decision.categoryId && decision.productName?.trim()),
   );
-  const canCreateNew = Boolean(sourceRow.productName && sourceRow.barcode);
+  const canCreateNew = Boolean(sourceRow.barcode);
   const isPending = decision.action === "pending" || decision.action === "skipped";
 
   async function suggestProduct() {
@@ -385,9 +393,15 @@ function ReviewRow({
 
       {isCreatingNew ? (
         <div className="mt-3 space-y-2 rounded-xl border border-dashed border-teal-200 bg-white/70 p-3">
-          <p className="text-sm font-medium text-slate-800">
-            {sourceRow.productName} <span className="font-normal text-slate-400">• {sourceRow.barcode}</span>
-          </p>
+          <div className="flex flex-wrap items-center gap-2">
+            <Input
+              value={decision.productName ?? ""}
+              onChange={(event) => onDecisionChange({ ...decision, productName: event.target.value })}
+              placeholder="Ürün adı"
+              className="min-w-[220px] flex-1"
+            />
+            <span className="text-xs text-slate-400">{sourceRow.barcode}</span>
+          </div>
           <div className="flex flex-wrap items-center gap-2">
             <Select
               value={decision.categoryId ?? ""}
@@ -424,7 +438,9 @@ function ReviewRow({
               Vazgeç
             </Button>
           </div>
-          {!decision.categoryId ? (
+          {!decision.productName?.trim() ? (
+            <p className="text-xs font-medium text-amber-700">Ürün adı boş olamaz.</p>
+          ) : !decision.categoryId ? (
             <p className="text-xs font-medium text-amber-700">Kategori seçilmeden bu ürün oluşturulmaz.</p>
           ) : null}
         </div>
@@ -486,7 +502,13 @@ function ReviewRow({
             <Button
               type="button"
               variant="secondary"
-              onClick={() => onDecisionChange({ ...decision, action: "create" })}
+              onClick={() =>
+                onDecisionChange({
+                  ...decision,
+                  action: "create",
+                  productName: decision.productName ?? sourceRow.productName ?? "",
+                })
+              }
             >
               Yeni ürün olarak oluştur
             </Button>
@@ -678,7 +700,7 @@ export function StockImportPanel({
             newProduct: isCreatingNew
               ? {
                   categoryId: decision.categoryId!,
-                  productName: sourceRow?.productName ?? sourceRow?.barcode ?? "İsimsiz ürün",
+                  productName: decision.productName!.trim(),
                   skuCode: sourceRow?.barcode ?? "",
                 }
               : null,
