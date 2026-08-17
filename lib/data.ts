@@ -23,7 +23,7 @@ import { ensureDefaultPriceListsForTenant, fetchTenantPriceLists } from "@/lib/p
 import { DEFAULT_HOMEPAGE_BLOCKS, normalizeHomepageBlocks } from "@/lib/storefront/homepage-blocks";
 import { toStorefrontProduct } from "@/lib/storefront/pricing";
 import { getSmartDefaultAppearance } from "@/lib/storefront/smart-defaults";
-import { expandSearchTerms } from "@/lib/search/turkish-search-aliases";
+import { buildProductNameSearchClause, expandSearchTerms } from "@/lib/search/turkish-search-aliases";
 import { DEFAULT_BUSINESS_HOURS, WEEKDAY_ORDER } from "@/lib/storefront/business-hours";
 import type {
   AccessCode,
@@ -635,9 +635,7 @@ export async function getTenantProductsPage(params: {
   const orFilter = term
     ? (() => {
         const escapedTerm = term.replace(/[()]/g, "");
-        const nameConditions = expandSearchTerms(escapedTerm)
-          .map((nameTerm) => `product_name.ilike.%${nameTerm}%`)
-          .join(",");
+        const nameConditions = buildProductNameSearchClause(escapedTerm);
         const categoryMatch = params.matchCategoryIds?.length
           ? `,category_id.in.(${params.matchCategoryIds.join(",")})`
           : "";
@@ -732,10 +730,9 @@ export async function getMarketCatalogProductsPage(params: {
     .range(from, to);
 
   if (term) {
-    const nameConditions = expandSearchTerms(term)
-      .flatMap((nameTerm) => [`product_name.ilike.%${nameTerm}%`, `brand.ilike.%${nameTerm}%`])
-      .join(",");
-    query = query.or(`${nameConditions},category_name.ilike.%${term}%`);
+    const nameConditions = buildProductNameSearchClause(term);
+    const brandConditions = buildProductNameSearchClause(term, "brand");
+    query = query.or(`${nameConditions},${brandConditions},category_name.ilike.%${term}%`);
   }
 
   const { data, count } = await query;
@@ -1152,9 +1149,7 @@ async function getCachedStorefrontProductRowsPage(
       const orFilter = term
         ? (() => {
             const escapedTerm = term.replace(/[()]/g, "");
-            const nameConditions = expandSearchTerms(escapedTerm)
-              .map((nameTerm) => `product_name.ilike.%${nameTerm}%`)
-              .join(",");
+            const nameConditions = buildProductNameSearchClause(escapedTerm);
             const categoryMatch = matchCategoryIds.length
               ? `,category_id.in.(${matchCategoryIds.join(",")})`
               : "";

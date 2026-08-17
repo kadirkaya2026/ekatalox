@@ -128,3 +128,38 @@ export function expandSearchTerms(term: string): string[] {
 
   return [...terms];
 }
+
+/**
+ * Postgres/PostgREST `.or()` filtresine gömülecek, ürün adı için bir
+ * ILIKE koşul öbeği üretir (ör. "product_name.ilike.%x%,..." ya da
+ * "and(product_name.ilike.%x%,product_name.ilike.%y%)").
+ *
+ * Tek kelimelik terimler için önceki davranış aynen korunuyor (fonetik +
+ * genel terim genişletmesi, OR).
+ *
+ * Çok kelimelik terimler ("chivas 70" gibi) için ise artık her kelime AYRI
+ * AYRI (VE) aranıyor — önceden tüm ifade tek bir bitişik substring olarak
+ * arandığından "Chivas Regal 12 Yıl 70 Cl" gibi araya başka kelime giren
+ * ürünler hiç bulunamıyordu. "sarı kola" -> "fanta" gibi tam öbek
+ * genişletmeleri, VE koşulunun yanında ayrı bir OR alternatifi olarak
+ * korunuyor.
+ */
+export function buildProductNameSearchClause(term: string, field: string = "product_name"): string {
+  const trimmed = term.trim();
+  if (!trimmed) return "";
+
+  const lowerTrimmed = trimmed.toLocaleLowerCase("tr-TR");
+  const words = lowerTrimmed.split(/\s+/).filter(Boolean);
+
+  if (words.length <= 1) {
+    return expandSearchTerms(trimmed)
+      .map((t) => `${field}.ilike.%${t}%`)
+      .join(",");
+  }
+
+  const andOfWords = `and(${words.map((word) => `${field}.ilike.%${word}%`).join(",")})`;
+  const wholePhraseExtras = expandSearchTerms(trimmed).filter((t) => t !== lowerTrimmed && t !== trimmed);
+  const extraConditions = wholePhraseExtras.map((t) => `${field}.ilike.%${t}%`);
+
+  return [andOfWords, ...extraConditions].join(",");
+}
