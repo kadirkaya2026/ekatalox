@@ -17,7 +17,7 @@ import {
   getDescendantCategoryIds,
 } from "@/lib/categories/tree";
 import { buildPackageUpgradeHref, getEffectiveProductLimit } from "@/lib/billing/plans";
-import { expandCategorySearchTerm } from "@/lib/search/turkish-search-aliases";
+import { containsWholeWord, expandCategorySearchTerm } from "@/lib/search/turkish-search-aliases";
 import {
   buildProductFormFromProduct,
   toProductFormData,
@@ -154,7 +154,7 @@ export function ProductsManager({
     if (!term) return [];
     const searchTerms = expandCategorySearchTerm(term);
     const matchedRootIds = categories
-      .filter((category) => searchTerms.some((t) => category.name.toLowerCase().includes(t)))
+      .filter((category) => searchTerms.some((t) => containsWholeWord(category.name, t)))
       .map((c) => c.id);
     return [...new Set(matchedRootIds.flatMap((id) => getDescendantCategoryIds(categories, id)))];
   }, [categories, debouncedSearchTerm]);

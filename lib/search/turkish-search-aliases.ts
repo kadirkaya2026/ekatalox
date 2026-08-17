@@ -58,6 +58,10 @@ const GENERIC_TERM_EXPANSIONS: Record<string, string[]> = {
   çips: ["lays", "ruffles", "doritos", "cheetos", "pringles"],
   cips: ["lays", "ruffles", "doritos", "cheetos", "pringles"],
   chips: ["lays", "ruffles", "doritos", "cheetos", "pringles"],
+  // Müşteri marka adını boşluksuz tek kelime olarak yazabiliyor ("cocacola")
+  // — gerçek ürün adında ise iki kelime arasında boşluk var ("Coca Cola").
+  cocacola: ["coca cola"],
+  kokakola: ["coca cola"],
   çikolata: ["milka", "toblerone", "kinder", "nutella"],
   bisküvi: ["oreo"],
   // Türkçe temizlik ürünü adları genelde kategori kelimesini zaten içeriyor
@@ -81,6 +85,44 @@ const CATEGORY_SEARCH_SYNONYMS: Record<string, string[]> = {
   cerez: ["atıştırmalık"],
   temizlik: ["ev bakım"],
 };
+
+// Türkçe harfler dahil "kelime karakteri" tanımı — JS'in yerleşik \b sınır
+// kontrolü ASCII [A-Za-z0-9_] dışındaki her şeyi (ç, ş, ı, ğ, ü, ö dahil)
+// sınır sayıyor, bu da Türkçe kelimeleri yanlış yerden bölüyor. Kendi
+// tanımımızı kullanıyoruz.
+const TURKISH_WORD_CHAR_CLASS = "A-Za-z0-9çÇğĞıİöÖşŞüÜ_";
+
+function escapeRegexLiteral(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+/**
+ * `haystack` içinde `needle`in tam bir KELİME (veya kelime öbeği) olarak
+ * geçip geçmediğini kontrol eder — "kola" için true döner ("Coca Cola
+ * Zero"), ama "çikolata" için false döner (kelimenin ortasında gömülü).
+ * Düz substring eşleşmesinin (`.includes()`) aksine, kısa/genel kelimelerin
+ * alakasız kelimelerin içine gömülü geçmesini engeller.
+ */
+export function containsWholeWord(haystack: string, needle: string): boolean {
+  const trimmedNeedle = needle.trim();
+  if (!trimmedNeedle) return false;
+
+  const pattern = new RegExp(
+    `(^|[^${TURKISH_WORD_CHAR_CLASS}])${escapeRegexLiteral(trimmedNeedle)}($|[^${TURKISH_WORD_CHAR_CLASS}])`,
+    "i",
+  );
+  return pattern.test(haystack);
+}
+
+/**
+ * Postgres `~*` (PostgREST `imatch`) ile kullanılacak, Türkçe karakterleri
+ * doğru tanıyan kelime-sınırlı bir regex deseni üretir (`\m`/`\M` Postgres'e
+ * özgü kelime başı/sonu işaretleridir, ASCII olmayan harfleri de kelime
+ * karakteri sayar — canlı ortamda doğrulandı).
+ */
+function wholeWordPattern(value: string): string {
+  return `\\m${escapeRegexLiteral(value)}\\M`;
+}
 
 /**
  * Bir arama teriminin işaret ettiği kategori adı(nı) da içerecek şekilde
@@ -131,14 +173,18 @@ export function expandSearchTerms(term: string): string[] {
 
 /**
  * Postgres/PostgREST `.or()` filtresine gömülecek, ürün adı için bir
- * ILIKE koşul öbeği üretir (ör. "product_name.ilike.%x%,..." ya da
- * "and(product_name.ilike.%x%,product_name.ilike.%y%)").
+ * KELİME-SINIRLI eşleşme koşul öbeği üretir (`imatch` + `\m..\M`, düz
+ * substring `ilike` DEĞİL). Bunun nedeni: kısa/genel terimler (ör. "kola")
+ * substring olarak alakasız kelimelerin içine gömülü geçebiliyor — "kola"
+ * "çikolata" kelimesinin ortasında geçiyor, "kola" aramasında çikolatalı
+ * onlarca ürünün (ve "Çikolata" kategorisinin) sonuçları basması bu
+ * yüzdendi (canlıda doğrulandı, 17 Ağu 2026).
  *
- * Tek kelimelik terimler için önceki davranış aynen korunuyor (fonetik +
- * genel terim genişletmesi, OR).
+ * Tek kelimelik terimler için fonetik + genel terim genişletmesi (OR)
+ * uygulanıyor, hepsi kelime sınırlı.
  *
- * Çok kelimelik terimler ("chivas 70" gibi) için ise artık her kelime AYRI
- * AYRI (VE) aranıyor — önceden tüm ifade tek bir bitişik substring olarak
+ * Çok kelimelik terimler ("chivas 70" gibi) için her kelime AYRI AYRI (VE)
+ * aranıyor — önceden tüm ifade tek bir bitişik substring olarak
  * arandığından "Chivas Regal 12 Yıl 70 Cl" gibi araya başka kelime giren
  * ürünler hiç bulunamıyordu. "sarı kola" -> "fanta" gibi tam öbek
  * genişletmeleri, VE koşulunun yanında ayrı bir OR alternatifi olarak
@@ -153,13 +199,13 @@ export function buildProductNameSearchClause(term: string, field: string = "prod
 
   if (words.length <= 1) {
     return expandSearchTerms(trimmed)
-      .map((t) => `${field}.ilike.%${t}%`)
+      .map((t) => `${field}.imatch.${wholeWordPattern(t)}`)
       .join(",");
   }
 
-  const andOfWords = `and(${words.map((word) => `${field}.ilike.%${word}%`).join(",")})`;
+  const andOfWords = `and(${words.map((word) => `${field}.imatch.${wholeWordPattern(word)}`).join(",")})`;
   const wholePhraseExtras = expandSearchTerms(trimmed).filter((t) => t !== lowerTrimmed && t !== trimmed);
-  const extraConditions = wholePhraseExtras.map((t) => `${field}.ilike.%${t}%`);
+  const extraConditions = wholePhraseExtras.map((t) => `${field}.imatch.${wholeWordPattern(t)}`);
 
   return [andOfWords, ...extraConditions].join(",");
 }

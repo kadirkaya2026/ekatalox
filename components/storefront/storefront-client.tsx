@@ -58,7 +58,7 @@ import {
 } from "@/lib/storefront/cart";
 import { useResolvedStorefrontTheme } from "@/lib/storefront/use-resolved-storefront-theme";
 import { StorefrontThemeProvider, useStorefrontTheme } from "@/lib/storefront/theme-context";
-import { expandCategorySearchTerm } from "@/lib/search/turkish-search-aliases";
+import { containsWholeWord, expandCategorySearchTerm } from "@/lib/search/turkish-search-aliases";
 import { useStorefrontLocale, type TranslateFn } from "@/lib/storefront/locale-context";
 import type { StorefrontTheme } from "@/lib/storefront/themes";
 import { StorefrontLayoutProvider } from "@/lib/storefront/layout-context";
@@ -1067,9 +1067,7 @@ export function StorefrontClient({
     }
     const searchTerms = expandCategorySearchTerm(normalizedSearch);
     const matchedRootIds = categories
-      .filter((category) =>
-        searchTerms.some((term) => category.name.toLocaleLowerCase("tr-TR").includes(term)),
-      )
+      .filter((category) => searchTerms.some((term) => containsWholeWord(category.name, term)))
       .map((category) => category.id);
     return [...new Set(matchedRootIds.flatMap((id) => getDescendantCategoryIds(categories, id)))];
   }, [categories, debouncedSearchTerm]);
