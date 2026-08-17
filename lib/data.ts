@@ -23,6 +23,7 @@ import { ensureDefaultPriceListsForTenant, fetchTenantPriceLists } from "@/lib/p
 import { DEFAULT_HOMEPAGE_BLOCKS, normalizeHomepageBlocks } from "@/lib/storefront/homepage-blocks";
 import { toStorefrontProduct } from "@/lib/storefront/pricing";
 import { getSmartDefaultAppearance } from "@/lib/storefront/smart-defaults";
+import { expandSearchTermWithPhoneticAliases } from "@/lib/search/turkish-search-aliases";
 import { DEFAULT_BUSINESS_HOURS, WEEKDAY_ORDER } from "@/lib/storefront/business-hours";
 import type {
   AccessCode,
@@ -634,10 +635,13 @@ export async function getTenantProductsPage(params: {
   const orFilter = term
     ? (() => {
         const escapedTerm = term.replace(/[()]/g, "");
+        const nameConditions = expandSearchTermWithPhoneticAliases(escapedTerm)
+          .map((nameTerm) => `product_name.ilike.%${nameTerm}%`)
+          .join(",");
         const categoryMatch = params.matchCategoryIds?.length
           ? `,category_id.in.(${params.matchCategoryIds.join(",")})`
           : "";
-        return `product_name.ilike.%${escapedTerm}%,sku_code.ilike.%${escapedTerm}%${categoryMatch}`;
+        return `${nameConditions},sku_code.ilike.%${escapedTerm}%${categoryMatch}`;
       })()
     : null;
 
@@ -728,9 +732,10 @@ export async function getMarketCatalogProductsPage(params: {
     .range(from, to);
 
   if (term) {
-    query = query.or(
-      `product_name.ilike.%${term}%,category_name.ilike.%${term}%,brand.ilike.%${term}%`,
-    );
+    const nameConditions = expandSearchTermWithPhoneticAliases(term)
+      .flatMap((nameTerm) => [`product_name.ilike.%${nameTerm}%`, `brand.ilike.%${nameTerm}%`])
+      .join(",");
+    query = query.or(`${nameConditions},category_name.ilike.%${term}%`);
   }
 
   const { data, count } = await query;
@@ -1101,14 +1106,17 @@ async function getCachedStorefrontProductRowsPage(
     const from = (page - 1) * STOREFRONT_PRODUCTS_PAGE_SIZE;
     const categoryIdSet = filter.categoryIds?.length ? new Set(filter.categoryIds) : null;
     const excludeSet = filter.excludeCategoryIds?.length ? new Set(filter.excludeCategoryIds) : null;
-    const term = filter.search?.trim().toLocaleLowerCase("tr-TR");
+    const searchTerms = filter.search
+      ? expandSearchTermWithPhoneticAliases(filter.search).map((t) => t.toLocaleLowerCase("tr-TR"))
+      : [];
     const filtered = demoProducts.filter((product) => {
       if (product.tenant_id !== filter.tenantId) return false;
       if (excludeSet?.has(product.category_id)) return false;
       if (filter.discountOnly) return product.is_discount_active;
       if (categoryIdSet && !categoryIdSet.has(product.category_id)) return false;
-      if (!term) return true;
-      return product.product_name.toLocaleLowerCase("tr-TR").includes(term);
+      if (!searchTerms.length) return true;
+      const name = product.product_name.toLocaleLowerCase("tr-TR");
+      return searchTerms.some((t) => name.includes(t));
     });
 
     return {
@@ -1144,10 +1152,13 @@ async function getCachedStorefrontProductRowsPage(
       const orFilter = term
         ? (() => {
             const escapedTerm = term.replace(/[()]/g, "");
+            const nameConditions = expandSearchTermWithPhoneticAliases(escapedTerm)
+              .map((nameTerm) => `product_name.ilike.%${nameTerm}%`)
+              .join(",");
             const categoryMatch = matchCategoryIds.length
               ? `,category_id.in.(${matchCategoryIds.join(",")})`
               : "";
-            return `product_name.ilike.%${escapedTerm}%,sku_code.ilike.%${escapedTerm}%${categoryMatch}`;
+            return `${nameConditions},sku_code.ilike.%${escapedTerm}%${categoryMatch}`;
           })()
         : null;
 
