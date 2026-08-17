@@ -52,6 +52,22 @@ const GENERIC_TERM_EXPANSIONS: Record<string, string[]> = {
   gin: ["gordon", "bombay sapphire", "beefeater"],
   rom: ["bacardi", "captain morgan"],
   "enerji içeceği": ["redbull", "hell"],
+  // Cips markalarının çoğu (Lay's, Doritos vb.) adında "cips"/"chips"
+  // kelimesi geçmiyor — "çips"/"cips" fonetik grubuyla zaten eşleşiyor,
+  // burada ayrıca marka listesine genişletiliyor.
+  çips: ["lays", "ruffles", "doritos", "cheetos", "pringles"],
+  cips: ["lays", "ruffles", "doritos", "cheetos", "pringles"],
+  chips: ["lays", "ruffles", "doritos", "cheetos", "pringles"],
+  çikolata: ["milka", "toblerone", "kinder", "nutella"],
+  bisküvi: ["oreo"],
+  // Türkçe temizlik ürünü adları genelde kategori kelimesini zaten içeriyor
+  // (ör. "Persil ... Çamaşır Deterjanı"), ama marka-adı-önce yazılmış
+  // ürünlerde bu kelime hiç geçmeyebilir — ek güvenlik için markalar da
+  // arama terimine dahil ediliyor.
+  deterjan: ["omo", "ariel", "persil", "bingo"],
+  "çamaşır suyu": ["domestos", "ace"],
+  yumuşatıcı: ["vernel", "yumoş", "comfort"],
+  "bulaşık deterjanı": ["fairy", "pril"],
 };
 
 /**
