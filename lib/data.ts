@@ -23,7 +23,7 @@ import { ensureDefaultPriceListsForTenant, fetchTenantPriceLists } from "@/lib/p
 import { DEFAULT_HOMEPAGE_BLOCKS, normalizeHomepageBlocks } from "@/lib/storefront/homepage-blocks";
 import { toStorefrontProduct } from "@/lib/storefront/pricing";
 import { getSmartDefaultAppearance } from "@/lib/storefront/smart-defaults";
-import { expandSearchTermWithPhoneticAliases } from "@/lib/search/turkish-search-aliases";
+import { expandSearchTerms } from "@/lib/search/turkish-search-aliases";
 import { DEFAULT_BUSINESS_HOURS, WEEKDAY_ORDER } from "@/lib/storefront/business-hours";
 import type {
   AccessCode,
@@ -635,7 +635,7 @@ export async function getTenantProductsPage(params: {
   const orFilter = term
     ? (() => {
         const escapedTerm = term.replace(/[()]/g, "");
-        const nameConditions = expandSearchTermWithPhoneticAliases(escapedTerm)
+        const nameConditions = expandSearchTerms(escapedTerm)
           .map((nameTerm) => `product_name.ilike.%${nameTerm}%`)
           .join(",");
         const categoryMatch = params.matchCategoryIds?.length
@@ -732,7 +732,7 @@ export async function getMarketCatalogProductsPage(params: {
     .range(from, to);
 
   if (term) {
-    const nameConditions = expandSearchTermWithPhoneticAliases(term)
+    const nameConditions = expandSearchTerms(term)
       .flatMap((nameTerm) => [`product_name.ilike.%${nameTerm}%`, `brand.ilike.%${nameTerm}%`])
       .join(",");
     query = query.or(`${nameConditions},category_name.ilike.%${term}%`);
@@ -1107,7 +1107,7 @@ async function getCachedStorefrontProductRowsPage(
     const categoryIdSet = filter.categoryIds?.length ? new Set(filter.categoryIds) : null;
     const excludeSet = filter.excludeCategoryIds?.length ? new Set(filter.excludeCategoryIds) : null;
     const searchTerms = filter.search
-      ? expandSearchTermWithPhoneticAliases(filter.search).map((t) => t.toLocaleLowerCase("tr-TR"))
+      ? expandSearchTerms(filter.search).map((t) => t.toLocaleLowerCase("tr-TR"))
       : [];
     const filtered = demoProducts.filter((product) => {
       if (product.tenant_id !== filter.tenantId) return false;
@@ -1152,7 +1152,7 @@ async function getCachedStorefrontProductRowsPage(
       const orFilter = term
         ? (() => {
             const escapedTerm = term.replace(/[()]/g, "");
-            const nameConditions = expandSearchTermWithPhoneticAliases(escapedTerm)
+            const nameConditions = expandSearchTerms(escapedTerm)
               .map((nameTerm) => `product_name.ilike.%${nameTerm}%`)
               .join(",");
             const categoryMatch = matchCategoryIds.length
