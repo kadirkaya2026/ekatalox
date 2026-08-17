@@ -58,6 +58,7 @@ import {
 } from "@/lib/storefront/cart";
 import { useResolvedStorefrontTheme } from "@/lib/storefront/use-resolved-storefront-theme";
 import { StorefrontThemeProvider, useStorefrontTheme } from "@/lib/storefront/theme-context";
+import { expandCategorySearchTerm } from "@/lib/search/turkish-search-aliases";
 import { useStorefrontLocale, type TranslateFn } from "@/lib/storefront/locale-context";
 import type { StorefrontTheme } from "@/lib/storefront/themes";
 import { StorefrontLayoutProvider } from "@/lib/storefront/layout-context";
@@ -1052,15 +1053,25 @@ export function StorefrontClient({
   // Arama artık sunucuda çalışıyor — kategori adı eşleşmesini de arama
   // sorgusuna dahil etmek için (ör. "bira" yazınca "Biralar" kategorisindeki
   // ürünlerin de gelmesi) isim eşleşen kategori id'lerini burada, elimizdeki
-  // kategori listesinden çıkarıp API'ye ayrıca gönderiyoruz.
+  // kategori listesinden çıkarıp API'ye ayrıca gönderiyoruz. Ürünler ağacın
+  // yaprak (en alt) kategorilerine bağlı olduğundan, sadece adı eşleşen
+  // kategorinin kendi id'sini değil TÜM alt kategorilerini de dahil ediyoruz
+  // — yoksa ör. "meyve" araması "Meyve & Sebze" ana kategorisini bulur ama
+  // ürünlerin asıl bağlı olduğu "Elma"/"Domates" gibi alt kategorileri hiç
+  // kapsamaz. "çerez" gibi kategori adında hiç geçmeyen argo terimler için
+  // de expandCategorySearchTerm ile eşanlamlı genişletme uygulanıyor.
   const matchCategoryIds = useMemo(() => {
     const normalizedSearch = debouncedSearchTerm.trim().toLocaleLowerCase("tr-TR");
     if (!normalizedSearch) {
       return [] as string[];
     }
-    return categories
-      .filter((category) => category.name.toLocaleLowerCase("tr-TR").includes(normalizedSearch))
+    const searchTerms = expandCategorySearchTerm(normalizedSearch);
+    const matchedRootIds = categories
+      .filter((category) =>
+        searchTerms.some((term) => category.name.toLocaleLowerCase("tr-TR").includes(term)),
+      )
       .map((category) => category.id);
+    return [...new Set(matchedRootIds.flatMap((id) => getDescendantCategoryIds(categories, id)))];
   }, [categories, debouncedSearchTerm]);
   const selectedCategoryLineage = useMemo(
     () =>

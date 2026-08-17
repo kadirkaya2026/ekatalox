@@ -17,6 +17,7 @@ import {
   getDescendantCategoryIds,
 } from "@/lib/categories/tree";
 import { buildPackageUpgradeHref, getEffectiveProductLimit } from "@/lib/billing/plans";
+import { expandCategorySearchTerm } from "@/lib/search/turkish-search-aliases";
 import {
   buildProductFormFromProduct,
   toProductFormData,
@@ -142,11 +143,20 @@ export function ProductsManager({
 
   // Arama metni bir kategori adıyla eşleşiyorsa (ör. "viski") o kategorideki
   // ürünler de sonuca dahil olsun — bkz. getTenantProductsPage'in
-  // matchCategoryIds parametresi.
+  // matchCategoryIds parametresi. Ürünler yaprak kategorilere bağlı olduğu
+  // için, adı eşleşen kategorinin TÜM alt kategorilerini de dahil ediyoruz
+  // (yoksa ör. "meyve" sadece "Meyve & Sebze" ana kategorisini bulur,
+  // ürünlerin asıl bağlı olduğu "Elma"/"Domates" gibi alt kategorileri
+  // kapsamaz). "çerez" gibi kategori adında geçmeyen argo terimler için de
+  // expandCategorySearchTerm ile eşanlamlı genişletme uygulanıyor.
   const matchCategoryIds = useMemo(() => {
     const term = debouncedSearchTerm.trim().toLowerCase();
     if (!term) return [];
-    return categories.filter((category) => category.name.toLowerCase().includes(term)).map((c) => c.id);
+    const searchTerms = expandCategorySearchTerm(term);
+    const matchedRootIds = categories
+      .filter((category) => searchTerms.some((t) => category.name.toLowerCase().includes(t)))
+      .map((c) => c.id);
+    return [...new Set(matchedRootIds.flatMap((id) => getDescendantCategoryIds(categories, id)))];
   }, [categories, debouncedSearchTerm]);
 
   useEffect(() => {

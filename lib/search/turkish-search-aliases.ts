@@ -70,6 +70,32 @@ const GENERIC_TERM_EXPANSIONS: Record<string, string[]> = {
   "bulaşık deterjanı": ["fairy", "pril"],
 };
 
+// Kategori adıyla substring olarak örtüşmeyen ama aynı kategoriyi kastedilen
+// argo/alternatif terimler — örn. "çerez" günlük dilde çok kullanılıyor ama
+// gerçek kategori adı "Atıştırmalık", kelime hiç ortak değil. Storefront'ta
+// arama terimiyle eşleşen kategorileri bulurken (bkz.
+// components/storefront/storefront-client.tsx matchCategoryIds) kategori
+// adının kendisine ek olarak bu terimler de aranır.
+const CATEGORY_SEARCH_SYNONYMS: Record<string, string[]> = {
+  çerez: ["atıştırmalık"],
+  cerez: ["atıştırmalık"],
+  temizlik: ["ev bakım"],
+};
+
+/**
+ * Bir arama teriminin işaret ettiği kategori adı(nı) da içerecek şekilde
+ * genişletilmiş terim listesini döndürür (ör. "çerez" -> ["çerez",
+ * "atıştırmalık"]). İlk eleman her zaman küçük harfe çevrilmiş orijinal
+ * terimdir.
+ */
+export function expandCategorySearchTerm(term: string): string[] {
+  const trimmed = term.trim();
+  if (!trimmed) return [];
+
+  const lower = trimmed.toLocaleLowerCase("tr-TR");
+  return [lower, ...(CATEGORY_SEARCH_SYNONYMS[lower] ?? [])];
+}
+
 /**
  * Verilen arama terimini, bilinen fonetik yazım gruplarıyla ve genel/argo
  * terim karşılıklarıyla genişletilmiş bir terim listesi olarak döndürür.
