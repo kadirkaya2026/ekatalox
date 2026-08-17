@@ -38,6 +38,20 @@ const GENERIC_TERM_EXPANSIONS: Record<string, string[]> = {
   "sarı kola": ["fanta"],
   "beyaz kola": ["sprite"],
   pampers: ["prima"],
+  // "bira" ürün adında genelde geçmez (ör. "Efes Extra 50 CL" içinde "bira"
+  // kelimesi yok) — kategori terimini yazan müşteri markaları görmeli.
+  bira: ["efes", "tuborg", "carlsberg", "heineken", "becks", "bomonti"],
+  // "viski"/"whisky" fonetik grubuyla zaten eşleşiyor, ama marka isimlerinin
+  // hiçbiri bu kelimeyi içermiyor — ayrıca marka listesine genişletilmeli.
+  viski: ["chivas", "jack daniel", "johnnie walker", "ballantine", "jim beam", "grant"],
+  vişki: ["chivas", "jack daniel", "johnnie walker", "ballantine", "jim beam", "grant"],
+  whisky: ["chivas", "jack daniel", "johnnie walker", "ballantine", "jim beam", "grant"],
+  votka: ["absolut", "smirnoff", "finlandia"],
+  vodka: ["absolut", "smirnoff", "finlandia"],
+  cin: ["gordon", "bombay sapphire", "beefeater"],
+  gin: ["gordon", "bombay sapphire", "beefeater"],
+  rom: ["bacardi", "captain morgan"],
+  "enerji içeceği": ["redbull", "hell"],
 };
 
 /**
