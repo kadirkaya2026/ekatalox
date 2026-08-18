@@ -2715,7 +2715,7 @@ export function StorefrontClient({
               <div className="mt-6">
                 <div className="mb-3">
                   <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-emerald-700">
-                    {t("cart.suggestedProducts")}
+                    {t("productModal.relatedProductsEyebrow")}
                   </p>
                   <h3 className={cn("mt-1 text-lg font-bold tracking-tight", theme.text)}>
                     {t("cart.youMayAlsoLike")}
