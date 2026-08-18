@@ -2766,7 +2766,7 @@ export function StorefrontClient({
             </div>
           ) : null}
 
-          {relatedPreviewProducts.length ? (
+          {!activePreviewTab && relatedPreviewProducts.length ? (
             <div className="shrink-0">
               <h3 className={cn("mb-2 text-sm font-bold tracking-tight", theme.text)}>
                 {t("productModal.relatedProductsTitle")}
