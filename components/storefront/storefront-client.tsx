@@ -889,7 +889,11 @@ export function StorefrontClient({
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>("all");
   const [selectedProduct, setSelectedProduct] = useState<StorefrontProduct | null>(null);
   const [previewProduct, setPreviewProduct] = useState<StorefrontProduct | null>(null);
-  const [activePreviewTab, setActivePreviewTab] = useState<ProductDetailTab>("details");
+  // null = hiçbir sekme açık değil (varsayılan) — Detaylar/Paket/Koli metni
+  // sadece kullanıcı ilgili butona tıklayınca görünür, aksi halde ürün
+  // önizleme modalı sekme butonlarının hemen altına ilgili ürünler bölümüne
+  // geçer, ekstra kaydırma çubuğu gerekmez (kullanıcı isteği, 19 Ağu 2026).
+  const [activePreviewTab, setActivePreviewTab] = useState<ProductDetailTab | null>(null);
   const [activePreviewImageIndex, setActivePreviewImageIndex] = useState(0);
   const [previewDescription, setPreviewDescription] = useState<string | null | undefined>(
     undefined,
@@ -1267,7 +1271,7 @@ export function StorefrontClient({
       }
 
       setPreviewProduct(product);
-      setActivePreviewTab("details");
+      setActivePreviewTab(null);
       setActivePreviewImageIndex(0);
 
       if (analyticsSubdomain) {
@@ -1991,7 +1995,7 @@ export function StorefrontClient({
     descriptionAbortRef.current?.abort();
     descriptionAbortRef.current = null;
     setPreviewProduct(null);
-    setActivePreviewTab("details");
+    setActivePreviewTab(null);
     setPreviewDescription(undefined);
     setPreviewDescriptionLoading(false);
     setPreviewDescriptionError(null);
@@ -2608,9 +2612,9 @@ export function StorefrontClient({
         )
       ) : activePreviewTab === "package" ? (
         <p className={cn("text-sm leading-6", theme.textMuted)}>{packageContent}</p>
-      ) : (
+      ) : activePreviewTab === "carton" ? (
         <p className={cn("text-sm leading-6", theme.textMuted)}>{cartonContent}</p>
-      );
+      ) : null;
 
     return (
       <Modal
@@ -2700,7 +2704,9 @@ export function StorefrontClient({
               <button
                 key={tab.key}
                 type="button"
-                onClick={() => setActivePreviewTab(tab.key)}
+                onClick={() =>
+                  setActivePreviewTab((current) => (current === tab.key ? null : tab.key))
+                }
                 className={theme.modalTabChip(activePreviewTab === tab.key)}
               >
                 {tab.label}
@@ -2708,9 +2714,11 @@ export function StorefrontClient({
             ))}
           </div>
 
-          <div className={cn("min-h-0 flex-1 overflow-y-auto overscroll-y-contain", theme.modalSurface)}>
-            {tabContent}
-          </div>
+          {tabContent ? (
+            <div className={cn("min-h-0 flex-1 overflow-y-auto overscroll-y-contain", theme.modalSurface)}>
+              {tabContent}
+            </div>
+          ) : null}
 
           {relatedPreviewProducts.length ? (
             <div className="shrink-0">
