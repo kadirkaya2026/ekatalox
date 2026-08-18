@@ -678,6 +678,7 @@ export function StockImportPanel({
     skippedForCatalogLimitCount: number;
     createdProductCount: number;
     skippedForNewProductLimitCount: number;
+    addedToMasterCatalogCount: number;
   } | null>(null);
 
   const flatCategories = useMemo(() => flattenCategoryTree(buildCategoryTree(categories)), [categories]);
@@ -831,6 +832,7 @@ export function StockImportPanel({
         skippedForCatalogLimitCount: result.skippedForCatalogLimitCount ?? 0,
         createdProductCount: result.createdProductCount ?? 0,
         skippedForNewProductLimitCount: result.skippedForNewProductLimitCount ?? 0,
+        addedToMasterCatalogCount: result.addedToMasterCatalogCount ?? 0,
       });
       router.refresh();
     } catch {
@@ -866,6 +868,9 @@ export function StockImportPanel({
             : ""}
           {applyResult.createdProductCount
             ? ` ${applyResult.createdProductCount} tanesi yeni ürün olarak oluşturuldu.`
+            : ""}
+          {applyResult.addedToMasterCatalogCount
+            ? ` Bunlardan ${applyResult.addedToMasterCatalogCount} tanesi görseliyle birlikte Master Katalog'a da eklendi.`
             : ""}
           {applyResult.skippedInvalidCount ? ` ${applyResult.skippedInvalidCount} satır atlandı.` : ""}
           {applyResult.skippedForCatalogLimitCount

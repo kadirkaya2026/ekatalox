@@ -110,13 +110,17 @@ export async function POST(request: Request) {
   const createdProductRows: Array<StockImportApplyRowInput & { productId: string }> = [];
   let skippedInvalidCategoryCount = 0;
   let skippedForNewProductLimitCount = 0;
+  let addedToMasterCatalogCount = 0;
 
   if (newProductRows.length) {
     const { data: categoryRows } = await supabase
       .from("categories")
-      .select("id")
+      .select("id, name")
       .eq("tenant_id", tenant.id);
     const validCategoryIds = new Set((categoryRows ?? []).map((row) => row.id as string));
+    const categoryNameById = new Map(
+      (categoryRows ?? []).map((row) => [row.id as string, row.name as string]),
+    );
 
     const eligibleRows = newProductRows.filter((row) => validCategoryIds.has(row.newProduct.categoryId));
     skippedInvalidCategoryCount = newProductRows.length - eligibleRows.length;
@@ -159,6 +163,13 @@ export async function POST(request: Request) {
           },
         }));
 
+        const masterCatalogCandidates: Array<{
+          sku_code: string;
+          product_name: string;
+          category_name: string;
+          image_url: string;
+        }> = [];
+
         for (const chunk of chunkArray(rowsWithPayload, UPSERT_CHUNK_SIZE)) {
           // Aynı barkod aynı anda başka bir yoldan da eklenmiş olabilir
           // (yarış durumu, ya da dosyada zaten var olan bir sku_code'a denk
@@ -174,10 +185,50 @@ export async function POST(request: Request) {
           const insertedIds = new Set((inserted ?? []).map((row) => row.id as string));
 
           for (const entry of chunk) {
-            if (insertedIds.has(entry.payloadItem.id)) {
-              createdProductRows.push({ ...entry.row, productId: entry.payloadItem.id });
+            if (!insertedIds.has(entry.payloadItem.id)) continue;
+            createdProductRows.push({ ...entry.row, productId: entry.payloadItem.id });
+
+            // Master Katalog'a sadece görseli olan (bkz. schema: image_url
+            // not null) ve kendi Storage'ımıza yüklenmiş (upload-image
+            // endpoint'i üzerinden — dış CDN hotlink değil) ürünler eklenir;
+            // diğer tenant'lar da bu ürünü katalogda bulup aktarabilsin.
+            if (entry.payloadItem.image_url) {
+              masterCatalogCandidates.push({
+                sku_code: normalizeCode(entry.payloadItem.sku_code),
+                product_name: entry.payloadItem.product_name,
+                category_name: categoryNameById.get(entry.payloadItem.category_id) ?? "Diğer",
+                image_url: entry.payloadItem.image_url,
+              });
             }
           }
+        }
+
+        if (masterCatalogCandidates.length) {
+          const candidateSkus = [...new Set(masterCatalogCandidates.map((c) => c.sku_code))];
+          const existingSkus = new Set<string>();
+
+          for (const skuChunk of chunkArray(candidateSkus, ID_CHUNK_SIZE)) {
+            const { data: existingRows } = await supabase
+              .from("market_catalog_products")
+              .select("sku_code")
+              .in("sku_code", skuChunk);
+
+            for (const row of existingRows ?? []) {
+              existingSkus.add(row.sku_code as string);
+            }
+          }
+
+          const newCatalogRows = masterCatalogCandidates
+            .filter((candidate) => !existingSkus.has(candidate.sku_code))
+            .map((candidate) => ({ ...candidate, source: "tenant_stock_import" }));
+
+          for (const chunk of chunkArray(newCatalogRows, UPSERT_CHUNK_SIZE)) {
+            await supabase
+              .from("market_catalog_products")
+              .upsert(chunk, { onConflict: "source,sku_code", ignoreDuplicates: true });
+          }
+
+          addedToMasterCatalogCount = newCatalogRows.length;
         }
       }
     }
@@ -362,6 +413,7 @@ export async function POST(request: Request) {
     createdProductCount: createdProductRows.length,
     skippedInvalidCategoryCount,
     skippedForNewProductLimitCount,
+    addedToMasterCatalogCount,
     updatedProducts: updatedProducts.map((product) => normalizeProductRecord(product)),
   });
 }
