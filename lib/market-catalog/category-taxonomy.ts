@@ -391,6 +391,21 @@ export const MARKET_CATEGORY_ANCESTORS: Record<string, string[]> = {
   "Giyim, Aksesuar": ["Ev & Yaşam"],
   "Spor, Outdoor": ["Ev & Yaşam"],
   "Elektronik": ["Teknoloji"],
+
+  // iyisarap_crawl kategorileri
+  "Kırmızı Şarap": ["Alkol"],
+  "Beyaz Şarap": ["Alkol"],
+  "Rose Şarap": ["Alkol"],
+  "Şampanya": ["Alkol"],
+  "Prosecco": ["Alkol"],
+  "Doğal Köpüklü": ["Alkol"],
+  "Suni Köpüklü": ["Alkol"],
+  "Yarı Tatlı Şarap": ["Alkol"],
+  "Tatlı Şarap": ["Alkol"],
+  "Natural Wine": ["Alkol"],
+  "Likör Şarabı": ["Alkol"],
+  "Meyve Şarabı": ["Alkol"],
+  "Bundle": ["Alkol"],
 };
 
 // Kök→yaprak sırayla tam yol. Haritada olmayan adlar tek elemanlı (kendi
