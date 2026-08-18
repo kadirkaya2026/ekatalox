@@ -24,6 +24,7 @@ import { DEFAULT_HOMEPAGE_BLOCKS, normalizeHomepageBlocks } from "@/lib/storefro
 import { toStorefrontProduct } from "@/lib/storefront/pricing";
 import { getSmartDefaultAppearance } from "@/lib/storefront/smart-defaults";
 import { buildProductNameSearchClause, expandSearchTerms } from "@/lib/search/turkish-search-aliases";
+import { getDescendantCategoryIds } from "@/lib/categories/tree";
 import { DEFAULT_BUSINESS_HOURS, WEEKDAY_ORDER } from "@/lib/storefront/business-hours";
 import type {
   AccessCode,
@@ -1465,6 +1466,57 @@ export async function getStorefrontRecommendationPool(params: {
 
   const rows = await readPool(params.tenantId, params.excludeCategoryIds ?? []);
   return rows.map((product) => toStorefrontProduct(product, params.priceListId, params.isCatalogOnly));
+}
+
+// Anasayfadaki kategori kutucukları (StorefrontCategoryTiles) manuel bir
+// tile_image_url/banner yoksa "kategorideki bir ürünün fotoğrafı"na
+// düşüyor — ama eskiden bu, sadece anasayfanın YÜKLEDİĞİ ilk sayfa (60
+// ürün, bkz. STOREFRONT_PRODUCTS_PAGE_SIZE) içinde aranıyordu. Bir ana
+// kategorinin ürünleri o ilk 60'a denk gelmezse (çok sık, kategori sayısı
+// arttıkça) kutucuk boş/generic ikonla kalıyordu — tüm kataloğu
+// dolduran tenant'larda bile (kullanıcı geri bildirimi, ekran görüntüsü,
+// 18 Ağu 2026). Bu fonksiyon her ANA kategori için (kendisi + tüm alt
+// kategorileri) sunucu tarafında ayrı, küçük bir sorguyla gerçek bir
+// temsilci ürün görseli bulur — böylece hem yeni açılan hem de zaten
+// dolu tüm tenant'larda otomatik çalışır, manuel görsel yüklemeye gerek
+// kalmaz (bkz. storefront-homepage-extras.tsx).
+export async function getStorefrontCategoryRepresentativeImages(
+  tenantId: string,
+  categories: Category[],
+): Promise<Record<string, string>> {
+  const supabase = createSupabaseAdminClient();
+  if (!supabase) return {};
+
+  const topCategories = categories.filter((category) => !category.parent_id);
+  const result: Record<string, string> = {};
+
+  await Promise.all(
+    topCategories.map(async (category) => {
+      // Zaten manuel bir görsel varsa bu kategori için hiç sorgu atmaya
+      // gerek yok — StorefrontCategoryTiles fallback zincirinde önce
+      // tile_image_url/banner_item denenir.
+      if (category.tile_image_url || category.banner_item?.image_url) return;
+
+      const subtreeIds = getDescendantCategoryIds(categories, category.id);
+      const { data } = await supabase
+        .from("products")
+        .select("image_url")
+        .eq("tenant_id", tenantId)
+        .in("category_id", subtreeIds)
+        .eq("is_in_stock", true)
+        .not("image_url", "is", null)
+        .neq("image_url", "")
+        .order("display_order", { ascending: true })
+        .limit(1)
+        .maybeSingle();
+
+      if (data?.image_url) {
+        result[category.id] = data.image_url as string;
+      }
+    }),
+  );
+
+  return result;
 }
 
 // Anasayfadaki "indirimli ürünler" karo şeridi için — tüm katalogdan

@@ -823,6 +823,7 @@ export function StorefrontClient({
   promoProducts,
   bestSellerProducts,
   recommendationPool,
+  categoryRepresentativeImages = {},
   storefrontSettings,
   sections = [],
   subdomain,
@@ -839,6 +840,12 @@ export function StorefrontClient({
   promoProducts: StorefrontProduct[];
   bestSellerProducts: StorefrontProduct[];
   recommendationPool: StorefrontProduct[];
+  // Anasayfada henüz yüklenmemiş ürünlerin de kategori kutucuğunda temsilci
+  // görsel olarak kullanılabilmesi için sunucu tarafında ayrıca çekilen,
+  // kategori id -> ürün image_url haritası (bkz. lib/data.ts
+  // getStorefrontCategoryRepresentativeImages). Bölüm sayfası (section
+  // page) kategori kutucuğu göstermediği için bu prop'u geçmiyor.
+  categoryRepresentativeImages?: Record<string, string>;
   storefrontSettings: TenantStorefrontSettings;
   sections?: StorefrontSectionWithProducts[];
   subdomain?: string;
@@ -2768,6 +2775,7 @@ export function StorefrontClient({
                   flatCategories={categories}
                   selectedCategoryId={selectedCategoryId}
                   products={products}
+                  categoryRepresentativeImages={categoryRepresentativeImages}
                   onCategoryChange={handleCategoryChange}
                 />
               ) : null;
@@ -2829,6 +2837,7 @@ export function StorefrontClient({
                       flatCategories={categories}
                       selectedCategoryId={selectedCategoryId}
                       products={products}
+                      categoryRepresentativeImages={categoryRepresentativeImages}
                       onCategoryChange={handleCategoryChange}
                       layout="grid4"
                     />

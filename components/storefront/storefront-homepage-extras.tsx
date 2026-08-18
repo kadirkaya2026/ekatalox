@@ -186,6 +186,7 @@ export function StorefrontCategoryTiles({
   flatCategories,
   selectedCategoryId,
   products,
+  categoryRepresentativeImages = {},
   onCategoryChange,
   layout = "scroll",
 }: {
@@ -193,6 +194,12 @@ export function StorefrontCategoryTiles({
   flatCategories: Category[];
   selectedCategoryId: string;
   products: StorefrontProduct[];
+  // Anasayfada henüz yüklenmemiş ürünlerin görsellerini de kapsayan,
+  // sunucu tarafında ayrıca hesaplanmış kategori id -> ürün image_url
+  // haritası (bkz. lib/data.ts getStorefrontCategoryRepresentativeImages).
+  // `products` (istemcideki ilk sayfa) içinde temsilci bulunamazsa son
+  // çare olarak buraya bakılır.
+  categoryRepresentativeImages?: Record<string, string>;
   onCategoryChange: (categoryId: string) => void;
   layout?: "scroll" | "grid4";
 }) {
@@ -216,7 +223,8 @@ export function StorefrontCategoryTiles({
     const categoryAndDescendantIds = new Set(getDescendantCategoryIds(flatCategories, category.id));
     const representativeProduct = products.find((product) => categoryAndDescendantIds.has(product.category_id));
     const isActive = selectedCategoryId === category.id || categoryAndDescendantIds.has(selectedCategoryId);
-    return { category, image: customImage ?? representativeProduct?.image_url ?? null, index, isActive };
+    const fallbackImage = customImage ?? representativeProduct?.image_url ?? categoryRepresentativeImages[category.id] ?? null;
+    return { category, image: fallbackImage, index, isActive };
   });
 
   return (
