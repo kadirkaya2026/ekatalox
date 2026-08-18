@@ -442,6 +442,21 @@ export function formatCategoryDisplayName(name: string): string {
 const CATEGORY_NAME_ALIASES: Record<string, string> = {
   "Enerji İçecekleri": "Enerji & Spor İçeceği",
   "Gazlı İçecek": "Gazlı İçecekler",
+  "Meyve Suları": "Meyve Suyu & Nektarı",
+  "Meyveli Soda": "Maden Suyu & Soda",
+  // Bunlar tutarsız/karışık içerikli çıktı (bkz. 18 Ağu 2026 temizliği —
+  // "İçecek" tek başına 254, "Soğuk Çay ve Kahve" hem soğuk çay hem soğuk
+  // kahve, "Su ve Soda" hem su hem soda ürünleri içeriyordu). TEK bir
+  // spesifik alt kategoriye yönlendirilemeyecek kadar genel/karışık, o
+  // yüzden zaten var olan genel "Diğer Ürünler" kovasına yönlendiriliyor —
+  // en azından aynı isimde yeni bir tekrar/karışık kategori oluşmasını
+  // engeller.
+  "İçecek": "Diğer Ürünler",
+  "İÇECEKLER": "Diğer Ürünler",
+  "Soğuk Çay ve Kahve": "Diğer Ürünler",
+  "Soğuk İçecek & Meşrubat": "Diğer Ürünler",
+  "Soğuk ve Sıcak İçeçekler": "Diğer Ürünler",
+  "Su ve Soda": "Diğer Ürünler",
 };
 
 // Kök→yaprak sırayla tam yol. Arama/eşleştirme MARKET_CATEGORY_ANCESTORS'ta
