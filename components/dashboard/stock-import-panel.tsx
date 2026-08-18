@@ -816,7 +816,14 @@ function ReviewRow({
         </div>
       ) : (
         <div className="mt-3 flex flex-wrap items-center gap-2">
-          {decision.action !== "approved" && hasResolution ? (
+          {/* Bir aday/ürün zaten seçildiğinde (candidate chip, ProductPicker) action
+              doğrudan "reassigned" olarak set ediliyor — bu durumda "Onayla"yı tekrar
+              göstermek anlamsız bir no-op'a yol açıyordu (kullanıcı "eşleştirip
+              onaya basınca hiçbir şey değişmiyor" diye bildirdi, 18 Ağu 2026).
+              "Onayla" sadece gerçekten bir şeyi değiştireceği durumda gösterilir:
+              satır otomatik eşleşti ama dosyada fiyat olmadığı için action hâlâ
+              "pending" kaldıysa (bkz. initialDecisionsFromResults). */}
+          {decision.action === "pending" && hasResolution ? (
             <Button
               type="button"
               variant="secondary"
@@ -1023,9 +1030,16 @@ export function StockImportPanel({
 
   const reviewRows = useMemo(() => {
     if (!matchResponse) return [];
+    // Barkodu tenant'ın KENDİ mevcut ürünlerinden biriyle birebir eşleşen
+    // satırlar (matched_exact) — yani zaten Ürünler sayfasında olan ürünler
+    // — varsayılan görünümden çıkarılıyor; her yeniden yüklemede yüzlerce
+    // "zaten tamam" satırını tek tek görmek zorunda kalmasın diye (bkz.
+    // kullanıcı geri bildirimi, 18 Ağu 2026). "barkod eşleşti" etiketine
+    // tıklayarak yine de görülebilirler — decision'ları hâlâ mevcut,
+    // fiyat/stok Uygula'da normal şekilde güncellenmeye devam eder.
     const filtered = statusFilter
       ? matchResponse.results.filter((result) => result.status === statusFilter)
-      : matchResponse.results;
+      : matchResponse.results.filter((result) => result.status !== "matched_exact");
     return [...filtered].sort((a, b) => {
       const decisionA = decisions.get(a.rowNumber);
       const decisionB = decisions.get(b.rowNumber);
@@ -1280,6 +1294,13 @@ export function StockImportPanel({
                       style={{ width: `${resolvedPercent}%` }}
                     />
                   </div>
+                  {!statusFilter && matchResponse.summary.matchedExact ? (
+                    <p className="mt-3 text-sm text-emerald-700">
+                      {matchResponse.summary.matchedExact} ürün zaten mağazanızda var — bu satırlar listede
+                      gösterilmiyor, fiyat/stok Uygula&apos;da normal şekilde güncellenecek. Görmek için aşağıdaki
+                      &quot;barkod eşleşti&quot; etiketine tıkla.
+                    </p>
+                  ) : null}
 
                   <div className="mt-4 flex flex-wrap items-center gap-2">
                     {(
@@ -1360,9 +1381,11 @@ export function StockImportPanel({
           </Card>
 
           <div className="space-y-2">
-            {statusFilter && reviewRows.length === 0 ? (
+            {reviewRows.length === 0 ? (
               <Card className="p-6 text-center text-sm text-slate-500">
-                Bu filtrede satır yok.
+                {statusFilter
+                  ? "Bu filtrede satır yok."
+                  : "Tüm satırlar zaten mağazanızda var — gözden geçirilecek satır kalmadı."}
               </Card>
             ) : null}
             {reviewRows.map((result) => {
