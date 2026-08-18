@@ -120,6 +120,8 @@ export function ProductsManager({
   const [deleteTarget, setDeleteTarget] = useState<Product | null>(null);
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
   const [selectedProductIds, setSelectedProductIds] = useState<string[]>([]);
+  const [isSelectingAllFiltered, setIsSelectingAllFiltered] = useState(false);
+  const [allFilteredSelectedFlag, setAllFilteredSelectedFlag] = useState(false);
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
   const [draggedProductId, setDraggedProductId] = useState<string | null>(null);
   const [inlineCategoryProductId, setInlineCategoryProductId] = useState<string | null>(null);
@@ -288,6 +290,7 @@ export function ProductsManager({
   }
 
   function toggleSelectProduct(productId: string) {
+    setAllFilteredSelectedFlag(false);
     setSelectedProductIds((current) =>
       current.includes(productId)
         ? current.filter((id) => id !== productId)
@@ -296,6 +299,7 @@ export function ProductsManager({
   }
 
   function toggleSelectAllOnPage() {
+    setAllFilteredSelectedFlag(false);
     setSelectedProductIds((current) => {
       if (allPageSelected) {
         return current.filter((id) => !pageProductIds.includes(id));
@@ -303,6 +307,39 @@ export function ProductsManager({
 
       return Array.from(new Set([...current, ...pageProductIds]));
     });
+  }
+
+  // Sadece o an ekrandaki sayfayı değil, arama/kategori filtresine uyan
+  // TÜM ürünleri (binlerce olabilir) seçer — id listesini sayfalama
+  // olmadan sunucudan çeker.
+  async function selectAllFiltered() {
+    setIsSelectingAllFiltered(true);
+    setMessage(null);
+    try {
+      const params = new URLSearchParams();
+      params.set("idsOnly", "1");
+      if (debouncedSearchTerm.trim()) params.set("q", debouncedSearchTerm.trim());
+      if (expandedCategoryIds.length) params.set("categoryIds", expandedCategoryIds.join(","));
+      if (matchCategoryIds.length) params.set("matchCategoryIds", matchCategoryIds.join(","));
+
+      const response = await fetch(`/api/tenant/products?${params.toString()}`);
+      const result = await response.json();
+
+      if (!response.ok) {
+        setMessage(result.error ?? "Ürünler seçilemedi.");
+        return;
+      }
+
+      setSelectedProductIds(result.ids as string[]);
+      setAllFilteredSelectedFlag(true);
+    } finally {
+      setIsSelectingAllFiltered(false);
+    }
+  }
+
+  function clearSelection() {
+    setSelectedProductIds([]);
+    setAllFilteredSelectedFlag(false);
   }
 
   function handleDeleteProduct(product: Product) {
@@ -351,6 +388,7 @@ export function ProductsManager({
       setTotal((current) => Math.max(0, current - deletedCount));
       setGrandTotal((current) => Math.max(0, current - deletedCount));
       setSelectedProductIds([]);
+      setAllFilteredSelectedFlag(false);
       setBulkDeleteOpen(false);
       setMessage(`${deletedCount} ürün kalıcı olarak silindi.`);
       await fetchPage(currentPage);
@@ -467,6 +505,7 @@ export function ProductsManager({
       }
 
       setSelectedProductIds([]);
+      setAllFilteredSelectedFlag(false);
       setMessage(
         `${result.updatedProducts.length} ürünün stoğu ${is_in_stock ? "açıldı" : "kapatıldı"}.`,
       );
@@ -495,6 +534,7 @@ export function ProductsManager({
       }
 
       setSelectedProductIds([]);
+      setAllFilteredSelectedFlag(false);
       setBulkCategoryId("");
       setMessage(`${result.updatedProducts.length} ürünün kategorisi güncellendi.`);
       await fetchPage(currentPage);
@@ -563,16 +603,49 @@ export function ProductsManager({
           />
 
           {selectedProductIds.length ? (
-            <ProductsBulkActionBar
-              selectedCount={selectedProductIds.length}
-              flatCategories={flatCategories}
-              bulkCategoryId={bulkCategoryId}
-              onBulkCategoryChange={setBulkCategoryId}
-              onApplyBulkCategory={handleBulkCategoryUpdate}
-              onBulkSetStock={handleBulkSetStock}
-              onRequestBulkDelete={() => setBulkDeleteOpen(true)}
-              pending={pending}
-            />
+            <>
+              {allFilteredSelectedFlag ? (
+                <div className="mt-4 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-sm text-emerald-800">
+                  <span>
+                    Filtreye uyan tüm <strong>{selectedProductIds.length}</strong> ürün seçildi.
+                  </span>
+                  <button
+                    type="button"
+                    onClick={clearSelection}
+                    className="font-semibold underline underline-offset-2 hover:text-emerald-900"
+                  >
+                    Seçimi temizle
+                  </button>
+                </div>
+              ) : allPageSelected && total > pageProductIds.length ? (
+                <div className="mt-4 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-blue-100 bg-blue-50 px-4 py-2.5 text-sm text-blue-800">
+                  <span>
+                    Bu sayfadaki {pageProductIds.length} ürün seçildi.
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => void selectAllFiltered()}
+                    disabled={isSelectingAllFiltered}
+                    className="font-semibold underline underline-offset-2 hover:text-blue-900 disabled:opacity-50"
+                  >
+                    {isSelectingAllFiltered
+                      ? "Yükleniyor…"
+                      : `Filtreye uyan tüm ${total} ürünü seç`}
+                  </button>
+                </div>
+              ) : null}
+
+              <ProductsBulkActionBar
+                selectedCount={selectedProductIds.length}
+                flatCategories={flatCategories}
+                bulkCategoryId={bulkCategoryId}
+                onBulkCategoryChange={setBulkCategoryId}
+                onApplyBulkCategory={handleBulkCategoryUpdate}
+                onBulkSetStock={handleBulkSetStock}
+                onRequestBulkDelete={() => setBulkDeleteOpen(true)}
+                pending={pending}
+              />
+            </>
           ) : null}
         </div>
 

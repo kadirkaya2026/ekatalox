@@ -679,6 +679,52 @@ export async function getTenantProductsPage(params: {
   return { products: normalizeProductRows(fallback.data), total: fallback.count ?? 0 };
 }
 
+// "Tümünü seç" için: geçerli arama/kategori filtresine uyan HER ürünün id'sini
+// (sayfalama olmadan) döner. getTenantProductsPage'deki filtre mantığıyla
+// birebir aynı olmalı, yoksa kullanıcı ekranda gördüğünden farklı bir küme
+// seçmiş olur. PostgREST'in tek sorguda döndürebildiği satır sayısı
+// sınırlı olduğu için 1000'lik sayfalarla çekiyoruz.
+export async function getTenantProductIdsForFilter(params: {
+  tenantId: string;
+  search?: string;
+  categoryIds?: string[];
+  matchCategoryIds?: string[];
+}): Promise<string[]> {
+  const supabase = createSupabaseAdminClient();
+  if (!supabase) return [];
+
+  const term = params.search?.trim().replace(/[,%]/g, " ").trim();
+  const orFilter = term
+    ? (() => {
+        const escapedTerm = term.replace(/[()]/g, "");
+        const nameConditions = buildProductNameSearchClause(escapedTerm);
+        const categoryMatch = params.matchCategoryIds?.length
+          ? `,category_id.in.(${params.matchCategoryIds.join(",")})`
+          : "";
+        return `${nameConditions},sku_code.ilike.%${escapedTerm}%${categoryMatch}`;
+      })()
+    : null;
+
+  const ids: string[] = [];
+  const pageSize = 1000;
+  for (let from = 0; ; from += pageSize) {
+    let query = supabase
+      .from("products")
+      .select("id")
+      .eq("tenant_id", params.tenantId);
+    if (params.categoryIds?.length) query = query.in("category_id", params.categoryIds);
+    if (orFilter) query = query.or(orFilter);
+    query = query.range(from, from + pageSize - 1);
+
+    const { data, error } = await query;
+    if (error || !data) break;
+    ids.push(...data.map((row) => row.id as string));
+    if (data.length < pageSize) break;
+  }
+
+  return ids;
+}
+
 export async function getTenantCategories(tenantId: string): Promise<Category[]> {
   const supabase = createSupabaseAdminClient();
 
