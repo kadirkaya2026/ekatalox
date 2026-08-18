@@ -2503,7 +2503,7 @@ export function StorefrontClient({
     );
   }
 
-  function renderCrossSellCard(product: StorefrontProduct) {
+  function renderCrossSellCard(product: StorefrontProduct, compact = false) {
     const cartQuantity = product.has_variants
       ? cartVariantCountByProductId.get(product.id) ?? 0
       : cartQuantityByProductId.get(product.id) ?? 0;
@@ -2511,7 +2511,14 @@ export function StorefrontClient({
     return (
       <article
         key={product.id}
-        className={cn("relative overflow-visible min-w-[182px] max-w-[182px] rounded-[1.5rem] p-3", theme.border, theme.productThumbSurface, theme.elevation1, theme.surfaceRing)}
+        className={cn(
+          "relative overflow-visible rounded-[1.5rem] p-3",
+          compact ? "min-w-[128px] max-w-[128px] rounded-2xl p-2" : "min-w-[182px] max-w-[182px]",
+          theme.border,
+          theme.productThumbSurface,
+          theme.elevation1,
+          theme.surfaceRing,
+        )}
       >
         <StorefrontFloatingCartAction
           product={product}
@@ -2522,43 +2529,54 @@ export function StorefrontClient({
           onOpenAddToCart={handleQuickAddOrOpenModal}
         />
 
-        <div className={cn("relative h-28 overflow-hidden rounded-[1.15rem]", theme.productImageWrap)}>
+        <div
+          className={cn(
+            "relative overflow-hidden rounded-[1.15rem]",
+            compact ? "h-16 rounded-xl" : "h-28",
+            theme.productImageWrap,
+          )}
+        >
           <DiscountSticker product={product} />
           {product.image_url ? (
             <StorefrontImage
               src={product.image_url}
               alt={product.product_name}
-              className="object-contain p-4"
+              className={cn("object-contain", compact ? "p-2" : "p-4")}
               sizes={STOREFRONT_CROSS_SELL_SIZES}
             />
           ) : (
             <div className={theme.emptyImage}>
               <ProductImagePlaceholder
                 productName={product.product_name}
-                iconClassName={cn("size-6", theme.textMuted)}
-                textClassName={cn("text-[10px]", theme.textMuted)}
+                iconClassName={cn(compact ? "size-4" : "size-6", theme.textMuted)}
+                textClassName={cn(compact ? "text-[9px]" : "text-[10px]", theme.textMuted)}
               />
             </div>
           )}
         </div>
 
-        <div className="mt-3 space-y-1.5">
-          <p className={cn("line-clamp-2 text-sm font-semibold leading-5", theme.productThumbText)}>
+        <div className={compact ? "mt-1.5 space-y-1" : "mt-3 space-y-1.5"}>
+          <p
+            className={cn(
+              compact ? "line-clamp-1 text-xs font-semibold leading-4" : "line-clamp-2 text-sm font-semibold leading-5",
+              theme.productThumbText,
+            )}
+          >
             {product.product_name}
           </p>
-          {theme.showProductModelNo ? (
+          {!compact && theme.showProductModelNo ? (
             <p className={cn("text-[11px]", theme.productThumbMeta)}>
               {formatProductModelNo(product.sku_code)}
             </p>
           ) : null}
-          {getUnitSummary(product, t) ? (
+          {!compact && getUnitSummary(product, t) ? (
             <p className={cn("line-clamp-2 text-[11px] leading-4", theme.productThumbMeta)}>
               {getUnitSummary(product, t)}
             </p>
           ) : null}
         </div>
 
-        <div className="mt-3 flex items-end justify-between gap-2">
+        <div className={cn("flex items-end justify-between gap-2", compact ? "mt-1.5" : "mt-3")}>
           <ProductPrice product={product} size="crossSell" />
           {cartQuantity > 0 ? (
             <span className={cn(theme.stockBadgeIn, "px-2.5 py-1 text-[10px]")}>
@@ -2725,8 +2743,11 @@ export function StorefrontClient({
               <h3 className={cn("mb-2 text-sm font-bold tracking-tight", theme.text)}>
                 {t("productModal.relatedProductsTitle")}
               </h3>
-              <div className="scrollbar-hide -mx-1 flex gap-3 overflow-x-auto px-1 pb-1">
-                {relatedPreviewProducts.map((product) => renderCrossSellCard(product))}
+              {/* -mt-2/pt-2: kartın üstünden taşan yüzen sepete-ekle rozetinin
+                  (StorefrontFloatingCartAction) overflow-x-auto tarafından
+                  üstten kırpılmasını önler — sepet çekmecesindeki aynı çözüm. */}
+              <div className="scrollbar-hide -mx-1 -mt-2 flex gap-2.5 overflow-x-auto px-1 pb-1 pt-2">
+                {relatedPreviewProducts.map((product) => renderCrossSellCard(product, true))}
               </div>
             </div>
           ) : null}
