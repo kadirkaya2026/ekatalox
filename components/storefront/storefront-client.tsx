@@ -2548,8 +2548,12 @@ export function StorefrontClient({
 
     const tabItems: Array<{ key: ProductDetailTab; label: string }> = [
       { key: "details", label: t("productModal.tabDetails") },
-      { key: "package", label: t("productModal.tabPackage") },
-      { key: "carton", label: t("productModal.tabCarton") },
+      ...(previewProduct.package_quantity
+        ? [{ key: "package" as const, label: t("productModal.tabPackage") }]
+        : []),
+      ...(previewProduct.carton_quantity
+        ? [{ key: "carton" as const, label: t("productModal.tabCarton") }]
+        : []),
     ];
 
     const detailContent = previewDescription;
