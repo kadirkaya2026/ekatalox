@@ -24,7 +24,7 @@ import {
   type StockImportRawTable,
   type StockImportSourceRow,
 } from "@/lib/csv/parse-stock-import";
-import type { StockImportMatchResult } from "@/lib/products/stock-import-matching";
+import type { StockImportMatchResult, StockImportMatchStatus } from "@/lib/products/stock-import-matching";
 import { buildCategoryTree, flattenCategoryTree } from "@/lib/categories/tree";
 import { cn } from "@/lib/utils";
 import type { Category, PriceList } from "@/lib/types";
@@ -691,6 +691,7 @@ export function StockImportPanel({
     new Map(),
   );
   const [decisions, setDecisions] = useState<Map<number, RowDecision>>(new Map());
+  const [statusFilter, setStatusFilter] = useState<StockImportMatchStatus | null>(null);
 
   async function handleFile(file: File) {
     setError(null);
@@ -748,6 +749,7 @@ export function StockImportPanel({
       setSourceRowsByRowNumber(byRowNumber);
       setMatchResponse(result as MatchResponse);
       setDecisions(initialDecisionsFromResults((result as MatchResponse).results, byRowNumber));
+      setStatusFilter(null);
       setStep("review");
     } catch {
       setError("Eşleştirme sırasında bir hata oluştu.");
@@ -762,14 +764,17 @@ export function StockImportPanel({
 
   const reviewRows = useMemo(() => {
     if (!matchResponse) return [];
-    return [...matchResponse.results].sort((a, b) => {
+    const filtered = statusFilter
+      ? matchResponse.results.filter((result) => result.status === statusFilter)
+      : matchResponse.results;
+    return [...filtered].sort((a, b) => {
       const decisionA = decisions.get(a.rowNumber);
       const decisionB = decisions.get(b.rowNumber);
       const priorityA = decisionA?.action === "approved" ? 1 : 0;
       const priorityB = decisionB?.action === "approved" ? 1 : 0;
       return priorityA - priorityB;
     });
-  }, [matchResponse, decisions]);
+  }, [matchResponse, decisions, statusFilter]);
 
   const pendingCount = [...decisions.values()].filter((d) => d.action === "pending").length;
   const applyCount = [...decisions.values()].filter((d) => isRowReadyForApply(d)).length;
@@ -842,6 +847,7 @@ export function StockImportPanel({
     setMatchResponse(null);
     setSourceRowsByRowNumber(new Map());
     setDecisions(new Map());
+    setStatusFilter(null);
     setApplyResult(null);
     setError(null);
   }
@@ -995,25 +1001,77 @@ export function StockImportPanel({
                   </div>
 
                   <div className="mt-4 flex flex-wrap items-center gap-2">
-                    <Badge className="bg-emerald-100 text-emerald-700">
-                      %{percent(matchResponse.summary.matchedExact)} barkod eşleşti (
-                      {matchResponse.summary.matchedExact})
-                    </Badge>
-                    <Badge className="bg-sky-100 text-sky-700">
-                      %{percent(matchResponse.summary.matchedMasterCatalog)} Master Katalog&apos;da bulundu (
-                      {matchResponse.summary.matchedMasterCatalog})
-                    </Badge>
-                    <Badge className="bg-emerald-50 text-emerald-700">
-                      %{percent(matchResponse.summary.matchedFuzzyHigh)} isimle eşleşti (
-                      {matchResponse.summary.matchedFuzzyHigh})
-                    </Badge>
-                    <Badge className="bg-amber-100 text-amber-800">
-                      %{percent(matchResponse.summary.needsReview)} gözden geçirilmeli (
-                      {matchResponse.summary.needsReview})
-                    </Badge>
-                    <Badge className="bg-slate-100 text-slate-700">
-                      %{percent(matchResponse.summary.noMatch)} eşleşmedi ({matchResponse.summary.noMatch})
-                    </Badge>
+                    {(
+                      [
+                        {
+                          status: "matched_exact",
+                          count: matchResponse.summary.matchedExact,
+                          label: "barkod eşleşti",
+                          className: "bg-emerald-100 text-emerald-700",
+                        },
+                        {
+                          status: "matched_master_catalog",
+                          count: matchResponse.summary.matchedMasterCatalog,
+                          label: "Master Katalog'da bulundu",
+                          className: "bg-sky-100 text-sky-700",
+                        },
+                        {
+                          status: "matched_fuzzy_high",
+                          count: matchResponse.summary.matchedFuzzyHigh,
+                          label: "isimle eşleşti",
+                          className: "bg-emerald-50 text-emerald-700",
+                        },
+                        {
+                          status: "needs_review",
+                          count: matchResponse.summary.needsReview,
+                          label: "gözden geçirilmeli",
+                          className: "bg-amber-100 text-amber-800",
+                        },
+                        {
+                          status: "no_match",
+                          count: matchResponse.summary.noMatch,
+                          label: "eşleşmedi",
+                          className: "bg-slate-100 text-slate-700",
+                        },
+                      ] satisfies Array<{
+                        status: StockImportMatchStatus;
+                        count: number;
+                        label: string;
+                        className: string;
+                      }>
+                    ).map((item) => (
+                      <button
+                        key={item.status}
+                        type="button"
+                        onClick={() =>
+                          setStatusFilter((current) => (current === item.status ? null : item.status))
+                        }
+                        className="rounded-full outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
+                      >
+                        <Badge
+                          className={cn(
+                            item.className,
+                            "cursor-pointer transition",
+                            statusFilter === item.status
+                              ? "ring-2 ring-offset-1 ring-slate-400"
+                              : statusFilter
+                                ? "opacity-50 hover:opacity-80"
+                                : "hover:opacity-80",
+                          )}
+                        >
+                          %{percent(item.count)} {item.label} ({item.count})
+                        </Badge>
+                      </button>
+                    ))}
+                    {statusFilter ? (
+                      <button
+                        type="button"
+                        onClick={() => setStatusFilter(null)}
+                        className="text-xs font-medium text-slate-500 underline hover:text-slate-700"
+                      >
+                        Filtreyi temizle
+                      </button>
+                    ) : null}
                   </div>
                 </>
               );
@@ -1021,6 +1079,11 @@ export function StockImportPanel({
           </Card>
 
           <div className="space-y-2">
+            {statusFilter && reviewRows.length === 0 ? (
+              <Card className="p-6 text-center text-sm text-slate-500">
+                Bu filtrede satır yok.
+              </Card>
+            ) : null}
             {reviewRows.map((result) => {
               const decision = decisions.get(result.rowNumber);
               const sourceRow = sourceRowsByRowNumber.get(result.rowNumber);

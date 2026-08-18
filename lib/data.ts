@@ -732,7 +732,9 @@ export async function getMarketCatalogProductsPage(params: {
   if (term) {
     const nameConditions = buildProductNameSearchClause(term);
     const brandConditions = buildProductNameSearchClause(term, "brand");
-    query = query.or(`${nameConditions},${brandConditions},category_name.ilike.%${term}%`);
+    query = query.or(
+      `${nameConditions},${brandConditions},category_name.ilike.%${term}%,sku_code.ilike.%${term}%`,
+    );
   }
 
   const { data, count } = await query;

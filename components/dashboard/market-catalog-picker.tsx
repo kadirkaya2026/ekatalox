@@ -167,7 +167,7 @@ export function MarketCatalogPicker({
           <Input
             value={search}
             onChange={(event) => setSearch(event.target.value)}
-            placeholder="Ürün, kategori veya marka ara..."
+            placeholder="Ürün, barkod, kategori veya marka ara..."
             className="pl-10"
           />
         </div>
