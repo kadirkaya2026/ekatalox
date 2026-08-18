@@ -408,17 +408,51 @@ export const MARKET_CATEGORY_ANCESTORS: Record<string, string[]> = {
   "Bundle": ["Alkol"],
 };
 
-// Kök→yaprak sırayla tam yol. Haritada olmayan adlar tek elemanlı (kendi
-// kendinin kökü) yol döner — gelecekte yeni bir alt kategori eklenirse kırılmadan
-// düz kök olarak eklenir.
+// Bazı kaynaklardan (crawler'ın kendi ham breadcrumb'ı) gelen yaprak adları
+// tamamen büyük harf ("SAKIZ", "İÇECEKLER", "BİSKÜVİ-ÇİKOLATA" — 383
+// girdiden 27'si) — tenant'a kategori olarak bu haliyle kopyalanınca
+// storefront'ta özensiz görünüyordu (kullanıcı geri bildirimi, 18 Ağu
+// 2026). Sadece TAMAMEN büyük harfli adlar normalize edilir; zaten düzgün
+// yazılmış adlara (ör. "Bisküvi ve Çikolata") dokunulmaz — aksi halde "ve/
+// ile" gibi bağlaçlar da yanlışlıkla büyütülürdü.
+function isAllUppercase(value: string): boolean {
+  return value === value.toLocaleUpperCase("tr-TR") && value !== value.toLocaleLowerCase("tr-TR");
+}
+
+function toTitleCaseTr(value: string): string {
+  return value
+    .toLocaleLowerCase("tr-TR")
+    .replace(/(^|[\s&/-])([a-zçğıöşü])/g, (_match, sep: string, char: string) => sep + char.toLocaleUpperCase("tr-TR"));
+}
+
+export function formatCategoryDisplayName(name: string): string {
+  return isAllUppercase(name) ? toTitleCaseTr(name) : name;
+}
+
+// Kök→yaprak sırayla tam yol. Arama/eşleştirme MARKET_CATEGORY_ANCESTORS'ta
+// ham `categoryName` ile yapılır (market_catalog_products.category_name'de
+// saklanan değerle birebir aynı olmalı) — sadece dönen yaprak ismi
+// (tenant'ın categories tablosuna yazılacak metin) görüntü için
+// düzeltilir. Haritada olmayan adlar tek elemanlı (kendi kendinin kökü)
+// yol döner — gelecekte yeni bir alt kategori eklenirse kırılmadan düz kök
+// olarak eklenir.
 export function resolveCategoryPath(categoryName: string): string[] {
   const ancestors = MARKET_CATEGORY_ANCESTORS[categoryName] ?? [];
-  return [...ancestors, categoryName];
+  return [...ancestors, formatCategoryDisplayName(categoryName)];
+}
+
+export interface MasterCategorySubcategory {
+  // MARKET_CATEGORY_ANCESTORS'taki ham anahtar — resolveCategoryPath'e
+  // (ve dolayısıyla apply/route.ts'teki ensureCategoryPath'e) AYNEN bu
+  // gönderilmeli, aksi halde eşleştirme anahtarı bulunamaz. Kullanıcıya
+  // gösterilirken displayName kullanılır.
+  rawName: string;
+  displayName: string;
 }
 
 export interface MasterCategoryGroup {
   parentName: string;
-  subcategoryNames: string[];
+  subcategories: MasterCategorySubcategory[];
 }
 
 // Ana kategori → alt kategoriler (alfabetik) şeklinde gruplu liste — stok
@@ -428,23 +462,24 @@ export interface MasterCategoryGroup {
 // kategori) önlemek için — buradan seçilen bir yaprak, resolveCategoryPath
 // ile aynı ana kategori altına doğru şekilde yerleşir.
 export function getMasterCategoryGroups(): MasterCategoryGroup[] {
-  const subcategoriesByParent = new Map<string, string[]>();
+  const subcategoriesByParent = new Map<string, MasterCategorySubcategory[]>();
 
-  for (const [leaf, ancestors] of Object.entries(MARKET_CATEGORY_ANCESTORS)) {
+  for (const [rawName, ancestors] of Object.entries(MARKET_CATEGORY_ANCESTORS)) {
     const parent = ancestors[0];
     if (!parent) continue;
+    const entry: MasterCategorySubcategory = { rawName, displayName: formatCategoryDisplayName(rawName) };
     const list = subcategoriesByParent.get(parent);
     if (list) {
-      list.push(leaf);
+      list.push(entry);
     } else {
-      subcategoriesByParent.set(parent, [leaf]);
+      subcategoriesByParent.set(parent, [entry]);
     }
   }
 
   return [...subcategoriesByParent.entries()]
     .sort(([a], [b]) => a.localeCompare(b, "tr"))
-    .map(([parentName, subcategoryNames]) => ({
+    .map(([parentName, subcategories]) => ({
       parentName,
-      subcategoryNames: [...subcategoryNames].sort((a, b) => a.localeCompare(b, "tr")),
+      subcategories: [...subcategories].sort((a, b) => a.displayName.localeCompare(b.displayName, "tr")),
     }));
 }

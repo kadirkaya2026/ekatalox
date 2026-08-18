@@ -206,13 +206,16 @@ export function StorefrontCategoryTiles({
 
   const tiles = categories.map((category, index) => {
     // Öncelik: kare kutucuk için özel yüklenen görsel (tile_image_url) →
-    // kategori sayfasının geniş banner'ı (kırpılarak) → kategorideki bir
-    // ürünün fotoğrafı.
+    // kategori sayfasının geniş banner'ı (kırpılarak) → kategorideki (alt
+    // kategoriler dahil) bir ürünün fotoğrafı. Burada gösterilen kategoriler
+    // genelde ANA (üst) kategoriler — ürünler ise her zaman en alttaki
+    // yaprak kategoriye atanır, bu yüzden sadece tam category_id eşleşmesi
+    // aramak (eski davranış) üst kategori kutucuklarını hep görselsiz
+    // bırakıyordu; alt kategori id'leri de dahil edilerek düzeltildi.
     const customImage = category.tile_image_url ?? category.banner_item?.image_url ?? null;
-    const representativeProduct = products.find((product) => product.category_id === category.id);
-    const isActive =
-      selectedCategoryId === category.id ||
-      getDescendantCategoryIds(flatCategories, category.id).includes(selectedCategoryId);
+    const categoryAndDescendantIds = new Set(getDescendantCategoryIds(flatCategories, category.id));
+    const representativeProduct = products.find((product) => categoryAndDescendantIds.has(product.category_id));
+    const isActive = selectedCategoryId === category.id || categoryAndDescendantIds.has(selectedCategoryId);
     return { category, image: customImage ?? representativeProduct?.image_url ?? null, index, isActive };
   });
 

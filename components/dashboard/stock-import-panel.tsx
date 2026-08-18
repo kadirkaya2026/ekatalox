@@ -27,7 +27,7 @@ import {
 } from "@/lib/csv/parse-stock-import";
 import type { StockImportMatchResult, StockImportMatchStatus } from "@/lib/products/stock-import-matching";
 import { buildCategoryTree, flattenCategoryTree } from "@/lib/categories/tree";
-import { getMasterCategoryGroups } from "@/lib/market-catalog/category-taxonomy";
+import { formatCategoryDisplayName, getMasterCategoryGroups } from "@/lib/market-catalog/category-taxonomy";
 import { cn } from "@/lib/utils";
 import type { Category, PriceList } from "@/lib/types";
 
@@ -383,7 +383,9 @@ function CategoryPicker({
 
   const selectedLabel = categoryId
     ? (flatCategories.find((category) => category.id === categoryId)?.name ?? null)
-    : newCategoryName;
+    : newCategoryName !== null
+      ? formatCategoryDisplayName(newCategoryName)
+      : null;
 
   const normalized = query.trim().toLocaleLowerCase("tr-TR");
 
@@ -396,11 +398,11 @@ function CategoryPicker({
 
   const matchingMasterCategories = useMemo(() => {
     if (!normalized) return [];
-    const matches: Array<{ name: string; parentName: string }> = [];
+    const matches: Array<{ rawName: string; displayName: string; parentName: string }> = [];
     for (const group of MASTER_CATEGORY_GROUPS) {
-      for (const name of group.subcategoryNames) {
-        if (name.toLocaleLowerCase("tr-TR").includes(normalized)) {
-          matches.push({ name, parentName: group.parentName });
+      for (const subcategory of group.subcategories) {
+        if (subcategory.displayName.toLocaleLowerCase("tr-TR").includes(normalized)) {
+          matches.push({ rawName: subcategory.rawName, displayName: subcategory.displayName, parentName: group.parentName });
           if (matches.length >= 8) return matches;
         }
       }
@@ -459,15 +461,15 @@ function CategoryPicker({
               </p>
               {matchingMasterCategories.map((item) => (
                 <button
-                  key={item.name}
+                  key={item.rawName}
                   type="button"
                   onClick={() => {
-                    onSelectByName(item.name);
+                    onSelectByName(item.rawName);
                     setQuery("");
                   }}
                   className="flex w-full items-center justify-between gap-2 rounded-md px-2.5 py-1.5 text-left text-sm hover:bg-sky-50"
                 >
-                  <span className="truncate">{item.name}</span>
+                  <span className="truncate">{item.displayName}</span>
                   <span className="shrink-0 text-xs text-slate-400">{item.parentName}</span>
                 </button>
               ))}
