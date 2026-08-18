@@ -8,6 +8,7 @@ import { productWithVariantsAndPricesSelect } from "@/lib/products/queries";
 import { normalizeCode } from "@/lib/products/stock-import-matching";
 import { importProductsFromMasterCatalog } from "@/lib/products/import-from-master-catalog";
 import { buildCategoryCache, ensureCategoryPath, normalizeCategoryName } from "@/lib/categories/ensure-hierarchy";
+import { resolveCategoryPath } from "@/lib/market-catalog/category-taxonomy";
 import { compactProductDisplayOrder } from "@/lib/products/reorder";
 import { getEffectiveProductLimit } from "@/lib/billing/plans";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
@@ -152,7 +153,19 @@ export async function POST(request: Request) {
       const resolvedIdByNormalizedName = new Map<string, string>();
 
       for (const rawName of uniqueNewCategoryNames) {
-        const categoryId = await ensureCategoryPath(supabase, tenant.id, categoryCache, [rawName], nextCategoryDisplayOrder);
+        // rawName Master Katalog taksonomisinde bilinen bir yaprak isimse
+        // (dropdown'dan seçildiyse — bkz. stock-import-panel.tsx)
+        // resolveCategoryPath doğru ana kategoriyi de yola ekler; bilinmeyen
+        // (serbest yazılmış) bir isimse tek elemanlı kök yol döner — davranış
+        // Master Katalog importuyla (import-from-master-catalog.ts) birebir
+        // aynı.
+        const categoryId = await ensureCategoryPath(
+          supabase,
+          tenant.id,
+          categoryCache,
+          resolveCategoryPath(rawName),
+          nextCategoryDisplayOrder,
+        );
         validCategoryIds.add(categoryId);
         categoryNameById.set(categoryId, rawName);
         resolvedIdByNormalizedName.set(normalizeCategoryName(rawName), categoryId);

@@ -415,3 +415,36 @@ export function resolveCategoryPath(categoryName: string): string[] {
   const ancestors = MARKET_CATEGORY_ANCESTORS[categoryName] ?? [];
   return [...ancestors, categoryName];
 }
+
+export interface MasterCategoryGroup {
+  parentName: string;
+  subcategoryNames: string[];
+}
+
+// Ana kategori → alt kategoriler (alfabetik) şeklinde gruplu liste — stok
+// listesi "yeni ürün oluştur" akışında (bkz. stock-import-panel.tsx)
+// kullanıcının serbest metinle kategori adı yazıp Master Katalog'un zaten
+// kürasyonlu taksonomisinden sapmasını (yazım farkı, tekrar eden benzer
+// kategori) önlemek için — buradan seçilen bir yaprak, resolveCategoryPath
+// ile aynı ana kategori altına doğru şekilde yerleşir.
+export function getMasterCategoryGroups(): MasterCategoryGroup[] {
+  const subcategoriesByParent = new Map<string, string[]>();
+
+  for (const [leaf, ancestors] of Object.entries(MARKET_CATEGORY_ANCESTORS)) {
+    const parent = ancestors[0];
+    if (!parent) continue;
+    const list = subcategoriesByParent.get(parent);
+    if (list) {
+      list.push(leaf);
+    } else {
+      subcategoriesByParent.set(parent, [leaf]);
+    }
+  }
+
+  return [...subcategoriesByParent.entries()]
+    .sort(([a], [b]) => a.localeCompare(b, "tr"))
+    .map(([parentName, subcategoryNames]) => ({
+      parentName,
+      subcategoryNames: [...subcategoryNames].sort((a, b) => a.localeCompare(b, "tr")),
+    }));
+}

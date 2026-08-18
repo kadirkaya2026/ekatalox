@@ -27,6 +27,7 @@ import {
 } from "@/lib/csv/parse-stock-import";
 import type { StockImportMatchResult, StockImportMatchStatus } from "@/lib/products/stock-import-matching";
 import { buildCategoryTree, flattenCategoryTree } from "@/lib/categories/tree";
+import { getMasterCategoryGroups } from "@/lib/market-catalog/category-taxonomy";
 import { cn } from "@/lib/utils";
 import type { Category, PriceList } from "@/lib/types";
 
@@ -100,10 +101,18 @@ const FIELD_OPTIONS: Array<{ value: StockImportFieldKey; label: string }> = [
 
 // Yeni açılan (ürünü sıfır) bir tenant'ta kategori dropdown'ı tamamen boş
 // olur — "Yeni ürün olarak oluştur" seçilmiş ama seçilecek hiçbir kategori
-// yoksa kullanıcı sıkışır. Bu sentinel değer dropdown'a ek bir seçenek
-// olarak eklenir; seçildiğinde categoryId yerine serbest metin bir
-// newCategoryName girişi açılır (bkz. ReviewRow, apply/route.ts).
-const NEW_CATEGORY_OPTION_VALUE = "__new_category__";
+// yoksa kullanıcı sıkışır. Bu sentinel, dropdown'a serbest metin girişi
+// açan bir seçenek olarak eklenir (bkz. ReviewRow, apply/route.ts).
+const FREE_TEXT_CATEGORY_OPTION_VALUE = "__free_text_category__";
+// Master Katalog'un kürasyonlu taksonomisinden (bkz.
+// lib/market-catalog/category-taxonomy.ts) bir alt kategori seçildiğinde
+// dropdown değeri bu önekle işaretlenir — böylece tenant'ın kendi
+// kategorileriyle (değeri bir UUID) ve serbest metin sentinel'iyle
+// karışmaz. Seçilen isim, apply'da resolveCategoryPath ile doğru ana
+// kategori altına yerleştirilir; serbest yazılan isimler taksonomide
+// bulunamazsa kök seviyede kalır (aynı davranış, bkz. apply/route.ts).
+const MASTER_CATEGORY_OPTION_PREFIX = "mk:";
+const MASTER_CATEGORY_GROUPS = getMasterCategoryGroups();
 
 function Dropzone({ onFile, disabled }: { onFile: (file: File) => void; disabled?: boolean }) {
   const [isDragging, setIsDragging] = useState(false);
@@ -598,11 +607,21 @@ function ReviewRow({
 
           <div className="flex flex-wrap items-center gap-2">
             <Select
-              value={decision.newCategoryName !== null ? NEW_CATEGORY_OPTION_VALUE : (decision.categoryId ?? "")}
+              value={
+                decision.newCategoryName !== null
+                  ? FREE_TEXT_CATEGORY_OPTION_VALUE
+                  : (decision.categoryId ?? "")
+              }
               onChange={(event) => {
                 const value = event.target.value;
-                if (value === NEW_CATEGORY_OPTION_VALUE) {
+                if (value === FREE_TEXT_CATEGORY_OPTION_VALUE) {
                   onDecisionChange({ ...decision, categoryId: null, newCategoryName: decision.newCategoryName ?? "" });
+                } else if (value.startsWith(MASTER_CATEGORY_OPTION_PREFIX)) {
+                  onDecisionChange({
+                    ...decision,
+                    categoryId: null,
+                    newCategoryName: value.slice(MASTER_CATEGORY_OPTION_PREFIX.length),
+                  });
                 } else {
                   onDecisionChange({ ...decision, categoryId: value || null, newCategoryName: null });
                 }
@@ -610,13 +629,26 @@ function ReviewRow({
               className="min-w-[220px]"
             >
               <option value="">Kategori seçin (zorunlu)</option>
-              {flatCategories.map((category) => (
-                <option key={category.id} value={category.id}>
-                  {"— ".repeat(category.depth)}
-                  {category.name}
-                </option>
+              {flatCategories.length ? (
+                <optgroup label="Mağazanızdaki kategoriler">
+                  {flatCategories.map((category) => (
+                    <option key={category.id} value={category.id}>
+                      {"— ".repeat(category.depth)}
+                      {category.name}
+                    </option>
+                  ))}
+                </optgroup>
+              ) : null}
+              {MASTER_CATEGORY_GROUPS.map((group) => (
+                <optgroup key={group.parentName} label={`Master Katalog — ${group.parentName}`}>
+                  {group.subcategoryNames.map((name) => (
+                    <option key={name} value={`${MASTER_CATEGORY_OPTION_PREFIX}${name}`}>
+                      {name}
+                    </option>
+                  ))}
+                </optgroup>
               ))}
-              <option value={NEW_CATEGORY_OPTION_VALUE}>+ Yeni kategori oluştur</option>
+              <option value={FREE_TEXT_CATEGORY_OPTION_VALUE}>+ Serbest kategori adı yaz</option>
             </Select>
             {decision.newCategoryName !== null ? (
               <Input
