@@ -1279,33 +1279,72 @@ async function getCachedStorefrontProductRowsPage(
         discountOnly,
       };
 
+      const escapedTerm = term ? term.replace(/[()]/g, "") : "";
+      const categoryMatch = matchCategoryIds.length ? `,category_id.in.(${matchCategoryIds.join(",")})` : "";
       const orFilter = term
-        ? (() => {
-            const escapedTerm = term.replace(/[()]/g, "");
-            const nameConditions = buildProductNameSearchClause(escapedTerm);
-            const categoryMatch = matchCategoryIds.length
-              ? `,category_id.in.(${matchCategoryIds.join(",")})`
-              : "";
-            return `${nameConditions},sku_code.ilike.%${escapedTerm}%${categoryMatch}`;
-          })()
+        ? `${buildProductNameSearchClause(escapedTerm)},sku_code.ilike.%${escapedTerm}%${categoryMatch}`
         : null;
 
-      let primaryQuery = applyStorefrontProductFilters(
-        admin
-          .from("products")
-          .select(productWithVariantsSelect, { count: "exact" })
-          .eq("tenant_id", resolvedTenantId),
-        resolvedFilter,
-        orFilter,
-      );
-      primaryQuery = primaryQuery
-        .order("display_order", { ascending: true })
-        .order("created_at", { ascending: false })
-        .range(from, to);
+      function buildQuery(select: string, useOrFilter: string | null, head: boolean) {
+        return applyStorefrontProductFilters(
+          admin!.from("products").select(select, { count: "exact", head }).eq("tenant_id", resolvedTenantId),
+          resolvedFilter,
+          useOrFilter,
+        )
+          .order("display_order", { ascending: true })
+          .order("created_at", { ascending: false });
+      }
+
+      // "su" gibi kısa/genel terimlerde ürün adı önek eşleşmesi + kategori
+      // genişletmesi ("Su & İçecek" kategorisindeki HER ürün) asıl aranan
+      // "Su" ürününü onlarca alakasız üründen alt ediyordu (kullanıcı geri
+      // bildirimi, 18 Ağu 2026, storefront'ta ekran görüntüsüyle
+      // doğrulandı). Arama varsa önce ürün adı/marka'da TAM kelime eşleşen
+      // satırlar (tier A), sonra geri kalanı (ön ek/sku/kategori — tier B)
+      // gösterilir; arama yoksa (salt kategori gezintisi) davranış aynı.
+      if (term) {
+        const strictOrFilter = buildProductNameSearchClause(escapedTerm, "product_name", true);
+        const { count: rawCountA } = await buildQuery("id", strictOrFilter, true);
+        const countA = rawCountA ?? 0;
+
+        if (countA > 0 && countA <= TIER_A_ID_EXCLUSION_CAP) {
+          const { count: rawTotal } = await buildQuery("id", orFilter, true);
+          const total = rawTotal ?? 0;
+          const products: Product[] = [];
+
+          if (from < countA) {
+            const { data: tierAData, error: tierAError } = await buildQuery(
+              productWithVariantsSelect,
+              strictOrFilter,
+              false,
+            ).range(from, Math.min(to, countA - 1));
+            if (!tierAError) products.push(...normalizeProductRows(tierAData as unknown as Array<Record<string, unknown>>));
+          }
+
+          if (to >= countA) {
+            const { data: tierAIdRows } = await buildQuery("id", strictOrFilter, false);
+            const tierAIds = ((tierAIdRows ?? []) as unknown as Array<{ id: string }>).map((row) => row.id);
+
+            let tierBQuery = buildQuery(productWithVariantsSelect, orFilter, false).range(
+              Math.max(0, from - countA),
+              to - countA,
+            );
+            if (tierAIds.length) {
+              tierBQuery = tierBQuery.not("id", "in", `(${tierAIds.join(",")})`);
+            }
+            const { data: tierBData, error: tierBError } = await tierBQuery;
+            if (!tierBError) products.push(...normalizeProductRows(tierBData as unknown as Array<Record<string, unknown>>));
+          }
+
+          return { products, total };
+        }
+      }
+
+      const primaryQuery = buildQuery(productWithVariantsSelect, orFilter, false).range(from, to);
 
       const { data, error, count } = await primaryQuery;
       if (!error) {
-        return { products: normalizeProductRows(data), total: count ?? 0 };
+        return { products: normalizeProductRows(data as unknown as Array<Record<string, unknown>>), total: count ?? 0 };
       }
 
       let fallbackQuery = applyStorefrontProductFilters(
