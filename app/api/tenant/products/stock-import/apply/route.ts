@@ -21,6 +21,46 @@ const ID_CHUNK_SIZE = 200;
 const UPSERT_CHUNK_SIZE = 500;
 const SKU_REPAIR_CONCURRENCY = 20;
 
+// Master Katalog'a sadece görseli olan (kendi Storage'ımıza yüklenmiş, dış
+// CDN hotlink değil) ürünler eklenir; diğer tenant'lar da bu ürünü katalogda
+// bulup aktarabilsin. "Yeni ürün oluştur" akışında (aşağıda) VE barkod
+// düzeltme (self-healing SKU repair) akışında aynı mantık kullanılıyor —
+// ikisi de burada birleşiyor.
+async function contributeToMasterCatalog(
+  supabase: SupabaseClient,
+  candidates: Array<{ sku_code: string; product_name: string; category_name: string; image_url: string }>,
+): Promise<number> {
+  if (!candidates.length) return 0;
+
+  const candidateSkus = [...new Set(candidates.map((c) => c.sku_code))];
+  const existingSkus = new Set<string>();
+
+  for (const skuChunk of chunkArray(candidateSkus, ID_CHUNK_SIZE)) {
+    const { data: existingRows } = await supabase
+      .from("market_catalog_products")
+      .select("sku_code")
+      .in("sku_code", skuChunk);
+
+    for (const row of existingRows ?? []) {
+      existingSkus.add(row.sku_code as string);
+    }
+  }
+
+  const newCatalogRows = candidates
+    .filter((candidate) => !existingSkus.has(candidate.sku_code))
+    .map((candidate) => ({ ...candidate, source: "tenant_stock_import" }));
+
+  if (!newCatalogRows.length) return 0;
+
+  for (const chunk of chunkArray(newCatalogRows, UPSERT_CHUNK_SIZE)) {
+    await supabase
+      .from("market_catalog_products")
+      .upsert(chunk, { onConflict: "source,sku_code", ignoreDuplicates: true });
+  }
+
+  return newCatalogRows.length;
+}
+
 async function fetchAllTenantProductIds(supabase: SupabaseClient, tenantId: string) {
   const ids: string[] = [];
   const PAGE_SIZE = 1000;
@@ -262,33 +302,7 @@ export async function POST(request: Request) {
           }
         }
 
-        if (masterCatalogCandidates.length) {
-          const candidateSkus = [...new Set(masterCatalogCandidates.map((c) => c.sku_code))];
-          const existingSkus = new Set<string>();
-
-          for (const skuChunk of chunkArray(candidateSkus, ID_CHUNK_SIZE)) {
-            const { data: existingRows } = await supabase
-              .from("market_catalog_products")
-              .select("sku_code")
-              .in("sku_code", skuChunk);
-
-            for (const row of existingRows ?? []) {
-              existingSkus.add(row.sku_code as string);
-            }
-          }
-
-          const newCatalogRows = masterCatalogCandidates
-            .filter((candidate) => !existingSkus.has(candidate.sku_code))
-            .map((candidate) => ({ ...candidate, source: "tenant_stock_import" }));
-
-          for (const chunk of chunkArray(newCatalogRows, UPSERT_CHUNK_SIZE)) {
-            await supabase
-              .from("market_catalog_products")
-              .upsert(chunk, { onConflict: "source,sku_code", ignoreDuplicates: true });
-          }
-
-          addedToMasterCatalogCount = newCatalogRows.length;
-        }
+        addedToMasterCatalogCount += await contributeToMasterCatalog(supabase, masterCatalogCandidates);
       }
     }
   }
@@ -395,16 +409,29 @@ export async function POST(request: Request) {
   if (barcodeByProductId.size) {
     const productIdsNeedingCheck = [...barcodeByProductId.keys()];
     const currentSkuByProductId = new Map<string, string>();
+    // sku_code düzeltilen ürünler aşağıda (bkz. skuUpdates sonrası)
+    // görselliyse Master Katalog'a da katkı olarak eklenir — bunun için
+    // ürün adı/görsel/kategori burada aynı sorguya alınıyor, ayrı bir
+    // round-trip'e gerek kalmıyor.
+    const productDetailsById = new Map<
+      string,
+      { productName: string; imageUrl: string | null; categoryId: string }
+    >();
 
     for (const idsChunk of chunkArray(productIdsNeedingCheck, ID_CHUNK_SIZE)) {
       const { data } = await supabase
         .from("products")
-        .select("id, sku_code")
+        .select("id, sku_code, product_name, image_url, category_id")
         .eq("tenant_id", tenant.id)
         .in("id", idsChunk);
 
       for (const row of data ?? []) {
         currentSkuByProductId.set(row.id as string, row.sku_code as string);
+        productDetailsById.set(row.id as string, {
+          productName: row.product_name as string,
+          imageUrl: row.image_url as string | null,
+          categoryId: row.category_id as string,
+        });
       }
     }
 
@@ -441,6 +468,40 @@ export async function POST(request: Request) {
             .eq("tenant_id", tenant.id),
         ),
       );
+    }
+
+    // Barkodu az önce düzeltilen (isimle/manuel eşleştirilmiş) ürünler —
+    // tenant'ta zaten görseliyle var olduklarına göre, bir sonraki tenant
+    // aynı barkodu yüklediğinde artık Master Katalog'dan barkodla (tier 1)
+    // otomatik eşleşsin diye buraya da katkı olarak eklenir. Sadece "yeni
+    // ürün oluştur" akışında değil, mevcut ürünle eşleştirmede de aynı
+    // kural: yalnızca gerçek (kendi Storage'ımıza yüklenmiş) görseli
+    // olanlar eklenir.
+    const matchedCandidateDetails = skuUpdates
+      .map(([productId, barcode]) => ({ barcode, details: productDetailsById.get(productId) }))
+      .filter(
+        (entry): entry is { barcode: string; details: { productName: string; imageUrl: string; categoryId: string } } =>
+          Boolean(entry.details?.imageUrl),
+      );
+
+    if (matchedCandidateDetails.length) {
+      const uniqueCategoryIds = [...new Set(matchedCandidateDetails.map((entry) => entry.details.categoryId))];
+      const { data: categoryRowsForMatch } = await supabase
+        .from("categories")
+        .select("id, name")
+        .in("id", uniqueCategoryIds);
+      const categoryNameByIdForMatch = new Map(
+        (categoryRowsForMatch ?? []).map((row) => [row.id as string, row.name as string]),
+      );
+
+      const matchedCandidates = matchedCandidateDetails.map((entry) => ({
+        sku_code: entry.barcode,
+        product_name: entry.details.productName,
+        category_name: categoryNameByIdForMatch.get(entry.details.categoryId) ?? "Diğer",
+        image_url: entry.details.imageUrl,
+      }));
+
+      addedToMasterCatalogCount += await contributeToMasterCatalog(supabase, matchedCandidates);
     }
   }
 
