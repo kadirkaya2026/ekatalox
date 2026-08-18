@@ -429,6 +429,21 @@ export function formatCategoryDisplayName(name: string): string {
   return isAllUppercase(name) ? toTitleCaseTr(name) : name;
 }
 
+// Aynı kavramı farklı kaynaklardan (crawler) gelen farklı isimlerle ifade
+// eden yaprak adlarını TEK bir kanonik isme yönlendirir — ör. "Enerji
+// İçecekleri" ve "Enerji & Spor İçeceği" aynı şeydi ama iki ayrı kategori
+// olarak duruyordu, "Gazlı İçecek"/"Gazlı İçecekler" de öyle (kullanıcı
+// geri bildirimi, 18 Ağu 2026 — market_catalog_products'taki mevcut
+// satırlar da bu kanonik isimlere göre bulk retag edildi). Anahtar hâlâ
+// MARKET_CATEGORY_ANCESTORS'ta ata zinciri bulmak için ham isimle
+// kullanılır — sadece dönen YAPRAK ismi burada kanonikleştirilir, böylece
+// ileride her iki ham isimle de gelen ürünler aynı tek tenant kategorisine
+// düşer.
+const CATEGORY_NAME_ALIASES: Record<string, string> = {
+  "Enerji İçecekleri": "Enerji & Spor İçeceği",
+  "Gazlı İçecek": "Gazlı İçecekler",
+};
+
 // Kök→yaprak sırayla tam yol. Arama/eşleştirme MARKET_CATEGORY_ANCESTORS'ta
 // ham `categoryName` ile yapılır (market_catalog_products.category_name'de
 // saklanan değerle birebir aynı olmalı) — sadece dönen yaprak ismi
@@ -437,8 +452,9 @@ export function formatCategoryDisplayName(name: string): string {
 // yol döner — gelecekte yeni bir alt kategori eklenirse kırılmadan düz kök
 // olarak eklenir.
 export function resolveCategoryPath(categoryName: string): string[] {
-  const ancestors = MARKET_CATEGORY_ANCESTORS[categoryName] ?? [];
-  return [...ancestors, formatCategoryDisplayName(categoryName)];
+  const canonicalName = CATEGORY_NAME_ALIASES[categoryName] ?? categoryName;
+  const ancestors = MARKET_CATEGORY_ANCESTORS[canonicalName] ?? MARKET_CATEGORY_ANCESTORS[categoryName] ?? [];
+  return [...ancestors, formatCategoryDisplayName(canonicalName)];
 }
 
 export interface MasterCategorySubcategory {
