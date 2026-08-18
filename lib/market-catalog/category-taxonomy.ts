@@ -457,6 +457,68 @@ const CATEGORY_NAME_ALIASES: Record<string, string> = {
   "Soğuk İçecek & Meşrubat": "Diğer Ürünler",
   "Soğuk ve Sıcak İçeçekler": "Diğer Ürünler",
   "Su ve Soda": "Diğer Ürünler",
+
+  // 18 Ağu 2026 — marketgo'daki tüm kategori ağacını doğru ürün sayılarıyla
+  // tarayınca (önceki tarama Supabase'in 1000 satır varsayılan limiti
+  // yüzünden yanıltıcıydı) bulunan, gerçek ürünlerle dolu tekrar çiftleri.
+  // Aynı prensip: birebir eşanlamlılar kanonik isme, karışık/genel
+  // olanlar mevcut "Diğer ..." kovasına yönlendirilir.
+  "Kefir Ayran ve Yoğurt": "Kefir ve Ayran",
+  "Kefir": "Kefir ve Ayran",
+  "Tereyağ": "Tereyağı ve Kaymak",
+  "Beyaz Peynir": "Peynir",
+  "Süzme Peynir": "Peynir",
+  "Süt ve Süt Ürünleri": "Süt",
+  "Margarin": "Krema ve Margarin",
+  "Krema Sos": "Krema ve Margarin",
+  "Bakliyat Pirinç Bulgur": "Bakliyat & Pirinç",
+  "Baharat": "Baharatlar",
+  "Turşu Konserve Garnitür": "Turşu & Konserve",
+  "Konserve Garnitür": "Turşu & Konserve",
+  "Pasta Tatlı Malzemeleri": "Pasta Malzemeleri",
+  "Bal Reçel": "Reçel, Bal ve Ezme",
+  "Reçel": "Reçel, Bal ve Ezme",
+  "Bal": "Reçel, Bal ve Ezme",
+  // Bunlar marka adı ama fiilen kategori olarak kullanılmıştı (ör. "Elidor"
+  // şampuan markası) — hepsi kendi ürün türünün kanonik kategorisine.
+  "Şampuan ve Saç Kremi": "Saç Bakım ve Şekillendirme",
+  "Şampuan": "Saç Bakım ve Şekillendirme",
+  "Saç Kremi": "Saç Bakım ve Şekillendirme",
+  "Elidor": "Saç Bakım ve Şekillendirme",
+  "Duru": "Saç Bakım ve Şekillendirme",
+  "Pantene": "Saç Bakım ve Şekillendirme",
+  "Clear": "Saç Bakım ve Şekillendirme",
+  "Head Shoulders": "Saç Bakım ve Şekillendirme",
+  "Blendax": "Saç Bakım ve Şekillendirme",
+  "Diş ve Ağız Bakımı": "Ağız ve Diş Sağlığı",
+  "Ağız Bakım Suyu": "Ağız ve Diş Sağlığı",
+  "Diş Macunu": "Ağız ve Diş Sağlığı",
+  "Sabun ve Duş Jeli": "Duş ve Banyo",
+  "Sabun Çeşitleri": "Duş ve Banyo",
+  "Sabun ve Sıvı Sabun": "Duş ve Banyo",
+  "Şampuan ve Sabun": "Duş ve Banyo",
+  "Sıvı Sabun": "Duş ve Banyo",
+  "Kolonya": "Parfüm ve Kolonya",
+  "Parfüm ve Deodorant": "Parfüm ve Kolonya",
+  "Çamaşır Yıkama Ürünleri": "Çamaşır Deterjanı",
+  "Bulaşık Yıkama Ürünleri": "Bulaşık Deterjanı",
+  "Yüzey Temizleyici": "Yüzey ve Genel Temizlik",
+  "Islak Mendil ve Havlu": "Kağıt Ürünleri ve Islak Mendil",
+  "Kağıt Ürünleri": "Kağıt Ürünleri ve Islak Mendil",
+  "Havlu Kağıt": "Kağıt Peçete Havlu",
+  "Peçete": "Kağıt Peçete Havlu",
+  "Deterjan Yumuşatıcı": "Yumuşatıcı",
+  "Buzdolabı Poşeti": "Çöp Torbaları ve Saklama Ürünleri",
+  "Çöp Torbası": "Çöp Torbaları ve Saklama Ürünleri",
+  "Kullan-At Plastik": "Çöp Torbaları ve Saklama Ürünleri",
+  "Sinek ve Böcek ilacı": "Haşere ve Böcek İlaçları",
+  // "Deterjan, Temizlik" (246 ürün — çamaşır/bulaşık/yüzey/kağıt/haşere
+  // karışık) tek bir spesifik kategoriye yönlendirilemeyecek kadar
+  // genel/karışıktı; en azından tekrar aynı isimde çöp kutusu oluşmasın
+  // diye Ev Bakım'ın kendi genel kovasına yönlendiriliyor.
+  "Deterjan, Temizlik": "Diğer Ev Bakım Ürünleri",
+  "Deterjan": "Diğer Ev Bakım Ürünleri",
+  "Temizlik": "Diğer Ev Bakım Ürünleri",
 };
 
 // Kök→yaprak sırayla tam yol. Arama/eşleştirme MARKET_CATEGORY_ANCESTORS'ta
