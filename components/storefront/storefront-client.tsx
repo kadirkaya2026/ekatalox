@@ -2710,23 +2710,18 @@ export function StorefrontClient({
 
           <div className={cn("min-h-0 flex-1 overflow-y-auto overscroll-y-contain", theme.modalSurface)}>
             {tabContent}
-
-            {relatedPreviewProducts.length ? (
-              <div className="mt-6">
-                <div className="mb-3">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-emerald-700">
-                    {t("productModal.relatedProductsEyebrow")}
-                  </p>
-                  <h3 className={cn("mt-1 text-lg font-bold tracking-tight", theme.text)}>
-                    {t("cart.youMayAlsoLike")}
-                  </h3>
-                </div>
-                <div className="scrollbar-hide -mx-1 flex gap-3 overflow-x-auto px-1 pb-1">
-                  {relatedPreviewProducts.map((product) => renderCrossSellCard(product))}
-                </div>
-              </div>
-            ) : null}
           </div>
+
+          {relatedPreviewProducts.length ? (
+            <div className="shrink-0">
+              <h3 className={cn("mb-2 text-sm font-bold tracking-tight", theme.text)}>
+                {t("productModal.relatedProductsTitle")}
+              </h3>
+              <div className="scrollbar-hide -mx-1 flex gap-3 overflow-x-auto px-1 pb-1">
+                {relatedPreviewProducts.map((product) => renderCrossSellCard(product))}
+              </div>
+            </div>
+          ) : null}
         </div>
       </Modal>
     );

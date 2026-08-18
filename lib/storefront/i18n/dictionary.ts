@@ -132,7 +132,7 @@ export const storefrontDictionary: Record<StorefrontLocale, StorefrontDictionary
     "productModal.cartonMissing": "Koli bilgisi eklenmedi.",
     "productModal.detailLoading": "Detay yükleniyor…",
     "productModal.detailLoadFailed": "Detay bilgisi yüklenemedi.",
-    "productModal.relatedProductsEyebrow": "İlgili Ürünler",
+    "productModal.relatedProductsTitle": "Bunlar da ilgini çekebilir",
 
     "addToCart.selectedModels": "Seçilen Modeller",
     "addToCart.searchPlaceholder": "Model ara (14 Pro, 12/12 PF)",
@@ -372,7 +372,7 @@ export const storefrontDictionary: Record<StorefrontLocale, StorefrontDictionary
     "productModal.cartonMissing": "Keine Kartonangabe hinterlegt.",
     "productModal.detailLoading": "Details werden geladen…",
     "productModal.detailLoadFailed": "Details konnten nicht geladen werden.",
-    "productModal.relatedProductsEyebrow": "Ähnliche Produkte",
+    "productModal.relatedProductsTitle": "Das könnte dich auch interessieren",
 
     "addToCart.selectedModels": "Ausgewählte Modelle",
     "addToCart.searchPlaceholder": "Modell suchen (14 Pro, 12/12 PF)",
@@ -611,7 +611,7 @@ export const storefrontDictionary: Record<StorefrontLocale, StorefrontDictionary
     "productModal.cartonMissing": "No carton information added.",
     "productModal.detailLoading": "Loading details…",
     "productModal.detailLoadFailed": "Could not load details.",
-    "productModal.relatedProductsEyebrow": "Related Products",
+    "productModal.relatedProductsTitle": "You might also like these",
 
     "addToCart.selectedModels": "Selected Models",
     "addToCart.searchPlaceholder": "Search model (14 Pro, 12/12 PF)",
@@ -849,7 +849,7 @@ export const storefrontDictionary: Record<StorefrontLocale, StorefrontDictionary
     "productModal.cartonMissing": "Информация о коробке не указана.",
     "productModal.detailLoading": "Загрузка информации…",
     "productModal.detailLoadFailed": "Не удалось загрузить информацию.",
-    "productModal.relatedProductsEyebrow": "Похожие товары",
+    "productModal.relatedProductsTitle": "Это тоже может вас заинтересовать",
 
     "addToCart.selectedModels": "Выбранные модели",
     "addToCart.searchPlaceholder": "Поиск модели (14 Pro, 12/12 PF)",
