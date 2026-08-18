@@ -127,8 +127,8 @@ export function containsWholeWord(haystack: string, needle: string): boolean {
  * edilebilir bir gürültü; otomatik/kör eşleştirme burayı kullanmıyor, bkz.
  * stock-import-matching.ts kendi ayrı skorlama mantığını kullanır).
  */
-function wholeWordPattern(value: string): string {
-  return `\\m${escapeRegexLiteral(value)}`;
+function wholeWordPattern(value: string, strict = false): string {
+  return `\\m${escapeRegexLiteral(value)}${strict ? "\\M" : ""}`;
 }
 
 /**
@@ -197,7 +197,13 @@ export function expandSearchTerms(term: string): string[] {
  * genişletmeleri, VE koşulunun yanında ayrı bir OR alternatifi olarak
  * korunuyor.
  */
-export function buildProductNameSearchClause(term: string, field: string = "product_name"): string {
+// strict=true: kelimenin hem başı hem sonu sınırlı (\m...\M) — yani TAM
+// kelime eşleşmesi ("su" sadece "Su" ile eşleşir, "Sucuk" ile eşleşmez).
+// Master Katalog aramasında (bkz. lib/data.ts getMarketCatalogProductsPage)
+// bu, ön-ek eşleşen geniş havuz içinde önce hangi satırların gösterileceğini
+// sıralamak için kullanılıyor — kullanıcı "su" yazınca önce "Su" olanları,
+// sonra "Sucuk" gibi sadece önekle başlayanları görmek istedi (18 Ağu 2026).
+export function buildProductNameSearchClause(term: string, field: string = "product_name", strict = false): string {
   const trimmed = term.trim();
   if (!trimmed) return "";
 
@@ -206,13 +212,13 @@ export function buildProductNameSearchClause(term: string, field: string = "prod
 
   if (words.length <= 1) {
     return expandSearchTerms(trimmed)
-      .map((t) => `${field}.imatch.${wholeWordPattern(t)}`)
+      .map((t) => `${field}.imatch.${wholeWordPattern(t, strict)}`)
       .join(",");
   }
 
-  const andOfWords = `and(${words.map((word) => `${field}.imatch.${wholeWordPattern(word)}`).join(",")})`;
+  const andOfWords = `and(${words.map((word) => `${field}.imatch.${wholeWordPattern(word, strict)}`).join(",")})`;
   const wholePhraseExtras = expandSearchTerms(trimmed).filter((t) => t !== lowerTrimmed && t !== trimmed);
-  const extraConditions = wholePhraseExtras.map((t) => `${field}.imatch.${wholeWordPattern(t)}`);
+  const extraConditions = wholePhraseExtras.map((t) => `${field}.imatch.${wholeWordPattern(t, strict)}`);
 
   return [andOfWords, ...extraConditions].join(",");
 }

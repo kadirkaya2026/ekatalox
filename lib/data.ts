@@ -756,6 +756,33 @@ export const MARKET_CATALOG_PAGE_SIZE = 50;
 // etmek (eski davranış) tarayıcıyı kilitliyordu — sunucu tarafında hem
 // sayfalanıyor hem de arama terimi TÜM tabloda (sadece o an ekrandaki
 // sayfada değil) aranıyor.
+// Arama yokken kullanılan düz sayfalama sorgusu, hem no-search hem de
+// tier A/B eşiği aşıldığında (aşağıya bak) fallback olarak kullanılıyor.
+async function fetchMarketCatalogPageByFilter(
+  supabase: NonNullable<ReturnType<typeof createSupabaseAdminClient>>,
+  orFilter: string | null,
+  from: number,
+  to: number,
+): Promise<{ products: MarketCatalogProduct[]; total: number }> {
+  let query = supabase
+    .from("market_catalog_products")
+    .select("*", { count: "exact" })
+    .order("category_name", { ascending: true })
+    .order("product_name", { ascending: true })
+    .range(from, to);
+
+  if (orFilter) query = query.or(orFilter);
+
+  const { data, count } = await query;
+  return { products: (data as MarketCatalogProduct[] | null) ?? [], total: count ?? 0 };
+}
+
+// Tam kelime eşleşen (ör. "su" -> "Su") satırların id listesi bir sonraki
+// aşamada ön ek havuzundan (tier B) hariç tutulmak için tutuluyor —
+// URL/istek uzunluğu taşmasın diye çok büyükse (TIER_A_ID_EXCLUSION_CAP)
+// bu yol tamamen atlanıp basit ön ek sıralamasına dönülür.
+const TIER_A_ID_EXCLUSION_CAP = 200;
+
 export async function getMarketCatalogProductsPage(params: {
   page: number;
   search?: string;
@@ -771,27 +798,82 @@ export async function getMarketCatalogProductsPage(params: {
   const to = from + MARKET_CATALOG_PAGE_SIZE - 1;
   const term = params.search?.trim().replace(/[,%]/g, " ").trim();
 
-  let query = supabase
-    .from("market_catalog_products")
-    .select("*", { count: "exact" })
-    .order("category_name", { ascending: true })
-    .order("product_name", { ascending: true })
-    .range(from, to);
-
-  if (term) {
-    const nameConditions = buildProductNameSearchClause(term);
-    const brandConditions = buildProductNameSearchClause(term, "brand");
-    query = query.or(
-      `${nameConditions},${brandConditions},category_name.ilike.%${term}%,sku_code.ilike.%${term}%`,
-    );
+  if (!term) {
+    return fetchMarketCatalogPageByFilter(supabase, null, from, to);
   }
 
-  const { data, count } = await query;
+  // "su" gibi kısa/genel bir terim aratıldığında ön ek eşleşmesi (bkz.
+  // buildProductNameSearchClause) "Sucuk" gibi yüzlerce alakasız sonucu da
+  // getiriyor, asıl aranan "Su" ürünleri arada kayboluyordu (kullanıcı geri
+  // bildirimi, 18 Ağu 2026). Burada iki katman kuruluyor: önce TAM kelime
+  // eşleşenler (tier A), tükenince ön ek-sadece eşleşenler (tier B) — ikisi
+  // birlikte ön ek havuzunun (tier B üst kümesi) tamamına eşit.
+  const prefixFilter = [
+    buildProductNameSearchClause(term),
+    buildProductNameSearchClause(term, "brand"),
+    `category_name.ilike.%${term}%`,
+    `sku_code.ilike.%${term}%`,
+  ].join(",");
+  // Tier A SADECE ürün adı/marka'da TAM kelime eşleşmesini sayar —
+  // category_name/sku_code'daki düz substring eşleşmesi burada YOK, aksi
+  // halde ör. "Su & İçecek" kategorisindeki HER ürün "su" için "tam eşleşme"
+  // sayılıp önceliklendirilirdi (ilk denemede yakalanan gerçek bir hata).
+  const strictFilter = [
+    buildProductNameSearchClause(term, "product_name", true),
+    buildProductNameSearchClause(term, "brand", true),
+  ].join(",");
 
-  return {
-    products: (data as MarketCatalogProduct[] | null) ?? [],
-    total: count ?? 0,
-  };
+  const { count: rawCountA } = await supabase
+    .from("market_catalog_products")
+    .select("*", { count: "exact", head: true })
+    .or(strictFilter);
+  const countA = rawCountA ?? 0;
+
+  if (countA === 0 || countA > TIER_A_ID_EXCLUSION_CAP) {
+    return fetchMarketCatalogPageByFilter(supabase, prefixFilter, from, to);
+  }
+
+  const { count: rawTotal } = await supabase
+    .from("market_catalog_products")
+    .select("*", { count: "exact", head: true })
+    .or(prefixFilter);
+  const total = rawTotal ?? 0;
+
+  const products: MarketCatalogProduct[] = [];
+
+  if (from < countA) {
+    const { data: tierARows } = await supabase
+      .from("market_catalog_products")
+      .select("*")
+      .or(strictFilter)
+      .order("category_name", { ascending: true })
+      .order("product_name", { ascending: true })
+      .range(from, Math.min(to, countA - 1));
+    products.push(...((tierARows as MarketCatalogProduct[] | null) ?? []));
+  }
+
+  if (to >= countA) {
+    const { data: tierAIdRows } = await supabase
+      .from("market_catalog_products")
+      .select("id")
+      .or(strictFilter);
+    const tierAIds = (tierAIdRows ?? []).map((row) => row.id as string);
+
+    let tierBQuery = supabase
+      .from("market_catalog_products")
+      .select("*")
+      .or(prefixFilter)
+      .order("category_name", { ascending: true })
+      .order("product_name", { ascending: true })
+      .range(Math.max(0, from - countA), to - countA);
+    if (tierAIds.length) {
+      tierBQuery = tierBQuery.not("id", "in", `(${tierAIds.join(",")})`);
+    }
+    const { data: tierBRows } = await tierBQuery;
+    products.push(...((tierBRows as MarketCatalogProduct[] | null) ?? []));
+  }
+
+  return { products, total };
 }
 
 export async function getTenantStorefrontSettings(
