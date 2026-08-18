@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { getMarketTopLevelDisplayOrder } from "@/lib/market-catalog/category-taxonomy";
 
 export function normalizeCategoryName(name: string) {
   return name.trim().toLocaleLowerCase("tr-TR");
@@ -59,13 +60,21 @@ export async function ensureCategoryPath(
       continue;
     }
 
+    // Ana kategori (parentId === null) Master Katalog'un sabit 21'li
+    // taksonomisiyle eşleşiyorsa marketgo'nun kürasyonlu sırası kullanılır
+    // (bkz. getMarketTopLevelDisplayOrder) — böylece kategori kutucukları
+    // hangi tenant/hangi sırada import edilirse edilsin aynı sırada çıkar.
+    // Eşleşme yoksa (tenant'a özgü ana kategori, ör. "Kategorisiz") eski
+    // sıralı sayaç davranışı korunur.
+    const topLevelOrder = parentId === null ? getMarketTopLevelDisplayOrder(name) : null;
+
     const { data: created, error } = await supabase
       .from("categories")
       .insert({
         tenant_id: tenantId,
         name,
         parent_id: parentId,
-        display_order: nextDisplayOrder.value++,
+        display_order: topLevelOrder ?? nextDisplayOrder.value++,
         // "Kategorisiz" — kaynak sitede kategori bilgisi olmayan Master
         // Katalog ürünlerinin düştüğü kova — storefront'ta hiçbir yerde
         // (nav, arama) görünmemeli, admin panelinde ürün yönetimi için

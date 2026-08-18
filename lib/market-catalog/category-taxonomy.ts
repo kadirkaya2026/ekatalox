@@ -534,6 +534,47 @@ export function resolveCategoryPath(categoryName: string): string[] {
   return [...ancestors, formatCategoryDisplayName(canonicalName)];
 }
 
+// marketgo tenant'ının elle kürasyonladığı ana kategori kutucuk sırası —
+// kullanıcı isteği (19 Ağu 2026), görsellerle aynı mantık: bu sıra TÜM
+// tenant'larda (mevcut ve sıfırdan açılan) ortak olmalı. Ana kategori
+// oluşturulurken (bkz. lib/categories/ensure-hierarchy.ts ensureCategoryPath)
+// buradaki index kullanılır; listede olmayan (tenant'a özgü, taksonomi dışı)
+// ana kategoriler eski sıralı sayaç davranışını korur.
+export const MARKET_TOP_LEVEL_CATEGORY_ORDER: string[] = [
+  "Su & İçecek",
+  "Atıştırmalık",
+  "Süt Ürünleri",
+  "Meyve & Sebze",
+  "Kahvaltılık",
+  "Fırından",
+  "Dondurma",
+  "Temel Gıda",
+  "Pratik Yemek",
+  "Et, Tavuk & Balık",
+  "Dondurulmuş",
+  "Fit & Form",
+  "Ev Bakım",
+  "Kişisel Bakım",
+  "Evcil Hayvan",
+  "Ev & Yaşam",
+  "Bebek",
+  "Cinsel Sağlık",
+  "Teknoloji",
+  "Alkol",
+  "Sigara",
+];
+
+// 1, elle eklenen "İndirimli Ürünler" gibi tenant'a özgü sabitlenmiş
+// kategoriler için ayrılmıştır (bkz. is_discount_category, storefront-client.tsx).
+const MARKET_TOP_LEVEL_ORDER_BASE = 2;
+
+export function getMarketTopLevelDisplayOrder(name: string): number | null {
+  const canonicalName = CATEGORY_NAME_ALIASES[name] ?? name;
+  const formatted = formatCategoryDisplayName(canonicalName);
+  const index = MARKET_TOP_LEVEL_CATEGORY_ORDER.indexOf(formatted);
+  return index === -1 ? null : index + MARKET_TOP_LEVEL_ORDER_BASE;
+}
+
 export interface MasterCategorySubcategory {
   // MARKET_CATEGORY_ANCESTORS'taki ham anahtar — resolveCategoryPath'e
   // (ve dolayısıyla apply/route.ts'teki ensureCategoryPath'e) AYNEN bu
