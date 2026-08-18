@@ -3,7 +3,6 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { getSessionContext } from "@/lib/auth/session";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { ensureTenantAdminResponse } from "@/lib/tenancy/guards";
-import { getMarketCatalogProductsPage } from "@/lib/data";
 import {
   matchStockImportRows,
   normalizeCode,
@@ -84,17 +83,27 @@ async function fetchMasterCatalogMatchesForBarcodes(
 // ürünlerinde de bulanık eşleşmesi bulunamayan satırlar için son çare:
 // Master Katalog'a karşı isimle arama. Katalog paylaşımlı ve çok büyük
 // (30k+ satır, tüm tenant'lar için ortak) olduğundan tamamını belleğe
-// çekmek yerine satır başına hedefli bir Postgres sorgusu atılır (mevcut
-// Master Katalog sayfası/arama API'siyle aynı sorgu — bkz. lib/data.ts
-// getMarketCatalogProductsPage, buildProductNameSearchClause). Çok büyük
-// dosyalarda (binlerce eşleşmeyen satır) istek süresi patlamasın diye tek
-// istekte en fazla MASTER_CATALOG_NAME_MATCH_LIMIT satır denenir — kalanlar
-// "eşleşmedi"/"gözden geçir" kalır, kullanıcı "başka ürün seç"ten Master
-// Katalog'u manuel arayabilir.
-const MASTER_CATALOG_NAME_MATCH_LIMIT = 500;
+// çekmek yerine satır başına hedefli bir Postgres sorgusu atılır.
+//
+// getMarketCatalogProductsPage (Master Katalog sayfasının kullandığı ağır
+// sorgu — exact count + isim/marka/kategori/sku 4 alanlı regex OR) BİLEREK
+// kullanılmıyor: o, kullanıcının arama kutusuna yazdığı TEK bir terim için
+// tasarlandı. Burada aynı sorgu satır başına (dosya başına yüzlerce kez)
+// tekrarlanınca 45k+ satırlık tabloda tam tarama × yüzlerce istek anlamına
+// geliyor — production'da 10sn'lik eşleştirmeyi 2+ dakikaya çıkardı (bkz.
+// olay: 18 Ağu 2026). Bunun yerine burada tek alanlı, count'suz, düz ilike
+// kullanılıyor — daha ucuz. product_name üzerinde index olmadığı için
+// (bkz. migration 0056_market_catalog.sql) bu hâlâ tam tarama, ama en az
+// tek alan × count yok × regex yok kadar hafif. Kalıcı çözüm: product_name
+// üzerinde pg_trgm GIN index (bkz. supabase/migrations, index eklenene
+// kadar bu satır başına arama MASTER_CATALOG_NAME_MATCH_LIMIT ile sınırlı
+// tutuluyor).
+const MASTER_CATALOG_NAME_MATCH_LIMIT = 200;
 const MASTER_CATALOG_NAME_MATCH_CONCURRENCY = 8;
+const MASTER_CATALOG_NAME_MATCH_CANDIDATE_CAP = 40;
 
 async function matchUnresolvedRowsAgainstMasterCatalogByName(
+  supabase: SupabaseClient,
   rows: Array<{ rowNumber: number; productName: string }>,
 ): Promise<Map<number, StockImportMasterCatalogMatch>> {
   const map = new Map<number, StockImportMasterCatalogMatch>();
@@ -120,15 +129,20 @@ async function matchUnresolvedRowsAgainstMasterCatalogByName(
         const token = pickDistinctiveSearchToken(productName);
         if (!token) return;
 
-        const { products } = await getMarketCatalogProductsPage({ page: 1, search: token });
-        if (!products.length) return;
+        const { data } = await supabase
+          .from("market_catalog_products")
+          .select("sku_code, product_name, category_name, image_url")
+          .ilike("product_name", `%${token}%`)
+          .limit(MASTER_CATALOG_NAME_MATCH_CANDIDATE_CAP);
+
+        if (!data?.length) return;
 
         const match = scoreMasterCatalogNameMatch(
           productName,
-          products.map((product) => ({
-            skuCode: product.sku_code,
-            productName: product.product_name,
-            categoryName: product.category_name,
+          data.map((product) => ({
+            skuCode: product.sku_code as string,
+            productName: product.product_name as string,
+            categoryName: product.category_name as string,
             imageUrl: product.image_url as string,
           })),
         );
@@ -202,6 +216,7 @@ export async function POST(request: Request) {
     .filter((row): row is { rowNumber: number; productName: string } => Boolean(row.productName));
 
   const masterCatalogNameMatches = await matchUnresolvedRowsAgainstMasterCatalogByName(
+    supabase,
     rowsNeedingMasterCatalogNameMatch,
   );
 
