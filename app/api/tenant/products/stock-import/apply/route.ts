@@ -7,6 +7,7 @@ import { normalizeProductRecord } from "@/lib/products/records";
 import { productWithVariantsAndPricesSelect } from "@/lib/products/queries";
 import { normalizeCode } from "@/lib/products/stock-import-matching";
 import { importProductsFromMasterCatalog } from "@/lib/products/import-from-master-catalog";
+import { buildCategoryCache, ensureCategoryPath, normalizeCategoryName } from "@/lib/categories/ensure-hierarchy";
 import { compactProductDisplayOrder } from "@/lib/products/reorder";
 import { getEffectiveProductLimit } from "@/lib/billing/plans";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
@@ -115,14 +116,59 @@ export async function POST(request: Request) {
   if (newProductRows.length) {
     const { data: categoryRows } = await supabase
       .from("categories")
-      .select("id, name")
+      .select("id, name, parent_id")
       .eq("tenant_id", tenant.id);
     const validCategoryIds = new Set((categoryRows ?? []).map((row) => row.id as string));
     const categoryNameById = new Map(
       (categoryRows ?? []).map((row) => [row.id as string, row.name as string]),
     );
 
-    const eligibleRows = newProductRows.filter((row) => validCategoryIds.has(row.newProduct.categoryId));
+    // Tenant'ta o isimde bir kategori henüz yoksa (ör. yeni açılan, ürünü
+    // sıfır bir tenant — kategori dropdown'ı UI'da tamamen boş olur)
+    // kullanıcı categoryId yerine elle bir newCategoryName girmiş olabilir.
+    // Master Katalog importundakiyle (bkz. import-from-master-catalog.ts)
+    // aynı ensureCategoryPath ile burada da oluşturulur/eşleştirilir — aynı
+    // isim birden fazla satırda geçiyorsa tek kategori olarak birleşir.
+    const rowsNeedingNewCategory = newProductRows.filter(
+      (row) => !row.newProduct.categoryId && row.newProduct.newCategoryName,
+    );
+
+    if (rowsNeedingNewCategory.length) {
+      const categoryCache = buildCategoryCache(
+        (categoryRows as Array<{ id: string; name: string; parent_id: string | null }> | null) ?? [],
+      );
+      const { data: lastCategory } = await supabase
+        .from("categories")
+        .select("display_order")
+        .eq("tenant_id", tenant.id)
+        .order("display_order", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      const nextCategoryDisplayOrder = { value: (lastCategory?.display_order ?? 0) + 1 };
+
+      const uniqueNewCategoryNames = [
+        ...new Set(rowsNeedingNewCategory.map((row) => row.newProduct.newCategoryName!.trim())),
+      ];
+      const resolvedIdByNormalizedName = new Map<string, string>();
+
+      for (const rawName of uniqueNewCategoryNames) {
+        const categoryId = await ensureCategoryPath(supabase, tenant.id, categoryCache, [rawName], nextCategoryDisplayOrder);
+        validCategoryIds.add(categoryId);
+        categoryNameById.set(categoryId, rawName);
+        resolvedIdByNormalizedName.set(normalizeCategoryName(rawName), categoryId);
+      }
+
+      for (const row of rowsNeedingNewCategory) {
+        const resolvedId = resolvedIdByNormalizedName.get(normalizeCategoryName(row.newProduct.newCategoryName!.trim()));
+        if (resolvedId) {
+          row.newProduct.categoryId = resolvedId;
+        }
+      }
+    }
+
+    const eligibleRows = newProductRows.filter(
+      (row) => row.newProduct.categoryId && validCategoryIds.has(row.newProduct.categoryId),
+    );
     skippedInvalidCategoryCount = newProductRows.length - eligibleRows.length;
 
     if (eligibleRows.length) {
@@ -153,7 +199,7 @@ export async function POST(request: Request) {
           payloadItem: {
             id: randomUUID(),
             tenant_id: tenant.id,
-            category_id: row.newProduct.categoryId,
+            category_id: row.newProduct.categoryId!,
             sku_code: row.newProduct.skuCode,
             product_name: row.newProduct.productName,
             image_url: row.newProduct.imageUrl ?? null,

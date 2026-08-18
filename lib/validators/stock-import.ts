@@ -26,12 +26,24 @@ export const stockImportApplyRowSchema = z
     // da şemayla tekrar doğrulanır (bkz. apply/route.ts).
     newProduct: z
       .object({
-        categoryId: z.string().uuid("Geçerli bir kategori seçin."),
+        categoryId: z.string().uuid("Geçerli bir kategori seçin.").nullable().optional(),
+        // categoryId yerine — tenant'ta o isimde bir kategori henüz yoksa
+        // (ör. yeni açılan, ürünü sıfır bir tenant'ta kategori dropdown'ı
+        // boş olur) kullanıcı elle yeni bir kategori adı girebilir; apply
+        // aşamasında Master Katalog importundakiyle (bkz.
+        // import-from-master-catalog.ts) aynı ensureCategoryPath ile
+        // oluşturulur/eşleştirilir. İkisinden tam olarak biri dolu olmalı
+        // (aşağıdaki .refine).
+        newCategoryName: z.string().trim().min(1, "Kategori adı gerekli.").nullable().optional(),
         productName: z.string().trim().min(1, "Ürün adı gerekli."),
         skuCode: z.string().trim().min(1, "Barkod/SKU gerekli."),
         // Yükleme akışında ayrı bir uploda-image çağrısıyla önceden
         // yüklenip Supabase Storage public URL'i olarak buraya konur.
         imageUrl: z.string().trim().url().nullable().optional(),
+      })
+      .refine((value) => Boolean(value.categoryId) || Boolean(value.newCategoryName), {
+        message: "Kategori seçin veya yeni bir kategori adı girin.",
+        path: ["categoryId"],
       })
       .nullable()
       .optional(),

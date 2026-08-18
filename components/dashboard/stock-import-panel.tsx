@@ -49,7 +49,16 @@ interface RowDecision {
   // action==="create" iken dolu — hiçbir yerde eşleşmeyen satırı tenant'ta
   // sıfırdan yeni ürün olarak oluşturmak için seçilen kategori. Kategori
   // seçilmeden bu satır "uygulamaya hazır" sayılmaz (bkz. applyCount).
+  // categoryId ile newCategoryName birbirini dışlar (biri set edilince
+  // diğeri temizlenir) — masterCatalogSkuCode/productId ikilisiyle aynı
+  // desen.
   categoryId: string | null;
+  // categoryId yerine — tenant'ta o isimde bir kategori henüz yoksa (ör.
+  // yeni açılan, ürünü sıfır bir tenant'ta kategori dropdown'ı boş olur)
+  // kullanıcı elle yeni bir kategori adı yazabilir; apply'da Master
+  // Katalog importundakiyle aynı mekanizmayla (ensureCategoryPath)
+  // oluşturulur/eşleştirilir.
+  newCategoryName: string | null;
   // action==="create" iken dosyadaki isim yerine kullanıcının elle
   // düzenleyebildiği ürün adı — boş bırakılamaz (bkz. isRowReadyForApply).
   productName: string | null;
@@ -88,6 +97,13 @@ const FIELD_OPTIONS: Array<{ value: StockImportFieldKey; label: string }> = [
   { value: "price", label: "Fiyat" },
   { value: "ignore", label: "Yoksay" },
 ];
+
+// Yeni açılan (ürünü sıfır) bir tenant'ta kategori dropdown'ı tamamen boş
+// olur — "Yeni ürün olarak oluştur" seçilmiş ama seçilecek hiçbir kategori
+// yoksa kullanıcı sıkışır. Bu sentinel değer dropdown'a ek bir seçenek
+// olarak eklenir; seçildiğinde categoryId yerine serbest metin bir
+// newCategoryName girişi açılır (bkz. ReviewRow, apply/route.ts).
+const NEW_CATEGORY_OPTION_VALUE = "__new_category__";
 
 function Dropzone({ onFile, disabled }: { onFile: (file: File) => void; disabled?: boolean }) {
   const [isDragging, setIsDragging] = useState(false);
@@ -182,6 +198,7 @@ function initialDecisionsFromResults(
           ? (result.masterCatalogMatch?.productName ?? null)
           : null,
       categoryId: null,
+      newCategoryName: null,
       productName: null,
       skuCode: null,
       imageUrl: null,
@@ -199,7 +216,7 @@ function isRowReadyForApply(decision: RowDecision) {
   if (decision.price === null) return false;
   if (decision.action === "create") {
     return (
-      Boolean(decision.categoryId) &&
+      Boolean(decision.categoryId || decision.newCategoryName?.trim()) &&
       Boolean(decision.productName?.trim()) &&
       Boolean(decision.skuCode?.trim())
     );
@@ -377,7 +394,7 @@ function ReviewRow({
   const hasResolution = Boolean(
     decision.productId ||
       decision.masterCatalogSkuCode ||
-      (isCreatingNew && decision.categoryId && decision.productName?.trim()),
+      (isCreatingNew && (decision.categoryId || decision.newCategoryName?.trim()) && decision.productName?.trim()),
   );
   const canCreateNew = Boolean(sourceRow.barcode);
   const isPending = decision.action === "pending" || decision.action === "skipped";
@@ -581,8 +598,15 @@ function ReviewRow({
 
           <div className="flex flex-wrap items-center gap-2">
             <Select
-              value={decision.categoryId ?? ""}
-              onChange={(event) => onDecisionChange({ ...decision, categoryId: event.target.value || null })}
+              value={decision.newCategoryName !== null ? NEW_CATEGORY_OPTION_VALUE : (decision.categoryId ?? "")}
+              onChange={(event) => {
+                const value = event.target.value;
+                if (value === NEW_CATEGORY_OPTION_VALUE) {
+                  onDecisionChange({ ...decision, categoryId: null, newCategoryName: decision.newCategoryName ?? "" });
+                } else {
+                  onDecisionChange({ ...decision, categoryId: value || null, newCategoryName: null });
+                }
+              }}
               className="min-w-[220px]"
             >
               <option value="">Kategori seçin (zorunlu)</option>
@@ -592,7 +616,17 @@ function ReviewRow({
                   {category.name}
                 </option>
               ))}
+              <option value={NEW_CATEGORY_OPTION_VALUE}>+ Yeni kategori oluştur</option>
             </Select>
+            {decision.newCategoryName !== null ? (
+              <Input
+                autoFocus
+                value={decision.newCategoryName}
+                onChange={(event) => onDecisionChange({ ...decision, newCategoryName: event.target.value })}
+                placeholder="Yeni kategori adı"
+                className="w-48"
+              />
+            ) : null}
             <Input
               type="number"
               min="0"
@@ -610,7 +644,7 @@ function ReviewRow({
             <Button
               type="button"
               variant="secondary"
-              onClick={() => onDecisionChange({ ...decision, action: "pending", categoryId: null })}
+              onClick={() => onDecisionChange({ ...decision, action: "pending", categoryId: null, newCategoryName: null })}
             >
               Vazgeç
             </Button>
@@ -619,8 +653,10 @@ function ReviewRow({
             <p className="text-xs font-medium text-amber-700">Ürün adı boş olamaz.</p>
           ) : !decision.skuCode?.trim() ? (
             <p className="text-xs font-medium text-amber-700">Barkod/SKU boş olamaz.</p>
-          ) : !decision.categoryId ? (
-            <p className="text-xs font-medium text-amber-700">Kategori seçilmeden bu ürün oluşturulmaz.</p>
+          ) : !decision.categoryId && !decision.newCategoryName?.trim() ? (
+            <p className="text-xs font-medium text-amber-700">
+              {decision.newCategoryName !== null ? "Yeni kategori adı boş olamaz." : "Kategori seçilmeden bu ürün oluşturulmaz."}
+            </p>
           ) : null}
         </div>
       ) : null}
@@ -641,6 +677,7 @@ function ReviewRow({
                     masterCatalogSkuCode: null,
                     masterCatalogProductName: null,
                     categoryId: null,
+                    newCategoryName: null,
                   })
                 }
                 className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:border-emerald-300 hover:bg-emerald-50"
@@ -711,6 +748,7 @@ function ReviewRow({
                   masterCatalogSkuCode: null,
                   masterCatalogProductName: null,
                   categoryId: null,
+                  newCategoryName: null,
                 })
               }
             >
@@ -741,6 +779,7 @@ function ReviewRow({
               masterCatalogSkuCode: null,
               masterCatalogProductName: null,
               categoryId: null,
+              newCategoryName: null,
             });
             setShowPicker(false);
           }}
@@ -752,6 +791,7 @@ function ReviewRow({
               masterCatalogSkuCode: product.sku_code,
               masterCatalogProductName: product.product_name,
               categoryId: null,
+              newCategoryName: null,
             });
             setShowPicker(false);
           }}
@@ -892,14 +932,16 @@ export function StockImportPanel({
         .filter((decision) => isRowReadyForApply(decision))
         .map((decision) => {
           const sourceRow = sourceRowsByRowNumber.get(decision.rowNumber);
-          const isCreatingNew = decision.action === "create" && decision.categoryId;
+          const isCreatingNew =
+            decision.action === "create" && Boolean(decision.categoryId || decision.newCategoryName?.trim());
 
           return {
             productId: isCreatingNew ? null : decision.productId,
             masterCatalogSkuCode: isCreatingNew ? null : decision.masterCatalogSkuCode,
             newProduct: isCreatingNew
               ? {
-                  categoryId: decision.categoryId!,
+                  categoryId: decision.categoryId,
+                  newCategoryName: decision.newCategoryName?.trim() || null,
                   productName: decision.productName!.trim(),
                   skuCode: decision.skuCode!.trim(),
                   imageUrl: decision.imageUrl,
