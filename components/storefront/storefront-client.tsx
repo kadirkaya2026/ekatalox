@@ -1448,6 +1448,39 @@ export function StorefrontClient({
 
     return [...crossSell, ...rest].slice(0, 10);
   }, [cart, recommendationPool, sections, storefrontSettings.recommendation_mode, recommendationSeed]);
+
+  // Ürün önizleme modalında (bkz. renderProductPreviewModal), sepet
+  // çekmecesindeki "Bunlar da hoşunuza gidebilir" bölümüyle aynı mantık:
+  // önce açılan ürünle aynı yaprak kategoriden ürünler, yeterli sayıda
+  // yoksa üst kategorinin tüm alt kategorilerine genişletilir.
+  const relatedPreviewProducts = useMemo(() => {
+    if (!previewProduct) {
+      return [];
+    }
+
+    const pool = dedupeProducts([
+      ...sections.flatMap((section) => section.products),
+      ...recommendationPool,
+    ]).filter((product) => product.id !== previewProduct.id && product.is_in_stock);
+
+    const sameLeaf = pool.filter((product) => product.category_id === previewProduct.category_id);
+
+    if (sameLeaf.length >= 4) {
+      return shuffleProductsBySeed(sameLeaf, recommendationSeed).slice(0, 10);
+    }
+
+    const lineage = getCategoryLineage(categories, previewProduct.category_id);
+    const parent = lineage.length >= 2 ? lineage[lineage.length - 2] : null;
+
+    if (!parent) {
+      return shuffleProductsBySeed(sameLeaf, recommendationSeed).slice(0, 10);
+    }
+
+    const siblingIds = new Set(getDescendantCategoryIds(categories, parent.id));
+    const broadened = pool.filter((product) => siblingIds.has(product.category_id));
+
+    return shuffleProductsBySeed(dedupeProducts([...sameLeaf, ...broadened]), recommendationSeed).slice(0, 10);
+  }, [previewProduct, sections, recommendationPool, categories, recommendationSeed]);
   const buildWhatsAppOrderMessage = useCallback(
     (pdfUrl?: string | null) => {
       return buildWhatsAppMessage({
@@ -2677,6 +2710,22 @@ export function StorefrontClient({
 
           <div className={cn("min-h-0 flex-1 overflow-y-auto overscroll-y-contain", theme.modalSurface)}>
             {tabContent}
+
+            {relatedPreviewProducts.length ? (
+              <div className="mt-6">
+                <div className="mb-3">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-emerald-700">
+                    {t("cart.suggestedProducts")}
+                  </p>
+                  <h3 className={cn("mt-1 text-lg font-bold tracking-tight", theme.text)}>
+                    {t("cart.youMayAlsoLike")}
+                  </h3>
+                </div>
+                <div className="scrollbar-hide -mx-1 flex gap-3 overflow-x-auto px-1 pb-1">
+                  {relatedPreviewProducts.map((product) => renderCrossSellCard(product))}
+                </div>
+              </div>
+            ) : null}
           </div>
         </div>
       </Modal>
