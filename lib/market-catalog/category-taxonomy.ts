@@ -385,6 +385,12 @@ export const MARKET_CATEGORY_ANCESTORS: Record<string, string[]> = {
   "Ağız Bakım Suyu": ["Kişisel Bakım"],
   "KAHVALTILIK": ["Kahvaltılık"],
   "Blendax": ["Kişisel Bakım"],
+
+  // onual_crawl kategorileri
+  "Kozmetik, Kişisel Bakım": ["Kişisel Bakım"],
+  "Giyim, Aksesuar": ["Ev & Yaşam"],
+  "Spor, Outdoor": ["Ev & Yaşam"],
+  "Elektronik": ["Teknoloji"],
 };
 
 // Kök→yaprak sırayla tam yol. Haritada olmayan adlar tek elemanlı (kendi
