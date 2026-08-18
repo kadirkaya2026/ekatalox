@@ -5,6 +5,7 @@ import type { CategoryNode } from "@/lib/categories/tree";
 import { getDescendantCategoryIds } from "@/lib/categories/tree";
 import type { BannerItem, Category, StorefrontProduct } from "@/lib/types";
 import { STOREFRONT_BANNER_SIZES, STOREFRONT_PRODUCT_GRID_SIZES } from "@/lib/storefront/image-sizes";
+import { DEFAULT_CATEGORY_ICONS } from "@/lib/storefront/default-category-icons";
 import { useStorefrontTheme } from "@/lib/storefront/theme-context";
 import { useStorefrontLocale } from "@/lib/storefront/locale-context";
 import { cn, formatCurrency } from "@/lib/utils";
@@ -213,17 +214,27 @@ export function StorefrontCategoryTiles({
 
   const tiles = categories.map((category, index) => {
     // Öncelik: kare kutucuk için özel yüklenen görsel (tile_image_url) →
-    // kategori sayfasının geniş banner'ı (kırpılarak) → kategorideki (alt
-    // kategoriler dahil) bir ürünün fotoğrafı. Burada gösterilen kategoriler
-    // genelde ANA (üst) kategoriler — ürünler ise her zaman en alttaki
-    // yaprak kategoriye atanır, bu yüzden sadece tam category_id eşleşmesi
-    // aramak (eski davranış) üst kategori kutucuklarını hep görselsiz
-    // bırakıyordu; alt kategori id'leri de dahil edilerek düzeltildi.
+    // kategori sayfasının geniş banner'ı (kırpılarak) → Master Katalog'un
+    // 21 ana kategorisi için elle hazırlanmış standart ikon (bkz.
+    // lib/storefront/default-category-icons.ts — marketgo'nun manuel
+    // yüklediği görsellerle aynı set, TÜM tenant'larda ortak; kullanıcı
+    // isteği, 18 Ağu 2026) → hiçbiri yoksa (özel/taksonomi dışı bir
+    // kategoriyse) son çare olarak kategorideki (alt kategoriler dahil)
+    // bir ürünün fotoğrafı. Burada gösterilen kategoriler genelde ANA
+    // (üst) kategoriler — ürünler ise her zaman en alttaki yaprak
+    // kategoriye atanır, bu yüzden ürün-fotoğrafı fallback'i alt kategori
+    // id'lerini de kapsar.
     const customImage = category.tile_image_url ?? category.banner_item?.image_url ?? null;
+    const standardIcon = DEFAULT_CATEGORY_ICONS[category.name] ?? null;
     const categoryAndDescendantIds = new Set(getDescendantCategoryIds(flatCategories, category.id));
     const representativeProduct = products.find((product) => categoryAndDescendantIds.has(product.category_id));
     const isActive = selectedCategoryId === category.id || categoryAndDescendantIds.has(selectedCategoryId);
-    const fallbackImage = customImage ?? representativeProduct?.image_url ?? categoryRepresentativeImages[category.id] ?? null;
+    const fallbackImage =
+      customImage ??
+      standardIcon ??
+      representativeProduct?.image_url ??
+      categoryRepresentativeImages[category.id] ??
+      null;
     return { category, image: fallbackImage, index, isActive };
   });
 
