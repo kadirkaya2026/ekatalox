@@ -12,6 +12,8 @@ import {
 import { AnimatePresence, motion } from "framer-motion";
 import {
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   CreditCard,
   Megaphone,
   Minus,
@@ -895,6 +897,14 @@ export function StorefrontClient({
   // geçer, ekstra kaydırma çubuğu gerekmez (kullanıcı isteği, 19 Ağu 2026).
   const [activePreviewTab, setActivePreviewTab] = useState<ProductDetailTab | null>(null);
   const [activePreviewImageIndex, setActivePreviewImageIndex] = useState(0);
+  const relatedPreviewScrollRef = useRef<HTMLDivElement>(null);
+
+  function scrollRelatedPreview(direction: "left" | "right") {
+    const container = relatedPreviewScrollRef.current;
+    if (!container) return;
+    const amount = Math.round(container.clientWidth * 0.8) * (direction === "left" ? -1 : 1);
+    container.scrollBy({ left: amount, behavior: "smooth" });
+  }
   const [previewDescription, setPreviewDescription] = useState<string | null | undefined>(
     undefined,
   );
@@ -2503,7 +2513,11 @@ export function StorefrontClient({
     );
   }
 
-  function renderCrossSellCard(product: StorefrontProduct, compact = false) {
+  function renderCrossSellCard(
+    product: StorefrontProduct,
+    compact = false,
+    onOpenDetail?: (productId: string) => void,
+  ) {
     const cartQuantity = product.has_variants
       ? cartVariantCountByProductId.get(product.id) ?? 0
       : cartQuantityByProductId.get(product.id) ?? 0;
@@ -2511,9 +2525,23 @@ export function StorefrontClient({
     return (
       <article
         key={product.id}
+        {...(onOpenDetail
+          ? {
+              role: "button" as const,
+              tabIndex: 0,
+              onClick: () => onOpenDetail(product.id),
+              onKeyDown: (event: React.KeyboardEvent) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  onOpenDetail(product.id);
+                }
+              },
+            }
+          : {})}
         className={cn(
           "relative overflow-visible rounded-[1.5rem] p-3",
           compact ? "min-w-[128px] max-w-[128px] rounded-2xl p-2" : "min-w-[182px] max-w-[182px]",
+          onOpenDetail && "cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-current/50",
           theme.border,
           theme.productThumbSurface,
           theme.elevation1,
@@ -2743,11 +2771,49 @@ export function StorefrontClient({
               <h3 className={cn("mb-2 text-sm font-bold tracking-tight", theme.text)}>
                 {t("productModal.relatedProductsTitle")}
               </h3>
-              {/* -mt-2/pt-2: kartın üstünden taşan yüzen sepete-ekle rozetinin
-                  (StorefrontFloatingCartAction) overflow-x-auto tarafından
-                  üstten kırpılmasını önler — sepet çekmecesindeki aynı çözüm. */}
-              <div className="scrollbar-hide -mx-1 -mt-2 flex gap-2.5 overflow-x-auto px-1 pb-1 pt-2">
-                {relatedPreviewProducts.map((product) => renderCrossSellCard(product, true))}
+              <div className="relative">
+                {/* -mt-2/pt-2: kartın üstünden taşan yüzen sepete-ekle rozetinin
+                    (StorefrontFloatingCartAction) overflow-x-auto tarafından
+                    üstten kırpılmasını önler — sepet çekmecesindeki aynı çözüm. */}
+                <div
+                  ref={relatedPreviewScrollRef}
+                  onWheel={(event) => {
+                    if (Math.abs(event.deltaY) <= Math.abs(event.deltaX)) return;
+                    event.currentTarget.scrollBy({ left: event.deltaY });
+                    event.preventDefault();
+                  }}
+                  className="scrollbar-hide -mx-1 -mt-2 flex gap-2.5 overflow-x-auto px-1 pb-1 pt-2"
+                >
+                  {relatedPreviewProducts.map((product) =>
+                    renderCrossSellCard(product, true, handleOpenProductDetail),
+                  )}
+                </div>
+                {relatedPreviewProducts.length > 2 ? (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => scrollRelatedPreview("left")}
+                      aria-label={t("cart.scrollLeft")}
+                      className={cn(
+                        theme.cartDrawerCloseButton,
+                        "absolute left-0 top-1/2 hidden -translate-x-1/2 -translate-y-1/2 shadow-md sm:flex",
+                      )}
+                    >
+                      <ChevronLeft className="size-5" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => scrollRelatedPreview("right")}
+                      aria-label={t("cart.scrollRight")}
+                      className={cn(
+                        theme.cartDrawerCloseButton,
+                        "absolute right-0 top-1/2 hidden -translate-y-1/2 translate-x-1/2 shadow-md sm:flex",
+                      )}
+                    >
+                      <ChevronRight className="size-5" />
+                    </button>
+                  </>
+                ) : null}
               </div>
             </div>
           ) : null}
