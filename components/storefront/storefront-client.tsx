@@ -912,6 +912,9 @@ export function StorefrontClient({
   const [previewDescriptionError, setPreviewDescriptionError] = useState<string | null>(null);
   const descriptionCacheRef = useRef(new Map<string, string | null>());
   const descriptionAbortRef = useRef<AbortController | null>(null);
+  const [relatedPreviewProducts, setRelatedPreviewProducts] = useState<StorefrontProduct[]>([]);
+  const relatedPreviewCacheRef = useRef(new Map<string, StorefrontProduct[]>());
+  const relatedPreviewAbortRef = useRef<AbortController | null>(null);
   const [recommendationSeed] = useState(() => Math.random().toString(36));
   const [selectedQuantity, setSelectedQuantity] = useState("");
   const [selectedPackageCount, setSelectedPackageCount] = useState("");
@@ -1463,38 +1466,79 @@ export function StorefrontClient({
     return [...crossSell, ...rest].slice(0, 10);
   }, [cart, recommendationPool, sections, storefrontSettings.recommendation_mode, recommendationSeed]);
 
-  // Ürün önizleme modalında (bkz. renderProductPreviewModal), sepet
-  // çekmecesindeki "Bunlar da hoşunuza gidebilir" bölümüyle aynı mantık:
-  // önce açılan ürünle aynı yaprak kategoriden ürünler, yeterli sayıda
-  // yoksa üst kategorinin tüm alt kategorilerine genişletilir.
-  const relatedPreviewProducts = useMemo(() => {
-    if (!previewProduct) {
-      return [];
-    }
-
-    const pool = dedupeProducts([
-      ...sections.flatMap((section) => section.products),
-      ...recommendationPool,
-    ]).filter((product) => product.id !== previewProduct.id && product.is_in_stock);
-
-    const sameLeaf = pool.filter((product) => product.category_id === previewProduct.category_id);
-
-    if (sameLeaf.length >= 4) {
-      return shuffleProductsBySeed(sameLeaf, recommendationSeed).slice(0, 10);
+  // Ürün önizleme modalındaki (bkz. renderProductPreviewModal) "Bunlar da
+  // ilgini çekebilir" bölümü — client'a önceden yüklenmiş sections/
+  // recommendationPool örneklem havuzuna güvenmek yerine (bu havuz
+  // tenant genelinde en fazla 300 ürünlük bir örneklem olduğundan
+  // "Fırından" gibi az ürünlü/düşük öncelikli kategoriler hiç
+  // girmeyebiliyordu — kullanıcı geri bildirimi, 19 Ağu 2026) modal her
+  // açıldığında o ürünün kategorisine özel /api/storefront/products
+  // sorgusu yapılır; kategori az ürünlüyse üst kategorinin tüm alt
+  // kategorilerine genişletilir. Aynı kategori için sonuç oturum
+  // boyunca önbelleğe alınır.
+  useEffect(() => {
+    if (!previewProduct || !subdomain) {
+      setRelatedPreviewProducts([]);
+      return;
     }
 
     const lineage = getCategoryLineage(categories, previewProduct.category_id);
     const parent = lineage.length >= 2 ? lineage[lineage.length - 2] : null;
+    const matchCategoryIds = parent
+      ? getDescendantCategoryIds(categories, parent.id)
+      : [previewProduct.category_id];
+    const cacheKey = matchCategoryIds.slice().sort().join(",");
+    const productId = previewProduct.id;
 
-    if (!parent) {
-      return shuffleProductsBySeed(sameLeaf, recommendationSeed).slice(0, 10);
+    const applyResult = (list: StorefrontProduct[]) => {
+      const filtered = list.filter((product) => product.id !== productId && product.is_in_stock);
+      setRelatedPreviewProducts(shuffleProductsBySeed(filtered, recommendationSeed).slice(0, 10));
+    };
+
+    const cached = relatedPreviewCacheRef.current.get(cacheKey);
+    if (cached) {
+      applyResult(cached);
+      return;
     }
 
-    const siblingIds = new Set(getDescendantCategoryIds(categories, parent.id));
-    const broadened = pool.filter((product) => siblingIds.has(product.category_id));
+    relatedPreviewAbortRef.current?.abort();
+    const abortController = new AbortController();
+    relatedPreviewAbortRef.current = abortController;
 
-    return shuffleProductsBySeed(dedupeProducts([...sameLeaf, ...broadened]), recommendationSeed).slice(0, 10);
-  }, [previewProduct, sections, recommendationPool, categories, recommendationSeed]);
+    void (async () => {
+      try {
+        const params = new URLSearchParams({
+          subdomain,
+          categoryIds: matchCategoryIds.join(","),
+          page: "1",
+        });
+        const response = await fetch(`/api/storefront/products?${params.toString()}`, {
+          signal: abortController.signal,
+        });
+
+        if (!response.ok) {
+          return;
+        }
+
+        const result = await response.json();
+        const fetched = Array.isArray(result.products) ? (result.products as StorefrontProduct[]) : [];
+
+        relatedPreviewCacheRef.current.set(cacheKey, fetched);
+
+        if (!abortController.signal.aborted) {
+          applyResult(fetched);
+        }
+      } catch (error) {
+        if (error instanceof DOMException && error.name === "AbortError") {
+          return;
+        }
+      }
+    })();
+
+    return () => {
+      abortController.abort();
+    };
+  }, [previewProduct, subdomain, categories, recommendationSeed]);
   const buildWhatsAppOrderMessage = useCallback(
     (pdfUrl?: string | null) => {
       return buildWhatsAppMessage({
