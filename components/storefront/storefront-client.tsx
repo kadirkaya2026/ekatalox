@@ -821,6 +821,7 @@ export function StorefrontClient({
   initialProducts,
   initialProductTotal,
   promoProducts,
+  bestSellerProducts,
   recommendationPool,
   storefrontSettings,
   sections = [],
@@ -836,6 +837,7 @@ export function StorefrontClient({
   initialProducts: StorefrontProduct[];
   initialProductTotal: number;
   promoProducts: StorefrontProduct[];
+  bestSellerProducts: StorefrontProduct[];
   recommendationPool: StorefrontProduct[];
   storefrontSettings: TenantStorefrontSettings;
   sections?: StorefrontSectionWithProducts[];
@@ -1381,6 +1383,14 @@ export function StorefrontClient({
   const heroClusterItems = storefrontSettings.hero_cluster_items ?? [];
   const showSections =
     showHomeBanner && sections.length > 0 && isHomepageBlockVisible(homepageBlocks, "showcase");
+  // "En Çok Satanlar" reorder edilebilir homepage_blocks setinin parçası
+  // değil — admin sadece aç/kapat + ürün sayısı ayarlıyor (bkz. tenant-
+  // storefront settings), konumu her zaman "Öne Çıkan Bölümler"in hemen
+  // altında sabit (aşağıda "showcase" block case'inin sonuna ekleniyor).
+  const visibleBestSellerProducts = storefrontSettings.is_best_sellers_visible
+    ? bestSellerProducts.slice(0, storefrontSettings.best_sellers_product_count)
+    : [];
+  const showBestSellers = showHomeBanner && visibleBestSellerProducts.length > 0;
   const showHeroCluster =
     showHomeBanner &&
     heroClusterItems.length >= 2 &&
@@ -2840,9 +2850,13 @@ export function StorefrontClient({
               // Noir mobilde tüm ürün blokları gizli olsa da vitrin
               // (admin'in seçtiği "öne çıkan ürünler") kategori kutucuklarının
               // hemen altında görünmeye devam etsin.
-              return showSections ? (
+              if (!showSections && !showBestSellers) {
+                return null;
+              }
+
+              return (
                 <div key="showcase" className="mb-10 space-y-10">
-                  {sections.map((section) => {
+                  {showSections ? sections.map((section) => {
                     const visibleSectionProducts = section.products.slice(0, 8);
                     const hasMore = section.products.length > 8;
                     const sectionHref = subdomain
@@ -2900,9 +2914,32 @@ export function StorefrontClient({
                         ) : null}
                       </section>
                     );
-                  })}
+                  }) : null}
+
+                  {showBestSellers ? (
+                    <section>
+                      <div className="mb-5 flex items-end justify-between gap-4">
+                        <h2 className={cn("text-2xl font-bold tracking-tight sm:text-[2rem]", theme.text)}>
+                          {storefrontSettings.best_sellers_title}
+                        </h2>
+                      </div>
+
+                      <StorefrontProductListing
+                        products={visibleBestSellerProducts}
+                        cartQuantityByProductId={cartQuantityByProductId}
+                        cartVariantCountByProductId={cartVariantCountByProductId}
+                        productCardClassName={resolvedProductCardClassName}
+                        productImageWrapClassName={resolvedProductImageWrapClassName}
+                        gridClassName={layout.sectionProductGridClass}
+                        onOpenDetail={handleOpenProductDetail}
+                        onIncrease={handleIncreaseCartItem}
+                        onDecrease={handleDecreaseCartItem}
+                        onOpenAddToCart={handleQuickAddOrOpenModal}
+                      />
+                    </section>
+                  ) : null}
                 </div>
-              ) : null;
+              );
             }
 
             if (block.id === "banner2") {

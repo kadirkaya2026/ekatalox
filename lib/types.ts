@@ -325,6 +325,7 @@ export interface TenantStorefrontSettings {
   homepage_blocks: HomepageBlock[];
   banner_items: BannerItem[];
   hero_cluster_items: BannerItem[];
+  is_hero_cluster_visible_on_mobile: boolean;
   site_tab_title: string | null;
   site_favicon_url: string | null;
   announcement_title: string | null;
@@ -374,6 +375,9 @@ export interface TenantStorefrontSettings {
   business_hours: BusinessHours;
   is_min_cart_amount_active: boolean;
   min_cart_amount: number;
+  is_best_sellers_visible: boolean;
+  best_sellers_title: string;
+  best_sellers_product_count: number;
   created_at: string;
   updated_at: string;
 }

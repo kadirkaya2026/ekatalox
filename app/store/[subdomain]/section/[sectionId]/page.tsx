@@ -164,6 +164,7 @@ export default async function SectionDetailPage(props: {
         initialProducts={sectionProducts}
         initialProductTotal={sectionProducts.length}
         promoProducts={[]}
+        bestSellerProducts={[]}
         recommendationPool={sectionProducts}
         storefrontSettings={storefrontSettings}
         sections={[]}

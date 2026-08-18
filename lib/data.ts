@@ -13,7 +13,7 @@ import {
 } from "@/lib/demo-data";
 import { shouldAllowDemoFallback } from "@/lib/env";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
-import { getCurrentMonthVisitorCountsByTenant } from "@/lib/analytics/queries";
+import { getCurrentMonthVisitorCountsByTenant, getDateRange } from "@/lib/analytics/queries";
 import { normalizeProductDescription } from "@/lib/products/description-html";
 import { normalizeProductRecord } from "@/lib/products/records";
 import { productWithVariantsAndPricesSelect } from "@/lib/products/queries";
@@ -172,6 +172,9 @@ export function getDefaultTenantStorefrontSettings(
     business_hours: DEFAULT_BUSINESS_HOURS,
     is_min_cart_amount_active: false,
     min_cart_amount: 0,
+    is_best_sellers_visible: false,
+    best_sellers_title: "En Çok Satanlar",
+    best_sellers_product_count: 8,
     updated_at: now,
   };
 }
@@ -1343,6 +1346,84 @@ export async function getStorefrontPromoProducts(params: {
   );
 
   const rows = await readPromo(params.tenantId, params.excludeCategoryIds ?? [], limit);
+  return rows.map((product) => toStorefrontProduct(product, params.priceListId, params.isCatalogOnly));
+}
+
+// "Öne Çıkan Bölümler"in aksine burada ürün listesi admin tarafından
+// seçilmiyor — son 30 gündeki gerçek storefront_analytics_product_daily.
+// cart_add_count toplamına göre otomatik hesaplanıyor (bkz. showcase-manager
+// ile karıştırılmasın, o elle seçilen storefront_sections'ı yönetir).
+const BEST_SELLER_CANDIDATE_LIMIT = 100;
+
+export async function getStorefrontBestSellerProducts(params: {
+  tenantId: string;
+  priceListId: string;
+  isCatalogOnly: boolean;
+  excludeCategoryIds?: string[];
+  limit?: number;
+}): Promise<StorefrontProduct[]> {
+  const supabaseAdmin = createSupabaseAdminClient();
+  const limit = params.limit ?? 8;
+
+  if (!supabaseAdmin) {
+    return [];
+  }
+
+  const readBestSellers = unstable_cache(
+    async (tenantId: string, excludeCategoryIds: string[], resolvedLimit: number) => {
+      const admin = createSupabaseAdminClient();
+      if (!admin) return [] as Product[];
+
+      const { startDate, endDate } = getDateRange("monthly");
+
+      const { data: statRows } = await admin
+        .from("storefront_analytics_product_daily")
+        .select("product_id, cart_add_count")
+        .eq("tenant_id", tenantId)
+        .gte("stat_date", startDate)
+        .lte("stat_date", endDate);
+
+      if (!statRows?.length) return [] as Product[];
+
+      const cartAddByProductId = new Map<string, number>();
+      for (const row of statRows as Array<{ product_id: string; cart_add_count: number | null }>) {
+        const current = cartAddByProductId.get(row.product_id) ?? 0;
+        cartAddByProductId.set(row.product_id, current + (row.cart_add_count ?? 0));
+      }
+
+      const rankedProductIds = [...cartAddByProductId.entries()]
+        .filter(([, count]) => count > 0)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, BEST_SELLER_CANDIDATE_LIMIT)
+        .map(([productId]) => productId);
+
+      if (!rankedProductIds.length) return [] as Product[];
+
+      let query = admin
+        .from("products")
+        .select(productWithVariantsSelect)
+        .eq("tenant_id", tenantId)
+        .eq("is_in_stock", true)
+        .in("id", rankedProductIds);
+      if (excludeCategoryIds.length) {
+        query = query.not("category_id", "in", `(${excludeCategoryIds.join(",")})`);
+      }
+
+      const { data } = await query;
+      const products = normalizeProductRows(data);
+      const productById = new Map(products.map((product) => [product.id, product]));
+
+      // Sıralamayı cart_add_count'a göre koru — .in() sorgusu sıra garantisi vermez.
+      return rankedProductIds
+        .map((id) => productById.get(id))
+        .filter((product): product is Product => Boolean(product))
+        .slice(0, resolvedLimit);
+    },
+    [params.tenantId],
+    { tags: [`storefront_${params.tenantId}`], revalidate: 300 },
+  );
+
+  const rows = await readBestSellers(params.tenantId, params.excludeCategoryIds ?? [], limit);
   return rows.map((product) => toStorefrontProduct(product, params.priceListId, params.isCatalogOnly));
 }
 

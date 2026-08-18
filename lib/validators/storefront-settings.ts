@@ -335,6 +335,19 @@ export const storefrontSettingsSchema = z
     min_cart_amount: z.coerce
       .number()
       .min(0, "Minimum sepet tutarı negatif olamaz."),
+    is_best_sellers_visible: z.boolean().default(false),
+    best_sellers_title: z
+      .string()
+      .trim()
+      .min(1, "Bölüm başlığı boş olamaz.")
+      .max(60, "Bölüm başlığı en fazla 60 karakter olabilir.")
+      .default("En Çok Satanlar"),
+    best_sellers_product_count: z.coerce
+      .number()
+      .int()
+      .min(4, "En az 4 ürün gösterilmeli.")
+      .max(24, "En fazla 24 ürün gösterilebilir.")
+      .default(8),
   })
   .superRefine((value, ctx) => {
     if (!value.is_always_open && !WEEKDAY_ORDER.some((day) => value.business_hours[day].is_open)) {

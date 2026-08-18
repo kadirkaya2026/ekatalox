@@ -15,6 +15,7 @@ import { StorefrontLocaleProvider } from "@/lib/storefront/locale-context";
 import { getAppearanceFromSettings } from "@/lib/storefront/theme-context";
 import { isTrialExpired } from "@/lib/billing/trial";
 import {
+  getStorefrontBestSellerProducts,
   getStorefrontProductsPage,
   getStorefrontPromoProducts,
   getStorefrontRecommendationPool,
@@ -142,7 +143,7 @@ export default async function StorefrontPage(props: PageProps<"/store/[subdomain
     isCatalogOnly: priceListState.isCatalogOnly,
   };
 
-  const [firstPage, storefrontSettings, sections, promoProducts, recommendationPool] =
+  const [firstPage, storefrontSettings, sections, promoProducts, recommendationPool, bestSellerProducts] =
     await Promise.all([
       getStorefrontProductsPage({ ...pricingParams, page: 1, excludeCategoryIds: hiddenCategoryIds }),
       getTenantStorefrontSettings(tenant.id),
@@ -153,6 +154,10 @@ export default async function StorefrontPage(props: PageProps<"/store/[subdomain
       ),
       getStorefrontPromoProducts({ ...pricingParams, excludeCategoryIds: hiddenCategoryIds }),
       getStorefrontRecommendationPool({ ...pricingParams, excludeCategoryIds: hiddenCategoryIds }),
+      // Ayarlar aynı anda çekildiği için henüz best_sellers_product_count'u
+      // bilmiyoruz — üst sınır (24) kadar çekilip gösterim sırasında admin'in
+      // seçtiği sayıya kırpılıyor (bkz. storefront-client.tsx).
+      getStorefrontBestSellerProducts({ ...pricingParams, excludeCategoryIds: hiddenCategoryIds, limit: 24 }),
     ]);
   const footerVisible = storefrontSettings.is_footer_visible;
   const headersList = await headers();
@@ -173,6 +178,7 @@ export default async function StorefrontPage(props: PageProps<"/store/[subdomain
         initialProducts={firstPage.products}
         initialProductTotal={firstPage.total}
         promoProducts={promoProducts}
+        bestSellerProducts={bestSellerProducts}
         recommendationPool={recommendationPool}
         storefrontSettings={storefrontSettings}
         sections={sections}
