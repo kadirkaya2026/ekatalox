@@ -25,7 +25,11 @@ export function useBodyScrollLock(locked: boolean) {
       body.style.position = previousPosition;
       body.style.top = previousTop;
       body.style.width = previousWidth;
-      window.scrollTo(0, scrollY);
+      // "auto" burada global `scroll-behavior: smooth` (app/globals.css)
+      // kuralına uyar ve kapanışta sayfanın en üstünden eski konumuna
+      // görünür şekilde kayması gibi bir animasyona yol açar — "instant"
+      // bu CSS kuralını atlayıp anlık zıplama sağlar.
+      window.scrollTo({ top: scrollY, left: 0, behavior: "instant" });
     };
   }, [locked]);
 }
