@@ -3,10 +3,14 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { getSessionContext } from "@/lib/auth/session";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { ensureTenantAdminResponse } from "@/lib/tenancy/guards";
+import { getMarketCatalogProductsPage } from "@/lib/data";
 import {
   matchStockImportRows,
   normalizeCode,
+  pickDistinctiveSearchToken,
+  scoreMasterCatalogNameMatch,
   type StockImportMasterCatalogMatch,
+  type StockImportMatchResult,
   type StockImportMatchStatus,
 } from "@/lib/products/stock-import-matching";
 import { stockImportMatchRequestSchema } from "@/lib/validators/stock-import";
@@ -76,6 +80,71 @@ async function fetchMasterCatalogMatchesForBarcodes(
   return map;
 }
 
+// Barkodla (ne tenant'ta ne Master Katalog'da) eşleşmeyen ve tenant'ın kendi
+// ürünlerinde de bulanık eşleşmesi bulunamayan satırlar için son çare:
+// Master Katalog'a karşı isimle arama. Katalog paylaşımlı ve çok büyük
+// (30k+ satır, tüm tenant'lar için ortak) olduğundan tamamını belleğe
+// çekmek yerine satır başına hedefli bir Postgres sorgusu atılır (mevcut
+// Master Katalog sayfası/arama API'siyle aynı sorgu — bkz. lib/data.ts
+// getMarketCatalogProductsPage, buildProductNameSearchClause). Çok büyük
+// dosyalarda (binlerce eşleşmeyen satır) istek süresi patlamasın diye tek
+// istekte en fazla MASTER_CATALOG_NAME_MATCH_LIMIT satır denenir — kalanlar
+// "eşleşmedi"/"gözden geçir" kalır, kullanıcı "başka ürün seç"ten Master
+// Katalog'u manuel arayabilir.
+const MASTER_CATALOG_NAME_MATCH_LIMIT = 500;
+const MASTER_CATALOG_NAME_MATCH_CONCURRENCY = 8;
+
+async function matchUnresolvedRowsAgainstMasterCatalogByName(
+  rows: Array<{ rowNumber: number; productName: string }>,
+): Promise<Map<number, StockImportMasterCatalogMatch>> {
+  const map = new Map<number, StockImportMasterCatalogMatch>();
+  if (!rows.length) return map;
+
+  // Aynı isim dosyada birden fazla satırda geçebilir — arama isim başına
+  // bir kez yapılır, sonuç o isme sahip tüm satırlara uygulanır.
+  const rowNumbersByName = new Map<string, number[]>();
+  for (const row of rows) {
+    const existing = rowNumbersByName.get(row.productName);
+    if (existing) {
+      existing.push(row.rowNumber);
+    } else {
+      rowNumbersByName.set(row.productName, [row.rowNumber]);
+    }
+  }
+
+  const entries = [...rowNumbersByName.entries()].slice(0, MASTER_CATALOG_NAME_MATCH_LIMIT);
+
+  for (const batch of chunkArray(entries, MASTER_CATALOG_NAME_MATCH_CONCURRENCY)) {
+    await Promise.all(
+      batch.map(async ([productName, rowNumbers]) => {
+        const token = pickDistinctiveSearchToken(productName);
+        if (!token) return;
+
+        const { products } = await getMarketCatalogProductsPage({ page: 1, search: token });
+        if (!products.length) return;
+
+        const match = scoreMasterCatalogNameMatch(
+          productName,
+          products.map((product) => ({
+            skuCode: product.sku_code,
+            productName: product.product_name,
+            categoryName: product.category_name,
+            imageUrl: product.image_url as string,
+          })),
+        );
+
+        if (match) {
+          for (const rowNumber of rowNumbers) {
+            map.set(rowNumber, match);
+          }
+        }
+      }),
+    );
+  }
+
+  return map;
+}
+
 export async function POST(request: Request) {
   const guard = await ensureTenantAdminResponse();
   if (guard) {
@@ -124,7 +193,30 @@ export async function POST(request: Request) {
 
   const masterCatalogBySkuCode = await fetchMasterCatalogMatchesForBarcodes(supabase, candidateBarcodes);
 
-  const results = matchStockImportRows(parsed.data.rows, products, masterCatalogBySkuCode);
+  const barcodeMatchedResults = matchStockImportRows(parsed.data.rows, products, masterCatalogBySkuCode);
+
+  const rowByNumber = new Map(parsed.data.rows.map((row) => [row.rowNumber, row]));
+  const rowsNeedingMasterCatalogNameMatch = barcodeMatchedResults
+    .filter((result) => result.status === "no_match" || result.status === "needs_review")
+    .map((result) => ({ rowNumber: result.rowNumber, productName: rowByNumber.get(result.rowNumber)?.productName }))
+    .filter((row): row is { rowNumber: number; productName: string } => Boolean(row.productName));
+
+  const masterCatalogNameMatches = await matchUnresolvedRowsAgainstMasterCatalogByName(
+    rowsNeedingMasterCatalogNameMatch,
+  );
+
+  const results: StockImportMatchResult[] = masterCatalogNameMatches.size
+    ? barcodeMatchedResults.map((result) => {
+        const nameMatch = masterCatalogNameMatches.get(result.rowNumber);
+        if (!nameMatch) return result;
+        return {
+          ...result,
+          status: "matched_master_catalog" as StockImportMatchStatus,
+          matchedProductId: null,
+          masterCatalogMatch: nameMatch,
+        };
+      })
+    : barcodeMatchedResults;
 
   const summary = results.reduce(
     (acc, result) => {

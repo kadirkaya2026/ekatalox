@@ -2,6 +2,7 @@
 
 import {
   useCallback,
+  useEffect,
   useMemo,
   useRef,
   useState,
@@ -40,6 +41,11 @@ interface RowDecision {
   // için dolu — productId ile birbirini dışlar (biri set edilince diğeri
   // temizlenir). Apply isteğinde productId yerine bu gönderilir.
   masterCatalogSkuCode: string | null;
+  // masterCatalogSkuCode dolu olduğunda gösterilecek ürün adı — otomatik
+  // eşleşmede result.masterCatalogMatch'ten, "başka ürün seç" ile Master
+  // Katalog'dan manuel seçimde ProductPicker'dan gelir (result nesnesi bu
+  // durumda güncellenmediği için ekranda göstermek için ayrıca saklanır).
+  masterCatalogProductName: string | null;
   // action==="create" iken dolu — hiçbir yerde eşleşmeyen satırı tenant'ta
   // sıfırdan yeni ürün olarak oluşturmak için seçilen kategori. Kategori
   // seçilmeden bu satır "uygulamaya hazır" sayılmaz (bkz. applyCount).
@@ -171,6 +177,10 @@ function initialDecisionsFromResults(
       productId: isAutoMatch ? result.matchedProductId : null,
       masterCatalogSkuCode:
         isAutoMatch && result.status === "matched_master_catalog" ? (result.masterCatalogMatch?.skuCode ?? null) : null,
+      masterCatalogProductName:
+        isAutoMatch && result.status === "matched_master_catalog"
+          ? (result.masterCatalogMatch?.productName ?? null)
+          : null,
       categoryId: null,
       productName: null,
       skuCode: null,
@@ -200,14 +210,31 @@ function isRowReadyForApply(decision: RowDecision) {
   );
 }
 
+interface MasterCatalogSearchEntry {
+  sku_code: string;
+  product_name: string;
+  category_name: string;
+}
+
+// productPool sadece tenant'ın ZATEN mağazasına eklediği ürünleri içerir —
+// yeni açılan bir tenant'ın ürünü sıfırdır, dosyadaki hemen hemen hiçbir
+// satır burada bulunamaz. Bu yüzden aynı arama kutusu, mevcut ürünlerin
+// yanı sıra paylaşımlı Master Katalog'da da (debounce'lu, sunucu taraflı,
+// /api/tenant/products/market-catalog — Master Katalog sayfasıyla aynı
+// Türkçe-fonetik-farkında arama) sonuç gösterir; kullanıcı oradan seçince
+// satır "matched_master_catalog" gibi işlenir (apply'da otomatik aktarılır).
 function ProductPicker({
   productPool,
   onSelect,
+  onSelectMasterCatalog,
 }: {
   productPool: ProductPoolEntry[];
   onSelect: (product: ProductPoolEntry) => void;
+  onSelectMasterCatalog: (product: MasterCatalogSearchEntry) => void;
 }) {
   const [query, setQuery] = useState("");
+  const [masterCatalogMatches, setMasterCatalogMatches] = useState<MasterCatalogSearchEntry[]>([]);
+  const [masterCatalogPending, setMasterCatalogPending] = useState(false);
 
   const matches = useMemo(() => {
     const normalized = query.trim().toLocaleLowerCase("tr-TR");
@@ -222,6 +249,40 @@ function ProductPicker({
       .slice(0, 8);
   }, [productPool, query]);
 
+  useEffect(() => {
+    const trimmed = query.trim();
+    // Boş sorguda hiçbir şey sıfırlamıyoruz — bölüm zaten JSX'te
+    // `query.trim() ? ... : null` ile gizleniyor, bu yüzden eski
+    // sonuçların state'te kalması görünürde bir fark yaratmıyor; effect'i
+    // salt asenkron fetch'e ayırmak (senkron setState resetlemeden)
+    // react-hooks/set-state-in-effect kuralıyla da uyumlu.
+    if (!trimmed) {
+      return;
+    }
+
+    const controller = new AbortController();
+    setMasterCatalogPending(true);
+    const timeoutId = setTimeout(() => {
+      fetch(`/api/tenant/products/market-catalog?q=${encodeURIComponent(trimmed)}&page=1`, {
+        signal: controller.signal,
+      })
+        .then((response) => (response.ok ? response.json() : null))
+        .then((data: { products: MasterCatalogSearchEntry[] } | null) => {
+          setMasterCatalogMatches((data?.products ?? []).slice(0, 8));
+        })
+        .catch(() => {
+          // AbortError, kullanıcı yazmaya devam ederken önceki isteğin iptal
+          // edilmesinden kaynaklanır — sessizce yoksayılır.
+        })
+        .finally(() => setMasterCatalogPending(false));
+    }, 300);
+
+    return () => {
+      clearTimeout(timeoutId);
+      controller.abort();
+    };
+  }, [query]);
+
   return (
     <div className="mt-2">
       <div className="relative">
@@ -234,18 +295,45 @@ function ProductPicker({
         />
       </div>
       {matches.length ? (
-        <div className="mt-2 max-h-48 space-y-1 overflow-y-auto rounded-lg border border-slate-100 p-1">
-          {matches.map((product) => (
-            <button
-              key={product.id}
-              type="button"
-              onClick={() => onSelect(product)}
-              className="flex w-full items-center justify-between gap-2 rounded-md px-2.5 py-1.5 text-left text-sm hover:bg-slate-50"
-            >
-              <span className="truncate font-medium text-slate-800">{product.product_name}</span>
-              <span className="shrink-0 text-xs text-slate-400">{product.sku_code}</span>
-            </button>
-          ))}
+        <div className="mt-2">
+          <p className="px-1 text-[11px] font-medium uppercase tracking-wide text-slate-400">Mağazanızdaki ürünler</p>
+          <div className="mt-1 max-h-40 space-y-1 overflow-y-auto rounded-lg border border-slate-100 p-1">
+            {matches.map((product) => (
+              <button
+                key={product.id}
+                type="button"
+                onClick={() => onSelect(product)}
+                className="flex w-full items-center justify-between gap-2 rounded-md px-2.5 py-1.5 text-left text-sm hover:bg-slate-50"
+              >
+                <span className="truncate font-medium text-slate-800">{product.product_name}</span>
+                <span className="shrink-0 text-xs text-slate-400">{product.sku_code}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      ) : null}
+      {query.trim() ? (
+        <div className="mt-2">
+          <p className="px-1 text-[11px] font-medium uppercase tracking-wide text-slate-400">
+            Master Katalog{masterCatalogPending ? " • aranıyor..." : ""}
+          </p>
+          {masterCatalogMatches.length ? (
+            <div className="mt-1 max-h-40 space-y-1 overflow-y-auto rounded-lg border border-slate-100 p-1">
+              {masterCatalogMatches.map((product) => (
+                <button
+                  key={product.sku_code}
+                  type="button"
+                  onClick={() => onSelectMasterCatalog(product)}
+                  className="flex w-full items-center justify-between gap-2 rounded-md px-2.5 py-1.5 text-left text-sm hover:bg-sky-50"
+                >
+                  <span className="truncate font-medium text-slate-800">{product.product_name}</span>
+                  <span className="shrink-0 text-xs text-slate-400">{product.category_name}</span>
+                </button>
+              ))}
+            </div>
+          ) : !masterCatalogPending ? (
+            <p className="px-1 py-1 text-xs text-slate-400">Master Katalog&apos;da sonuç bulunamadı.</p>
+          ) : null}
         </div>
       ) : null}
     </div>
@@ -277,11 +365,12 @@ function ReviewRow({
   const imageInputRef = useRef<HTMLInputElement>(null);
   const matchedProduct = decision.productId
     ? productById.get(decision.productId)
-    : decision.masterCatalogSkuCode && result.masterCatalogMatch
+    : decision.masterCatalogSkuCode
       ? {
           id: "",
-          sku_code: result.masterCatalogMatch.skuCode,
-          product_name: result.masterCatalogMatch.productName,
+          sku_code: decision.masterCatalogSkuCode,
+          product_name:
+            decision.masterCatalogProductName ?? result.masterCatalogMatch?.productName ?? decision.masterCatalogSkuCode,
         }
       : null;
   const isCreatingNew = decision.action === "create";
@@ -408,7 +497,7 @@ function ReviewRow({
             {decision.action === "suggested" && "Önerildi"}
             {decision.action === "create" && "Yeni ürün"}
           </Badge>
-          {result.status === "matched_master_catalog" ? (
+          {result.status === "matched_master_catalog" || decision.masterCatalogSkuCode ? (
             <Badge className="bg-sky-100 text-sky-700">Master Katalog&apos;dan aktarılacak</Badge>
           ) : null}
         </div>
@@ -550,6 +639,7 @@ function ReviewRow({
                     action: "reassigned",
                     productId: candidate.productId,
                     masterCatalogSkuCode: null,
+                    masterCatalogProductName: null,
                     categoryId: null,
                   })
                 }
@@ -619,6 +709,7 @@ function ReviewRow({
                   action: "skipped",
                   productId: null,
                   masterCatalogSkuCode: null,
+                  masterCatalogProductName: null,
                   categoryId: null,
                 })
               }
@@ -648,6 +739,18 @@ function ReviewRow({
               action: "reassigned",
               productId: product.id,
               masterCatalogSkuCode: null,
+              masterCatalogProductName: null,
+              categoryId: null,
+            });
+            setShowPicker(false);
+          }}
+          onSelectMasterCatalog={(product) => {
+            onDecisionChange({
+              ...decision,
+              action: "reassigned",
+              productId: null,
+              masterCatalogSkuCode: product.sku_code,
+              masterCatalogProductName: product.product_name,
               categoryId: null,
             });
             setShowPicker(false);

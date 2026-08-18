@@ -176,6 +176,57 @@ function scoreNameMatch(rowName: string, candidateName: string, rowTokens: Set<s
   return Math.max(baseScore, containmentScore);
 }
 
+// Stok dosyalarında çok sık geçen ama ayırt edici olmayan birim/paket
+// kelimeleri — bunlar Master Katalog'a karşı arama terimi olarak seçilirse
+// arama hem çok geniş (binlerce alakasız sonuç) hem de yavaş olur.
+const SEARCH_TOKEN_STOPWORDS = new Set([
+  "g", "gr", "gram", "kg", "ml", "cl", "lt", "l", "litre",
+  "adet", "paket", "pk", "li", "lu", "lı", "lü", "kutu", "şişe", "poşet",
+]);
+
+// Bir satırın Master Katalog'da isimle aranması gerektiğinde (barkod
+// eşleşmedi, tenant'ın kendi ürünlerinde de bulanık eşleşme yok) hangi
+// kelimeyle arama yapılacağını seçer — en uzun (genelde en ayırt edici,
+// ör. marka/ürün adı) kelime, birim/sayı kelimeleri hariç tutularak.
+export function pickDistinctiveSearchToken(productName: string): string | null {
+  const tokens = tokenize(productName).filter(
+    (token) => token.length >= 3 && !/^\d+$/.test(token) && !SEARCH_TOKEN_STOPWORDS.has(token),
+  );
+  if (!tokens.length) return null;
+  return tokens.reduce((longest, token) => (token.length > longest.length ? token : longest));
+}
+
+// Master Katalog'dan isim aramasıyla dönen aday listesini, tenant'ın kendi
+// ürünleriyle eşleştirmede kullanılan aynı skor fonksiyonuyla değerlendirir
+// — tutarlı bir güven eşiği için otomatik onay (matched_master_catalog)
+// sadece FUZZY_HIGH eşiğini net farkla geçen tek bir aday varsa verilir.
+export function scoreMasterCatalogNameMatch(
+  rowProductName: string,
+  candidates: StockImportMasterCatalogMatch[],
+): StockImportMasterCatalogMatch | null {
+  if (!candidates.length) return null;
+
+  const rowNormalizedName = normalizeText(rowProductName);
+  const rowTokens = new Set(tokenize(rowProductName));
+
+  const scored = candidates
+    .map((candidate) => {
+      const candidateTokens = new Set(tokenize(candidate.productName));
+      const score = scoreNameMatch(rowNormalizedName, normalizeText(candidate.productName), rowTokens, candidateTokens);
+      return { candidate, score };
+    })
+    .sort((a, b) => b.score - a.score);
+
+  const top = scored[0];
+  const second = scored[1];
+
+  if (top && top.score >= FUZZY_HIGH_SCORE_THRESHOLD && (!second || top.score - second.score >= FUZZY_HIGH_MARGIN)) {
+    return top.candidate;
+  }
+
+  return null;
+}
+
 export function matchStockImportRows(
   rows: StockImportSourceRow[],
   products: TenantProductForMatching[],
