@@ -99,19 +99,11 @@ const FIELD_OPTIONS: Array<{ value: StockImportFieldKey; label: string }> = [
   { value: "ignore", label: "Yoksay" },
 ];
 
-// Yeni açılan (ürünü sıfır) bir tenant'ta kategori dropdown'ı tamamen boş
-// olur — "Yeni ürün olarak oluştur" seçilmiş ama seçilecek hiçbir kategori
-// yoksa kullanıcı sıkışır. Bu sentinel, dropdown'a serbest metin girişi
-// açan bir seçenek olarak eklenir (bkz. ReviewRow, apply/route.ts).
-const FREE_TEXT_CATEGORY_OPTION_VALUE = "__free_text_category__";
-// Master Katalog'un kürasyonlu taksonomisinden (bkz.
-// lib/market-catalog/category-taxonomy.ts) bir alt kategori seçildiğinde
-// dropdown değeri bu önekle işaretlenir — böylece tenant'ın kendi
-// kategorileriyle (değeri bir UUID) ve serbest metin sentinel'iyle
-// karışmaz. Seçilen isim, apply'da resolveCategoryPath ile doğru ana
-// kategori altına yerleştirilir; serbest yazılan isimler taksonomide
-// bulunamazsa kök seviyede kalır (aynı davranış, bkz. apply/route.ts).
-const MASTER_CATEGORY_OPTION_PREFIX = "mk:";
+// Master Katalog'un kürasyonlu taksonomisi (bkz.
+// lib/market-catalog/category-taxonomy.ts) — CategoryPicker'da aranabilir
+// seçenekler olarak sunulur. Seçilen isim apply'da resolveCategoryPath ile
+// doğru ana kategori altına yerleştirilir; serbest yazılan (taksonomide
+// bulunamayan) isimler kök seviyede kalır (bkz. apply/route.ts).
 const MASTER_CATEGORY_GROUPS = getMasterCategoryGroups();
 
 function Dropzone({ onFile, disabled }: { onFile: (file: File) => void; disabled?: boolean }) {
@@ -366,6 +358,140 @@ function ProductPicker({
   );
 }
 
+// Master Katalog taksonomisi ~400 alt kategori içeriyor — düz bir <select>
+// içinde bunları taramak pratik değil (bkz. kullanıcı geri bildirimi, 18 Ağu
+// 2026). ProductPicker ile aynı ara-yaz/tıkla-seç deseni: mağazanın kendi
+// kategorileri + Master Katalog'un tamamı isimle aranır, hiçbiri uymuyorsa
+// arama kutusundaki metinle serbest bir kategori de oluşturulabilir — ayrı
+// bir "serbest metin" moduna gerek kalmadan.
+function CategoryPicker({
+  flatCategories,
+  categoryId,
+  newCategoryName,
+  onSelectExisting,
+  onSelectByName,
+  onClear,
+}: {
+  flatCategories: Array<{ id: string; name: string; depth: number }>;
+  categoryId: string | null;
+  newCategoryName: string | null;
+  onSelectExisting: (categoryId: string) => void;
+  onSelectByName: (name: string) => void;
+  onClear: () => void;
+}) {
+  const [query, setQuery] = useState("");
+
+  const selectedLabel = categoryId
+    ? (flatCategories.find((category) => category.id === categoryId)?.name ?? null)
+    : newCategoryName;
+
+  const normalized = query.trim().toLocaleLowerCase("tr-TR");
+
+  const matchingExisting = useMemo(() => {
+    if (!normalized) return [];
+    return flatCategories
+      .filter((category) => category.name.toLocaleLowerCase("tr-TR").includes(normalized))
+      .slice(0, 8);
+  }, [flatCategories, normalized]);
+
+  const matchingMasterCategories = useMemo(() => {
+    if (!normalized) return [];
+    const matches: Array<{ name: string; parentName: string }> = [];
+    for (const group of MASTER_CATEGORY_GROUPS) {
+      for (const name of group.subcategoryNames) {
+        if (name.toLocaleLowerCase("tr-TR").includes(normalized)) {
+          matches.push({ name, parentName: group.parentName });
+          if (matches.length >= 8) return matches;
+        }
+      }
+    }
+    return matches;
+  }, [normalized]);
+
+  if (selectedLabel && !query) {
+    return (
+      <div className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm">
+        <span className="font-medium text-slate-800">{selectedLabel}</span>
+        <button type="button" onClick={onClear} className="ml-1 text-xs font-medium text-slate-400 hover:text-rose-600">
+          Değiştir
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-w-[240px]">
+      <div className="relative">
+        <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
+        <Input
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          placeholder="Kategori ara..."
+          className="pl-9"
+        />
+      </div>
+      {query.trim() ? (
+        <div className="mt-1 max-h-56 space-y-1 overflow-y-auto rounded-lg border border-slate-100 p-1">
+          {matchingExisting.length ? (
+            <>
+              <p className="px-1.5 pt-1 text-[10px] font-medium uppercase tracking-wide text-slate-400">
+                Mağazanızdaki kategoriler
+              </p>
+              {matchingExisting.map((category) => (
+                <button
+                  key={category.id}
+                  type="button"
+                  onClick={() => {
+                    onSelectExisting(category.id);
+                    setQuery("");
+                  }}
+                  className="block w-full rounded-md px-2.5 py-1.5 text-left text-sm hover:bg-slate-50"
+                >
+                  {category.name}
+                </button>
+              ))}
+            </>
+          ) : null}
+          {matchingMasterCategories.length ? (
+            <>
+              <p className="px-1.5 pt-1 text-[10px] font-medium uppercase tracking-wide text-slate-400">
+                Master Katalog
+              </p>
+              {matchingMasterCategories.map((item) => (
+                <button
+                  key={item.name}
+                  type="button"
+                  onClick={() => {
+                    onSelectByName(item.name);
+                    setQuery("");
+                  }}
+                  className="flex w-full items-center justify-between gap-2 rounded-md px-2.5 py-1.5 text-left text-sm hover:bg-sky-50"
+                >
+                  <span className="truncate">{item.name}</span>
+                  <span className="shrink-0 text-xs text-slate-400">{item.parentName}</span>
+                </button>
+              ))}
+            </>
+          ) : null}
+          {!matchingExisting.length && !matchingMasterCategories.length ? (
+            <p className="px-1.5 py-1 text-xs text-slate-400">Eşleşen kategori bulunamadı.</p>
+          ) : null}
+          <button
+            type="button"
+            onClick={() => {
+              onSelectByName(query.trim());
+              setQuery("");
+            }}
+            className="block w-full rounded-md px-2.5 py-1.5 text-left text-sm font-medium text-teal-700 hover:bg-teal-50"
+          >
+            + &quot;{query.trim()}&quot; adıyla yeni kategori oluştur
+          </button>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 function ReviewRow({
   result,
   sourceRow,
@@ -606,59 +732,14 @@ function ReviewRow({
           {imageUploadError ? <p className="text-xs font-medium text-rose-600">{imageUploadError}</p> : null}
 
           <div className="flex flex-wrap items-center gap-2">
-            <Select
-              value={
-                decision.newCategoryName !== null
-                  ? FREE_TEXT_CATEGORY_OPTION_VALUE
-                  : (decision.categoryId ?? "")
-              }
-              onChange={(event) => {
-                const value = event.target.value;
-                if (value === FREE_TEXT_CATEGORY_OPTION_VALUE) {
-                  onDecisionChange({ ...decision, categoryId: null, newCategoryName: decision.newCategoryName ?? "" });
-                } else if (value.startsWith(MASTER_CATEGORY_OPTION_PREFIX)) {
-                  onDecisionChange({
-                    ...decision,
-                    categoryId: null,
-                    newCategoryName: value.slice(MASTER_CATEGORY_OPTION_PREFIX.length),
-                  });
-                } else {
-                  onDecisionChange({ ...decision, categoryId: value || null, newCategoryName: null });
-                }
-              }}
-              className="min-w-[220px]"
-            >
-              <option value="">Kategori seçin (zorunlu)</option>
-              {flatCategories.length ? (
-                <optgroup label="Mağazanızdaki kategoriler">
-                  {flatCategories.map((category) => (
-                    <option key={category.id} value={category.id}>
-                      {"— ".repeat(category.depth)}
-                      {category.name}
-                    </option>
-                  ))}
-                </optgroup>
-              ) : null}
-              {MASTER_CATEGORY_GROUPS.map((group) => (
-                <optgroup key={group.parentName} label={`Master Katalog — ${group.parentName}`}>
-                  {group.subcategoryNames.map((name) => (
-                    <option key={name} value={`${MASTER_CATEGORY_OPTION_PREFIX}${name}`}>
-                      {name}
-                    </option>
-                  ))}
-                </optgroup>
-              ))}
-              <option value={FREE_TEXT_CATEGORY_OPTION_VALUE}>+ Serbest kategori adı yaz</option>
-            </Select>
-            {decision.newCategoryName !== null ? (
-              <Input
-                autoFocus
-                value={decision.newCategoryName}
-                onChange={(event) => onDecisionChange({ ...decision, newCategoryName: event.target.value })}
-                placeholder="Yeni kategori adı"
-                className="w-48"
-              />
-            ) : null}
+            <CategoryPicker
+              flatCategories={flatCategories}
+              categoryId={decision.categoryId}
+              newCategoryName={decision.newCategoryName}
+              onSelectExisting={(categoryId) => onDecisionChange({ ...decision, categoryId, newCategoryName: null })}
+              onSelectByName={(name) => onDecisionChange({ ...decision, categoryId: null, newCategoryName: name })}
+              onClear={() => onDecisionChange({ ...decision, categoryId: null, newCategoryName: null })}
+            />
             <Input
               type="number"
               min="0"
@@ -685,10 +766,8 @@ function ReviewRow({
             <p className="text-xs font-medium text-amber-700">Ürün adı boş olamaz.</p>
           ) : !decision.skuCode?.trim() ? (
             <p className="text-xs font-medium text-amber-700">Barkod/SKU boş olamaz.</p>
-          ) : !decision.categoryId && !decision.newCategoryName?.trim() ? (
-            <p className="text-xs font-medium text-amber-700">
-              {decision.newCategoryName !== null ? "Yeni kategori adı boş olamaz." : "Kategori seçilmeden bu ürün oluşturulmaz."}
-            </p>
+          ) : !decision.categoryId && !decision.newCategoryName ? (
+            <p className="text-xs font-medium text-amber-700">Kategori seçilmeden bu ürün oluşturulmaz.</p>
           ) : null}
         </div>
       ) : null}
