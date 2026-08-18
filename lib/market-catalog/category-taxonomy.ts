@@ -8,7 +8,7 @@
 // tüm ağaç iki seviyeli: ana kategori → alt kategori). Haritada olmayan bir isim
 // kök seviyede kalır (tek elemanlı yol).
 export const MARKET_CATEGORY_ANCESTORS: Record<string, string[]> = {
-  "Atıştırmalık & Tatlı": ["Temel Gıda"],
+  "Atıştırmalık & Tatlı": ["Atıştırmalık"],
   "Atıştırmalık Bar": ["Atıştırmalık"],
   "Atıştırmalık ve Bisküvi": ["Kahvaltılık"],
   "Atıştırmalık ve Diğer": ["Dondurulmuş"],
@@ -87,12 +87,12 @@ export const MARKET_CATEGORY_ANCESTORS: Record<string, string[]> = {
   "Helva": ["Atıştırmalık"],
   "Hijyenik Ped ve Kadın Sağlığı": ["Kişisel Bakım"],
   "Hırdavat & Oto": ["Ev & Yaşam"],
-  "Kahvaltılık Ezme & Kremalar": ["Temel Gıda"],
+  "Kahvaltılık Ezme & Kremalar": ["Kahvaltılık"],
   "Kahvaltılık Gevrek ve Granola": ["Kahvaltılık"],
   "Kahvaltılık Sos ve Diğer": ["Kahvaltılık"],
   "Kahvaltılık ve Tahıllar": ["Fit & Form"],
   "Kahve": ["Kahvaltılık"],
-  "Kahve & Çay": ["Temel Gıda"],
+  "Kahve & Çay": ["Kahvaltılık"],
   "Kamp & Piknik": ["Ev & Yaşam"],
   "Kayganlaştırıcı ve Masaj Jelleri": ["Cinsel Sağlık"],
   "Kağıt Ürünleri ve Islak Mendil": ["Ev Bakım"],
