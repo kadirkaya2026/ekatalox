@@ -835,7 +835,14 @@ function ReviewRow({
           <Button type="button" variant="secondary" onClick={() => setShowPicker((current) => !current)}>
             Başka ürün seç
           </Button>
-          {!hasResolution && !isCreatingNew && canCreateNew ? (
+          {/* hasResolution şartı YOK — bir satır zaten bir ürünle eşleştirilmiş
+              olsa bile (candidate chip / "başka ürün seç") kullanıcı o eşleşmeyi
+              istemeyip yeni ürün oluşturmaya geçebilmeli. Önceki hâliyle
+              hasResolution true olunca bu buton tamamen kayboluyor, kullanıcı
+              "başka ürün seç"te aradığını bulamayınca sıkışıyordu (bildirim,
+              18 Ağu 2026). productId/masterCatalogSkuCode burada temizleniyor,
+              aksi hâlde matchedProduct eski eşleşmeyi göstermeye devam ederdi. */}
+          {!isCreatingNew && canCreateNew ? (
             <Button
               type="button"
               variant="secondary"
@@ -843,6 +850,9 @@ function ReviewRow({
                 onDecisionChange({
                   ...decision,
                   action: "create",
+                  productId: null,
+                  masterCatalogSkuCode: null,
+                  masterCatalogProductName: null,
                   productName: decision.productName ?? sourceRow.productName ?? "",
                   skuCode: decision.skuCode ?? sourceRow.barcode ?? "",
                 })
