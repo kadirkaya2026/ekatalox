@@ -116,12 +116,19 @@ export function containsWholeWord(haystack: string, needle: string): boolean {
 
 /**
  * Postgres `~*` (PostgREST `imatch`) ile kullanılacak, Türkçe karakterleri
- * doğru tanıyan kelime-sınırlı bir regex deseni üretir (`\m`/`\M` Postgres'e
- * özgü kelime başı/sonu işaretleridir, ASCII olmayan harfleri de kelime
- * karakteri sayar — canlı ortamda doğrulandı).
+ * doğru tanıyan KELİME BAŞI sınırlı bir regex deseni üretir (`\m` Postgres'e
+ * özgü kelime başı işaretidir, ASCII olmayan harfleri de kelime karakteri
+ * sayar — canlı ortamda doğrulandı). Bilerek sadece BAŞLANGIÇ sınırlı —
+ * sonda `\M` de olsaydı "lund" araması "Lunda"yı bulamazdı (kullanıcı geri
+ * bildirimi, 18 Ağu 2026: "lund" hiçbir şey bulmuyor ama "lunda" buluyordu).
+ * Başlangıç sınırı yine de "kola" aramasının "çikolata" gibi kelimenin
+ * ORTASINA gömülü geçmesini engeller — sadece "kola" ile BAŞLAYAN kelimeler
+ * eşleşir (ör. "kolay" da eşleşir, ama bu satır arama kutusu için kabul
+ * edilebilir bir gürültü; otomatik/kör eşleştirme burayı kullanmıyor, bkz.
+ * stock-import-matching.ts kendi ayrı skorlama mantığını kullanır).
  */
 function wholeWordPattern(value: string): string {
-  return `\\m${escapeRegexLiteral(value)}\\M`;
+  return `\\m${escapeRegexLiteral(value)}`;
 }
 
 /**
