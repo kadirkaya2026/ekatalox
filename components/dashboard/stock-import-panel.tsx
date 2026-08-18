@@ -930,7 +930,9 @@ export function StockImportPanel({
     skippedInvalidCount: number;
     importedFromMasterCatalogCount: number;
     skippedForCatalogLimitCount: number;
+    skippedImportFailedCount: number;
     createdProductCount: number;
+    skippedInvalidCategoryCount: number;
     skippedForNewProductLimitCount: number;
     addedToMasterCatalogCount: number;
   } | null>(null);
@@ -1033,6 +1035,14 @@ export function StockImportPanel({
 
   const pendingCount = [...decisions.values()].filter((d) => d.action === "pending").length;
   const applyCount = [...decisions.values()].filter((d) => isRowReadyForApply(d)).length;
+  // "Yeni ürün olarak oluştur" seçilip kategori/fiyat gibi zorunlu bir alan
+  // boş bırakılan satırlar isRowReadyForApply'de false döner ve applyCount'a
+  // hiç girmez — Uygula'ya basıldığında bu satırlar sessizce atlanırdı,
+  // kullanıcı "oluşturdum" sandığı ürünlerin hiç oluşmadığını fark etmeden.
+  // Bu sayaç "Uygula"nın yanında ayrıca gösterilir (bkz. aşağıdaki kart).
+  const incompleteCreateCount = [...decisions.values()].filter(
+    (d) => d.action === "create" && !isRowReadyForApply(d),
+  ).length;
 
   async function applyChanges() {
     setError(null);
@@ -1086,7 +1096,9 @@ export function StockImportPanel({
         skippedInvalidCount: result.skippedInvalidCount,
         importedFromMasterCatalogCount: result.importedFromMasterCatalogCount ?? 0,
         skippedForCatalogLimitCount: result.skippedForCatalogLimitCount ?? 0,
+        skippedImportFailedCount: result.skippedImportFailedCount ?? 0,
         createdProductCount: result.createdProductCount ?? 0,
+        skippedInvalidCategoryCount: result.skippedInvalidCategoryCount ?? 0,
         skippedForNewProductLimitCount: result.skippedForNewProductLimitCount ?? 0,
         addedToMasterCatalogCount: result.addedToMasterCatalogCount ?? 0,
       });
@@ -1134,6 +1146,12 @@ export function StockImportPanel({
             : ""}
           {applyResult.skippedForNewProductLimitCount
             ? ` ${applyResult.skippedForNewProductLimitCount} yeni ürün, ürün limitiniz nedeniyle oluşturulamadı.`
+            : ""}
+          {applyResult.skippedInvalidCategoryCount
+            ? ` ${applyResult.skippedInvalidCategoryCount} yeni ürün, geçerli bir kategori bulunamadığı için oluşturulamadı.`
+            : ""}
+          {applyResult.skippedImportFailedCount
+            ? ` ${applyResult.skippedImportFailedCount} satır Master Katalog'dan aktarılamadığı için atlandı.`
             : ""}
         </p>
         <div className="mt-4 flex gap-2">
@@ -1368,13 +1386,21 @@ export function StockImportPanel({
           </div>
 
           <Card className="sticky bottom-4 flex flex-wrap items-center justify-between gap-3 p-4 shadow-lg">
-            <p className="text-sm text-slate-600">
-              {applyCount} ürün stoğa açılıp fiyatı güncellenecek
-              {selectedPriceListId
-                ? ` (${priceLists.find((list) => list.id === selectedPriceListId)?.name ?? ""})`
-                : ""}
-              .
-            </p>
+            <div>
+              <p className="text-sm text-slate-600">
+                {applyCount} ürün stoğa açılıp fiyatı güncellenecek
+                {selectedPriceListId
+                  ? ` (${priceLists.find((list) => list.id === selectedPriceListId)?.name ?? ""})`
+                  : ""}
+                .
+              </p>
+              {incompleteCreateCount ? (
+                <p className="mt-1 text-sm font-medium text-amber-700">
+                  {incompleteCreateCount} yeni ürün, kategori veya fiyat eksik olduğu için uygulanmayacak — yukarıda
+                  eksik olan satırları tamamla.
+                </p>
+              ) : null}
+            </div>
             <div className="flex gap-2">
               <Button type="button" variant="secondary" onClick={resetAll} disabled={isApplying}>
                 Vazgeç
