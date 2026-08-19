@@ -27,6 +27,9 @@ export interface StorefrontHeaderProps {
     | "is_logout_button_visible"
   >;
   storefrontTitle: string;
+  // Alkol/sigara bayii (tekel) tenant'larda "sepet" dili yerine "sipariş
+  // listesi" dili kullanılır (kullanıcı isteği, 20 Ağu 2026).
+  isTekel: boolean;
   tenantId: string;
   subdomain?: string;
   homeHref?: string;
@@ -77,11 +80,13 @@ function HeaderActions({
       ) : null}
       <div className="hidden text-right sm:block">
         <p className={cn("text-[10px] uppercase tracking-[0.22em]", theme.cartTotalLabel)}>
-          {t("header.cartTotal")}
+          {t(props.isTekel ? "header.cartTotalPickup" : "header.cartTotal")}
         </p>
         <div className="mt-1">
           {props.cartLength === 0 ? (
-            <p className={theme.cartTotalEmpty}>{t("header.cartEmpty")}</p>
+            <p className={theme.cartTotalEmpty}>
+              {t(props.isTekel ? "header.cartEmptyPickup" : "header.cartEmpty")}
+            </p>
           ) : props.cartTotalEntries.length ? (
             props.cartTotalEntries.map(({ currency, total }) => (
               <p key={currency} className={theme.cartTotalValue}>
@@ -99,7 +104,7 @@ function HeaderActions({
         type="button"
         onClick={props.onOpenCart}
         className={theme.cartButton}
-        aria-label={t("header.openCartAria")}
+        aria-label={t(props.isTekel ? "header.openCartAriaPickup" : "header.openCartAria")}
       >
         <ShoppingCart className="size-5" />
         <AnimatePresence>

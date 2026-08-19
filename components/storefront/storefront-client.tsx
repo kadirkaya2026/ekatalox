@@ -886,6 +886,10 @@ export function StorefrontClient({
   // adı, adresi ve telefonu zorunlu tutulur — teslimat yapan tekel/marketlerin
   // WhatsApp mesajında bu bilgiler olmadan sipariş alması istenmiyor.
   const isMarketTenant = tenant.business_type === "market";
+  // Alkol/sigara bayii (tekel) — yasal olarak dağıtım/teslimat yapamaz.
+  // true iken adres toplanmaz, sepet/checkout metinleri "sipariş listesi
+  // hazırlama" diline döner (kullanıcı isteği, 20 Ağu 2026).
+  const isTekel = tenant.is_tekel;
   const [searchInput, setSearchInput] = useState("");
   const debouncedSearchTerm = useDebouncedValue(searchInput, 250);
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>("all");
@@ -1547,9 +1551,10 @@ export function StorefrontClient({
         customerAddress: isMarketTenant ? customerAddress : undefined,
         customerPhone: isMarketTenant ? customerPhone : undefined,
         pdfUrl,
+        isTekel,
       });
     },
-    [customerReferenceName, customerAddress, customerPhone, isMarketTenant, tenant.company_name],
+    [customerReferenceName, customerAddress, customerPhone, isMarketTenant, isTekel, tenant.company_name],
   );
 
   const clearWhatsappHandoff = useCallback(() => {
@@ -1588,7 +1593,7 @@ export function StorefrontClient({
         hasValidationError = true;
       }
 
-      if (!customerAddress.trim()) {
+      if (!isTekel && !customerAddress.trim()) {
         setCustomerAddressError(t("cart.customerAddressRequiredError"));
         hasValidationError = true;
       }
@@ -1620,7 +1625,7 @@ export function StorefrontClient({
           note,
           customer_reference_name: customerReferenceName.trim(),
           customer_phone: isMarketTenant ? customerPhone.trim() : "",
-          customer_address: isMarketTenant ? customerAddress.trim() : "",
+          customer_address: isMarketTenant && !isTekel ? customerAddress.trim() : "",
           paymentMethod: isCatalogOnly ? null : selectedPaymentMethod,
           selectedInstallmentCount: isCatalogOnly ? null : selectedInstallmentCount,
           cashDiscountTiers: storefrontSettings.cash_discount_tiers ?? [],
@@ -2731,7 +2736,9 @@ export function StorefrontClient({
               !previewProduct.is_in_stock && "cursor-not-allowed opacity-50",
             )}
           >
-            {previewProduct.is_in_stock ? t("product.addToCart") : t("product.soldOut")}
+            {previewProduct.is_in_stock
+              ? t(isTekel ? "product.addToCartPickup" : "product.addToCart")
+              : t("product.soldOut")}
           </Button>
         }
       >
@@ -2887,6 +2894,7 @@ export function StorefrontClient({
         headerStyleKey={storefrontSettings.header_style_key ?? "standard"}
         storefrontSettings={storefrontSettings}
         storefrontTitle={storefrontTitle}
+        isTekel={isTekel}
         tenantId={tenant.id}
         subdomain={subdomain}
         homeHref={homeHref}
@@ -3385,6 +3393,7 @@ export function StorefrontClient({
         customerPhoneError={customerPhoneError}
         setCustomerPhoneError={setCustomerPhoneError}
         isMarketTenant={isMarketTenant}
+        isTekel={isTekel}
         recommendedProducts={recommendedProducts}
         cartPaymentSummary={cartPaymentSummary}
         cartDiscountSummary={cartDiscountSummary}
@@ -3422,7 +3431,11 @@ export function StorefrontClient({
       <Modal
         open={Boolean(selectedProduct)}
         onClose={closeAddToCartModal}
-        title={selectedProduct?.has_variants ? t("product.selectModel") : t("product.addToCart")}
+        title={
+          selectedProduct?.has_variants
+            ? t("product.selectModel")
+            : t(isTekel ? "product.addToCartPickup" : "product.addToCart")
+        }
         contentScroll={!selectedProduct?.has_variants}
         sheet={Boolean(selectedProduct?.has_variants)}
         panelClassName={theme.modalPanel}
@@ -3448,7 +3461,7 @@ export function StorefrontClient({
                 form="add-to-cart-form"
                 className="flex h-11 w-full rounded-full text-sm font-bold sm:h-auto sm:w-auto sm:rounded-lg sm:px-4 sm:py-2.5"
               >
-                {t("product.addToCart")}
+                {t(isTekel ? "product.addToCartPickup" : "product.addToCart")}
               </Button>
             </div>
           ) : (
@@ -3457,7 +3470,7 @@ export function StorefrontClient({
               form="add-to-cart-form"
               className="flex h-11 w-full rounded-full text-sm font-bold sm:h-auto sm:w-auto sm:rounded-lg sm:px-4 sm:py-2.5"
             >
-              {t("product.addToCart")}
+              {t(isTekel ? "product.addToCartPickup" : "product.addToCart")}
             </Button>
           )
         }

@@ -73,6 +73,11 @@ export const tenantUpdateSchema = z
     status: z.enum(["active", "suspended"]).optional(),
     plan: tenantPlanSchema.optional(),
     business_type: businessTypeSchema.optional(),
+    // Alkol/sigara bayii (tekel) — yasal olarak dağıtım/teslimat
+    // yapamayan market tenant'lar için (kullanıcı isteği, 20 Ağu 2026).
+    // true olduğunda storefront adres toplamaz, sepet/checkout metinleri
+    // "sipariş listesi hazırlama" diline döner (bkz. lib/storefront/cart.ts).
+    is_tekel: z.boolean().optional(),
     max_product_limit: maxProductLimitSchema.optional(),
     visitor_limit_addon: z.number().int().min(0).optional(),
     product_limit_addon: z.number().int().min(0).optional(),

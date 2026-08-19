@@ -350,13 +350,20 @@ export function buildWhatsAppMessage(params: {
   customerAddress?: string;
   customerPhone?: string;
   pdfUrl?: string | null;
+  // Alkol/sigara bayii (tekel) tenant'lar yasal olarak dağıtım/teslimat
+  // yapamaz — bu mesaj adres satırı içermemeli, bunun yerine ürünün
+  // mağazadan elden teslim alınacağını açıkça belirten bir ibare taşımalı
+  // (kullanıcı isteği, 20 Ağu 2026). Bu, hem "adres istemedik" savunmasını
+  // hem de her siparişte WhatsApp geçmişinde kayıtlı bir "elden teslim"
+  // beyanını sağlar.
+  isTekel?: boolean;
 }) {
   const lines = [
     `Merhaba, ${params.tenantName} için sipariş oluşturmak istiyorum`,
     `👤 Müşteri/cari : ${params.customerReferenceName.trim()}`,
   ];
 
-  if (params.customerAddress?.trim()) {
+  if (!params.isTekel && params.customerAddress?.trim()) {
     lines.push(`📍 Adres : ${params.customerAddress.trim()}`);
   }
 
@@ -366,6 +373,10 @@ export function buildWhatsAppMessage(params: {
 
   if (params.pdfUrl?.trim()) {
     lines.push(`📄 Sipariş Fişi : ${params.pdfUrl.trim()}`);
+  }
+
+  if (params.isTekel) {
+    lines.push(`🏪 Bu sipariş mağazadan elden teslim alınacaktır. Kargo/gönderi yapılmamaktadır.`);
   }
 
   return lines.join("\n");

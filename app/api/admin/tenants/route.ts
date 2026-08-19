@@ -98,6 +98,7 @@ export async function POST(request: Request) {
       product_limit_addon: 0,
       is_demo: false,
       business_type: parsed.data.business_type ?? "general",
+      is_tekel: false,
       is_password_protected: true,
       public_price_list_id: null,
       age_verification_required: false,

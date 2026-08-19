@@ -90,6 +90,10 @@ export interface Tenant {
   product_limit_addon: number;
   is_demo: boolean;
   business_type: TenantBusinessType;
+  // Alkol/sigara bayii (tekel) — yasal olarak dağıtım/teslimat yapamaz.
+  // true ise storefront adres toplamaz, sepet/checkout metinleri "sipariş
+  // listesi hazırlama" diline döner (kullanıcı isteği, 20 Ağu 2026).
+  is_tekel: boolean;
   is_password_protected: boolean;
   public_price_list_id: string | null;
   age_verification_required: boolean;

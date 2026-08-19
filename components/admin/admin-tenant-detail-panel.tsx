@@ -259,6 +259,32 @@ export function AdminTenantDetailPanel({ tenant: initialTenant }: { tenant: Tena
     });
   }
 
+  // Alkol/sigara bayii (tekel) — yasal olarak dağıtım/teslimat yapamaz.
+  // Açıldığında storefront adres toplamayı bırakır, sepet/checkout
+  // metinleri "sipariş listesi hazırlama" diline döner (kullanıcı isteği,
+  // 20 Ağu 2026).
+  function toggleTekel(nextValue: boolean) {
+    setMessage(null);
+
+    startTransition(async () => {
+      const response = await fetch(`/api/admin/tenants/${tenant.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ is_tekel: nextValue }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        setMessage(result.error ?? "Tekel ayarı güncellenemedi.");
+        return;
+      }
+
+      setTenant((current) => ({ ...current, is_tekel: result.tenant.is_tekel }));
+      setMessage(nextValue ? "Tekel modu açıldı." : "Tekel modu kapatıldı.");
+    });
+  }
+
   function revalidateStorefront() {
     setMessage(null);
 
@@ -540,6 +566,9 @@ export function AdminTenantDetailPanel({ tenant: initialTenant }: { tenant: Tena
               {tenant.business_type === "market" ? (
                 <Badge className="bg-violet-50 text-violet-700">Market</Badge>
               ) : null}
+              {tenant.is_tekel ? (
+                <Badge className="bg-amber-50 text-amber-700">Tekel</Badge>
+              ) : null}
             </div>
             <p className="mt-2 text-sm text-slate-600">
               {tenant.subdomain}.ekatalox.com
@@ -585,6 +614,16 @@ export function AdminTenantDetailPanel({ tenant: initialTenant }: { tenant: Tena
             >
               {tenant.business_type === "market" ? "Genel işletme yap" : "Market yap"}
             </Button>
+            {tenant.business_type === "market" ? (
+              <Button
+                variant="secondary"
+                onClick={() => toggleTekel(!tenant.is_tekel)}
+                disabled={pending}
+                className="border-amber-200 text-amber-700 hover:bg-amber-50 hover:text-amber-800"
+              >
+                {tenant.is_tekel ? "Tekel modunu kapat" : "Tekel yap (dağıtım yok)"}
+              </Button>
+            ) : null}
             <Button
               variant="secondary"
               onClick={deleteTenant}

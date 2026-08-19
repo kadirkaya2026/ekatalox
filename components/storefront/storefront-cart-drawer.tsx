@@ -66,6 +66,10 @@ export type StorefrontCartDrawerProps = {
   customerPhoneError: string | null;
   setCustomerPhoneError: Dispatch<SetStateAction<string | null>>;
   isMarketTenant: boolean;
+  // Alkol/sigara bayii (tekel) — yasal olarak dağıtım/teslimat yapamaz.
+  // true iken adres alanı hiç gösterilmez/toplanmaz (kullanıcı isteği,
+  // 20 Ağu 2026).
+  isTekel: boolean;
   recommendedProducts: StorefrontProduct[];
   cartPaymentSummary: CartPaymentSummary | null;
   cartDiscountSummary: CartDiscountSummary | null;
@@ -120,6 +124,7 @@ export function StorefrontCartDrawer({
   customerPhoneError,
   setCustomerPhoneError,
   isMarketTenant,
+  isTekel,
   recommendedProducts,
   cartPaymentSummary,
   cartDiscountSummary,
@@ -245,7 +250,7 @@ export function StorefrontCartDrawer({
             <div className="flex items-center justify-between gap-3">
               <div className="flex min-w-0 items-baseline gap-2.5">
                 <h2 className={theme.cartDrawerTitle}>
-                  {t("cart.title")}
+                  {t(isTekel ? "cart.titlePickup" : "cart.title")}
                 </h2>
                 <p className={cn("truncate text-xs font-medium sm:text-sm", theme.cartDrawerMuted)}>
                   {t("cart.lineSummary", { distinct: cartDistinctCount, count: cartItemCount })}
@@ -504,7 +509,7 @@ export function StorefrontCartDrawer({
                     ) : null}
                   </div>
 
-                  {isMarketTenant ? (
+                  {isMarketTenant && !isTekel ? (
                     <div className="mt-3">
                       <div className="mb-2 flex items-center justify-between gap-3">
                         <span className={cn("text-sm font-semibold", theme.text)}>{t("cart.customerAddress")}</span>
@@ -525,6 +530,11 @@ export function StorefrontCartDrawer({
                         <p className={cn("mt-2 text-xs font-medium", theme.dangerText)}>{customerAddressError}</p>
                       ) : null}
                     </div>
+                  ) : null}
+                  {isMarketTenant && isTekel ? (
+                    <p className={cn("mt-3 rounded-xl p-3 text-xs font-medium", theme.surfaceMuted, theme.textMuted)}>
+                      {t("cart.pickupDisclaimer")}
+                    </p>
                   ) : null}
                   {!isCatalogOnly
                     ? selectedPaymentMethod === "card" && (() => {
@@ -567,13 +577,15 @@ export function StorefrontCartDrawer({
 
                 <div className={theme.panelSurface}>
                   <div className="mb-2 flex items-center justify-between gap-3">
-                    <p className={cn("text-sm font-semibold", theme.text)}>{t("cart.orderNote")}</p>
+                    <p className={cn("text-sm font-semibold", theme.text)}>
+                      {t(isTekel ? "cart.orderNotePickup" : "cart.orderNote")}
+                    </p>
                     <span className={cn("rounded-full px-3 py-1 text-[11px] font-semibold", theme.surfaceMuted, theme.textMuted)}>
                       {t("cart.optional")}
                     </span>
                   </div>
                   <Textarea
-                    placeholder={t("cart.orderNotePlaceholder")}
+                    placeholder={t(isTekel ? "cart.orderNotePlaceholderPickup" : "cart.orderNotePlaceholder")}
                     value={note}
                     onChange={(event) => setNote(event.target.value)}
                     className={cn("min-h-[84px] rounded-[1.1rem] text-[16px]", theme.formField, theme.text)}
@@ -639,7 +651,7 @@ export function StorefrontCartDrawer({
                   <ShoppingCart className={cn("size-9", theme.textMuted)} />
                 </div>
                 <p className={cn("mt-5 text-base font-semibold", theme.text)}>
-                  {t("cart.emptyTitle")}
+                  {t(isTekel ? "cart.emptyTitlePickup" : "cart.emptyTitle")}
                 </p>
                 <p className={cn("mt-2 max-w-xs text-sm leading-6", theme.textMuted)}>
                   {t("cart.emptyHint")}
@@ -752,7 +764,7 @@ export function StorefrontCartDrawer({
                   <div className="hidden items-center justify-between gap-3 sm:flex">
                     <p className={cn("text-sm font-medium", theme.cartSummaryMuted)}>{t("cart.total")}</p>
                     <p className={cn("text-base font-bold tracking-tight sm:text-lg", theme.cartSummaryMuted)}>
-                      {t("header.cartEmpty")}
+                      {t(isTekel ? "header.cartEmptyPickup" : "header.cartEmpty")}
                     </p>
                   </div>
                 ) : cartTotalEntries.length ? (
@@ -848,7 +860,7 @@ export function StorefrontCartDrawer({
                 >
                   {isGeneratingOrderPdf
                     ? t("cart.pdfPreparing")
-                    : t("cart.completeViaWhatsApp")}
+                    : t(isTekel ? "cart.completeViaWhatsAppPickup" : "cart.completeViaWhatsApp")}
                 </Button>
               )}
               {cart.length > 0 && (
