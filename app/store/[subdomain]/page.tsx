@@ -30,6 +30,7 @@ import {
   isTenantCustomDomainHost,
 } from "@/lib/tenancy/request-host";
 import { getHiddenStorefrontCategoryIds } from "@/lib/categories/tree";
+import type { Category } from "@/lib/types";
 import { getNextOpening, isStoreOpenNow } from "@/lib/storefront/business-hours";
 import { getStorefrontHomePath } from "@/lib/storefront/paths";
 import {
@@ -168,6 +169,33 @@ export default async function StorefrontPage(props: PageProps<"/store/[subdomain
       getStorefrontBestSellerProducts({ ...pricingParams, excludeCategoryIds: hiddenCategoryIds, limit: 24 }),
       getStorefrontCategoryRepresentativeImages(tenant.id, categories),
     ]);
+  // "İndirimli Ürünler" kategorisi (bkz. Category.is_discount_category,
+  // storefront-client.tsx) hiçbir tenant'ta admin panelinden
+  // oluşturulamıyor — sadece marketgo'da elle eklenmiş bir satır olarak
+  // vardı. Artık DB'ye satır eklemeden, promoProducts (zaten yukarıda
+  // is_discount_active=true ürünler için çekiliyor) doluysa bu kategori
+  // sanal olarak listeye ekleniyor; ürün kalmayınca otomatik kayboluyor
+  // (kullanıcı isteği, 19 Ağu 2026).
+  const hasManualDiscountCategory = categories.some((category) => category.is_discount_category);
+  const categoriesForStorefront: Category[] =
+    !hasManualDiscountCategory && promoProducts.length > 0
+      ? [
+          {
+            id: "virtual-discount-category",
+            tenant_id: tenant.id,
+            name: "İndirimli Ürünler",
+            parent_id: null,
+            display_order: 1,
+            banner_item: null,
+            tile_image_url: null,
+            is_discount_category: true,
+            is_hidden_from_storefront: false,
+            created_at: new Date(0).toISOString(),
+          },
+          ...categories,
+        ]
+      : categories;
+
   const footerVisible = storefrontSettings.is_footer_visible;
   const headersList = await headers();
   const requestHost = getRequestHostFromHeaders(headersList);
@@ -183,7 +211,7 @@ export default async function StorefrontPage(props: PageProps<"/store/[subdomain
     >
       <StorefrontClient
         tenant={tenant}
-        categories={categories}
+        categories={categoriesForStorefront}
         initialProducts={firstPage.products}
         initialProductTotal={firstPage.total}
         promoProducts={promoProducts}
