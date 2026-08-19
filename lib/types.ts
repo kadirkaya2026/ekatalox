@@ -163,6 +163,9 @@ export interface ProductSuggestion {
   price: number | null;
   status: ProductSuggestionStatus;
   category_name: string | null;
+  // Süper admin onaydan önce yükleyebiliyor (bkz. product-suggestions-panel.tsx)
+  // — market_catalog_products.image_url'e onaylanınca kopyalanır.
+  image_url: string | null;
   market_catalog_product_id: string | null;
   product_id: string | null;
   reviewed_by: string | null;

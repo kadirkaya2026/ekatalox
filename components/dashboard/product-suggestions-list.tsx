@@ -3,10 +3,11 @@ import { Badge } from "@/components/ui/badge";
 import { formatDate } from "@/lib/utils";
 import type { ProductSuggestion } from "@/lib/types";
 
-const STATUS_META: Record<ProductSuggestion["status"], { label: string; className: string }> = {
+// "rejected" durumu burada yok — reddedilen öneriler tenant'a hiç
+// görünmeden sessizce kaybolur (bkz. getTenantAllSuggestions).
+const STATUS_META: Record<Exclude<ProductSuggestion["status"], "rejected">, { label: string; className: string }> = {
   pending: { label: "Bekliyor", className: "bg-amber-100 text-amber-800" },
   approved: { label: "Oluşturuldu", className: "bg-emerald-100 text-emerald-700" },
-  rejected: { label: "Reddedildi", className: "bg-rose-100 text-rose-700" },
 };
 
 export function ProductSuggestionsList({ suggestions }: { suggestions: ProductSuggestion[] }) {
@@ -21,8 +22,10 @@ export function ProductSuggestionsList({ suggestions }: { suggestions: ProductSu
         Listede bulamayıp eklenmesini önerdiğiniz ürünler ve süper adminin kararı.
       </p>
       <div className="mt-4 space-y-2">
-        {suggestions.map((suggestion) => {
-          const meta = STATUS_META[suggestion.status];
+        {suggestions
+          .filter((suggestion) => suggestion.status !== "rejected")
+          .map((suggestion) => {
+          const meta = STATUS_META[suggestion.status as Exclude<ProductSuggestion["status"], "rejected">];
           return (
             <div
               key={suggestion.id}

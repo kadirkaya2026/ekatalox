@@ -78,13 +78,21 @@ export async function POST(
     return NextResponse.json({ error: "Bayi bulunamadı." }, { status: 404 });
   }
 
+  // Süper admin onaydan önce ad/fiyat/barkod/görseli düzeltmiş olabilir —
+  // boş bırakılan alanlarda önerideki orijinal değer kullanılır (kullanıcı
+  // isteği, 19 Ağu 2026).
+  const effectiveBarcode = parsed.data.barcode?.trim() || suggestion.barcode;
+  const effectiveProductName = parsed.data.product_name?.trim() || suggestion.product_name;
+  const effectivePrice = parsed.data.price !== undefined ? parsed.data.price : suggestion.price;
+  const effectiveImageUrl = parsed.data.image_url !== undefined ? parsed.data.image_url : null;
+
   // Aynı barkod (herhangi bir kaynaktan) zaten Master Katalogda varsa onu
   // kullan; yoksa bu öneriden yeni bir katalog satırı oluştur.
   let marketCatalogProduct = (
     await supabase
       .from("market_catalog_products")
       .select("*")
-      .eq("sku_code", suggestion.barcode)
+      .eq("sku_code", effectiveBarcode)
       .maybeSingle()
   ).data;
 
@@ -93,11 +101,11 @@ export async function POST(
       .from("market_catalog_products")
       .insert({
         source: "tenant_suggestion",
-        sku_code: suggestion.barcode,
-        product_name: suggestion.product_name,
+        sku_code: effectiveBarcode,
+        product_name: effectiveProductName,
         category_name: parsed.data.category_name,
-        reference_price: suggestion.price,
-        image_url: null,
+        reference_price: effectivePrice,
+        image_url: effectiveImageUrl,
       })
       .select("*")
       .single();
@@ -154,10 +162,14 @@ export async function POST(
       {
         tenant_id: tenant.id,
         category_id: leafCategoryId,
-        sku_code: suggestion.barcode,
-        product_name: suggestion.product_name,
-        image_url: marketCatalogProduct.image_url,
-        is_in_stock: true,
+        sku_code: effectiveBarcode,
+        product_name: effectiveProductName,
+        image_url: effectiveImageUrl ?? marketCatalogProduct.image_url,
+        // Süper admin onayladığında ürün tenant'ın Ürünler sayfasında
+        // STOĞU KAPALI görünür — tenant isterse kendisi açar (kullanıcı
+        // isteği, 19 Ağu 2026): ürün fiyat/görsel/kategori açısından hazır
+        // olsa da satışa açılıp açılmayacağına tenant karar vermeli.
+        is_in_stock: false,
         display_order: (lastProduct?.display_order ?? 0) + 1,
       },
       { onConflict: "tenant_id,sku_code" },
@@ -169,7 +181,7 @@ export async function POST(
     return NextResponse.json({ error: productError.message }, { status: 400 });
   }
 
-  if (typeof suggestion.price === "number") {
+  if (typeof effectivePrice === "number") {
     const pricedLists = getPricedLists(await getTenantPriceLists(tenant.id));
 
     if (pricedLists.length) {
@@ -177,7 +189,7 @@ export async function POST(
         pricedLists.map((list) => ({
           product_id: product.id,
           price_list_id: list.id,
-          price: suggestion.price,
+          price: effectivePrice,
         })),
         { onConflict: "product_id,price_list_id" },
       );
@@ -193,6 +205,10 @@ export async function POST(
     .update({
       status: "approved",
       category_name: parsed.data.category_name,
+      barcode: effectiveBarcode,
+      product_name: effectiveProductName,
+      price: effectivePrice,
+      image_url: effectiveImageUrl,
       market_catalog_product_id: marketCatalogProduct.id,
       product_id: product.id,
       reviewed_by: session.profile!.id,

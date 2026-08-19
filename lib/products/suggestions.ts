@@ -20,9 +20,11 @@ export async function getTenantPendingSuggestionNotices(
   return (data as ProductSuggestion[] | null) ?? [];
 }
 
-// Ürünler sayfasındaki "Önerdiğim Ürünler" bölümü için — durumu ne olursa
-// olsun (bekliyor/oluşturuldu/reddedildi) tenant'ın bugüne kadar önerdiği
-// TÜM ürünler, en yeni en üstte (kullanıcı isteği, 19 Ağu 2026).
+// Ürünler sayfasındaki "Önerdiğim Ürünler" bölümü için — tenant'ın bugüne
+// kadar önerdiği ürünler, en yeni en üstte. Süper admin bir öneriyi
+// reddettiğinde tenant'a hiçbir iz kalmadan (sessizce) kaybolmalı
+// (kullanıcı isteği, 19 Ağu 2026) — bu yüzden "rejected" durumundakiler
+// burada hiç dönmüyor.
 export async function getTenantAllSuggestions(tenantId: string): Promise<ProductSuggestion[]> {
   const supabase = createSupabaseAdminClient();
   if (!supabase) {
@@ -33,6 +35,7 @@ export async function getTenantAllSuggestions(tenantId: string): Promise<Product
     .from("product_suggestions")
     .select("*")
     .eq("tenant_id", tenantId)
+    .neq("status", "rejected")
     .order("created_at", { ascending: false });
 
   return (data as ProductSuggestion[] | null) ?? [];
