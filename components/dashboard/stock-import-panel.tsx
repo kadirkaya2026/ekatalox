@@ -32,7 +32,12 @@ import { cn } from "@/lib/utils";
 import type { Category, PriceList } from "@/lib/types";
 
 type WizardStep = "upload" | "mapping" | "review";
-type RowDecisionAction = "approved" | "reassigned" | "skipped" | "pending" | "suggested" | "create";
+// "created" — "create" formunda "Kaydet"e basılıp ürün ANINDA (toplu
+// "Uygula" beklenmeden) hem Master Katalog'a hem tenant'ın Ürünler
+// sayfasına kaydedildiğinde set edilir (kullanıcı isteği, 19 Ağu 2026).
+// isRowReadyForApply bu action için false döner — "Uygula"ya tekrar
+// dahil edilip ürünün ikinci kez oluşturulması engellenir.
+type RowDecisionAction = "approved" | "reassigned" | "skipped" | "pending" | "suggested" | "create" | "created";
 
 interface RowDecision {
   rowNumber: number;
@@ -501,6 +506,7 @@ function ReviewRow({
   productById,
   productPool,
   flatCategories,
+  priceListId,
   onDecisionChange,
 }: {
   result: StockImportMatchResult;
@@ -509,6 +515,7 @@ function ReviewRow({
   productById: Map<string, ProductPoolEntry>;
   productPool: ProductPoolEntry[];
   flatCategories: Array<{ id: string; name: string; depth: number }>;
+  priceListId: string;
   onDecisionChange: (next: RowDecision) => void;
 }) {
   const [showPicker, setShowPicker] = useState(false);
@@ -516,6 +523,8 @@ function ReviewRow({
   const [suggestError, setSuggestError] = useState<string | null>(null);
   const [imageUploadPending, setImageUploadPending] = useState(false);
   const [imageUploadError, setImageUploadError] = useState<string | null>(null);
+  const [savePending, setSavePending] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const matchedProduct = decision.productId
     ? productById.get(decision.productId)
@@ -535,6 +544,66 @@ function ReviewRow({
   );
   const canCreateNew = Boolean(sourceRow.barcode);
   const isPending = decision.action === "pending" || decision.action === "skipped";
+  const isNewProductFormValid = Boolean(
+    decision.productName?.trim() &&
+      decision.skuCode?.trim() &&
+      (decision.categoryId || decision.newCategoryName?.trim()) &&
+      decision.price !== null,
+  );
+
+  async function saveNewProductNow() {
+    if (!isNewProductFormValid) return;
+    setSaveError(null);
+    setSavePending(true);
+
+    try {
+      const response = await fetch("/api/tenant/products/stock-import/apply", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          updates: [
+            {
+              productId: null,
+              masterCatalogSkuCode: null,
+              newProduct: {
+                categoryId: decision.categoryId,
+                newCategoryName: decision.newCategoryName?.trim() || null,
+                productName: decision.productName!.trim(),
+                skuCode: decision.skuCode!.trim(),
+                imageUrl: decision.imageUrl,
+              },
+              priceListId,
+              price: decision.price!,
+              barcode: sourceRow.barcode ?? null,
+            },
+          ],
+        }),
+      });
+      const result = await response.json();
+
+      if (!response.ok) {
+        setSaveError(result.error ?? "Kaydedilemedi.");
+        return;
+      }
+
+      if (!result.createdProductCount) {
+        setSaveError(
+          result.skippedForNewProductLimitCount
+            ? "Plan limitiniz nedeniyle yeni ürün oluşturulamadı."
+            : result.skippedInvalidCategoryCount
+              ? "Kategori geçersiz, ürün oluşturulamadı."
+              : "Ürün oluşturulamadı, satırı kontrol edin.",
+        );
+        return;
+      }
+
+      onDecisionChange({ ...decision, action: "created" });
+    } catch {
+      setSaveError("Kaydedilirken bir hata oluştu.");
+    } finally {
+      setSavePending(false);
+    }
+  }
 
   async function suggestProduct() {
     if (!sourceRow.barcode) return;
@@ -633,7 +702,7 @@ function ReviewRow({
         <div className="flex flex-col items-end gap-1.5">
           <Badge
             className={
-              decision.action === "approved" || decision.action === "reassigned"
+              decision.action === "approved" || decision.action === "reassigned" || decision.action === "created"
                 ? "bg-emerald-100 text-emerald-700"
                 : decision.action === "skipped"
                   ? "bg-slate-200 text-slate-600"
@@ -650,6 +719,7 @@ function ReviewRow({
             {decision.action === "pending" && "Bekliyor"}
             {decision.action === "suggested" && "Önerildi"}
             {decision.action === "create" && "Yeni ürün"}
+            {decision.action === "created" && "Oluşturuldu"}
           </Badge>
           {result.status === "matched_master_catalog" || decision.masterCatalogSkuCode ? (
             <Badge className="bg-sky-100 text-sky-700">Master Katalog&apos;dan aktarılacak</Badge>
@@ -756,6 +826,9 @@ function ReviewRow({
               placeholder="Fiyat"
               className="w-28"
             />
+            <Button type="button" onClick={saveNewProductNow} disabled={!isNewProductFormValid || savePending}>
+              {savePending ? "Kaydediliyor..." : "Kaydet"}
+            </Button>
             <Button
               type="button"
               variant="secondary"
@@ -770,7 +843,10 @@ function ReviewRow({
             <p className="text-xs font-medium text-amber-700">Barkod/SKU boş olamaz.</p>
           ) : !decision.categoryId && !decision.newCategoryName ? (
             <p className="text-xs font-medium text-amber-700">Kategori seçilmeden bu ürün oluşturulmaz.</p>
+          ) : decision.price === null ? (
+            <p className="text-xs font-medium text-amber-700">Fiyat girilmeden bu ürün kaydedilmez.</p>
           ) : null}
+          {saveError ? <p className="text-xs font-medium text-rose-600">{saveError}</p> : null}
         </div>
       ) : null}
 
@@ -813,6 +889,12 @@ function ReviewRow({
           >
             Geri al
           </Button>
+        </div>
+      ) : decision.action === "created" ? (
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <p className="text-sm font-medium text-emerald-700">
+            Ürün kaydedildi — Master Katalog&apos;a ve mağazanızın Ürünler sayfasına eklendi.
+          </p>
         </div>
       ) : (
         <div className="mt-3 flex flex-wrap items-center gap-2">
@@ -968,6 +1050,12 @@ export function StockImportPanel({
   );
   const [decisions, setDecisions] = useState<Map<number, RowDecision>>(new Map());
   const [statusFilter, setStatusFilter] = useState<StockImportMatchStatus | null>(null);
+  // "Atlandı" işaretlenen satırlar ana gözden geçirme listesinde soluk
+  // görünmeye devam eder (ReviewRow, decision.action==="skipped" stiliyle)
+  // — bu sekme onları ayrıca tek bir listede toplayıp, kullanıcı isterse
+  // tekrar karar vermek için kolayca bulmasını sağlar (kullanıcı isteği,
+  // 19 Ağu 2026).
+  const [reviewTab, setReviewTab] = useState<"review" | "skipped">("review");
 
   async function handleFile(file: File) {
     setError(null);
@@ -1040,6 +1128,13 @@ export function StockImportPanel({
 
   const reviewRows = useMemo(() => {
     if (!matchResponse) return [];
+
+    if (reviewTab === "skipped") {
+      return matchResponse.results.filter(
+        (result) => decisions.get(result.rowNumber)?.action === "skipped",
+      );
+    }
+
     // Barkodu tenant'ın KENDİ mevcut ürünlerinden biriyle birebir eşleşen
     // satırlar (matched_exact) — yani zaten Ürünler sayfasında olan ürünler
     // — varsayılan görünümden çıkarılıyor; her yeniden yüklemede yüzlerce
@@ -1057,7 +1152,8 @@ export function StockImportPanel({
       const priorityB = decisionB?.action === "approved" ? 1 : 0;
       return priorityA - priorityB;
     });
-  }, [matchResponse, decisions, statusFilter]);
+  }, [matchResponse, decisions, statusFilter, reviewTab]);
+  const skippedCount = [...decisions.values()].filter((decision) => decision.action === "skipped").length;
 
   const pendingCount = [...decisions.values()].filter((d) => d.action === "pending").length;
   const applyCount = [...decisions.values()].filter((d) => isRowReadyForApply(d)).length;
@@ -1281,6 +1377,39 @@ export function StockImportPanel({
 
       {step === "review" && matchResponse ? (
         <div className="space-y-4">
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => setReviewTab("review")}
+              className={cn(
+                "rounded-full px-4 py-1.5 text-sm font-medium transition",
+                reviewTab === "review"
+                  ? "bg-slate-900 text-white"
+                  : "bg-slate-100 text-slate-600 hover:bg-slate-200",
+              )}
+            >
+              Gözden Geçirme
+            </button>
+            <button
+              type="button"
+              onClick={() => setReviewTab("skipped")}
+              className={cn(
+                "rounded-full px-4 py-1.5 text-sm font-medium transition",
+                reviewTab === "skipped"
+                  ? "bg-slate-900 text-white"
+                  : "bg-slate-100 text-slate-600 hover:bg-slate-200",
+              )}
+            >
+              Atlanan Ürünler ({skippedCount})
+            </button>
+          </div>
+
+          {reviewTab === "skipped" ? (
+            <Card className="p-5 text-sm text-slate-600">
+              Daha sonra karar vermek üzere atladığın satırlar burada listelenir. Bir satıra tekrar karar
+              verdiğinde (onayla, yeni ürün oluştur vb.) otomatik olarak bu listeden çıkar.
+            </Card>
+          ) : (
           <Card className="p-5">
             {(() => {
               const total = matchResponse.summary.totalRows || 1;
@@ -1389,11 +1518,14 @@ export function StockImportPanel({
               );
             })()}
           </Card>
+          )}
 
           <div className="space-y-2">
             {reviewRows.length === 0 ? (
               <Card className="p-6 text-center text-sm text-slate-500">
-                {statusFilter
+                {reviewTab === "skipped"
+                  ? "Henüz atlanan satır yok."
+                  : statusFilter
                   ? "Bu filtrede satır yok."
                   : "Tüm satırlar zaten mağazanızda var — gözden geçirilecek satır kalmadı."}
               </Card>
@@ -1412,6 +1544,7 @@ export function StockImportPanel({
                   productById={productById}
                   productPool={matchResponse.productPool}
                   flatCategories={flatCategories}
+                  priceListId={selectedPriceListId}
                   onDecisionChange={(next) =>
                     setDecisions((current) => new Map(current).set(next.rowNumber, next))
                   }
