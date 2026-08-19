@@ -20,6 +20,24 @@ export async function getTenantPendingSuggestionNotices(
   return (data as ProductSuggestion[] | null) ?? [];
 }
 
+// Ürünler sayfasındaki "Önerdiğim Ürünler" bölümü için — durumu ne olursa
+// olsun (bekliyor/oluşturuldu/reddedildi) tenant'ın bugüne kadar önerdiği
+// TÜM ürünler, en yeni en üstte (kullanıcı isteği, 19 Ağu 2026).
+export async function getTenantAllSuggestions(tenantId: string): Promise<ProductSuggestion[]> {
+  const supabase = createSupabaseAdminClient();
+  if (!supabase) {
+    return [];
+  }
+
+  const { data } = await supabase
+    .from("product_suggestions")
+    .select("*")
+    .eq("tenant_id", tenantId)
+    .order("created_at", { ascending: false });
+
+  return (data as ProductSuggestion[] | null) ?? [];
+}
+
 export async function getPendingProductSuggestions(): Promise<ProductSuggestionWithTenant[]> {
   const supabase = createSupabaseAdminClient();
   if (!supabase) {
