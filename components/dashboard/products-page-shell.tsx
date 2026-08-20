@@ -9,6 +9,8 @@ interface Props {
   initialTotal: number;
   initialCategories: Category[];
   priceLists: PriceList[];
+  initialSearchTerm?: string;
+  focusProductId?: string | null;
 }
 
 export function ProductsPageShell({
@@ -17,6 +19,8 @@ export function ProductsPageShell({
   initialTotal,
   initialCategories,
   priceLists,
+  initialSearchTerm,
+  focusProductId,
 }: Props) {
   return (
     <ProductsManager
@@ -25,6 +29,8 @@ export function ProductsPageShell({
       initialTotal={initialTotal}
       initialCategories={initialCategories}
       priceLists={priceLists}
+      initialSearchTerm={initialSearchTerm}
+      focusProductId={focusProductId}
     />
   );
 }

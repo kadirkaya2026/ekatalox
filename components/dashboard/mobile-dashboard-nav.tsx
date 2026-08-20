@@ -17,12 +17,14 @@ export function MobileDashboardNav({
   subtitle,
   plan,
   businessType,
+  suggestionNoticeCount = 0,
 }: {
   mode: "admin" | "tenant";
   title: string;
   subtitle: string;
   plan?: TenantPlan;
   businessType?: TenantBusinessType;
+  suggestionNoticeCount?: number;
 }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
@@ -46,10 +48,19 @@ export function MobileDashboardNav({
         <button
           type="button"
           onClick={() => setOpen(true)}
-          aria-label="Menüyü aç"
-          className="rounded-lg p-2 text-slate-200 transition hover:bg-slate-800"
+          aria-label={
+            suggestionNoticeCount
+              ? `Menüyü aç (${suggestionNoticeCount} bildirim)`
+              : "Menüyü aç"
+          }
+          className="relative rounded-lg p-2 text-slate-200 transition hover:bg-slate-800"
         >
           <Menu className="size-5" />
+          {suggestionNoticeCount ? (
+            <span className="absolute -right-0.5 -top-0.5 inline-flex min-w-[1.125rem] items-center justify-center rounded-full bg-rose-600 px-1 text-[10px] font-bold leading-[1.125rem] text-white ring-2 ring-slate-900">
+              {suggestionNoticeCount > 9 ? "9+" : suggestionNoticeCount}
+            </span>
+          ) : null}
         </button>
       </div>
 
@@ -89,6 +100,7 @@ export function MobileDashboardNav({
                 subtitle={subtitle}
                 plan={plan}
                 businessType={businessType}
+                suggestionNoticeCount={suggestionNoticeCount}
               />
             </motion.div>
           </motion.div>

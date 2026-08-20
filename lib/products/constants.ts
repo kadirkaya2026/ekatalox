@@ -47,3 +47,16 @@ export function formatProductModelNo(skuCode: string | null | undefined) {
     ? `${PRODUCT_MODEL_NO_LABEL}: ${skuCode.trim()}`
     : `${PRODUCT_MODEL_NO_LABEL} bilgisi yok`;
 }
+
+// Ürünler sayfasındaki satış durumu filtresi. is_in_stock=false olan ürün
+// vitrinde sipariş edilemez ("Stok kapalı" rozeti) — tenant admin bu ürünleri
+// ayıklayıp toplu işlem yapabilsin diye filtreleniyor.
+export const productStockFilters = ["all", "in_stock", "out_of_stock"] as const;
+
+export type ProductStockFilter = (typeof productStockFilters)[number];
+
+export function parseProductStockFilter(value: unknown): ProductStockFilter {
+  return productStockFilters.includes(value as ProductStockFilter)
+    ? (value as ProductStockFilter)
+    : "all";
+}

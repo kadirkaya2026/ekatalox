@@ -12,6 +12,7 @@ import {
 import { getSessionContext } from "@/lib/auth/session";
 import { getEffectiveProductLimit, hasPlanFeature } from "@/lib/billing/plans";
 import { ensureTenantAdminResponse } from "@/lib/tenancy/guards";
+import { parseProductStockFilter } from "@/lib/products/constants";
 import { productCreateSchema } from "@/lib/validators/product";
 import { getTenantProductIdsForFilter, getTenantProductsPage } from "@/lib/data";
 
@@ -28,6 +29,7 @@ export async function GET(request: Request) {
   const search = url.searchParams.get("q") ?? undefined;
   const categoryIds = url.searchParams.get("categoryIds")?.split(",").filter(Boolean);
   const matchCategoryIds = url.searchParams.get("matchCategoryIds")?.split(",").filter(Boolean);
+  const stockFilter = parseProductStockFilter(url.searchParams.get("stock"));
 
   // "Filtreye uyan tümünü seç": sayfalama olmadan sadece id listesi ister.
   if (url.searchParams.get("idsOnly") === "1") {
@@ -36,6 +38,7 @@ export async function GET(request: Request) {
       search,
       categoryIds,
       matchCategoryIds,
+      stockFilter,
     });
     return NextResponse.json({ ids });
   }
@@ -46,6 +49,7 @@ export async function GET(request: Request) {
     search,
     categoryIds,
     matchCategoryIds,
+    stockFilter,
   });
 
   return NextResponse.json({ products, total });

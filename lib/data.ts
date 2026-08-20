@@ -16,6 +16,7 @@ import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { getCurrentMonthVisitorCountsByTenant, getDateRange } from "@/lib/analytics/queries";
 import { normalizeProductDescription } from "@/lib/products/description-html";
 import { normalizeProductRecord } from "@/lib/products/records";
+import type { ProductStockFilter } from "@/lib/products/constants";
 import { productWithVariantsAndPricesSelect } from "@/lib/products/queries";
 import { getPricedLists, normalizePriceListRecord, sortPriceLists } from "@/lib/price-lists/records";
 import { getPriceListDisplayName } from "@/lib/price-lists/constants";
@@ -608,6 +609,7 @@ export async function getTenantProductsPage(params: {
   search?: string;
   categoryIds?: string[];
   matchCategoryIds?: string[];
+  stockFilter?: ProductStockFilter;
 }): Promise<{ products: Product[]; total: number }> {
   const supabase = createSupabaseAdminClient();
 
@@ -626,6 +628,8 @@ export async function getTenantProductsPage(params: {
     const filtered = demoProducts.filter((product) => {
       if (product.tenant_id !== params.tenantId) return false;
       if (categoryIdSet && !categoryIdSet.has(product.category_id)) return false;
+      if (params.stockFilter === "in_stock" && !product.is_in_stock) return false;
+      if (params.stockFilter === "out_of_stock" && product.is_in_stock) return false;
       if (!normalizedTerm) return true;
       return (
         product.product_name.toLowerCase().includes(normalizedTerm) ||
@@ -652,6 +656,8 @@ export async function getTenantProductsPage(params: {
     .select(productWithVariantsSelect, { count: "exact" })
     .eq("tenant_id", params.tenantId);
   if (params.categoryIds?.length) primaryQuery = primaryQuery.in("category_id", params.categoryIds);
+  if (params.stockFilter === "in_stock") primaryQuery = primaryQuery.eq("is_in_stock", true);
+  if (params.stockFilter === "out_of_stock") primaryQuery = primaryQuery.eq("is_in_stock", false);
   if (orFilter) primaryQuery = primaryQuery.or(orFilter);
   primaryQuery = primaryQuery
     .order("display_order", { ascending: true })
@@ -669,6 +675,8 @@ export async function getTenantProductsPage(params: {
     .select("*", { count: "exact" })
     .eq("tenant_id", params.tenantId);
   if (params.categoryIds?.length) fallbackQuery = fallbackQuery.in("category_id", params.categoryIds);
+  if (params.stockFilter === "in_stock") fallbackQuery = fallbackQuery.eq("is_in_stock", true);
+  if (params.stockFilter === "out_of_stock") fallbackQuery = fallbackQuery.eq("is_in_stock", false);
   if (orFilter) fallbackQuery = fallbackQuery.or(orFilter);
   fallbackQuery = fallbackQuery
     .order("display_order", { ascending: true })
@@ -690,6 +698,7 @@ export async function getTenantProductIdsForFilter(params: {
   search?: string;
   categoryIds?: string[];
   matchCategoryIds?: string[];
+  stockFilter?: ProductStockFilter;
 }): Promise<string[]> {
   const supabase = createSupabaseAdminClient();
   if (!supabase) return [];
@@ -714,6 +723,8 @@ export async function getTenantProductIdsForFilter(params: {
       .select("id")
       .eq("tenant_id", params.tenantId);
     if (params.categoryIds?.length) query = query.in("category_id", params.categoryIds);
+    if (params.stockFilter === "in_stock") query = query.eq("is_in_stock", true);
+    if (params.stockFilter === "out_of_stock") query = query.eq("is_in_stock", false);
     if (orFilter) query = query.or(orFilter);
     query = query.range(from, from + pageSize - 1);
 

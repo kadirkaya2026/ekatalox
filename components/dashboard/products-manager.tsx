@@ -11,6 +11,7 @@ import { ProductVariantMatrixModal } from "@/components/dashboard/product-varian
 import { ProductsBulkActionBar } from "@/components/dashboard/products-bulk-action-bar";
 import { ProductsTable } from "@/components/dashboard/products-table";
 import { ProductsToolbar } from "@/components/dashboard/products-toolbar";
+import type { ProductStockFilter } from "@/lib/products/constants";
 import {
   buildCategoryTree,
   flattenCategoryTree,
@@ -98,12 +99,19 @@ export function ProductsManager({
   initialTotal,
   initialCategories,
   priceLists,
+  initialSearchTerm = "",
+  focusProductId = null,
 }: {
   tenant: Tenant;
   initialProducts: Product[];
   initialTotal: number;
   initialCategories: Category[];
   priceLists: PriceList[];
+  // Bildirim zilinden gelindiğinde ürünü ilk sayfaya getiren barkod araması.
+  // Sunucu bu terimle zaten filtreledi; ilk render'da tekrar fetch olmasın
+  // diye debounce'lu kopya da aynı değerle başlatılıyor.
+  initialSearchTerm?: string;
+  focusProductId?: string | null;
 }) {
   const pricedLists = useMemo(
     () => priceLists.filter((list) => !list.is_catalog_only),
@@ -113,8 +121,8 @@ export function ProductsManager({
   const [total, setTotal] = useState(initialTotal);
   const [grandTotal, setGrandTotal] = useState(initialTotal);
   const [isLoading, setIsLoading] = useState(false);
-  const [searchTerm, setSearchTermRaw] = useState("");
-  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
+  const [searchTerm, setSearchTermRaw] = useState(initialSearchTerm);
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState(initialSearchTerm);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [variantMatrixProduct, setVariantMatrixProduct] = useState<Product | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Product | null>(null);
@@ -123,12 +131,15 @@ export function ProductsManager({
   const [isSelectingAllFiltered, setIsSelectingAllFiltered] = useState(false);
   const [allFilteredSelectedFlag, setAllFilteredSelectedFlag] = useState(false);
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
+  const [stockFilter, setStockFilterRaw] = useState<ProductStockFilter>("all");
   const [draggedProductId, setDraggedProductId] = useState<string | null>(null);
   const [inlineCategoryProductId, setInlineCategoryProductId] = useState<string | null>(null);
   const [bulkCategoryId, setBulkCategoryId] = useState<string>("");
   const [message, setMessage] = useState<string | null>(null);
   const [isOrderSaving, setIsOrderSaving] = useState(false);
   const [page, setPage] = useState(1);
+  // Vurgu kalıcı olmasın: arama/filtre değişince veya süre dolunca sönüyor.
+  const [highlightedProductId, setHighlightedProductId] = useState(focusProductId);
   const [pending, startTransition] = useTransition();
   const router = useRouter();
   const categories = initialCategories;
@@ -184,6 +195,7 @@ export function ProductsManager({
       if (debouncedSearchTerm.trim()) params.set("q", debouncedSearchTerm.trim());
       if (expandedCategoryIds.length) params.set("categoryIds", expandedCategoryIds.join(","));
       if (matchCategoryIds.length) params.set("matchCategoryIds", matchCategoryIds.join(","));
+      if (stockFilter !== "all") params.set("stock", stockFilter);
 
       const response = await fetch(`/api/tenant/products?${params.toString()}`);
       const result = await response.json();
@@ -210,11 +222,12 @@ export function ProductsManager({
     }
     void fetchPage(page);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, debouncedSearchTerm, categoryFilterKey, matchCategoryKey]);
+  }, [page, debouncedSearchTerm, categoryFilterKey, matchCategoryKey, stockFilter]);
 
   function setSearchTerm(value: string) {
     setSearchTermRaw(value);
     setPage(1);
+    setHighlightedProductId(null);
   }
 
   function toggleCategoryFilter(categoryId: string) {
@@ -229,6 +242,15 @@ export function ProductsManager({
   function clearCategoryFilters() {
     setSelectedCategoryIds([]);
     setPage(1);
+  }
+
+  // Filtre değişince seçim temizleniyor: aksi halde artık listede görünmeyen
+  // ürünler seçili kalıp toplu işleme sessizce dahil olurdu.
+  function setStockFilter(value: ProductStockFilter) {
+    setStockFilterRaw(value);
+    setPage(1);
+    setSelectedProductIds([]);
+    setAllFilteredSelectedFlag(false);
   }
 
   const pageCount = Math.max(1, Math.ceil(total / PRODUCTS_PAGE_SIZE));
@@ -280,11 +302,18 @@ export function ProductsManager({
         return;
       }
 
-      setProducts((current) =>
-        current.map((item) =>
-          item.id === product.id ? { ...item, is_in_stock: result.product.is_in_stock } : item,
-        ),
-      );
+      // Satış durumu filtresi açıkken ürün artık filtreye uymuyor —
+      // handleBulkSetStock ile aynı davranış için sayfayı tazeliyoruz,
+      // yoksa listede filtreye uymayan satır kalır ve sayaç şişer.
+      if (stockFilter !== "all") {
+        await fetchPage(currentPage);
+      } else {
+        setProducts((current) =>
+          current.map((item) =>
+            item.id === product.id ? { ...item, is_in_stock: result.product.is_in_stock } : item,
+          ),
+        );
+      }
       setMessage("Stok durumu güncellendi.");
     });
   }
@@ -321,6 +350,7 @@ export function ProductsManager({
       if (debouncedSearchTerm.trim()) params.set("q", debouncedSearchTerm.trim());
       if (expandedCategoryIds.length) params.set("categoryIds", expandedCategoryIds.join(","));
       if (matchCategoryIds.length) params.set("matchCategoryIds", matchCategoryIds.join(","));
+      if (stockFilter !== "all") params.set("stock", stockFilter);
 
       const response = await fetch(`/api/tenant/products?${params.toString()}`);
       const result = await response.json();
@@ -600,6 +630,8 @@ export function ProductsManager({
             selectedCategoryIds={selectedCategoryIds}
             onToggleCategory={toggleCategoryFilter}
             onClearCategories={clearCategoryFilters}
+            stockFilter={stockFilter}
+            onStockFilterChange={setStockFilter}
           />
 
           {selectedProductIds.length ? (
@@ -650,6 +682,7 @@ export function ProductsManager({
         </div>
 
         <ProductsTable
+          highlightedProductId={highlightedProductId}
           grandTotal={grandTotal}
           filteredProducts={products}
           pageStartIndex={pageStartIndex}

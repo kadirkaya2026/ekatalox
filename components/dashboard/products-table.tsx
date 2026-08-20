@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import {
   ArrowDown,
@@ -136,6 +136,7 @@ function renderVariantCountBadge(product: Product) {
 }
 
 export function ProductsTable({
+  highlightedProductId = null,
   grandTotal,
   filteredProducts,
   pageStartIndex = 0,
@@ -164,6 +165,8 @@ export function ProductsTable({
   onOpenEdit,
   onRequestDelete,
 }: {
+  // Bildirim zilinden gelen ürün: satır vurgulanır ve ekrana kaydırılır.
+  highlightedProductId?: string | null;
   grandTotal: number;
   filteredProducts: Product[];
   pageStartIndex?: number;
@@ -193,6 +196,17 @@ export function ProductsTable({
   onRequestDelete: (product: Product) => void;
 }) {
   const resolvedTotalCount = totalFilteredCount ?? filteredProducts.length;
+  // Masaüstünde tablo satırı, mobilde kart — hangisi render edildiyse o
+  // görünür olacağı için ikisi de aynı ref'e yazıyor, sonuncusu kazanmıyor:
+  // gizli olan scrollIntoView'da zaten viewport dışında sayılmaz.
+  const highlightedRowRef = useRef<HTMLElement | null>(null);
+
+  useEffect(() => {
+    if (!highlightedProductId) {
+      return;
+    }
+    highlightedRowRef.current?.scrollIntoView({ block: "center", behavior: "smooth" });
+  }, [highlightedProductId, filteredProducts]);
 
   return (
     <>
@@ -233,9 +247,18 @@ export function ProductsTable({
             {filteredProducts.map((product, index) => (
               <tr
                 key={product.id}
+                ref={
+                  product.id === highlightedProductId
+                    ? (node) => {
+                        highlightedRowRef.current = node;
+                      }
+                    : undefined
+                }
                 className={cn(
                   "border-t border-border",
                   draggedProductId === product.id && "bg-emerald-50/60",
+                  product.id === highlightedProductId &&
+                    "bg-amber-50 ring-2 ring-inset ring-amber-400 dark:bg-amber-900/20",
                 )}
                 draggable
                 onDragStart={() => onDragStart(product.id)}
@@ -430,7 +453,21 @@ export function ProductsTable({
 
       <div className="grid gap-3 p-4 md:hidden">
         {filteredProducts.map((product, index) => (
-          <Card key={product.id} className="p-4">
+          <Card
+            key={product.id}
+            ref={
+              product.id === highlightedProductId
+                ? (node) => {
+                    highlightedRowRef.current = node;
+                  }
+                : undefined
+            }
+            className={cn(
+              "p-4",
+              product.id === highlightedProductId &&
+                "bg-amber-50 ring-2 ring-amber-400 dark:bg-amber-900/20",
+            )}
+          >
             <div className="mb-3 flex items-center justify-between">
               <label className="flex items-center gap-2 text-sm text-muted-foreground">
                 <input

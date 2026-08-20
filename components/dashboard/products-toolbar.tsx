@@ -2,10 +2,17 @@
 
 import { useEffect, useRef, useState } from "react";
 import { ArrowUpDown, Check, ChevronDown, ListFilter } from "lucide-react";
+import type { ProductStockFilter } from "@/lib/products/constants";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type { CategoryNode } from "@/lib/categories/tree";
 import { cn } from "@/lib/utils";
+
+const STOCK_FILTER_OPTIONS: { value: ProductStockFilter; label: string }[] = [
+  { value: "all", label: "Tümü" },
+  { value: "in_stock", label: "Stokta var" },
+  { value: "out_of_stock", label: "Stok kapalı" },
+];
 
 export function ProductsToolbar({
   searchTerm,
@@ -14,6 +21,8 @@ export function ProductsToolbar({
   selectedCategoryIds,
   onToggleCategory,
   onClearCategories,
+  stockFilter,
+  onStockFilterChange,
 }: {
   searchTerm: string;
   onSearchChange: (value: string) => void;
@@ -21,6 +30,8 @@ export function ProductsToolbar({
   selectedCategoryIds: string[];
   onToggleCategory: (categoryId: string) => void;
   onClearCategories: () => void;
+  stockFilter: ProductStockFilter;
+  onStockFilterChange: (value: ProductStockFilter) => void;
 }) {
   const [categoryFilterOpen, setCategoryFilterOpen] = useState(false);
   const categoryFilterRef = useRef<HTMLDivElement | null>(null);
@@ -130,6 +141,46 @@ export function ProductsToolbar({
             ) : null}
           </div>
         </div>
+      </div>
+
+      {/* Satış durumu filtresi: is_in_stock=false ürünler vitrinde sipariş
+          edilemiyor, tenant admin bunları tek tıkla ayıklayıp toplu
+          "Stok Aç" uygulayabilsin diye. */}
+      <div className="mt-4 flex flex-wrap items-center gap-3">
+        <span className="text-sm font-medium text-muted-foreground">Satış durumu</span>
+        <div
+          role="group"
+          aria-label="Satış durumuna göre filtrele"
+          className="inline-flex rounded-lg border border-border bg-muted/60 p-1"
+        >
+          {STOCK_FILTER_OPTIONS.map((option) => {
+            const active = stockFilter === option.value;
+
+            return (
+              <button
+                key={option.value}
+                type="button"
+                aria-pressed={active}
+                onClick={() => onStockFilterChange(option.value)}
+                className={cn(
+                  "rounded-md px-3 py-1.5 text-sm font-semibold transition",
+                  active
+                    ? "bg-card text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground",
+                )}
+              >
+                {option.label}
+              </button>
+            );
+          })}
+        </div>
+        {stockFilter !== "all" ? (
+          <span className="text-xs text-muted-foreground">
+            {stockFilter === "in_stock"
+              ? "Sadece satışa açık ürünler listeleniyor."
+              : "Sadece satışa kapalı ürünler listeleniyor."}
+          </span>
+        ) : null}
       </div>
 
       <div className="mt-4 rounded-xl border border-border bg-muted/60 px-4 py-4">

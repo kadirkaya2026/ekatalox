@@ -20,6 +20,25 @@ export async function getTenantPendingSuggestionNotices(
   return (data as ProductSuggestion[] | null) ?? [];
 }
 
+// Menüdeki kırmızı bildirim rozeti için — onaylanmış ama tenant'ın henüz
+// kapatmadığı öneri sayısı. Her dashboard sayfasında (layout) çalıştığı için
+// satırlar çekilmiyor, sadece sayım yapılıyor.
+export async function getTenantSuggestionNoticeCount(tenantId: string): Promise<number> {
+  const supabase = createSupabaseAdminClient();
+  if (!supabase) {
+    return 0;
+  }
+
+  const { count } = await supabase
+    .from("product_suggestions")
+    .select("id", { count: "exact", head: true })
+    .eq("tenant_id", tenantId)
+    .eq("status", "approved")
+    .is("dismissed_at", null);
+
+  return count ?? 0;
+}
+
 // Ürünler sayfasındaki "Önerdiğim Ürünler" bölümü için — tenant'ın bugüne
 // kadar önerdiği ürünler, en yeni en üstte. Süper admin bir öneriyi
 // reddettiğinde tenant'a hiçbir iz kalmadan (sessizce) kaybolmalı

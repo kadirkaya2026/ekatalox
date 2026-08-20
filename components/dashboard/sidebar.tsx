@@ -39,6 +39,21 @@ import { hasPlanFeature, type PlanFeature, type TenantPlan } from "@/lib/billing
 import type { TenantBusinessType } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
+// Menüde bekleyen bildirim sayısını gösteren kırmızı rozet. Hem "Ürünler"
+// üst başlığında (alt menü kapalıyken de görünsün diye) hem "Önerdiğim
+// Ürünler" alt bağlantısında kullanılıyor.
+function NavNotificationBadge({ count }: { count: number }) {
+  if (count <= 0) {
+    return null;
+  }
+
+  return (
+    <span className="ml-auto inline-flex min-w-[1.25rem] items-center justify-center rounded-full bg-rose-600 px-1.5 text-[11px] font-bold leading-5 text-white">
+      {count > 9 ? "9+" : count}
+    </span>
+  );
+}
+
 interface SubLink {
   href: string;
   label: string;
@@ -186,6 +201,7 @@ const tenantLinks: SidebarLink[] = [
 
 const adminLinks: SidebarLink[] = [
   { href: "/", label: "Tenant Yönetimi", icon: Building2 },
+  { href: "/market-catalog", label: "Master Katalog", icon: Store },
   { href: "/product-suggestions", label: "Ürün Önerileri", icon: PackagePlus },
   { href: "/logs", label: "Giriş Logları", icon: ScrollText },
 ];
@@ -222,12 +238,14 @@ export function Sidebar({
   subtitle,
   plan = "baslangic",
   businessType = "general",
+  suggestionNoticeCount = 0,
 }: {
   mode: "admin" | "tenant";
   title: string;
   subtitle: string;
   plan?: TenantPlan;
   businessType?: TenantBusinessType;
+  suggestionNoticeCount?: number;
 }) {
   const pathname = usePathname();
   const links =
@@ -294,6 +312,9 @@ export function Sidebar({
               >
                 <link.icon className="size-4" />
                 <span>{link.label}</span>
+                {link.href === "/products" ? (
+                  <NavNotificationBadge count={suggestionNoticeCount} />
+                ) : null}
               </Link>
 
               <AnimatePresence initial={false}>
@@ -333,6 +354,9 @@ export function Sidebar({
                                 )}
                               />
                               <span>{child.label}</span>
+                              {child.href === "/products/suggestions" ? (
+                                <NavNotificationBadge count={suggestionNoticeCount} />
+                              ) : null}
                             </Link>
                           );
                         })}
