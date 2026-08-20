@@ -90,7 +90,18 @@ export function ProductSuggestionsPanel({
   }
 
   function approve(suggestion: ProductSuggestionWithTenant) {
-    const categoryName = categoryByRow[suggestion.id] ?? CATEGORY_OPTIONS[0];
+    // Eskiden seçim yapılmamışsa sessizce CATEGORY_OPTIONS[0] gönderiliyordu —
+    // yani Türkçe alfabetik ilk kategori ("Ağız Bakım Suyu"). Dropdown'da
+    // placeholder olmadığı için kutu o değerle SEÇİLİ görünüyor, kategoriye
+    // dokunmadan onaylayan admin ürünü farkında olmadan oraya gönderiyordu
+    // (canlıda "TEKİRDAĞ RAKI 70CL" -> "Ağız Bakım Suyu" böyle oluştu).
+    // Artık seçim zorunlu.
+    const categoryName = categoryByRow[suggestion.id];
+    if (!categoryName) {
+      setError(`"${suggestion.product_name}" için önce kategori seçin.`);
+      return;
+    }
+
     const edit = getEdit(suggestion);
     setError(null);
     setPendingId(suggestion.id);
@@ -234,19 +245,23 @@ export function ProductSuggestionsPanel({
 
                 <div className="flex flex-wrap items-center gap-2">
                   <Select
-                    value={categoryByRow[suggestion.id] ?? CATEGORY_OPTIONS[0]}
+                    value={categoryByRow[suggestion.id] ?? ""}
                     onChange={(event) =>
                       setCategoryByRow((current) => ({ ...current, [suggestion.id]: event.target.value }))
                     }
                     className="max-w-xs"
                   >
+                    <option value="">Kategori seçin…</option>
                     {CATEGORY_OPTIONS.map((category) => (
                       <option key={category} value={category}>
                         {category}
                       </option>
                     ))}
                   </Select>
-                  <Button onClick={() => approve(suggestion)} disabled={isPending}>
+                  <Button
+                    onClick={() => approve(suggestion)}
+                    disabled={isPending || !categoryByRow[suggestion.id]}
+                  >
                     {isPending ? "Ekleniyor..." : "Onayla ve ekle"}
                   </Button>
                   <Button type="button" variant="secondary" onClick={() => setExpandedId(null)} disabled={isPending}>

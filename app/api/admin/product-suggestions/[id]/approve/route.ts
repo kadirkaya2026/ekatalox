@@ -88,13 +88,19 @@ export async function POST(
 
   // Aynı barkod (herhangi bir kaynaktan) zaten Master Katalogda varsa onu
   // kullan; yoksa bu öneriden yeni bir katalog satırı oluştur.
-  let marketCatalogProduct = (
-    await supabase
-      .from("market_catalog_products")
-      .select("*")
-      .eq("sku_code", effectiveBarcode)
-      .maybeSingle()
-  ).data;
+  //
+  // maybeSingle() KULLANILMIYOR: UNIQUE kısıt (source, sku_code) olduğu için
+  // aynı barkod farklı kaynaklarda (migros_crawl + tenant_stock_import gibi)
+  // birden fazla satır olabilir. maybeSingle() bu durumda hata döndürüp
+  // data'yı null yapıyordu, kod da "katalogda yok" sanıp bir kopya daha
+  // yaratıyordu. En eski satır kanonik kabul ediliyor.
+  const { data: existingCatalogRows } = await supabase
+    .from("market_catalog_products")
+    .select("*")
+    .eq("sku_code", effectiveBarcode)
+    .order("created_at", { ascending: true });
+
+  let marketCatalogProduct = existingCatalogRows?.[0] ?? null;
 
   if (!marketCatalogProduct) {
     const { data: inserted, error: insertCatalogError } = await supabase
@@ -115,6 +121,41 @@ export async function POST(
     }
 
     marketCatalogProduct = inserted;
+  } else {
+    // Satır zaten vardı. Süper adminin onay ekranında girdiği değerler
+    // eskiden TAMAMEN yok sayılıyordu; seçilen kategori sadece bayinin kendi
+    // ürününe uygulanıyor, Master Katalog satırı ör. stok listesi
+    // yüklemesinden gelen "Diğer" kategorisinde kalıyordu (kullanıcı
+    // bildirimi). Artık SADECE eksik/geçersiz alanlar dolduruluyor —
+    // küratörlü (ör. migros_crawl) satırların geçerli değerleri korunuyor.
+    const patch: Record<string, unknown> = {};
+
+    const existingCategory = marketCatalogProduct.category_name as string | null;
+    if (!existingCategory || !(existingCategory in MARKET_CATEGORY_ANCESTORS)) {
+      patch.category_name = parsed.data.category_name;
+    }
+    if (!(marketCatalogProduct.product_name as string | null)?.trim()) {
+      patch.product_name = effectiveProductName;
+    }
+    if (marketCatalogProduct.reference_price === null && typeof effectivePrice === "number") {
+      patch.reference_price = effectivePrice;
+    }
+    if (!(marketCatalogProduct.image_url as string | null) && effectiveImageUrl) {
+      patch.image_url = effectiveImageUrl;
+    }
+
+    if (Object.keys(patch).length) {
+      const { data: patched } = await supabase
+        .from("market_catalog_products")
+        .update(patch)
+        .eq("id", marketCatalogProduct.id)
+        .select("*")
+        .single();
+
+      if (patched) {
+        marketCatalogProduct = patched;
+      }
+    }
   }
 
   const { data: categoryRows } = await supabase
