@@ -16,8 +16,24 @@ export function buildSuggestionProductHref(notice: ProductSuggestion) {
   return `/dashboard/products?${params.toString()}`;
 }
 
-// Gövdesiz çağrı tenant'ın TÜM okunmamış bildirimlerini kapatır; bu yüzden
-// suggestionId her zaman gönderiliyor.
+// Zili açıp listeyi sonuna kadar kaydırmak bildirimleri SİLMEZ, sadece
+// "görüldü" işaretler — menüdeki kırmızı sayaç sıfırlanır, bildirimler zilde
+// kalır. Kapatma ayrı: tek tıklama (dismissSuggestionNotice) veya
+// "Tümünü temizle" (dismissAllSuggestionNotices).
+export async function markSuggestionNoticesSeen() {
+  await fetch("/api/tenant/products/product-suggestions/seen", {
+    method: "POST",
+  }).catch(() => undefined);
+}
+
+// Gövdesiz çağrı tenant'ın TÜM okunmamış bildirimlerini kapatır — sadece
+// "Tümünü temizle" bunu kullanır, tekil kapatma her zaman suggestionId
+// gönderir.
+export async function dismissAllSuggestionNotices() {
+  await fetch("/api/tenant/products/product-suggestions/dismiss", {
+    method: "POST",
+  }).catch(() => undefined);
+}
 export async function dismissSuggestionNotice(suggestionId: string) {
   await fetch("/api/tenant/products/product-suggestions/dismiss", {
     method: "POST",

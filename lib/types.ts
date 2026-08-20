@@ -174,6 +174,10 @@ export interface ProductSuggestion {
   product_id: string | null;
   reviewed_by: string | null;
   reviewed_at: string | null;
+  // Zil açılıp liste sonuna kadar kaydırıldığında dolar — menüdeki kırmızı
+  // sayaç bunu sayar. Bildirim listede kalmaya devam eder.
+  seen_at: string | null;
+  // Bildirime tıklandığında veya "Tümünü temizle" ile dolar — listeden kalkar.
   dismissed_at: string | null;
   created_at: string;
 }

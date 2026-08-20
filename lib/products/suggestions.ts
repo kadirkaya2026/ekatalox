@@ -21,8 +21,12 @@ export async function getTenantPendingSuggestionNotices(
 }
 
 // Menüdeki kırmızı bildirim rozeti için — onaylanmış ama tenant'ın henüz
-// kapatmadığı öneri sayısı. Her dashboard sayfasında (layout) çalıştığı için
+// GÖRMEDİĞİ öneri sayısı. Her dashboard sayfasında (layout) çalıştığı için
 // satırlar çekilmiyor, sadece sayım yapılıyor.
+//
+// Ölçüt dismissed_at değil seen_at: kullanıcı zili açıp listeyi sonuna kadar
+// kaydırınca sayaç sıfırlanır ama bildirimler zilde durmaya devam eder
+// (kullanıcı isteği, 21 Ağu 2026).
 export async function getTenantSuggestionNoticeCount(tenantId: string): Promise<number> {
   const supabase = createSupabaseAdminClient();
   if (!supabase) {
@@ -34,7 +38,8 @@ export async function getTenantSuggestionNoticeCount(tenantId: string): Promise<
     .select("id", { count: "exact", head: true })
     .eq("tenant_id", tenantId)
     .eq("status", "approved")
-    .is("dismissed_at", null);
+    .is("dismissed_at", null)
+    .is("seen_at", null);
 
   return count ?? 0;
 }

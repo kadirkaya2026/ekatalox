@@ -5,7 +5,9 @@ import { useRouter } from "next/navigation";
 import { Bell, PackageCheck } from "lucide-react";
 import {
   buildSuggestionProductHref,
+  dismissAllSuggestionNotices,
   dismissSuggestionNotice,
+  markSuggestionNoticesSeen,
 } from "@/lib/products/suggestion-notice-actions";
 import type { ProductSuggestion } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -26,7 +28,14 @@ export function SuggestionNotificationBell({
   // notices prop'u kapatılan bildirimi geri diriltmesin.
   const [dismissedIds, setDismissedIds] = useState<string[]>([]);
   const [pendingId, setPendingId] = useState<string | null>(null);
+  // Sayaç "görüldü" ile sıfırlanıyor ama bildirimler listede kaldığı için
+  // rozetin lokal olarak da sönmesi gerekiyor (sunucu sayısı router.refresh'e
+  // kadar eski kalır).
+  const [seen, setSeen] = useState(false);
+  const [clearingAll, setClearingAll] = useState(false);
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const listRef = useRef<HTMLDivElement | null>(null);
+  const seenSentRef = useRef(false);
 
   useEffect(() => {
     if (!open) {
@@ -44,7 +53,48 @@ export function SuggestionNotificationBell({
   }, [open]);
 
   const items = notices.filter((notice) => !dismissedIds.includes(notice.id));
-  const count = items.length;
+  // Rozet "görülmemiş" sayısını gösterir; liste uzunluğunu değil.
+  const count = seen ? 0 : items.length;
+
+  // Liste sonuna gelindiğinde (ya da liste zaten tamamen görünüyorsa, yani
+  // kaydıracak bir şey yoksa) bildirimler görüldü sayılır.
+  function markSeen() {
+    if (seenSentRef.current) return;
+    seenSentRef.current = true;
+    setSeen(true);
+    void markSuggestionNoticesSeen().then(() => router.refresh());
+  }
+
+  function handleListScroll() {
+    const el = listRef.current;
+    if (!el) return;
+    if (el.scrollTop + el.clientHeight >= el.scrollHeight - 8) {
+      markSeen();
+    }
+  }
+
+  // Kaydırma çubuğu hiç çıkmıyorsa "sonuna kaydırma" olayı da hiç olmaz;
+  // bu durumda liste açılır açılmaz görüldü sayılıyor.
+  useEffect(() => {
+    if (!open) return;
+    const el = listRef.current;
+    if (el && el.scrollHeight <= el.clientHeight + 8) {
+      markSeen();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, items.length]);
+
+  async function clearAll() {
+    if (clearingAll) return;
+    setClearingAll(true);
+    setDismissedIds(notices.map((notice) => notice.id));
+    setSeen(true);
+    seenSentRef.current = true;
+    await dismissAllSuggestionNotices();
+    router.refresh();
+    setClearingAll(false);
+    setOpen(false);
+  }
 
   async function openProduct(notice: ProductSuggestion) {
     if (pendingId) {
@@ -53,6 +103,7 @@ export function SuggestionNotificationBell({
 
     setPendingId(notice.id);
     setDismissedIds((current) => [...current, notice.id]);
+    seenSentRef.current = true;
 
     // Sıralama önemli: "okundu" kaydı ÖNCE sunucuya yazılıyor. Menüdeki
     // kırmızı rozet dashboard layout'unda sunucu tarafında sayılıyor
@@ -93,12 +144,28 @@ export function SuggestionNotificationBell({
 
       {open ? (
         <div className="absolute right-0 top-full z-30 mt-2 w-[min(22rem,calc(100vw-2rem))] rounded-xl border border-border bg-card p-2 shadow-lg">
-          <p className="px-2 py-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            Bildirimler
-          </p>
+          <div className="flex items-center justify-between gap-3 px-2 py-1.5">
+            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              Bildirimler
+            </p>
+            {items.length ? (
+              <button
+                type="button"
+                onClick={() => void clearAll()}
+                disabled={clearingAll || pendingId !== null}
+                className="text-xs font-semibold text-muted-foreground underline underline-offset-2 transition hover:text-foreground disabled:opacity-50"
+              >
+                {clearingAll ? "Temizleniyor…" : "Tümünü temizle"}
+              </button>
+            ) : null}
+          </div>
 
-          {count ? (
-            <div className="max-h-80 space-y-1 overflow-y-auto">
+          {items.length ? (
+            <div
+              ref={listRef}
+              onScroll={handleListScroll}
+              className="max-h-80 space-y-1 overflow-y-auto"
+            >
               {items.map((notice) => (
                 <button
                   key={notice.id}
