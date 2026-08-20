@@ -17,14 +17,12 @@ export function SuggestionNotificationBell({
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
-  // Okundu işaretlenen bildirim anında listeden düşsün diye lokal kopya
-  // tutuluyor; sunucudaki dismissed_at güncellemesi arka planda gidiyor.
-  const [items, setItems] = useState(notices);
+  // Kapatılan bildirimlerin id'si tutuluyor; listeyi kopyalamak yerine
+  // filtre uygulanıyor ki router.refresh() sonrası gelen (henüz güncellenmemiş)
+  // notices prop'u kapatılan bildirimi geri diriltmesin.
+  const [dismissedIds, setDismissedIds] = useState<string[]>([]);
+  const [pendingId, setPendingId] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
-
-  useEffect(() => {
-    setItems(notices);
-  }, [notices]);
 
   useEffect(() => {
     if (!open) {
@@ -41,10 +39,37 @@ export function SuggestionNotificationBell({
     return () => document.removeEventListener("mousedown", handlePointerDown);
   }, [open]);
 
+  const items = notices.filter((notice) => !dismissedIds.includes(notice.id));
   const count = items.length;
 
   async function openProduct(notice: ProductSuggestion) {
-    setItems((current) => current.filter((item) => item.id !== notice.id));
+    if (pendingId) {
+      return;
+    }
+
+    setPendingId(notice.id);
+    setDismissedIds((current) => [...current, notice.id]);
+
+    // Sıralama önemli: "okundu" kaydı ÖNCE sunucuya yazılıyor. Menüdeki
+    // kırmızı rozet dashboard layout'unda sunucu tarafında sayılıyor
+    // (getTenantSuggestionNoticeCount); önce yönlendirseydik hedef sayfa
+    // bildirim hâlâ okunmamışken render edilir ve rozet eski sayıda kalırdı.
+    await fetch("/api/tenant/products/product-suggestions/dismiss", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ suggestionId: notice.id }),
+    }).catch(() => undefined);
+
+    // Menüdeki rozet /dashboard layout'unda sunucuda sayılıyor ve App
+    // Router'da paylaşılan layout kardeş sayfalar arası yumuşak geçişte
+    // YENİDEN RENDER EDİLMİYOR (partial rendering) — yani sadece push
+    // etmek rozeti asla güncellemezdi. router.refresh() o anki route'un
+    // Server Component'lerini layout'lar dahil yeniden render ettiği için
+    // rozet daha sayfadan çıkmadan güncelleniyor; ardından gelen yumuşak
+    // geçiş bu güncel layout'u koruyor.
+    router.refresh();
+
+    setPendingId(null);
     setOpen(false);
 
     // Ürün listesi sunucu tarafında sayfalandığı için ürünün kaçıncı sayfada
@@ -55,14 +80,6 @@ export function SuggestionNotificationBell({
       params.set("focus", notice.product_id);
     }
     router.push(`/dashboard/products?${params.toString()}`);
-
-    await fetch("/api/tenant/products/product-suggestions/dismiss", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ suggestionId: notice.id }),
-    }).catch(() => undefined);
-
-    router.refresh();
   }
 
   return (
@@ -94,10 +111,11 @@ export function SuggestionNotificationBell({
                 <button
                   key={notice.id}
                   type="button"
+                  disabled={pendingId !== null}
                   onClick={() => void openProduct(notice)}
                   className={cn(
                     "flex w-full items-start gap-3 rounded-lg p-3 text-left transition",
-                    "hover:bg-emerald-50 dark:hover:bg-emerald-900/20",
+                    "hover:bg-emerald-50 disabled:opacity-60 dark:hover:bg-emerald-900/20",
                   )}
                 >
                   <PackageCheck className="mt-0.5 size-5 shrink-0 text-emerald-600" />
@@ -108,7 +126,7 @@ export function SuggestionNotificationBell({
                       eklendi.
                     </span>
                     <span className="mt-0.5 block text-xs font-semibold text-emerald-700 dark:text-emerald-400">
-                      Stok açmak için tıklayın →
+                      {pendingId === notice.id ? "Açılıyor…" : "Stok açmak için tıklayın →"}
                     </span>
                   </span>
                 </button>
