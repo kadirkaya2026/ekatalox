@@ -26,6 +26,74 @@ const SKU_REPAIR_CONCURRENCY = 20;
 // bulup aktarabilsin. "Yeni ürün oluştur" akışında (aşağıda) VE barkod
 // düzeltme (self-healing SKU repair) akışında aynı mantık kullanılıyor —
 // ikisi de burada birleşiyor.
+// Crawler kaynaklı Master Katalog satırlarının bir kısmında sku_code gerçek
+// bir barkod değil, kaynaktan türetilmiş sentetik bir kod ("MAHSEN-efe-gold",
+// "USM-ace-camasir-suyu-klasik-1-l" gibi) — o sitede barkod yayınlanmadığı
+// için. Bayi Excel'inde o ürünün GERÇEK barkodu olur ve bayi iki kaydı
+// eşleştirir.
+//
+// Eskiden bu bilgi kayboluyordu: contributeToMasterCatalog barkodu mevcut
+// satırın sku'suyla karşılaştırıp "yok" sanıyor ve aynı ürün için İKİNCİ bir
+// katalog satırı açıyordu (canlıda 139 böyle çift birikmişti). Artık barkod
+// mevcut satıra geri yazılıyor; böylece kopya oluşmuyor ve bu ürünü sonra
+// yükleyen her bayi barkodla (tier 1) otomatik eşleşiyor.
+function isRealBarcode(value: string) {
+  return /^\d{8,14}$/.test(value);
+}
+
+async function backfillMasterCatalogBarcodes(
+  supabase: SupabaseClient,
+  pairs: Array<{ catalogSkuCode: string; barcode: string }>,
+): Promise<number> {
+  // Aynı katalog satırı dosyada birden fazla geçebilir; ilk barkod kazanır.
+  const barcodeByCatalogSku = new Map<string, string>();
+  for (const pair of pairs) {
+    const barcode = normalizeCode(pair.barcode);
+    if (!isRealBarcode(barcode)) continue;
+    if (isRealBarcode(normalizeCode(pair.catalogSkuCode))) continue; // zaten gerçek barkod
+    if (!barcodeByCatalogSku.has(pair.catalogSkuCode)) {
+      barcodeByCatalogSku.set(pair.catalogSkuCode, barcode);
+    }
+  }
+
+  if (!barcodeByCatalogSku.size) return 0;
+
+  const { data: catalogRows } = await supabase
+    .from("market_catalog_products")
+    .select("id, source, sku_code")
+    .in("sku_code", [...barcodeByCatalogSku.keys()]);
+
+  if (!catalogRows?.length) return 0;
+
+  // UNIQUE (source, sku_code): hedef barkod aynı kaynakta zaten varsa
+  // güncelleme 23505 verir. Böyle satırlar sessizce atlanır — bunlar zaten
+  // "aynı ürün iki satır" durumu, birleştirme ayrı bir iş.
+  const { data: conflictRows } = await supabase
+    .from("market_catalog_products")
+    .select("source, sku_code")
+    .in("sku_code", [...new Set(barcodeByCatalogSku.values())]);
+  const taken = new Set((conflictRows ?? []).map((row) => `${row.source}\u0000${row.sku_code}`));
+
+  let updated = 0;
+  for (const row of catalogRows) {
+    const barcode = barcodeByCatalogSku.get(row.sku_code as string);
+    if (!barcode) continue;
+    if (taken.has(`${row.source}\u0000${barcode}`)) continue;
+
+    const { error } = await supabase
+      .from("market_catalog_products")
+      .update({ sku_code: barcode })
+      .eq("id", row.id);
+
+    if (!error) {
+      updated++;
+      taken.add(`${row.source}\u0000${barcode}`);
+    }
+  }
+
+  return updated;
+}
+
 async function contributeToMasterCatalog(
   supabase: SupabaseClient,
   candidates: Array<{ sku_code: string; product_name: string; category_name: string; image_url: string }>,
@@ -135,6 +203,15 @@ export async function POST(request: Request) {
     importedProductIdBySku = new Map(importResult.insertedProducts.map((p) => [p.sku_code, p.id]));
     skippedForCatalogLimitCount = importResult.skippedForLimitCount;
   }
+
+  // Barkod geri yazımı import'tan SONRA: import katalog satırını sku_code ile
+  // buluyor, önce güncelleseydik bulamazdı.
+  const backfilledCatalogBarcodeCount = await backfillMasterCatalogBarcodes(
+    supabase,
+    masterCatalogRows
+      .filter((row) => row.barcode)
+      .map((row) => ({ catalogSkuCode: row.masterCatalogSkuCode, barcode: row.barcode! })),
+  );
 
   // Hiçbir yerde eşleşmeyen ve kullanıcının "yeni ürün olarak oluştur"
   // dediği satırlar — kategori seçimi (categoryId) UI'da zorunlu tutulduğu
@@ -534,6 +611,7 @@ export async function POST(request: Request) {
     skippedInvalidCategoryCount,
     skippedForNewProductLimitCount,
     addedToMasterCatalogCount,
+    backfilledCatalogBarcodeCount,
     updatedProducts: updatedProducts.map((product) => normalizeProductRecord(product)),
   });
 }

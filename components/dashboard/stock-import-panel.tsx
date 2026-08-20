@@ -1036,6 +1036,7 @@ export function StockImportPanel({
     skippedInvalidCategoryCount: number;
     skippedForNewProductLimitCount: number;
     addedToMasterCatalogCount: number;
+    backfilledCatalogBarcodeCount: number;
   } | null>(null);
 
   const flatCategories = useMemo(() => flattenCategoryTree(buildCategoryTree(categories)), [categories]);
@@ -1223,6 +1224,7 @@ export function StockImportPanel({
         skippedInvalidCategoryCount: result.skippedInvalidCategoryCount ?? 0,
         skippedForNewProductLimitCount: result.skippedForNewProductLimitCount ?? 0,
         addedToMasterCatalogCount: result.addedToMasterCatalogCount ?? 0,
+        backfilledCatalogBarcodeCount: result.backfilledCatalogBarcodeCount ?? 0,
       });
       router.refresh();
     } catch {
@@ -1258,6 +1260,9 @@ export function StockImportPanel({
             : ""}
           {applyResult.createdProductCount
             ? ` ${applyResult.createdProductCount} tanesi yeni ürün olarak oluşturuldu.`
+            : ""}
+          {applyResult.backfilledCatalogBarcodeCount
+            ? ` Eşleştirdiğiniz ${applyResult.backfilledCatalogBarcodeCount} Master Katalog ürününe dosyadaki barkod işlendi — bir dahaki yüklemede barkodla otomatik eşleşecekler.`
             : ""}
           {applyResult.addedToMasterCatalogCount
             ? ` Bunlardan ${applyResult.addedToMasterCatalogCount} tanesi görseliyle birlikte Master Katalog'a da eklendi.`
