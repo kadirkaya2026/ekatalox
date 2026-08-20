@@ -3,6 +3,10 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Bell, PackageCheck } from "lucide-react";
+import {
+  buildSuggestionProductHref,
+  dismissSuggestionNotice,
+} from "@/lib/products/suggestion-notice-actions";
 import type { ProductSuggestion } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -54,11 +58,7 @@ export function SuggestionNotificationBell({
     // kırmızı rozet dashboard layout'unda sunucu tarafında sayılıyor
     // (getTenantSuggestionNoticeCount); önce yönlendirseydik hedef sayfa
     // bildirim hâlâ okunmamışken render edilir ve rozet eski sayıda kalırdı.
-    await fetch("/api/tenant/products/product-suggestions/dismiss", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ suggestionId: notice.id }),
-    }).catch(() => undefined);
+    await dismissSuggestionNotice(notice.id);
 
     // Menüdeki rozet /dashboard layout'unda sunucuda sayılıyor ve App
     // Router'da paylaşılan layout kardeş sayfalar arası yumuşak geçişte
@@ -71,15 +71,7 @@ export function SuggestionNotificationBell({
 
     setPendingId(null);
     setOpen(false);
-
-    // Ürün listesi sunucu tarafında sayfalandığı için ürünün kaçıncı sayfada
-    // olduğu bilinemez; barkodla arama yapılarak ilk sayfaya getiriliyor
-    // (arama sku_code'u da kapsıyor), focus parametresi de satırı vurguluyor.
-    const params = new URLSearchParams({ q: notice.barcode });
-    if (notice.product_id) {
-      params.set("focus", notice.product_id);
-    }
-    router.push(`/dashboard/products?${params.toString()}`);
+    router.push(buildSuggestionProductHref(notice));
   }
 
   return (
