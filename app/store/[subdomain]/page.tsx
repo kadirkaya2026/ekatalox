@@ -18,6 +18,7 @@ import {
   getStorefrontBestSellerProducts,
   getStorefrontCategoryRepresentativeImages,
   getStorefrontProductsPage,
+  getStorefrontPromoProductCount,
   getStorefrontPromoProducts,
   getStorefrontRecommendationPool,
   getStorefrontSections,
@@ -150,6 +151,7 @@ export default async function StorefrontPage(props: PageProps<"/store/[subdomain
     storefrontSettings,
     sections,
     promoProducts,
+    promoProductCount,
     recommendationPool,
     bestSellerProducts,
     categoryRepresentativeImages,
@@ -162,6 +164,7 @@ export default async function StorefrontPage(props: PageProps<"/store/[subdomain
         priceListState.isCatalogOnly,
       ),
       getStorefrontPromoProducts({ ...pricingParams, excludeCategoryIds: hiddenCategoryIds }),
+      getStorefrontPromoProductCount({ tenantId: tenant.id, excludeCategoryIds: hiddenCategoryIds }),
       getStorefrontRecommendationPool({ ...pricingParams, excludeCategoryIds: hiddenCategoryIds }),
       // Ayarlar aynı anda çekildiği için henüz best_sellers_product_count'u
       // bilmiyoruz — üst sınır (24) kadar çekilip gösterim sırasında admin'in
@@ -215,6 +218,7 @@ export default async function StorefrontPage(props: PageProps<"/store/[subdomain
         initialProducts={firstPage.products}
         initialProductTotal={firstPage.total}
         promoProducts={promoProducts}
+        promoProductCount={promoProductCount}
         bestSellerProducts={bestSellerProducts}
         recommendationPool={recommendationPool}
         categoryRepresentativeImages={categoryRepresentativeImages}

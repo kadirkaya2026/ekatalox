@@ -823,6 +823,7 @@ export function StorefrontClient({
   initialProducts,
   initialProductTotal,
   promoProducts,
+  promoProductCount = 0,
   bestSellerProducts,
   recommendationPool,
   categoryRepresentativeImages = {},
@@ -840,6 +841,7 @@ export function StorefrontClient({
   initialProducts: StorefrontProduct[];
   initialProductTotal: number;
   promoProducts: StorefrontProduct[];
+  promoProductCount?: number;
   bestSellerProducts: StorefrontProduct[];
   recommendationPool: StorefrontProduct[];
   // Anasayfada henüz yüklenmemiş ürünlerin de kategori kutucuğunda temsilci
@@ -1050,10 +1052,39 @@ export function StorefrontClient({
   );
   const layout = getStorefrontLayout(storefrontSettings.layout_key ?? "classic-grid");
   const productCardStyle = getProductCardStyleClasses(storefrontSettings.product_card_style);
-  const homepageBlocks = useMemo(
-    () => normalizeHomepageBlocks(storefrontSettings.homepage_blocks),
-    [storefrontSettings.homepage_blocks],
+  // Market/tekel bayilerde MOBİLDE düzen: banner -> indirimli ürün şeridi ->
+  // kategori görselleri. Varsayılan sırada kategoriler ve indirimliler
+  // banner'ın ÜSTÜNDE (bkz. DEFAULT_HOMEPAGE_BLOCKS). Sıralamayı CSS order
+  // ile değil dizi üzerinde yapıyoruz: blokların kapsayıcısı düz bir div,
+  // flex'e çevirmek tüm vitrinlerde yerleşimi etkilerdi.
+  // "Tümü (N)" bunun üzerine gidiyor. Kategori ya tenant'ta gerçek bir satır
+  // (is_discount_category) ya da page.tsx'in indirimli ürün varken listeye
+  // eklediği "virtual-discount-category" satırı.
+  const discountCategoryId = useMemo(
+    () => categories.find((category) => category.is_discount_category)?.id ?? null,
+    [categories],
   );
+
+  const usesMarketMobileOrder =
+    isMobileViewport && (tenant.business_type === "market" || tenant.is_tekel);
+
+  const homepageBlocks = useMemo(() => {
+    const base = normalizeHomepageBlocks(storefrontSettings.homepage_blocks);
+    if (!usesMarketMobileOrder) return base;
+
+    const bannerOrder = base.find((block) => block.id === "banner")?.order;
+    if (bannerOrder === undefined) return base;
+
+    return base
+      .map((block) =>
+        block.id === "promoTiles"
+          ? { ...block, order: bannerOrder + 0.1 }
+          : block.id === "categoryTiles"
+            ? { ...block, order: bannerOrder + 0.2 }
+            : block,
+      )
+      .sort((left, right) => left.order - right.order);
+  }, [storefrontSettings.homepage_blocks, usesMarketMobileOrder]);
   const usesSidebarNav = layout.categoryNav === "sidebar";
   const cartStorageKey = useMemo(() => getCartStorageKey(tenant.id), [tenant.id]);
   const announcementStorageKeys = useMemo(
@@ -2977,8 +3008,20 @@ export function StorefrontClient({
             }
 
             if (block.id === "promoTiles") {
-              return showPromoTiles && !hideHomeProductsOnMobile ? (
-                <StorefrontPromoTiles key="promoTiles" products={promoProducts} />
+              // Market/tekel bayilerde indirim şeridi mobilde asıl istenen
+              // bölüm; noir temanın mobilde ürünleri gizleme kuralından muaf.
+              const hidePromo = hideHomeProductsOnMobile && !usesMarketMobileOrder;
+              return showPromoTiles && !hidePromo ? (
+                <StorefrontPromoTiles
+                  key="promoTiles"
+                  products={promoProducts}
+                  totalCount={promoProductCount}
+                  onSeeAll={
+                    discountCategoryId
+                      ? () => handleCategoryChange(discountCategoryId)
+                      : undefined
+                  }
+                />
               ) : null;
             }
 

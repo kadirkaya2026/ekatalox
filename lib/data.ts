@@ -775,6 +775,7 @@ async function fetchMarketCatalogPageByFilter(
   orFilter: string | null,
   from: number,
   to: number,
+  category?: string,
 ): Promise<{ products: MarketCatalogProduct[]; total: number }> {
   let query = supabase
     .from("market_catalog_products")
@@ -783,6 +784,10 @@ async function fetchMarketCatalogPageByFilter(
     .order("product_name", { ascending: true })
     .range(from, to);
 
+  // Kategori filtresi arama teriminden bağımsız ve ONUNLA BİRLİKTE çalışır:
+  // `.or(...)` içindeki koşullar kendi aralarında OR'lanır, `.eq(...)` ise
+  // tüm gruba AND ile eklenir — yani "bu kategoride ara" doğru anlama gelir.
+  if (category) query = query.eq("category_name", category);
   if (orFilter) query = query.or(orFilter);
 
   const { data, count } = await query;
@@ -798,6 +803,7 @@ const TIER_A_ID_EXCLUSION_CAP = 200;
 export async function getMarketCatalogProductsPage(params: {
   page: number;
   search?: string;
+  category?: string;
 }): Promise<{ products: MarketCatalogProduct[]; total: number }> {
   const supabase = createSupabaseAdminClient();
 
@@ -809,9 +815,10 @@ export async function getMarketCatalogProductsPage(params: {
   const from = (page - 1) * MARKET_CATALOG_PAGE_SIZE;
   const to = from + MARKET_CATALOG_PAGE_SIZE - 1;
   const term = params.search?.trim().replace(/[,%]/g, " ").trim();
+  const category = params.category?.trim() || undefined;
 
   if (!term) {
-    return fetchMarketCatalogPageByFilter(supabase, null, from, to);
+    return fetchMarketCatalogPageByFilter(supabase, null, from, to, category);
   }
 
   // "su" gibi kısa/genel bir terim aratıldığında ön ek eşleşmesi (bkz.
@@ -835,28 +842,32 @@ export async function getMarketCatalogProductsPage(params: {
     buildProductNameSearchClause(term, "brand", true),
   ].join(",");
 
-  const { count: rawCountA } = await supabase
+  // Sayımlar da kategoriyle sınırlanmalı, yoksa sayfalama filtrelenmiş
+  // listeyle uyuşmaz (toplam büyük görünür, son sayfalar boş gelir).
+  const countAQuery = supabase
     .from("market_catalog_products")
-    .select("*", { count: "exact", head: true })
-    .or(strictFilter);
+    .select("*", { count: "exact", head: true });
+  if (category) countAQuery.eq("category_name", category);
+  const { count: rawCountA } = await countAQuery.or(strictFilter);
   const countA = rawCountA ?? 0;
 
   if (countA === 0 || countA > TIER_A_ID_EXCLUSION_CAP) {
-    return fetchMarketCatalogPageByFilter(supabase, prefixFilter, from, to);
+    return fetchMarketCatalogPageByFilter(supabase, prefixFilter, from, to, category);
   }
 
-  const { count: rawTotal } = await supabase
+  const totalQuery = supabase
     .from("market_catalog_products")
-    .select("*", { count: "exact", head: true })
-    .or(prefixFilter);
+    .select("*", { count: "exact", head: true });
+  if (category) totalQuery.eq("category_name", category);
+  const { count: rawTotal } = await totalQuery.or(prefixFilter);
   const total = rawTotal ?? 0;
 
   const products: MarketCatalogProduct[] = [];
 
   if (from < countA) {
-    const { data: tierARows } = await supabase
-      .from("market_catalog_products")
-      .select("*")
+    const tierAQuery = supabase.from("market_catalog_products").select("*");
+    if (category) tierAQuery.eq("category_name", category);
+    const { data: tierARows } = await tierAQuery
       .or(strictFilter)
       .order("category_name", { ascending: true })
       .order("product_name", { ascending: true })
@@ -865,15 +876,14 @@ export async function getMarketCatalogProductsPage(params: {
   }
 
   if (to >= countA) {
-    const { data: tierAIdRows } = await supabase
-      .from("market_catalog_products")
-      .select("id")
-      .or(strictFilter);
+    const tierAIdQuery = supabase.from("market_catalog_products").select("id");
+    if (category) tierAIdQuery.eq("category_name", category);
+    const { data: tierAIdRows } = await tierAIdQuery.or(strictFilter);
     const tierAIds = (tierAIdRows ?? []).map((row) => row.id as string);
 
-    let tierBQuery = supabase
-      .from("market_catalog_products")
-      .select("*")
+    const tierBBase = supabase.from("market_catalog_products").select("*");
+    if (category) tierBBase.eq("category_name", category);
+    let tierBQuery = tierBBase
       .or(prefixFilter)
       .order("category_name", { ascending: true })
       .order("product_name", { ascending: true })
@@ -1577,6 +1587,48 @@ export async function getStorefrontPromoProducts(params: {
 
   const rows = await readPromo(params.tenantId, params.excludeCategoryIds ?? [], limit);
   return rows.map((product) => toStorefrontProduct(product, params.priceListId, params.isCatalogOnly));
+}
+
+// İndirimli ürün şeridinin sağ üstündeki "Tümü (N)" sayacı için — şeritte
+// yalnızca ilk 12 ürün gösterildiği için gerçek toplam ayrıca sayılıyor.
+// Filtreler getStorefrontPromoProducts ile birebir aynı olmalı, yoksa
+// müşteri "Tümü (40)" görüp kategoriye girince farklı sayıda ürün bulur.
+export async function getStorefrontPromoProductCount(params: {
+  tenantId: string;
+  excludeCategoryIds?: string[];
+}): Promise<number> {
+  const supabaseAdmin = createSupabaseAdminClient();
+
+  if (!supabaseAdmin) {
+    if (!shouldAllowDemoFallback()) return 0;
+    return demoProducts.filter(
+      (product) => product.tenant_id === params.tenantId && product.is_discount_active,
+    ).length;
+  }
+
+  const readCount = unstable_cache(
+    async (tenantId: string, excludeCategoryIds: string[]) => {
+      const admin = createSupabaseAdminClient();
+      if (!admin) return 0;
+
+      let query = admin
+        .from("products")
+        .select("id", { count: "exact", head: true })
+        .eq("tenant_id", tenantId)
+        .eq("is_discount_active", true)
+        .eq("is_in_stock", true);
+      if (excludeCategoryIds.length) {
+        query = query.not("category_id", "in", `(${excludeCategoryIds.join(",")})`);
+      }
+
+      const { count } = await query;
+      return count ?? 0;
+    },
+    [params.tenantId],
+    { tags: [`storefront_${params.tenantId}`], revalidate: 60 },
+  );
+
+  return readCount(params.tenantId, params.excludeCategoryIds ?? []);
 }
 
 // "Öne Çıkan Bölümler"in aksine burada ürün listesi admin tarafından

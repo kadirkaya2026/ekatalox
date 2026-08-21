@@ -112,18 +112,49 @@ export function StorefrontHeroCluster({
   );
 }
 
-export function StorefrontPromoTiles({ products }: { products: StorefrontProduct[] }) {
+export function StorefrontPromoTiles({
+  products,
+  totalCount = 0,
+  onSeeAll,
+}: {
+  products: StorefrontProduct[];
+  // Şeritte sadece ilk 12 ürün var; sağ üstteki sayaç gerçek toplamı
+  // gösterir (bkz. getStorefrontPromoProductCount).
+  totalCount?: number;
+  onSeeAll?: () => void;
+}) {
   const theme = useStorefrontTheme();
   const { t } = useStorefrontLocale();
 
-  const discounted = products.filter((product) => (product.discount_percentage ?? 0) > 0).slice(0, 6);
+  const discounted = products.filter((product) => (product.discount_percentage ?? 0) > 0).slice(0, 12);
 
   if (!discounted.length) {
     return null;
   }
 
+  // Sayaç sunucudan gelmediyse (ör. bölüm sayfası) en azından şeritteki
+  // ürün sayısını göster, "Tümü (0)" yazmasın.
+  const shownCount = totalCount > 0 ? totalCount : discounted.length;
+
   return (
     <section className="mb-5 sm:mb-8">
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <h2 className={cn("text-base font-semibold leading-6 sm:text-lg", theme.text)}>
+          İndirimli Ürünler
+        </h2>
+        {onSeeAll ? (
+          <button
+            type="button"
+            onClick={onSeeAll}
+            className={cn(
+              "shrink-0 rounded-full px-3 py-1 text-sm font-semibold transition hover:opacity-80",
+              theme.productPrice,
+            )}
+          >
+            Tümü ({shownCount})
+          </button>
+        ) : null}
+      </div>
       <div className="scrollbar-hide -mx-4 flex gap-3 overflow-x-auto px-4 sm:mx-0 sm:grid sm:grid-cols-3 sm:gap-4 sm:overflow-visible sm:px-0 lg:grid-cols-6">
         {discounted.map((product) => (
           <div
