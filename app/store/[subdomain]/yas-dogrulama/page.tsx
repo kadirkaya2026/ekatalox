@@ -9,6 +9,7 @@ import { AgeVerificationGate } from "@/components/storefront/age-verification-ga
 import { StoreClosedNotice } from "@/components/storefront/store-closed-notice";
 import { StorefrontSuspendedNotice } from "@/components/storefront/storefront-suspended-notice";
 import { StorefrontPageShell } from "@/components/storefront/storefront-page-shell";
+import { buildStorefrontIcons, buildStorefrontTitle, isWhiteLabelStorefront } from "@/lib/storefront/white-label";
 import { StorefrontLocaleProvider } from "@/lib/storefront/locale-context";
 import { getAppearanceFromSettings } from "@/lib/storefront/theme-context";
 import { isTrialExpired } from "@/lib/billing/trial";
@@ -33,10 +34,8 @@ export async function generateMetadata(
     settings.site_tab_title ?? settings.storefront_title ?? tenant.company_name;
 
   return {
-    title,
-    icons: settings.site_favicon_url
-      ? { icon: settings.site_favicon_url }
-      : undefined,
+    title: buildStorefrontTitle(title, tenant),
+    icons: buildStorefrontIcons(settings.site_favicon_url, tenant),
     robots: {
       index: false,
       follow: false,
@@ -89,7 +88,11 @@ export default async function StorefrontAgeGatePage(
   const settings = await getTenantStorefrontSettings(tenant.id);
 
   return (
-    <StorefrontPageShell storefrontSettings={settings} subdomain={subdomain}>
+    <StorefrontPageShell
+        storefrontSettings={settings}
+        subdomain={subdomain}
+        hidePoweredBy={isWhiteLabelStorefront(tenant)}
+      >
       <AgeVerificationGate
         subdomain={subdomain}
         companyName={tenant.company_name}

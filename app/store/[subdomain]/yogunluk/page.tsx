@@ -4,6 +4,7 @@
 export const revalidate = 300;
 
 import type { Metadata } from "next";
+import { buildStorefrontIcons, buildStorefrontTitle, isWhiteLabelStorefront } from "@/lib/storefront/white-label";
 import { notFound } from "next/navigation";
 import { VisitorQuotaNotice } from "@/components/storefront/visitor-quota-notice";
 import { getStorefrontTenantCached, getTenantStorefrontSettings } from "@/lib/data";
@@ -29,10 +30,8 @@ export async function generateMetadata(
     settings.site_tab_title ?? settings.storefront_title ?? tenant.company_name;
 
   return {
-    title,
-    icons: settings.site_favicon_url
-      ? { icon: settings.site_favicon_url }
-      : undefined,
+    title: buildStorefrontTitle(title, tenant),
+    icons: buildStorefrontIcons(settings.site_favicon_url, tenant),
     robots: {
       index: false,
       follow: false,

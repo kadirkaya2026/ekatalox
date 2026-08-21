@@ -9,6 +9,7 @@ import { StoreClosedNotice } from "@/components/storefront/store-closed-notice";
 import { StoreOutsideHoursNotice } from "@/components/storefront/store-outside-hours-notice";
 import { StorefrontSuspendedNotice } from "@/components/storefront/storefront-suspended-notice";
 import { StorefrontPageShell } from "@/components/storefront/storefront-page-shell";
+import { buildStorefrontIcons, buildStorefrontTitle, isWhiteLabelStorefront } from "@/lib/storefront/white-label";
 import { StorefrontClient } from "@/components/storefront/storefront-client";
 import { StorefrontFooter } from "@/components/storefront/storefront-footer";
 import { StorefrontLocaleProvider } from "@/lib/storefront/locale-context";
@@ -54,10 +55,8 @@ export async function generateMetadata(
     settings.site_tab_title ?? settings.storefront_title ?? tenant.company_name;
 
   return {
-    title,
-    icons: settings.site_favicon_url
-      ? { icon: settings.site_favicon_url }
-      : undefined,
+    title: buildStorefrontTitle(title, tenant),
+    icons: buildStorefrontIcons(settings.site_favicon_url, tenant),
     robots: {
       index: false,
       follow: false,
@@ -125,7 +124,11 @@ export default async function StorefrontPage(props: PageProps<"/store/[subdomain
     const settings = await getTenantStorefrontSettings(tenant.id);
 
     return (
-      <StorefrontPageShell storefrontSettings={settings} subdomain={subdomain}>
+      <StorefrontPageShell
+        storefrontSettings={settings}
+        subdomain={subdomain}
+        hidePoweredBy={isWhiteLabelStorefront(tenant)}
+      >
         <PasswordGate
           subdomain={subdomain}
           companyName={tenant.company_name}
@@ -214,6 +217,7 @@ export default async function StorefrontPage(props: PageProps<"/store/[subdomain
     <StorefrontPageShell
       storefrontSettings={storefrontSettings}
       subdomain={subdomain}
+      hidePoweredBy={isWhiteLabelStorefront(tenant)}
       className={footerVisible ? "pb-0" : undefined}
     >
       <StorefrontClient

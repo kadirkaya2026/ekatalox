@@ -44,6 +44,11 @@ const fontVariables = [
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://www.ekatalox.com"),
+  // favicon app/ altından public/'e taşındı: dosya tabanlı favicon Next.js
+  // tarafından HER rotaya otomatik ekleniyordu ve vitrin sayfaları kendi
+  // ikonunu verse bile eKatalox ikonu HTML'de kalıyordu. Artık normal
+  // metadata olarak tanımlı, dolayısıyla alt rotalar tamamen ezebiliyor.
+  icons: { icon: "/favicon.ico" },
   title: {
     default: "eKatalox — Toptan Ticaretin Dijital İşletim Sistemi",
     template: "%s | eKatalox",

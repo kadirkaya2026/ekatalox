@@ -9,6 +9,7 @@ import { StoreClosedNotice } from "@/components/storefront/store-closed-notice";
 import { StoreOutsideHoursNotice } from "@/components/storefront/store-outside-hours-notice";
 import { StorefrontSuspendedNotice } from "@/components/storefront/storefront-suspended-notice";
 import { StorefrontPageShell } from "@/components/storefront/storefront-page-shell";
+import { buildStorefrontIcons, buildStorefrontTitle, isWhiteLabelStorefront } from "@/lib/storefront/white-label";
 import { StorefrontClient } from "@/components/storefront/storefront-client";
 import { StorefrontFooter } from "@/components/storefront/storefront-footer";
 import { StorefrontSectionBreadcrumb } from "@/components/storefront/storefront-section-breadcrumb";
@@ -36,7 +37,17 @@ import {
 export async function generateMetadata(props: {
   params: Promise<{ subdomain: string; sectionId: string }>;
 }): Promise<Metadata> {
+  // Başlık verilmezse kök layout'un varsayılanı ("eKatalox — Toptan
+  // Ticaretin Dijital İşletim Sistemi") sekmede görünüyordu.
+  const { subdomain } = await props.params;
+  const tenant = await getStorefrontTenant(subdomain);
+  const settings = tenant ? await getTenantStorefrontSettings(tenant.id) : null;
+  const title =
+    settings?.site_tab_title ?? settings?.storefront_title ?? tenant?.company_name ?? "";
+
   return {
+    ...(tenant ? { title: buildStorefrontTitle(title, tenant) } : {}),
+    icons: buildStorefrontIcons(settings?.site_favicon_url, tenant),
     robots: {
       index: false,
       follow: false,
@@ -106,7 +117,11 @@ export default async function SectionDetailPage(props: {
     const settings = await getTenantStorefrontSettings(tenant.id);
 
     return (
-      <StorefrontPageShell storefrontSettings={settings} subdomain={subdomain}>
+      <StorefrontPageShell
+        storefrontSettings={settings}
+        subdomain={subdomain}
+        hidePoweredBy={isWhiteLabelStorefront(tenant)}
+      >
         <PasswordGate
           subdomain={subdomain}
           companyName={tenant.company_name}
@@ -149,6 +164,7 @@ export default async function SectionDetailPage(props: {
     <StorefrontPageShell
       storefrontSettings={storefrontSettings}
       subdomain={subdomain}
+      hidePoweredBy={isWhiteLabelStorefront(tenant)}
       className={footerVisible ? "pb-0" : undefined}
     >
       <div className="container-shell py-4">

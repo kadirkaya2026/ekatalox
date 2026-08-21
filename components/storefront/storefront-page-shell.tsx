@@ -18,12 +18,14 @@ function StorefrontPageShellInner({
   fontClassName,
   style,
   isThemeToggleVisible,
+  hidePoweredBy,
   children,
 }: {
   className?: string;
   fontClassName: string;
   style?: CSSProperties;
   isThemeToggleVisible: boolean;
+  hidePoweredBy?: boolean;
   children: React.ReactNode;
 }) {
   const theme = useStorefrontTheme();
@@ -37,7 +39,7 @@ function StorefrontPageShellInner({
     >
       <StorefrontThemeReset isToggleVisible={isThemeToggleVisible} />
       {children}
-      <StorefrontPoweredByBar />
+      {hidePoweredBy ? null : <StorefrontPoweredByBar />}
     </div>
   );
 }
@@ -47,6 +49,7 @@ export function StorefrontPageShell({
   themeKey,
   subdomain,
   className,
+  hidePoweredBy,
   children,
 }: {
   storefrontSettings?: Pick<
@@ -62,6 +65,9 @@ export function StorefrontPageShell({
   themeKey?: string;
   subdomain: string;
   className?: string;
+  // Market/tekel vitrinlerinde eKatalox rozeti gösterilmez
+  // (bkz. lib/storefront/white-label.ts).
+  hidePoweredBy?: boolean;
   children: React.ReactNode;
 }) {
   const resolvedThemeKey = storefrontSettings?.theme_key ?? themeKey ?? "minimal";
@@ -91,6 +97,7 @@ export function StorefrontPageShell({
           fontClassName={fontOption.className}
           style={brandStyle}
           isThemeToggleVisible={storefrontSettings?.is_theme_toggle_visible !== false}
+          hidePoweredBy={hidePoweredBy}
         >
           {children}
         </StorefrontPageShellInner>
