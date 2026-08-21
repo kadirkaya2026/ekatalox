@@ -3067,11 +3067,14 @@ export function StorefrontClient({
         className={cn(
           "container-shell py-5 sm:py-6",
           // Alt navigasyon barı sayfanın üstünde durduğu için son ürünün
-          // altında daha fazla boşluk gerekiyor (bkz. globals.css).
-          usesBottomNav
-            ? "bottom-nav-safe-bottom"
-            : hasPageFooter
-              ? "pb-4"
+          // altında daha fazla boşluk gerekiyor (bkz. globals.css). Ama
+          // altbilgi varsa boşluk ona ait (bottom-nav-footer-inset);
+          // burada da verilirse ürünlerle altbilgi arasında koca bir
+          // boşluk kalıyor.
+          hasPageFooter
+            ? "pb-4"
+            : usesBottomNav
+              ? "bottom-nav-safe-bottom"
               : "sticky-safe-bottom",
         )}
       >

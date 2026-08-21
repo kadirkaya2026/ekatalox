@@ -131,9 +131,13 @@ function MobileSection({
 export function StorefrontFooter({
   settings,
   copyrightTenantName,
+  hasBottomNav = false,
 }: {
   settings: TenantStorefrontSettings;
   copyrightTenantName?: string | null;
+  // Market/tekel vitrinlerinde mobilde sabit alt navigasyon barı var;
+  // altbilgi onun altında kalmasın diye ek boşluk (bkz. globals.css).
+  hasBottomNav?: boolean;
 }) {
   const theme = useStorefrontTheme();
   const { t } = useStorefrontLocale();
@@ -180,7 +184,9 @@ export function StorefrontFooter({
   let mobileDividerIndex = 0;
 
   return (
-    <footer className={cn("mt-auto", theme.footerShell)}>
+    <footer
+      className={cn("mt-auto", theme.footerShell, hasBottomNav && "bottom-nav-footer-inset")}
+    >
       <div className="mx-auto max-w-7xl px-4 pt-5 pb-0 md:py-7">
         {showMainColumns ? (
           <div className={gridClassName}>

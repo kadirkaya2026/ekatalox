@@ -131,6 +131,15 @@ button:focus-visible {
   padding-bottom: calc(env(safe-area-inset-bottom) + 0.35rem);
 }
 
+/* Sayfa altbilgisi <main>'in dışında render ediliyor, dolayısıyla
+   bottom-nav-safe-bottom onu kapsamıyordu ve sabit barın altında
+   kalıyordu. Bar sm:hidden olduğu için bu pay da sadece mobilde. */
+@media (max-width: 639px) {
+  .bottom-nav-footer-inset {
+    padding-bottom: calc(env(safe-area-inset-bottom) + 5.5rem);
+  }
+}
+
 .surface-premium {
   backdrop-filter: blur(18px);
   -webkit-backdrop-filter: blur(18px);

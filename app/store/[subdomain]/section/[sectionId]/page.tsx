@@ -9,7 +9,12 @@ import { StoreClosedNotice } from "@/components/storefront/store-closed-notice";
 import { StoreOutsideHoursNotice } from "@/components/storefront/store-outside-hours-notice";
 import { StorefrontSuspendedNotice } from "@/components/storefront/storefront-suspended-notice";
 import { StorefrontPageShell } from "@/components/storefront/storefront-page-shell";
-import { buildStorefrontIcons, buildStorefrontTitle, isWhiteLabelStorefront } from "@/lib/storefront/white-label";
+import {
+  buildStorefrontIcons,
+  buildStorefrontTitle,
+  isMarketOrTekelTenant,
+  isWhiteLabelStorefront,
+} from "@/lib/storefront/white-label";
 import { StorefrontClient } from "@/components/storefront/storefront-client";
 import { StorefrontFooter } from "@/components/storefront/storefront-footer";
 import { StorefrontSectionBreadcrumb } from "@/components/storefront/storefront-section-breadcrumb";
@@ -156,9 +161,14 @@ export default async function SectionDetailPage(props: {
   const footerVisible = storefrontSettings.is_footer_visible;
   const headersList = await headers();
   const requestHost = getRequestHostFromHeaders(headersList);
-  const copyrightTenantName = isTenantCustomDomainHost(requestHost, tenant)
-    ? tenant.company_name
-    : null;
+  // Boş bırakılırsa altbilgi "©2026 eKatalox" bağlantısı basıyor.
+  // Market/tekel vitrinlerinde müşteriye eKatalox markası hiç
+  // görünmemeli (kullanıcı isteği, 21 Ağu 2026), o yüzden özel alan
+  // adı olmasa da bayinin kendi adı yazılıyor.
+  const copyrightTenantName =
+    isTenantCustomDomainHost(requestHost, tenant) || isMarketOrTekelTenant(tenant)
+      ? (tenant.company_name ?? storefrontSettings.storefront_title ?? null)
+      : null;
 
   return (
     <StorefrontPageShell
@@ -195,6 +205,7 @@ export default async function SectionDetailPage(props: {
         <StorefrontFooter
           settings={storefrontSettings}
           copyrightTenantName={copyrightTenantName}
+          hasBottomNav={isMarketOrTekelTenant(tenant)}
         />
       ) : null}
     </StorefrontPageShell>
