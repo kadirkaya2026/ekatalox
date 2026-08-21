@@ -28,9 +28,18 @@ const Hero = () => {
       {/* Ambient background */}
       <div className="absolute inset-0 bg-[#090d16]" />
       <div className="absolute inset-0 bg-grid mask-radial-fade opacity-60" />
-      <div className="absolute -top-40 left-1/2 -translate-x-1/2 w-[900px] h-[900px] rounded-full bg-[var(--marketing-primary)]/20 blur-[140px] animate-pulse-glow" />
-      <div className="absolute top-40 right-0 w-[600px] h-[600px] rounded-full bg-[var(--marketing-accent)]/25 blur-[120px]" />
-      <div className="absolute top-60 left-0 w-[500px] h-[500px] rounded-full bg-[var(--marketing-primary)]/10 blur-[120px]" />
+      <div
+        className="absolute -top-40 left-1/2 -translate-x-1/2 w-[900px] h-[900px] rounded-full animate-pulse-glow"
+        style={{ background: "radial-gradient(closest-side, rgba(var(--marketing-primary-rgb), 0.2), transparent)" }}
+      />
+      <div
+        className="absolute top-40 right-0 w-[600px] h-[600px] rounded-full"
+        style={{ background: "radial-gradient(closest-side, rgba(var(--marketing-accent-rgb), 0.25), transparent)" }}
+      />
+      <div
+        className="absolute top-60 left-0 w-[500px] h-[500px] rounded-full"
+        style={{ background: "radial-gradient(closest-side, rgba(var(--marketing-primary-rgb), 0.1), transparent)" }}
+      />
 
       {/* Sticky content */}
       <div className="sticky top-0 h-screen flex flex-col items-center justify-start pt-28 md:pt-36 px-6">
@@ -211,7 +220,10 @@ const ProblemSolution = () => {
 
   return (
     <section className="relative py-28 md:py-40 px-6">
-      <div className="absolute top-1/3 left-0 w-[500px] h-[500px] rounded-full bg-[var(--marketing-primary)]/10 blur-[160px] pointer-events-none" />
+      <div
+        className="absolute top-1/3 left-0 w-[500px] h-[500px] rounded-full pointer-events-none"
+        style={{ background: "radial-gradient(closest-side, rgba(var(--marketing-primary-rgb), 0.1), transparent)" }}
+      />
       <div className="max-w-5xl mx-auto relative">
         <motion.div
           initial={{ opacity: 0, y: 30 }}
@@ -301,7 +313,10 @@ const Features = () => {
 
   return (
     <section id="ozellikler" className="relative py-28 md:py-40 px-6">
-      <div className="absolute top-1/4 right-0 w-[500px] h-[500px] rounded-full bg-[var(--marketing-accent)]/10 blur-[140px] pointer-events-none" />
+      <div
+        className="absolute top-1/4 right-0 w-[500px] h-[500px] rounded-full pointer-events-none"
+        style={{ background: "radial-gradient(closest-side, rgba(var(--marketing-accent-rgb), 0.1), transparent)" }}
+      />
       <div className="max-w-7xl mx-auto relative">
         <motion.div
           initial={{ opacity: 0, y: 30 }}
@@ -348,7 +363,10 @@ const Features = () => {
 const ThemesPromo = () => (
   <section className="relative py-24 md:py-32 px-6">
     <div className="max-w-6xl mx-auto relative rounded-3xl border border-white/10 bg-gradient-to-b from-white/[0.04] to-transparent overflow-hidden p-10 md:p-16 text-center">
-      <div className="absolute -top-24 left-1/2 -translate-x-1/2 w-[600px] h-[400px] rounded-full bg-[var(--marketing-primary)]/15 blur-[140px] pointer-events-none" />
+      <div
+        className="absolute -top-24 left-1/2 -translate-x-1/2 w-[600px] h-[400px] rounded-full pointer-events-none"
+        style={{ background: "radial-gradient(closest-side, rgba(var(--marketing-primary-rgb), 0.15), transparent)" }}
+      />
       <motion.div
         initial={{ opacity: 0, y: 24 }}
         whileInView={{ opacity: 1, y: 0 }}
@@ -400,8 +418,14 @@ const FAQ = () => {
 
   return (
     <section id="faq" className="relative py-28 md:py-40 px-6">
-      <div className="absolute top-1/2 left-1/3 w-[500px] h-[500px] rounded-full bg-[var(--marketing-primary)]/10 blur-[160px] pointer-events-none" />
-      <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] rounded-full bg-[var(--marketing-accent)]/10 blur-[140px] pointer-events-none" />
+      <div
+        className="absolute top-1/2 left-1/3 w-[500px] h-[500px] rounded-full pointer-events-none"
+        style={{ background: "radial-gradient(closest-side, rgba(var(--marketing-primary-rgb), 0.1), transparent)" }}
+      />
+      <div
+        className="absolute bottom-0 right-1/4 w-[500px] h-[500px] rounded-full pointer-events-none"
+        style={{ background: "radial-gradient(closest-side, rgba(var(--marketing-accent-rgb), 0.1), transparent)" }}
+      />
       <div className="max-w-3xl mx-auto relative">
         <motion.div
           initial={{ opacity: 0, y: 30 }}
@@ -572,8 +596,14 @@ const Pricing = () => {
 
   return (
     <section id="fiyatlandirma" className="relative py-32 md:py-44 px-6">
-      <div className="absolute top-1/4 right-1/4 w-[500px] h-[500px] rounded-full bg-[var(--marketing-accent)]/15 blur-[160px] pointer-events-none" />
-      <div className="absolute bottom-0 left-1/4 w-[500px] h-[500px] rounded-full bg-[var(--marketing-primary)]/10 blur-[160px] pointer-events-none" />
+      <div
+        className="absolute top-1/4 right-1/4 w-[500px] h-[500px] rounded-full pointer-events-none"
+        style={{ background: "radial-gradient(closest-side, rgba(var(--marketing-accent-rgb), 0.15), transparent)" }}
+      />
+      <div
+        className="absolute bottom-0 left-1/4 w-[500px] h-[500px] rounded-full pointer-events-none"
+        style={{ background: "radial-gradient(closest-side, rgba(var(--marketing-primary-rgb), 0.1), transparent)" }}
+      />
       <div className="max-w-7xl mx-auto relative">
         <motion.div
           initial={{ opacity: 0, y: 30 }}
@@ -744,8 +774,14 @@ const PricingCard = ({ plan, index, billing }) => {
 const FinalCTA = () => (
   <section id="baslat" className="relative py-40 md:py-56 px-6 overflow-hidden">
     <div className="absolute inset-0">
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[900px] h-[900px] rounded-full bg-[var(--marketing-accent)]/20 blur-[160px]" />
-      <div className="absolute top-1/3 left-1/4 w-[500px] h-[500px] rounded-full bg-[var(--marketing-primary)]/15 blur-[140px]" />
+      <div
+        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[900px] h-[900px] rounded-full"
+        style={{ background: "radial-gradient(closest-side, rgba(var(--marketing-accent-rgb), 0.2), transparent)" }}
+      />
+      <div
+        className="absolute top-1/3 left-1/4 w-[500px] h-[500px] rounded-full"
+        style={{ background: "radial-gradient(closest-side, rgba(var(--marketing-primary-rgb), 0.15), transparent)" }}
+      />
     </div>
     <motion.div
       initial={{ opacity: 0, y: 50 }}

@@ -147,8 +147,14 @@ const FooterCol = ({ title, items }) => (
 
 export const PageHero = ({ tag, title, subtitle, children }) => (
   <section className="relative pt-36 md:pt-44 pb-16 md:pb-20 px-6 overflow-hidden">
-    <div className="absolute -top-40 left-1/2 -translate-x-1/2 w-[900px] h-[600px] rounded-full bg-[var(--marketing-primary)]/15 blur-[160px] pointer-events-none" />
-    <div className="absolute top-20 right-0 w-[500px] h-[500px] rounded-full bg-[var(--marketing-accent)]/15 blur-[140px] pointer-events-none" />
+    <div
+        className="absolute -top-40 left-1/2 -translate-x-1/2 w-[900px] h-[600px] rounded-full pointer-events-none"
+        style={{ background: "radial-gradient(closest-side, rgba(var(--marketing-primary-rgb), 0.15), transparent)" }}
+      />
+    <div
+        className="absolute top-20 right-0 w-[500px] h-[500px] rounded-full pointer-events-none"
+        style={{ background: "radial-gradient(closest-side, rgba(var(--marketing-accent-rgb), 0.15), transparent)" }}
+      />
     <div className="relative max-w-5xl mx-auto text-center">
       {tag && (
         <motion.div

@@ -90,8 +90,14 @@ const KayitForm = () => {
     <main className="relative min-h-screen bg-[#090d16] text-white overflow-hidden">
       <SiteNavbar />
 
-      <div className="absolute -top-40 left-1/4 w-[700px] h-[700px] rounded-full bg-[var(--marketing-primary)]/15 blur-[160px] pointer-events-none" />
-      <div className="absolute top-40 right-0 w-[600px] h-[600px] rounded-full bg-[var(--marketing-accent)]/20 blur-[160px] pointer-events-none" />
+      <div
+        className="absolute -top-40 left-1/4 w-[700px] h-[700px] rounded-full pointer-events-none"
+        style={{ background: "radial-gradient(closest-side, rgba(var(--marketing-primary-rgb), 0.15), transparent)" }}
+      />
+      <div
+        className="absolute top-40 right-0 w-[600px] h-[600px] rounded-full pointer-events-none"
+        style={{ background: "radial-gradient(closest-side, rgba(var(--marketing-accent-rgb), 0.2), transparent)" }}
+      />
 
       <div className="relative pt-32 md:pt-36 pb-24 px-6">
         <div className="max-w-6xl mx-auto grid lg:grid-cols-[1.1fr_1fr] gap-12 lg:gap-16 items-start">
