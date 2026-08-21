@@ -682,9 +682,13 @@ interface ActiveAnnouncement {
 function AnnouncementModal({
   announcement,
   onDismiss,
+  badgeLabel,
 }: {
   announcement: ActiveAnnouncement;
   onDismiss: () => void;
+  // Yoğunluk modu aynı modalı kullanıyor ama "Yeni Duyuru" rozeti oraya
+  // uymuyor; verilmezse duyuru metni kullanılır.
+  badgeLabel?: string;
 }) {
   const theme = useStorefrontTheme();
   const { t } = useStorefrontLocale();
@@ -740,7 +744,7 @@ function AnnouncementModal({
                   </div>
                   <div className="space-y-2">
                     <span className={cn(theme.stockBadgeIn, "uppercase tracking-[0.22em] text-[11px]")}>
-                      {t("announcement.badge")}
+                      {badgeLabel ?? t("announcement.badge")}
                     </span>
                     <h2
                       id="announcement-modal-title"
@@ -1807,6 +1811,44 @@ export function StorefrontClient({
     };
   }, [selectedProduct, variantSelections]);
   const storefrontTitle = storefrontSettings.storefront_title || tenant.company_name;
+  // Yoğunluk modu: bayi tek tuşla açar, vitrini açan müşteriye uyarı
+  // gösterilir. Duyurudan bağımsız ve ondan ÖNCELİKLİ — yoğunluk anlık bir
+  // bilgi, kalıcı duyurunun arkasında kalmamalı.
+  //
+  // sessionStorage kullanılıyor (duyurudaki localStorage + sürüm sayacı
+  // değil): yoğunluk geçici bir durum, müşteri sekmesini kapatıp tekrar
+  // girdiğinde güncel durumu yeniden görmeli. Aynı oturumda ise tekrar
+  // tekrar çıkmamalı.
+  const busyNote =
+    storefrontSettings.busy_mode_note?.trim() ||
+    "Şu anda biraz yoğunuz, siparişiniz beklenenden biraz daha gecikebilir. Anlayışınız için teşekkür ederiz.";
+  const busyModeOn = !homeHref && Boolean(storefrontSettings.is_busy_mode);
+  const [showBusyModal, setShowBusyModal] = useState(false);
+
+  useEffect(() => {
+    if (!busyModeOn) {
+      setShowBusyModal(false);
+      return;
+    }
+
+    const key = `ekatalox_busy_seen_${tenant.id}`;
+    try {
+      if (window.sessionStorage.getItem(key) === "1") return;
+    } catch {
+      // sessionStorage kapalıysa (gizli sekme kısıtları) yine de göster.
+    }
+    setShowBusyModal(true);
+  }, [busyModeOn, tenant.id]);
+
+  function dismissBusyModal() {
+    setShowBusyModal(false);
+    try {
+      window.sessionStorage.setItem(`ekatalox_busy_seen_${tenant.id}`, "1");
+    } catch {
+      // yoksay
+    }
+  }
+
   const activeAnnouncement = useMemo<ActiveAnnouncement | null>(() => {
     if (homeHref || !storefrontSettings.is_active) {
       return null;
@@ -3469,7 +3511,21 @@ export function StorefrontClient({
       />
       {renderProductPreviewModal()}
 
-      {isAnnouncementEligible && activeAnnouncement ? (
+      {showBusyModal ? (
+        <AnnouncementModal
+          key="busy-mode"
+          announcement={{
+            title: "Şu anda yoğunuz",
+            body: busyNote,
+            version: 0,
+            maxDisplayCount: 1,
+          }}
+          onDismiss={dismissBusyModal}
+          badgeLabel="Bilgilendirme"
+        />
+      ) : null}
+
+      {!showBusyModal && isAnnouncementEligible && activeAnnouncement ? (
         <AnnouncementModal
           key={announcementRenderKey ?? activeAnnouncement.version}
           announcement={activeAnnouncement}

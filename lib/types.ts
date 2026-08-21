@@ -344,6 +344,10 @@ export interface TenantStorefrontSettings {
   site_favicon_url: string | null;
   announcement_title: string | null;
   announcement_body: string | null;
+  // Yoğunluk modu: tek tuşla açılan geçici uyarı. Duyurudan bağımsız
+  // tutuluyor ki açıp kapatmak kalıcı duyuru metnini bozmasın.
+  is_busy_mode: boolean;
+  busy_mode_note: string | null;
   is_active: boolean;
   version: number;
   max_display_count: number;

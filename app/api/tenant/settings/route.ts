@@ -162,6 +162,8 @@ export async function PATCH(request: Request) {
       body.announcement_title ?? existingSettings.announcement_title,
     announcement_body: body.announcement_body ?? existingSettings.announcement_body,
     is_active: body.is_active ?? existingSettings.is_active,
+    is_busy_mode: body.is_busy_mode ?? existingSettings.is_busy_mode ?? false,
+    busy_mode_note: body.busy_mode_note ?? existingSettings.busy_mode_note,
     max_display_count:
       body.max_display_count ?? existingSettings.max_display_count,
     card_installment_options:
@@ -308,6 +310,8 @@ export async function PATCH(request: Request) {
         announcement_title: parsed.data.announcement_title,
         announcement_body: parsed.data.announcement_body,
         is_active: parsed.data.is_active,
+        is_busy_mode: parsed.data.is_busy_mode,
+        busy_mode_note: parsed.data.busy_mode_note,
         version: nextAnnouncementVersion,
         max_display_count: parsed.data.max_display_count,
         card_installment_options: parsed.data.card_installment_options,
@@ -409,6 +413,8 @@ export async function PATCH(request: Request) {
     announcement_title: parsed.data.announcement_title,
     announcement_body: parsed.data.announcement_body,
     is_active: parsed.data.is_active,
+    is_busy_mode: parsed.data.is_busy_mode,
+    busy_mode_note: parsed.data.busy_mode_note,
     version: nextAnnouncementVersion,
     max_display_count: parsed.data.max_display_count,
     card_installment_options: parsed.data.card_installment_options,

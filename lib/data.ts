@@ -130,6 +130,8 @@ export function getDefaultTenantStorefrontSettings(
     site_tab_title: null,
     site_favicon_url: null,
     announcement_title: null,
+    is_busy_mode: false,
+    busy_mode_note: null,
     announcement_body: null,
     is_active: false,
     version: 0,

@@ -235,6 +235,13 @@ export const storefrontSettingsSchema = z
       "Duyuru metni en fazla 1200 karakter olabilir.",
     ),
     is_active: z.boolean().default(false),
+    // Yoğunluk modu duyurudan bağımsız; açıp kapatmak duyuru metnini
+    // etkilemez. Not boş bırakılırsa vitrinde varsayılan metin gösterilir.
+    is_busy_mode: z.boolean().default(false),
+    busy_mode_note: optionalAnnouncementTextSchema(
+      400,
+      "Yoğunluk mesajı en fazla 400 karakter olabilir.",
+    ),
     max_display_count: z.coerce
       .number()
       .int("Maksimum gösterim sayısı tam sayı olmalıdır.")

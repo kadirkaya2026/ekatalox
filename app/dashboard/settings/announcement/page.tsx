@@ -1,4 +1,5 @@
 import { Header } from "@/components/dashboard/header";
+import { BusyModeToggle } from "@/components/dashboard/busy-mode-toggle";
 import { TenantAnnouncementForm } from "@/components/dashboard/tenant-announcement-form";
 import { requireTenantAdminPage } from "@/lib/auth/session";
 import { getTenantStorefrontSettings } from "@/lib/data";
@@ -15,6 +16,7 @@ export default async function TenantAnnouncementSettingsPage() {
         description="Esnaf anasayfaya girdiğinde gösterilecek duyuru popup'ını yönetin."
       />
 
+      <BusyModeToggle initialStorefrontSettings={storefrontSettings} />
       <TenantAnnouncementForm initialStorefrontSettings={storefrontSettings} />
     </div>
   );
