@@ -117,12 +117,11 @@ button:focus-visible {
   padding-bottom: calc(env(safe-area-inset-bottom) + 1rem);
 }
 
-/* Market/tekel vitrinlerinde mobilde alt navigasyon barı (Ara /
-   Kategoriler / Sepet + sepet özeti satırı) sayfanın üstünde duruyor;
-   son ürün barın altında kalmasın diye sticky-safe-bottom'dan (5rem)
-   daha fazla boşluk gerekiyor. */
+/* Market/tekel vitrinlerinde mobilde alt navigasyon barı (Ara / Sepet /
+   Kampanyalar) sayfanın üstünde duruyor; son ürün barın altında
+   kalmasın diye ~4.6rem'lik bar yüksekliğinin üstüne pay bırakılıyor. */
 .bottom-nav-safe-bottom {
-  padding-bottom: calc(env(safe-area-inset-bottom) + 10rem);
+  padding-bottom: calc(env(safe-area-inset-bottom) + 7rem);
 }
 
 .surface-premium {

@@ -1,8 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { AnimatePresence, motion } from "framer-motion";
-import { LayoutGrid, Search, ShoppingCart } from "lucide-react";
+import { Search, ShoppingCart, Ticket } from "lucide-react";
 import { useStorefrontLocale } from "@/lib/storefront/locale-context";
 import { useStorefrontTheme } from "@/lib/storefront/theme-context";
 import { cn } from "@/lib/utils";
@@ -12,87 +11,34 @@ import { cn } from "@/lib/utils";
 // başlıktan buraya taşındı; üst başlık sayfayla birlikte kayıp gittiği
 // için müşteri ürünlere bakarken ikisine de ulaşamıyordu.
 //
-// İki katman:
-//   1) Sepet özeti — sadece sepette ürün varken. Eskiden ayrı bir
-//      "sticky cart" barıydı ve kapatılabiliyordu; artık kalıcı
-//      navigasyonun parçası olduğu için kapatma yok.
-//   2) Ara / Kategoriler / Sepet — her zaman.
+// Sepet ortada duruyor, sağda kampanyalar var. Kategoriler bilerek
+// burada değil — üst başlıktaki kategori şeridi zaten kaydırılabilir
+// halde duruyor.
 //
-// Fiyat bloğu (indirim, kampanya, çoklu para birimi) storefront-client
-// içinde hesaplandığı için hazır düğüm olarak geliyor; burada tekrar
-// hesaplanmıyor.
+// Sepet tutarını gösteren "Sipariş Özeti" satırı da bilerek yok
+// (kullanıcı isteği): tutar için sepet açılıyor, alt bar sade kalıyor.
 export function StorefrontBottomNav({
-  cartLength,
   cartItemCount,
-  cartSummary,
   isTekel,
   isSearchOpen,
-  isCategoriesOpen,
+  isCampaignsOpen,
   onOpenSearch,
-  onOpenCategories,
   onOpenCart,
+  onOpenCampaigns,
 }: {
-  cartLength: number;
   cartItemCount: number;
-  cartSummary: ReactNode;
   isTekel: boolean;
   isSearchOpen: boolean;
-  isCategoriesOpen: boolean;
+  isCampaignsOpen: boolean;
   onOpenSearch: () => void;
-  onOpenCategories: () => void;
   onOpenCart: () => void;
+  onOpenCampaigns: () => void;
 }) {
   const theme = useStorefrontTheme();
   const { t } = useStorefrontLocale();
 
   return (
     <div className="fixed inset-x-0 bottom-0 z-40 sm:hidden">
-      <AnimatePresence>
-        {cartLength ? (
-          <motion.div
-            initial={{ opacity: 0, y: 18 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 18 }}
-            transition={{ duration: 0.24, ease: "easeOut" }}
-            className="px-3 pb-2"
-          >
-            <button
-              type="button"
-              onClick={onOpenCart}
-              className={cn(
-                theme.stickyCart,
-                "!static w-full max-w-none rounded-[1.5rem] px-3 py-2.5 text-left shadow-[0_18px_44px_rgba(15,23,42,0.22)]",
-              )}
-            >
-              <div className="flex items-center gap-3">
-                <div
-                  className={cn(
-                    "flex size-9 shrink-0 items-center justify-center rounded-xl",
-                    theme.surfaceMuted,
-                  )}
-                >
-                  <ShoppingCart className="size-4" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-[13px] font-semibold tracking-tight text-white">
-                    {t("cart.orderSummary")}
-                  </p>
-                </div>
-                <div className="min-w-0 text-right">{cartSummary}</div>
-                <span
-                  className={cn(
-                    theme.stickyCartButton,
-                    "shrink-0 rounded-full px-4 py-2 text-sm font-semibold shadow-[0_8px_24px_rgba(16,185,129,0.22)]",
-                  )}
-                >
-                  {t("stickyCart.continue")}
-                </span>
-              </div>
-            </button>
-          </motion.div>
-        ) : null}
-      </AnimatePresence>
-
       <nav
         aria-label={t("bottomNav.ariaLabel")}
         className={cn(
@@ -108,17 +54,17 @@ export function StorefrontBottomNav({
           onClick={onOpenSearch}
         />
         <BottomNavButton
-          label={t("bottomNav.categories")}
-          icon={<LayoutGrid className="size-[22px]" />}
-          isActive={isCategoriesOpen}
-          onClick={onOpenCategories}
-        />
-        <BottomNavButton
           label={t(isTekel ? "bottomNav.cartPickup" : "bottomNav.cart")}
           icon={<ShoppingCart className="size-[22px]" />}
           isActive={false}
           badge={cartItemCount || null}
           onClick={onOpenCart}
+        />
+        <BottomNavButton
+          label={t("bottomNav.campaigns")}
+          icon={<Ticket className="size-[22px]" />}
+          isActive={isCampaignsOpen}
+          onClick={onOpenCampaigns}
         />
       </nav>
     </div>

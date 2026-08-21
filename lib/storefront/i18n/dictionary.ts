@@ -191,7 +191,12 @@ export const storefrontDictionary: Record<StorefrontLocale, StorefrontDictionary
     // Mobil alt navigasyon (market/tekel vitrinleri).
     "bottomNav.ariaLabel": "Alt gezinme",
     "bottomNav.search": "Ara",
-    "bottomNav.categories": "Kategoriler",
+    "bottomNav.campaigns": "Kampanyalar",
+    "campaignsSheet.title": "Kampanyalar",
+    "campaignsSheet.description": "Size özel indirim ve ödeme kampanyaları",
+    "campaignsSheet.empty": "Şu anda aktif kampanya yok.",
+    "campaignsSheet.emptyHint": "Sepetinize ürün ekledikçe kampanyalar burada görünür.",
+    "campaignsSheet.closeAria": "Kampanyaları kapat",
     "bottomNav.cart": "Sepet",
     "bottomNav.cartPickup": "Listem",
 
@@ -448,7 +453,12 @@ export const storefrontDictionary: Record<StorefrontLocale, StorefrontDictionary
 
     "bottomNav.ariaLabel": "Untere Navigation",
     "bottomNav.search": "Suchen",
-    "bottomNav.categories": "Kategorien",
+    "bottomNav.campaigns": "Aktionen",
+    "campaignsSheet.title": "Aktionen",
+    "campaignsSheet.description": "Rabatt- und Zahlungsaktionen für Sie",
+    "campaignsSheet.empty": "Derzeit keine aktiven Aktionen.",
+    "campaignsSheet.emptyHint": "Aktionen erscheinen hier, sobald Sie Produkte in den Warenkorb legen.",
+    "campaignsSheet.closeAria": "Aktionen schließen",
     "bottomNav.cart": "Warenkorb",
     "bottomNav.cartPickup": "Meine Liste",
 
@@ -704,7 +714,12 @@ export const storefrontDictionary: Record<StorefrontLocale, StorefrontDictionary
 
     "bottomNav.ariaLabel": "Bottom navigation",
     "bottomNav.search": "Search",
-    "bottomNav.categories": "Categories",
+    "bottomNav.campaigns": "Campaigns",
+    "campaignsSheet.title": "Campaigns",
+    "campaignsSheet.description": "Discount and payment campaigns for you",
+    "campaignsSheet.empty": "No active campaigns right now.",
+    "campaignsSheet.emptyHint": "Campaigns appear here as you add products to your cart.",
+    "campaignsSheet.closeAria": "Close campaigns",
     "bottomNav.cart": "Cart",
     "bottomNav.cartPickup": "My List",
 
@@ -959,7 +974,12 @@ export const storefrontDictionary: Record<StorefrontLocale, StorefrontDictionary
 
     "bottomNav.ariaLabel": "Нижняя навигация",
     "bottomNav.search": "Поиск",
-    "bottomNav.categories": "Категории",
+    "bottomNav.campaigns": "Акции",
+    "campaignsSheet.title": "Акции",
+    "campaignsSheet.description": "Скидки и платёжные акции для вас",
+    "campaignsSheet.empty": "Сейчас активных акций нет.",
+    "campaignsSheet.emptyHint": "Акции появятся здесь по мере добавления товаров в корзину.",
+    "campaignsSheet.closeAria": "Закрыть акции",
     "bottomNav.cart": "Корзина",
     "bottomNav.cartPickup": "Мой список",
 

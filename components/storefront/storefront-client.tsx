@@ -898,6 +898,7 @@ export function StorefrontClient({
   const [isCategoryDrawerOpen, setIsCategoryDrawerOpen] = useState(false);
   const [isStickyCartBarDismissed, setIsStickyCartBarDismissed] = useState(false);
   const [isSearchSheetOpen, setIsSearchSheetOpen] = useState(false);
+  const [isCampaignsSheetOpen, setIsCampaignsSheetOpen] = useState(false);
   const [note, setNote] = useState("");
   const [customerReferenceName, setCustomerReferenceName] = useState("");
   const [customerReferenceNameError, setCustomerReferenceNameError] = useState<string | null>(
@@ -3415,7 +3416,7 @@ export function StorefrontClient({
               // Alt navigasyon barı varken sepet özeti satırı da
               // eklendiği için kampanya barları daha yukarı çıkmalı.
               bottom: usesBottomNav
-                ? "calc(env(safe-area-inset-bottom) + 10.5rem)"
+                ? "calc(env(safe-area-inset-bottom) + 6.25rem)"
                 : "calc(env(safe-area-inset-bottom) + 6.5rem)",
             }}
           >
@@ -3483,30 +3484,29 @@ export function StorefrontClient({
 
       {isMounted && usesBottomNav ? (
         <StorefrontBottomNav
-          cartLength={cart.length}
           cartItemCount={cartItemCount}
-          cartSummary={cartSummaryNode}
           isTekel={isTekel}
           isSearchOpen={isSearchSheetOpen}
-          isCategoriesOpen={isCategoryDrawerOpen}
+          isCampaignsOpen={isCampaignsSheetOpen}
           onOpenSearch={() => {
-            setIsCategoryDrawerOpen(false);
+            setIsCampaignsSheetOpen(false);
             setIsSearchSheetOpen(true);
-          }}
-          onOpenCategories={() => {
-            setIsSearchSheetOpen(false);
-            setIsCategoryDrawerOpen(true);
           }}
           onOpenCart={() => {
             setIsSearchSheetOpen(false);
+            setIsCampaignsSheetOpen(false);
             openCartDrawer();
+          }}
+          onOpenCampaigns={() => {
+            setIsSearchSheetOpen(false);
+            setIsCampaignsSheetOpen(true);
           }}
         />
       ) : null}
 
       {isMounted && usesBottomNav ? (
         <StorefrontSearchSheet
-          isOpen={isSearchSheetOpen && !isCartOpen && !isCategoryDrawerOpen}
+          isOpen={isSearchSheetOpen && !isCartOpen && !isCampaignsSheetOpen}
           value={searchInput}
           resultCount={productTotal}
           onChange={handleSearchChange}
@@ -3514,7 +3514,80 @@ export function StorefrontClient({
         />
       ) : null}
 
-      {usesSidebarNav || usesBottomNav ? (
+      {/* Kampanyalar paneli — alt bardaki "Kampanyalar" butonunun geçici
+          hedefi. Mevcut kampanya barlarını (nakit indirimi + kart
+          kampanyası) tekrar kullanıyor; ayrı bir kampanyalar sayfası
+          tasarlanınca bu handler o sayfaya yönlendirilecek. */}
+      <AnimatePresence>
+        {isMounted && usesBottomNav && isCampaignsSheetOpen ? (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.18, ease: "easeOut" }}
+            className={theme.cartDrawerOverlay}
+          >
+            <button
+              type="button"
+              aria-label={t("campaignsSheet.closeAria")}
+              className="absolute inset-0 h-full w-full"
+              onClick={() => setIsCampaignsSheetOpen(false)}
+            />
+            <motion.div
+              initial={{ opacity: 0, y: 28 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 28 }}
+              transition={{ duration: 0.24, ease: [0.16, 1, 0.3, 1] }}
+              className={theme.cartDrawerPanel}
+              role="dialog"
+              aria-modal="true"
+              aria-label={t("campaignsSheet.title")}
+            >
+              <div className="flex max-h-[94dvh] flex-col">
+                <div className="flex justify-center pt-3">
+                  <span className={theme.cartDrawerHandle} />
+                </div>
+
+                <div className={cn(theme.cartDrawerHeaderBorder, "px-4 pb-3 pt-3 sm:px-5")}>
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <h2 className={theme.cartDrawerTitle}>{t("campaignsSheet.title")}</h2>
+                      <p className={cn("truncate text-xs font-medium sm:text-sm", theme.cartDrawerMuted)}>
+                        {t("campaignsSheet.description")}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setIsCampaignsSheetOpen(false)}
+                      className={theme.cartDrawerCloseButton}
+                      aria-label={t("campaignsSheet.closeAria")}
+                    >
+                      <X className="size-5" />
+                    </button>
+                  </div>
+                </div>
+
+                <div className="safe-bottom-padding max-h-[min(72dvh,560px)] space-y-3 overflow-y-auto px-4 py-4 sm:px-5">
+                  {hasVisibleHomeCampaignBars ? (
+                    renderCampaignBarsForSurface("home", false)
+                  ) : (
+                    <div className="py-8 text-center">
+                      <p className={cn("text-sm font-semibold", theme.text)}>
+                        {t("campaignsSheet.empty")}
+                      </p>
+                      <p className={cn("mt-1.5 text-xs", theme.textMuted)}>
+                        {t("campaignsSheet.emptyHint")}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
+
+      {usesSidebarNav ? (
         <StorefrontCategoryDrawer
           isOpen={isCategoryDrawerOpen}
           onClose={() => setIsCategoryDrawerOpen(false)}
