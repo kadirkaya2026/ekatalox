@@ -1471,8 +1471,14 @@ export function StorefrontClient({
   // ve diğer temalarda davranış aynen korunur.
   const isNoirTheme = storefrontSettings.theme_key === "noir";
   const hideHomeProductsOnMobile = isNoirTheme && isMobileViewport && showHomeBanner;
+  // Noir mobilde kategori kutucukları normalde blok sırasından çıkarılıp
+  // doğrudan banner'ın içine enjekte edilir. Market/tekel bayilerde
+  // istenen sıra banner -> indirim şeridi -> kategoriler olduğu için bu
+  // enjeksiyon kapatılıyor; sırayı blok haritası yönetiyor (bkz.
+  // usesMarketMobileOrder). Aksi halde kategoriler indirim şeridinin
+  // üstünde kalıyordu.
   const showCategoryTilesOnMobileAfterBanner =
-    isNoirTheme && isMobileViewport && showCategoryTilesBlock;
+    isNoirTheme && isMobileViewport && showCategoryTilesBlock && !usesMarketMobileOrder;
   const recommendedProducts = useMemo(() => {
     const cartIds = new Set(cart.map((item) => item.product_id));
     const availableProducts = dedupeProducts([
