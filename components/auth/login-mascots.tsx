@@ -8,6 +8,8 @@ import { motion, useReducedMotion } from "framer-motion";
 //   2) Boştayken gözbebekleri fareyi takip ediyor.
 //   3) Şifre alanına odaklanınca gözlerini kapatıyorlar — "bakmıyorum".
 //      E-posta alanında ise mor karakter merakla öne eğiliyor.
+//   4) Giriş başarısız olunca hep birlikte "hayır" der gibi sağa sola
+//      kafa sallayıp üzgün suratlara dönüyorlar.
 //
 // prefers-reduced-motion açıksa tüm hareket kapanır, şekiller doğrudan
 // son hâlleriyle çizilir.
@@ -48,13 +50,31 @@ function Eyes({
   );
 }
 
-export function LoginMascots({ focus }: { focus: MascotFocus }) {
+export function LoginMascots({
+  focus,
+  errorKey = 0,
+}: {
+  focus: MascotFocus;
+  // Her başarısız giriş denemesinde artan sayaç — değeri değiştiğinde
+  // sallanma yeniden tetiklenir (aynı hata iki kez alınsa bile).
+  errorKey?: number;
+}) {
   const reduceMotion = useReducedMotion();
   const wrapperRef = useRef<HTMLDivElement | null>(null);
   const [pupil, setPupil] = useState({ x: 0, y: 0 });
 
   const eyesClosed = focus === "password";
   const peeking = focus === "email";
+  const [shaking, setShaking] = useState(false);
+
+  useEffect(() => {
+    if (!errorKey) return;
+    setShaking(true);
+    const timeout = setTimeout(() => setShaking(false), 1400);
+    return () => clearTimeout(timeout);
+  }, [errorKey]);
+
+  const sad = shaking;
 
   useEffect(() => {
     if (reduceMotion) return;
@@ -87,7 +107,15 @@ export function LoginMascots({ focus }: { focus: MascotFocus }) {
 
   return (
     <div ref={wrapperRef} className="mb-6 flex justify-center" aria-hidden="true">
-      <svg viewBox="0 0 240 116" className="h-28 w-auto" role="presentation">
+      <motion.svg
+        viewBox="0 0 240 116"
+        className="h-28 w-auto"
+        role="presentation"
+        animate={
+          shaking && !reduceMotion ? { x: [0, -7, 7, -6, 5, -3, 0] } : { x: 0 }
+        }
+        transition={shaking ? { duration: 0.55, ease: "easeInOut" } : { duration: 0.2 }}
+      >
         {/* Turuncu: alttan büyüyerek geliyor */}
         <motion.g
           initial={reduceMotion ? false : { scaleY: 0.1, opacity: 0 }}
@@ -97,7 +125,9 @@ export function LoginMascots({ focus }: { focus: MascotFocus }) {
         >
           <path d="M30 108a48 48 0 0 1 96 0Z" fill="#f97316" />
           <Eyes closed={eyesClosed} offset={offset} cx={78} cy={84} gap={13} />
-          {eyesClosed ? (
+          {sad ? (
+            <path d="M70 99q8 -7 16 0" stroke="#0b1220" strokeWidth={2.4} fill="none" strokeLinecap="round" />
+          ) : eyesClosed ? (
             <path d="M70 97q8 5 16 0" stroke="#0b1220" strokeWidth={2.4} fill="none" strokeLinecap="round" />
           ) : (
             <path d="M70 95q8 7 16 0" stroke="#0b1220" strokeWidth={2.4} fill="none" strokeLinecap="round" />
@@ -135,7 +165,7 @@ export function LoginMascots({ focus }: { focus: MascotFocus }) {
           )}
           <line x1="200" y1="92" x2="222" y2="92" stroke="#0b1220" strokeWidth={2.6} strokeLinecap="round" />
         </motion.g>
-      </svg>
+      </motion.svg>
     </div>
   );
 }

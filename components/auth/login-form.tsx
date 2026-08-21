@@ -52,6 +52,8 @@ export function LoginForm({ target }: { target?: string }) {
   const [error, setError] = useState<string | null>(null);
   // Maskotların hangi tepkiyi vereceğini belirler (bkz. login-mascots.tsx).
   const [focusedField, setFocusedField] = useState<MascotFocus>("idle");
+  // Her başarısız denemede artıyor; maskotların sallanmasını tetikler.
+  const [errorKey, setErrorKey] = useState(0);
   const [pending, startTransition] = useTransition();
 
   const supabase = createSupabaseBrowserClient();
@@ -59,6 +61,14 @@ export function LoginForm({ target }: { target?: string }) {
     typeof window !== "undefined" &&
     (window.location.hostname === "localhost" ||
       window.location.hostname.endsWith(".localhost"));
+
+  // Her hata hem mesajı gösterir hem maskotların sallanmasını tetikler.
+  // Aynı hata art arda alınsa bile errorKey değiştiği için animasyon
+  // yeniden oynar.
+  function fail(message: string) {
+    setError(message);
+    setErrorKey((current) => current + 1);
+  }
 
   function redirectFallback() {
     if (target === "admin") {
@@ -79,18 +89,18 @@ export function LoginForm({ target }: { target?: string }) {
     setError(null);
 
     if (!email.trim()) {
-      setError("E-posta adresi zorunludur.");
+      fail("E-posta adresi zorunludur.");
       return;
     }
 
     if (!password) {
-      setError("Şifre zorunludur.");
+      fail("Şifre zorunludur.");
       return;
     }
 
     if (!supabase) {
       if (!canUseDemoFallback) {
-        setError("Supabase yapılandırması eksik. Lütfen production environment değerlerini girin.");
+        fail("Supabase yapılandırması eksik. Lütfen production environment değerlerini girin.");
         return;
       }
 
@@ -105,7 +115,7 @@ export function LoginForm({ target }: { target?: string }) {
       });
 
       if (signInError) {
-        setError(translateAuthError(signInError.message));
+        fail(translateAuthError(signInError.message));
         return;
       }
 
@@ -114,7 +124,7 @@ export function LoginForm({ target }: { target?: string }) {
       } = await supabase.auth.getUser();
 
       if (!user) {
-        setError("Oturum açılamadı.");
+        fail("Oturum açılamadı.");
         return;
       }
 
@@ -149,7 +159,7 @@ export function LoginForm({ target }: { target?: string }) {
         transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
         className="relative w-full max-w-md overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-b from-white/[0.04] to-white/[0.01] p-7 backdrop-blur-xl md:p-9"
       >
-        <LoginMascots focus={focusedField} />
+        <LoginMascots focus={focusedField} errorKey={errorKey} />
 
         <Link href="/#top" className="inline-flex">
           <EkataloxLogo variant="light" className="h-10 w-[176px]" priority />
