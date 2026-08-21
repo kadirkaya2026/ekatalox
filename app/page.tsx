@@ -86,37 +86,12 @@ const Hero = () => {
               14 Gün Ücretsiz Deneyin
               <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
             </a>
-            <a href="https://demo.ekatalox.com" target="_blank" rel="noreferrer" className="group inline-flex items-center justify-center gap-2 px-8 py-4 rounded-full glass text-white hover:bg-white/10 transition-all duration-300">
+            <a href="https://www.ekatalox.com/temalar" className="group inline-flex items-center justify-center gap-2 px-8 py-4 rounded-full glass text-white hover:bg-white/10 transition-all duration-300">
               Örnek Kataloğu İncele
               <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
             </a>
           </motion.div>
 
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.8, delay: 0.7 }}
-            className="mt-6 text-xs md:text-sm text-slate-500"
-          >
-            Kurulum sadece 5 dakika. Kredi kartı gerekmez. Örnek katalog şifreleri: 1111 - 2222 - 3333
-          </motion.p>
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.8, delay: 0.8 }}
-            className="mt-2 text-xs md:text-sm text-slate-500"
-          >
-            Yönetici panelini de deneyin:{" "}
-            <a
-              href="https://app.ekatalox.com"
-              target="_blank"
-              rel="noreferrer"
-              className="font-medium text-[var(--marketing-primary)] hover:underline"
-            >
-              app.ekatalox.com
-            </a>{" "}
-            — demo-admin@ekatalox.com / Demo1234!
-          </motion.p>
         </motion.div>
 
         {/* Storefront mockup */}
