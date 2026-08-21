@@ -21,14 +21,24 @@ export const productPriceEntrySchema = z
     // Liste başına indirimli fiyat. Boş bırakılırsa bu listede indirim yok
     // (kullanıcı isteği, 21 Ağu 2026). Eskiden tek bir products.discount_price
     // tüm listelere uygulanıyordu.
-    discount_price: z
-      .union([
-        z.coerce.number().min(0, "İndirimli fiyat sıfırdan küçük olamaz."),
+    // DİKKAT: z.union([z.coerce.number(), z.null()]) YAZMAYIN. Union
+    // seçenekleri sırayla denenir ve z.coerce.number() null'ı 0'a çevirir
+    // (Number(null) === 0), yani "indirim yok" değeri sessizce "indirim: 0"
+    // olur; aşağıdaki erken çıkış çalışmaz ve fiyatı girilmemiş her liste
+    // için hata üretilir. Bu yüzden boş/null önce preprocess'te
+    // sabitleniyor, sayıya dönüştürme ondan sonra deneniyor.
+    discount_price: z.preprocess(
+      (value) =>
+        value === undefined ||
+        value === null ||
+        (typeof value === "string" && value.trim() === "")
+          ? null
+          : value,
+      z.union([
         z.null(),
-        z.literal(""),
-      ])
-      .default(null)
-      .transform((value) => (value === "" || value === null ? null : value)),
+        z.coerce.number().min(0, "İndirimli fiyat sıfırdan küçük olamaz."),
+      ]),
+    ),
   })
   .superRefine((entry, ctx) => {
     if (entry.discount_price === null) return;
