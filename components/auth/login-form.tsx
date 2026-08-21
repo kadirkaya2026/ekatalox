@@ -131,14 +131,26 @@ export function LoginForm({ target }: { target?: string }) {
 
   return (
     <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#090d16] px-6 py-10">
-      <div className="pointer-events-none absolute -top-40 left-1/2 h-[600px] w-[900px] -translate-x-1/2 rounded-full bg-[var(--marketing-primary)]/15 blur-[160px]" />
-      <div className="pointer-events-none absolute right-0 top-40 h-[500px] w-[500px] rounded-full bg-[var(--marketing-accent)]/15 blur-[140px]" />
+      {/* Eskiden burada blur-[160px] ve blur-[140px] filtreli iki div vardı.
+          iPhone'da devicePixelRatio 3 olduğu için bu, cihaz pikselinde ~480px
+          yarıçaplı bir blur demekti; WebKit her biri için devasa bir yüzey
+          ayırmaya çalışıp render sürecini çökertiyordu ("bu sayfada birçok kez
+          sorun oluştu"). Blink aynı işi kaldırdığı için Chrome'da görünmüyordu.
+          Aynı görsel etki radial-gradient ile filtresiz elde ediliyor: ek
+          katman, ek tampon ve blur geçişi yok. */}
+      <div
+        className="pointer-events-none absolute inset-0"
+        style={{
+          background:
+            "radial-gradient(60% 45% at 50% 0%, rgba(var(--marketing-primary-rgb), 0.16), transparent 70%), radial-gradient(48% 40% at 100% 22%, rgba(var(--marketing-accent-rgb), 0.12), transparent 70%)",
+        }}
+      />
 
       <motion.div
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-        className="relative w-full max-w-md overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-b from-white/[0.04] to-white/[0.01] p-7 backdrop-blur-xl md:p-9"
+        className="relative w-full max-w-md overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-b from-white/[0.07] to-white/[0.02] p-7 md:p-9"
       >
         <Link href="/#top" className="inline-flex">
           <EkataloxLogo variant="light" className="h-10 w-[176px]" priority />
