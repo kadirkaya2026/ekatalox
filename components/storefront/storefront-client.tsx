@@ -970,6 +970,19 @@ export function StorefrontClient({
   const isFirstProductFetch = useRef(true);
   const [hoveredCategoryId, setHoveredCategoryId] = useState<string | null>(null);
   const [activeBannerIndex, setActiveBannerIndex] = useState(0);
+  // Mobilde banner'lar elle kaydırılabiliyor (scroll-snap şeridi).
+  const bannerScrollRef = useRef<HTMLDivElement | null>(null);
+  // Kullanıcı kaydırdıktan sonra otomatik geçiş bir süre susar; aksi
+  // halde banner bakarken elinin altından kayıyor.
+  const bannerInteractionRef = useRef(0);
+  // Kendi yaptığımız kaydırmaların onScroll'u tetiklemesini ayırt etmek
+  // için: smooth scroll ara pozisyonlar üretiyor, bunlar index'i geri
+  // alıp animasyonu iptal edebiliyor.
+  const bannerProgrammaticRef = useRef(false);
+  // Kaydırma durdu mu? Sabit süreli timeout yetmiyor — smooth scroll
+  // beklenenden uzun sürüp bayrağı erken temizleyince kalan olaylar
+  // "kullanıcı kaydırdı" sanılıyor ve otomatik geçiş kadansı bozuluyor.
+  const bannerScrollEndTimerRef = useRef<number | null>(null);
   const [isMobileViewport, setIsMobileViewport] = useState(false);
 
   useEffect(() => {
@@ -1995,11 +2008,42 @@ export function StorefrontClient({
     }
 
     const interval = window.setInterval(() => {
+      // Kullanıcı az önce elle kaydırdıysa sırayı ona bırak.
+      if (Date.now() - bannerInteractionRef.current < 8000) {
+        return;
+      }
       setActiveBannerIndex((currentIndex) => (currentIndex + 1) % bannerItems.length);
     }, 5000);
 
     return () => window.clearInterval(interval);
   }, [bannerItems.length]);
+
+  // Otomatik geçiş veya noktalara tıklama index'i değiştirdiğinde mobil
+  // şeridi de oraya kaydır. Kullanıcının kendi kaydırması zaten index'i
+  // güncelliyor, o durumda scrollLeft hedefte olduğu için no-op.
+  useEffect(() => {
+    const container = bannerScrollRef.current;
+    if (!container) {
+      return;
+    }
+
+    const target = activeBannerIndex * container.clientWidth;
+    if (Math.abs(container.scrollLeft - target) < 8) {
+      return;
+    }
+
+    bannerProgrammaticRef.current = true;
+    container.scrollTo({ left: target, behavior: "smooth" });
+
+    // Emniyet: scrollTo hiç kaydırma üretmezse onScroll tetiklenmez ve
+    // bayrak sonsuza kadar açık kalırdı. Normal şartlarda bayrağı
+    // kaydırma durduğunda onScroll temizliyor.
+    const timeout = window.setTimeout(() => {
+      bannerProgrammaticRef.current = false;
+    }, 1500);
+
+    return () => window.clearTimeout(timeout);
+  }, [activeBannerIndex, bannerItems.length]);
 
   useEffect(() => {
     if (!isMounted || !activeAnnouncement) {
@@ -3181,16 +3225,83 @@ export function StorefrontClient({
                 <section className="mb-5 sm:mb-10 w-full">
                   {bannerItems.length ? (
                     <div className="w-full space-y-4">
-                      {currentBanner
-                        ? renderBannerItem(
-                            currentBanner,
-                            activeBannerIndex,
-                            selectedCategory?.name ?? storefrontTitle,
-                            theme,
-                            t,
-                            usesMarketMobileOrder,
-                          )
-                        : null}
+                      {/* Mobilde tüm banner'lar yan yana duran bir
+                          scroll-snap şeridinde: parmakla kaydırılabiliyor
+                          (kullanıcı isteği, 22 Ağu 2026). Masaüstünde
+                          eskisi gibi tek banner render ediliyor. */}
+                      {isMobileViewport ? (
+                        <div
+                          ref={bannerScrollRef}
+                          // Padding YOK: clientWidth padding'i de sayıyor,
+                          // slide genişliği saymıyor — ikisi eşit kalmazsa
+                          // scrollLeft/clientWidth index hesabı kayıyor.
+                          className="scrollbar-hide flex snap-x snap-mandatory overflow-x-auto"
+                          onPointerDown={() => {
+                            // Kullanıcı devraldı: hem otomatik geçişi sustur
+                            // hem de sürmekte olan programatik kaydırmanın
+                            // bayrağını düşür ki parmağı index'i sürebilsin.
+                            bannerInteractionRef.current = Date.now();
+                            bannerProgrammaticRef.current = false;
+                          }}
+                          onScroll={(event) => {
+                            const element = event.currentTarget;
+
+                            // Kaydırma durduğunda bayrağı temizle. Otomatik
+                            // geçişin kendi kaydırması "kullanıcı dokundu"
+                            // sayılırsa sonraki turu susturup kadansı
+                            // 5 sn yerine 10 sn'ye çıkarıyordu.
+                            if (bannerScrollEndTimerRef.current !== null) {
+                              window.clearTimeout(bannerScrollEndTimerRef.current);
+                            }
+                            bannerScrollEndTimerRef.current = window.setTimeout(() => {
+                              bannerProgrammaticRef.current = false;
+                              bannerScrollEndTimerRef.current = null;
+                            }, 140);
+
+                            if (bannerProgrammaticRef.current) {
+                              return;
+                            }
+
+                            // Parmak kalksa da atalet kaydırması sürüyor,
+                            // o yüzden pointerdown'a ek olarak burada da.
+                            bannerInteractionRef.current = Date.now();
+
+                            if (!element.clientWidth) return;
+                            const nextIndex = Math.round(
+                              element.scrollLeft / element.clientWidth,
+                            );
+                            setActiveBannerIndex((currentIndex) =>
+                              nextIndex !== currentIndex &&
+                              nextIndex >= 0 &&
+                              nextIndex < bannerItems.length
+                                ? nextIndex
+                                : currentIndex,
+                            );
+                          }}
+                        >
+                          {bannerItems.map((banner, index) => (
+                            <div key={banner.id} className="w-full shrink-0 snap-start">
+                              {renderBannerItem(
+                                banner,
+                                index,
+                                selectedCategory?.name ?? storefrontTitle,
+                                theme,
+                                t,
+                                usesMarketMobileOrder,
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      ) : currentBanner ? (
+                        renderBannerItem(
+                          currentBanner,
+                          activeBannerIndex,
+                          selectedCategory?.name ?? storefrontTitle,
+                          theme,
+                          t,
+                          usesMarketMobileOrder,
+                        )
+                      ) : null}
                       {bannerItems.length > 1 ? (
                         <div className="flex items-center justify-center gap-2">
                           {bannerItems.map((banner, index) => (
