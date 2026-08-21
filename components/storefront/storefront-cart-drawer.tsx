@@ -666,6 +666,7 @@ export function StorefrontCartDrawer({
                 {!isCatalogOnly && cartPaymentSummary ? (
                   <div className="space-y-2.5">
                     {(cartPaymentSummary.isQualified && cartPaymentSummary.discountAmount > 0) ||
+                    cartPaymentSummary.campaignDiscountAmount > 0 ||
                     cartPaymentSummary.surchargeAmount > 0 ? (
                       <>
                         <div className="flex items-center justify-between gap-3">
@@ -673,7 +674,9 @@ export function StorefrontCartDrawer({
                           <p
                             className={cn(
                               "text-sm font-semibold tracking-tight",
-                              cartPaymentSummary.isQualified && cartPaymentSummary.discountAmount > 0
+                              (cartPaymentSummary.isQualified &&
+                                cartPaymentSummary.discountAmount > 0) ||
+                              cartPaymentSummary.campaignDiscountAmount > 0
                                 ? cn(theme.cartSummaryMuted, "line-through")
                                 : "text-white",
                             )}
@@ -691,6 +694,26 @@ export function StorefrontCartDrawer({
                             </p>
                             <p className="text-base font-bold tracking-tight text-emerald-300">
                               -{formatCurrency(cartPaymentSummary.discountAmount, cartPaymentSummary.currency)}
+                            </p>
+                          </div>
+                        ) : null}
+                        {cartPaymentSummary.appliedCampaign &&
+                        cartPaymentSummary.campaignDiscountAmount > 0 ? (
+                          <div className="flex items-center justify-between gap-3">
+                            <div className="min-w-0">
+                              <p className={cn("text-sm font-medium", theme.cartSummaryMuted)}>
+                                {t("cart.campaignDiscount")}
+                              </p>
+                              <p className={cn("truncate text-[11px]", theme.cartSummaryMuted)}>
+                                {cartPaymentSummary.appliedCampaign.title}
+                              </p>
+                            </div>
+                            <p className="shrink-0 text-base font-bold tracking-tight text-emerald-300">
+                              -
+                              {formatCurrency(
+                                cartPaymentSummary.campaignDiscountAmount,
+                                cartPaymentSummary.currency,
+                              )}
                             </p>
                           </div>
                         ) : null}

@@ -42,6 +42,18 @@ export function buildTenantBannerPath(params: {
   return `${params.tenantId}/banner_${Date.now()}.${extension}`;
 }
 
+// Kampanya görselleri de banner bucket'ına yazılıyor: RLS ${tenantId}/
+// önekine göre çalıştığı için (storage_object_tenant_prefix, bkz. 0011)
+// yeni bucket ve yeni politika gerekmiyor.
+export function buildTenantCampaignImagePath(params: {
+  tenantId: string;
+  fileName?: string | null;
+  contentType?: string | null;
+}) {
+  const extension = getBannerFileExtension(params);
+  return `${params.tenantId}/campaign_${Date.now()}.${extension}`;
+}
+
 export function buildHeroClusterImagePath(params: {
   tenantId: string;
   slot: "large" | "side";

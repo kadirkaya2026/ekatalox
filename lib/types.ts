@@ -299,6 +299,37 @@ export interface CardCampaignTier {
   maxFreeInstallmentCount: number;
 }
 
+// Bayinin kendi tanımladığı kampanyalar (bkz. 0081_tenant_campaigns.sql).
+// Ayarlardaki CashDiscountTier/CardCampaignTier'dan bağımsız: onlar ödeme
+// yöntemine bağlı basamaklar, bunlar bayinin vitrinde gösterdiği kartlar.
+export type CampaignRuleType = "none" | "cart_threshold";
+export type CampaignDiscountKind = "amount" | "percentage";
+export type CampaignPaymentMethod = "any" | "cash" | "card";
+
+export interface TenantCampaign {
+  id: string;
+  tenant_id: string;
+  title: string;
+  description: string | null;
+  image_url: string | null;
+  badge_label: string | null;
+  /** null = hemen başlar */
+  starts_at: string | null;
+  /** null = süresiz */
+  ends_at: string | null;
+  is_active: boolean;
+  link_category_id: string | null;
+  display_order: number;
+  /** "none" ise sadece duyuru kartı — sepete dokunmaz. */
+  rule_type: CampaignRuleType;
+  min_cart_amount: number | null;
+  discount_kind: CampaignDiscountKind | null;
+  discount_value: number | null;
+  payment_method: CampaignPaymentMethod;
+  created_at?: string;
+  updated_at?: string;
+}
+
 export interface InstallmentOption {
   count: number;
   label: string;

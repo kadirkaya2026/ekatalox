@@ -25,6 +25,7 @@ import {
   getStorefrontSections,
   getStorefrontTenant,
   getTenantCategories,
+  getStorefrontCampaigns,
   getTenantStorefrontSettings,
 } from "@/lib/data";
 import { getStorefrontHomePath, getStorefrontSectionPath } from "@/lib/storefront/paths";
@@ -158,6 +159,9 @@ export default async function SectionDetailPage(props: {
     section.products,
   );
 
+  // Süresi geçmiş/pasif kampanyalar getStorefrontCampaigns içinde süzülüyor.
+  const campaigns = await getStorefrontCampaigns(tenant.id);
+
   const footerVisible = storefrontSettings.is_footer_visible;
   const headersList = await headers();
   const requestHost = getRequestHostFromHeaders(headersList);
@@ -197,6 +201,7 @@ export default async function SectionDetailPage(props: {
         subdomain={subdomain}
         pageTitle={section.title}
         homeHref={getStorefrontHomePath()}
+        campaigns={campaigns}
         hasPageFooter={footerVisible}
         isCatalogOnly={priceListState.isCatalogOnly}
         sectionMode

@@ -1,7 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { ChevronDown, ChevronRight, Search, ShoppingCart, Store } from "lucide-react";
+import { ChevronDown, ChevronRight, Search, ShoppingCart, Store, Ticket } from "lucide-react";
 import type { CategoryNode } from "@/lib/categories/tree";
 import { getDescendantCategoryIds } from "@/lib/categories/tree";
 import type { Category } from "@/lib/types";
@@ -58,6 +58,10 @@ export interface StorefrontHeaderProps {
   // gösterilmiyor. Değer zaten mobil kontrolünden geçmiş halde geliyor —
   // masaüstünde her zaman false, yani eski düzen aynen korunuyor.
   hideSearchAndCart?: boolean;
+  // Masaüstünde alt navigasyon barı yok (sm:hidden), o yüzden kampanya
+  // paneline üst başlıktan erişiliyor. Kampanyası olmayan bayide boş
+  // buton durmasın diye çağıran taraf kampanya varsa gönderiyor.
+  onOpenCampaigns?: () => void;
 }
 
 function HeaderActions({
@@ -78,6 +82,17 @@ function HeaderActions({
           tenantId={props.tenantId}
           className="hidden lg:inline-flex"
         />
+      ) : null}
+      {props.onOpenCampaigns ? (
+        <button
+          type="button"
+          onClick={props.onOpenCampaigns}
+          className={cn(theme.cartButton, "hidden sm:flex")}
+          aria-label={t("campaignsSheet.headerButtonAria")}
+          title={t("campaignsSheet.title")}
+        >
+          <Ticket className="size-5" />
+        </button>
       ) : null}
       <StorefrontLanguageSwitcher />
       {props.storefrontSettings.is_theme_toggle_visible !== false ? (

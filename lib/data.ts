@@ -44,6 +44,7 @@ import type {
   TenantMembership,
   TenantStorefrontSettings,
   TenantWithRelations,
+  TenantCampaign,
 } from "@/lib/types";
 
 type AdminClient = NonNullable<ReturnType<typeof createSupabaseAdminClient>>;
@@ -1814,6 +1815,65 @@ export async function getTenantSectionProducts(sectionId: string): Promise<Produ
     .map((row: { products: unknown }) => row.products)
     .filter((p): p is Record<string, unknown> => Boolean(p))
     .map((product) => normalizeProductRecord(product));
+}
+
+/**
+ * Vitrinde gösterilecek kampanyalar (bkz. 0081_tenant_campaigns.sql).
+ *
+ * Tarih penceresi SQL'de now() ile değil, burada JS'te süzülüyor: SQL'e
+ * now() konsaydı unstable_cache sonucu bayatlardı, istemcide süzmek de
+ * sunucu/istemci saat farkından hidrasyon uyuşmazlığı üretirdi. Tazelik
+ * ISR'ın 300 sn revalidate'iyle sınırlı, bu kabul edilebilir.
+ */
+export async function getStorefrontCampaigns(
+  tenantId: string,
+): Promise<TenantCampaign[]> {
+  const readCampaigns = unstable_cache(
+    async (resolvedTenantId: string) => {
+      const supabase = createSupabaseAdminClient();
+
+      if (!supabase) {
+        return [];
+      }
+
+      const { data } = await supabase
+        .from("tenant_campaigns")
+        .select("*")
+        .eq("tenant_id", resolvedTenantId)
+        .eq("is_active", true)
+        .order("display_order", { ascending: true })
+        .order("created_at", { ascending: true });
+
+      return (data ?? []) as TenantCampaign[];
+    },
+    [`campaigns_${tenantId}`],
+    {
+      tags: [`storefront_${tenantId}`],
+    },
+  );
+
+  const campaigns = await readCampaigns(tenantId);
+  const now = Date.now();
+
+  return campaigns
+    .filter((campaign) => {
+      if (campaign.starts_at && new Date(campaign.starts_at).getTime() > now) {
+        return false;
+      }
+      if (campaign.ends_at && new Date(campaign.ends_at).getTime() <= now) {
+        return false;
+      }
+      return true;
+    })
+    .map((campaign) => ({
+      ...campaign,
+      // Supabase numeric kolonları string döndürebiliyor; sepet matematiği
+      // sayı bekliyor.
+      min_cart_amount:
+        campaign.min_cart_amount === null ? null : Number(campaign.min_cart_amount),
+      discount_value:
+        campaign.discount_value === null ? null : Number(campaign.discount_value),
+    }));
 }
 
 export async function getStorefrontSections(

@@ -46,6 +46,7 @@ import {
   requestOrderReceiptPdf,
 } from "@/lib/storefront/order-pdf-request";
 import {
+  getCampaignDiscountStatus,
   buildWhatsAppMessage,
   CartDiscountConfig,
   formatDiscountPercentage,
@@ -84,6 +85,7 @@ import type {
   StorefrontSectionWithProducts,
   Tenant,
   TenantStorefrontSettings,
+  TenantCampaign,
 } from "@/lib/types";
 import { cn, formatCurrency, formatDateSlashTr } from "@/lib/utils";
 import {
@@ -117,6 +119,7 @@ import {
   isHomepageBlockVisible,
 } from "@/lib/storefront/homepage-blocks";
 import { StorefrontBottomNav } from "@/components/storefront/storefront-bottom-nav";
+import { StorefrontCampaignsSheet } from "@/components/storefront/storefront-campaigns-sheet";
 import { StorefrontSearchSheet } from "@/components/storefront/storefront-search-sheet";
 import { isMarketOrTekelTenant } from "@/lib/storefront/white-label";
 import { StorefrontHeader } from "@/components/storefront/storefront-header";
@@ -844,6 +847,7 @@ export function StorefrontClient({
   categories,
   initialProducts,
   initialProductTotal,
+  campaigns = [],
   promoProducts,
   promoProductCount = 0,
   bestSellerProducts,
@@ -862,6 +866,7 @@ export function StorefrontClient({
   categories: Category[];
   initialProducts: StorefrontProduct[];
   initialProductTotal: number;
+  campaigns?: TenantCampaign[];
   promoProducts: StorefrontProduct[];
   promoProductCount?: number;
   bestSellerProducts: StorefrontProduct[];
@@ -1240,6 +1245,13 @@ export function StorefrontClient({
       storefrontSettings.is_card_campaign_active,
     ],
   );
+  // Ödeme yöntemi seçilmeden önce de gösterilir: "fark etmez" kampanyalar
+  // uygulanır, yönteme bağlı olanlar "kazanabilirsiniz" olarak listelenir.
+  const campaignStatus = useMemo(
+    () => getCampaignDiscountStatus(cart, campaigns, selectedPaymentMethod),
+    [cart, campaigns, selectedPaymentMethod],
+  );
+
   const cartPaymentSummary = useMemo(() => {
     if (!selectedPaymentMethod || !cart.length) return null;
 
@@ -1267,8 +1279,10 @@ export function StorefrontClient({
       cashConfig,
       cardConfig,
       selectedInstallment,
+      campaigns,
     );
   }, [
+    campaigns,
     cart,
     selectedPaymentMethod,
     selectedInstallmentCount,
@@ -3061,6 +3075,14 @@ export function StorefrontClient({
         onCategoryChange={handleCategoryChange}
         onOpenCategoryDrawer={() => setIsCategoryDrawerOpen(true)}
         hideSearchAndCart={usesBottomNav}
+        onOpenCampaigns={
+          campaigns.length
+            ? () => {
+                setIsSearchSheetOpen(false);
+                setIsCampaignsSheetOpen(true);
+              }
+            : undefined
+        }
       />
 
       <main
@@ -3517,78 +3539,18 @@ export function StorefrontClient({
         />
       ) : null}
 
-      {/* Kampanyalar paneli — alt bardaki "Kampanyalar" butonunun geçici
-          hedefi. Mevcut kampanya barlarını (nakit indirimi + kart
-          kampanyası) tekrar kullanıyor; ayrı bir kampanyalar sayfası
-          tasarlanınca bu handler o sayfaya yönlendirilecek. */}
-      <AnimatePresence>
-        {isMounted && usesBottomNav && isCampaignsSheetOpen ? (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.18, ease: "easeOut" }}
-            className={theme.cartDrawerOverlay}
-          >
-            <button
-              type="button"
-              aria-label={t("campaignsSheet.closeAria")}
-              className="absolute inset-0 h-full w-full"
-              onClick={() => setIsCampaignsSheetOpen(false)}
-            />
-            <motion.div
-              initial={{ opacity: 0, y: 28 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 28 }}
-              transition={{ duration: 0.24, ease: [0.16, 1, 0.3, 1] }}
-              className={theme.cartDrawerPanel}
-              role="dialog"
-              aria-modal="true"
-              aria-label={t("campaignsSheet.title")}
-            >
-              <div className="flex max-h-[94dvh] flex-col">
-                <div className="flex justify-center pt-3">
-                  <span className={theme.cartDrawerHandle} />
-                </div>
-
-                <div className={cn(theme.cartDrawerHeaderBorder, "px-4 pb-3 pt-3 sm:px-5")}>
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="min-w-0">
-                      <h2 className={theme.cartDrawerTitle}>{t("campaignsSheet.title")}</h2>
-                      <p className={cn("truncate text-xs font-medium sm:text-sm", theme.cartDrawerMuted)}>
-                        {t("campaignsSheet.description")}
-                      </p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => setIsCampaignsSheetOpen(false)}
-                      className={theme.cartDrawerCloseButton}
-                      aria-label={t("campaignsSheet.closeAria")}
-                    >
-                      <X className="size-5" />
-                    </button>
-                  </div>
-                </div>
-
-                <div className="safe-bottom-padding max-h-[min(72dvh,560px)] space-y-3 overflow-y-auto px-4 py-4 sm:px-5">
-                  {hasVisibleHomeCampaignBars ? (
-                    renderCampaignBarsForSurface("home", false)
-                  ) : (
-                    <div className="py-8 text-center">
-                      <p className={cn("text-sm font-semibold", theme.text)}>
-                        {t("campaignsSheet.empty")}
-                      </p>
-                      <p className={cn("mt-1.5 text-xs", theme.textMuted)}>
-                        {t("campaignsSheet.emptyHint")}
-                      </p>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </motion.div>
-          </motion.div>
-        ) : null}
-      </AnimatePresence>
+      <StorefrontCampaignsSheet
+        isOpen={isMounted && isCampaignsSheetOpen}
+        onClose={() => setIsCampaignsSheetOpen(false)}
+        campaigns={campaigns}
+        campaignStatus={campaignStatus}
+        cartSubtotal={campaignStatus?.subtotal ?? cartTotal}
+        currency={campaignStatus?.currency ?? cartCurrency}
+        onOpenCategory={handleCategoryChange}
+        paymentCampaignBars={
+          hasVisibleHomeCampaignBars ? renderCampaignBarsForSurface("home", false) : null
+        }
+      />
 
       {usesSidebarNav ? (
         <StorefrontCategoryDrawer

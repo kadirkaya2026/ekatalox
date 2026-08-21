@@ -27,6 +27,7 @@ import {
   ShieldCheck,
   Star,
   Store,
+  Ticket,
   TrendingUp,
   UploadCloud,
   UserCircle,
@@ -167,6 +168,12 @@ const tenantLinks: SidebarLink[] = [
         href: "/settings/min-order",
         label: "Minimum Sepet Tutarı",
         icon: Wallet,
+        group: "İçerik & İletişim",
+      },
+      {
+        href: "/settings/campaigns",
+        label: "Kampanyalar",
+        icon: Ticket,
         group: "İçerik & İletişim",
       },
       {

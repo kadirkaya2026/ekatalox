@@ -3,7 +3,13 @@ import {
   supportedCurrencyCodes,
   type CurrencyCode,
 } from "@/lib/products/constants";
-import type { CartItem, CashDiscountTier, CardCampaignTier, InstallmentOption } from "@/lib/types";
+import type {
+  CartItem,
+  CashDiscountTier,
+  CardCampaignTier,
+  InstallmentOption,
+  TenantCampaign,
+} from "@/lib/types";
 
 export function getCartTotal(items: CartItem[]) {
   return items.reduce((total, item) => total + (item.price ?? 0) * item.quantity, 0);
@@ -79,6 +85,9 @@ export interface CartPaymentSummary {
   appliedCashTier: CashDiscountTier | null;
   /** Hangi kart tier uygulandı */
   appliedCardTier: CardCampaignTier | null;
+  /** Bayinin kendi kampanyalarından uygulanan (varsa) — bkz. getBestCampaignDiscount */
+  appliedCampaign: TenantCampaign | null;
+  campaignDiscountAmount: number;
 }
 
 // ─── Tier seçim helpers ────────────────────────────────────────────────────────
@@ -131,6 +140,133 @@ export function formatDiscountPercentage(value: number) {
   return value.toFixed(2).replace(/\.00$/, "").replace(/(\.\d)0$/, "$1");
 }
 
+// ─── Bayi kampanyaları ────────────────────────────────────────────────────────
+
+export interface CampaignDiscountCandidate {
+  campaign: TenantCampaign;
+  /** Bu kampanya uygulanırsa sepetten düşecek tutar */
+  amount: number;
+}
+
+export interface CampaignDiscountStatus {
+  currency: CurrencyCode;
+  subtotal: number;
+  /** Şu an gerçekten uygulanan kampanya (en avantajlısı) */
+  applied: CampaignDiscountCandidate | null;
+  /**
+   * Eşiği tutan ama ödeme yöntemi henüz seçilmediği/uyuşmadığı için
+   * uygulanmayanlar. "Nakit ödemede 100 TL indirim kazanırsınız" ipucu için.
+   */
+  potential: CampaignDiscountCandidate[];
+  /**
+   * Eşiği tutmayanların içinde en yakını — "X TL daha ekle" için.
+   * Uygulanandan daha fazla indirim getirecek olanlar arasından seçilir,
+   * yoksa null (zaten en iyisi uygulanıyorsa yukarı satış anlamsız).
+   */
+  nextTarget: { campaign: TenantCampaign; amount: number; remaining: number } | null;
+}
+
+/** Kampanyanın bu sepet tutarında getireceği indirim (eşiği tutmazsa 0). */
+export function getCampaignDiscountAmount(campaign: TenantCampaign, subtotal: number) {
+  if (campaign.rule_type !== "cart_threshold") return 0;
+  if (campaign.discount_value === null || campaign.min_cart_amount === null) return 0;
+  if (subtotal < campaign.min_cart_amount) return 0;
+
+  const raw =
+    campaign.discount_kind === "percentage"
+      ? (subtotal * campaign.discount_value) / 100
+      : campaign.discount_value;
+
+  // İndirim sepetten büyük olamaz.
+  return roundCurrencyAmount(Math.min(raw, subtotal));
+}
+
+/** Kampanya eşiği tutmasa da getireceği indirim — "X TL daha ekle" hesabı için. */
+function getCampaignDiscountAtThreshold(campaign: TenantCampaign) {
+  if (campaign.rule_type !== "cart_threshold") return 0;
+  if (campaign.discount_value === null || campaign.min_cart_amount === null) return 0;
+
+  return roundCurrencyAmount(
+    campaign.discount_kind === "percentage"
+      ? (campaign.min_cart_amount * campaign.discount_value) / 100
+      : campaign.discount_value,
+  );
+}
+
+function campaignAppliesToPaymentMethod(
+  campaign: TenantCampaign,
+  paymentMethod: "cash" | "card" | null,
+) {
+  if (campaign.payment_method === "any") return true;
+  // Ödeme yöntemi henüz seçilmediyse yönteme bağlı kampanya uygulanamaz;
+  // sadece "kazanabilirsiniz" ipucu olarak gösterilir.
+  return campaign.payment_method === paymentMethod;
+}
+
+/**
+ * Uygulanabilir kampanyalardan EN AVANTAJLISINI seçer (kullanıcı kararı,
+ * 21 Ağu 2026): birden fazla kural aynı anda tutsa bile indirimler
+ * toplanmaz, en çok indirim getiren tek kampanya uygulanır. Eşitlikte
+ * display_order küçük olan kazanır.
+ *
+ * Tarih penceresi burada kontrol edilmiyor — süresi geçmiş kampanyalar
+ * sunucuda (getStorefrontCampaigns) zaten süzülüyor.
+ */
+export function getCampaignDiscountStatus(
+  items: CartItem[],
+  campaigns: TenantCampaign[],
+  paymentMethod: "cash" | "card" | null,
+): CampaignDiscountStatus | null {
+  if (!items.length) return null;
+
+  const totalsByCurrency = getCartTotalsByCurrency(items);
+  const currencies = Object.entries(totalsByCurrency).filter(
+    (entry): entry is [CurrencyCode, number] => typeof entry[1] === "number",
+  );
+  if (currencies.length !== 1) return null;
+
+  const [currency, subtotal] = currencies[0];
+  const rounded = roundCurrencyAmount(subtotal);
+
+  const rules = campaigns.filter((campaign) => campaign.rule_type === "cart_threshold");
+  if (!rules.length) return null;
+
+  const byBestDiscount = (a: CampaignDiscountCandidate, b: CampaignDiscountCandidate) =>
+    b.amount - a.amount || a.campaign.display_order - b.campaign.display_order;
+
+  const qualified = rules
+    .map((campaign) => ({ campaign, amount: getCampaignDiscountAmount(campaign, rounded) }))
+    .filter((entry) => entry.amount > 0);
+
+  const applied =
+    qualified
+      .filter((entry) => campaignAppliesToPaymentMethod(entry.campaign, paymentMethod))
+      .sort(byBestDiscount)[0] ?? null;
+
+  const potential = qualified
+    .filter((entry) => !campaignAppliesToPaymentMethod(entry.campaign, paymentMethod))
+    .sort(byBestDiscount);
+
+  const nextTarget =
+    rules
+      .filter(
+        (campaign) =>
+          campaign.min_cart_amount !== null &&
+          rounded < campaign.min_cart_amount &&
+          // Zaten uygulanandan daha iyisini vaat etmiyorsa yukarı satış anlamsız.
+          getCampaignDiscountAtThreshold(campaign) > (applied?.amount ?? 0),
+      )
+      .map((campaign) => ({
+        campaign,
+        amount: getCampaignDiscountAtThreshold(campaign),
+        remaining: roundCurrencyAmount(campaign.min_cart_amount! - rounded),
+      }))
+      .sort((a, b) => a.remaining - b.remaining || a.campaign.display_order - b.campaign.display_order)[0] ??
+    null;
+
+  return { currency, subtotal: rounded, applied, potential, nextTarget };
+}
+
 // ─── Core calculation ─────────────────────────────────────────────────────────
 
 export function getCartPaymentSummary(
@@ -139,6 +275,7 @@ export function getCartPaymentSummary(
   cashConfig: CashTieredConfig | null,
   cardConfig: CardTieredConfig | null,
   selectedInstallment: InstallmentOption | null,
+  campaigns: TenantCampaign[] = [],
 ): CartPaymentSummary | null {
   if (!items.length) return null;
 
@@ -164,7 +301,17 @@ export function getCartPaymentSummary(
     discountPercentage > 0
       ? roundCurrencyAmount((roundedSubtotal * discountPercentage) / 100)
       : 0;
-  const afterDiscount = roundCurrencyAmount(roundedSubtotal - discountAmount);
+  // ── Bayi kampanyası ──
+  // Eski nakit basamağıyla üst üste binebilir (kullanıcı kararı: eski
+  // sistem dursun, bağımsız çalışsın). Pratikte hiçbir bayide nakit
+  // basamağı açık değil, o yüzden teorik bir durum.
+  const campaignStatus = getCampaignDiscountStatus(items, campaigns, paymentMethod);
+  const appliedCampaign = campaignStatus?.applied?.campaign ?? null;
+  const campaignDiscountAmount = campaignStatus?.applied?.amount ?? 0;
+
+  const afterDiscount = roundCurrencyAmount(
+    Math.max(roundedSubtotal - discountAmount - campaignDiscountAmount, 0),
+  );
 
   // ── Kart ──
   const appliedCardTier =
@@ -219,6 +366,8 @@ export function getCartPaymentSummary(
     zeroCommissionApplied,
     appliedCashTier,
     appliedCardTier,
+    appliedCampaign,
+    campaignDiscountAmount,
   };
 }
 
@@ -336,6 +485,20 @@ export function buildAppliedCampaignBenefitNotes(summary: CartPaymentSummary): s
   ) {
     notes.push(
       `${summary.appliedCardTier.threshold} ${summary.currency} ve üzerine kart ile ${summary.appliedCardTier.maxFreeInstallmentCount} taksite kadar 0 komisyon kampanyasından faydalanılmıştır.`,
+    );
+  }
+
+  // Bayinin kendi kampanyası — WhatsApp mesajı ve sipariş PDF'i bu notları
+  // kullandığı için indirim burada da yazılı kalıyor.
+  if (summary.appliedCampaign && summary.campaignDiscountAmount > 0) {
+    const campaign = summary.appliedCampaign;
+    const benefit =
+      campaign.discount_kind === "percentage"
+        ? `%${formatDiscountPercentage(campaign.discount_value ?? 0)}`
+        : `${campaign.discount_value} ${summary.currency}`;
+
+    notes.push(
+      `${campaign.min_cart_amount} ${summary.currency} ve üzeri alışverişte ${benefit} indirim ("${campaign.title}") kampanyasından faydalanılmıştır.`,
     );
   }
 

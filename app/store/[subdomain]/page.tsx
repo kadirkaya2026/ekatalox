@@ -30,6 +30,7 @@ import {
   getStorefrontSections,
   getStorefrontTenant,
   getTenantCategories,
+  getStorefrontCampaigns,
   getTenantStorefrontSettings,
 } from "@/lib/data";
 import {
@@ -211,6 +212,9 @@ export default async function StorefrontPage(props: PageProps<"/store/[subdomain
         ]
       : categories;
 
+  // Süresi geçmiş/pasif kampanyalar getStorefrontCampaigns içinde süzülüyor.
+  const campaigns = await getStorefrontCampaigns(tenant.id);
+
   const footerVisible = storefrontSettings.is_footer_visible;
   const headersList = await headers();
   const requestHost = getRequestHostFromHeaders(headersList);
@@ -243,6 +247,7 @@ export default async function StorefrontPage(props: PageProps<"/store/[subdomain
         storefrontSettings={storefrontSettings}
         sections={sections}
         subdomain={subdomain}
+        campaigns={campaigns}
         hasPageFooter={footerVisible}
         isCatalogOnly={priceListState.isCatalogOnly}
       />
