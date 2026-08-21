@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState, useTransition } from "react";
 import { motion } from "framer-motion";
 import { EkataloxLogo } from "@/components/brand/ekatalox-logo";
+import { LoginMascots, type MascotFocus } from "@/components/auth/login-mascots";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { translateAuthError } from "@/lib/auth/translate-error";
 
@@ -14,6 +15,8 @@ function Field({
   placeholder,
   value,
   onChange,
+  onFocus,
+  onBlur,
 }: {
   id: string;
   label: string;
@@ -21,6 +24,8 @@ function Field({
   placeholder: string;
   value: string;
   onChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
+  onFocus?: () => void;
+  onBlur?: () => void;
 }) {
   return (
     <div>
@@ -33,6 +38,8 @@ function Field({
         placeholder={placeholder}
         value={value}
         onChange={onChange}
+        onFocus={onFocus}
+        onBlur={onBlur}
         className="w-full rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white outline-none transition-colors placeholder:text-slate-600 focus:border-[var(--marketing-primary)]/60"
       />
     </div>
@@ -43,6 +50,8 @@ export function LoginForm({ target }: { target?: string }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
+  // Maskotların hangi tepkiyi vereceğini belirler (bkz. login-mascots.tsx).
+  const [focusedField, setFocusedField] = useState<MascotFocus>("idle");
   const [pending, startTransition] = useTransition();
 
   const supabase = createSupabaseBrowserClient();
@@ -140,6 +149,8 @@ export function LoginForm({ target }: { target?: string }) {
         transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
         className="relative w-full max-w-md overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-b from-white/[0.04] to-white/[0.01] p-7 backdrop-blur-xl md:p-9"
       >
+        <LoginMascots focus={focusedField} />
+
         <Link href="/#top" className="inline-flex">
           <EkataloxLogo variant="light" className="h-10 w-[176px]" priority />
         </Link>
@@ -158,6 +169,8 @@ export function LoginForm({ target }: { target?: string }) {
             placeholder="ornek@sirketiniz.com"
             value={email}
             onChange={(event) => setEmail(event.target.value)}
+            onFocus={() => setFocusedField("email")}
+            onBlur={() => setFocusedField("idle")}
           />
           <Field
             id="login-password"
@@ -166,6 +179,8 @@ export function LoginForm({ target }: { target?: string }) {
             placeholder="••••••••"
             value={password}
             onChange={(event) => setPassword(event.target.value)}
+            onFocus={() => setFocusedField("password")}
+            onBlur={() => setFocusedField("idle")}
           />
           <button
             type="submit"
