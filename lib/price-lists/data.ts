@@ -78,7 +78,7 @@ export function countPricedLists(priceLists: PriceList[]) {
 export async function upsertProductPrices(
   supabase: AdminClient,
   productId: string,
-  prices: Array<{ price_list_id: string; price: number }>,
+  prices: Array<{ price_list_id: string; price: number; discount_price?: number | null }>,
 ) {
   if (!prices.length) {
     return null;
@@ -89,6 +89,9 @@ export async function upsertProductPrices(
       product_id: productId,
       price_list_id: entry.price_list_id,
       price: entry.price,
+      // undefined gelirse sütuna dokunulmaması gerekir ama upsert tüm
+      // satırı yazdığı için açıkça null'a çekiliyor: "bu listede indirim yok".
+      discount_price: entry.discount_price ?? null,
     })),
     { onConflict: "product_id,price_list_id" },
   );

@@ -35,7 +35,7 @@ export function ProductEditModal({
   onError: (message: string) => void;
 }) {
   const [pending, startTransition] = useTransition();
-  const { form, updateField, updateListPrice, handleImageSelect, handleImageRemove, discountPreview } =
+  const { form, updateField, updateListPrice, updateListDiscount, handleImageSelect, handleImageRemove, discountPreview } =
     useProductForm(() => buildProductFormFromProduct(product, priceLists), {
       onImageResult: (message) => {
         if (message) {
@@ -122,11 +122,14 @@ export function ProductEditModal({
           </select>
         </div>
 
-        <ProductPriceFields
-          priceLists={priceLists}
-          values={form.listPrices}
-          onChange={updateListPrice}
-        />
+          <ProductPriceFields
+            priceLists={priceLists}
+            values={form.listPrices}
+            onChange={updateListPrice}
+            discountValues={form.listDiscounts}
+            onDiscountChange={updateListDiscount}
+            showDiscounts={form.is_discount_active}
+          />
 
         <PlanFeatureGate feature="product_discount" plan={tenant.plan} companyName={tenant.company_name}>
           <div className="rounded-xl border border-border bg-muted/60 px-4 py-3">
@@ -139,25 +142,10 @@ export function ProductEditModal({
               İndirim uygula
             </label>
             {form.is_discount_active ? (
-              <div className="mt-3 grid gap-2">
-                <Input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  placeholder="İndirimli satış fiyatı"
-                  value={form.discount_price}
-                  onChange={(event) => updateField("discount_price", event.target.value)}
-                />
-                {discountPreview !== null ? (
-                  <p className="text-sm font-medium text-emerald-700">
-                    Vitrinde yaklaşık %{discountPreview} indirim görünecek
-                  </p>
-                ) : (
-                  <p className="text-sm text-muted-foreground">
-                    İndirimli fiyat, liste fiyatlarından düşük olmalıdır.
-                  </p>
-                )}
-              </div>
+              <p className="mt-2 text-sm text-muted-foreground">
+                İndirimli fiyatı her fiyat listesi için yukarıdaki alanlara ayrı ayrı
+                girin. Boş bıraktığınız listede indirim uygulanmaz.
+              </p>
             ) : null}
           </div>
         </PlanFeatureGate>

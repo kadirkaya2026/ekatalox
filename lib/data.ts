@@ -1595,6 +1595,10 @@ export async function getStorefrontPromoProducts(params: {
 // müşteri "Tümü (40)" görüp kategoriye girince farklı sayıda ürün bulur.
 export async function getStorefrontPromoProductCount(params: {
   tenantId: string;
+  // İndirim liste başına tanımlandığı için sayaç da ziyaretçinin aktif
+  // fiyat listesine göre hesaplanır: başka listede indirimli olan ürün
+  // burada sayılmaz (bkz. 0079_product_price_discount.sql).
+  priceListId: string;
   excludeCategoryIds?: string[];
 }): Promise<number> {
   const supabaseAdmin = createSupabaseAdminClient();
@@ -1607,16 +1611,26 @@ export async function getStorefrontPromoProductCount(params: {
   }
 
   const readCount = unstable_cache(
-    async (tenantId: string, excludeCategoryIds: string[]) => {
+    async (tenantId: string, priceListId: string, excludeCategoryIds: string[]) => {
       const admin = createSupabaseAdminClient();
       if (!admin) return 0;
 
-      let query = admin
+      // !inner + price_list_id filtresi: yalnızca bu listede indirimli
+      // fiyatı olan satırlar sayılır. Gömülü join Supabase'in tip
+      // çıkarımını "excessively deep" hatasına soktuğu için sorgu
+      // gevşek tiple kuruluyor; dönen tek değer zaten count.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      let query: any = admin
         .from("products")
-        .select("id", { count: "exact", head: true })
+        .select("id, product_prices!inner(price_list_id, discount_price)", {
+          count: "exact",
+          head: true,
+        })
         .eq("tenant_id", tenantId)
         .eq("is_discount_active", true)
-        .eq("is_in_stock", true);
+        .eq("is_in_stock", true)
+        .eq("product_prices.price_list_id", priceListId)
+        .not("product_prices.discount_price", "is", null);
       if (excludeCategoryIds.length) {
         query = query.not("category_id", "in", `(${excludeCategoryIds.join(",")})`);
       }
@@ -1624,11 +1638,11 @@ export async function getStorefrontPromoProductCount(params: {
       const { count } = await query;
       return count ?? 0;
     },
-    [params.tenantId],
+    [params.tenantId, params.priceListId],
     { tags: [`storefront_${params.tenantId}`], revalidate: 60 },
   );
 
-  return readCount(params.tenantId, params.excludeCategoryIds ?? []);
+  return readCount(params.tenantId, params.priceListId, params.excludeCategoryIds ?? []);
 }
 
 // "Öne Çıkan Bölümler"in aksine burada ürün listesi admin tarafından

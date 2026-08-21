@@ -30,8 +30,12 @@ export function resolveStorefrontPrice(
   }
 
   const listPrice = getProductPriceForList(product.prices, priceListId);
+  // İndirim liste başına: sadece bu fiyat listesinin kendi indirimli fiyatı
+  // geçerli. Değer yoksa bu listede indirim yok — başka listede olması bu
+  // listeyi etkilemez (kullanıcı isteği, 21 Ağu 2026).
+  const listEntry = product.prices?.find((entry) => entry.price_list_id === priceListId);
   const discountPrice =
-    typeof product.discount_price === "number" ? product.discount_price : null;
+    typeof listEntry?.discount_price === "number" ? listEntry.discount_price : null;
 
   if (
     product.is_discount_active &&

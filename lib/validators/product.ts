@@ -134,39 +134,15 @@ export const productBaseSchema = z.object({
     booleanSchema,
   ),
   discount_price: optionalDiscountPriceSchema,
-}).superRefine((value, ctx) => {
-  if (!value.is_discount_active) {
-    return;
-  }
-
-  if (value.discount_price === null) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      message: "İndirim aktifken indirimli satış fiyatı zorunludur.",
-      path: ["discount_price"],
-    });
-    return;
-  }
-
-  const minListPrice = Math.min(...value.prices.map((entry) => entry.price));
-
-  if (minListPrice <= 0) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      message: "İndirim uygulamak için en az bir liste fiyatı sıfırdan büyük olmalıdır.",
-      path: ["discount_price"],
-    });
-    return;
-  }
-
-  if (value.discount_price >= minListPrice) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      message: "İndirimli fiyat, liste fiyatından düşük olmalıdır.",
-      path: ["discount_price"],
-    });
-  }
 });
+
+// NOT: Eskiden burada tüm listelerin en düşük fiyatı üzerinden tek bir
+// çapraz kontrol vardı (minListPrice). Bu iki soruna yol açıyordu:
+// (1) sadece 1. listede fiyat girilmişse diğerleri 0 olduğu için
+//     minListPrice=0 çıkıyor ve "indirim uygulanamaz" hatası veriliyordu —
+//     yani tüm listelere fiyat girmek zorunlu hale geliyordu,
+// (2) tek bir indirimli fiyat tüm listelere uygulanıyordu.
+// Artık doğrulama liste bazında productPriceEntrySchema içinde yapılıyor.
 
 export const productCreateSchema = productBaseSchema.extend({
   tenant_id: z.string().min(1).optional(),

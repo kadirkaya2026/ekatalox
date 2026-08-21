@@ -33,7 +33,7 @@ export function ProductAddForm({
   const router = useRouter();
   const [message, setMessage] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
-  const { form, updateField, updateListPrice, handleImageSelect, discountPreview } =
+  const { form, updateField, updateListPrice, updateListDiscount, handleImageSelect, discountPreview } =
     useProductForm(() => buildEmptyProductForm(priceLists), { onImageResult: setMessage });
 
   const categoryTree = useMemo(() => buildCategoryTree(initialCategories), [initialCategories]);
@@ -166,6 +166,9 @@ export function ProductAddForm({
             priceLists={priceLists}
             values={form.listPrices}
             onChange={updateListPrice}
+            discountValues={form.listDiscounts}
+            onDiscountChange={updateListDiscount}
+            showDiscounts={form.is_discount_active}
           />
 
           <PlanFeatureGate
@@ -183,25 +186,10 @@ export function ProductAddForm({
                 İndirim uygula
               </label>
               {form.is_discount_active ? (
-                <div className="mt-3 grid gap-2">
-                  <Input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    placeholder="İndirimli satış fiyatı"
-                    value={form.discount_price}
-                    onChange={(event) => updateField("discount_price", event.target.value)}
-                  />
-                  {discountPreview !== null ? (
-                    <p className="text-sm font-medium text-emerald-700">
-                      Vitrinde yaklaşık %{discountPreview} indirim görünecek
-                    </p>
-                  ) : (
-                    <p className="text-sm text-slate-500">
-                      İndirimli fiyat, liste fiyatlarından düşük olmalıdır.
-                    </p>
-                  )}
-                </div>
+                <p className="mt-2 text-sm text-slate-500">
+                  İndirimli fiyatı her fiyat listesi için yukarıdaki alanlara ayrı ayrı
+                  girin. Boş bıraktığınız listede indirim uygulanmaz.
+                </p>
               ) : null}
             </div>
           </PlanFeatureGate>

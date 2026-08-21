@@ -46,7 +46,10 @@ export function resolveStorefrontVariantPrice(
 
   const listPrice = resolveVariantListPrice(variant, product, priceListId);
   const discountPrice =
-    typeof product.discount_price === "number" ? product.discount_price : null;
+    typeof product.prices?.find((entry) => entry.price_list_id === priceListId)?.discount_price ===
+    "number"
+      ? product.prices.find((entry) => entry.price_list_id === priceListId)!.discount_price!
+      : null;
 
   if (
     product.is_discount_active &&

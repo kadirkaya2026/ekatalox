@@ -32,9 +32,13 @@ export function buildVariantListPriceFormState(
   );
 }
 
+// Her fiyat listesinin kendi indirimli fiyatı gönderilir; boş bırakılan
+// listede indirim yoktur (kullanıcı isteği, 21 Ağu 2026).
 export function appendProductPricesToFormData(
   formData: FormData,
   listPrices: Record<string, string>,
+  listDiscounts?: Record<string, string>,
+  discountsEnabled = true,
 ) {
   formData.set(
     "prices",
@@ -42,8 +46,25 @@ export function appendProductPricesToFormData(
       Object.entries(listPrices).map(([price_list_id, price]) => ({
         price_list_id,
         price,
+        discount_price: discountsEnabled ? (listDiscounts?.[price_list_id] ?? null) : null,
       })),
     ),
+  );
+}
+
+// Düzenleme formunu açarken mevcut liste indirimlerini doldurur.
+export function buildListDiscountFormState(
+  priceLists: Array<{ id: string; is_catalog_only?: boolean }>,
+  product?: { prices?: Array<{ price_list_id: string; discount_price?: number | null }> },
+): Record<string, string> {
+  return Object.fromEntries(
+    priceLists.map((list) => {
+      const entry = product?.prices?.find((price) => price.price_list_id === list.id);
+      return [
+        list.id,
+        typeof entry?.discount_price === "number" ? String(entry.discount_price) : "",
+      ];
+    }),
   );
 }
 

@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { defaultCurrencyCode } from "@/lib/products/constants";
 import {
   appendProductPricesToFormData,
+  buildListDiscountFormState,
   buildListPriceFormState,
   getMinPriceFromFormState,
 } from "@/lib/products/price-form";
@@ -22,6 +23,8 @@ export interface ProductFormState {
   product_name: string;
   currency: string;
   listPrices: Record<string, string>;
+  // Liste başına indirimli fiyat; boş = o listede indirim yok.
+  listDiscounts: Record<string, string>;
   is_in_stock: boolean;
   is_recommended: boolean;
   is_discount_active: boolean;
@@ -44,6 +47,7 @@ export function buildEmptyProductForm(priceLists: PriceList[]): ProductFormState
     product_name: "",
     currency: defaultCurrencyCode,
     listPrices: buildListPriceFormState(priceLists),
+    listDiscounts: buildListDiscountFormState(priceLists),
     is_in_stock: true,
     is_recommended: false,
     is_discount_active: false,
@@ -70,6 +74,7 @@ export function buildProductFormFromProduct(
     product_name: product.product_name,
     currency: product.currency ?? defaultCurrencyCode,
     listPrices: buildListPriceFormState(priceLists, product),
+    listDiscounts: buildListDiscountFormState(priceLists, product),
     is_in_stock: product.is_in_stock,
     is_recommended: product.is_recommended,
     is_discount_active: product.is_discount_active,
@@ -95,7 +100,12 @@ export function toProductFormData(form: ProductFormState) {
   formData.set("sku_code", form.sku_code);
   formData.set("product_name", form.product_name);
   formData.set("currency", form.currency);
-  appendProductPricesToFormData(formData, form.listPrices);
+  appendProductPricesToFormData(
+    formData,
+    form.listPrices,
+    form.listDiscounts,
+    form.is_discount_active,
+  );
   formData.set("is_in_stock", String(form.is_in_stock));
   formData.set("is_recommended", String(form.is_recommended));
   formData.set("is_discount_active", String(form.is_discount_active));
@@ -175,6 +185,16 @@ export function useProductForm(
     }));
   }
 
+  function updateListDiscount(priceListId: string, value: string) {
+    setForm((current) => ({
+      ...current,
+      listDiscounts: {
+        ...current.listDiscounts,
+        [priceListId]: value,
+      },
+    }));
+  }
+
   function handleImageSelect(slot: ProductImageSlot, file: File | null) {
     const { file: fileKey, remove: removeKey } = IMAGE_SLOT_FIELDS[slot];
 
@@ -210,6 +230,7 @@ export function useProductForm(
     setForm,
     updateField,
     updateListPrice,
+    updateListDiscount,
     handleImageSelect,
     handleImageRemove,
     discountPreview,

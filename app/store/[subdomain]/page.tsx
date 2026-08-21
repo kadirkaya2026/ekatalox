@@ -164,7 +164,11 @@ export default async function StorefrontPage(props: PageProps<"/store/[subdomain
         priceListState.isCatalogOnly,
       ),
       getStorefrontPromoProducts({ ...pricingParams, excludeCategoryIds: hiddenCategoryIds }),
-      getStorefrontPromoProductCount({ tenantId: tenant.id, excludeCategoryIds: hiddenCategoryIds }),
+      getStorefrontPromoProductCount({
+        tenantId: tenant.id,
+        priceListId: priceListState.priceListId,
+        excludeCategoryIds: hiddenCategoryIds,
+      }),
       getStorefrontRecommendationPool({ ...pricingParams, excludeCategoryIds: hiddenCategoryIds }),
       // Ayarlar aynı anda çekildiği için henüz best_sellers_product_count'u
       // bilmiyoruz — üst sınır (24) kadar çekilip gösterim sırasında admin'in

@@ -64,6 +64,9 @@ export interface ProductPrice {
   product_id: string;
   price_list_id: string;
   price: number;
+  // Liste başına indirimli fiyat. null = bu listede indirim yok.
+  // Eskiden tek bir products.discount_price tüm listelere uygulanıyordu.
+  discount_price?: number | null;
 }
 
 export interface ProductVariantPrice {
