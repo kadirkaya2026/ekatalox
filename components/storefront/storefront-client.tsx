@@ -3079,6 +3079,8 @@ export function StorefrontClient({
                       ? () => handleCategoryChange(discountCategoryId)
                       : undefined
                   }
+                  onOpenDetail={handleOpenProductDetail}
+                  onOpenAddToCart={handleQuickAddOrOpenModal}
                 />
               ) : null;
             }

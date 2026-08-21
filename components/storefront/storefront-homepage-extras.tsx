@@ -1,6 +1,6 @@
 "use client";
 
-import { Store, Tag } from "lucide-react";
+import { Plus, Store, Tag } from "lucide-react";
 import type { CategoryNode } from "@/lib/categories/tree";
 import { getDescendantCategoryIds } from "@/lib/categories/tree";
 import type { BannerItem, Category, StorefrontProduct } from "@/lib/types";
@@ -116,12 +116,18 @@ export function StorefrontPromoTiles({
   products,
   totalCount = 0,
   onSeeAll,
+  onOpenDetail,
+  onOpenAddToCart,
 }: {
   products: StorefrontProduct[];
   // Şeritte sadece ilk 12 ürün var; sağ üstteki sayaç gerçek toplamı
   // gösterir (bkz. getStorefrontPromoProductCount).
   totalCount?: number;
   onSeeAll?: () => void;
+  // Kartlar eskiden tıklanamıyordu; ana ürün kartıyla aynı davranışı
+  // vermek için ebeveynden geliyor.
+  onOpenDetail?: (productId: string) => void;
+  onOpenAddToCart?: (productId: string) => void;
 }) {
   const theme = useStorefrontTheme();
   const { t } = useStorefrontLocale();
@@ -159,16 +165,49 @@ export function StorefrontPromoTiles({
         {discounted.map((product) => (
           <div
             key={product.id}
+            role={onOpenDetail ? "button" : undefined}
+            tabIndex={onOpenDetail ? 0 : undefined}
+            onClick={onOpenDetail ? () => onOpenDetail(product.id) : undefined}
+            onKeyDown={
+              onOpenDetail
+                ? (event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      onOpenDetail(product.id);
+                    }
+                  }
+                : undefined
+            }
             className={cn(
-              "relative w-40 shrink-0 overflow-hidden rounded-2xl p-3 sm:w-auto",
+              "relative w-40 shrink-0 rounded-2xl p-3 sm:w-auto",
+              onOpenDetail && "cursor-pointer transition hover:opacity-90",
               theme.border,
               theme.surface,
               theme.elevation1,
             )}
           >
-            <span className="absolute right-2 top-2 z-10 inline-flex items-center gap-1 rounded-full bg-rose-600 px-2 py-0.5 text-[10px] font-bold text-white">
+            {/* İndirim etiketi solda, + butonu sağda — ikisi de kartın
+                İÇİNDE. Buton kart kenarından taşırsa yatay kaydırma kabı
+                (overflow-x-auto) üstünü kırpıyor. */}
+            <span className="absolute left-2 top-2 z-10 inline-flex items-center gap-1 rounded-full bg-rose-600 px-2 py-0.5 text-[10px] font-bold text-white">
               <Tag className="size-2.5" />%{Math.round(product.discount_percentage ?? 0)}
             </span>
+            {onOpenAddToCart && product.is_in_stock ? (
+              <button
+                type="button"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onOpenAddToCart(product.id);
+                }}
+                aria-label={t("product.selectAddUnitAria")}
+                className={cn(
+                  "absolute right-2 top-2 z-30 flex size-8 items-center justify-center transition active:scale-90",
+                  theme.floatingCartAddButton,
+                )}
+              >
+                <Plus className="size-3.5" strokeWidth={2.8} />
+              </button>
+            ) : null}
             <div className={cn("relative aspect-square overflow-hidden rounded-xl", theme.productImageWrap)}>
               {product.image_url ? (
                 <StorefrontImage
@@ -196,7 +235,6 @@ export function StorefrontPromoTiles({
                 ) : null}
               </div>
             ) : null}
-            <p className={cn("mt-1 text-[10px] font-medium", theme.textMuted)}>{t("catalog.viewProduct")}</p>
           </div>
         ))}
       </div>
