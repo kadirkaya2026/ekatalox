@@ -116,6 +116,9 @@ import {
   normalizeHomepageBlocks,
   isHomepageBlockVisible,
 } from "@/lib/storefront/homepage-blocks";
+import { StorefrontBottomNav } from "@/components/storefront/storefront-bottom-nav";
+import { StorefrontSearchSheet } from "@/components/storefront/storefront-search-sheet";
+import { isMarketOrTekelTenant } from "@/lib/storefront/white-label";
 import { StorefrontHeader } from "@/components/storefront/storefront-header";
 import { StorefrontHeroBlock } from "@/components/storefront/storefront-hero-block";
 import {
@@ -603,6 +606,11 @@ function renderBannerItem(
   title: string,
   theme: StorefrontTheme,
   t: TranslateFn,
+  // Market/tekel vitrinlerinde mobilde banner daha dolgun görünsün diye
+  // 3:1 yerine 5:2 (kullanıcı isteği, 21 Ağu 2026: "yukarı doğru
+  // genişlesin"). Görsel object-cover ile yerleştiği için kutu uzayınca
+  // sol/sağ kenarlardan ~%17 kırpılıyor — bilinçli tercih.
+  tallOnMobile = false,
 ) {
   const href = banner.cta_href?.trim() || null;
   const Wrapper = href ? "a" : "div";
@@ -640,7 +648,12 @@ function renderBannerItem(
           "bg-[linear-gradient(135deg,rgba(255,255,255,0.05),transparent_60%)]",
         )}
       />
-      <div className="relative aspect-[3/1] bg-transparent">
+      <div
+        className={cn(
+          "relative bg-transparent",
+          tallOnMobile ? "aspect-[5/2] sm:aspect-[3/1]" : "aspect-[3/1]",
+        )}
+      >
         {banner.image_url ? (
           <StorefrontImage
             src={banner.image_url}
@@ -884,6 +897,7 @@ export function StorefrontClient({
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isCategoryDrawerOpen, setIsCategoryDrawerOpen] = useState(false);
   const [isStickyCartBarDismissed, setIsStickyCartBarDismissed] = useState(false);
+  const [isSearchSheetOpen, setIsSearchSheetOpen] = useState(false);
   const [note, setNote] = useState("");
   const [customerReferenceName, setCustomerReferenceName] = useState("");
   const [customerReferenceNameError, setCustomerReferenceNameError] = useState<string | null>(
@@ -1074,8 +1088,10 @@ export function StorefrontClient({
     [categories],
   );
 
-  const usesMarketMobileOrder =
-    isMobileViewport && (tenant.business_type === "market" || tenant.is_tekel);
+  const usesMarketMobileOrder = isMobileViewport && isMarketOrTekelTenant(tenant);
+  // Sabit alt navigasyon (Ara / Kategoriler / Sepet) — mobil anasayfa
+  // sıralamasıyla aynı kapı: market veya tekel bayii + mobil.
+  const usesBottomNav = usesMarketMobileOrder;
 
   const homepageBlocks = useMemo(() => {
     const base = normalizeHomepageBlocks(storefrontSettings.homepage_blocks);
@@ -2121,6 +2137,47 @@ export function StorefrontClient({
     setHoveredCategoryId(null);
   }
 
+  // Sepet tutarı bloğu iki yerde gösteriliyor: eski sabit sepet barı
+  // (masaüstü/diğer bayiler) ve yeni mobil alt navigasyon. İndirim,
+  // kampanya ve çoklu para birimi kuralları tek yerde kalsın diye hazır
+  // düğüm olarak üretiliyor.
+  const cartSummaryNode = (
+    <div className="space-y-0.5">
+      {cartPaymentSummary && cartPaymentSummary.finalTotal !== cartPaymentSummary.subtotal ? (
+        <>
+          <p className="truncate text-[11px] font-medium leading-tight text-slate-300 line-through">
+            {formatCurrency(cartPaymentSummary.subtotal, cartPaymentSummary.currency)}
+          </p>
+          <p className={cn("truncate text-[13px] font-semibold leading-tight", theme.stickyCartText)}>
+            {formatCurrency(cartPaymentSummary.finalTotal, cartPaymentSummary.currency)}
+          </p>
+        </>
+      ) : cartDiscountSummary?.isQualified ? (
+        <>
+          <p className="truncate text-[11px] font-medium leading-tight text-slate-300 line-through">
+            {formatCurrency(cartDiscountSummary.subtotal, cartDiscountSummary.currency)}
+          </p>
+          <p className={cn("truncate text-[13px] font-semibold leading-tight", theme.stickyCartText)}>
+            {formatCurrency(cartDiscountSummary.totalAfterDiscount, cartDiscountSummary.currency)}
+          </p>
+        </>
+      ) : cartTotalEntries.length ? (
+        cartTotalEntries.map(({ currency, total }) => (
+          <p
+            key={currency}
+            className={cn("truncate text-[13px] font-semibold leading-tight", theme.stickyCartText)}
+          >
+            {currency}: {formatCurrency(total, currency)}
+          </p>
+        ))
+      ) : (
+        <p className={cn("truncate text-[13px] font-semibold leading-tight", theme.stickyCartText)}>
+          {formatCurrency(cartTotal, cartCurrency)}
+        </p>
+      )}
+    </div>
+  );
+
   function handleSearchChange(value: string) {
     setSearchInput(value);
   }
@@ -3002,12 +3059,19 @@ export function StorefrontClient({
         onHoverCategory={setHoveredCategoryId}
         onCategoryChange={handleCategoryChange}
         onOpenCategoryDrawer={() => setIsCategoryDrawerOpen(true)}
+        hideSearchAndCart={usesBottomNav}
       />
 
       <main
         className={cn(
           "container-shell py-5 sm:py-6",
-          hasPageFooter ? "pb-4" : "sticky-safe-bottom",
+          // Alt navigasyon barı sayfanın üstünde durduğu için son ürünün
+          // altında daha fazla boşluk gerekiyor (bkz. globals.css).
+          usesBottomNav
+            ? "bottom-nav-safe-bottom"
+            : hasPageFooter
+              ? "pb-4"
+              : "sticky-safe-bottom",
         )}
       >
         <div className={layout.catalogShellClass}>
@@ -3098,6 +3162,7 @@ export function StorefrontClient({
                             selectedCategory?.name ?? storefrontTitle,
                             theme,
                             t,
+                            usesMarketMobileOrder,
                           )
                         : null}
                       {bannerItems.length > 1 ? (
@@ -3259,6 +3324,7 @@ export function StorefrontClient({
                       selectedCategory?.name ?? storefrontTitle,
                       theme,
                       t,
+                      usesMarketMobileOrder,
                     )}
                   </div>
                 </section>
@@ -3345,7 +3411,13 @@ export function StorefrontClient({
             exit={{ opacity: 0, y: 14, scale: 0.97 }}
             transition={{ duration: 0.24, ease: "easeOut" }}
             className="fixed left-4 right-4 z-40 space-y-2 xl:hidden"
-            style={{ bottom: "calc(env(safe-area-inset-bottom) + 6.5rem)" }}
+            style={{
+              // Alt navigasyon barı varken sepet özeti satırı da
+              // eklendiği için kampanya barları daha yukarı çıkmalı.
+              bottom: usesBottomNav
+                ? "calc(env(safe-area-inset-bottom) + 10.5rem)"
+                : "calc(env(safe-area-inset-bottom) + 6.5rem)",
+            }}
           >
             {renderCampaignBarsForSurface("home", true)}
           </motion.div>
@@ -3353,7 +3425,7 @@ export function StorefrontClient({
       </AnimatePresence>
 
       <AnimatePresence>
-        {isMounted && cart.length && !isStickyCartBarDismissed && !isCartOpen ? (
+        {isMounted && !usesBottomNav && cart.length && !isStickyCartBarDismissed && !isCartOpen ? (
           <motion.div
             initial={{ opacity: 0, y: 18, scale: 0.96 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -3378,53 +3450,7 @@ export function StorefrontClient({
                       {t("cart.orderSummary")}
                     </p>
                   </div>
-                  <div className="min-w-0 text-right">
-                    <div className="space-y-0.5">
-                      {cartPaymentSummary && cartPaymentSummary.finalTotal !== cartPaymentSummary.subtotal ? (
-                        <>
-                          <p className="truncate text-[11px] font-medium leading-tight text-slate-300 line-through">
-                            {formatCurrency(cartPaymentSummary.subtotal, cartPaymentSummary.currency)}
-                          </p>
-                          <p className={cn("truncate text-[13px] font-semibold leading-tight", theme.stickyCartText)}>
-                            {formatCurrency(cartPaymentSummary.finalTotal, cartPaymentSummary.currency)}
-                          </p>
-                        </>
-                      ) : cartDiscountSummary?.isQualified ? (
-                        <>
-                          <p className="truncate text-[11px] font-medium leading-tight text-slate-300 line-through">
-                            {formatCurrency(
-                              cartDiscountSummary.subtotal,
-                              cartDiscountSummary.currency,
-                            )}
-                          </p>
-                          <p
-                            className={cn(
-                              "truncate text-[13px] font-semibold leading-tight",
-                              theme.stickyCartText,
-                            )}
-                          >
-                            {formatCurrency(
-                              cartDiscountSummary.totalAfterDiscount,
-                              cartDiscountSummary.currency,
-                            )}
-                          </p>
-                        </>
-                      ) : cartTotalEntries.length ? (
-                        cartTotalEntries.map(({ currency, total }) => (
-                          <p
-                            key={currency}
-                            className={cn("truncate text-[13px] font-semibold leading-tight", theme.stickyCartText)}
-                          >
-                            {currency}: {formatCurrency(total, currency)}
-                          </p>
-                        ))
-                      ) : (
-                        <p className={cn("truncate text-[13px] font-semibold leading-tight", theme.stickyCartText)}>
-                          {formatCurrency(cartTotal, cartCurrency)}
-                        </p>
-                      )}
-                    </div>
-                  </div>
+                  <div className="min-w-0 text-right">{cartSummaryNode}</div>
                   <span
                     className={cn(
                       theme.stickyCartButton,
@@ -3455,7 +3481,40 @@ export function StorefrontClient({
         ) : null}
       </AnimatePresence>
 
-      {usesSidebarNav ? (
+      {isMounted && usesBottomNav ? (
+        <StorefrontBottomNav
+          cartLength={cart.length}
+          cartItemCount={cartItemCount}
+          cartSummary={cartSummaryNode}
+          isTekel={isTekel}
+          isSearchOpen={isSearchSheetOpen}
+          isCategoriesOpen={isCategoryDrawerOpen}
+          onOpenSearch={() => {
+            setIsCategoryDrawerOpen(false);
+            setIsSearchSheetOpen(true);
+          }}
+          onOpenCategories={() => {
+            setIsSearchSheetOpen(false);
+            setIsCategoryDrawerOpen(true);
+          }}
+          onOpenCart={() => {
+            setIsSearchSheetOpen(false);
+            openCartDrawer();
+          }}
+        />
+      ) : null}
+
+      {isMounted && usesBottomNav ? (
+        <StorefrontSearchSheet
+          isOpen={isSearchSheetOpen && !isCartOpen && !isCategoryDrawerOpen}
+          value={searchInput}
+          resultCount={productTotal}
+          onChange={handleSearchChange}
+          onClose={() => setIsSearchSheetOpen(false)}
+        />
+      ) : null}
+
+      {usesSidebarNav || usesBottomNav ? (
         <StorefrontCategoryDrawer
           isOpen={isCategoryDrawerOpen}
           onClose={() => setIsCategoryDrawerOpen(false)}

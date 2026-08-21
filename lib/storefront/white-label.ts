@@ -13,6 +13,16 @@ import type { Tenant } from "@/lib/types";
 export function isWhiteLabelStorefront(
   tenant: Pick<Tenant, "business_type" | "is_tekel"> | null | undefined,
 ): boolean {
+  return isMarketOrTekelTenant(tenant);
+}
+
+// "Market veya tekel bayii mi?" sorusunun tek kaynağı. Beyaz etiket,
+// mobil anasayfa sıralaması (indirim şeridi + kategori kutuları) ve
+// mobil alt navigasyon barı aynı kapıyı kullanıyor — üç ayrı yerde
+// kopyalanmasın diye buraya alındı.
+export function isMarketOrTekelTenant(
+  tenant: Pick<Tenant, "business_type" | "is_tekel"> | null | undefined,
+): boolean {
   if (!tenant) return false;
   return tenant.business_type === "market" || Boolean(tenant.is_tekel);
 }

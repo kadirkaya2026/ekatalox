@@ -188,6 +188,13 @@ export const storefrontDictionary: Record<StorefrontLocale, StorefrontDictionary
     "catalog.viewProduct": "İncele",
     "catalog.home": "Anasayfa",
 
+    // Mobil alt navigasyon (market/tekel vitrinleri).
+    "bottomNav.ariaLabel": "Alt gezinme",
+    "bottomNav.search": "Ara",
+    "bottomNav.categories": "Kategoriler",
+    "bottomNav.cart": "Sepet",
+    "bottomNav.cartPickup": "Listem",
+
     "stickyCart.continue": "Devam >",
     "stickyCart.closeAria": "Sipariş özetini kapat",
 
@@ -439,6 +446,12 @@ export const storefrontDictionary: Record<StorefrontLocale, StorefrontDictionary
     "catalog.viewProduct": "Ansehen",
     "catalog.home": "Startseite",
 
+    "bottomNav.ariaLabel": "Untere Navigation",
+    "bottomNav.search": "Suchen",
+    "bottomNav.categories": "Kategorien",
+    "bottomNav.cart": "Warenkorb",
+    "bottomNav.cartPickup": "Meine Liste",
+
     "stickyCart.continue": "Weiter >",
     "stickyCart.closeAria": "Bestellübersicht schließen",
 
@@ -689,6 +702,12 @@ export const storefrontDictionary: Record<StorefrontLocale, StorefrontDictionary
     "catalog.viewProduct": "View",
     "catalog.home": "Home",
 
+    "bottomNav.ariaLabel": "Bottom navigation",
+    "bottomNav.search": "Search",
+    "bottomNav.categories": "Categories",
+    "bottomNav.cart": "Cart",
+    "bottomNav.cartPickup": "My List",
+
     "stickyCart.continue": "Continue >",
     "stickyCart.closeAria": "Close order summary",
 
@@ -937,6 +956,12 @@ export const storefrontDictionary: Record<StorefrontLocale, StorefrontDictionary
     "catalog.discoverCta": "Открыть",
     "catalog.viewProduct": "Смотреть",
     "catalog.home": "Главная",
+
+    "bottomNav.ariaLabel": "Нижняя навигация",
+    "bottomNav.search": "Поиск",
+    "bottomNav.categories": "Категории",
+    "bottomNav.cart": "Корзина",
+    "bottomNav.cartPickup": "Мой список",
 
     "stickyCart.continue": "Продолжить >",
     "stickyCart.closeAria": "Закрыть сводку заказа",

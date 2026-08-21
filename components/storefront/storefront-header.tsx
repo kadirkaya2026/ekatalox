@@ -53,6 +53,11 @@ export interface StorefrontHeaderProps {
   onHoverCategory: (categoryId: string | null) => void;
   onCategoryChange: (categoryId: string) => void;
   onOpenCategoryDrawer: () => void;
+  // Market/tekel vitrinlerinde MOBİLDE arama ve sepet alt navigasyon
+  // barına taşındı (bkz. storefront-bottom-nav.tsx); başlıkta ikisi de
+  // gösterilmiyor. Değer zaten mobil kontrolünden geçmiş halde geliyor —
+  // masaüstünde her zaman false, yani eski düzen aynen korunuyor.
+  hideSearchAndCart?: boolean;
 }
 
 function HeaderActions({
@@ -100,6 +105,7 @@ function HeaderActions({
           )}
         </div>
       </div>
+      {props.hideSearchAndCart ? null : (
       <button
         type="button"
         onClick={props.onOpenCart}
@@ -122,6 +128,7 @@ function HeaderActions({
           ) : null}
         </AnimatePresence>
       </button>
+      )}
     </div>
   );
 }
@@ -408,6 +415,21 @@ function StorefrontHeaderCategoryNav({ props }: { props: StorefrontHeaderProps }
 
 function StorefrontHeaderTopBar({ props }: { props: StorefrontHeaderProps }) {
   const theme = useStorefrontTheme();
+
+  // Arama ve sepet alt bara taşındığında dört başlık varyantının da
+  // ortasında bir boşluk kalıyor (grid gözü boşalıyor, arama satırı
+  // yok oluyor). O yüzden bu durumda tek sade satır render ediliyor:
+  // logo + dil/tema/çıkış. Kategori sekmeleri altta, ayrı bileşende.
+  if (props.hideSearchAndCart) {
+    return (
+      <div className="container-shell py-3">
+        <div className="flex items-center justify-between gap-3">
+          <HeaderBrand props={props} compact />
+          <HeaderActions props={props} compact />
+        </div>
+      </div>
+    );
+  }
 
   if (props.headerStyleKey === "centered") {
     return (
