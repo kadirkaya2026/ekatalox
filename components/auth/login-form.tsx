@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useState, useTransition } from "react";
 import { motion } from "framer-motion";
 import { EkataloxLogo } from "@/components/brand/ekatalox-logo";
-import { LoginMascots, type MascotFocus } from "@/components/auth/login-mascots";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { translateAuthError } from "@/lib/auth/translate-error";
 
@@ -15,8 +14,6 @@ function Field({
   placeholder,
   value,
   onChange,
-  onFocus,
-  onBlur,
 }: {
   id: string;
   label: string;
@@ -24,8 +21,6 @@ function Field({
   placeholder: string;
   value: string;
   onChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
-  onFocus?: () => void;
-  onBlur?: () => void;
 }) {
   return (
     <div>
@@ -38,8 +33,6 @@ function Field({
         placeholder={placeholder}
         value={value}
         onChange={onChange}
-        onFocus={onFocus}
-        onBlur={onBlur}
         className="w-full rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white outline-none transition-colors placeholder:text-slate-600 focus:border-[var(--marketing-primary)]/60"
       />
     </div>
@@ -50,10 +43,6 @@ export function LoginForm({ target }: { target?: string }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
-  // Maskotların hangi tepkiyi vereceğini belirler (bkz. login-mascots.tsx).
-  const [focusedField, setFocusedField] = useState<MascotFocus>("idle");
-  // Her başarısız denemede artıyor; maskotların sallanmasını tetikler.
-  const [errorKey, setErrorKey] = useState(0);
   const [pending, startTransition] = useTransition();
 
   const supabase = createSupabaseBrowserClient();
@@ -61,14 +50,6 @@ export function LoginForm({ target }: { target?: string }) {
     typeof window !== "undefined" &&
     (window.location.hostname === "localhost" ||
       window.location.hostname.endsWith(".localhost"));
-
-  // Her hata hem mesajı gösterir hem maskotların sallanmasını tetikler.
-  // Aynı hata art arda alınsa bile errorKey değiştiği için animasyon
-  // yeniden oynar.
-  function fail(message: string) {
-    setError(message);
-    setErrorKey((current) => current + 1);
-  }
 
   function redirectFallback() {
     if (target === "admin") {
@@ -89,18 +70,18 @@ export function LoginForm({ target }: { target?: string }) {
     setError(null);
 
     if (!email.trim()) {
-      fail("E-posta adresi zorunludur.");
+      setError("E-posta adresi zorunludur.");
       return;
     }
 
     if (!password) {
-      fail("Şifre zorunludur.");
+      setError("Şifre zorunludur.");
       return;
     }
 
     if (!supabase) {
       if (!canUseDemoFallback) {
-        fail("Supabase yapılandırması eksik. Lütfen production environment değerlerini girin.");
+        setError("Supabase yapılandırması eksik. Lütfen production environment değerlerini girin.");
         return;
       }
 
@@ -115,7 +96,7 @@ export function LoginForm({ target }: { target?: string }) {
       });
 
       if (signInError) {
-        fail(translateAuthError(signInError.message));
+        setError(translateAuthError(signInError.message));
         return;
       }
 
@@ -124,7 +105,7 @@ export function LoginForm({ target }: { target?: string }) {
       } = await supabase.auth.getUser();
 
       if (!user) {
-        fail("Oturum açılamadı.");
+        setError("Oturum açılamadı.");
         return;
       }
 
@@ -159,8 +140,6 @@ export function LoginForm({ target }: { target?: string }) {
         transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
         className="relative w-full max-w-md overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-b from-white/[0.04] to-white/[0.01] p-7 backdrop-blur-xl md:p-9"
       >
-        <LoginMascots focus={focusedField} errorKey={errorKey} />
-
         <Link href="/#top" className="inline-flex">
           <EkataloxLogo variant="light" className="h-10 w-[176px]" priority />
         </Link>
@@ -176,8 +155,6 @@ export function LoginForm({ target }: { target?: string }) {
             placeholder="ornek@sirketiniz.com"
             value={email}
             onChange={(event) => setEmail(event.target.value)}
-            onFocus={() => setFocusedField("email")}
-            onBlur={() => setFocusedField("idle")}
           />
           <Field
             id="login-password"
@@ -186,8 +163,6 @@ export function LoginForm({ target }: { target?: string }) {
             placeholder="••••••••"
             value={password}
             onChange={(event) => setPassword(event.target.value)}
-            onFocus={() => setFocusedField("password")}
-            onBlur={() => setFocusedField("idle")}
           />
           <button
             type="submit"
