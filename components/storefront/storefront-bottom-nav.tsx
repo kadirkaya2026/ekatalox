@@ -42,7 +42,7 @@ export function StorefrontBottomNav({
       <nav
         aria-label={t("bottomNav.ariaLabel")}
         className={cn(
-          "safe-bottom-padding grid grid-cols-3 gap-1 border-t px-2 pt-1.5 shadow-[0_-8px_28px_rgba(15,23,42,0.10)]",
+          "bottom-nav-inset grid grid-cols-3 items-end gap-1 border-t px-2 pt-2 shadow-[0_-8px_28px_rgba(15,23,42,0.10)]",
           theme.surface,
           theme.border,
         )}
@@ -55,9 +55,10 @@ export function StorefrontBottomNav({
         />
         <BottomNavButton
           label={t(isTekel ? "bottomNav.cartPickup" : "bottomNav.cart")}
-          icon={<ShoppingCart className="size-[22px]" />}
+          icon={<ShoppingCart className="size-[27px]" />}
           isActive={false}
           badge={cartItemCount || null}
+          emphasized
           onClick={onOpenCart}
         />
         <BottomNavButton
@@ -71,17 +72,23 @@ export function StorefrontBottomNav({
   );
 }
 
+// emphasized: ortadaki sepet butonu. Diğerlerinden büyük ve barın üst
+// çizgisinin dışına taşıyor (kullanıcı isteği). Taşan kısmın altındaki
+// yuvarlak barla aynı yüzey rengini kullanıyor — çizgi ikonun etrafında
+// kesiliyormuş gibi görünsün diye.
 function BottomNavButton({
   label,
   icon,
   isActive,
   badge = null,
+  emphasized = false,
   onClick,
 }: {
   label: string;
   icon: ReactNode;
   isActive: boolean;
   badge?: number | null;
+  emphasized?: boolean;
   onClick: () => void;
 }) {
   const theme = useStorefrontTheme();
@@ -92,15 +99,31 @@ function BottomNavButton({
       onClick={onClick}
       aria-current={isActive ? "true" : undefined}
       className={cn(
-        "flex min-h-[3.25rem] flex-col items-center justify-center gap-0.5 rounded-2xl px-1 py-1.5 transition",
+        "flex min-h-[3.25rem] flex-col items-center justify-end gap-1 rounded-2xl px-1 pb-0.5 transition",
+        emphasized ? "-mt-5" : "pt-1.5",
         isActive ? theme.productPrice : theme.textMuted,
       )}
     >
-      <span className="relative">
+      <span
+        className={cn(
+          "relative flex items-center justify-center",
+          // elevation2 barın üstüne doğru vuran gölge; taşan yuvarlağın
+          // arkadaki ürünlerden ayrılmasını sağlıyor (sepet çekmecesi de
+          // aynı gölgeyi kullanıyor).
+          emphasized && cn("size-[3.1rem] rounded-full", theme.surface, theme.elevation2),
+        )}
+      >
         {icon}
         {badge ? <span className={theme.cartBadge}>{badge}</span> : null}
       </span>
-      <span className="truncate text-[11px] font-semibold leading-tight">{label}</span>
+      <span
+        className={cn(
+          "truncate font-semibold leading-tight",
+          emphasized ? "text-[13px]" : "text-[11px]",
+        )}
+      >
+        {label}
+      </span>
     </button>
   );
 }

@@ -124,6 +124,13 @@ button:focus-visible {
   padding-bottom: calc(env(safe-area-inset-bottom) + 7rem);
 }
 
+/* Alt navigasyon barının kendi iç boşluğu. safe-bottom-padding (1rem)
+   ikonları fazla yukarıda bırakıyordu; güvenli alanın üstüne sadece
+   ince bir pay kalsın diye ayrıldı. */
+.bottom-nav-inset {
+  padding-bottom: calc(env(safe-area-inset-bottom) + 0.35rem);
+}
+
 .surface-premium {
   backdrop-filter: blur(18px);
   -webkit-backdrop-filter: blur(18px);
