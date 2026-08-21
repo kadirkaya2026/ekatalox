@@ -711,7 +711,7 @@ function AnnouncementModal({
           <button
             type="button"
             aria-label={t("announcement.closeAria")}
-            className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(16,185,129,0.14),transparent_30%),radial-gradient(circle_at_bottom,rgba(14,165,233,0.16),transparent_34%),rgba(2,6,23,0.60)] backdrop-blur-md"
+            className="absolute inset-0 bg-black/55 backdrop-blur-md"
             onClick={handleDismiss}
           />
 
@@ -731,15 +731,17 @@ function AnnouncementModal({
             aria-describedby="announcement-modal-body"
           >
             <div className="absolute inset-0 overflow-hidden">
-              <div className="absolute inset-x-0 top-0 h-32 bg-gradient-to-r from-emerald-500/18 via-cyan-500/18 to-sky-500/18" />
-              <div className="absolute -right-16 top-8 h-44 w-44 rounded-full bg-emerald-400/14 blur-3xl" />
-              <div className="absolute -left-10 bottom-0 h-36 w-36 rounded-full bg-sky-400/14 blur-3xl" />
+              {/* Renkler temadan geliyor; eskiden emerald/cyan/sky sabit
+                  kodluydu ve her vitrinde aynı görünüyordu. İki dekoratif
+                  blur-3xl daire de kaldırıldı — hem sabit renkliydiler hem
+                  iOS Safari'de gereksiz filtre yüküydüler. */}
+              <div className={cn("absolute inset-x-0 top-0 h-28", theme.surfaceMuted)} />
             </div>
 
             <div className="relative p-6 sm:p-8">
               <div className="flex items-start justify-between gap-4">
                 <div className="flex items-center gap-4">
-                  <div className={cn("flex size-14 shrink-0 items-center justify-center rounded-2xl", theme.surfaceMuted, "text-emerald-700")}>
+                  <div className={cn("flex size-14 shrink-0 items-center justify-center rounded-2xl", theme.surfaceMuted, theme.productPrice)}>
                     <Megaphone className="size-6" />
                   </div>
                   <div className="space-y-2">
@@ -766,7 +768,7 @@ function AnnouncementModal({
               </div>
 
               <div className={cn("mt-6 p-5 sm:p-6", theme.modalSurface)}>
-                <div className="mb-4 h-px w-full bg-gradient-to-r from-emerald-200 via-sky-200 to-transparent" />
+                <div className={cn("mb-4 h-px w-full", theme.surfaceMuted)} />
                 <p
                   id="announcement-modal-body"
                   className={cn("whitespace-pre-line text-[15px] leading-8 sm:text-base", theme.textMuted)}
@@ -779,7 +781,10 @@ function AnnouncementModal({
                 <Button
                   type="button"
                   onClick={handleDismiss}
-                  className="h-12 rounded-full bg-[linear-gradient(135deg,#0f172a_0%,#111827_45%,#0f766e_100%)] px-7 text-sm font-semibold text-white shadow-[0_18px_40px_rgba(15,23,42,0.22)] transition hover:scale-[1.01] hover:shadow-[0_22px_48px_rgba(15,23,42,0.28)]"
+                  className={cn(
+                    "h-12 rounded-full px-7 text-sm font-semibold transition hover:scale-[1.01]",
+                    theme.primaryButton,
+                  )}
                 >
                   {t("announcement.acknowledge")}
                 </Button>
