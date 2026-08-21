@@ -165,11 +165,8 @@ export function LoginForm({ target }: { target?: string }) {
           <EkataloxLogo variant="light" className="h-10 w-[176px]" priority />
         </Link>
         <h1 className="mt-5 text-2xl font-semibold text-white" style={{ letterSpacing: "-0.02em" }}>
-          Yönetim paneline erişin
+          Yönetim Paneli
         </h1>
-        <p className="mt-2 text-sm leading-6 text-slate-400">
-          Supabase Auth ile süper admin veya tenant admin hesabınızla giriş yapın.
-        </p>
 
         <form onSubmit={submit} className="mt-6 space-y-4">
           <Field
