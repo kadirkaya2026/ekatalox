@@ -3056,6 +3056,11 @@ export function StorefrontClient({
                   products={products}
                   categoryRepresentativeImages={categoryRepresentativeImages}
                   onCategoryChange={handleCategoryChange}
+                  // Market/tekel mobilde kategoriler 4'lü ızgara olarak
+                  // kalmalı. Noir'in banner içine enjekte ettiği sürüm bunu
+                  // zaten yapıyordu; enjeksiyonu kapatınca burada da
+                  // vermezsek kutucuklar yatay kaydırıcıya dönüşüyor.
+                  layout={usesMarketMobileOrder ? "grid4" : undefined}
                 />
               ) : null;
             }

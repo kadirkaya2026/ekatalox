@@ -19,6 +19,11 @@ export function normalizeProductPriceRecord(record: RawProductPriceRecord): Prod
     product_id: String(record.product_id ?? ""),
     price_list_id: String(record.price_list_id ?? ""),
     price: Number(record.price ?? 0),
+    // Liste başına indirimli fiyat. Bu alan taşınmazsa vitrin hiçbir üründe
+    // indirim göremez ve indirimli ürün şeridi boş kalır (fec4527'de
+    // gözden kaçmıştı).
+    discount_price:
+      typeof record.discount_price === "number" ? record.discount_price : null,
   };
 }
 
