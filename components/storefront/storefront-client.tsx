@@ -3331,7 +3331,9 @@ export function StorefrontClient({
                   )}
                 </section>
                 {showCategoryTilesOnMobileAfterBanner ? (
-                  <div className="mb-5 sm:hidden">
+                  // Alt boşluğu artık StorefrontCategoryTiles kendi veriyor
+                  // (grid4 dahil); burada tekrar vermek çift boşluk yapardı.
+                  <div className="sm:hidden">
                     <StorefrontCategoryTiles
                       categories={topCategories}
                       flatCategories={categories}

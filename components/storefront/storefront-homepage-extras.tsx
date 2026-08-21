@@ -308,7 +308,11 @@ export function StorefrontCategoryTiles({
   });
 
   return (
-    <section className={isGrid4 ? "" : "mb-5 sm:mb-8"}>
+    // grid4'te alt boşluk yoktu: kutucuklar noir temada banner'ın içine
+    // enjekte edildiğinden boşluğu sarmalayıcı veriyordu. Blok bağımsız
+    // render edilmeye başlayınca altındaki başlık ("En Çok Satanlar")
+    // kutucuklara yapıştı.
+    <section className={isGrid4 ? "mb-6 sm:mb-8" : "mb-5 sm:mb-8"}>
       <div
         className={
           isGrid4
