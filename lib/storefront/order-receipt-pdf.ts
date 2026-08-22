@@ -13,6 +13,11 @@ import { registerRobotoFonts } from "@/lib/storefront/pdf-fonts";
 export interface GenerateOrderReceiptPdfParams {
   tenantName: string;
   customerReferenceName: string;
+  // Tekel/market bayilerinde sipariş kapıda teslim ediliyor; telefon ve adres
+  // fişte yazmazsa kurye elindeki kağıtla kime nereye gideceğini bilmiyordu.
+  // Toptan bayilerde bu alanlar boş gelebilir, o yüzden opsiyonel.
+  customerPhone?: string | null;
+  customerAddress?: string | null;
   orderNumber: string;
   orderDate: Date;
   items: CartItem[];
@@ -106,6 +111,30 @@ export async function generateOrderReceiptPdf(
   );
 
   cursorY += PDF_SPACING.headerBlock;
+
+  // Telefon ve adres, varsa müşteri satırının hemen altına. Adres uzun
+  // olabildiği için sayfa genişliğine sarılıyor; sarılmazsa jsPDF metni
+  // kenardan taşırıp kırpıyor.
+  const contactLines: string[] = [];
+  const customerPhone = params.customerPhone?.trim();
+  if (customerPhone) contactLines.push(`Telefon: ${customerPhone}`);
+  const customerAddress = params.customerAddress?.trim();
+  if (customerAddress) {
+    const wrapped = doc.splitTextToSize(
+      `Adres: ${customerAddress}`,
+      pageWidth - margin * 2,
+    ) as string[];
+    contactLines.push(...wrapped);
+  }
+
+  if (contactLines.length > 0) {
+    doc.setFontSize(PDF_FONT_SIZE.headerMeta);
+    for (const line of contactLines) {
+      doc.text(line, margin, cursorY);
+      cursorY += 5;
+    }
+    cursorY += 3;
+  }
 
   doc.setDrawColor(...SOFT_BORDER);
   doc.line(margin, cursorY, pageWidth - margin, cursorY);
