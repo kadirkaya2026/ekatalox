@@ -24,7 +24,9 @@ export default async function Page() {
   const { data: codeRows } = supabase
     ? await supabase
         .from("magnet_codes")
-        .select("id, code, tenant_id, label, assigned_at, created_at")
+        .select(
+          "id, code, tenant_id, label, assigned_at, created_at, city, district, neighborhood, placed_at",
+        )
         .order("created_at", { ascending: false })
         .limit(1000)
     : { data: [] };
@@ -49,6 +51,10 @@ export default async function Page() {
     assigned_at: row.assigned_at,
     created_at: row.created_at,
     scan_count: scanCounts.get(String(row.code).toLowerCase()) ?? 0,
+    city: row.city,
+    district: row.district,
+    neighborhood: row.neighborhood,
+    placed_at: row.placed_at,
   }));
 
   const { data: tenantRows } = supabase

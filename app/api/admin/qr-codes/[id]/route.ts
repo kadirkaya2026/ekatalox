@@ -39,6 +39,19 @@ export async function PATCH(
     guncelleme.label = label;
   }
 
+  // Konum alanları: gövdede varsa güncellenir, yoksa dokunulmaz.
+  for (const alan of ["city", "district", "neighborhood"] as const) {
+    if (typeof body?.[alan] === "string") {
+      guncelleme[alan] = body[alan].trim() || null;
+    }
+  }
+
+  // Mahalle girildiği an magnet fiilen sahaya bırakılmış sayılıyor;
+  // "kaç magnet dağıtıldı" sorusunun cevabı bu.
+  if (typeof body?.neighborhood === "string" && body.neighborhood.trim()) {
+    guncelleme.placed_at = new Date().toISOString();
+  }
+
   // KOD DÜZENLEME: yanlış basılmış ya da yanlış girilmiş bir kodu
   // düzeltebilmek için. Kod değişirse eski kodu taşıyan magnetler ölür,
   // o yüzden arayüzde uyarı gösteriliyor.
@@ -65,7 +78,9 @@ export async function PATCH(
     .from("magnet_codes")
     .update(guncelleme)
     .eq("id", id)
-    .select("id, code, tenant_id, label, assigned_at, tenants(subdomain, company_name)")
+    .select(
+      "id, code, tenant_id, label, assigned_at, city, district, neighborhood, placed_at, tenants(subdomain, company_name)",
+    )
     .maybeSingle();
 
   if (error) {

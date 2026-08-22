@@ -23,6 +23,10 @@ export interface MagnetCodeRow {
   assigned_at: string | null;
   created_at: string;
   scan_count: number;
+  city: string | null;
+  district: string | null;
+  neighborhood: string | null;
+  placed_at: string | null;
 }
 
 export interface TenantOption {
@@ -57,6 +61,35 @@ export function QrCodeManager({
 
   // Elle kod ekleme: basılmış magnetin kodu silindiyse geri yazabilmek için.
   const [manualCode, setManualCode] = useState("");
+  // Toplu üretimde partinin tamamına işlenecek konum.
+  const [batchCity, setBatchCity] = useState("");
+  const [batchDistrict, setBatchDistrict] = useState("");
+  // Mahalle kırılımı filtresi
+  const [hoodFilter, setHoodFilter] = useState("");
+  // Satır içi mahalle girişi
+  const [hoodEditId, setHoodEditId] = useState<string | null>(null);
+  const [hoodValue, setHoodValue] = useState("");
+
+  async function saveNeighborhood(row: MagnetCodeRow) {
+    setRowPending(row.id);
+    setError(null);
+
+    const response = await fetch(`/api/admin/qr-codes/${row.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      // tenant_id gönderilmezse uç atamayı kaldırıyor.
+      body: JSON.stringify({ neighborhood: hoodValue, tenant_id: row.tenant_id }),
+    });
+
+    if (!response.ok) {
+      const result = await response.json().catch(() => ({}));
+      setError(result.error ?? "Mahalle kaydedilemedi.");
+    } else {
+      setHoodEditId(null);
+      await refresh();
+    }
+    setRowPending(null);
+  }
   // Satır içi kod düzenleme
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingValue, setEditingValue] = useState("");
@@ -68,7 +101,7 @@ export function QrCodeManager({
     const response = await fetch("/api/admin/qr-codes", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ code: manualCode, label }),
+      body: JSON.stringify({ code: manualCode, label, city: batchCity, district: batchDistrict }),
     });
     const result = await response.json().catch(() => ({}));
 
@@ -170,7 +203,7 @@ export function QrCodeManager({
     const response = await fetch("/api/admin/qr-codes", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ count: Number(count), label }),
+      body: JSON.stringify({ count: Number(count), label, city: batchCity, district: batchDistrict }),
     });
     const result = await response.json().catch(() => ({}));
 
@@ -222,9 +255,40 @@ export function QrCodeManager({
     setRowPending(null);
   }
 
-  const gorunen = codes.filter((row) =>
-    filter === "free" ? !row.tenant_id : filter === "assigned" ? Boolean(row.tenant_id) : true,
-  );
+  const gorunen = codes
+    .filter((row) =>
+      filter === "free" ? !row.tenant_id : filter === "assigned" ? Boolean(row.tenant_id) : true,
+    )
+    .filter((row) => (hoodFilter ? row.neighborhood === hoodFilter : true));
+
+  // Mahalle kırılımı. Mahallesi girilmemiş kodlar tabloya girmiyor —
+  // henüz sahaya bırakılmamış demektir.
+  const mahalleOzeti = (() => {
+    const harita = new Map<
+      string,
+      { neighborhood: string; district: string; toplam: number; atanmis: number; okutma: number }
+    >();
+
+    for (const row of codes) {
+      if (!row.neighborhood) continue;
+      const anahtar = `${row.district ?? ""}|${row.neighborhood}`;
+      const mevcut = harita.get(anahtar) ?? {
+        neighborhood: row.neighborhood,
+        district: row.district ?? "",
+        toplam: 0,
+        atanmis: 0,
+        okutma: 0,
+      };
+      mevcut.toplam += 1;
+      if (row.tenant_id) mevcut.atanmis += 1;
+      mevcut.okutma += row.scan_count;
+      harita.set(anahtar, mevcut);
+    }
+
+    return [...harita.values()].sort(
+      (a, b) => b.okutma - a.okutma || b.toplam - a.toplam || a.neighborhood.localeCompare(b.neighborhood, "tr"),
+    );
+  })();
 
   const bostaSayisi = codes.filter((row) => !row.tenant_id).length;
 
@@ -248,7 +312,23 @@ export function QrCodeManager({
               onChange={(event) => setCount(event.target.value)}
             />
           </div>
-          <div className="min-w-52 flex-1">
+          <div className="w-36">
+            <label className="mb-1.5 block text-sm font-medium text-foreground">İl</label>
+            <Input
+              value={batchCity}
+              placeholder="İstanbul"
+              onChange={(event) => setBatchCity(event.target.value)}
+            />
+          </div>
+          <div className="w-36">
+            <label className="mb-1.5 block text-sm font-medium text-foreground">İlçe</label>
+            <Input
+              value={batchDistrict}
+              placeholder="Bağcılar"
+              onChange={(event) => setBatchDistrict(event.target.value)}
+            />
+          </div>
+          <div className="min-w-40 flex-1">
             <label className="mb-1.5 block text-sm font-medium text-foreground">
               Parti notu <span className="text-muted-foreground">(opsiyonel)</span>
             </label>
@@ -315,7 +395,58 @@ export function QrCodeManager({
         <InlineAlert message={message} tone="success" onExpire={() => setMessage(null)} />
       </Card>
 
-      <div className="flex items-center gap-2">
+      {/* MAHALLE TAKİBİ: hangi mahalleye kaç magnet bırakıldı, kaçı bayiye
+          bağlandı, oradan kaç okutma geldi. Saha ekibinin asıl baktığı tablo. */}
+      {mahalleOzeti.length ? (
+        <Card className="overflow-hidden p-0">
+          <div className="flex items-center justify-between gap-3 border-b px-4 py-3">
+            <p className="text-sm font-semibold text-foreground">Mahalle Takibi</p>
+            {hoodFilter ? (
+              <button
+                type="button"
+                onClick={() => setHoodFilter("")}
+                className="text-xs font-semibold text-muted-foreground underline"
+              >
+                filtreyi kaldır
+              </button>
+            ) : null}
+          </div>
+          <div className="max-h-64 overflow-y-auto">
+            <table className="w-full text-sm">
+              <thead className="sticky top-0 bg-slate-50 text-left text-xs text-muted-foreground">
+                <tr>
+                  <th className="px-4 py-2 font-medium">Mahalle</th>
+                  <th className="px-4 py-2 font-medium">İlçe</th>
+                  <th className="px-4 py-2 text-right font-medium">Magnet</th>
+                  <th className="px-4 py-2 text-right font-medium">Bayiye bağlı</th>
+                  <th className="px-4 py-2 text-right font-medium">Okutma</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y">
+                {mahalleOzeti.map((satir) => (
+                  <tr
+                    key={`${satir.district}|${satir.neighborhood}`}
+                    onClick={() =>
+                      setHoodFilter(hoodFilter === satir.neighborhood ? "" : satir.neighborhood)
+                    }
+                    className={`cursor-pointer hover:bg-slate-50 ${
+                      hoodFilter === satir.neighborhood ? "bg-slate-100" : ""
+                    }`}
+                  >
+                    <td className="px-4 py-2 font-medium text-foreground">{satir.neighborhood}</td>
+                    <td className="px-4 py-2 text-muted-foreground">{satir.district || "—"}</td>
+                    <td className="px-4 py-2 text-right">{satir.toplam}</td>
+                    <td className="px-4 py-2 text-right">{satir.atanmis}</td>
+                    <td className="px-4 py-2 text-right font-semibold">{satir.okutma}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+      ) : null}
+
+      <div className="flex flex-wrap items-center gap-2">
         {(
           [
             ["all", `Tümü (${codes.length})`],
@@ -334,6 +465,11 @@ export function QrCodeManager({
             {etiket}
           </button>
         ))}
+        {hoodFilter ? (
+          <span className="rounded-full bg-emerald-100 px-3 py-1.5 text-sm font-semibold text-emerald-800">
+            Mahalle: {hoodFilter}
+          </span>
+        ) : null}
       </div>
 
       <Card className="overflow-hidden p-0">
@@ -394,6 +530,49 @@ export function QrCodeManager({
                 <div className="min-w-24 text-xs text-muted-foreground">
                   {row.scan_count} okutma
                 </div>
+
+                {/* Mahalle: magnet dükkana bırakıldığında buraya yazılıyor.
+                    Mahalle girildiği an kod "sahaya bırakıldı" sayılıyor. */}
+                {hoodEditId === row.id ? (
+                  <div className="flex items-center gap-1.5">
+                    <Input
+                      autoFocus
+                      value={hoodValue}
+                      placeholder="Mahalle"
+                      onChange={(event) => setHoodValue(event.target.value)}
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter") {
+                          event.preventDefault();
+                          void saveNeighborhood(row);
+                        }
+                        if (event.key === "Escape") setHoodEditId(null);
+                      }}
+                      className="h-8 w-36"
+                    />
+                    <Button variant="ghost" onClick={() => void saveNeighborhood(row)} title="Kaydet">
+                      <Check className="size-4" />
+                    </Button>
+                    <Button variant="ghost" onClick={() => setHoodEditId(null)} title="Vazgeç">
+                      <X className="size-4" />
+                    </Button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setHoodEditId(row.id);
+                      setHoodValue(row.neighborhood ?? "");
+                    }}
+                    className={`rounded-full px-2.5 py-1 text-[11px] ${
+                      row.neighborhood
+                        ? "bg-emerald-100 font-semibold text-emerald-800"
+                        : "border border-dashed text-muted-foreground"
+                    }`}
+                    title="Mahalle gir / değiştir"
+                  >
+                    {row.neighborhood ?? "+ mahalle"}
+                  </button>
+                )}
 
                 {row.label ? (
                   <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] text-slate-600">

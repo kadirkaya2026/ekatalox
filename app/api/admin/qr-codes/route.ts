@@ -20,7 +20,9 @@ export async function GET() {
 
   const { data, error } = await supabase
     .from("magnet_codes")
-    .select("id, code, tenant_id, label, assigned_at, created_at, tenants(subdomain, company_name)")
+    .select(
+      "id, code, tenant_id, label, assigned_at, created_at, city, district, neighborhood, placed_at, tenants(subdomain, company_name)",
+    )
     .order("created_at", { ascending: false })
     .limit(1000);
 
@@ -53,6 +55,16 @@ export async function POST(request: Request) {
   const label = typeof body?.label === "string" ? body.label.trim() || null : null;
   const manualInput = typeof body?.code === "string" ? body.code : null;
 
+  // Konum toplu üretimde de verilebiliyor: bir ilçe için basılan partinin
+  // tamamı baştan o ilçeye işaretlensin, sahada sadece mahalle girilsin.
+  const metin = (deger: unknown) =>
+    typeof deger === "string" && deger.trim() ? deger.trim() : null;
+  const konum = {
+    city: metin(body?.city),
+    district: metin(body?.district),
+    neighborhood: metin(body?.neighborhood),
+  };
+
   const supabase = createSupabaseAdminClient();
   if (!supabase) {
     return NextResponse.json({ error: "Sunucu yapılandırması eksik." }, { status: 500 });
@@ -66,7 +78,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: parsed.error }, { status: 400 });
     }
 
-    const { error } = await supabase.from("magnet_codes").insert({ code: parsed.code, label });
+    const { error } = await supabase.from("magnet_codes").insert({ code: parsed.code, label, ...konum });
 
     if (error) {
       // 23505 = benzersiz kısıt ihlali (lower(code) indeksi).
@@ -102,7 +114,7 @@ export async function POST(request: Request) {
     deneme += 1;
     const code = generateMagnetCode();
 
-    const { error } = await supabase.from("magnet_codes").insert({ code, label });
+    const { error } = await supabase.from("magnet_codes").insert({ code, label, ...konum });
     if (!error) {
       uretilen.push(code);
     }
