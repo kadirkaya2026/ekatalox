@@ -11,6 +11,7 @@ import {
   NEW_PLAN_OPTIONS,
   PLAN_PRICING,
 } from '@/lib/billing/plans'
+import { TERMS_VERSION, TERMS_VERSION_LABEL } from '@/lib/legal/terms'
 
 type BillingPeriod = 'yearly' | 'monthly'
 
@@ -35,6 +36,10 @@ const KayitForm = () => {
   const [billing, setBilling] = useState<BillingPeriod>('yearly')
   const plans = buildPlans(billing)
   const [form, setForm] = useState({ fullName: '', company: '', email: '', phone: '', password: '', plan: 'business' })
+  // Kullanım Şartları onayı. Varsayılan olarak İŞARETSİZ ve zorunlu:
+  // TBK m.20-25 genel işlem koşullarında karşı tarafın kabulünü arıyor,
+  // "butona basınca kabul etmiş sayılırsınız" bunun zayıf hâli.
+  const [termsAccepted, setTermsAccepted] = useState(false)
   const [submitted, setSubmitted] = useState(false)
   const [sending, setSending] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
@@ -66,6 +71,7 @@ const KayitForm = () => {
     if (!form.company.trim()) errs.company = 'Şirket adını girin'
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) errs.email = 'Geçerli bir e-posta girin'
     if (form.password.length < 6) errs.password = 'Şifre en az 6 karakter olmalı'
+    if (!termsAccepted) errs.terms = 'Devam etmek için Kullanım Şartları’nı kabul etmelisiniz'
     setErrors(errs)
     if (Object.keys(errs).length > 0) return
 
@@ -75,7 +81,7 @@ const KayitForm = () => {
       const res = await fetch('/api/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ fullName: form.fullName, company: form.company, email: form.email, phone: form.phone, plan: form.plan, billingPeriod: billing }),
+        body: JSON.stringify({ fullName: form.fullName, company: form.company, email: form.email, phone: form.phone, plan: form.plan, billingPeriod: billing, termsAccepted, termsVersion: TERMS_VERSION }),
       })
       if (!res.ok) throw new Error()
       setSubmitted(true)
@@ -212,13 +218,35 @@ const KayitForm = () => {
                     </div>
 
                     {apiError && <div className="text-sm text-red-400 text-center">{apiError}</div>}
+
+                    {/* Zorunlu onay. Bilinçli olarak işaretsiz başlıyor ve
+                        önceden işaretlenmiş gelmiyor — "kabul etmiş
+                        sayılırsınız" ibaresinin aksine burada müşterinin
+                        olumlu bir eylemi var, kabul böyle ispatlanabiliyor. */}
+                    <label className="flex items-start gap-3 cursor-pointer select-none">
+                      <input
+                        type="checkbox"
+                        checked={termsAccepted}
+                        onChange={(e) => {
+                          setTermsAccepted(e.target.checked)
+                          if (e.target.checked) setErrors((prev) => { const { terms, ...rest } = prev; return rest })
+                        }}
+                        className="mt-0.5 h-4 w-4 shrink-0 rounded border-white/20 bg-white/5 accent-[var(--marketing-primary)] cursor-pointer"
+                        aria-invalid={errors.terms ? 'true' : undefined}
+                      />
+                      <span className="text-[12px] leading-5 text-slate-400">
+                        <Link href="/kullanim-sartlari" target="_blank" className="text-slate-200 underline underline-offset-4 hover:text-white">Kullanım Şartları</Link>
+                        {' '}ve{' '}
+                        <Link href="/gizlilik-ve-kvkk" target="_blank" className="text-slate-200 underline underline-offset-4 hover:text-white">Gizlilik ve KVKK Aydınlatma Metni</Link>
+                        {"'ni okudum, kabul ediyorum."}
+                        <span className="block text-[11px] text-slate-600 mt-0.5">Sürüm: {TERMS_VERSION_LABEL}</span>
+                      </span>
+                    </label>
+                    {errors.terms && <p className="text-[12px] text-red-400 -mt-2">{errors.terms}</p>}
+
                     <button type="submit" disabled={sending} className="w-full inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-full bg-white text-black font-medium text-sm hover:scale-[1.01] active:scale-[0.99] transition-transform shadow-[0_0_40px_rgba(var(--marketing-primary-rgb),0.2)] mt-2 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:scale-100">
                       {sending ? 'Lütfen bekleyin…' : <><span>Ücretsiz Hesap Aç</span><ArrowRight className="w-4 h-4" /></>}
                     </button>
-
-                    <p className="text-[11px] text-slate-500 text-center">
-                      Devam ederek <Link href="/kullanim-sartlari" className="text-slate-300 underline-offset-4 hover:underline">Kullanım Şartları</Link> ve <Link href="/gizlilik-ve-kvkk" className="text-slate-300 underline-offset-4 hover:underline">Gizlilik ve KVKK</Link> metnini kabul etmiş olursunuz.
-                    </p>
 
                     <div className="pt-4 border-t border-white/5 text-center text-sm text-slate-400">
                       Hesabınız var mı? <Link href="/login" className="text-white hover:text-[var(--marketing-primary)]">Giriş yapın</Link>

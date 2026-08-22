@@ -1,6 +1,9 @@
 'use client'
 
 import { SiteNavbar, SiteFooter, PageHero } from '@/components/site-chrome'
+// Sayfadaki "Son güncelleme" tarihi ile kabul kaydına yazılan sürüm tek
+// kaynaktan gelsin diye (bkz. terms_acceptances.terms_version).
+import { TERMS_VERSION_LABEL } from '@/lib/legal/terms'
 
 const sections = [
   {
@@ -96,7 +99,7 @@ const Page = () => {
       <PageHero
         tag="Yasal"
         title={<>Kullanım <span className="bg-clip-text text-transparent bg-gradient-to-r from-[#10b981] to-[#00ff87]">Şartları</span></>}
-        subtitle="eKatalox'u kullanmadan önce lütfen bu şartları dikkatlice okuyun. Son güncelleme: 2 Ağustos 2026."
+        subtitle={`eKatalox'u kullanmadan önce lütfen bu şartları dikkatlice okuyun. Son güncelleme: ${TERMS_VERSION_LABEL}.`}
       />
 
       <section className="px-6 pb-28">
