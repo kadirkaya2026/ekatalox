@@ -326,6 +326,12 @@ export interface TenantCampaign {
   discount_kind: CampaignDiscountKind | null;
   discount_value: number | null;
   payment_method: CampaignPaymentMethod;
+  /**
+   * Kampanya eşiğine ve indirim matrahına SAYILMAYACAK kategoriler.
+   * Alt kategoriler burada tutulmaz; vitrinde kategori ağacıyla
+   * genişletilir (bkz. getCampaignEligibleSubtotal).
+   */
+  excluded_category_ids: string[];
   created_at?: string;
   updated_at?: string;
 }

@@ -8,9 +8,9 @@ import { StorefrontImage } from "@/components/storefront/storefront-image";
 import { useStorefrontLocale } from "@/lib/storefront/locale-context";
 import { useStorefrontTheme } from "@/lib/storefront/theme-context";
 import type { CampaignDiscountStatus } from "@/lib/storefront/cart";
-import { getCampaignDiscountAmount } from "@/lib/storefront/cart";
+import { getCampaignDiscountAmount, getCampaignEligibleSubtotal } from "@/lib/storefront/cart";
 import { buildCampaignRuleSentence } from "@/lib/validators/campaign";
-import type { TenantCampaign } from "@/lib/types";
+import type { CartItem, TenantCampaign } from "@/lib/types";
 import type { CurrencyCode } from "@/lib/products/constants";
 import { cn, formatCurrency } from "@/lib/utils";
 
@@ -27,7 +27,9 @@ export function StorefrontCampaignsSheet({
   onClose,
   campaigns,
   campaignStatus,
-  cartSubtotal,
+  cartItems,
+  excludedByCampaign,
+  categoryNameById,
   currency,
   onOpenCategory,
   paymentCampaignBars,
@@ -36,7 +38,10 @@ export function StorefrontCampaignsSheet({
   onClose: () => void;
   campaigns: TenantCampaign[];
   campaignStatus: CampaignDiscountStatus | null;
-  cartSubtotal: number;
+  cartItems: CartItem[];
+  /** kampanya id -> hariç kategori id kümesi (alt kategoriler genişletilmiş) */
+  excludedByCampaign?: Map<string, Set<string>>;
+  categoryNameById: Map<string, string>;
   currency: CurrencyCode;
   onOpenCategory: (categoryId: string) => void;
   /** Ayarlardaki eski nakit/kart kampanya barları — varsa altta gösterilir */
@@ -125,7 +130,9 @@ export function StorefrontCampaignsSheet({
                     key={campaign.id}
                     campaign={campaign}
                     isApplied={campaign.id === appliedId}
-                    cartSubtotal={cartSubtotal}
+                    cartItems={cartItems}
+                    excludedByCampaign={excludedByCampaign}
+                    categoryNameById={categoryNameById}
                     currency={currency}
                     onOpenCategory={(categoryId) => {
                       onOpenCategory(categoryId);
@@ -158,13 +165,17 @@ export function StorefrontCampaignsSheet({
 function CampaignCard({
   campaign,
   isApplied,
-  cartSubtotal,
+  cartItems,
+  excludedByCampaign,
+  categoryNameById,
   currency,
   onOpenCategory,
 }: {
   campaign: TenantCampaign;
   isApplied: boolean;
-  cartSubtotal: number;
+  cartItems: CartItem[];
+  excludedByCampaign?: Map<string, Set<string>>;
+  categoryNameById: Map<string, string>;
   currency: CurrencyCode;
   onOpenCategory: (categoryId: string) => void;
 }) {
@@ -186,10 +197,21 @@ function CampaignCard({
   });
 
   const hasRule = campaign.rule_type === "cart_threshold" && campaign.min_cart_amount !== null;
-  const remaining = hasRule ? campaign.min_cart_amount! - cartSubtotal : 0;
+  // Hariç tutulan kategoriler eşiğe sayılmadığı için "kalan tutar" sepet
+  // toplamına göre değil, kampanyaya UYGUN tutara göre hesaplanmalı.
+  const uygunTutar = getCampaignEligibleSubtotal(cartItems, campaign, excludedByCampaign);
+  const remaining = hasRule ? campaign.min_cart_amount! - uygunTutar : 0;
   // Eşik tuttu ama uygulanmıyorsa sebep ödeme yöntemi şartıdır — ayırmak
   // için tutarı doğrudan soruyoruz.
-  const qualifiesByAmount = hasRule && getCampaignDiscountAmount(campaign, cartSubtotal) > 0;
+  const qualifiesByAmount =
+    hasRule && getCampaignDiscountAmount(campaign, cartItems, excludedByCampaign) > 0;
+
+  // Hariç kategoriler müşteriye açıkça yazılmalı, yoksa "neden tutmadı"
+  // sorusu doğuyor. Sadece bayinin seçtikleri gösteriliyor (alt kategoriler
+  // genişletilmiş hâli değil) — liste okunabilir kalsın.
+  const haricKategoriAdlari = (campaign.excluded_category_ids ?? [])
+    .map((id) => categoryNameById.get(id))
+    .filter((ad): ad is string => Boolean(ad));
 
   return (
     <div
@@ -247,6 +269,12 @@ function CampaignCard({
         {ruleSentence ? (
           <p className={cn("text-sm font-semibold leading-5", theme.productPrice)}>
             {ruleSentence}
+          </p>
+        ) : null}
+
+        {haricKategoriAdlari.length ? (
+          <p className={cn("text-xs leading-4", theme.textMuted)}>
+            {t("campaignsSheet.excluded", { categories: haricKategoriAdlari.join(", ") })}
           </p>
         ) : null}
 

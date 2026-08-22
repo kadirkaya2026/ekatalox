@@ -55,6 +55,7 @@ function createEmptyCampaign(displayOrder: number): CampaignDraft {
     discount_kind: null,
     discount_value: null,
     payment_method: "any",
+    excluded_category_ids: [],
     isNew: true,
   };
 }
@@ -132,6 +133,8 @@ export function TenantCampaignsForm({
       discount_kind: hasRule ? campaign.discount_kind : null,
       discount_value: hasRule ? campaign.discount_value : null,
       payment_method: campaign.payment_method,
+      // Kural kapalıyken hariç kategori tutmanın anlamı yok.
+      excluded_category_ids: hasRule ? campaign.excluded_category_ids : [],
     };
   }
 
@@ -468,6 +471,56 @@ export function TenantCampaignsForm({
                         <p className="mt-1 text-xs text-muted-foreground">
                           &quot;Fark etmez&quot; seçerseniz indirim müşteri ödeme yöntemini
                           seçmeden de sepet toplamına yansır.
+                        </p>
+                      </div>
+
+                      {/* Bazı ürünler kampanya eşiğine sayılmasın: "1.000 TL'ye
+                          100 TL indirim ama sigara sayılmasın" gibi. Seçilen
+                          kategorinin ALT kategorileri de otomatik hariç kalır. */}
+                      <div>
+                        <label className="mb-1.5 block text-sm font-medium text-foreground">
+                          Kampanyaya sayılmayacak kategoriler{" "}
+                          <span className="text-muted-foreground">(opsiyonel)</span>
+                        </label>
+                        <div className="max-h-44 overflow-y-auto rounded-xl border bg-white p-2">
+                          {categories.length === 0 ? (
+                            <p className="px-1 py-2 text-xs text-muted-foreground">
+                              Kategori bulunamadı.
+                            </p>
+                          ) : (
+                            categories.map((category) => {
+                              const secili = campaign.excluded_category_ids.includes(category.id);
+                              return (
+                                <label
+                                  key={category.id}
+                                  className="flex cursor-pointer items-center gap-2 rounded-lg px-1.5 py-1 hover:bg-slate-50"
+                                >
+                                  <input
+                                    type="checkbox"
+                                    className="size-4"
+                                    checked={secili}
+                                    onChange={(event) =>
+                                      updateField(
+                                        campaign.id,
+                                        "excluded_category_ids",
+                                        event.target.checked
+                                          ? [...campaign.excluded_category_ids, category.id]
+                                          : campaign.excluded_category_ids.filter(
+                                              (id) => id !== category.id,
+                                            ),
+                                      )
+                                    }
+                                  />
+                                  <span className="text-sm text-foreground">{category.name}</span>
+                                </label>
+                              );
+                            })
+                          )}
+                        </div>
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          İşaretlediğiniz kategorilerdeki ürünlerin tutarı eşiğe sayılmaz ve
+                          yüzde indirimin matrahına girmez. Alt kategoriler de otomatik hariç
+                          tutulur.
                         </p>
                       </div>
 

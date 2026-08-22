@@ -166,19 +166,56 @@ export interface CampaignDiscountStatus {
   nextTarget: { campaign: TenantCampaign; amount: number; remaining: number } | null;
 }
 
-/** Kampanyanın bu sepet tutarında getireceği indirim (eşiği tutmazsa 0). */
-export function getCampaignDiscountAmount(campaign: TenantCampaign, subtotal: number) {
+/**
+ * Kampanyaya SAYILAN sepet tutarı.
+ *
+ * Bayi bazı kategorileri kampanya dışında bırakabiliyor (kullanıcı isteği,
+ * 22 Ağu 2026): "1.000 TL'ye 100 TL indirim ama sigara sayılmasın". Bu
+ * durumda 900 TL market + 600 TL sigara alan müşteride eşik TUTMAZ, çünkü
+ * uygun tutar 900 TL.
+ *
+ * excludedByCampaign: kampanya id -> hariç kategori id kümesi. Alt
+ * kategoriler ÇAĞIRAN TARAFTA genişletiliyor (kategori ağacı burada yok);
+ * verilmezse hiçbir kategori hariç tutulmaz ve eski davranış korunur.
+ */
+export function getCampaignEligibleSubtotal(
+  items: CartItem[],
+  campaign: TenantCampaign,
+  excludedByCampaign?: Map<string, Set<string>>,
+) {
+  const haric = excludedByCampaign?.get(campaign.id);
+
+  const toplam = items.reduce((tutar, item) => {
+    if (haric?.size && item.category_id && haric.has(item.category_id)) {
+      return tutar;
+    }
+    return tutar + (item.price ?? 0) * item.quantity;
+  }, 0);
+
+  return roundCurrencyAmount(toplam);
+}
+
+/** Kampanyanın bu sepette getireceği indirim (eşiği tutmazsa 0). */
+export function getCampaignDiscountAmount(
+  campaign: TenantCampaign,
+  items: CartItem[],
+  excludedByCampaign?: Map<string, Set<string>>,
+) {
   if (campaign.rule_type !== "cart_threshold") return 0;
   if (campaign.discount_value === null || campaign.min_cart_amount === null) return 0;
-  if (subtotal < campaign.min_cart_amount) return 0;
 
+  const uygunTutar = getCampaignEligibleSubtotal(items, campaign, excludedByCampaign);
+  if (uygunTutar < campaign.min_cart_amount) return 0;
+
+  // Yüzde indirim de UYGUN TUTAR üzerinden hesaplanıyor: eşiğe saymadığımız
+  // ürünün üzerinden indirim vermek tutarsız olurdu.
   const raw =
     campaign.discount_kind === "percentage"
-      ? (subtotal * campaign.discount_value) / 100
+      ? (uygunTutar * campaign.discount_value) / 100
       : campaign.discount_value;
 
-  // İndirim sepetten büyük olamaz.
-  return roundCurrencyAmount(Math.min(raw, subtotal));
+  // İndirim uygun tutardan büyük olamaz.
+  return roundCurrencyAmount(Math.min(raw, uygunTutar));
 }
 
 /** Kampanya eşiği tutmasa da getireceği indirim — "X TL daha ekle" hesabı için. */
@@ -216,6 +253,8 @@ export function getCampaignDiscountStatus(
   items: CartItem[],
   campaigns: TenantCampaign[],
   paymentMethod: "cash" | "card" | null,
+  /** kampanya id -> hariç kategori id kümesi (alt kategoriler genişletilmiş) */
+  excludedByCampaign?: Map<string, Set<string>>,
 ): CampaignDiscountStatus | null {
   if (!items.length) return null;
 
@@ -235,7 +274,10 @@ export function getCampaignDiscountStatus(
     b.amount - a.amount || a.campaign.display_order - b.campaign.display_order;
 
   const qualified = rules
-    .map((campaign) => ({ campaign, amount: getCampaignDiscountAmount(campaign, rounded) }))
+    .map((campaign) => ({
+      campaign,
+      amount: getCampaignDiscountAmount(campaign, items, excludedByCampaign),
+    }))
     .filter((entry) => entry.amount > 0);
 
   const applied =
@@ -247,19 +289,25 @@ export function getCampaignDiscountStatus(
     .filter((entry) => !campaignAppliesToPaymentMethod(entry.campaign, paymentMethod))
     .sort(byBestDiscount);
 
+  // "X TL daha ekle" kalan tutarı da UYGUN TUTAR üzerinden: hariç kategoriler
+  // eşiğe saymadığı için sepet toplamına göre hesaplarsak müşteriye yanlış
+  // rakam gösterir (sigarayı da sayıp "200 TL kaldı" der, oysa 800 TL kalmış).
   const nextTarget =
     rules
-      .filter(
-        (campaign) =>
-          campaign.min_cart_amount !== null &&
-          rounded < campaign.min_cart_amount &&
-          // Zaten uygulanandan daha iyisini vaat etmiyorsa yukarı satış anlamsız.
-          getCampaignDiscountAtThreshold(campaign) > (applied?.amount ?? 0),
-      )
+      .filter((campaign) => {
+        if (campaign.min_cart_amount === null) return false;
+        const uygun = getCampaignEligibleSubtotal(items, campaign, excludedByCampaign);
+        if (uygun >= campaign.min_cart_amount) return false;
+        // Zaten uygulanandan daha iyisini vaat etmiyorsa yukarı satış anlamsız.
+        return getCampaignDiscountAtThreshold(campaign) > (applied?.amount ?? 0);
+      })
       .map((campaign) => ({
         campaign,
         amount: getCampaignDiscountAtThreshold(campaign),
-        remaining: roundCurrencyAmount(campaign.min_cart_amount! - rounded),
+        remaining: roundCurrencyAmount(
+          campaign.min_cart_amount! -
+            getCampaignEligibleSubtotal(items, campaign, excludedByCampaign),
+        ),
       }))
       .sort((a, b) => a.remaining - b.remaining || a.campaign.display_order - b.campaign.display_order)[0] ??
     null;
@@ -276,6 +324,7 @@ export function getCartPaymentSummary(
   cardConfig: CardTieredConfig | null,
   selectedInstallment: InstallmentOption | null,
   campaigns: TenantCampaign[] = [],
+  excludedByCampaign?: Map<string, Set<string>>,
 ): CartPaymentSummary | null {
   if (!items.length) return null;
 
@@ -305,7 +354,12 @@ export function getCartPaymentSummary(
   // Eski nakit basamağıyla üst üste binebilir (kullanıcı kararı: eski
   // sistem dursun, bağımsız çalışsın). Pratikte hiçbir bayide nakit
   // basamağı açık değil, o yüzden teorik bir durum.
-  const campaignStatus = getCampaignDiscountStatus(items, campaigns, paymentMethod);
+  const campaignStatus = getCampaignDiscountStatus(
+    items,
+    campaigns,
+    paymentMethod,
+    excludedByCampaign,
+  );
   const appliedCampaign = campaignStatus?.applied?.campaign ?? null;
   const campaignDiscountAmount = campaignStatus?.applied?.amount ?? 0;
 

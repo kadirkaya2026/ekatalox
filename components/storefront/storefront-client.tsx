@@ -1275,9 +1275,40 @@ export function StorefrontClient({
   );
   // Ödeme yöntemi seçilmeden önce de gösterilir: "fark etmez" kampanyalar
   // uygulanır, yönteme bağlı olanlar "kazanabilirsiniz" olarak listelenir.
+  // Bayi bir kategoriyi kampanya dışında bıraktığında ALT kategorileri de
+  // dışarıda kalmalı: "Sigara" hariç tutulduysa "Sigara > Filtreli" de
+  // sayılmamalı. Kayıtta yalnızca seçilen id'ler duruyor, ağaç burada
+  // genişletiliyor — kategori ağacı değişince kayıt güncellenmek zorunda
+  // kalmasın diye.
+  const excludedCategoriesByCampaign = useMemo(() => {
+    const harita = new Map<string, Set<string>>();
+
+    for (const campaign of campaigns) {
+      const secilen = campaign.excluded_category_ids ?? [];
+      if (!secilen.length) continue;
+
+      const kume = new Set<string>();
+      for (const categoryId of secilen) {
+        kume.add(categoryId);
+        for (const altId of getDescendantCategoryIds(categories, categoryId)) {
+          kume.add(altId);
+        }
+      }
+      harita.set(campaign.id, kume);
+    }
+
+    return harita;
+  }, [campaigns, categories]);
+
   const campaignStatus = useMemo(
-    () => getCampaignDiscountStatus(cart, campaigns, selectedPaymentMethod),
-    [cart, campaigns, selectedPaymentMethod],
+    () =>
+      getCampaignDiscountStatus(
+        cart,
+        campaigns,
+        selectedPaymentMethod,
+        excludedCategoriesByCampaign,
+      ),
+    [cart, campaigns, selectedPaymentMethod, excludedCategoriesByCampaign],
   );
 
   const cartPaymentSummary = useMemo(() => {
@@ -1308,8 +1339,10 @@ export function StorefrontClient({
       cardConfig,
       selectedInstallment,
       campaigns,
+      excludedCategoriesByCampaign,
     );
   }, [
+    excludedCategoriesByCampaign,
     campaigns,
     cart,
     selectedPaymentMethod,
@@ -3672,7 +3705,9 @@ export function StorefrontClient({
         onClose={() => setIsCampaignsSheetOpen(false)}
         campaigns={campaigns}
         campaignStatus={campaignStatus}
-        cartSubtotal={campaignStatus?.subtotal ?? cartTotal}
+        cartItems={cart}
+        excludedByCampaign={excludedCategoriesByCampaign}
+        categoryNameById={categoryNameMap}
         currency={campaignStatus?.currency ?? cartCurrency}
         onOpenCategory={handleCategoryChange}
         paymentCampaignBars={

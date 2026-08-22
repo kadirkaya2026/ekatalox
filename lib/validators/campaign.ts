@@ -66,6 +66,10 @@ export const campaignSchema = z
     ),
     discount_value: nullableNumber("İndirim değeri sıfırdan küçük olamaz."),
     payment_method: z.enum(["any", "cash", "card"]).default("any"),
+    excluded_category_ids: z
+      .array(z.string().uuid("Kategori seçimi geçersiz."))
+      .max(50, "En fazla 50 kategori hariç tutabilirsiniz.")
+      .default([]),
   })
   .superRefine((value, ctx) => {
     if (value.rule_type === "cart_threshold") {

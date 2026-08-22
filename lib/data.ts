@@ -1873,6 +1873,7 @@ export async function getStorefrontCampaigns(
         campaign.min_cart_amount === null ? null : Number(campaign.min_cart_amount),
       discount_value:
         campaign.discount_value === null ? null : Number(campaign.discount_value),
+      excluded_category_ids: campaign.excluded_category_ids ?? [],
     }));
 }
 
