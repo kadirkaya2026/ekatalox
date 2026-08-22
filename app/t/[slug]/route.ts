@@ -24,7 +24,27 @@ export async function GET(request: Request, ctx: { params: Promise<{ slug: strin
   const { slug } = await ctx.params;
   const normalized = slug.trim().toLowerCase();
 
-  const tenant = normalized ? await getStorefrontTenantCached(normalized) : null;
+  // Önce kod havuzuna bak (bkz. 0084_magnet_codes.sql): magnetler bayi belli
+  // olmadan basılabilsin diye kod ile tenant arasına eşleştirme katmanı
+  // konuldu. Havuzda kayıt yoksa eski davranışa düşülür ve slug doğrudan
+  // subdomain sayılır — daha önce basılmış /t/lucatech magnetleri çalışmaya
+  // devam eder.
+  const code = normalized ? await lookupMagnetCode(normalized) : null;
+
+  if (code && !code.tenantId) {
+    // Kod üretilmiş ama henüz bir bayiye atanmamış. Okutmayı yine de
+    // sayıyoruz: magnet sahada mı, kaç kişi denedi?
+    void recordScan(null, normalized, request);
+    return redirectTo(
+      `https://${appEnv.marketingDomain}/magaza-yakinda?kod=${encodeURIComponent(normalized)}`,
+    );
+  }
+
+  const tenant = code?.tenantId
+    ? await getStorefrontTenantById(code.tenantId)
+    : normalized
+      ? await getStorefrontTenantCached(normalized)
+      : null;
 
   // Elinde magnet olan bir müşteriye hata sayfası göstermenin anlamı yok:
   // slug yanlışsa ya da bayi kapandıysa tanıtım sitesine düşsün.
@@ -53,7 +73,7 @@ function redirectTo(url: string) {
   return response;
 }
 
-async function recordScan(tenantId: string, slug: string, request: Request) {
+async function recordScan(tenantId: string | null, slug: string, request: Request) {
   try {
     const supabase = createSupabaseAdminClient();
     if (!supabase) return;
@@ -65,5 +85,48 @@ async function recordScan(tenantId: string, slug: string, request: Request) {
     });
   } catch {
     // Ölçüm kaydı, yönlendirmeyi hiçbir koşulda engellememeli.
+  }
+}
+
+/**
+ * Kod havuzunda arama. Kod bulunursa (atanmış ya da atanmamış) döner,
+ * bulunmazsa null — çağıran taraf o zaman slug'ı subdomain kabul eder.
+ *
+ * lower() ile arıyoruz: magnetteki metni elle yazan müşteri K7M2XQ da
+ * yazabilir, benzersiz indeks de lower(code) üzerinde.
+ */
+async function lookupMagnetCode(code: string): Promise<{ tenantId: string | null } | null> {
+  try {
+    const supabase = createSupabaseAdminClient();
+    if (!supabase) return null;
+
+    const { data } = await supabase
+      .from("magnet_codes")
+      .select("tenant_id")
+      .ilike("code", code)
+      .maybeSingle();
+
+    return data ? { tenantId: data.tenant_id ?? null } : null;
+  } catch {
+    // Havuz okunamazsa eski davranışa düş: slug'ı subdomain say.
+    return null;
+  }
+}
+
+/** Koda atanmış tenant'ı id üzerinden getirir. */
+async function getStorefrontTenantById(tenantId: string) {
+  try {
+    const supabase = createSupabaseAdminClient();
+    if (!supabase) return null;
+
+    const { data } = await supabase
+      .from("tenants")
+      .select("id, subdomain, custom_domain, status")
+      .eq("id", tenantId)
+      .maybeSingle();
+
+    return data;
+  } catch {
+    return null;
   }
 }

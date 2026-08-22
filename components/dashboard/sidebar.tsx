@@ -20,6 +20,7 @@ import {
   PackagePlus,
   PanelBottom,
   Palette,
+  QrCode,
   PlusCircle,
   ScanBarcode,
   ScrollText,
@@ -209,6 +210,7 @@ const tenantLinks: SidebarLink[] = [
 const adminLinks: SidebarLink[] = [
   { href: "/", label: "Tenant Yönetimi", icon: Building2 },
   { href: "/market-catalog", label: "Master Katalog", icon: Store },
+  { href: "/qr-kodlari", label: "Magnet QR Kodları", icon: QrCode },
   { href: "/product-suggestions", label: "Ürün Önerileri", icon: PackagePlus },
   { href: "/logs", label: "Giriş Logları", icon: ScrollText },
 ];
