@@ -1377,11 +1377,17 @@ export function StorefrontClient({
     for (const product of promoProducts) {
       map.set(product.id, product);
     }
+    // Çok satanlar şeridi de kendi sunucu sorgusundan geliyor; haritaya
+    // eklenmezse oradaki kartların "+" butonu ve detay modalı sessizce
+    // hiçbir şey yapmıyordu (ürün ana katalog sayfasında yüklü değilse).
+    for (const product of bestSellerProducts) {
+      map.set(product.id, product);
+    }
     for (const product of recommendationPool) {
       map.set(product.id, product);
     }
     return map;
-  }, [products, sections, promoProducts, recommendationPool]);
+  }, [products, sections, promoProducts, bestSellerProducts, recommendationPool]);
   const cartVariantCountByProductId = useMemo(
     () =>
       new Map(
