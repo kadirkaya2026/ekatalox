@@ -1,6 +1,12 @@
 'use client'
 
 import { SiteNavbar, SiteFooter, PageHero } from '@/components/site-chrome'
+// Veri sorumlusunun tanıtıcı bilgileri (6563 m.3 / TTK m.39). Doldurulmadıysa
+// boş dizi döner ve bölüm gösterilmez — bkz. lib/legal/company.ts
+import { getCompanyIdentityLines } from '@/lib/legal/company'
+import { TERMS_VERSION_LABEL } from '@/lib/legal/terms'
+
+const identityLines = getCompanyIdentityLines()
 
 const sections = [
   {
@@ -8,7 +14,10 @@ const sections = [
     body: [
       '6698 sayılı Kişisel Verilerin Korunması Kanunu ("KVKK") uyarınca, ekatalox.com web sitesi ve panelinin işletmecisi eKatalox ("Veri Sorumlusu", "biz"), kimliğiniz belirli veya belirlenebilir gerçek kişiye ait kişisel verilerinizi aşağıda açıklanan kapsamda işlemektedir.',
       'Bu metin; ekatalox.com üzerinden hizmet aldığınız işletmenin (Kullanıcı) tenant yöneticisi, çalışanı, müşterisi veya ziyaretçisi olarak sizinle ilgili kişisel verilerin nasıl işlendiğini açıklar ve KVKK m. 10 kapsamındaki aydınlatma yükümlülüğümüzü yerine getirmek amacıyla hazırlanmıştır.',
+      'Kullanıcının kendi vitrini üzerinden topladığı müşteri verileri bakımından VERİ SORUMLUSU ilgili Kullanıcıdır; eKatalox bu veriler bakımından yalnızca VERİ İŞLEYEN sıfatıyla hareket eder.',
+      ...(identityLines.length ? ['Veri sorumlusuna ait tanıtıcı bilgiler:'] : []),
     ],
+    list: identityLines.length ? identityLines : undefined,
   },
   {
     title: '2. Toplanan Veriler',
@@ -44,30 +53,48 @@ const sections = [
   {
     title: '5. Üçüncü Taraflarla Paylaşım',
     body: [
-      'Verileriniz asla üçüncü şahıslara satılmaz veya pazarlama amacıyla paylaşılmaz. Yalnızca; hizmetin sunulması için zorunlu olan bulut altyapı sağlayıcıları (veritabanı/barındırma), Sanal POS/ödeme kuruluşları ve yasal olarak yetkili kamu kurum ve kuruluşlarının talebi doğrultusunda paylaşılabilir.',
-      'Altyapı sağlayıcılarımızın bir kısmı Avrupa Birliği sınırları içinde hizmet vermektedir; yurt dışına aktarım söz konusu olduğunda KVKK\'nın öngördüğü uygun güvenceler (sözleşmesel taahhütler, açık rıza vb.) sağlanmaya çalışılır.',
+      'Verileriniz asla üçüncü şahıslara satılmaz veya pazarlama amacıyla paylaşılmaz. Yalnızca; hizmetin sunulması için zorunlu olan aşağıdaki alt yükleniciler (alt veri işleyenler) ile ve yasal olarak yetkili kamu kurum ve kuruluşlarının talebi doğrultusunda paylaşılır.',
+    ],
+    list: [
+      'Supabase — veritabanı ve dosya barındırma (sunucu konumu: Frankfurt, Almanya)',
+      'Vercel — uygulama barındırma ve içerik dağıtımı (sunucu konumu: Frankfurt, Almanya)',
+      'Resend — işlem e-postalarının gönderimi',
+      'Sanal POS / ödeme kuruluşları — abonelik tahsilatı (kart bilgileri eKatalox sunucularında saklanmaz)',
     ],
   },
   {
-    title: '6. Veri Güvenliği',
+    // ESKİ METİN "uygun güvenceler sağlanmaya çalışılır" diyordu; bu
+    // hukuken bir taahhüt değil. 7499 sayılı Kanun (12 Mart 2024) yurt
+    // dışına aktarımı yeniden düzenledi: standart sözleşme kullanılıyorsa
+    // İMZADAN İTİBAREN 5 İŞ GÜNÜ içinde Kurul'a bildirim zorunlu.
+    // Bildirmemek bağımsız bir kabahat ve idari para cezası doğuruyor.
+    title: '6. Yurt Dışına Aktarım',
+    body: [
+      'Yukarıda sayılan altyapı sağlayıcılarının sunucuları Türkiye dışında (Almanya) bulunduğundan, kişisel verileriniz KVKK m. 9 anlamında yurt dışına aktarılmaktadır.',
+      'Bu aktarım, 6698 sayılı Kanun\'da 7499 sayılı Kanun ile yapılan değişiklik uyarınca, Kurul tarafından ilan edilen standart sözleşmelerin imzalanması suretiyle gerçekleştirilmektedir. İmzalanan standart sözleşmeler, imza tarihinden itibaren beş iş günü içinde Kişisel Verileri Koruma Kurulu\'na bildirilmektedir.',
+      'Aktarımın hukuki dayanağı ve uygulanan güvenceler hakkında ayrıntılı bilgi talep etmek için aşağıdaki başvuru kanallarını kullanabilirsiniz.',
+    ],
+  },
+  {
+    title: '7. Veri Güvenliği',
     body: [
       'Verileriniz, yüksek güvenlikli cloud veritabanlarında (Supabase altyapısı, SSL/TLS şifrelemesi ile) saklanır. Erişim, yalnızca yetkilendirilmiş sistemler ve personelle sınırlıdır; veriler düzenli olarak yedeklenir.',
     ],
   },
   {
-    title: '7. Veri Toplama Yöntemi',
+    title: '8. Veri Toplama Yöntemi',
     body: [
       'Kişisel verileriniz; web sitesi ve panel üzerindeki formlar, WhatsApp üzerinden iletilen sipariş mesajları, çerezler ve benzeri teknolojiler aracılığıyla elektronik ortamda otomatik veya kısmen otomatik yollarla toplanır.',
     ],
   },
   {
-    title: '8. Saklama Süresi',
+    title: '9. Saklama Süresi',
     body: [
       'Kişisel verileriniz, işlenme amacının gerektirdiği süre boyunca ve ilgili mevzuatta öngörülen zamanaşımı süreleri (örneğin Türk Ticaret Kanunu ve vergi mevzuatı kapsamındaki 10 yıla varan saklama yükümlülükleri) saklı kalmak kaydıyla saklanır. Bu sürelerin sonunda verileriniz silinir, yok edilir veya anonim hale getirilir.',
     ],
   },
   {
-    title: '9. KVKK m. 11 Kapsamındaki Haklarınız',
+    title: '10. KVKK m. 11 Kapsamındaki Haklarınız',
     body: [
       'KVKK\'nın 11. maddesi uyarınca bize başvurarak;',
     ],
@@ -84,9 +111,9 @@ const sections = [
     ],
   },
   {
-    title: '10. Başvuru Yöntemi',
+    title: '11. Başvuru Yöntemi',
     body: [
-      'Yukarıdaki haklarınızı kullanmak için talebinizi info@ekatalox.com adresine iletebilirsiniz. Başvurunuz, niteliğine göre en kısa sürede ve en geç 30 gün içinde ücretsiz olarak sonuçlandırılır; işlemin ayrıca bir maliyet gerektirmesi halinde Kişisel Verileri Koruma Kurulu\'nca belirlenen tarifedeki ücret talep edilebilir.',
+      'Veri Sorumlusuna Başvuru Usul ve Esasları Hakkında Tebliğ uyarınca başvurunuzu; yukarıda belirtilen merkez adresimize ıslak imzalı yazılı olarak, kayıtlı elektronik posta (KEP) adresimize, güvenli elektronik imza veya mobil imza ile ya da daha önce bize bildirdiğiniz ve sistemimizde kayıtlı bulunan elektronik posta adresinizi kullanarak info@ekatalox.com adresine iletebilirsiniz. Başvurunuzda ad soyad, imza, T.C. kimlik numarası, adres ve talep konusunun yer alması gerekir. Başvurunuz, niteliğine göre en kısa sürede ve en geç 30 gün içinde ücretsiz olarak sonuçlandırılır; işlemin ayrıca bir maliyet gerektirmesi halinde Kişisel Verileri Koruma Kurulu\'nca belirlenen tarifedeki ücret talep edilebilir.',
     ],
   },
 ]
@@ -98,7 +125,7 @@ const Page = () => {
       <PageHero
         tag="Yasal"
         title={<>Gizlilik Politikası ve <span className="bg-clip-text text-transparent bg-gradient-to-r from-[#10b981] to-[#00ff87]">KVKK</span></>}
-        subtitle="eKatalox olarak kişisel verilerinizin güvenliğine önem veriyoruz. Son güncelleme: 2 Ağustos 2026."
+        subtitle={`eKatalox olarak kişisel verilerinizin güvenliğine önem veriyoruz. Son güncelleme: ${TERMS_VERSION_LABEL}.`}
       />
 
       <section className="px-6 pb-28">

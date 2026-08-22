@@ -7,6 +7,6 @@
 //
 // app/kullanim-sartlari/page.tsx içindeki "Son güncelleme" ifadesi bu
 // sabitten üretiliyor ki ikisi birbirinden kopmasın.
-export const TERMS_VERSION = "2026-08-02";
+export const TERMS_VERSION = "2026-08-22";
 
-export const TERMS_VERSION_LABEL = "2 Ağustos 2026";
+export const TERMS_VERSION_LABEL = "22 Ağustos 2026";
