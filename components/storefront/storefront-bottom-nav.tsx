@@ -114,8 +114,10 @@ function BottomNavButton({
         )}
       >
         {icon}
+        {/* Rozet turuncu yuvarlağın üstünde duruyor: beyaz zemin +
+            siyah rakam (kullanıcı isteği, 22 Ağu 2026). */}
         {badge ? (
-          <span className="absolute -right-2 -top-2 inline-flex min-w-5 items-center justify-center rounded-full bg-slate-900 px-1.5 py-0.5 text-[10px] font-bold text-white">
+          <span className="absolute -right-2 -top-2 inline-flex min-w-5 items-center justify-center rounded-full bg-white px-1.5 py-0.5 text-[10px] font-bold text-slate-900 shadow-sm">
             {badge}
           </span>
         ) : null}
