@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Download, Loader2, Plus, Printer, QrCode, Trash2 } from "lucide-react";
+import { Check, Download, Loader2, Pencil, Plus, Printer, QrCode, Trash2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { InlineAlert } from "@/components/ui/inline-alert";
@@ -54,6 +54,62 @@ export function QrCodeManager({
   const [qrOpenId, setQrOpenId] = useState<string | null>(null);
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
   const [qrSvg, setQrSvg] = useState<string | null>(null);
+
+  // Elle kod ekleme: basılmış magnetin kodu silindiyse geri yazabilmek için.
+  const [manualCode, setManualCode] = useState("");
+  // Satır içi kod düzenleme
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingValue, setEditingValue] = useState("");
+
+  async function addManual() {
+    setError(null);
+    setMessage(null);
+
+    const response = await fetch("/api/admin/qr-codes", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ code: manualCode, label }),
+    });
+    const result = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      setError(result.error ?? "Kod eklenemedi.");
+      return;
+    }
+
+    setMessage(`${manualCode.trim().toUpperCase()} havuza eklendi.`);
+    setManualCode("");
+    await refresh();
+  }
+
+  async function saveCode(row: MagnetCodeRow) {
+    const yeni = editingValue.trim().toLowerCase().replace(/[\s-]/g, "");
+    if (!yeni || yeni === row.code.toLowerCase()) {
+      setEditingId(null);
+      return;
+    }
+
+    setRowPending(row.id);
+    setError(null);
+
+    const response = await fetch(`/api/admin/qr-codes/${row.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      // tenant_id de gönderilmeli: PATCH gövdede yoksa atamayı kaldırıyor.
+      body: JSON.stringify({ code: yeni, tenant_id: row.tenant_id }),
+    });
+    const result = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      setError(result.error ?? "Kod güncellenemedi.");
+    } else {
+      setEditingId(null);
+      setQrOpenId(null);
+      await refresh();
+    }
+
+    setRowPending(null);
+  }
 
   function codeUrl(code: string) {
     return `https://${marketingDomain}/t/${code}`;
@@ -221,6 +277,40 @@ export function QrCodeManager({
           </a>
         </div>
 
+        {/* Elle kod ekleme: basılmış bir magnetin kodu yanlışlıkla
+            silindiyse aynı kodu geri yazmak tek kurtarma yolu. */}
+        <div className="mt-4 border-t pt-4">
+          <p className="text-sm font-semibold text-foreground">
+            Elle kod ekle{" "}
+            <span className="font-normal text-muted-foreground">
+              (silinen bir magnetin kodunu geri yazmak için)
+            </span>
+          </p>
+          <div className="mt-2 flex flex-wrap items-end gap-3">
+            <div className="w-48">
+              <Input
+                value={manualCode}
+                placeholder="örn. K7M2XQ"
+                onChange={(event) => setManualCode(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" && manualCode.trim()) {
+                    event.preventDefault();
+                    void addManual();
+                  }
+                }}
+                className="font-mono uppercase"
+              />
+            </div>
+            <Button variant="secondary" disabled={!manualCode.trim()} onClick={() => void addManual()}>
+              <Plus className="size-4" />
+              Ekle
+            </Button>
+            <p className="text-xs text-muted-foreground">
+              Boşluk ve tire yok sayılır, büyük/küçük harf fark etmez.
+            </p>
+          </div>
+        </div>
+
         <InlineAlert message={error} tone="error" onExpire={() => setError(null)} />
         <InlineAlert message={message} tone="success" onExpire={() => setMessage(null)} />
       </Card>
@@ -254,13 +344,51 @@ export function QrCodeManager({
             {gorunen.map((row) => (
               <div key={row.id}>
               <div className="flex flex-wrap items-center gap-3 px-4 py-3">
-                <div className="min-w-36">
-                  <p className="font-mono text-sm font-bold tracking-widest text-foreground">
-                    {formatMagnetCodeForPrint(row.code)}
-                  </p>
-                  <p className="text-[11px] text-muted-foreground">
-                    {marketingDomain}/t/{row.code}
-                  </p>
+                <div className="min-w-44">
+                  {editingId === row.id ? (
+                    <div className="flex items-center gap-1.5">
+                      <Input
+                        autoFocus
+                        value={editingValue}
+                        onChange={(event) => setEditingValue(event.target.value)}
+                        onKeyDown={(event) => {
+                          if (event.key === "Enter") {
+                            event.preventDefault();
+                            void saveCode(row);
+                          }
+                          if (event.key === "Escape") setEditingId(null);
+                        }}
+                        className="h-8 w-32 font-mono uppercase"
+                      />
+                      <Button variant="ghost" onClick={() => void saveCode(row)} title="Kaydet">
+                        <Check className="size-4" />
+                      </Button>
+                      <Button variant="ghost" onClick={() => setEditingId(null)} title="Vazgeç">
+                        <X className="size-4" />
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-1.5">
+                      <div>
+                        <p className="font-mono text-sm font-bold tracking-widest text-foreground">
+                          {formatMagnetCodeForPrint(row.code)}
+                        </p>
+                        <p className="text-[11px] text-muted-foreground">
+                          {marketingDomain}/t/{row.code}
+                        </p>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        title="Kodu düzenle — bu kod basıldıysa eski magnetler ölür"
+                        onClick={() => {
+                          setEditingId(row.id);
+                          setEditingValue(row.code);
+                        }}
+                      >
+                        <Pencil className="size-3.5" />
+                      </Button>
+                    </div>
+                  )}
                 </div>
 
                 <div className="min-w-24 text-xs text-muted-foreground">

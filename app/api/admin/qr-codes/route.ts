@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { ensureSuperAdminResponse } from "@/lib/tenancy/guards";
-import { generateMagnetCode } from "@/lib/magnet/codes";
+import { generateMagnetCode, normalizeMagnetCode } from "@/lib/magnet/codes";
 
 // Önceden basılacak QR magnetlerinin kod havuzu — SADECE süper admin.
 // Kodlar bayi belli olmadan üretilip bastırılıyor, atama sonra yapılıyor
@@ -50,19 +50,47 @@ export async function POST(request: Request) {
   if (guard) return guard;
 
   const body = await request.json().catch(() => null);
-  const count = Math.floor(Number(body?.count ?? 0));
   const label = typeof body?.label === "string" ? body.label.trim() || null : null;
+  const manualInput = typeof body?.code === "string" ? body.code : null;
+
+  const supabase = createSupabaseAdminClient();
+  if (!supabase) {
+    return NextResponse.json({ error: "Sunucu yapılandırması eksik." }, { status: 500 });
+  }
+
+  // ELLE KOD EKLEME: basılmış bir magnetin kodu yanlışlıkla silindiyse
+  // aynı kodu geri yazabilmek gerekiyor, aksi halde o magnetler çöp olur.
+  if (manualInput !== null) {
+    const parsed = normalizeMagnetCode(manualInput);
+    if ("error" in parsed) {
+      return NextResponse.json({ error: parsed.error }, { status: 400 });
+    }
+
+    const { error } = await supabase.from("magnet_codes").insert({ code: parsed.code, label });
+
+    if (error) {
+      // 23505 = benzersiz kısıt ihlali (lower(code) indeksi).
+      const cakisma = error.code === "23505";
+      return NextResponse.json(
+        {
+          error: cakisma
+            ? `${parsed.code.toUpperCase()} kodu zaten havuzda var.`
+            : "Kod eklenemedi.",
+        },
+        { status: cakisma ? 409 : 500 },
+      );
+    }
+
+    return NextResponse.json({ created: [parsed.code] });
+  }
+
+  const count = Math.floor(Number(body?.count ?? 0));
 
   if (!Number.isFinite(count) || count < 1 || count > MAX_BATCH) {
     return NextResponse.json(
       { error: `Bir seferde 1 ile ${MAX_BATCH} arasında kod üretebilirsiniz.` },
       { status: 400 },
     );
-  }
-
-  const supabase = createSupabaseAdminClient();
-  if (!supabase) {
-    return NextResponse.json({ error: "Sunucu yapılandırması eksik." }, { status: 500 });
   }
 
   // Çakışma ihtimali düşük ama sıfır değil; benzersiz indeks (lower(code))
