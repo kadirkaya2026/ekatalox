@@ -14,8 +14,9 @@ export async function GET(request: Request) {
   const url = new URL(request.url);
   const page = Number.parseInt(url.searchParams.get("page") ?? "1", 10) || 1;
   const search = url.searchParams.get("q") ?? undefined;
+  const category = url.searchParams.get("category") ?? undefined;
 
-  const { products, total } = await getMarketCatalogProductsPage({ page, search });
+  const { products, total } = await getMarketCatalogProductsPage({ page, search, category });
 
   return NextResponse.json({ products, total });
 }

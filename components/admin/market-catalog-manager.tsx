@@ -62,6 +62,9 @@ export function MarketCatalogManager({
   const [page, setPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
+  // Kategori filtresi arama kutusundan bağımsız ve onunla birlikte çalışır:
+  // "bu kategoride şunu ara" mümkün. Boş = tüm kategoriler.
+  const [categoryFilter, setCategoryFilter] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -85,7 +88,7 @@ export function MarketCatalogManager({
     }
     void fetchPage(page);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, debouncedSearchTerm]);
+  }, [page, debouncedSearchTerm, categoryFilter]);
 
   async function fetchPage(targetPage: number) {
     setIsLoading(true);
@@ -93,6 +96,7 @@ export function MarketCatalogManager({
     try {
       const params = new URLSearchParams({ page: String(targetPage) });
       if (debouncedSearchTerm.trim()) params.set("q", debouncedSearchTerm.trim());
+      if (categoryFilter) params.set("category", categoryFilter);
 
       const response = await fetch(`/api/admin/market-catalog?${params.toString()}`);
       const result = await response.json();
@@ -241,7 +245,23 @@ export function MarketCatalogManager({
               sonra içe aktaracak marketlere yansır.
             </p>
           </div>
-          <div className="w-full sm:max-w-xs">
+          <div className="flex w-full flex-col gap-2 sm:max-w-md sm:flex-row">
+            <select
+              className="h-10 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 sm:w-52"
+              value={categoryFilter}
+              onChange={(event) => {
+                setCategoryFilter(event.target.value);
+                setPage(1);
+              }}
+            >
+              <option value="">Tüm kategoriler</option>
+              <option value="Kategorisiz">Kategorisiz</option>
+              {CATEGORY_OPTIONS.map((option) => (
+                <option key={option} value={option}>
+                  {option}
+                </option>
+              ))}
+            </select>
             <Input
               placeholder="Ürün adı, marka veya barkod ara"
               value={searchTerm}
