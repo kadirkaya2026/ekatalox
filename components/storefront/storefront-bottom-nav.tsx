@@ -94,28 +94,28 @@ function BottomNavButton({
       type="button"
       onClick={onClick}
       aria-current={isActive ? "true" : undefined}
-      // Yazı ve ikonlar her temada turuncu: beyaz barda siyah yeterince
-      // dikkat çekmiyordu (kullanıcı isteği, 22 Ağu 2026). Açık olan sekme
-      // daha koyu turuncu + açık turuncu kalıpla belli oluyor.
+      // Yazı ve ikonlar her temada siyah; vurgu sadece ortadaki sepet
+      // yuvarlağında (turuncu zemin + beyaz ikon, kullanıcı isteği
+      // 22 Ağu 2026). "Sepet" etiketi yuvarlağın dışında kaldığı için o
+      // da siyah kalıyor.
       className={cn(
-        "flex min-h-[3.25rem] flex-col items-center justify-end gap-1 rounded-2xl px-1 pb-0.5 transition",
+        "flex min-h-[3.25rem] flex-col items-center justify-end gap-1 rounded-2xl px-1 pb-0.5 text-slate-900 transition",
         emphasized ? "-mt-5" : "pt-1.5",
-        isActive ? "text-orange-700" : "text-orange-600",
-        isActive && !emphasized && "bg-orange-50",
+        isActive && !emphasized && "bg-slate-100",
       )}
     >
       <span
         className={cn(
           "relative flex items-center justify-center",
-          // Taşan yuvarlak, barla aynı beyaz zemini kullanıyor; gölge
+          // Taşan yuvarlak turuncu, içindeki sepet ikonu beyaz; gölge
           // arkadaki ürünlerden ayırıyor.
           emphasized &&
-            "size-[3.1rem] rounded-full bg-white shadow-[0_-24px_80px_rgba(15,23,42,0.22)]",
+            "size-[3.1rem] rounded-full bg-orange-600 text-white shadow-[0_-24px_80px_rgba(15,23,42,0.22)]",
         )}
       >
         {icon}
         {badge ? (
-          <span className="absolute -right-2 -top-2 inline-flex min-w-5 items-center justify-center rounded-full bg-orange-600 px-1.5 py-0.5 text-[10px] font-bold text-white">
+          <span className="absolute -right-2 -top-2 inline-flex min-w-5 items-center justify-center rounded-full bg-slate-900 px-1.5 py-0.5 text-[10px] font-bold text-white">
             {badge}
           </span>
         ) : null}
