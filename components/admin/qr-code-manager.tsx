@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Loader2, Plus, Printer, Trash2 } from "lucide-react";
+import { Download, Loader2, Plus, Printer, QrCode, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { InlineAlert } from "@/components/ui/inline-alert";
@@ -48,6 +48,58 @@ export function QrCodeManager({
   const [message, setMessage] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const [rowPending, setRowPending] = useState<string | null>(null);
+  // Açık olan QR önizlemesi. QR'lar tarayıcıda ÜRETİLİYOR ve sadece
+  // butona basılınca: 1000 kodun QR'ını sunucuda önden üretip sayfaya
+  // gömmek gereksiz yük olurdu.
+  const [qrOpenId, setQrOpenId] = useState<string | null>(null);
+  const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
+  const [qrSvg, setQrSvg] = useState<string | null>(null);
+
+  function codeUrl(code: string) {
+    return `https://${marketingDomain}/t/${code}`;
+  }
+
+  async function toggleQr(row: MagnetCodeRow) {
+    if (qrOpenId === row.id) {
+      setQrOpenId(null);
+      setQrDataUrl(null);
+      setQrSvg(null);
+      return;
+    }
+
+    setQrOpenId(row.id);
+    setQrDataUrl(null);
+    setQrSvg(null);
+
+    // Dinamik import: qrcode paketi sadece bu özellik kullanılınca yükleniyor,
+    // admin sayfasının ilk açılışını yavaşlatmıyor.
+    const QRCodeLib = (await import("qrcode")).default;
+    const url = codeUrl(row.code);
+
+    // Hata düzeltme M: magnetin köşesi aşınsa bile okunur ama H kadar
+    // yoğun değil — küçük baskıda modüller çok ufalmasın.
+    const opts = { errorCorrectionLevel: "M" as const, margin: 1 };
+
+    const [png, svg] = await Promise.all([
+      QRCodeLib.toDataURL(url, { ...opts, width: 512 }),
+      QRCodeLib.toString(url, { ...opts, type: "svg", width: 512 }),
+    ]);
+
+    setQrDataUrl(png);
+    setQrSvg(svg);
+  }
+
+  function downloadSvg(code: string, svg: string) {
+    // SVG'yi Blob üzerinden indiriyoruz; data: URL'de Türkçe/özel karakter
+    // kaçışları sorun çıkarabiliyor.
+    const blob = new Blob([svg], { type: "image/svg+xml" });
+    const href = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = href;
+    link.download = `magnet-${code.toUpperCase()}.svg`;
+    link.click();
+    URL.revokeObjectURL(href);
+  }
 
   async function refresh() {
     const response = await fetch("/api/admin/qr-codes");
@@ -200,7 +252,8 @@ export function QrCodeManager({
         ) : (
           <div className="divide-y">
             {gorunen.map((row) => (
-              <div key={row.id} className="flex flex-wrap items-center gap-3 px-4 py-3">
+              <div key={row.id}>
+              <div className="flex flex-wrap items-center gap-3 px-4 py-3">
                 <div className="min-w-36">
                   <p className="font-mono text-sm font-bold tracking-widest text-foreground">
                     {formatMagnetCodeForPrint(row.code)}
@@ -221,6 +274,15 @@ export function QrCodeManager({
                 ) : null}
 
                 <div className="ml-auto flex items-center gap-2">
+                  <Button
+                    variant="ghost"
+                    onClick={() => void toggleQr(row)}
+                    aria-expanded={qrOpenId === row.id}
+                    title="QR'ı göster / indir"
+                  >
+                    <QrCode className="size-4" />
+                  </Button>
+
                   <Select
                     value={row.tenant_id ?? ""}
                     disabled={rowPending === row.id}
@@ -247,6 +309,71 @@ export function QrCodeManager({
                     )}
                   </Button>
                 </div>
+              </div>
+
+              {qrOpenId === row.id ? (
+                <div className="flex flex-wrap items-center gap-5 border-t bg-slate-50/70 px-4 py-4">
+                  {qrDataUrl ? (
+                    <>
+                      {/* next/image değil: data: URL'i optimize etmenin anlamı
+                          yok ve loader'ı gereksiz yere devreye sokar. */}
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={qrDataUrl}
+                        alt={`${row.code} QR kodu`}
+                        className="size-36 rounded-xl border bg-white p-2"
+                      />
+
+                      <div className="min-w-52 space-y-2">
+                        <p className="font-mono text-sm font-bold tracking-widest text-foreground">
+                          {formatMagnetCodeForPrint(row.code)}
+                        </p>
+                        <p className="break-all text-xs text-muted-foreground">
+                          {codeUrl(row.code)}
+                        </p>
+
+                        <div className="flex flex-wrap items-center gap-2 pt-1">
+                          <a
+                            href={qrDataUrl}
+                            download={`magnet-${row.code.toUpperCase()}.png`}
+                            className="inline-flex items-center gap-1.5 rounded-lg border bg-white px-3 py-1.5 text-xs font-semibold"
+                          >
+                            <Download className="size-3.5" />
+                            PNG
+                          </a>
+                          {qrSvg ? (
+                            <button
+                              type="button"
+                              onClick={() => downloadSvg(row.code, qrSvg)}
+                              className="inline-flex items-center gap-1.5 rounded-lg border bg-white px-3 py-1.5 text-xs font-semibold"
+                            >
+                              <Download className="size-3.5" />
+                              SVG
+                            </button>
+                          ) : null}
+                          <button
+                            type="button"
+                            onClick={() => void navigator.clipboard.writeText(codeUrl(row.code))}
+                            className="rounded-lg border bg-white px-3 py-1.5 text-xs font-semibold"
+                          >
+                            Adresi kopyala
+                          </button>
+                        </div>
+
+                        <p className="pt-1 text-[11px] text-muted-foreground">
+                          Matbaa için SVG tercih edin — vektör olduğu için her boyutta keskin
+                          basılır.
+                        </p>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Loader2 className="size-4 animate-spin" />
+                      QR hazırlanıyor…
+                    </div>
+                  )}
+                </div>
+              ) : null}
               </div>
             ))}
           </div>
