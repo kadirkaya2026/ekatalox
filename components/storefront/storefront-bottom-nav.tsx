@@ -3,7 +3,6 @@
 import type { ReactNode } from "react";
 import { Search, ShoppingCart, Ticket } from "lucide-react";
 import { useStorefrontLocale } from "@/lib/storefront/locale-context";
-import { useStorefrontTheme } from "@/lib/storefront/theme-context";
 import { cn } from "@/lib/utils";
 
 // Market/tekel vitrinlerinde mobilde her zaman görünen alt navigasyon
@@ -34,18 +33,17 @@ export function StorefrontBottomNav({
   onOpenCart: () => void;
   onOpenCampaigns: () => void;
 }) {
-  const theme = useStorefrontTheme();
   const { t } = useStorefrontLocale();
 
   return (
     <div className="fixed inset-x-0 bottom-0 z-40 sm:hidden">
       <nav
         aria-label={t("bottomNav.ariaLabel")}
-        className={cn(
-          "bottom-nav-inset grid grid-cols-3 items-end gap-1 border-t px-2 pt-2 shadow-[0_-8px_28px_rgba(15,23,42,0.10)]",
-          theme.surface,
-          theme.border,
-        )}
+        // Bar bilerek temadan bağımsız: koyu temalarda (noir) tema yüzeyi
+        // sayfa zemininden ayrışmadığı için bar hiç fark edilmiyordu
+        // (kullanıcı isteği, 22 Ağu 2026). Her temada beyaz zemin +
+        // siyah ikon/yazı.
+        className="bottom-nav-inset grid grid-cols-3 items-end gap-1 border-t border-slate-200 bg-white px-2 pt-2 shadow-[0_-8px_28px_rgba(15,23,42,0.16)]"
       >
         <BottomNavButton
           label={t("bottomNav.search")}
@@ -91,30 +89,34 @@ function BottomNavButton({
   emphasized?: boolean;
   onClick: () => void;
 }) {
-  const theme = useStorefrontTheme();
-
   return (
     <button
       type="button"
       onClick={onClick}
       aria-current={isActive ? "true" : undefined}
+      // Yazı ve ikonlar her temada siyah; açık olan sekme siyah kalıp
+      // arkasındaki açık gri zeminden belli oluyor.
       className={cn(
-        "flex min-h-[3.25rem] flex-col items-center justify-end gap-1 rounded-2xl px-1 pb-0.5 transition",
+        "flex min-h-[3.25rem] flex-col items-center justify-end gap-1 rounded-2xl px-1 pb-0.5 text-slate-900 transition",
         emphasized ? "-mt-5" : "pt-1.5",
-        isActive ? theme.productPrice : theme.textMuted,
+        isActive && !emphasized && "bg-slate-100",
       )}
     >
       <span
         className={cn(
           "relative flex items-center justify-center",
-          // elevation2 barın üstüne doğru vuran gölge; taşan yuvarlağın
-          // arkadaki ürünlerden ayrılmasını sağlıyor (sepet çekmecesi de
-          // aynı gölgeyi kullanıyor).
-          emphasized && cn("size-[3.1rem] rounded-full", theme.surface, theme.elevation2),
+          // Taşan yuvarlak, barla aynı beyaz zemini kullanıyor; gölge
+          // arkadaki ürünlerden ayırıyor.
+          emphasized &&
+            "size-[3.1rem] rounded-full bg-white shadow-[0_-24px_80px_rgba(15,23,42,0.22)]",
         )}
       >
         {icon}
-        {badge ? <span className={theme.cartBadge}>{badge}</span> : null}
+        {badge ? (
+          <span className="absolute -right-2 -top-2 inline-flex min-w-5 items-center justify-center rounded-full bg-slate-900 px-1.5 py-0.5 text-[10px] font-bold text-white">
+            {badge}
+          </span>
+        ) : null}
       </span>
       <span
         className={cn(

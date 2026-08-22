@@ -3256,6 +3256,10 @@ export function StorefrontClient({
                   key="promoTiles"
                   products={promoProducts}
                   totalCount={promoProductCount}
+                  cartQuantityByProductId={cartQuantityByProductId}
+                  cartVariantCountByProductId={cartVariantCountByProductId}
+                  onIncrease={handleIncreaseCartItem}
+                  onDecrease={handleDecreaseCartItem}
                   onSeeAll={
                     discountCategoryId
                       ? () => handleCategoryChange(discountCategoryId)

@@ -113,6 +113,7 @@ export const StorefrontFloatingCartAction = memo(function StorefrontFloatingCart
   product,
   cartQuantity,
   compact = false,
+  positionClassName,
   onIncrease,
   onDecrease,
   onOpenAddToCart,
@@ -120,6 +121,10 @@ export const StorefrontFloatingCartAction = memo(function StorefrontFloatingCart
   product: StorefrontProduct;
   cartQuantity: number;
   compact?: boolean;
+  // Varsayılanda buton/step kartın köşesinden DIŞARI taşar. Yatay
+  // kaydırma kabı (ör. indirimli ürün şeridi) taşan kısmı kırptığı için
+  // oradaki kartlar konumu kart İÇİNE alacak şekilde geçersiz kılıyor.
+  positionClassName?: string;
   onIncrease: (productId: string) => void;
   onDecrease: (productId: string) => void;
   onOpenAddToCart: (productId: string) => void;
@@ -145,7 +150,8 @@ export const StorefrontFloatingCartAction = memo(function StorefrontFloatingCart
           className={cn(
             "absolute z-30 flex origin-top-right flex-col items-center rounded-[1.35rem] p-1 text-white",
             theme.floatingCartStepper,
-            compact ? "-right-2 -top-2" : "-right-2.5 -top-2.5 sm:-right-2 sm:-top-2",
+            positionClassName ??
+              (compact ? "-right-2 -top-2" : "-right-2.5 -top-2.5 sm:-right-2 sm:-top-2"),
             compact ? "w-10" : "w-11 sm:w-12",
           )}
         >
@@ -215,7 +221,8 @@ export const StorefrontFloatingCartAction = memo(function StorefrontFloatingCart
       onClick={(event) => event.stopPropagation()}
       className={cn(
         "absolute z-30 origin-top-right",
-        compact ? "-right-2 -top-2" : "-right-2.5 -top-2.5 sm:-right-2 sm:-top-2",
+        positionClassName ??
+          (compact ? "-right-2 -top-2" : "-right-2.5 -top-2.5 sm:-right-2 sm:-top-2"),
       )}
     >
       <motion.button

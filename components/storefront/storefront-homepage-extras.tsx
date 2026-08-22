@@ -1,6 +1,6 @@
 "use client";
 
-import { Plus, Store, Tag } from "lucide-react";
+import { Store, Tag } from "lucide-react";
 import type { CategoryNode } from "@/lib/categories/tree";
 import { getDescendantCategoryIds } from "@/lib/categories/tree";
 import type { BannerItem, Category, StorefrontProduct } from "@/lib/types";
@@ -10,6 +10,7 @@ import { useStorefrontTheme } from "@/lib/storefront/theme-context";
 import { useStorefrontLocale } from "@/lib/storefront/locale-context";
 import { cn, formatCurrency } from "@/lib/utils";
 import { StorefrontImage } from "@/components/storefront/storefront-image";
+import { StorefrontFloatingCartAction } from "@/components/storefront/storefront-product-card";
 
 const CLUSTER_GRADIENTS = [
   "linear-gradient(135deg, #0f172a 0%, #1e293b 100%)",
@@ -115,22 +116,33 @@ export function StorefrontHeroCluster({
 export function StorefrontPromoTiles({
   products,
   totalCount = 0,
+  cartQuantityByProductId,
+  cartVariantCountByProductId,
   onSeeAll,
   onOpenDetail,
+  onIncrease,
+  onDecrease,
   onOpenAddToCart,
 }: {
   products: StorefrontProduct[];
   // Şeritte sadece ilk 12 ürün var; sağ üstteki sayaç gerçek toplamı
   // gösterir (bkz. getStorefrontPromoProductCount).
   totalCount?: number;
+  // Sepetteki adet: + basıldıktan sonra kartın köşesinde artır/azalt
+  // kontrolünün çıkması için gerekli. Şerit eskiden sadece sabit bir "+"
+  // butonu çiziyordu, bu yüzden diğer bölümlerdeki adet kontrolü burada
+  // hiç görünmüyordu.
+  cartQuantityByProductId?: Map<string, number>;
+  cartVariantCountByProductId?: Map<string, number>;
   onSeeAll?: () => void;
   // Kartlar eskiden tıklanamıyordu; ana ürün kartıyla aynı davranışı
   // vermek için ebeveynden geliyor.
   onOpenDetail?: (productId: string) => void;
+  onIncrease?: (productId: string) => void;
+  onDecrease?: (productId: string) => void;
   onOpenAddToCart?: (productId: string) => void;
 }) {
   const theme = useStorefrontTheme();
-  const { t } = useStorefrontLocale();
 
   const discounted = products.filter((product) => (product.discount_percentage ?? 0) > 0).slice(0, 12);
 
@@ -192,21 +204,21 @@ export function StorefrontPromoTiles({
             <span className="absolute left-2 top-2 z-10 inline-flex items-center gap-1 rounded-full bg-rose-600 px-2 py-0.5 text-[10px] font-bold text-white">
               <Tag className="size-2.5" />%{Math.round(product.discount_percentage ?? 0)}
             </span>
-            {onOpenAddToCart && product.is_in_stock ? (
-              <button
-                type="button"
-                onClick={(event) => {
-                  event.stopPropagation();
-                  onOpenAddToCart(product.id);
-                }}
-                aria-label={t("product.selectAddUnitAria")}
-                className={cn(
-                  "absolute right-2 top-2 z-30 flex size-8 items-center justify-center transition active:scale-90",
-                  theme.floatingCartAddButton,
-                )}
-              >
-                <Plus className="size-3.5" strokeWidth={2.8} />
-              </button>
+            {onOpenAddToCart && onIncrease && onDecrease ? (
+              <StorefrontFloatingCartAction
+                product={product}
+                cartQuantity={
+                  product.has_variants
+                    ? cartVariantCountByProductId?.get(product.id) ?? 0
+                    : cartQuantityByProductId?.get(product.id) ?? 0
+                }
+                compact
+                // Şerit yatay kaydırıcı; kart dışına taşan konum kırpılıyor.
+                positionClassName="right-2 top-2"
+                onIncrease={onIncrease}
+                onDecrease={onDecrease}
+                onOpenAddToCart={onOpenAddToCart}
+              />
             ) : null}
             <div className={cn("relative aspect-square overflow-hidden rounded-xl", theme.productImageWrap)}>
               {product.image_url ? (
