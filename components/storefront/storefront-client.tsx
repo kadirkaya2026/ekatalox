@@ -86,6 +86,7 @@ import type {
   Tenant,
   TenantStorefrontSettings,
   TenantCampaign,
+  HomepageBlockId,
 } from "@/lib/types";
 import { cn, formatCurrency, formatDateSlashTr } from "@/lib/utils";
 import {
@@ -1112,23 +1113,37 @@ export function StorefrontClient({
   // sıralamasıyla aynı kapı: market veya tekel bayii + mobil.
   const usesBottomNav = usesMarketMobileOrder;
 
+  // Market/tekel bayilerinde masaüstü sıralaması da sabit: kategori menüsünün
+  // altında banner, onun altında kategori kutucukları, sonra indirimli ürünler,
+  // en sonda vitrin bölümleri (çok satanlar). Mobildeki sıradan farkı,
+  // kategori kutucuklarının indirimlilerden ÖNCE gelmesi — geniş ekranda
+  // müşteri önce nereye bakacağını seçiyor, mobilde ise fırsatı görüyor.
+  const usesMarketDesktopOrder = !isMobileViewport && isMarketOrTekelTenant(tenant);
+
   const homepageBlocks = useMemo(() => {
     const base = normalizeHomepageBlocks(storefrontSettings.homepage_blocks);
-    if (!usesMarketMobileOrder) return base;
+    if (!usesMarketMobileOrder && !usesMarketDesktopOrder) return base;
 
-    const bannerOrder = base.find((block) => block.id === "banner")?.order;
-    if (bannerOrder === undefined) return base;
+    // Grup, bu dört bloktan en üstte duranın yerine oturur; böylece bayinin
+    // kendi blok sıralamasında nereye koyduysa oraya yerleşir, sadece kendi
+    // aralarındaki sıra sabitlenir.
+    const groupIds: HomepageBlockId[] = usesMarketMobileOrder
+      ? ["banner", "promoTiles", "categoryTiles"]
+      : ["banner", "categoryTiles", "promoTiles", "showcase"];
+    const anchor = Math.min(
+      ...groupIds
+        .map((id) => base.find((block) => block.id === id)?.order)
+        .filter((order): order is number => order !== undefined),
+    );
+    if (!Number.isFinite(anchor)) return base;
 
     return base
-      .map((block) =>
-        block.id === "promoTiles"
-          ? { ...block, order: bannerOrder + 0.1 }
-          : block.id === "categoryTiles"
-            ? { ...block, order: bannerOrder + 0.2 }
-            : block,
-      )
+      .map((block) => {
+        const index = groupIds.indexOf(block.id);
+        return index === -1 ? block : { ...block, order: anchor + index * 0.1 };
+      })
       .sort((left, right) => left.order - right.order);
-  }, [storefrontSettings.homepage_blocks, usesMarketMobileOrder]);
+  }, [storefrontSettings.homepage_blocks, usesMarketMobileOrder, usesMarketDesktopOrder]);
   const usesSidebarNav = layout.categoryNav === "sidebar";
   const cartStorageKey = useMemo(() => getCartStorageKey(tenant.id), [tenant.id]);
   const announcementStorageKeys = useMemo(
