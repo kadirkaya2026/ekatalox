@@ -1,5 +1,9 @@
 @import "tailwindcss";
 
+/* 22 MB'lık ürün verisini tarama: Tailwind v4 kaynak taraması bu dosyada
+   bozuk sınıf adları üretip CSS derlemesini kırıyor. */
+@source not "../data";
+
 @theme inline {
   --color-background: #f8fafc;
   --color-foreground: #0f172a;
