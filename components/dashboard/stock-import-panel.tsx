@@ -29,6 +29,11 @@ import type { StockImportMatchResult, StockImportMatchStatus } from "@/lib/produ
 import { buildCategoryTree, flattenCategoryTree } from "@/lib/categories/tree";
 import { formatCategoryDisplayName, getMasterCategoryGroups } from "@/lib/market-catalog/category-taxonomy";
 import { cn } from "@/lib/utils";
+import {
+  applySkip,
+  groupRowsByCategory,
+  resolveRowCategory,
+} from "@/lib/products/stock-import-review";
 import type { Category, PriceList } from "@/lib/types";
 
 type WizardStep = "upload" | "mapping" | "review";
@@ -82,6 +87,9 @@ interface ProductPoolEntry {
   id: string;
   sku_code: string;
   product_name: string;
+  // Inceleme adiminda satirlari kategoriye gore toplu atlayabilmek icin
+  // match uc noktasindan geliyor (bkz. stock-import/match/route.ts).
+  category_id?: string | null;
 }
 
 interface MatchResponse {
@@ -507,6 +515,8 @@ function ReviewRow({
   productPool,
   flatCategories,
   priceListId,
+  isSelected,
+  onSelectedChange,
   onDecisionChange,
 }: {
   result: StockImportMatchResult;
@@ -516,6 +526,8 @@ function ReviewRow({
   productPool: ProductPoolEntry[];
   flatCategories: Array<{ id: string; name: string; depth: number }>;
   priceListId: string;
+  isSelected: boolean;
+  onSelectedChange: (next: boolean) => void;
   onDecisionChange: (next: RowDecision) => void;
 }) {
   const [showPicker, setShowPicker] = useState(false);
@@ -681,7 +693,15 @@ function ReviewRow({
       )}
     >
       <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
+        <div className="flex items-start gap-3">
+          <input
+            type="checkbox"
+            checked={isSelected}
+            onChange={(event) => onSelectedChange(event.target.checked)}
+            className="mt-1 size-4 shrink-0 cursor-pointer accent-slate-900"
+            aria-label="Bu satırı seç"
+          />
+          <div>
           <p className="text-sm font-semibold text-slate-900">
             {sourceRow.productName ?? "(ürün adı yok)"}
           </p>
@@ -698,6 +718,7 @@ function ReviewRow({
               <AlertTriangle className="size-3.5" /> Bu barkod dosyada birden fazla kez geçiyor
             </p>
           ) : null}
+          </div>
         </div>
         <div className="flex flex-col items-end gap-1.5">
           <Badge
@@ -953,15 +974,10 @@ function ReviewRow({
               type="button"
               variant="secondary"
               onClick={() =>
-                onDecisionChange({
-                  ...decision,
-                  action: "skipped",
-                  productId: null,
-                  masterCatalogSkuCode: null,
-                  masterCatalogProductName: null,
-                  categoryId: null,
-                  newCategoryName: null,
-                })
+                // Eslesme bilgisi korunuyor: skipped satirlar zaten yalnizca
+                // action'a bakilarak eleniyor (isRowReadyForApply). Temizlemek
+                // "atlamayi geri al"da eslesmeyi kaybettiriyordu.
+                onDecisionChange({ ...decision, action: "skipped" })
               }
             >
               Atla
@@ -970,7 +986,13 @@ function ReviewRow({
             <Button
               type="button"
               variant="secondary"
-              onClick={() => onDecisionChange({ ...decision, action: "pending" })}
+              onClick={() =>
+                onDecisionChange({
+                  ...decision,
+                  action:
+                    decision.productId || decision.masterCatalogSkuCode ? "approved" : "pending",
+                })
+              }
             >
               Atlamayı geri al
             </Button>
@@ -1057,6 +1079,9 @@ export function StockImportPanel({
   // tekrar karar vermek için kolayca bulmasını sağlar (kullanıcı isteği,
   // 19 Ağu 2026).
   const [reviewTab, setReviewTab] = useState<"review" | "skipped">("review");
+  // Toplu secim: kullanici yuklemek istemedigi satirlari tek tek isaretleyip
+  // hepsini birden atlayabiliyor (bkz. toplu islem cubugu).
+  const [selectedRows, setSelectedRows] = useState<Set<number>>(new Set());
 
   async function handleFile(file: File) {
     setError(null);
@@ -1154,6 +1179,39 @@ export function StockImportPanel({
       return priorityA - priorityB;
     });
   }, [matchResponse, decisions, statusFilter, reviewTab]);
+  const categoryNameById = useMemo(
+    () => new Map(flatCategories.map((category) => [category.id, category.name])),
+    [flatCategories],
+  );
+
+  // Bir satirin kategorisi: once Master Katalog eslesmesinden, yoksa
+  // tenant'taki eslesen urunun kategorisinden okunuyor.
+  const categoryOfRow = useCallback(
+    (result: StockImportMatchResult) =>
+      resolveRowCategory(
+        result,
+        decisions.get(result.rowNumber),
+        (productId) => productById.get(productId)?.category_id,
+        (categoryId) => categoryNameById.get(categoryId),
+      ),
+    [decisions, productById, categoryNameById],
+  );
+
+  // Dosyadaki tum satirlar kategoriye gore gruplaniyor — barkodu zaten
+  // eslesenler dahil, cunku onlarin da fiyat/stogu Uygula'da guncelleniyor
+  // ve kullanici bir kategoriyi tamamen disarida birakmak isteyebilir.
+  const categoryGroups = useMemo(
+    () =>
+      matchResponse ? groupRowsByCategory(matchResponse.results, decisions, categoryOfRow) : [],
+    [matchResponse, decisions, categoryOfRow],
+  );
+
+  // Atla / atlamayi geri al — eslesme bilgisi korunur, geri alinca satir
+  // otomatik eslesmesine geri doner.
+  const setSkipForRows = useCallback((rowNumbers: number[], skip: boolean) => {
+    setDecisions((current) => applySkip(current, rowNumbers, skip));
+  }, []);
+
   const skippedCount = [...decisions.values()].filter((decision) => decision.action === "skipped").length;
 
   const pendingCount = [...decisions.values()].filter((d) => d.action === "pending").length;
@@ -1525,6 +1583,131 @@ export function StockImportPanel({
           </Card>
           )}
 
+          {reviewTab === "review" && categoryGroups.length > 1 ? (
+            <Card className="p-5">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <h3 className="text-sm font-semibold text-slate-900">Kategoriler</h3>
+                  <p className="mt-0.5 text-xs text-slate-500">
+                    İşareti kaldırdığın kategorideki bütün satırlar atlanır; tekrar işaretlersen
+                    eşleşmeleriyle birlikte geri gelir.
+                  </p>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={() =>
+                      setSkipForRows(categoryGroups.flatMap((group) => group.rowNumbers), false)
+                    }
+                  >
+                    Tümünü seç
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={() =>
+                      setSkipForRows(categoryGroups.flatMap((group) => group.rowNumbers), true)
+                    }
+                  >
+                    Tümünü kaldır
+                  </Button>
+                </div>
+              </div>
+              <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                {categoryGroups.map((group) => {
+                  const total = group.rowNumbers.length;
+                  const included = total - group.skipped;
+                  const allSkipped = group.skipped === total;
+                  return (
+                    <label
+                      key={group.name}
+                      className={cn(
+                        "flex cursor-pointer items-center gap-2.5 rounded-xl border px-3 py-2 text-sm transition",
+                        allSkipped
+                          ? "border-slate-200 bg-slate-50 text-slate-400"
+                          : "border-slate-200 bg-white text-slate-800 hover:border-slate-300",
+                      )}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={!allSkipped}
+                        ref={(node) => {
+                          if (node) node.indeterminate = group.skipped > 0 && !allSkipped;
+                        }}
+                        onChange={(event) => setSkipForRows(group.rowNumbers, !event.target.checked)}
+                        className="size-4 shrink-0 cursor-pointer accent-slate-900"
+                      />
+                      <span className="min-w-0 flex-1 truncate">{group.name}</span>
+                      <span className="shrink-0 text-xs tabular-nums text-slate-500">
+                        {included}/{total}
+                      </span>
+                    </label>
+                  );
+                })}
+              </div>
+            </Card>
+          ) : null}
+
+          {reviewRows.length ? (
+            <div className="flex flex-wrap items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-2.5">
+              <label className="flex cursor-pointer items-center gap-2 text-sm text-slate-700">
+                <input
+                  type="checkbox"
+                  checked={reviewRows.every((row) => selectedRows.has(row.rowNumber))}
+                  ref={(node) => {
+                    if (node) {
+                      const picked = reviewRows.filter((row) => selectedRows.has(row.rowNumber)).length;
+                      node.indeterminate = picked > 0 && picked < reviewRows.length;
+                    }
+                  }}
+                  onChange={(event) =>
+                    setSelectedRows((current) => {
+                      const next = new Set(current);
+                      for (const row of reviewRows) {
+                        if (event.target.checked) next.add(row.rowNumber);
+                        else next.delete(row.rowNumber);
+                      }
+                      return next;
+                    })
+                  }
+                  className="size-4 cursor-pointer accent-slate-900"
+                />
+                Görünen {reviewRows.length} satırı seç
+              </label>
+              {selectedRows.size ? (
+                <>
+                  <span className="text-sm text-slate-500">{selectedRows.size} satır seçili</span>
+                  <div className="ml-auto flex gap-2">
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      onClick={() => {
+                        setSkipForRows([...selectedRows], true);
+                        setSelectedRows(new Set());
+                      }}
+                    >
+                      Seçilenleri atla
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      onClick={() => {
+                        setSkipForRows([...selectedRows], false);
+                        setSelectedRows(new Set());
+                      }}
+                    >
+                      Atlamayı geri al
+                    </Button>
+                    <Button type="button" variant="secondary" onClick={() => setSelectedRows(new Set())}>
+                      Seçimi temizle
+                    </Button>
+                  </div>
+                </>
+              ) : null}
+            </div>
+          ) : null}
+
           <div className="space-y-2">
             {reviewRows.length === 0 ? (
               <Card className="p-6 text-center text-sm text-slate-500">
@@ -1550,6 +1733,15 @@ export function StockImportPanel({
                   productPool={matchResponse.productPool}
                   flatCategories={flatCategories}
                   priceListId={selectedPriceListId}
+                  isSelected={selectedRows.has(result.rowNumber)}
+                  onSelectedChange={(next) =>
+                    setSelectedRows((current) => {
+                      const updated = new Set(current);
+                      if (next) updated.add(result.rowNumber);
+                      else updated.delete(result.rowNumber);
+                      return updated;
+                    })
+                  }
                   onDecisionChange={(next) =>
                     setDecisions((current) => new Map(current).set(next.rowNumber, next))
                   }

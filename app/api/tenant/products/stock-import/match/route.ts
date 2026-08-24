@@ -19,13 +19,20 @@ import { chunkArray } from "@/lib/utils";
 // fetchAllTenantProducts'ta da var — 1000'in üzerindeki tenant'larda
 // eşleştirme havuzu eksik kalmasın diye sayfalanarak çekiliyor.
 async function fetchAllTenantProductsForMatching(supabase: SupabaseClient, tenantId: string) {
-  const rows: Array<{ id: string; sku_code: string; product_name: string }> = [];
+  // category_id: inceleme adiminda satirlari kategoriye gore toplu
+  // secip atlayabilmek icin lazim (bkz. stock-import-panel kategori paneli)
+  const rows: Array<{
+    id: string;
+    sku_code: string;
+    product_name: string;
+    category_id: string | null;
+  }> = [];
   const PAGE_SIZE = 1000;
 
   for (let from = 0; ; from += PAGE_SIZE) {
     const { data } = await supabase
       .from("products")
-      .select("id, sku_code, product_name")
+      .select("id, sku_code, product_name, category_id")
       .eq("tenant_id", tenantId)
       .range(from, from + PAGE_SIZE - 1);
 
