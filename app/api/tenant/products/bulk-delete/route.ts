@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidateStorefrontCache } from "@/lib/storefront/cache";
 import { getSessionContext } from "@/lib/auth/session";
 import {
   PRODUCT_IMAGES_BUCKET,
@@ -100,6 +101,10 @@ export async function POST(request: Request) {
   }
 
   await compactProductDisplayOrder(supabase, tenant.id);
+
+  // Vitrin onbellegini tazele: aksi halde stok/fiyat degisikligi
+  // musteriye 60 sn veri onbellegi + CDN kopyasi kadar gec yansiyordu.
+  revalidateStorefrontCache({ tenantId: tenant.id, subdomain: tenant.subdomain });
 
   return NextResponse.json({ deletedIds: deletableIds });
 }

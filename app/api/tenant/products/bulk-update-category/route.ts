@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidateStorefrontCache } from "@/lib/storefront/cache";
 import { getSessionContext } from "@/lib/auth/session";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { ensureTenantAdminResponse } from "@/lib/tenancy/guards";
@@ -71,6 +72,9 @@ export async function POST(request: Request) {
 
     updatedProducts.push(...(data ?? []));
   }
+
+  // Vitrin onbellegini tazele — degisiklik musteriye aninda yansisin.
+  revalidateStorefrontCache({ tenantId: tenant.id, subdomain: tenant.subdomain });
 
   return NextResponse.json({ updatedProducts });
 }

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidateStorefrontCache } from "@/lib/storefront/cache";
 import { normalizeProductRecord } from "@/lib/products/records";
 import { productWithVariantsAndPricesSelect } from "@/lib/products/queries";
 import { parseProductPricesFromFormData } from "@/lib/products/form-prices";
@@ -210,6 +211,10 @@ export async function PATCH(
     return NextResponse.json({ error: "Ürün güncellendi ama okunamadı." }, { status: 400 });
   }
 
+  // Vitrin onbellegini tazele: aksi halde urun degisikligi musteriye
+  // 60 sn veri onbellegi + CDN kopyasi kadar gec yansiyordu.
+  revalidateStorefrontCache({ tenantId: tenant.id, subdomain: tenant.subdomain });
+
   return NextResponse.json({ product: normalizeProductRecord(product) });
   } catch (error) {
     if (error instanceof ProductImageValidationError) {
@@ -280,6 +285,10 @@ export async function DELETE(
   }
 
   await compactProductDisplayOrder(supabase, tenant.id);
+
+  // Vitrin onbellegini tazele: aksi halde urun degisikligi musteriye
+  // 60 sn veri onbellegi + CDN kopyasi kadar gec yansiyordu.
+  revalidateStorefrontCache({ tenantId: tenant.id, subdomain: tenant.subdomain });
 
   return NextResponse.json({ deletedId: id });
 }

@@ -597,9 +597,10 @@ export async function POST(request: Request) {
     updatedProducts.push(...((data as Array<Record<string, unknown>> | null) ?? []));
   }
 
-  if (importedProductIdBySku.size || createdProductRows.length) {
-    revalidateStorefrontCache({ tenantId: tenant.id, subdomain: tenant.subdomain });
-  }
+  // Vitrin onbellegini tazele. Eskiden yalnizca yeni urun eklendiginde
+  // cagriliyordu; oysa bu ucun asil isi mevcut urunlerin fiyat/stogunu
+  // guncellemek ve o degisiklik musteriye yansimiyordu.
+  revalidateStorefrontCache({ tenantId: tenant.id, subdomain: tenant.subdomain });
 
   return NextResponse.json({
     updatedCount: validUpdates.length,

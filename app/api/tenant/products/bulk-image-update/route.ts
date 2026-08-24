@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidateStorefrontCache } from "@/lib/storefront/cache";
 import { z } from "zod";
 import { getSessionContext } from "@/lib/auth/session";
 import { ensureTenantAdminResponse } from "@/lib/tenancy/guards";
@@ -52,6 +53,9 @@ export async function POST(request: Request) {
       successCount++;
     }
   }
+
+  // Vitrin onbellegini tazele — degisiklik musteriye aninda yansisin.
+  revalidateStorefrontCache({ tenantId: tenant.id, subdomain: tenant.subdomain });
 
   return NextResponse.json({ count: successCount, failedSkus });
 }

@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { revalidateStorefrontCache } from "@/lib/storefront/cache";
 import { NextResponse } from "next/server";
 import { normalizeProductRecord } from "@/lib/products/records";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
@@ -331,6 +332,9 @@ export async function POST(
       { status: 400 },
     );
   }
+
+  // Vitrin onbellegini tazele — degisiklik musteriye aninda yansisin.
+  revalidateStorefrontCache({ tenantId: tenant.id, subdomain: tenant.subdomain });
 
   return NextResponse.json({ product: normalizeProductRecord(data) });
 }

@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { revalidateStorefrontCache } from "@/lib/storefront/cache";
 import { NextResponse } from "next/server";
 import { normalizeProductRecord } from "@/lib/products/records";
 import { productWithVariantsAndPricesSelect } from "@/lib/products/queries";
@@ -231,6 +232,10 @@ export async function POST(request: Request) {
   if (!product) {
     return NextResponse.json({ error: "Ürün kaydedildi ama okunamadı." }, { status: 400 });
   }
+
+  // Vitrin onbellegini tazele: aksi halde urun degisikligi musteriye
+  // 60 sn veri onbellegi + CDN kopyasi kadar gec yansiyordu.
+  revalidateStorefrontCache({ tenantId: tenant.id, subdomain: tenant.subdomain });
 
   return NextResponse.json({ product: normalizeProductRecord(product) });
   } catch (error) {

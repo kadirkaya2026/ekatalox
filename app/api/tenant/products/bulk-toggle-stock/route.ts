@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidateStorefrontCache } from "@/lib/storefront/cache";
 import { getSessionContext } from "@/lib/auth/session";
 import { normalizeProductRecord } from "@/lib/products/records";
 import { productWithVariantsAndPricesSelect } from "@/lib/products/queries";
@@ -69,6 +70,10 @@ export async function POST(request: Request) {
 
     updatedProducts.push(...((data as Array<Record<string, unknown>> | null) ?? []));
   }
+
+  // Vitrin onbellegini tazele: aksi halde stok/fiyat degisikligi
+  // musteriye 60 sn veri onbellegi + CDN kopyasi kadar gec yansiyordu.
+  revalidateStorefrontCache({ tenantId: tenant.id, subdomain: tenant.subdomain });
 
   return NextResponse.json({
     updatedProducts: updatedProducts.map((product) => normalizeProductRecord(product)),

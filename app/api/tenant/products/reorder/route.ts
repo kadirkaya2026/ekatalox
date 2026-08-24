@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidateStorefrontCache } from "@/lib/storefront/cache";
 import { getTenantProducts } from "@/lib/data";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { getSessionContext } from "@/lib/auth/session";
@@ -237,9 +238,15 @@ export async function POST(request: Request) {
     );
   }
 
-  if (isMoveOrderRequest(parsed.data)) {
-    return moveProductOrder(tenant.id, parsed.data.productId, parsed.data.targetOrder);
+  const response = isMoveOrderRequest(parsed.data)
+    ? await moveProductOrder(tenant.id, parsed.data.productId, parsed.data.targetOrder)
+    : await reorderAllProducts(tenant.id, parsed.data.productIds);
+
+  // Siralama vitrinde urun dizilisini degistiriyor; onbellek tazelenmezse
+  // musteri eski sirayi gormeye devam ediyordu.
+  if (response.ok) {
+    revalidateStorefrontCache({ tenantId: tenant.id, subdomain: tenant.subdomain });
   }
 
-  return reorderAllProducts(tenant.id, parsed.data.productIds);
+  return response;
 }
