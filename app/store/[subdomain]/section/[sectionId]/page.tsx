@@ -19,7 +19,7 @@ import { StorefrontClient } from "@/components/storefront/storefront-client";
 import { StorefrontFooter } from "@/components/storefront/storefront-footer";
 import { StorefrontSectionBreadcrumb } from "@/components/storefront/storefront-section-breadcrumb";
 import { StorefrontLocaleProvider } from "@/lib/storefront/locale-context";
-import { getAppearanceFromSettings } from "@/lib/storefront/theme-context";
+import { getAppearanceFromSettings } from "@/lib/storefront/appearance";
 import { isTrialExpired } from "@/lib/billing/trial";
 import {
   getStorefrontSections,

@@ -9,7 +9,7 @@ import { notFound } from "next/navigation";
 import { VisitorQuotaNotice } from "@/components/storefront/visitor-quota-notice";
 import { getStorefrontTenantCached, getTenantStorefrontSettings } from "@/lib/data";
 import { StorefrontLocaleProvider } from "@/lib/storefront/locale-context";
-import { getAppearanceFromSettings } from "@/lib/storefront/theme-context";
+import { getAppearanceFromSettings } from "@/lib/storefront/appearance";
 
 export function generateStaticParams() {
   return [];

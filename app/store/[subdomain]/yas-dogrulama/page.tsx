@@ -11,7 +11,7 @@ import { StorefrontSuspendedNotice } from "@/components/storefront/storefront-su
 import { StorefrontPageShell } from "@/components/storefront/storefront-page-shell";
 import { buildStorefrontIcons, buildStorefrontTitle, isWhiteLabelStorefront } from "@/lib/storefront/white-label";
 import { StorefrontLocaleProvider } from "@/lib/storefront/locale-context";
-import { getAppearanceFromSettings } from "@/lib/storefront/theme-context";
+import { getAppearanceFromSettings } from "@/lib/storefront/appearance";
 import { isTrialExpired } from "@/lib/billing/trial";
 import { getStorefrontTenantCached, getTenantStorefrontSettings } from "@/lib/data";
 

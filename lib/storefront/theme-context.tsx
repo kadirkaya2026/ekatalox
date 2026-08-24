@@ -16,12 +16,8 @@ const StorefrontThemeContext = createContext<StorefrontTheme>(
   getStorefrontTheme("minimal"),
 );
 
-export interface StorefrontAppearanceSettings {
-  theme_key: StorefrontThemeKey | string;
-  brand_primary_color?: string | null;
-  brand_accent_color?: string | null;
-  product_image_background?: ProductImageBackgroundKey | null;
-}
+export type { StorefrontAppearanceSettings } from "@/lib/storefront/appearance";
+export { getAppearanceFromSettings } from "@/lib/storefront/appearance";
 
 export function StorefrontThemeProvider({
   themeKey,
@@ -56,16 +52,3 @@ export function useStorefrontTheme(): StorefrontTheme {
   return useContext(StorefrontThemeContext);
 }
 
-export function getAppearanceFromSettings(
-  settings: Pick<
-    TenantStorefrontSettings,
-    "theme_key" | "brand_primary_color" | "brand_accent_color" | "product_image_background"
-  >,
-): StorefrontAppearanceSettings {
-  return {
-    theme_key: settings.theme_key,
-    brand_primary_color: settings.brand_primary_color,
-    brand_accent_color: settings.brand_accent_color,
-    product_image_background: settings.product_image_background,
-  };
-}
