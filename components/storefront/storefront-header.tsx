@@ -123,6 +123,7 @@ function HeaderActions({
       {props.hideSearchAndCart ? null : (
       <button
         type="button"
+        data-cart-target=""
         onClick={props.onOpenCart}
         className={theme.cartButton}
         aria-label={t(props.isTekel ? "header.openCartAriaPickup" : "header.openCartAria")}

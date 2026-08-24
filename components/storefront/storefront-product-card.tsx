@@ -299,6 +299,9 @@ export const StorefrontProductCard = memo(function StorefrontProductCard({
         onOpenAddToCart={onOpenAddToCart}
       />
       <div
+        // Sepete uçma animasyonunun kaynağı: flyToCart bu kutunun
+        // içindeki görseli klonlayıp sepet butonuna taşıyor.
+        data-fly-source={product.id}
         className={cn(
           productImageWrapClassName,
           "overflow-hidden rounded-[1.2rem] p-2.5 sm:p-4",

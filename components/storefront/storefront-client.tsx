@@ -120,6 +120,7 @@ import {
   isHomepageBlockVisible,
 } from "@/lib/storefront/homepage-blocks";
 import { StorefrontBottomNav } from "@/components/storefront/storefront-bottom-nav";
+import { flyToCart } from "@/components/storefront/fly-to-cart";
 import { StorefrontCampaignsSheet } from "@/components/storefront/storefront-campaigns-sheet";
 import { StorefrontSearchSheet } from "@/components/storefront/storefront-search-sheet";
 import { isMarketOrTekelTenant } from "@/lib/storefront/white-label";
@@ -1436,12 +1437,40 @@ export function StorefrontClient({
     [analyticsSubdomain, productsById, tenant.id],
   );
 
-  const handleIncreaseCartItem = useCallback((productId: string) => {
-    setCart((current) => {
-      const currentQuantity = current.find((item) => item.id === productId)?.quantity ?? 0;
-      return updateCartLineQuantity(current, productId, currentQuantity + 1);
-    });
+  /* Sepete uçma animasyonu ---------------------------------------------
+     Sepetin kendisi tıklama anında güncelleniyor (kart üstündeki adet
+     doğru kalsın diye). Rozetteki sayı ise görsel sepete varana kadar
+     bekliyor — istenen his bu. Uçuş çalışamazsa (reduced-motion, kart
+     ekranda değil) promise hemen çözülüyor, sayı anında artıyor. */
+  const cartItemCountRef = useRef(0);
+  const pendingFlightsRef = useRef(0);
+  const [badgeCartCount, setBadgeCartCount] = useState(0);
+
+  const runCartFlight = useCallback((productId: string, nextFrame = false) => {
+    pendingFlightsRef.current += 1;
+    const settle = () => {
+      pendingFlightsRef.current = Math.max(0, pendingFlightsRef.current - 1);
+      setBadgeCartCount(cartItemCountRef.current);
+    };
+    const launch = () => {
+      void flyToCart(productId).then(settle, settle);
+    };
+    // modaldan eklerken kart perdenin arkasında kalıyor; kapanması için
+    // bir kare bekleyip öyle uçuruyoruz
+    if (nextFrame) requestAnimationFrame(launch);
+    else launch();
   }, []);
+
+  const handleIncreaseCartItem = useCallback(
+    (productId: string) => {
+      setCart((current) => {
+        const currentQuantity = current.find((item) => item.id === productId)?.quantity ?? 0;
+        return updateCartLineQuantity(current, productId, currentQuantity + 1);
+      });
+      runCartFlight(productId);
+    },
+    [runCartFlight],
+  );
 
   const handleDecreaseCartItem = useCallback((productId: string) => {
     setCart((current) => {
@@ -1512,12 +1541,13 @@ export function StorefrontClient({
       }
 
       setCart((current) => addToCart(current, product, 1));
+      runCartFlight(product.id);
 
       if (analyticsSubdomain) {
         trackStorefrontCartAdd(analyticsSubdomain, product.id);
       }
     },
-    [productsById, handleOpenAddToCartModal, analyticsSubdomain],
+    [productsById, handleOpenAddToCartModal, analyticsSubdomain, runCartFlight],
   );
 
   const visibleProducts = products;
@@ -1831,6 +1861,12 @@ export function StorefrontClient({
     [cart],
   );
   const previousCartItemCountRef = useRef(cartItemCount);
+
+
+  useEffect(() => {
+    cartItemCountRef.current = cartItemCount;
+    if (pendingFlightsRef.current === 0) setBadgeCartCount(cartItemCount);
+  }, [cartItemCount]);
 
   useEffect(() => {
     if (!cart.length) {
@@ -2538,6 +2574,7 @@ export function StorefrontClient({
           trackStorefrontCartAdd(analyticsSubdomain, selectedProduct.id);
         }
         closeAddToCartModal();
+        runCartFlight(selectedProduct.id, true);
       })();
       return;
     }
@@ -2567,6 +2604,7 @@ export function StorefrontClient({
       trackStorefrontCartAdd(analyticsSubdomain, selectedProduct.id);
     }
     closeAddToCartModal();
+    runCartFlight(selectedProduct.id, true);
   }
 
   function dismissCampaignOnSurface(kind: CampaignKind, surface: CampaignSurface) {
@@ -3154,7 +3192,7 @@ export function StorefrontClient({
         homeHref={homeHref}
         searchInput={searchInput}
         onSearchChange={handleSearchChange}
-        cartItemCount={cartItemCount}
+        cartItemCount={badgeCartCount}
         cartTotalEntries={cartTotalEntries}
         cartTotal={cartTotal}
         cartCurrency={cartCurrency}
@@ -3680,7 +3718,7 @@ export function StorefrontClient({
 
       {isMounted && usesBottomNav ? (
         <StorefrontBottomNav
-          cartItemCount={cartItemCount}
+          cartItemCount={badgeCartCount}
           isTekel={isTekel}
           isSearchOpen={isSearchSheetOpen}
           isCampaignsOpen={isCampaignsSheetOpen}
@@ -3743,7 +3781,7 @@ export function StorefrontClient({
         cart={cart}
         setCart={setCart}
         cartDistinctCount={cartDistinctCount}
-        cartItemCount={cartItemCount}
+        cartItemCount={badgeCartCount}
         selectedPaymentMethod={selectedPaymentMethod}
         setSelectedPaymentMethod={setSelectedPaymentMethod}
         selectedInstallmentCount={selectedInstallmentCount}

@@ -105,6 +105,8 @@ function BottomNavButton({
       )}
     >
       <span
+        // Mobilde sepete uçma animasyonunun hedefi ortadaki turuncu yuvarlak
+        data-cart-target={emphasized ? "" : undefined}
         className={cn(
           "relative flex items-center justify-center",
           // Taşan yuvarlak turuncu, içindeki sepet ikonu beyaz; gölge
