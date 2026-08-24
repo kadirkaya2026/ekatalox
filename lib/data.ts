@@ -1504,6 +1504,36 @@ export async function getStorefrontRecommendationPool(params: {
 // temsilci ürün görseli bulur — böylece hem yeni açılan hem de zaten
 // dolu tüm tenant'larda otomatik çalışır, manuel görsel yüklemeye gerek
 // kalmaz (bkz. storefront-homepage-extras.tsx).
+/**
+ * Kategori basina DOGRUDAN bagli urun sayisi (bkz.
+ * 0086_storefront_category_product_counts.sql). Vitrinde bos kategorileri
+ * gizlemek icin kullaniliyor.
+ *
+ * RPC henuz veritabaninda yoksa (migration uygulanmadan kod deploy
+ * edildiyse) null doner: vitrin bos kategorileri gizlemez ama calismaya
+ * devam eder. Sessizce bozulmaktansa ozelligin kapali kalmasi yeglenir.
+ */
+export async function getStorefrontCategoryProductCounts(
+  tenantId: string,
+): Promise<Map<string, number> | null> {
+  const supabase = createSupabaseAdminClient();
+  if (!supabase) return null;
+
+  const { data, error } = await supabase.rpc("storefront_category_product_counts", {
+    p_tenant_id: tenantId,
+  });
+
+  if (error || !Array.isArray(data)) return null;
+
+  return new Map(
+    (data as Array<{ category_id: string | null; product_count: number | string }>)
+      .filter((row): row is { category_id: string; product_count: number | string } =>
+        Boolean(row.category_id),
+      )
+      .map((row) => [row.category_id, Number(row.product_count) || 0]),
+  );
+}
+
 export async function getStorefrontCategoryRepresentativeImages(
   tenantId: string,
   categories: Category[],

@@ -22,6 +22,7 @@ import { getAppearanceFromSettings } from "@/lib/storefront/appearance";
 import { isTrialExpired } from "@/lib/billing/trial";
 import {
   getStorefrontBestSellerProducts,
+  getStorefrontCategoryProductCounts,
   getStorefrontCategoryRepresentativeImages,
   getStorefrontProductsPage,
   getStorefrontPromoProductCount,
@@ -37,7 +38,10 @@ import {
   getRequestHostFromHeaders,
   isTenantCustomDomainHost,
 } from "@/lib/tenancy/request-host";
-import { getHiddenStorefrontCategoryIds } from "@/lib/categories/tree";
+import {
+  getEmptyStorefrontCategoryIds,
+  getHiddenStorefrontCategoryIds,
+} from "@/lib/categories/tree";
 import type { Category } from "@/lib/types";
 import { getNextOpening, isStoreOpenNow } from "@/lib/storefront/business-hours";
 import { getStorefrontHomePath } from "@/lib/storefront/paths";
@@ -147,7 +151,22 @@ export default async function StorefrontPage(props: PageProps<"/store/[subdomain
 
   const rawCategories = await getTenantCategories(tenant.id);
   const hiddenCategoryIds = getHiddenStorefrontCategoryIds(rawCategories);
-  const categories = rawCategories.filter((category) => !hiddenCategoryIds.includes(category.id));
+
+  // Icinde (ve alt agacinda) hic urun olmayan kategoriler musteriye
+  // gosterilmiyor: tiklayinca bos liste aciliyordu.
+  //
+  // Bunlar bilerek hiddenCategoryIds'e EKLENMIYOR: o kume urun
+  // sorgularinda `category_id not in (...)` olarak kullaniliyor ve bos
+  // kategoriler zaten hicbir urun getirmiyor. Buyuk bayilerde 200+ bos
+  // kategori id'si sorgu dizesini gereksizce sisirirdi.
+  const categoryCounts = await getStorefrontCategoryProductCounts(tenant.id);
+  const emptyCategoryIds = categoryCounts
+    ? new Set(getEmptyStorefrontCategoryIds(rawCategories, categoryCounts))
+    : new Set<string>();
+
+  const categories = rawCategories.filter(
+    (category) => !hiddenCategoryIds.includes(category.id) && !emptyCategoryIds.has(category.id),
+  );
 
   const pricingParams = {
     tenantId: tenant.id,

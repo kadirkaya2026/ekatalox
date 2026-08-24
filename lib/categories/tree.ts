@@ -128,6 +128,62 @@ export function filterHiddenCategoriesAndProducts<P extends { category_id: strin
   };
 }
 
+/**
+ * Icinde (ve tum alt agacinda) hic urun olmayan kategorilerin id'leri.
+ *
+ * Musteri vitrininde bos kategori gostermenin anlami yok: tiklayinca bos
+ * liste aciliyor. Alt agac bakilmasinin sebebi, ust kategorinin kendi
+ * uzerinde urun olmayip yalnizca cocuklarinda olabilmesi — o durumda ust
+ * kategori GORUNUR kalmali, yoksa agac kopar.
+ *
+ * Istisna: "Indirimli Urunler" (is_discount_category). Onun icerigi
+ * kategoriye atanmis urunlerden degil, is_discount_active isaretli
+ * urunlerden geliyor — dogrudan bagli urunu yoktur ve bos sanilip
+ * gizlenirse marketin indirim kategorisi vitrinden silinir.
+ *
+ * counts: kategori id -> o kategoriye DOGRUDAN bagli urun sayisi.
+ */
+export function getEmptyStorefrontCategoryIds(
+  categories: Category[],
+  counts: Map<string, number>,
+): string[] {
+  const childrenByParent = new Map<string, Category[]>();
+  for (const category of categories) {
+    const key = category.parent_id ?? "__root__";
+    const list = childrenByParent.get(key);
+    if (list) list.push(category);
+    else childrenByParent.set(key, [category]);
+  }
+
+  const empty: string[] = [];
+  // Alt agacinda urun var mi — cocuklar once hesaplanip yukari tasiniyor,
+  // dongusel parent_id'ye karsi ziyaret seti tutuluyor.
+  const visiting = new Set<string>();
+  const cache = new Map<string, boolean>();
+
+  function hasProducts(category: Category): boolean {
+    const cached = cache.get(category.id);
+    if (cached !== undefined) return cached;
+    if (visiting.has(category.id)) return false;
+    visiting.add(category.id);
+
+    let result = category.is_discount_category || (counts.get(category.id) ?? 0) > 0;
+    for (const child of childrenByParent.get(category.id) ?? []) {
+      if (hasProducts(child)) result = true;
+    }
+
+    visiting.delete(category.id);
+    cache.set(category.id, result);
+    return result;
+  }
+
+  for (const category of categories) {
+    if (!hasProducts(category)) empty.push(category.id);
+  }
+
+  return empty;
+}
+
 export function getCategoryLineage(categories: Category[], categoryId: string) {
   const categoryMap = new Map(categories.map((category) => [category.id, category]));
   const lineage: Category[] = [];
