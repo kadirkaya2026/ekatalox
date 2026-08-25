@@ -33,6 +33,7 @@ import {
   UploadCloud,
   UserCircle,
   Wallet,
+  Magnet,
 } from "lucide-react";
 import { EkataloxLogo } from "@/components/brand/ekatalox-logo";
 import { SidebarLogoutButton } from "@/components/dashboard/sidebar-logout-button";
@@ -115,6 +116,7 @@ const tenantLinks: SidebarLink[] = [
   },
   { href: "/categories", label: "Kategoriler", icon: FolderTree },
   { href: "/access-codes", label: "Şifreler", icon: KeyRound },
+  { href: "/magnetler", label: "Magnetlerim", icon: Magnet },
   { href: "/reports", label: "Raporlar", icon: BarChart3 },
   {
     href: "/customers",
