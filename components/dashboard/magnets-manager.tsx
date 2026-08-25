@@ -47,6 +47,11 @@ export function MagnetsManager({
   const [blockPhoneInput, setBlockPhoneInput] = useState("");
   const [blockReasonInput, setBlockReasonInput] = useState("");
   const [blockPending, setBlockPending] = useState(false);
+  // Engelleme geri bildirimi KARTIN İÇİNDE gösterilir: genel hata alanı
+  // sayfanın en üstünde, düğmeden ekranlarca uzakta — kullanıcı hatayı
+  // görmeyip "engelledim" sanabiliyor.
+  const [blockError, setBlockError] = useState<string | null>(null);
+  const [blockSuccess, setBlockSuccess] = useState<string | null>(null);
 
   const pageCount = Math.max(1, Math.ceil(total / pageSize));
 
@@ -83,33 +88,36 @@ export function MagnetsManager({
 
   async function blockPhone(phone: string, reason: string | null) {
     setBlockPending(true);
-    setError(null);
+    setBlockError(null);
+    setBlockSuccess(null);
 
     const response = await fetch("/api/tenant/blocked-phones", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ phone, reason }),
     });
+    const result = await response.json().catch(() => ({}));
 
     if (!response.ok) {
-      const result = await response.json().catch(() => ({}));
-      setError(result.error ?? "Numara engellenemedi.");
+      setBlockError(result.error ?? "Numara engellenemedi.");
     } else {
       setBlockPhoneInput("");
       setBlockReasonInput("");
+      setBlockSuccess(`${phone} engellendi — bu numaradan artık sipariş alınmaz.`);
       await refreshBlocked();
     }
     setBlockPending(false);
   }
 
   async function unblockPhone(id: string) {
-    setError(null);
+    setBlockError(null);
+    setBlockSuccess(null);
     const response = await fetch(`/api/tenant/blocked-phones?id=${encodeURIComponent(id)}`, {
       method: "DELETE",
     });
     if (!response.ok) {
       const result = await response.json().catch(() => ({}));
-      setError(result.error ?? "Engel kaldırılamadı.");
+      setBlockError(result.error ?? "Engel kaldırılamadı.");
     } else {
       await refreshBlocked();
     }
@@ -317,6 +325,11 @@ export function MagnetsManager({
             Engelle
           </Button>
         </div>
+
+        <InlineAlert tone="error" message={blockError} className="mt-3" />
+        {blockSuccess ? (
+          <p className="mt-3 text-sm font-medium text-emerald-700">{blockSuccess}</p>
+        ) : null}
 
         {blocked.length ? (
           <div className="mt-4 divide-y rounded-xl border">
