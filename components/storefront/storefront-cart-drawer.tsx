@@ -509,10 +509,12 @@ export function StorefrontCartDrawer({
                     ) : null}
                   </div>
 
-                  {isMarketTenant && !isTekel ? (
+                  {isMarketTenant ? (
                     <div className="mt-3">
                       <div className="mb-2 flex items-center justify-between gap-3">
-                        <span className={cn("text-sm font-semibold", theme.text)}>{t("cart.customerAddress")}</span>
+                        <span className={cn("text-sm font-semibold", theme.text)}>
+                          {t(isTekel ? "cart.customerAddressPickup" : "cart.customerAddress")}
+                        </span>
                         <span className={cn("rounded-full px-3 py-1 text-[11px] font-semibold", theme.surfaceMuted, theme.textMuted)}>
                           {t("cart.required")}
                         </span>
@@ -523,7 +525,7 @@ export function StorefrontCartDrawer({
                           setCustomerAddress(event.target.value);
                           setCustomerAddressError(null);
                         }}
-                        placeholder={t("cart.customerAddressPlaceholder")}
+                        placeholder={t(isTekel ? "cart.customerAddressPickupPlaceholder" : "cart.customerAddressPlaceholder")}
                         className={cn("rounded-[1.1rem] text-[16px]", theme.formField, theme.text)}
                       />
                       {customerAddressError ? (

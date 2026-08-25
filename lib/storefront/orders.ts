@@ -24,7 +24,11 @@ export async function recordStorefrontOrder(params: {
   const name = params.customerName.trim();
   const address = params.customerAddress.trim();
 
-  if (!phone || !name || !address) {
+  // Adres ARTIK zorunlu degil. Tekel (gel-al) bayilerinde adres bos
+  // gonderiliyordu ve bu satir yuzunden o bayilerin HICBIR siparisi
+  // kaydedilmiyordu — ne musteri defteri olusuyordu ne de magnet
+  // sahiplenmesi calisabilirdi. Telefon + isim yeterli.
+  if (!phone || !name) {
     return;
   }
 

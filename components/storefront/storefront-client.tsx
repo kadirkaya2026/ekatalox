@@ -1767,7 +1767,10 @@ export function StorefrontClient({
         hasValidationError = true;
       }
 
-      if (!isTekel && !customerAddress.trim()) {
+      // Tekelde de adres isteniyor (kullanici karari, 25 Agu 2026): gel-al
+      // olsa bile musteri defteri ve magnet sahiplenmesi icin adres lazim.
+      // Gel-al WhatsApp mesajina adres EKLENMIYOR — bkz. lib/storefront/cart.ts.
+      if (!customerAddress.trim()) {
         setCustomerAddressError(t("cart.customerAddressRequiredError"));
         hasValidationError = true;
       }
@@ -1799,7 +1802,7 @@ export function StorefrontClient({
           note,
           customer_reference_name: customerReferenceName.trim(),
           customer_phone: isMarketTenant ? customerPhone.trim() : "",
-          customer_address: isMarketTenant && !isTekel ? customerAddress.trim() : "",
+          customer_address: isMarketTenant ? customerAddress.trim() : "",
           paymentMethod: isCatalogOnly ? null : selectedPaymentMethod,
           selectedInstallmentCount: isCatalogOnly ? null : selectedInstallmentCount,
           cashDiscountTiers: storefrontSettings.cash_discount_tiers ?? [],

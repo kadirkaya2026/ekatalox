@@ -128,6 +128,24 @@ export async function POST(request: Request) {
     const orderNumber = buildOrderReceiptOrderNumber(tenant.id);
     const orderDate = new Date();
 
+    // Siparis kaydi PDF uretiminden ONCE yapiliyor. Eskiden try blogunun
+    // icindeydi: pdf-lib bir sebeple patlarsa musteri WhatsApp'tan siparisi
+    // gonderiyor ama sistemde hicbir kaydi olmuyordu.
+    await recordStorefrontOrderStat(supabase, tenant.id, { catalogMode: true });
+    await recordStorefrontOrder({
+      supabase,
+      tenantId: tenant.id,
+      customerName: parsed.data.customer_reference_name,
+      customerPhone: parsed.data.customer_phone,
+      customerAddress: parsed.data.customer_address,
+      orderNumber,
+      currency: "CATALOG",
+      totalAmount: 0,
+      paymentMethod: null,
+      items,
+      note: parsed.data.note,
+    });
+
     try {
       const pdfBytes = await generateOrderReceiptPdf({
         tenantName: tenantDisplayName,
@@ -158,21 +176,6 @@ export async function POST(request: Request) {
         orderNumber,
         storagePath,
         pdfPublicUrl,
-      });
-
-      await recordStorefrontOrderStat(supabase, tenant.id, { catalogMode: true });
-      await recordStorefrontOrder({
-        supabase,
-        tenantId: tenant.id,
-        customerName: parsed.data.customer_reference_name,
-        customerPhone: parsed.data.customer_phone,
-        customerAddress: parsed.data.customer_address,
-        orderNumber,
-        currency: "CATALOG",
-        totalAmount: 0,
-        paymentMethod: null,
-        items,
-        note: parsed.data.note,
       });
 
       const pdfUrl = buildSecureOrderReceiptUrl(securePdfId, getPublicOrigin(request));
@@ -247,6 +250,26 @@ export async function POST(request: Request) {
   const orderNumber = buildOrderReceiptOrderNumber(tenant.id);
   const orderDate = new Date();
 
+  // Siparis kaydi PDF uretiminden ONCE (bkz. katalog dalindaki not).
+  await recordStorefrontOrderStat(supabase, tenant.id, {
+    catalogMode: false,
+    currency: paymentSummary.currency,
+    totalAmount: paymentSummary.finalTotal,
+  });
+  await recordStorefrontOrder({
+    supabase,
+    tenantId: tenant.id,
+    customerName: parsed.data.customer_reference_name,
+    customerPhone: parsed.data.customer_phone,
+    customerAddress: parsed.data.customer_address,
+    orderNumber,
+    currency: paymentSummary.currency,
+    totalAmount: paymentSummary.finalTotal,
+    paymentMethod,
+    items,
+    note: parsed.data.note,
+  });
+
   try {
     const pdfBytes = await generateOrderReceiptPdf({
       tenantName: tenantDisplayName,
@@ -296,25 +319,6 @@ export async function POST(request: Request) {
       orderNumber,
       storagePath,
       pdfPublicUrl,
-    });
-
-    await recordStorefrontOrderStat(supabase, tenant.id, {
-      catalogMode: false,
-      currency: paymentSummary.currency,
-      totalAmount: paymentSummary.finalTotal,
-    });
-    await recordStorefrontOrder({
-      supabase,
-      tenantId: tenant.id,
-      customerName: parsed.data.customer_reference_name,
-      customerPhone: parsed.data.customer_phone,
-      customerAddress: parsed.data.customer_address,
-      orderNumber,
-      currency: paymentSummary.currency,
-      totalAmount: paymentSummary.finalTotal,
-      paymentMethod,
-      items,
-      note: parsed.data.note,
     });
 
     const pdfUrl = buildSecureOrderReceiptUrl(securePdfId, getPublicOrigin(request));
