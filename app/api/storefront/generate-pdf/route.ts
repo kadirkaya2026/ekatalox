@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import { getStorefrontTenant, getTenantStorefrontSettings } from "@/lib/data";
 import { getCartPaymentSummary } from "@/lib/storefront/cart";
 import {
@@ -16,6 +17,8 @@ import {
 import { recordStorefrontOrderStat } from "@/lib/analytics/record-stats";
 import { recordStorefrontOrder } from "@/lib/storefront/orders";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { getStorefrontMagnetCookieName } from "@/lib/storefront/magnet-cookie";
+import { normalizeCustomerPhone } from "@/lib/storefront/customer-phone";
 import { getPublicOrigin } from "@/lib/tenancy/request-host";
 import { storefrontOrderPdfSchema } from "@/lib/validators/storefront-order-pdf";
 import type { CartItem } from "@/lib/types";
@@ -118,6 +121,30 @@ export async function POST(request: Request) {
     });
   }
 
+  // Engelli telefon: bayinin engellediği numaradan sipariş PDF üretilmeden
+  // reddedilir (RPC içinde ikinci bir savunma katmanı daha var).
+  const normalizedPhone = normalizeCustomerPhone(parsed.data.customer_phone);
+  if (normalizedPhone) {
+    const { data: blocked } = await supabase
+      .from("blocked_customer_phones")
+      .select("id")
+      .eq("tenant_id", tenant.id)
+      .eq("phone", normalizedPhone)
+      .maybeSingle();
+
+    if (blocked) {
+      return errorResponse(requestId, "Sipariş alınamadı. Lütfen mağaza ile iletişime geçin.", 403, {
+        reason: "phone_blocked",
+        tenantId: tenant.id,
+      });
+    }
+  }
+
+  // Magnet çerezi (proxy.ts set eder, HttpOnly — buradan başka okuyan yok).
+  // Kod BU tenant'a atanmış değilse yok sayılır; sahiplenme RPC içinde,
+  // sipariş insert'iyle aynı transaction'da yapılır.
+  const magnetCodeId = await resolveMagnetCodeId(supabase, tenant.id, tenant.subdomain);
+
   const items = parsed.data.items as CartItem[];
   const catalogMode = parsed.data.catalog_mode;
 
@@ -144,6 +171,7 @@ export async function POST(request: Request) {
       paymentMethod: null,
       items,
       note: parsed.data.note,
+      magnetCodeId,
     });
 
     try {
@@ -268,6 +296,7 @@ export async function POST(request: Request) {
     paymentMethod,
     items,
     note: parsed.data.note,
+    magnetCodeId,
   });
 
   try {
@@ -347,5 +376,33 @@ export async function POST(request: Request) {
       tenantId: tenant.id,
       orderNumber,
     });
+  }
+}
+
+/**
+ * Magnet çerezindeki kodu bu tenant'ın magnet_codes satırına çözer.
+ * Kod yoksa, geçersizse veya BAŞKA bayiye aitse null — sipariş akışını
+ * hiçbir koşulda bozmaz.
+ */
+async function resolveMagnetCodeId(
+  supabase: NonNullable<ReturnType<typeof createSupabaseAdminClient>>,
+  tenantId: string,
+  subdomain: string,
+): Promise<string | null> {
+  try {
+    const store = await cookies();
+    const raw = store.get(getStorefrontMagnetCookieName(subdomain))?.value?.trim().toLowerCase();
+    if (!raw || !/^[a-z0-9]{4,16}$/.test(raw)) return null;
+
+    const { data } = await supabase
+      .from("magnet_codes")
+      .select("id")
+      .eq("tenant_id", tenantId)
+      .ilike("code", raw)
+      .maybeSingle();
+
+    return data?.id ?? null;
+  } catch {
+    return null;
   }
 }

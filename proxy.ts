@@ -7,6 +7,11 @@ import {
   getStorefrontAgeCookieName,
   getStorefrontTierCookieName,
 } from "@/lib/storefront/tier-cookie";
+import {
+  getStorefrontMagnetCookieName,
+  MAGNET_COOKIE_MAX_AGE,
+  MAGNET_QUERY_PARAM,
+} from "@/lib/storefront/magnet-cookie";
 import type { Tenant } from "@/lib/types";
 import {
   getInternalPathFromResolution,
@@ -220,6 +225,35 @@ export async function proxy(request: NextRequest) {
 
   if (redirectResponse) {
     return redirectResponse;
+  }
+
+  // Magnet devri: /t/{kod} vitrine ?m={kod} ile yönlendirir (bkz.
+  // app/t/[slug]/route.ts). Kod burada — sayfalar ISR önbellekli olduğu ve
+  // aşağıdaki kota/yaş/gate dalları query'yi sildiği için çerezi
+  // set edebilecek TEK yer burası — kalıcı HttpOnly çereze çevrilir ve
+  // parametre düşürülerek kendine 302 atılır (kod adres çubuğunda ve
+  // referer'da kalmasın). Koşulsuz üzerine yazma = son okutulan kazanır.
+  if (hostResolution.kind === "storefront" && hostResolution.subdomain) {
+    const magnetParam = request.nextUrl.searchParams.get(MAGNET_QUERY_PARAM);
+    const magnetCode = magnetParam?.trim().toLowerCase().replace(/[\s-]/g, "") ?? "";
+
+    if (magnetCode && /^[a-z0-9]{4,16}$/.test(magnetCode)) {
+      const cleanUrl = request.nextUrl.clone();
+      cleanUrl.searchParams.delete(MAGNET_QUERY_PARAM);
+
+      const magnetResponse = NextResponse.redirect(cleanUrl, 302);
+      magnetResponse.cookies.set({
+        name: getStorefrontMagnetCookieName(hostResolution.subdomain),
+        value: magnetCode,
+        maxAge: MAGNET_COOKIE_MAX_AGE,
+        path: "/",
+        httpOnly: true,
+        sameSite: "lax",
+        secure: request.nextUrl.protocol === "https:",
+      });
+      magnetResponse.headers.set("Cache-Control", "no-store, max-age=0");
+      return magnetResponse;
+    }
   }
 
   // Oturum çerezi olmayan ziyaretçi her koşulda şifre ekranını görecek;

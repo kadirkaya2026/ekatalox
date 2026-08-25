@@ -19,6 +19,9 @@ export async function recordStorefrontOrder(params: {
   paymentMethod: "cash" | "card" | null;
   items: CartItem[];
   note?: string | null;
+  // Siparişin geldiği magnetin magnet_codes.id'si. RPC içinde sipariş
+  // satırına yazılır ve İLK siparişse magnet sessizce sahiplenilir.
+  magnetCodeId?: string | null;
 }) {
   const phone = normalizeCustomerPhone(params.customerPhone);
   const name = params.customerName.trim();
@@ -40,6 +43,12 @@ export async function recordStorefrontOrder(params: {
     currency: item.currency,
   }));
 
+  // p_magnet_code_id yalnizca doluysa gonderilir: parametre 0088'de eklendi
+  // ve fonksiyonda default null. Bos gondermemek, migration henuz
+  // calistirilmamis bir ortamda bile eski imzaya cozulmeyi garantiler —
+  // deploy/migration sirasi siparis kaydini asla bozamaz.
+  const magnetArgs = params.magnetCodeId ? { p_magnet_code_id: params.magnetCodeId } : {};
+
   const { error } = await params.supabase.rpc("record_storefront_order", {
     p_tenant_id: params.tenantId,
     p_phone: phone,
@@ -52,6 +61,7 @@ export async function recordStorefrontOrder(params: {
     p_item_count: params.items.length,
     p_items: itemsSnapshot,
     p_note: params.note ?? null,
+    ...magnetArgs,
   });
 
   if (error) {

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getStorefrontTenantCached } from "@/lib/data";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { appEnv } from "@/lib/env";
+import { MAGNET_QUERY_PARAM } from "@/lib/storefront/magnet-cookie";
 
 // Basılı QR'ların gittiği kısa adres: ekatalox.com/t/{subdomain}
 //
@@ -31,10 +32,18 @@ export async function GET(request: Request, ctx: { params: Promise<{ slug: strin
   // devam eder.
   const code = normalized ? await lookupMagnetCode(normalized) : null;
 
+  // Pasife alınmış magnet: bayinin (veya süper adminin) kararı. Okutma yine
+  // sayılır — "kapalıyken kaç kişi denedi" bilgisi geri açma kararında işe
+  // yarar — ama müşteri vitrine değil, ayarlanan adrese gider.
+  if (code?.isDisabled) {
+    void recordScan(code.tenantId, normalized, request, code.id);
+    return redirectTo(code.disabledRedirectUrl || "https://google.com");
+  }
+
   if (code && !code.tenantId) {
     // Kod üretilmiş ama henüz bir bayiye atanmamış. Okutmayı yine de
     // sayıyoruz: magnet sahada mı, kaç kişi denedi?
-    void recordScan(null, normalized, request);
+    void recordScan(null, normalized, request, code.id);
     return redirectTo(
       `https://${appEnv.marketingDomain}/magaza-yakinda?kod=${encodeURIComponent(normalized)}`,
     );
@@ -58,9 +67,12 @@ export async function GET(request: Request, ctx: { params: Promise<{ slug: strin
 
   // Kayıt en iyi çaba: analitik yazımı yavaşlarsa ya da patlarsa müşteri yine
   // vitrine gitmeli. Bu yüzden beklenmiyor ve hatası yutuluyor.
-  void recordScan(tenant.id, normalized, request);
+  void recordScan(tenant.id, normalized, request, code?.id ?? null);
 
-  return redirectTo(target);
+  // Kod havuzdan geldiyse vitrine ?m={kod} ile devredilir: vitrin host'unda
+  // proxy.ts bunu kalıcı HttpOnly çereze çevirir ve parametreyi düşürür.
+  // Eski /t/{subdomain} davranışında kod yok, parametre de eklenmez.
+  return redirectTo(code ? `${target}/?${MAGNET_QUERY_PARAM}=${encodeURIComponent(normalized)}` : target);
 }
 
 function redirectTo(url: string) {
@@ -73,13 +85,21 @@ function redirectTo(url: string) {
   return response;
 }
 
-async function recordScan(tenantId: string | null, slug: string, request: Request) {
+async function recordScan(
+  tenantId: string | null,
+  slug: string,
+  request: Request,
+  magnetCodeId: string | null = null,
+) {
   try {
     const supabase = createSupabaseAdminClient();
     if (!supabase) return;
     await supabase.from("magnet_scans").insert({
       tenant_id: tenantId,
       slug,
+      // Gerçek FK (0087): kod düzenlense bile geçmiş yetim kalmaz; sayaç
+      // trigger'ı da bu alandan artar.
+      magnet_code_id: magnetCodeId,
       user_agent: request.headers.get("user-agent")?.slice(0, 300) ?? null,
       referer: request.headers.get("referer")?.slice(0, 300) ?? null,
     });
@@ -95,18 +115,30 @@ async function recordScan(tenantId: string | null, slug: string, request: Reques
  * lower() ile arıyoruz: magnetteki metni elle yazan müşteri K7M2XQ da
  * yazabilir, benzersiz indeks de lower(code) üzerinde.
  */
-async function lookupMagnetCode(code: string): Promise<{ tenantId: string | null } | null> {
+async function lookupMagnetCode(code: string): Promise<{
+  id: string;
+  tenantId: string | null;
+  isDisabled: boolean;
+  disabledRedirectUrl: string | null;
+} | null> {
   try {
     const supabase = createSupabaseAdminClient();
     if (!supabase) return null;
 
     const { data } = await supabase
       .from("magnet_codes")
-      .select("tenant_id")
+      .select("id, tenant_id, is_disabled, disabled_redirect_url")
       .ilike("code", code)
       .maybeSingle();
 
-    return data ? { tenantId: data.tenant_id ?? null } : null;
+    return data
+      ? {
+          id: data.id,
+          tenantId: data.tenant_id ?? null,
+          isDisabled: data.is_disabled ?? false,
+          disabledRedirectUrl: data.disabled_redirect_url ?? null,
+        }
+      : null;
   } catch {
     // Havuz okunamazsa eski davranışa düş: slug'ı subdomain say.
     return null;
