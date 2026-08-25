@@ -467,6 +467,14 @@ export function QrCodeManager({
             <Printer className="size-4" />
             Baskı sayfası ({bostaKod})
           </a>
+          <a
+            href="/api/admin/qr-codes/export"
+            className="inline-flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-semibold"
+            title="Boştaki kodlar, üretim sırasıyla — sıralı baskı aracına yapıştırılır"
+          >
+            <Download className="size-4" />
+            Kod listesi (.txt)
+          </a>
         </div>
 
         {/* Elle kod ekleme: basılmış bir magnetin kodu yanlışlıkla
