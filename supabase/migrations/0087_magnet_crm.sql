@@ -6,6 +6,13 @@
 -- müşteriye bağlaması; bayi böylece "bu magnet mahalleden Ahmet abinin"
 -- bilgisine sahip oluyor. Müşteriye hiçbir form sorulmuyor.
 --
+-- DİKKAT: Yeni eklenen sütuna dokunan her ifade DO bloğunun içinde ve
+-- EXECUTE ile çalışıyor. Sebebi: Supabase SQL editörü (ve genel olarak
+-- basit sorgu protokolü) çok ifadeli betiğin TAMAMINI çalıştırmadan önce
+-- parse ediyor; ALTER henüz işlemediği için aşağıdaki UPDATE/CREATE INDEX
+-- "column does not exist" hatası veriyor ve tüm işlem geri alınıyor.
+-- DO gövdesi bir metin olduğundan çalışma anında derleniyor.
+--
 -- Bu dosya YALNIZCA şema açar. Hiçbir kod bu sütunları henüz okumuyor;
 -- davranış değişikliği sonraki migration ve deploy ile geliyor.
 
@@ -88,8 +95,11 @@ create index if not exists magnet_codes_created_at_idx
 -- Aralık ataması yalnızca sahipsiz kodlara bakıyor; kısmi indeks tam o sorgu için.
 create index if not exists magnet_codes_free_idx
   on public.magnet_codes (created_at) where tenant_id is null;
-create index if not exists magnet_codes_customer_idx
-  on public.magnet_codes (customer_id);
+do $$
+begin
+  execute 'create index if not exists magnet_codes_customer_idx
+             on public.magnet_codes (customer_id)';
+end $$;
 
 -- ---------------------------------------------------------------------------
 -- 3) magnet_scans -> magnet_codes gerçek foreign key
@@ -110,28 +120,36 @@ begin
   end if;
 end $$;
 
-update public.magnet_scans s
-   set magnet_code_id = c.id
-  from public.magnet_codes c
- where s.magnet_code_id is null
-   and lower(s.slug) = lower(c.code);
+do $$
+begin
+  execute '
+    update public.magnet_scans s
+       set magnet_code_id = c.id
+      from public.magnet_codes c
+     where s.magnet_code_id is null
+       and lower(s.slug) = lower(c.code)';
 
-create index if not exists magnet_scans_code_idx
-  on public.magnet_scans (magnet_code_id, scanned_at desc);
+  execute 'create index if not exists magnet_scans_code_idx
+             on public.magnet_scans (magnet_code_id, scanned_at desc)';
+end $$;
 
 -- ---------------------------------------------------------------------------
 -- 4) Okutma sayacı: geri doldurma + trigger
 -- ---------------------------------------------------------------------------
-update public.magnet_codes c
-   set scan_count = x.adet,
-       last_scan_at = x.son
-  from (
-    select magnet_code_id, count(*) as adet, max(scanned_at) as son
-      from public.magnet_scans
-     where magnet_code_id is not null
-     group by magnet_code_id
-  ) x
- where c.id = x.magnet_code_id;
+do $$
+begin
+  execute '
+    update public.magnet_codes c
+       set scan_count = x.adet,
+           last_scan_at = x.son
+      from (
+        select magnet_code_id, count(*) as adet, max(scanned_at) as son
+          from public.magnet_scans
+         where magnet_code_id is not null
+         group by magnet_code_id
+      ) x
+     where c.id = x.magnet_code_id';
+end $$;
 
 create or replace function public.bump_magnet_scan_count()
 returns trigger
@@ -174,8 +192,11 @@ begin
   end if;
 end $$;
 
-create index if not exists orders_magnet_code_idx
-  on public.orders (magnet_code_id, created_at desc);
+do $$
+begin
+  execute 'create index if not exists orders_magnet_code_idx
+             on public.orders (magnet_code_id, created_at desc)';
+end $$;
 
 -- ---------------------------------------------------------------------------
 -- 6) Telefon bazlı müşteri engelleme
