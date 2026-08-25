@@ -19,11 +19,6 @@ export async function PATCH(
   const { id } = await ctx.params;
   const body = await request.json().catch(() => null);
 
-  // tenant_id null gönderilirse atama kaldırılır ve kod havuza döner.
-  const tenantId =
-    typeof body?.tenant_id === "string" && body.tenant_id.trim()
-      ? body.tenant_id.trim()
-      : null;
   const label = typeof body?.label === "string" ? body.label.trim() || null : undefined;
 
   const supabase = createSupabaseAdminClient();
@@ -31,10 +26,28 @@ export async function PATCH(
     return NextResponse.json({ error: "Sunucu yapılandırması eksik." }, { status: 500 });
   }
 
-  const guncelleme: Record<string, unknown> = {
-    tenant_id: tenantId,
-    assigned_at: tenantId ? new Date().toISOString() : null,
-  };
+  const guncelleme: Record<string, unknown> = {};
+
+  // Atamaya YALNIZCA gövdede tenant_id anahtarı varsa dokunulur. Eski davranış
+  // anahtarsız her PATCH'te atamayı kaldırıyordu; is_disabled gibi tekil alan
+  // güncellemeleri bu yüzden yanlışlıkla kodu havuza döndürebilirdi.
+  if (body && Object.prototype.hasOwnProperty.call(body, "tenant_id")) {
+    const tenantId =
+      typeof body.tenant_id === "string" && body.tenant_id.trim()
+        ? body.tenant_id.trim()
+        : null;
+    guncelleme.tenant_id = tenantId;
+    guncelleme.assigned_at = tenantId ? new Date().toISOString() : null;
+  }
+
+  // Pasife alma / geri açma. Kim kapattıysa kayıtta dursun: bayi, süper
+  // adminin kapattığını görebilsin (bkz. 0087 disabled_by_role).
+  if (typeof body?.is_disabled === "boolean") {
+    guncelleme.is_disabled = body.is_disabled;
+    guncelleme.disabled_at = body.is_disabled ? new Date().toISOString() : null;
+    guncelleme.disabled_by_role = body.is_disabled ? "super_admin" : null;
+  }
+
   if (label !== undefined) {
     guncelleme.label = label;
   }
@@ -55,23 +68,14 @@ export async function PATCH(
   // KOD DÜZENLEME: yanlış basılmış ya da yanlış girilmiş bir kodu
   // düzeltebilmek için. Kod değişirse eski kodu taşıyan magnetler ölür,
   // o yüzden arayüzde uyarı gösteriliyor.
-  let eskiKod: string | null = null;
+  // Okutma geçmişi artık magnet_code_id FK'sı üzerinden bağlı (0087);
+  // kod metni değişse de geçmiş ve sayaç bozulmaz, slug taşıma gerekmez.
   if (typeof body?.code === "string") {
     const parsed = normalizeMagnetCode(body.code);
     if ("error" in parsed) {
       return NextResponse.json({ error: parsed.error }, { status: 400 });
     }
-
-    const { data: mevcut } = await supabase
-      .from("magnet_codes")
-      .select("code")
-      .eq("id", id)
-      .maybeSingle();
-
-    if (mevcut && mevcut.code.toLowerCase() !== parsed.code) {
-      eskiKod = mevcut.code;
-      guncelleme.code = parsed.code;
-    }
+    guncelleme.code = parsed.code;
   }
 
   const { data, error } = await supabase
@@ -79,7 +83,7 @@ export async function PATCH(
     .update(guncelleme)
     .eq("id", id)
     .select(
-      "id, code, tenant_id, label, assigned_at, city, district, neighborhood, placed_at, tenants(subdomain, company_name)",
+      "id, code, tenant_id, label, assigned_at, city, district, neighborhood, placed_at, is_disabled, scan_count, last_scan_at, customer_id, claimed_at, tenants(subdomain, company_name)",
     )
     .maybeSingle();
 
@@ -94,16 +98,6 @@ export async function PATCH(
 
   if (!data) {
     return NextResponse.json({ error: "Kod bulunamadı." }, { status: 404 });
-  }
-
-  // Okutma kayıtları slug (kod metni) üzerinden tutuluyor. Kod değişirse
-  // eski kayıtlar yetim kalır ve sayaç sıfırlanmış gibi görünür; geçmişi
-  // yeni koda taşıyoruz.
-  if (eskiKod) {
-    await supabase
-      .from("magnet_scans")
-      .update({ slug: data.code })
-      .ilike("slug", eskiKod);
   }
 
   return NextResponse.json({ code: data });

@@ -2,7 +2,7 @@
 
 import { useState, useTransition, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Check, Download, Loader2, Pencil, Plus, Printer, QrCode, Trash2, X } from "lucide-react";
+import { Ban, Check, Download, Loader2, Pencil, Plus, Power, Printer, QrCode, Trash2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { InlineAlert } from "@/components/ui/inline-alert";
@@ -58,7 +58,7 @@ export function QrCodeManager({
   total: number;
   page: number;
   pageSize: number;
-  durum: "all" | "free" | "assigned";
+  durum: "all" | "free" | "assigned" | "disabled";
   toplamKod: number;
   bostaKod: number;
 }) {
@@ -237,6 +237,26 @@ export function QrCodeManager({
     setMessage(`${result.created.length} kod üretildi.`);
     setLabel("");
     await refresh();
+  }
+
+  async function toggleDisabled(row: MagnetCodeRow) {
+    setRowPending(row.id);
+    setError(null);
+
+    const response = await fetch(`/api/admin/qr-codes/${row.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ is_disabled: !row.is_disabled }),
+    });
+
+    if (!response.ok) {
+      const result = await response.json().catch(() => ({}));
+      setError(result.error ?? "Kod güncellenemedi.");
+    } else {
+      await refresh();
+    }
+
+    setRowPending(null);
   }
 
   async function assign(id: string, tenantId: string) {
@@ -469,6 +489,7 @@ export function QrCodeManager({
             ["all", `Tümü (${toplamKod})`],
             ["free", `Boşta (${bostaKod})`],
             ["assigned", `Atanmış (${toplamKod - bostaKod})`],
+            ["disabled", "Pasif"],
           ] as const
         ).map(([key, etiket]) => (
           <button
@@ -596,6 +617,11 @@ export function QrCodeManager({
                     {row.label}
                   </span>
                 ) : null}
+                {row.is_disabled ? (
+                  <span className="rounded-full bg-red-100 px-2.5 py-1 text-[11px] font-semibold text-red-700">
+                    Pasif
+                  </span>
+                ) : null}
 
                 <div className="ml-auto flex items-center gap-2">
                   <Button
@@ -620,6 +646,23 @@ export function QrCodeManager({
                       </option>
                     ))}
                   </Select>
+
+                  <Button
+                    variant="ghost"
+                    disabled={rowPending === row.id}
+                    onClick={() => void toggleDisabled(row)}
+                    title={
+                      row.is_disabled
+                        ? "Aktifleştir — magnet yeniden vitrine yönlenir"
+                        : "Pasife al — magnet vitrine gitmez, ayarlı adrese yönlenir"
+                    }
+                  >
+                    {row.is_disabled ? (
+                      <Power className="size-4 text-emerald-600" />
+                    ) : (
+                      <Ban className="size-4 text-red-500" />
+                    )}
+                  </Button>
 
                   <Button
                     variant="ghost"

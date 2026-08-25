@@ -33,8 +33,10 @@ export default async function Page({
   // Durum suzgeci de sunucuda. Sayfa basina 100 satir cekildigi icin istemci
   // tarafinda suzmek "Bosta (3)" gibi sadece o sayfayi anlatan yanlis sayilar
   // uretiyordu.
-  const durum: "all" | "free" | "assigned" =
-    durumParam === "free" || durumParam === "assigned" ? durumParam : "all";
+  const durum: "all" | "free" | "assigned" | "disabled" =
+    durumParam === "free" || durumParam === "assigned" || durumParam === "disabled"
+      ? durumParam
+      : "all";
 
   async function fetchCodes() {
     if (!supabase) return { data: [], count: 0 };
@@ -48,6 +50,7 @@ export default async function Page({
       .range(from, from + PAGE_SIZE - 1);
     if (durum === "free") query = query.is("tenant_id", null);
     else if (durum === "assigned") query = query.not("tenant_id", "is", null);
+    else if (durum === "disabled") query = query.eq("is_disabled", true);
     return await query;
   }
 
