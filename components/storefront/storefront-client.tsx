@@ -1815,12 +1815,23 @@ export function StorefrontClient({
       pdfUrl = result.pdfUrl;
       pdfIncluded = true;
     } catch (error) {
-      // API'nin döndüğü asıl nedeni müşteriye göster (ör. "Tek para birimi
-      // kullanın"); genel mesaj yalnızca neden bilinmiyorsa kalır.
       const apiError =
         error instanceof OrderPdfRequestError && error.apiError?.trim()
           ? error.apiError.trim()
           : null;
+
+      // 403 = sipariş REDDEDİLDİ (engelli telefon). Diğer hatalardan farklı:
+      // aşağıdaki "PDF olmasa da WhatsApp'a devam et" toleransı burada
+      // uygulanmaz, yoksa engel kağıt üstünde kalır — müşteri PDF'siz
+      // mesajı yine de gönderebilirdi.
+      if (error instanceof OrderPdfRequestError && error.statusCode === 403) {
+        setOrderPdfError(apiError ?? "Sipariş alınamadı. Lütfen mağaza ile iletişime geçin.");
+        return; // finally yine çalışır, spinner kapanır
+
+      }
+
+      // API'nin döndüğü asıl nedeni müşteriye göster (ör. "Tek para birimi
+      // kullanın"); genel mesaj yalnızca neden bilinmiyorsa kalır.
       setOrderPdfError(
         apiError ? `${ORDER_PDF_ERROR_MESSAGE} Neden: ${apiError}` : ORDER_PDF_ERROR_MESSAGE,
       );
