@@ -7,7 +7,11 @@ import { generateMagnetCode, normalizeMagnetCode } from "@/lib/magnet/codes";
 // Kodlar bayi belli olmadan üretilip bastırılıyor, atama sonra yapılıyor
 // (bkz. 0084_magnet_codes.sql ve app/t/[slug]/route.ts).
 
-const MAX_BATCH = 200;
+// 5000: bir baskı partisi tek seferde üretilebilsin (kullanıcı 1000'lik
+// partilerle çalışıyor). Üretim artık 500'lük toplu insert'lerle yapıldığı
+// için istek başına HTTP çağrısı sayısı ~10'u geçmiyor, zaman aşımı riski yok.
+const MAX_BATCH = 5000;
+const INSERT_CHUNK = 500;
 
 // Sayfalama sart: 10.000 kodla calisacak. Eskiden .limit(1000) vardi ve
 // 1001'inci koddan sonrasi arayuzde hic gorunmuyordu.
@@ -119,18 +123,32 @@ export async function POST(request: Request) {
     );
   }
 
-  // Çakışma ihtimali düşük ama sıfır değil; benzersiz indeks (lower(code))
-  // son savunma. Çakışırsa o kodu atlayıp yeniden deniyoruz.
+  // Eskiden kod başına bir insert atılıyordu: 1000 kod = 1000 HTTP çağrısı,
+  // fonksiyon zaman aşımına uğruyordu. Şimdi 500'lük paketler halinde toplu
+  // insert. Çakışma ihtimali düşük ama sıfır değil (benzersiz indeks
+  // lower(code) son savunma): paket çakışırsa o paket taze kodlarla yeniden
+  // denenir — 23505 hangi satırın çakıştığını söylemediği için paketin
+  // tamamı reddedilir, tek tek ayıklamak yerine yeniden üretmek daha ucuz.
   const uretilen: string[] = [];
-  let deneme = 0;
+  let paketDenemesi = 0;
+  const azamiPaketDenemesi = Math.ceil(count / INSERT_CHUNK) * 5;
 
-  while (uretilen.length < count && deneme < count * 10) {
-    deneme += 1;
-    const code = generateMagnetCode();
+  while (uretilen.length < count && paketDenemesi < azamiPaketDenemesi) {
+    paketDenemesi += 1;
+    const kalan = count - uretilen.length;
+    const boyut = Math.min(INSERT_CHUNK, kalan);
+    const paket = Array.from({ length: boyut }, () => generateMagnetCode());
 
-    const { error } = await supabase.from("magnet_codes").insert({ code, label, ...konum });
+    // Aynı paket içi çift üretimi ele (300M kombinasyonda milyonda bir ama
+    // paketi komple patlatır).
+    const tekil = [...new Set(paket)];
+
+    const { error } = await supabase
+      .from("magnet_codes")
+      .insert(tekil.map((code) => ({ code, label, ...konum })));
+
     if (!error) {
-      uretilen.push(code);
+      uretilen.push(...tekil);
     }
   }
 

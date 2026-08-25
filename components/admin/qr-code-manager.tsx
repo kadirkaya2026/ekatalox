@@ -16,6 +16,21 @@ import { formatMagnetCodeForPrint } from "@/lib/magnet/codes";
 // kodu bayiye ata. Atama sonradan DEĞİŞTİRİLEBİLİR; bayi çıkarsa aynı
 // magnet başka bayiye devredilir (bkz. app/t/[slug]/route.ts, 302 + no-store).
 
+interface MagnetSearchResult {
+  code: string;
+  is_disabled: boolean;
+  disabled_by_role: string | null;
+  scan_count: number;
+  last_scan_at: string | null;
+  claimed_at: string | null;
+  city: string | null;
+  district: string | null;
+  neighborhood: string | null;
+  label: string | null;
+  tenants: { subdomain: string; company_name: string | null } | null;
+  customers: { full_name: string; phone: string; address: string } | null;
+}
+
 export interface MagnetCodeRow {
   id: string;
   code: string;
@@ -73,6 +88,18 @@ export function QrCodeManager({
   const [message, setMessage] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const [rowPending, setRowPending] = useState<string | null>(null);
+  // Aralık atama: havuzdan N sahipsiz kodu tek çağrıyla bayiye ver.
+  // Varsayılan 100 — kullanıcı kararı, partiler 100'lük dağıtılıyor.
+  const [rangeTenant, setRangeTenant] = useState("");
+  const [rangeCount, setRangeCount] = useState("100");
+  const [rangeLabel, setRangeLabel] = useState("");
+  const [rangePending, setRangePending] = useState(false);
+  const [rangeResult, setRangeResult] = useState<string | null>(null);
+  // Kod arama: elde magnet, "kimin bu?" sorusu.
+  const [searchInput, setSearchInput] = useState("");
+  const [searchPending, setSearchPending] = useState(false);
+  const [searchResult, setSearchResult] = useState<MagnetSearchResult | null>(null);
+  const [searchError, setSearchError] = useState<string | null>(null);
   // Açık olan QR önizlemesi. QR'lar tarayıcıda ÜRETİLİYOR ve sadece
   // butona basılınca: 1000 kodun QR'ını sunucuda önden üretip sayfaya
   // gömmek gereksiz yük olurdu.
@@ -213,7 +240,7 @@ export function QrCodeManager({
 
   async function refresh() {
     // Bulundugumuz sayfayi ve suzgeci tazele — liste artik sunucu tarafli.
-    const response = await fetch(`/api/admin/qr-codes?page=${page}&durum=${durum}`);
+    const response = await fetch(`/api/admin/qr-codes?page=${page}&status=${durum}`);
     const result = await response.json().catch(() => ({}));
     if (response.ok) setCodes(result.codes ?? []);
   }
@@ -237,6 +264,54 @@ export function QrCodeManager({
     setMessage(`${result.created.length} kod üretildi.`);
     setLabel("");
     await refresh();
+  }
+
+  async function assignRange() {
+    const adet = Math.floor(Number(rangeCount));
+    if (!rangeTenant || !Number.isFinite(adet) || adet < 1) return;
+
+    setRangePending(true);
+    setRangeResult(null);
+    setError(null);
+
+    const response = await fetch("/api/admin/qr-codes/assign-range", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ tenant_id: rangeTenant, count: adet, label: rangeLabel.trim() || null }),
+    });
+    const result = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      setError(result.error ?? "Atama yapılamadı.");
+    } else {
+      const assigned = result.assigned ?? 0;
+      setRangeResult(
+        assigned < adet
+          ? `${assigned} kod atandı — havuzda yalnızca ${assigned} sahipsiz kod vardı.`
+          : `${assigned} kod atandı.`,
+      );
+      await refresh();
+    }
+    setRangePending(false);
+  }
+
+  async function searchCode() {
+    const girdi = searchInput.trim();
+    if (!girdi) return;
+
+    setSearchPending(true);
+    setSearchError(null);
+    setSearchResult(null);
+
+    const response = await fetch(`/api/admin/qr-codes/search?code=${encodeURIComponent(girdi)}`);
+    const result = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      setSearchError(result.error ?? "Arama yapılamadı.");
+    } else {
+      setSearchResult(result.code as MagnetSearchResult);
+    }
+    setSearchPending(false);
   }
 
   async function toggleDisabled(row: MagnetCodeRow) {
@@ -344,7 +419,7 @@ export function QrCodeManager({
             <Input
               type="number"
               min={1}
-              max={200}
+              max={5000}
               value={count}
               onChange={(event) => setCount(event.target.value)}
             />
@@ -431,6 +506,136 @@ export function QrCodeManager({
         <InlineAlert message={error} tone="error" onExpire={() => setError(null)} />
         <InlineAlert message={message} tone="success" onExpire={() => setMessage(null)} />
       </Card>
+
+      <Card className="p-5">
+        <p className="text-sm font-semibold text-foreground">Aralık ataması</p>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Havuzdaki sahipsiz kodlardan seçtiğiniz adedi (üretim sırasıyla, en eski önce) tek
+          seferde bir bayiye atar. Baskı partileri üretim sırasına göre kutulandığı için
+          &quot;sıradaki kutu bu bayinin&quot; akışıyla birebir örtüşür.
+        </p>
+
+        <div className="mt-4 flex flex-wrap items-end gap-3">
+          <div className="min-w-52 flex-1">
+            <label className="mb-1.5 block text-sm font-medium text-foreground">Bayi</label>
+            <Select value={rangeTenant} onChange={(event) => setRangeTenant(event.target.value)}>
+              <option value="">— bayi seçin —</option>
+              {tenants.map((tenant) => (
+                <option key={tenant.id} value={tenant.id}>
+                  {tenant.company_name || tenant.subdomain} ({tenant.subdomain})
+                </option>
+              ))}
+            </Select>
+          </div>
+          <div className="w-28">
+            <label className="mb-1.5 block text-sm font-medium text-foreground">Adet</label>
+            <Input
+              type="number"
+              min={1}
+              max={5000}
+              value={rangeCount}
+              onChange={(event) => setRangeCount(event.target.value)}
+            />
+          </div>
+          <div className="min-w-40 flex-1">
+            <label className="mb-1.5 block text-sm font-medium text-foreground">
+              Not <span className="text-muted-foreground">(opsiyonel)</span>
+            </label>
+            <Input
+              value={rangeLabel}
+              placeholder="Örn: 3. kutu"
+              onChange={(event) => setRangeLabel(event.target.value)}
+            />
+          </div>
+          <Button
+            onClick={() => void assignRange()}
+            disabled={rangePending || !rangeTenant}
+          >
+            {rangePending ? <Loader2 className="size-4 animate-spin" /> : <Check className="size-4" />}
+            Ata
+          </Button>
+        </div>
+
+        {rangeResult ? (
+          <p className="mt-3 text-sm font-medium text-emerald-700">{rangeResult}</p>
+        ) : null}
+      </Card>
+
+      <Card className="p-5">
+        <p className="text-sm font-semibold text-foreground">Kod sorgula</p>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Elinizdeki magnetin kodunu yazın: hangi bayide, kim sahiplenmiş, kaç kez okutulmuş.
+        </p>
+
+        <div className="mt-4 flex flex-wrap items-end gap-3">
+          <div className="w-44">
+            <Input
+              value={searchInput}
+              placeholder="K7M 2XQ"
+              onChange={(event) => setSearchInput(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") void searchCode();
+              }}
+            />
+          </div>
+          <Button onClick={() => void searchCode()} disabled={searchPending}>
+            {searchPending ? <Loader2 className="size-4 animate-spin" /> : <QrCode className="size-4" />}
+            Sorgula
+          </Button>
+        </div>
+
+        <InlineAlert tone="error" message={searchError} className="mt-3" />
+
+        {searchResult ? (
+          <div className="mt-4 grid gap-2 rounded-xl border bg-slate-50/70 p-4 text-sm sm:grid-cols-2">
+            <div>
+              <span className="font-semibold">{formatMagnetCodeForPrint(searchResult.code)}</span>
+              {searchResult.is_disabled ? (
+                <span className="ml-2 rounded-full bg-red-100 px-2 py-0.5 text-[11px] font-semibold text-red-700">
+                  Pasif{searchResult.disabled_by_role === "super_admin" ? " (süper admin)" : ""}
+                </span>
+              ) : null}
+              {searchResult.label ? (
+                <span className="ml-2 text-muted-foreground">{searchResult.label}</span>
+              ) : null}
+            </div>
+            <div>
+              Bayi:{" "}
+              {searchResult.tenants
+                ? `${searchResult.tenants.company_name || searchResult.tenants.subdomain} (${searchResult.tenants.subdomain})`
+                : "atanmamış"}
+            </div>
+            <div>
+              Okutma: {searchResult.scan_count}
+              {searchResult.last_scan_at
+                ? ` — son: ${new Date(searchResult.last_scan_at).toLocaleString("tr-TR")}`
+                : ""}
+            </div>
+            <div>
+              Konum:{" "}
+              {[searchResult.city, searchResult.district, searchResult.neighborhood]
+                .filter(Boolean)
+                .join(" / ") || "—"}
+            </div>
+            {/* "Sahibi" DEĞİL "İlk sipariş": sessiz sahiplenme yanlış kişiyi
+                işaretleyebilir (ev telefonu, arkadaşın cihazı); kesin ifade
+                kullanmıyoruz. */}
+            <div className="sm:col-span-2">
+              İlk sipariş:{" "}
+              {searchResult.customers
+                ? `${searchResult.customers.full_name} — ${searchResult.customers.phone}${
+                    searchResult.customers.address ? ` — ${searchResult.customers.address}` : ""
+                  }${
+                    searchResult.claimed_at
+                      ? ` (${new Date(searchResult.claimed_at).toLocaleDateString("tr-TR")})`
+                      : ""
+                  }`
+                : "henüz yok"}
+            </div>
+          </div>
+        ) : null}
+      </Card>
+
 
       {/* MAHALLE TAKİBİ: hangi mahalleye kaç magnet bırakıldı, kaçı bayiye
           bağlandı, oradan kaç okutma geldi. Saha ekibinin asıl baktığı tablo. */}
