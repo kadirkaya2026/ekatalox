@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Check, Download, Loader2, Pencil, Plus, Printer, QrCode, Trash2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -27,6 +28,11 @@ export interface MagnetCodeRow {
   district: string | null;
   neighborhood: string | null;
   placed_at: string | null;
+  // 0087 ile geldi
+  is_disabled: boolean;
+  last_scan_at: string | null;
+  customer_id: string | null;
+  claimed_at: string | null;
 }
 
 export interface TenantOption {
@@ -39,15 +45,30 @@ export function QrCodeManager({
   initialCodes,
   tenants,
   marketingDomain,
+  total,
+  page,
+  pageSize,
+  durum,
+  toplamKod,
+  bostaKod,
 }: {
   initialCodes: MagnetCodeRow[];
   tenants: TenantOption[];
   marketingDomain: string;
+  total: number;
+  page: number;
+  pageSize: number;
+  durum: "all" | "free" | "assigned";
+  toplamKod: number;
+  bostaKod: number;
 }) {
+  const router = useRouter();
   const [codes, setCodes] = useState(initialCodes);
+  // Sunucudan gelen sayfa degisince yerel listeyi tazele.
+  useEffect(() => setCodes(initialCodes), [initialCodes]);
+  const pageCount = Math.max(1, Math.ceil(total / pageSize));
   const [count, setCount] = useState("25");
   const [label, setLabel] = useState("");
-  const [filter, setFilter] = useState<"all" | "free" | "assigned">("all");
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -191,7 +212,8 @@ export function QrCodeManager({
   }
 
   async function refresh() {
-    const response = await fetch("/api/admin/qr-codes");
+    // Bulundugumuz sayfayi ve suzgeci tazele — liste artik sunucu tarafli.
+    const response = await fetch(`/api/admin/qr-codes?page=${page}&durum=${durum}`);
     const result = await response.json().catch(() => ({}));
     if (response.ok) setCodes(result.codes ?? []);
   }
@@ -256,9 +278,6 @@ export function QrCodeManager({
   }
 
   const gorunen = codes
-    .filter((row) =>
-      filter === "free" ? !row.tenant_id : filter === "assigned" ? Boolean(row.tenant_id) : true,
-    )
     .filter((row) => (hoodFilter ? row.neighborhood === hoodFilter : true));
 
   // Mahalle kırılımı. Mahallesi girilmemiş kodlar tabloya girmiyor —
@@ -289,8 +308,6 @@ export function QrCodeManager({
       (a, b) => b.okutma - a.okutma || b.toplam - a.toplam || a.neighborhood.localeCompare(b.neighborhood, "tr"),
     );
   })();
-
-  const bostaSayisi = codes.filter((row) => !row.tenant_id).length;
 
   return (
     <div className="space-y-5">
@@ -353,7 +370,7 @@ export function QrCodeManager({
             className="inline-flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-semibold"
           >
             <Printer className="size-4" />
-            Baskı sayfası ({bostaSayisi})
+            Baskı sayfası ({bostaKod})
           </a>
         </div>
 
@@ -449,17 +466,17 @@ export function QrCodeManager({
       <div className="flex flex-wrap items-center gap-2">
         {(
           [
-            ["all", `Tümü (${codes.length})`],
-            ["free", `Boşta (${bostaSayisi})`],
-            ["assigned", `Atanmış (${codes.length - bostaSayisi})`],
+            ["all", `Tümü (${toplamKod})`],
+            ["free", `Boşta (${bostaKod})`],
+            ["assigned", `Atanmış (${toplamKod - bostaKod})`],
           ] as const
         ).map(([key, etiket]) => (
           <button
             key={key}
             type="button"
-            onClick={() => setFilter(key)}
+            onClick={() => router.push(`?durum=${key}`)}
             className={`rounded-full px-3.5 py-1.5 text-sm font-semibold ${
-              filter === key ? "bg-foreground text-background" : "border text-muted-foreground"
+              durum === key ? "bg-foreground text-background" : "border text-muted-foreground"
             }`}
           >
             {etiket}
@@ -686,6 +703,32 @@ export function QrCodeManager({
           </div>
         )}
       </Card>
+      {pageCount > 1 ? (
+        <div className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm">
+          <span className="text-slate-500">
+            Toplam {total} kod · sayfa {page} / {pageCount}
+          </span>
+          <div className="flex gap-2">
+            <Button
+              type="button"
+              variant="secondary"
+              disabled={page <= 1}
+              onClick={() => router.push(`?page=${page - 1}`)}
+            >
+              Önceki
+            </Button>
+            <Button
+              type="button"
+              variant="secondary"
+              disabled={page >= pageCount}
+              onClick={() => router.push(`?page=${page + 1}`)}
+            >
+              Sonraki
+            </Button>
+          </div>
+        </div>
+      ) : null}
     </div>
+
   );
 }

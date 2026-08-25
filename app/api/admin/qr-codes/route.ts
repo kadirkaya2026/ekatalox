@@ -9,42 +9,56 @@ import { generateMagnetCode, normalizeMagnetCode } from "@/lib/magnet/codes";
 
 const MAX_BATCH = 200;
 
-export async function GET() {
+// Sayfalama sart: 10.000 kodla calisacak. Eskiden .limit(1000) vardi ve
+// 1001'inci koddan sonrasi arayuzde hic gorunmuyordu.
+const PAGE_SIZE = 100;
+
+export async function GET(request: Request) {
   const guard = await ensureSuperAdminResponse();
   if (guard) return guard;
 
   const supabase = createSupabaseAdminClient();
   if (!supabase) {
-    return NextResponse.json({ codes: [] });
+    return NextResponse.json({ codes: [], total: 0, page: 1, pageSize: PAGE_SIZE });
   }
 
-  const { data, error } = await supabase
+  const url = new URL(request.url);
+  const page = Math.max(1, Number.parseInt(url.searchParams.get("page") ?? "1", 10) || 1);
+  const durum = url.searchParams.get("status");        // free | assigned | disabled
+  const arama = (url.searchParams.get("q") ?? "").trim().toLowerCase();
+  const tenantId = url.searchParams.get("tenant");
+
+  let query = supabase
     .from("magnet_codes")
     .select(
-      "id, code, tenant_id, label, assigned_at, created_at, city, district, neighborhood, placed_at, tenants(subdomain, company_name)",
+      "id, code, tenant_id, label, assigned_at, created_at, city, district, neighborhood, placed_at, is_disabled, scan_count, last_scan_at, customer_id, claimed_at" + ", tenants(subdomain, company_name)",
+      { count: "exact" },
     )
-    .order("created_at", { ascending: false })
-    .limit(1000);
+    .order("created_at", { ascending: false });
+
+  if (durum === "free") query = query.is("tenant_id", null);
+  else if (durum === "assigned") query = query.not("tenant_id", "is", null);
+  else if (durum === "disabled") query = query.eq("is_disabled", true);
+
+  if (tenantId) query = query.eq("tenant_id", tenantId);
+  if (arama) query = query.ilike("code", `%${arama}%`);
+
+  const from = (page - 1) * PAGE_SIZE;
+  const { data, error, count } = await query.range(from, from + PAGE_SIZE - 1);
 
   if (error) {
     return NextResponse.json({ error: "Kodlar okunamadı." }, { status: 500 });
   }
 
-  // Her kodun kaç kez okutulduğu — magnetin sahada çalışıp çalışmadığını
-  // gösteren tek somut veri.
-  const { data: scans } = await supabase.from("magnet_scans").select("slug");
-  const scanCounts = new Map<string, number>();
-  for (const scan of scans ?? []) {
-    const key = String(scan.slug ?? "").toLowerCase();
-    scanCounts.set(key, (scanCounts.get(key) ?? 0) + 1);
-  }
-
-  const codes = (data ?? []).map((row) => ({
-    ...row,
-    scan_count: scanCounts.get(String(row.code).toLowerCase()) ?? 0,
-  }));
-
-  return NextResponse.json({ codes });
+  // scan_count artik sutundan geliyor (bkz. 0087 trigger'i). Eskiden TUM
+  // magnet_scans satirlari belege cekilip JS'te sayiliyordu; PostgREST 1000
+  // satirda kestigi icin sayilar zaten yanlisti.
+  return NextResponse.json({
+    codes: data ?? [],
+    total: count ?? 0,
+    page,
+    pageSize: PAGE_SIZE,
+  });
 }
 
 export async function POST(request: Request) {

@@ -16,33 +16,61 @@ import { appEnv } from "@/lib/env";
 
 export const dynamic = "force-dynamic";
 
-export default async function Page() {
+export default async function Page({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string; durum?: string }>;
+}) {
   await requireSuperAdminPage();
 
   const supabase = createSupabaseAdminClient();
 
-  const { data: codeRows } = supabase
-    ? await supabase
-        .from("magnet_codes")
-        .select(
-          "id, code, tenant_id, label, assigned_at, created_at, city, district, neighborhood, placed_at",
-        )
-        .order("created_at", { ascending: false })
-        .limit(1000)
-    : { data: [] };
+  // Sayfalama: 10.000 kodla calisacak. Eskiden .limit(1000) vardi.
+  const PAGE_SIZE = 100;
+  const { page: sayfaParam, durum: durumParam } = await searchParams;
+  const page = Math.max(1, Number.parseInt(sayfaParam ?? "1", 10) || 1);
+  const from = (page - 1) * PAGE_SIZE;
+  // Durum suzgeci de sunucuda. Sayfa basina 100 satir cekildigi icin istemci
+  // tarafinda suzmek "Bosta (3)" gibi sadece o sayfayi anlatan yanlis sayilar
+  // uretiyordu.
+  const durum: "all" | "free" | "assigned" =
+    durumParam === "free" || durumParam === "assigned" ? durumParam : "all";
 
-  // Okutma sayısı: magnetin sahada gerçekten çalışıp çalışmadığını gösteren
-  // tek somut veri. Yenileme görüşmesinde de işe yarıyor.
-  const { data: scanRows } = supabase
-    ? await supabase.from("magnet_scans").select("slug")
-    : { data: [] };
-
-  const scanCounts = new Map<string, number>();
-  for (const scan of scanRows ?? []) {
-    const key = String(scan.slug ?? "").toLowerCase();
-    scanCounts.set(key, (scanCounts.get(key) ?? 0) + 1);
+  async function fetchCodes() {
+    if (!supabase) return { data: [], count: 0 };
+    let query = supabase
+      .from("magnet_codes")
+      .select(
+        "id, code, tenant_id, label, assigned_at, created_at, city, district, neighborhood, placed_at, is_disabled, scan_count, last_scan_at, customer_id, claimed_at",
+        { count: "exact" },
+      )
+      .order("created_at", { ascending: false })
+      .range(from, from + PAGE_SIZE - 1);
+    if (durum === "free") query = query.is("tenant_id", null);
+    else if (durum === "assigned") query = query.not("tenant_id", "is", null);
+    return await query;
   }
 
+  // Rozetlerdeki sayilar tum tabloyu anlatmali; head:true satir tasimaz.
+  const [{ data: codeRows, count }, toplamSonuc, bostaSonuc] = await Promise.all([
+    fetchCodes(),
+    supabase
+      ? supabase.from("magnet_codes").select("id", { count: "exact", head: true })
+      : Promise.resolve({ count: 0 }),
+    supabase
+      ? supabase
+          .from("magnet_codes")
+          .select("id", { count: "exact", head: true })
+          .is("tenant_id", null)
+      : Promise.resolve({ count: 0 }),
+  ]);
+
+  const toplamKod = toplamSonuc.count ?? 0;
+  const bostaKod = bostaSonuc.count ?? 0;
+
+  // Okutma sayisi artik magnet_codes.scan_count sutununda (0087 trigger'i).
+  // Eskiden TUM magnet_scans satirlari belege cekilip JS'te sayiliyordu ve
+  // PostgREST 1000 satirda kestigi icin sayilar sessizce yanlisti.
   const codes: MagnetCodeRow[] = (codeRows ?? []).map((row) => ({
     id: row.id,
     code: row.code,
@@ -50,11 +78,15 @@ export default async function Page() {
     label: row.label,
     assigned_at: row.assigned_at,
     created_at: row.created_at,
-    scan_count: scanCounts.get(String(row.code).toLowerCase()) ?? 0,
+    scan_count: row.scan_count ?? 0,
     city: row.city,
     district: row.district,
     neighborhood: row.neighborhood,
     placed_at: row.placed_at,
+    is_disabled: row.is_disabled ?? false,
+    last_scan_at: row.last_scan_at,
+    customer_id: row.customer_id,
+    claimed_at: row.claimed_at,
   }));
 
   const { data: tenantRows } = supabase
@@ -79,6 +111,12 @@ export default async function Page() {
         initialCodes={codes}
         tenants={tenants}
         marketingDomain={appEnv.marketingDomain}
+        total={count ?? 0}
+        page={page}
+        pageSize={PAGE_SIZE}
+        durum={durum}
+        toplamKod={toplamKod}
+        bostaKod={bostaKod}
       />
     </div>
   );
