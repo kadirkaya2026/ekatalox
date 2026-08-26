@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import nodemailer from 'nodemailer'
+import { getClientIp } from '@/lib/storefront/client-ip'
 import {
   formatPlanCapacityDescription,
   getPlanLabel,
@@ -52,12 +53,9 @@ export async function POST(req: NextRequest) {
           company: String(company).trim(),
           terms_version: TERMS_VERSION,
           accepted_at: new Date().toISOString(),
-          // Vercel arkasında gerçek istemci IP'si x-forwarded-for'un ilk
-          // parçasında; tek başına req.ip proxy adresini verebiliyor.
-          ip_address:
-            req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ??
-            req.headers.get('x-real-ip') ??
-            null,
+          // Cloudflare arkasında gerçek IP cf-connecting-ip'te; yardımcı
+          // önce onu okur (bkz. lib/storefront/client-ip.ts).
+          ip_address: getClientIp(req),
           user_agent: req.headers.get('user-agent') ?? null,
           source: 'kayit_formu',
         })

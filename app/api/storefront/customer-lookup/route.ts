@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getStorefrontTenant } from "@/lib/data";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { isLikelyCompletePhone, normalizeCustomerPhone } from "@/lib/storefront/customer-phone";
+import { getClientIp } from "@/lib/storefront/client-ip";
 
 // Telefonla otomatik doldurma: tam numara eşleşmesinde önceki sipariş
 // bilgisini döner. Bir müşterinin başka müşterinin bilgisini görebilmesi
@@ -32,10 +33,6 @@ function isRateLimited(key: string): boolean {
   return false;
 }
 
-function getClientIp(request: Request): string {
-  const forwardedFor = request.headers.get("x-forwarded-for");
-  return forwardedFor?.split(",")[0]?.trim() || "unknown";
-}
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
@@ -46,7 +43,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ customer: null });
   }
 
-  const ip = getClientIp(request);
+  const ip = getClientIp(request) ?? "unknown";
   if (isRateLimited(`${ip}:${subdomain}`)) {
     return NextResponse.json({ error: "Çok fazla istek." }, { status: 429 });
   }
