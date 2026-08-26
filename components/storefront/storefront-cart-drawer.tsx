@@ -830,6 +830,15 @@ export function StorefrontCartDrawer({
                   })}
                 </p>
               ) : null}
+              {/* Sert reddetme (engelli telefon/IP, 403/429): WhatsApp kutusu hiç
+                  açılmaz, bu yüzden hata BURADA bağımsız gösterilmeli. Eskiden
+                  yalnızca kutunun içinde render ediliyordu ve reddedilen müşteri
+                  ekranda hiçbir şey görmüyordu. */}
+              {!whatsappHandoff && orderPdfError ? (
+                <p className="mt-3 rounded-lg bg-rose-50 px-3 py-2 text-center text-xs font-medium leading-5 text-rose-700">
+                  {orderPdfError}
+                </p>
+              ) : null}
               {whatsappHandoff ? (
                 <div className="mt-3 space-y-2">
                   <p className={cn("text-center text-xs font-medium leading-5", theme.successText)}>
