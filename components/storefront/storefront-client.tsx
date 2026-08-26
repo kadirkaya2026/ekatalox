@@ -1820,11 +1820,14 @@ export function StorefrontClient({
           ? error.apiError.trim()
           : null;
 
-      // 403 = sipariş REDDEDİLDİ (engelli telefon). Diğer hatalardan farklı:
-      // aşağıdaki "PDF olmasa da WhatsApp'a devam et" toleransı burada
-      // uygulanmaz, yoksa engel kağıt üstünde kalır — müşteri PDF'siz
-      // mesajı yine de gönderebilirdi.
-      if (error instanceof OrderPdfRequestError && error.statusCode === 403) {
+      // 403/429 = sipariş REDDEDİLDİ (engelli telefon / engelli IP). Diğer
+      // hatalardan farklı: aşağıdaki "PDF olmasa da WhatsApp'a devam et"
+      // toleransı burada uygulanmaz, yoksa engel kağıt üstünde kalır —
+      // müşteri PDF'siz mesajı yine de gönderebilirdi.
+      if (
+        error instanceof OrderPdfRequestError &&
+        (error.statusCode === 403 || error.statusCode === 429)
+      ) {
         setOrderPdfError(apiError ?? "Sipariş alınamadı. Lütfen mağaza ile iletişime geçin.");
         return; // finally yine çalışır, spinner kapanır
 

@@ -18,6 +18,8 @@ import { recordStorefrontOrderStat } from "@/lib/analytics/record-stats";
 import { recordStorefrontOrder } from "@/lib/storefront/orders";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { getStorefrontMagnetCookieName } from "@/lib/storefront/magnet-cookie";
+import { getClientIp } from "@/lib/storefront/client-ip";
+import { checkOrderIpGuard, ipBlockedMessage } from "@/lib/storefront/ip-guard";
 import { normalizeCustomerPhone } from "@/lib/storefront/customer-phone";
 import { getPublicOrigin } from "@/lib/tenancy/request-host";
 import { storefrontOrderPdfSchema } from "@/lib/validators/storefront-order-pdf";
@@ -118,6 +120,19 @@ export async function POST(request: Request) {
     return errorResponse(requestId, "Sunucu yapılandırması eksik.", 500, {
       reason: "missing_service_role",
       tenantId: tenant.id,
+    });
+  }
+
+  // IP taşkın freni: aynı IP 10 dakikada 5'ten fazla deneme yaparsa 1 saat
+  // engellenir; bayi panelden kaldırabilir/uzatabilir/süresize çevirebilir.
+  const clientIp = getClientIp(request);
+  const ipGuard = await checkOrderIpGuard(supabase, tenant.id, clientIp);
+  if (ipGuard.blocked) {
+    return errorResponse(requestId, ipBlockedMessage(ipGuard), 429, {
+      reason: "ip_blocked",
+      tenantId: tenant.id,
+      permanent: ipGuard.permanent,
+      blockedUntil: ipGuard.blockedUntil,
     });
   }
 

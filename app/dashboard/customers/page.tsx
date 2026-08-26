@@ -1,6 +1,8 @@
 import { Header } from "@/components/dashboard/header";
 import { Card } from "@/components/ui/card";
 import { CustomersManager } from "@/components/dashboard/customers-manager";
+import { IpBlocksManager } from "@/components/dashboard/ip-blocks-manager";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { requireTenantAdminPage } from "@/lib/auth/session";
 import { getTenantCustomersOverview } from "@/lib/customers/data";
 
@@ -23,7 +25,17 @@ export default async function TenantCustomersPage() {
     );
   }
 
-  const customers = await getTenantCustomersOverview(tenant.id);
+  const supabase = createSupabaseAdminClient();
+  const [customers, { data: ipBlockRows }] = await Promise.all([
+    getTenantCustomersOverview(tenant.id),
+    supabase
+      ? supabase
+          .from("storefront_ip_blocks")
+          .select("id, ip, reason, blocked_until, created_at, updated_at")
+          .eq("tenant_id", tenant.id)
+          .order("created_at", { ascending: false })
+      : Promise.resolve({ data: [] }),
+  ]);
 
   return (
     <div className="space-y-6">
@@ -33,6 +45,7 @@ export default async function TenantCustomersPage() {
         description="WhatsApp ile sipariş veren müşterilerinizin isim, adres ve telefon bilgileri; sipariş sayıları ve geçmişleri burada listelenir."
       />
       <CustomersManager initialCustomers={customers} />
+      <IpBlocksManager initialBlocks={ipBlockRows ?? []} />
     </div>
   );
 }
