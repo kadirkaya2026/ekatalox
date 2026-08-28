@@ -1718,13 +1718,14 @@ export function StorefrontClient({
     };
   }, [previewProduct, subdomain, categories, recommendationSeed]);
   const buildWhatsAppOrderMessage = useCallback(
-    (pdfUrl?: string | null) => {
+    (pdfUrl?: string | null, trackingUrl?: string | null) => {
       return buildWhatsAppMessage({
         tenantName: tenant.company_name,
         customerReferenceName,
         customerAddress: isMarketTenant ? customerAddress : undefined,
         customerPhone: isMarketTenant ? customerPhone : undefined,
         pdfUrl,
+        trackingUrl,
         isTekel,
       });
     },
@@ -1791,6 +1792,7 @@ export function StorefrontClient({
     setIsGeneratingOrderPdf(true);
     let pdfUrl: string | null = null;
     let pdfIncluded = false;
+    let trackingUrl: string | null = null;
 
     try {
       const result = await requestOrderReceiptPdf({
@@ -1814,6 +1816,7 @@ export function StorefrontClient({
       });
       pdfUrl = result.pdfUrl;
       pdfIncluded = true;
+      trackingUrl = result.trackingUrl ?? null;
     } catch (error) {
       const apiError =
         error instanceof OrderPdfRequestError && error.apiError?.trim()
@@ -1842,13 +1845,14 @@ export function StorefrontClient({
       setIsGeneratingOrderPdf(false);
     }
 
-    const message = buildWhatsAppOrderMessage(pdfUrl);
+    const message = buildWhatsAppOrderMessage(pdfUrl, trackingUrl);
     setWhatsappHandoff(
       buildWhatsAppOrderHandoff({
         phone: tenant.whatsapp_number,
         message,
         directToRegisteredNumber: tenant.is_whatsapp_order_direct ?? true,
         pdfIncluded,
+        trackingUrl,
       }),
     );
   }, [

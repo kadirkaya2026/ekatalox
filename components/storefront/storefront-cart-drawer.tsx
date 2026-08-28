@@ -860,6 +860,16 @@ export function StorefrontCartDrawer({
                   >
                     {t("cart.sendViaWhatsApp")}
                   </a>
+                  {whatsappHandoff.trackingUrl ? (
+                    <a
+                      href={whatsappHandoff.trackingUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className={cn("block w-full text-center text-xs font-semibold underline underline-offset-2 transition hover:opacity-80", theme.textMuted)}
+                    >
+                      {t("cart.trackOrder")}
+                    </a>
+                  ) : null}
                   <button
                     type="button"
                     onClick={copyOrderMessage}

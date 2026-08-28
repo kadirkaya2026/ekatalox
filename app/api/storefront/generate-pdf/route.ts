@@ -174,7 +174,7 @@ export async function POST(request: Request) {
     // icindeydi: pdf-lib bir sebeple patlarsa musteri WhatsApp'tan siparisi
     // gonderiyor ama sistemde hicbir kaydi olmuyordu.
     await recordStorefrontOrderStat(supabase, tenant.id, { catalogMode: true });
-    await recordStorefrontOrder({
+    const recorded = await recordStorefrontOrder({
       supabase,
       tenantId: tenant.id,
       customerName: parsed.data.customer_reference_name,
@@ -222,7 +222,7 @@ export async function POST(request: Request) {
       });
 
       const pdfUrl = buildSecureOrderReceiptUrl(securePdfId, getPublicOrigin(request));
-      return NextResponse.json({ pdfUrl, orderNumber, securePdfId, requestId });
+      return NextResponse.json({ pdfUrl, orderNumber, securePdfId, requestId, trackingUrl: buildTrackingUrl(request, recorded) });
     } catch (error) {
       logOrderPdfServerEvent("error", "request_failed", {
         requestId,
@@ -299,7 +299,7 @@ export async function POST(request: Request) {
     currency: paymentSummary.currency,
     totalAmount: paymentSummary.finalTotal,
   });
-  await recordStorefrontOrder({
+  const recorded = await recordStorefrontOrder({
     supabase,
     tenantId: tenant.id,
     customerName: parsed.data.customer_reference_name,
@@ -376,7 +376,7 @@ export async function POST(request: Request) {
       durationMs,
     });
 
-    return NextResponse.json({ pdfUrl, orderNumber, securePdfId, requestId });
+    return NextResponse.json({ pdfUrl, orderNumber, securePdfId, requestId, trackingUrl: buildTrackingUrl(request, recorded) });
   } catch (error) {
     logOrderPdfServerEvent("error", "request_failed", {
       requestId,
@@ -420,4 +420,13 @@ async function resolveMagnetCodeId(
   } catch {
     return null;
   }
+}
+
+/** Müşterinin girişsiz sipariş takip sayfası (vitrin host'unda, gate'siz). */
+function buildTrackingUrl(
+  request: Request,
+  recorded: { trackingToken: string | null } | null,
+): string | null {
+  if (!recorded?.trackingToken) return null;
+  return `${getPublicOrigin(request)}/siparis/${recorded.trackingToken}`;
 }

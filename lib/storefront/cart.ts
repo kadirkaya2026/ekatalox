@@ -567,6 +567,7 @@ export function buildWhatsAppMessage(params: {
   customerAddress?: string;
   customerPhone?: string;
   pdfUrl?: string | null;
+  trackingUrl?: string | null;
   // Alkol/sigara bayii (tekel) tenant'lar yasal olarak dağıtım/teslimat
   // yapamaz — bu mesaj adres satırı içermemeli, bunun yerine ürünün
   // mağazadan elden teslim alınacağını açıkça belirten bir ibare taşımalı
@@ -590,6 +591,10 @@ export function buildWhatsAppMessage(params: {
 
   if (params.pdfUrl?.trim()) {
     lines.push(`📄 Sipariş Fişi : ${params.pdfUrl.trim()}`);
+  }
+
+  if (params.trackingUrl?.trim()) {
+    lines.push(`🔎 Sipariş Takip : ${params.trackingUrl.trim()}`);
   }
 
   if (params.isTekel) {

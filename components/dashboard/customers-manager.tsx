@@ -8,11 +8,8 @@ import { cn, formatCurrency, formatDate } from "@/lib/utils";
 import type { CurrencyCode } from "@/lib/products/constants";
 import type { StorefrontCustomerWithStats, StorefrontOrder } from "@/lib/types";
 
-function formatOrderTotal(order: StorefrontOrder) {
-  return order.currency === "CATALOG"
-    ? "Fiyatsız katalog"
-    : formatCurrency(order.total_amount, order.currency as CurrencyCode);
-}
+import { formatOrderTotal } from "@/lib/orders/format";
+import { ORDER_STATUS_TONES, ORDER_STATUS_LABELS } from "@/lib/orders/status";
 
 function formatCustomerTotals(totals: Record<string, number>) {
   const entries = Object.entries(totals).filter(([currency]) => currency !== "CATALOG");
@@ -67,7 +64,14 @@ function OrderDetailView({ order, onBack }: { order: StorefrontOrder; onBack: ()
       <BackButton label="Siparişlere dön" onClick={onBack} />
 
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h3 className="text-base font-semibold text-slate-900">{order.order_number}</h3>
+        <h3 className="flex items-center gap-2 text-base font-semibold text-slate-900">
+          {order.order_number}
+          {order.status ? (
+            <Badge className={cn("px-2.5 py-0.5 text-[11px]", ORDER_STATUS_TONES[order.status])}>
+              {ORDER_STATUS_LABELS[order.status]}
+            </Badge>
+          ) : null}
+        </h3>
         <span className="text-sm text-slate-500">{formatDate(order.created_at)}</span>
       </div>
       <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-slate-600">

@@ -2,6 +2,7 @@ export interface WhatsAppOrderHandoff {
   href: string;
   message: string;
   pdfIncluded: boolean;
+  trackingUrl?: string | null;
 }
 
 export function buildWhatsAppOrderHref(params: {
@@ -24,6 +25,7 @@ export function buildWhatsAppOrderHandoff(params: {
   message: string;
   directToRegisteredNumber: boolean;
   pdfIncluded: boolean;
+  trackingUrl?: string | null;
 }): WhatsAppOrderHandoff {
   return {
     href: buildWhatsAppOrderHref({
@@ -33,5 +35,6 @@ export function buildWhatsAppOrderHandoff(params: {
     }),
     message: params.message,
     pdfIncluded: params.pdfIncluded,
+    trackingUrl: params.trackingUrl ?? null,
   };
 }

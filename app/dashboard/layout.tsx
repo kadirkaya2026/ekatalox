@@ -6,6 +6,7 @@ import { requireTenantAdminPage } from "@/lib/auth/session";
 import { getCurrentMonthVisitorCount } from "@/lib/analytics/queries";
 import { getVisitorLimitForPlan } from "@/lib/billing/plans";
 import { getTenantSuggestionNoticeCount } from "@/lib/products/suggestions";
+import { getTenantNewOrderCount } from "@/lib/orders/data";
 import {
   getTrialDaysLeft,
   isTrialExpired,
@@ -25,12 +26,13 @@ export default async function DashboardLayout({
     tenant && isTrialTenant(tenant) && !trialExpired
       ? getTrialDaysLeft(tenant)
       : null;
-  const [monthlyVisitorCount, suggestionNoticeCount] = tenant
+  const [monthlyVisitorCount, suggestionNoticeCount, newOrderCount] = tenant
     ? await Promise.all([
         getCurrentMonthVisitorCount(tenant.id),
         getTenantSuggestionNoticeCount(tenant.id),
+        tenant.business_type === "market" ? getTenantNewOrderCount(tenant.id) : Promise.resolve(0),
       ])
-    : [0, 0];
+    : [0, 0, 0];
 
   return (
     <div className="min-h-screen bg-background text-foreground md:grid md:h-screen md:grid-cols-[280px_1fr] md:overflow-hidden">
@@ -41,6 +43,7 @@ export default async function DashboardLayout({
         plan={plan}
         businessType={tenant?.business_type}
         suggestionNoticeCount={suggestionNoticeCount}
+        newOrderCount={newOrderCount}
       />
       <div className="hidden md:block md:h-screen">
         <Sidebar
@@ -50,6 +53,7 @@ export default async function DashboardLayout({
           plan={plan}
           businessType={tenant?.business_type}
           suggestionNoticeCount={suggestionNoticeCount}
+          newOrderCount={newOrderCount}
         />
       </div>
       <main className="container-shell py-6 md:h-screen md:overflow-y-auto">

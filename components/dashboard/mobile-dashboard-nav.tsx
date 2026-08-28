@@ -18,6 +18,7 @@ export function MobileDashboardNav({
   plan,
   businessType,
   suggestionNoticeCount = 0,
+  newOrderCount = 0,
 }: {
   mode: "admin" | "tenant";
   title: string;
@@ -25,6 +26,7 @@ export function MobileDashboardNav({
   plan?: TenantPlan;
   businessType?: TenantBusinessType;
   suggestionNoticeCount?: number;
+  newOrderCount?: number;
 }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
@@ -101,6 +103,7 @@ export function MobileDashboardNav({
                 plan={plan}
                 businessType={businessType}
                 suggestionNoticeCount={suggestionNoticeCount}
+                newOrderCount={newOrderCount}
               />
             </motion.div>
           </motion.div>

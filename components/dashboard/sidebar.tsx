@@ -34,6 +34,7 @@ import {
   UserCircle,
   Wallet,
   Magnet,
+  ClipboardList,
 } from "lucide-react";
 import { EkataloxLogo } from "@/components/brand/ekatalox-logo";
 import { SidebarLogoutButton } from "@/components/dashboard/sidebar-logout-button";
@@ -117,6 +118,12 @@ const tenantLinks: SidebarLink[] = [
   { href: "/categories", label: "Kategoriler", icon: FolderTree },
   { href: "/access-codes", label: "Şifreler", icon: KeyRound },
   { href: "/magnetler", label: "Magnetlerim", icon: Magnet },
+  {
+    href: "/siparisler",
+    label: "Siparişler",
+    icon: ClipboardList,
+    requiredBusinessType: "market",
+  },
   { href: "/reports", label: "Raporlar", icon: BarChart3 },
   {
     href: "/customers",
@@ -250,6 +257,7 @@ export function Sidebar({
   plan = "baslangic",
   businessType = "general",
   suggestionNoticeCount = 0,
+  newOrderCount = 0,
 }: {
   mode: "admin" | "tenant";
   title: string;
@@ -257,6 +265,7 @@ export function Sidebar({
   plan?: TenantPlan;
   businessType?: TenantBusinessType;
   suggestionNoticeCount?: number;
+  newOrderCount?: number;
 }) {
   const pathname = usePathname();
   const links =
@@ -325,6 +334,9 @@ export function Sidebar({
                 <span>{link.label}</span>
                 {link.href === "/products" ? (
                   <NavNotificationBadge count={suggestionNoticeCount} />
+                ) : null}
+                {link.href === "/siparisler" ? (
+                  <NavNotificationBadge count={newOrderCount} />
                 ) : null}
               </Link>
 
