@@ -15,7 +15,7 @@ export default async function TenantCustomersPage() {
       <div className="space-y-6">
         <Header
           eyebrow="Raporlar"
-          title="Müşteriler"
+          title="Cari Hesaplar"
           description="Bu özellik sadece market tipi hesaplar için kullanılabilir."
         />
         <Card className="p-6 text-sm text-slate-600">
@@ -41,10 +41,10 @@ export default async function TenantCustomersPage() {
     <div className="space-y-6">
       <Header
         eyebrow="Raporlar"
-        title="Müşteriler"
-        description="WhatsApp ile sipariş veren müşterilerinizin isim, adres ve telefon bilgileri; sipariş sayıları ve geçmişleri burada listelenir."
+        title="Cari Hesaplar"
+        description="Sipariş veren her müşteri otomatik cari kaydı olur: toplam alışveriş, bekleyen siparişler, hareket dökümü, magnet ve engel durumu. Ciro yalnızca teslim edilen siparişleri kapsar."
       />
-      <CustomersManager initialCustomers={customers} />
+      <CustomersManager initialCustomers={customers} isTekel={Boolean(tenant.is_tekel)} />
       <IpBlocksManager initialBlocks={ipBlockRows ?? []} />
     </div>
   );

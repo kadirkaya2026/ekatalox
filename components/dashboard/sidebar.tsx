@@ -134,7 +134,7 @@ const tenantLinks: SidebarLink[] = [
   },
   {
     href: "/customers",
-    label: "Müşteriler",
+    label: "Cari Hesaplar",
     icon: Contact,
     requiredBusinessType: "market",
   },

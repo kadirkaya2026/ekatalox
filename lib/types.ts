@@ -184,7 +184,17 @@ export interface OrderStatusEvent {
 
 export interface StorefrontCustomerWithStats extends StorefrontCustomer {
   orders_count: number;
+  /** Teslim edilen siparişlerin toplamı (cari ciro), para birimine göre. */
   totals_by_currency: Record<string, number>;
+  delivered_count: number;
+  cancelled_count: number;
+  /** Henüz teslim edilmemiş (yeni…yola çıktı) siparişlerin toplamı. */
+  pending_by_currency: Record<string, number>;
+  last_order_status: OrderStatus | null;
+  /** Bu müşteriye tanımlı magnet kodu (varsa). */
+  magnet_code: string | null;
+  is_blocked: boolean;
+  blocked_id: string | null;
 }
 
 export interface MarketCatalogProduct {
