@@ -29,6 +29,8 @@ export interface ProductFormState {
   is_recommended: boolean;
   is_discount_active: boolean;
   discount_price: string;
+  // Alış fiyatı (maliyet) — kârlılık raporu için; müşteriye gösterilmez.
+  purchase_price: string;
   package_quantity: string;
   carton_quantity: string;
   description: string;
@@ -52,6 +54,7 @@ export function buildEmptyProductForm(priceLists: PriceList[]): ProductFormState
     is_recommended: false,
     is_discount_active: false,
     discount_price: "",
+    purchase_price: "",
     package_quantity: "",
     carton_quantity: "",
     description: "",
@@ -82,6 +85,10 @@ export function buildProductFormFromProduct(
       product.discount_price !== null && product.discount_price !== undefined
         ? String(product.discount_price)
         : "",
+    purchase_price:
+      product.purchase_price !== null && product.purchase_price !== undefined
+        ? String(product.purchase_price)
+        : "",
     package_quantity: product.package_quantity ? String(product.package_quantity) : "",
     carton_quantity: product.carton_quantity ? String(product.carton_quantity) : "",
     description: product.description ?? "",
@@ -110,6 +117,7 @@ export function toProductFormData(form: ProductFormState) {
   formData.set("is_recommended", String(form.is_recommended));
   formData.set("is_discount_active", String(form.is_discount_active));
   formData.set("discount_price", form.is_discount_active ? form.discount_price.trim() : "");
+  formData.set("purchase_price", form.purchase_price.trim());
   formData.set("package_quantity", form.package_quantity.trim());
   formData.set("carton_quantity", form.carton_quantity.trim());
   formData.set("description", form.description.trim());

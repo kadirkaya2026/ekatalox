@@ -134,6 +134,8 @@ export const productBaseSchema = z.object({
     booleanSchema,
   ),
   discount_price: optionalDiscountPriceSchema,
+  // Alış fiyatı (maliyet): boş → null; indirimli fiyatla aynı biçim kuralları.
+  purchase_price: optionalDiscountPriceSchema,
 });
 
 // NOT: Eskiden burada tüm listelerin en düşük fiyatı üzerinden tek bir
@@ -168,6 +170,7 @@ export const productImportRowSchema = z.object({
   image_url: imageUrlSchema,
   package_quantity: optionalPositiveIntegerSchema,
   carton_quantity: optionalPositiveIntegerSchema,
+  purchase_price: optionalDiscountPriceSchema,
 });
 
 export const productImportRowsSchema = z.array(productImportRowSchema);

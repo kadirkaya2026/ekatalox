@@ -120,6 +120,17 @@ export function ProductEditModal({
               </option>
             ))}
           </select>
+          <div className="md:col-span-2">
+            <Input
+              value={form.purchase_price}
+              onChange={(event) => updateField("purchase_price", event.target.value)}
+              placeholder="Alış fiyatı (maliyet)"
+              inputMode="decimal"
+            />
+            <p className="mt-1 text-xs text-muted-foreground">
+              Müşteriye gösterilmez; kâr hesabı için.
+            </p>
+          </div>
         </div>
 
           <ProductPriceFields

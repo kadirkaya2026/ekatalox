@@ -107,6 +107,8 @@ export function normalizeProductRecord(record: RawProductRecord): Product {
     is_recommended: Boolean(record.is_recommended),
     discount_price:
       typeof record.discount_price === "number" ? record.discount_price : null,
+    purchase_price:
+      typeof record.purchase_price === "number" ? record.purchase_price : null,
     package_quantity:
       typeof record.package_quantity === "number" ? record.package_quantity : null,
     carton_quantity:

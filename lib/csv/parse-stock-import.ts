@@ -1,6 +1,6 @@
 import { sanitizePrice } from "@/lib/products/parse-price-input";
 
-export type StockImportFieldKey = "barcode" | "product_name" | "price" | "ignore";
+export type StockImportFieldKey = "barcode" | "product_name" | "price" | "purchase_price" | "ignore";
 
 export interface StockImportRawTable {
   headers: string[];
@@ -17,6 +17,8 @@ export interface StockImportSourceRow {
   barcode: string | null;
   productName: string | null;
   price: number | null;
+  // Alış fiyatı (maliyet) — kârlılık raporu için; dosyada yoksa null.
+  purchasePrice: number | null;
 }
 
 // Barkod okuyucu/market otomasyon yazılımları vendor'a göre farklı başlıklar
@@ -41,6 +43,19 @@ const STOCK_IMPORT_FIELD_ALIASES: Record<Exclude<StockImportFieldKey, "ignore">,
     "stok cinsi",
   ],
   price: ["fiyat", "satış fiyatı", "satis fiyati", "price", "unit price", "fiyatı", "fiyati", "birim fiyat"],
+  purchase_price: [
+    "alış fiyatı",
+    "alis fiyati",
+    "alış",
+    "alis",
+    "maliyet",
+    "maliyet fiyatı",
+    "geliş fiyatı",
+    "gelis fiyati",
+    "cost",
+    "cost price",
+    "purchase price",
+  ],
 };
 
 function normalizeHeader(header: string): string {
@@ -127,17 +142,20 @@ export function mapRawRowsToSourceRows(
   const barcodeIndex = indexForField("barcode");
   const productNameIndex = indexForField("product_name");
   const priceIndex = indexForField("price");
+  const purchasePriceIndex = indexForField("purchase_price");
 
   return raw.rows.map((row, index) => {
     const rawBarcode = barcodeIndex >= 0 ? row[barcodeIndex]?.trim() : "";
     const rawProductName = productNameIndex >= 0 ? row[productNameIndex]?.trim() : "";
     const rawPrice = priceIndex >= 0 ? row[priceIndex]?.trim() : "";
+    const rawPurchase = purchasePriceIndex >= 0 ? row[purchasePriceIndex]?.trim() : "";
 
     return {
       rowNumber: index + 1,
       barcode: rawBarcode ? rawBarcode : null,
       productName: rawProductName ? rawProductName : null,
       price: rawPrice ? sanitizePrice(rawPrice) : null,
+      purchasePrice: rawPurchase ? sanitizePrice(rawPurchase) : null,
     };
   });
 }

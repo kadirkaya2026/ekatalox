@@ -335,6 +335,7 @@ export async function POST(request: Request) {
             image_url: row.newProduct.imageUrl ?? null,
             currency: "TRY",
             is_in_stock: true,
+            purchase_price: row.purchasePrice ?? null,
             display_order: nextDisplayOrder++,
           },
         }));
@@ -465,6 +466,27 @@ export async function POST(request: Request) {
 
     if (priceError) {
       return NextResponse.json({ error: priceError.message }, { status: 400 });
+    }
+  }
+
+  // Alış fiyatı (maliyet): ürün başına tek değer, fiyat listesinden bağımsız.
+  // Dosyada sütun yoksa satırlarda null gelir ve mevcut maliyet korunur.
+  const costUpdates = validUpdates.filter(
+    (update) => typeof update.purchasePrice === "number" && update.purchasePrice >= 0,
+  );
+  for (const batch of chunkArray(costUpdates, 25)) {
+    const results = await Promise.all(
+      batch.map((update) =>
+        supabase
+          .from("products")
+          .update({ purchase_price: update.purchasePrice })
+          .eq("tenant_id", tenant.id)
+          .eq("id", update.productId!),
+      ),
+    );
+    const failed = results.find((result) => result.error);
+    if (failed?.error) {
+      return NextResponse.json({ error: failed.error.message }, { status: 400 });
     }
   }
 

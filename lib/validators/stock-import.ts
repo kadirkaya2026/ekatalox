@@ -5,6 +5,7 @@ export const stockImportSourceRowSchema = z.object({
   barcode: z.string().trim().min(1).nullable(),
   productName: z.string().trim().min(1).nullable(),
   price: z.number().nonnegative().nullable(),
+  purchasePrice: z.number().nonnegative().nullable().default(null),
 });
 
 export const stockImportMatchRequestSchema = z.object({
@@ -49,6 +50,8 @@ export const stockImportApplyRowSchema = z
       .optional(),
     priceListId: z.string().uuid("Geçerli bir fiyat listesi seçin."),
     price: z.coerce.number().min(0, "Fiyat sıfırdan küçük olamaz."),
+    // Alış fiyatı (maliyet); dosyada sütun yoksa gönderilmez.
+    purchasePrice: z.coerce.number().min(0).nullable().optional(),
     // Satırın dosyadaki barkodu — isimle/manuel eşleştirilen ürünlerin
     // sku_code'unu buna göre düzeltmek için (bkz. apply/route.ts). Barkod
     // zaten tam eşleştiyse (matched_exact) sku_code=barcode olduğundan bu

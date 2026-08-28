@@ -81,6 +81,8 @@ interface RowDecision {
   // (ProductImagePlaceholder ürün adını otomatik gösterir).
   imageUrl: string | null;
   price: number | null;
+  // Alış fiyatı (maliyet): dosyada sütun eşlendiyse dolu, apply'da ürüne yazılır.
+  purchasePrice: number | null;
 }
 
 interface ProductPoolEntry {
@@ -109,6 +111,7 @@ const FIELD_OPTIONS: Array<{ value: StockImportFieldKey; label: string }> = [
   { value: "barcode", label: "Barkod / Stok Kodu" },
   { value: "product_name", label: "Ürün Adı" },
   { value: "price", label: "Fiyat" },
+  { value: "purchase_price", label: "Alış fiyatı (maliyet)" },
   { value: "ignore", label: "Yoksay" },
 ];
 
@@ -194,7 +197,8 @@ function initialDecisionsFromResults(
   const decisions = new Map<number, RowDecision>();
 
   for (const result of results) {
-    const sourcePrice = sourceRowsByRowNumber.get(result.rowNumber)?.price ?? null;
+    const sourceRow = sourceRowsByRowNumber.get(result.rowNumber);
+    const sourcePrice = sourceRow?.price ?? null;
     const hasPriceMissingWarning = result.warnings.includes("price_missing");
     const isAutoMatch =
       result.status === "matched_exact" ||
@@ -217,6 +221,7 @@ function initialDecisionsFromResults(
       skuCode: null,
       imageUrl: null,
       price: sourcePrice,
+      purchasePrice: sourceRow?.purchasePrice ?? null,
     });
   }
 
@@ -586,6 +591,7 @@ function ReviewRow({
               },
               priceListId,
               price: decision.price!,
+              purchasePrice: decision.purchasePrice,
               barcode: sourceRow.barcode ?? null,
             },
           ],
@@ -1106,7 +1112,13 @@ export function StockImportPanel({
   }
 
   const mappedFieldCounts = useMemo(() => {
-    const counts: Record<StockImportFieldKey, number> = { barcode: 0, product_name: 0, price: 0, ignore: 0 };
+    const counts: Record<StockImportFieldKey, number> = {
+      barcode: 0,
+      product_name: 0,
+      price: 0,
+      purchase_price: 0,
+      ignore: 0,
+    };
     for (const entry of mapping) counts[entry.field] += 1;
     return counts;
   }, [mapping]);
@@ -1251,6 +1263,7 @@ export function StockImportPanel({
               : null,
             priceListId: selectedPriceListId,
             price: decision.price!,
+            purchasePrice: decision.purchasePrice,
             barcode: sourceRow?.barcode ?? null,
           };
         });
