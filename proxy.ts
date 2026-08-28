@@ -268,6 +268,17 @@ export async function proxy(request: NextRequest) {
       getStorefrontTenant(hostResolution.subdomain as string),
     );
 
+    // Sipariş takip sayfası (/siparis/{token}): müşteri WhatsApp'taki linkten
+    // gelir; şifre/yaş/kota kapılarından bağımsız açılmalı — token'ın kendisi
+    // yetkidir. Kota dolu olsa da müşteri verdiği siparişin durumunu görebilir.
+    if (pathname.startsWith("/siparis/")) {
+      const trackUrl = request.nextUrl.clone();
+      trackUrl.pathname = `/store/${hostResolution.subdomain}${pathname}`;
+      const trackResponse = NextResponse.rewrite(trackUrl);
+      trackResponse.headers.set("X-Robots-Tag", "noindex, nofollow");
+      return trackResponse;
+    }
+
     if (tenant?.visitor_quota_exceeded) {
       const quotaUrl = request.nextUrl.clone();
       quotaUrl.pathname = `/store/${hostResolution.subdomain}/yogunluk`;
