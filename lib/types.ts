@@ -117,12 +117,31 @@ export interface StorefrontCustomer {
   updated_at: string;
 }
 
+export type OrderStatus =
+  | "new"
+  | "confirmed"
+  | "preparing"
+  | "shipped"
+  | "delivered"
+  | "cancelled";
+
 export interface StorefrontOrderItemSnapshot {
   product_name: string;
   sku_code?: string | null;
   quantity: number;
   price: number | null;
   currency: string;
+  // 0091 ile: sipariş anında ürün kimliği + maliyet donduruluyor. Maliyet
+  // sonradan değişse de geçmiş siparişin kârı değişmez.
+  product_id?: string | null;
+  variant_id?: string | null;
+  variant_name?: string | null;
+  sales_unit?: SalesUnit | null;
+  unit_quantity?: number | null;
+  original_price?: number | null;
+  discount_percentage?: number | null;
+  unit_cost?: number | null;
+  cost_source?: "product" | "backfill" | null;
 }
 
 export interface StorefrontOrder {
@@ -139,6 +158,27 @@ export interface StorefrontOrder {
   item_count: number;
   items: StorefrontOrderItemSnapshot[];
   note: string | null;
+  created_at: string;
+  // 0091: durum akışı + maliyet özeti + müşteri takip token'ı
+  status: OrderStatus;
+  status_updated_at: string;
+  confirmed_at: string | null;
+  delivered_at: string | null;
+  cancelled_at: string | null;
+  cancel_reason: string | null;
+  cost_total: number | null;
+  cost_missing_count: number;
+  tracking_token: string;
+  magnet_code_id?: string | null;
+}
+
+export interface OrderStatusEvent {
+  id: string;
+  order_id: string;
+  from_status: OrderStatus | null;
+  to_status: OrderStatus;
+  reason: string | null;
+  actor: "dealer" | "customer" | "system";
   created_at: string;
 }
 
@@ -207,6 +247,9 @@ export interface Product {
   is_discount_active: boolean;
   is_recommended: boolean;
   discount_price: number | null;
+  // Alış fiyatı (maliyet), ürün para birimiyle. Müşteriye gösterilmez;
+  // yalnız kârlılık raporu için.
+  purchase_price?: number | null;
   package_quantity: number | null;
   carton_quantity: number | null;
   created_at: string;

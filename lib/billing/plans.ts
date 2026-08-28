@@ -22,7 +22,8 @@ export type PlanFeature =
   | "online_payment"
   | "custom_domain"
   | "advanced_appearance"
-  | "homepage_blocks_editor";
+  | "homepage_blocks_editor"
+  | "sales_accounting";
 
 export interface PlanOption {
   id: TenantPlan;
@@ -159,6 +160,7 @@ const PROFESSIONAL_FEATURES: Record<PlanFeature, boolean> = {
   custom_domain: true,
   advanced_appearance: true,
   homepage_blocks_editor: true,
+  sales_accounting: true,
 };
 
 const STARTER_FEATURES: Record<PlanFeature, boolean> = {
@@ -171,6 +173,7 @@ const STARTER_FEATURES: Record<PlanFeature, boolean> = {
   custom_domain: false,
   advanced_appearance: false,
   homepage_blocks_editor: false,
+  sales_accounting: false,
 };
 
 // pro, business ile aynı özellik setini kullanır (showcase_products,
@@ -214,9 +217,12 @@ const PLAN_FEATURE_LABELS: Record<PlanFeature, string> = {
   custom_domain: "Özel alan adı",
   advanced_appearance: "Gelişmiş görünüm (font, kart, header)",
   homepage_blocks_editor: "Ana sayfa blok düzenleyici",
+  sales_accounting: "Satış & Kârlılık raporu",
 };
 
 const PLAN_FEATURE_UPGRADE_MESSAGES: Partial<Record<PlanFeature, string>> = {
+  sales_accounting:
+    "Ciro, kâr ve kâr marjı raporlarını görmek için paketinizi yükseltmeniz gerekmektedir.",
   online_payment:
     "iyzico, Paynet gibi sanal POS firmalarından siteniz üzerinden ödeme alabilmek için paketinizi yükseltmeniz gerekmektedir.",
   custom_domain:
