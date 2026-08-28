@@ -12,6 +12,10 @@ const env = {
     process.env.NEXT_PUBLIC_MARKETING_DOMAIN ?? "ekatalox.com",
   adminDomain: process.env.NEXT_PUBLIC_ADMIN_DOMAIN ?? "admin.ekatalox.com",
   appDomain: process.env.NEXT_PUBLIC_APP_DOMAIN ?? "app.ekatalox.com",
+  // Web Push (VAPID). Üretmek için: npx web-push generate-vapid-keys
+  vapidPublicKey: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? "",
+  vapidPrivateKey: process.env.VAPID_PRIVATE_KEY ?? "",
+  vapidSubject: process.env.VAPID_SUBJECT ?? "mailto:info@ekatalox.com",
 };
 
 export const appEnv = env;
@@ -56,4 +60,9 @@ export function requireServiceRoleEnv() {
     url: env.supabaseUrl,
     serviceRoleKey: env.supabaseServiceRoleKey,
   };
+}
+
+/** VAPID anahtarları yoksa push sessizce atlanır; sipariş akışı etkilenmez. */
+export function hasWebPushEnv() {
+  return Boolean(env.vapidPublicKey && env.vapidPrivateKey);
 }

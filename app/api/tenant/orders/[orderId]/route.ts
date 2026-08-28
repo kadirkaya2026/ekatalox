@@ -1,4 +1,6 @@
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
+import { sendOrderStatusPush } from "@/lib/push/send-order-status-push";
+import type { StorefrontOrder } from "@/lib/types";
 import { getSessionContext } from "@/lib/auth/session";
 import { ensureTenantAdminResponse } from "@/lib/tenancy/guards";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
@@ -69,5 +71,25 @@ export async function PATCH(request: Request, ctx: { params: Promise<{ orderId: 
     return NextResponse.json({ error: "Durum güncellenemedi." }, { status: 500 });
   }
 
-  return NextResponse.json({ order: data });
+  const order = data as StorefrontOrder | null;
+  if (order) {
+    // Müşteriye bildirim: yanıtı bekletmeden, arka planda (best-effort).
+    const origin = tenant.custom_domain?.trim()
+      ? `https://${tenant.custom_domain.trim()}`
+      : `https://${tenant.subdomain}.${process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? "ekatalox.com"}`;
+    after(() =>
+      sendOrderStatusPush({
+        tenantId: tenant.id,
+        orderId: order.id,
+        customerId: order.customer_id,
+        orderNumber: order.order_number,
+        status: order.status,
+        tenantName: tenant.company_name,
+        isTekel: Boolean(tenant.is_tekel),
+        trackingUrl: order.tracking_token ? `${origin}/siparis/${order.tracking_token}` : null,
+      }).catch((err) => console.error("[push] gönderim hatası:", err)),
+    );
+  }
+
+  return NextResponse.json({ order });
 }

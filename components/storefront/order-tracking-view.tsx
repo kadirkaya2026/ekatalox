@@ -12,6 +12,7 @@ import type { CurrencyCode } from "@/lib/products/constants";
 import type { OrderStatus } from "@/lib/types";
 import { getStatusDescription, getStatusLabel } from "@/lib/orders/status";
 import { buildWhatsAppOrderHref } from "@/lib/storefront/whatsapp-order";
+import { PushOptInButton } from "@/components/storefront/push-opt-in-button";
 
 export interface TrackingSnapshot {
   orderNumber: string;
@@ -148,6 +149,9 @@ function TrackingCard({
         </div>
 
         <div className="mt-6 flex flex-col gap-2">
+          {!cancelled && snap.status !== "delivered" ? (
+            <PushOptInButton token={token} vapidPublicKey={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? ""} />
+          ) : null}
           <a
             href={waHref}
             target="_blank"

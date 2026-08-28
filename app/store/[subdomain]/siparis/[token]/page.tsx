@@ -25,6 +25,8 @@ export async function generateMetadata(props: TrackingPageProps): Promise<Metada
     title: buildStorefrontTitle("Sipariş Takip", tenant),
     icons: buildStorefrontIcons(settings.site_favicon_url, tenant),
     robots: { index: false, follow: false, googleBot: { index: false, follow: false } },
+    // iOS'ta Web Push için "Ana Ekrana Ekle" gerekiyor; manifest bunu mümkün kılar.
+    manifest: "/tracking.webmanifest",
   };
 }
 
