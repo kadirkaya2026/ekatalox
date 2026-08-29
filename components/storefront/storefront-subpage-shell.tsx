@@ -44,7 +44,7 @@ export function StorefrontSubpageShell({
           <div className="flex items-center gap-2">
             <a
               href="/"
-              className={cn(theme.headerIconButton, "hidden h-11 w-auto shrink-0 items-center gap-2 whitespace-nowrap px-4 text-xs font-bold sm:inline-flex lg:h-12")}
+              className={cn(theme.headerIconButton, "hidden h-11 shrink-0 items-center gap-2 whitespace-nowrap px-4 text-xs font-bold sm:inline-flex lg:h-12 lg:!w-auto")}
             >
               <ArrowLeft className="size-4" />
               {t("orders.backToStore")}
