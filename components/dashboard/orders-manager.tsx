@@ -417,7 +417,7 @@ export function OrdersManager({
                       {getStatusLabel(next, { isTekel })}
                     </Button>
                   ) : null}
-                  {order.status !== "cancelled" ? (
+                  {!isTerminalStatus(order.status) ? (
                     <Button
                       variant="ghost"
                       disabled={pending === order.id}
