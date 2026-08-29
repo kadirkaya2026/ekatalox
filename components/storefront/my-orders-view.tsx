@@ -186,7 +186,7 @@ function MyOrdersCard({ subdomain, tenantName, logoUrl, isTekel }: { subdomain: 
               </span>
               <div>
                 <p className={cn("text-base font-semibold", text)}>{t("orders.title")}</p>
-                <p className={cn("text-xs", muted)}>{t("orders.showingFor").replace(/:?$/, "")}</p>
+                <p className={cn("text-xs", muted)}>{t("orders.formHint")}</p>
               </div>
             </div>
             <label className={cn("flex items-center gap-2 rounded-xl border px-3 py-3", theme.border, theme.surface)}>
