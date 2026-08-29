@@ -4,6 +4,7 @@ import { useRef, useState, type Dispatch, ReactNode, SetStateAction } from "reac
 import { AnimatePresence, motion } from "framer-motion";
 import {
   Banknote,
+  Check,
   ChevronLeft,
   ChevronRight,
   CreditCard,
@@ -152,6 +153,10 @@ export function StorefrontCartDrawer({
   const theme = useStorefrontTheme();
   const { t } = useStorefrontLocale();
   const [copyFeedback, setCopyFeedback] = useState<string | null>(null);
+  // "WhatsApp'tan gönder"e basıldı: sepet temizlendi, boş sepet yerine
+  // "gönderildi" ekranı ve takip linki gösterilir (kullanıcı isteği, 29 Ağu 2026).
+  // Sepete yeni ürün eklenince kendiliğinden kaybolur.
+  const [sentOrder, setSentOrder] = useState<{ trackingUrl: string | null } | null>(null);
   const crossSellScrollRef = useRef<HTMLDivElement>(null);
 
   function scrollCrossSell(direction: "left" | "right") {
@@ -647,6 +652,32 @@ export function StorefrontCartDrawer({
                   </section>
                 ) : null}
               </div>
+            ) : sentOrder ? (
+              <div className="flex h-full min-h-[320px] flex-col items-center justify-center text-center">
+                <div className={cn("flex size-20 items-center justify-center rounded-full", theme.surfaceMuted)}>
+                  <Check className={cn("size-9", theme.successText)} />
+                </div>
+                <p className={cn("mt-5 text-base font-semibold", theme.text)}>{t("cart.orderSentTitle")}</p>
+                <p className={cn("mt-2 max-w-xs text-sm leading-6", theme.textMuted)}>{t("cart.orderSentBody")}</p>
+                {sentOrder.trackingUrl ? (
+                  <a
+                    href={sentOrder.trackingUrl}
+                    className={cn(
+                      "mt-5 inline-flex h-11 items-center justify-center rounded-full px-6 text-sm font-bold shadow-none",
+                      stickyCartButtonClassName,
+                    )}
+                  >
+                    {t("cart.trackOrder")}
+                  </a>
+                ) : null}
+                <button
+                  type="button"
+                  onClick={() => setSentOrder(null)}
+                  className={cn("mt-4 text-xs font-semibold underline underline-offset-2 transition hover:opacity-80", theme.textMuted)}
+                >
+                  {t("cart.newOrder")}
+                </button>
+              </div>
             ) : (
               <div className="flex h-full min-h-[320px] flex-col items-center justify-center text-center">
                 <div className={cn("flex size-20 items-center justify-center rounded-full", theme.surfaceMuted)}>
@@ -853,6 +884,13 @@ export function StorefrontCartDrawer({
                   ) : null}
                   <a
                     href={whatsappHandoff.href}
+                    onClick={() => {
+                      // Gezinme (wa.me) engellenmez; sepet aynı anda sıfırlanır ki
+                      // müşteri geri döndüğünde ürünler tekrar sepette durmasın.
+                      setSentOrder({ trackingUrl: whatsappHandoff.trackingUrl ?? null });
+                      setCopyFeedback(null);
+                      clearCart();
+                    }}
                     className={cn(
                       "inline-flex h-11 w-full items-center justify-center rounded-full px-5 text-base font-bold shadow-none sm:h-12",
                       stickyCartButtonClassName,
