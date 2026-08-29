@@ -124,13 +124,20 @@ const tenantLinks: SidebarLink[] = [
     icon: ClipboardList,
     requiredBusinessType: "market",
   },
-  { href: "/reports", label: "Raporlar", icon: BarChart3 },
   {
-    href: "/satis",
-    label: "Satış & Kârlılık",
-    icon: Wallet,
-    requiredFeature: "sales_accounting",
-    requiredBusinessType: "market",
+    href: "/reports",
+    label: "Raporlar",
+    icon: BarChart3,
+    children: [
+      { href: "/reports", label: "Mağaza Raporları", icon: BarChart3 },
+      {
+        href: "/reports/satis",
+        label: "Satış & Kârlılık",
+        icon: Wallet,
+        requiredFeature: "sales_accounting",
+        requiredBusinessType: "market",
+      },
+    ],
   },
   {
     href: "/customers",
