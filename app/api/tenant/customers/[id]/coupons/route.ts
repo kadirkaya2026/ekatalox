@@ -119,13 +119,17 @@ export async function POST(request: Request, ctx: { params: Promise<{ id: string
     const origin = tenant.custom_domain?.trim()
       ? `https://${tenant.custom_domain.trim()}`
       : `https://${tenant.subdomain}.${appEnv.rootDomain}`;
-    const minPart = input.min_order_amount ? ` (${scope ? `${scope} kategorisinden ` : ""}${input.min_order_amount.toLocaleString("tr-TR")} ₺ ve üzeri)` : scope ? ` (${scope} kategorisinde)` : "";
-    const datePart = expiresAt ? ` · ${input.expires_in_days} gün geçerli` : "";
+    // Başlık: "Mağaza Adı - Size Özel ₺100 İndirim!"; gövde: bayinin mesajı
+    // (yoksa şartların kısa özeti). Kupon adı zaten kapsamı taşıyor.
+    const conditions = [
+      input.min_order_amount ? `${scope ? `${scope} kategorisinden ` : ""}${input.min_order_amount.toLocaleString("tr-TR")} ₺ ve üzeri` : scope ? `${scope} kategorisinde` : null,
+      expiresAt ? `${input.expires_in_days} gün geçerli` : null,
+    ].filter(Boolean).join(" · ");
     await sendCustomerPush({
       tenantId: tenant.id,
       customerId: customer.id,
-      title: `${storeName}: size özel ${benefit} indirim 🎁`,
-      body: `${input.message || "Bir sonraki siparişinizde sepette kendiliğinden uygulanır."}${minPart}${datePart}`,
+      title: `${storeName} - Size Özel ${benefit} İndirim!`,
+      body: input.message || (conditions ? `${conditions} · sepette kendiliğinden uygulanır.` : "Bir sonraki siparişinizde sepette kendiliğinden uygulanır."),
       url: `${origin}/?kampanya=1`,
       iconUrl: settings?.logo_url || settings?.site_favicon_url || null,
       tag: `coupon-${coupon.id}`,
