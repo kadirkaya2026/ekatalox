@@ -20,7 +20,10 @@ export function PushOptInBanner({ token, vapidPublicKey }: { token: string; vapi
   async function subscribe() {
     setState("subscribing");
     const r = await subscribeToOrderPush({ token, vapidPublicKey }).catch(() => ({ ok: false as const, reason: "server" as const }));
-    setState(r.ok ? "subscribed" : r.reason === "denied" ? "denied" : "error");
+    if (r.ok) { setState("subscribed"); return; }
+    // "denied" yalnız tarayıcı gerçekten reddettiyse: iOS dokunmasız
+    // istekte izin "default" kalır, düğme görünmeye devam etmeli.
+    setState(Notification.permission === "denied" ? "denied" : r.reason === "denied" ? "idle" : "error");
   }
 
   useEffect(() => {
@@ -32,7 +35,10 @@ export function PushOptInBanner({ token, vapidPublicKey }: { token: string; vapi
       if (yes) { setState("subscribed"); return; }
       // İlk açılışta otomatik izin iste (Safari masaüstü hareket ister; o zaman
       // sadece düğme kalır, otomatik deneme sessizce sonuçsuz kalır).
-      if (!autoAsked.current && Notification.permission === "default") {
+      // iOS/Safari izin için dokunma ister; orada sadece düğme. Android/Chrome
+      // ve masaüstü Chrome'da sayfa açılınca izin penceresi kendiliğinden gelir.
+      const isApple = /iPhone|iPad|iPod|Macintosh/i.test(navigator.userAgent) && /Safari/i.test(navigator.userAgent) && !/Chrome|CriOS|Android/i.test(navigator.userAgent);
+      if (!isApple && !autoAsked.current && Notification.permission === "default") {
         autoAsked.current = true;
         void subscribe();
       }

@@ -17,16 +17,21 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 type TrackingPageProps = { params: Promise<{ subdomain: string; token: string }> };
 
 export async function generateMetadata(props: TrackingPageProps): Promise<Metadata> {
-  const { subdomain } = await props.params;
+  const { subdomain, token } = await props.params;
   const tenant = await getStorefrontTenantCached(subdomain);
   if (!tenant) return {};
   const settings = await getTenantStorefrontSettings(tenant.id);
+  const base = buildStorefrontIcons(settings.site_favicon_url, tenant);
+  // iOS ana ekran ikonu apple-touch-icon'dan gelir (manifest'ten değil):
+  // bayinin logosu, yoksa favicon'u.
+  const appleIcon = settings.logo_url || settings.site_favicon_url || null;
   return {
     title: buildStorefrontTitle("Sipariş Takip", tenant),
-    icons: buildStorefrontIcons(settings.site_favicon_url, tenant),
+    icons: appleIcon ? { ...base, apple: appleIcon } : base,
+    appleWebApp: { capable: true, title: settings.storefront_title?.trim() || tenant.company_name, statusBarStyle: "default" },
     robots: { index: false, follow: false, googleBot: { index: false, follow: false } },
-    // iOS'ta Web Push için "Ana Ekrana Ekle" gerekiyor; manifest bunu mümkün kılar.
-    manifest: "/tracking.webmanifest",
+    // Sipariş özel manifest: "Ana Ekrana Ekle" bu sayfaya, bayinin adı/logosuyla açılır.
+    manifest: UUID.test(token) ? `/api/storefront/tracking-manifest?token=${token}` : undefined,
   };
 }
 
