@@ -31,7 +31,7 @@ export default async function TenantOrdersPage() {
       <Header
         eyebrow="Siparişler"
         title="Siparişler"
-        description="Vitrinden gelen siparişleri onaylayın, hazırlanıyor / yola çıktı / teslim edildi olarak işaretleyin. Müşteri, takip sayfasından ve açtıysa tarayıcı bildirimiyle her adımı görür. Ciro ve kâr yalnızca teslim edilen siparişlerden hesaplanır."
+        description="Gelen siparişi onaylayın, hazırlayın, teslim edin. Müşteri her adımı takip sayfasından ve bildirimle görür."
       />
       <DealerPushOptIn vapidPublicKey={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? ""} />
       <OrdersManager

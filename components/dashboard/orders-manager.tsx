@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ArrowLeft, ChevronRight, Copy, Loader2, MessageCircle, Printer, Search, XCircle } from "lucide-react";
+import { ArrowLeft, ChevronRight, Loader2, MessageCircle, Printer, Search, XCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -171,191 +171,202 @@ export function OrdersManager({
     const order = selected.order;
     const trackingUrl = buildTrackingUrl(storefrontOrigin, order.tracking_token);
     const next = getNextActions(order.status);
+    const primaryNext = next[0];
+    const otherNext = next.slice(1);
+    const actionLabel = (s: OrderStatus) => {
+      switch (s) {
+        case "confirmed": return "Siparişi onayla";
+        case "preparing": return "Hazırlanıyor";
+        case "shipped": return isTekel ? "Hazır, teslim alınabilir" : "Yola çıktı";
+        case "delivered": return "Teslim edildi";
+        default: return getStatusLabel(s, { isTekel });
+      }
+    };
+    const payment = formatPaymentMethod(order.payment_method);
     return (
-      <Card className="p-5">
-        <button
-          type="button"
-          onClick={() => setSelected(null)}
-          className="group mb-4 -ml-2 flex items-center gap-1.5 rounded-full py-1.5 pl-2 pr-3 text-sm font-medium text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900"
-        >
-          <ArrowLeft className="size-4 transition-transform duration-150 group-hover:-translate-x-0.5" />
-          Siparişlere dön
-        </button>
-
-        <InlineAlert tone="error" message={error} className="mb-4" />
-
-        <div className="flex flex-wrap items-center justify-between gap-2">
+      <Card className="overflow-hidden p-0">
+        {/* Üst şerit: geri + araçlar */}
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 px-4 py-3">
+          <button
+            type="button"
+            onClick={() => setSelected(null)}
+            className="group -ml-2 flex items-center gap-1.5 rounded-full py-1.5 pl-2 pr-3 text-sm font-medium text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900"
+          >
+            <ArrowLeft className="size-4 transition-transform duration-150 group-hover:-translate-x-0.5" />
+            Siparişler
+          </button>
           <div className="flex items-center gap-2">
-            <h3 className="text-base font-semibold text-slate-900">{formatOrderNo(order)}</h3>
-            <StatusBadge status={order.status} isTekel={isTekel} />
-          </div>
-          <span className="text-sm text-slate-500">{formatDate(order.created_at)}</span>
-        </div>
-        <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-slate-600">
-          <span className="font-semibold text-slate-900">{formatOrderTotal(order)}</span>
-          {formatPaymentMethod(order.payment_method) ? (
-            <>
-              <span className="text-slate-300">•</span>
-              <span>{formatPaymentMethod(order.payment_method)}</span>
-            </>
-          ) : null}
-          {order.cost_missing_count > 0 ? (
-            <>
-              <span className="text-slate-300">•</span>
-              <span className="text-amber-700">{order.cost_missing_count} kalemde alış fiyatı yok</span>
-            </>
-          ) : order.cost_total !== null && order.currency !== "CATALOG" ? (
-            <>
-              <span className="text-slate-300">•</span>
-              <span>
-                Kâr:{" "}
-                {formatCurrency(order.total_amount - order.cost_total, order.currency as CurrencyCode)}
-              </span>
-            </>
-          ) : null}
-        </div>
-
-        <div className="mt-3 rounded-xl bg-slate-50 p-3 text-sm text-slate-700">
-          <p className="font-medium text-slate-900">{order.customer_name}</p>
-          <p>{order.customer_phone}</p>
-          {order.customer_address ? <p className="text-slate-500">{order.customer_address}</p> : null}
-          {order.note ? (
-            <p className="mt-2 text-slate-600">
-              <span className="font-medium text-slate-700">Not: </span>
-              {order.note}
-            </p>
-          ) : null}
-        </div>
-
-        {/* Durum aksiyonları */}
-        {!isTerminalStatus(order.status) ? (
-          <div className="mt-4 flex flex-wrap items-center gap-2">
-            {next.map((s) => (
-              <Button
-                key={s}
-                disabled={pending === order.id}
-                onClick={() => void transition(order, s)}
-                variant={s === "delivered" ? "primary" : "secondary"}
+            <Button asChild variant="secondary">
+              <a href={`/yazdir/siparis/${order.id}`} target="_blank" rel="noreferrer" title="Fiş yazıcısından yazdır">
+                <Printer className="size-4" />
+                Yazdır
+              </a>
+            </Button>
+            <Button asChild variant="secondary">
+              <a
+                href={buildOrderStatusWhatsAppHref({ order, status: order.status, tenantName, isTekel, trackingUrl })}
+                target="_blank"
+                rel="noreferrer"
+                title="Müşteriye WhatsApp'tan durum mesajı gönder"
               >
-                {pending === order.id ? <Loader2 className="size-4 animate-spin" /> : null}
-                {getStatusLabel(s, { isTekel })}
-              </Button>
-            ))}
-            <Button
-              variant="ghost"
-              disabled={pending === order.id}
-              onClick={() => setCancelOpen((v) => !v)}
-              className="text-rose-600"
-            >
-              <XCircle className="size-4" />
-              İptal et
+                <MessageCircle className="size-4" />
+                WhatsApp
+              </a>
             </Button>
           </div>
-        ) : order.status === "cancelled" && order.cancel_reason ? (
-          <p className="mt-4 rounded-xl bg-rose-50 p-3 text-sm text-rose-700">
-            İptal sebebi: {order.cancel_reason}
-          </p>
-        ) : null}
+        </div>
 
-        {cancelOpen ? (
-          <div className="mt-3 rounded-xl border border-rose-200 bg-rose-50/60 p-4">
-            <p className="text-sm font-semibold text-rose-800">Siparişi iptal et</p>
-            <p className="mt-1 text-xs text-rose-700">Sebep müşteriye gösterilir; kısa ve net yazın.</p>
-            <Textarea
-              className="mt-2"
-              rows={2}
-              value={cancelReason}
-              placeholder="Örn: Ürün stokta kalmadı"
-              onChange={(e) => setCancelReason(e.target.value)}
-            />
-            <div className="mt-2 flex gap-2">
-              <Button
-                variant="danger"
-                disabled={pending === order.id || cancelReason.trim().length < 3}
-                onClick={() => void transition(order, "cancelled", cancelReason.trim())}
-              >
-                İptali onayla
-              </Button>
-              <Button variant="ghost" onClick={() => setCancelOpen(false)}>
-                Vazgeç
-              </Button>
+        <div className="space-y-5 p-5">
+          <InlineAlert tone="error" message={error} />
+
+          {/* Kimlik */}
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="text-2xl font-semibold tracking-tight text-slate-900">{formatOrderNo(order)}</h3>
+                <StatusBadge status={order.status} isTekel={isTekel} />
+              </div>
+              <p className="mt-1 text-sm text-slate-500">{formatDate(order.created_at)}</p>
+            </div>
+            <div className="text-right">
+              <p className="text-2xl font-semibold tabular-nums text-slate-900">{formatOrderTotal(order)}</p>
+              {payment ? <p className="text-sm text-slate-500">{payment}</p> : null}
             </div>
           </div>
-        ) : null}
 
-        {/* Müşteriyi bilgilendir / yazdır */}
-        <div className="mt-4 flex flex-wrap items-center gap-2">
-          <Button asChild variant="primary">
-            <a href={`/yazdir/siparis/${order.id}`} target="_blank" rel="noreferrer" title="Fiş yazıcısından yazdır (80 mm / 58 mm)">
-              <Printer className="size-4" />
-              Siparişi yazdır
-            </a>
-          </Button>
-          <Button asChild variant="secondary">
-            <a
-              href={buildOrderStatusWhatsAppHref({ order, status: order.status, tenantName, isTekel, trackingUrl })}
-              target="_blank"
-              rel="noreferrer"
-            >
-              <MessageCircle className="size-4" />
-              WhatsApp ile bilgilendir
-            </a>
-          </Button>
-          {trackingUrl ? (
-            <Button
-              variant="ghost"
-              onClick={() => void navigator.clipboard.writeText(trackingUrl)}
-              title="Müşteri takip linkini kopyala"
-            >
-              <Copy className="size-4" />
-              Takip linkini kopyala
-            </Button>
-          ) : null}
-        </div>
+          {/* Müşteri */}
+          <div className="rounded-xl bg-slate-50 px-4 py-3 text-sm">
+            <p className="font-semibold text-slate-900">{order.customer_name}</p>
+            <a href={`tel:${order.customer_phone}`} className="text-slate-700 hover:underline">{order.customer_phone}</a>
+            {order.customer_address ? <p className="mt-0.5 text-slate-600">{order.customer_address}</p> : null}
+            {order.note ? (
+              <p className="mt-2 rounded-lg bg-amber-50 px-3 py-2 text-amber-900">
+                <span className="font-semibold">Müşteri notu: </span>{order.note}
+              </p>
+            ) : null}
+          </div>
 
-        {/* Kalemler */}
-        <div className="mt-4 space-y-2">
-          {order.items.map((item, index) => (
-            <div
-              key={`${order.id}-${index}`}
-              className="flex items-center justify-between gap-3 rounded-xl border border-slate-100 bg-slate-50 px-4 py-2.5 text-sm"
-            >
-              <div>
-                <p className="font-medium text-slate-900">
+          {/* Ürünler */}
+          <div className="overflow-hidden rounded-xl border border-slate-200">
+            {order.items.map((item, index) => (
+              <div
+                key={`${order.id}-${index}`}
+                className="flex items-center justify-between gap-3 border-b border-slate-100 px-4 py-2.5 text-sm last:border-b-0"
+              >
+                <p className="text-slate-900">
+                  <span className="mr-2 inline-block min-w-8 font-semibold tabular-nums">{item.quantity}×</span>
                   {item.product_name}
                   {item.variant_name ? <span className="text-slate-500"> · {item.variant_name}</span> : null}
+                  {item.sales_unit && item.sales_unit !== "adet" ? <span className="text-slate-500"> · {item.sales_unit}</span> : null}
                 </p>
-                <p className="text-slate-500">
-                  {item.quantity} {item.sales_unit ?? "adet"}
-                  {item.unit_cost === null || item.unit_cost === undefined ? (
-                    <span className="ml-2 text-amber-700">maliyet yok</span>
-                  ) : null}
-                </p>
+                {item.price !== null ? (
+                  <p className="shrink-0 font-medium tabular-nums text-slate-700">
+                    {formatCurrency(item.price * item.quantity, item.currency as CurrencyCode)}
+                  </p>
+                ) : null}
               </div>
-              {item.price !== null ? (
-                <p className="font-medium text-slate-700">
-                  {formatCurrency(item.price * item.quantity, item.currency as CurrencyCode)}
-                </p>
+            ))}
+            <div className="flex items-center justify-between bg-slate-50 px-4 py-2.5 text-sm">
+              <span className="font-semibold text-slate-700">Toplam · {order.item_count} ürün</span>
+              <span className="font-semibold tabular-nums text-slate-900">{formatOrderTotal(order)}</span>
+            </div>
+          </div>
+
+          {/* Ne yapmalı? — tek net adım */}
+          {order.status === "cancelled" ? (
+            <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
+              <p className="font-semibold">Sipariş iptal edildi</p>
+              {order.cancel_reason ? <p className="mt-0.5">Sebep: {order.cancel_reason}</p> : null}
+            </div>
+          ) : order.status === "delivered" ? (
+            <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800">
+              ✓ Teslim edildi · {order.delivered_at ? formatDate(order.delivered_at) : ""}
+            </div>
+          ) : (
+            <div className="rounded-xl border border-slate-200 p-4">
+              <div className="flex flex-wrap items-center gap-2">
+                {primaryNext ? (
+                  <Button
+                    disabled={pending === order.id}
+                    onClick={() => void transition(order, primaryNext)}
+                    className="h-11 px-6 text-base"
+                  >
+                    {pending === order.id ? <Loader2 className="size-4 animate-spin" /> : null}
+                    {actionLabel(primaryNext)}
+                  </Button>
+                ) : null}
+                {otherNext.map((s) => (
+                  <Button key={s} variant="secondary" disabled={pending === order.id} onClick={() => void transition(order, s)}>
+                    {actionLabel(s)}
+                  </Button>
+                ))}
+                <button
+                  type="button"
+                  disabled={pending === order.id}
+                  onClick={() => setCancelOpen((v) => !v)}
+                  className="ml-auto text-sm font-medium text-rose-600 hover:underline"
+                >
+                  İptal et
+                </button>
+              </div>
+
+              {cancelOpen ? (
+                <div className="mt-4 rounded-xl border border-rose-200 bg-rose-50/60 p-4">
+                  <p className="text-sm font-semibold text-rose-800">Siparişi iptal et</p>
+                  <p className="mt-1 text-xs text-rose-700">Sebep müşteriye gösterilir; kısa ve net yazın.</p>
+                  <Textarea
+                    className="mt-2"
+                    rows={2}
+                    value={cancelReason}
+                    placeholder="Örn: Ürün stokta kalmadı"
+                    onChange={(e) => setCancelReason(e.target.value)}
+                  />
+                  <div className="mt-2 flex gap-2">
+                    <Button
+                      variant="danger"
+                      disabled={pending === order.id || cancelReason.trim().length < 3}
+                      onClick={() => void transition(order, "cancelled", cancelReason.trim())}
+                    >
+                      İptali onayla
+                    </Button>
+                    <Button variant="ghost" onClick={() => setCancelOpen(false)}>
+                      Vazgeç
+                    </Button>
+                  </div>
+                </div>
               ) : null}
             </div>
-          ))}
-        </div>
+          )}
 
-        {/* Zaman çizelgesi */}
-        <div className="mt-5">
-          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Geçmiş</p>
-          <ol className="mt-2 space-y-1.5 text-sm">
-            {selected.events.map((ev) => (
-              <li key={ev.id} className="flex flex-wrap items-center gap-2 text-slate-600">
-                <span className="text-xs text-slate-400">{new Date(ev.created_at).toLocaleString("tr-TR")}</span>
-                <StatusBadge status={ev.to_status} isTekel={isTekel} />
-                {ev.reason && ev.reason !== "legacy-backfill" ? <span className="text-slate-500">{ev.reason}</span> : null}
-                <span className="text-xs text-slate-400">
-                  {ev.actor === "dealer" ? "siz" : ev.actor === "customer" ? "müşteri" : "sistem"}
-                </span>
-              </li>
-            ))}
-          </ol>
+          {/* Geçmiş + kâr notu: katlanır, göz önünde değil */}
+          <details className="group text-sm">
+            <summary className="cursor-pointer select-none text-xs font-semibold uppercase tracking-wide text-slate-400 hover:text-slate-600">
+              Geçmiş ve kâr bilgisi
+            </summary>
+            <div className="mt-3 space-y-3">
+              {order.currency !== "CATALOG" ? (
+                <p className="text-slate-600">
+                  {order.cost_missing_count > 0
+                    ? `Kâr hesaplanamıyor: ${order.cost_missing_count} ürünün alış fiyatı girilmemiş (Ürünler sayfasından ekleyebilirsiniz).`
+                    : order.cost_total !== null
+                      ? `Tahmini kâr: ${formatCurrency(order.total_amount - order.cost_total, order.currency as CurrencyCode)}`
+                      : null}
+                </p>
+              ) : null}
+              <ol className="space-y-1.5">
+                {selected.events.map((ev) => (
+                  <li key={ev.id} className="flex flex-wrap items-center gap-2 text-slate-600">
+                    <span className="text-xs text-slate-400">{new Date(ev.created_at).toLocaleString("tr-TR")}</span>
+                    <StatusBadge status={ev.to_status} isTekel={isTekel} />
+                    {ev.reason && ev.reason !== "legacy-backfill" ? <span className="text-slate-500">{ev.reason}</span> : null}
+                    <span className="text-xs text-slate-400">
+                      {ev.actor === "dealer" ? "siz" : ev.actor === "customer" ? "müşteri" : "sistem"}
+                    </span>
+                  </li>
+                ))}
+              </ol>
+            </div>
+          </details>
         </div>
       </Card>
     );
