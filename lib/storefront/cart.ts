@@ -593,10 +593,9 @@ export function buildWhatsAppMessage(params: {
     lines.push(`📄 Sipariş Fişi : ${params.pdfUrl.trim()}`);
   }
 
-  if (params.trackingUrl?.trim()) {
-    lines.push(`🔎 Sipariş Takip : ${params.trackingUrl.trim()}`);
-  }
-
+  // Takip linki mesaja YAZILMIYOR (kullanıcı kararı, 29 Ağu 2026): müşteri
+  // vitrindeki "Sipariş Takip" ikonundan numarasıyla ulaşıyor; mesaj kısa kalsın.
+  // trackingUrl parametresi geriye dönük uyumluluk için duruyor.
   if (params.isTekel) {
     lines.push(`🏪 Bu sipariş mağazadan elden teslim alınacaktır. Kargo/gönderi yapılmamaktadır.`);
   }

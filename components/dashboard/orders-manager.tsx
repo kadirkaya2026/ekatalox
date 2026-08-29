@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ArrowLeft, ChevronRight, Copy, Loader2, MessageCircle, Search, XCircle } from "lucide-react";
+import { ArrowLeft, ChevronRight, Copy, Loader2, MessageCircle, Printer, Search, XCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -283,8 +283,14 @@ export function OrdersManager({
           </div>
         ) : null}
 
-        {/* Müşteriyi bilgilendir */}
+        {/* Müşteriyi bilgilendir / yazdır */}
         <div className="mt-4 flex flex-wrap items-center gap-2">
+          <Button asChild variant="primary">
+            <a href={`/yazdir/siparis/${order.id}`} target="_blank" rel="noreferrer" title="Fiş yazıcısından yazdır (80 mm / 58 mm)">
+              <Printer className="size-4" />
+              Siparişi yazdır
+            </a>
+          </Button>
           <Button asChild variant="secondary">
             <a
               href={buildOrderStatusWhatsAppHref({ order, status: order.status, tenantName, isTekel, trackingUrl })}
@@ -447,6 +453,11 @@ export function OrdersManager({
                       {getStatusLabel(next, { isTekel })}
                     </Button>
                   ) : null}
+                  <Button asChild variant="ghost" title="Fişi yazdır">
+                    <a href={`/yazdir/siparis/${order.id}`} target="_blank" rel="noreferrer">
+                      <Printer className="size-4" />
+                    </a>
+                  </Button>
                   {!isTerminalStatus(order.status) ? (
                     <Button
                       variant="ghost"
