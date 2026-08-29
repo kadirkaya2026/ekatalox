@@ -3207,6 +3207,7 @@ export function StorefrontClient({
     <div className="contents">
       {isClosedNow ? <StoreClosedOverlay nextOpening={closedNowNextOpening} /> : null}
       <StorefrontHeader
+        orderTrackingHref={isMarketOrTekelTenant(tenant) ? "/siparislerim" : undefined}
         headerStyleKey={storefrontSettings.header_style_key ?? "standard"}
         storefrontSettings={storefrontSettings}
         storefrontTitle={storefrontTitle}

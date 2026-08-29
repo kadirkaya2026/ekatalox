@@ -271,7 +271,8 @@ export async function proxy(request: NextRequest) {
     // Sipariş takip sayfası (/siparis/{token}): müşteri WhatsApp'taki linkten
     // gelir; şifre/yaş/kota kapılarından bağımsız açılmalı — token'ın kendisi
     // yetkidir. Kota dolu olsa da müşteri verdiği siparişin durumunu görebilir.
-    if (pathname.startsWith("/siparis/")) {
+    // /siparislerim: telefon numarasıyla sipariş listesi — aynı gerekçe.
+    if (pathname.startsWith("/siparis/") || pathname === "/siparislerim") {
       const trackUrl = request.nextUrl.clone();
       trackUrl.pathname = `/store/${hostResolution.subdomain}${pathname}`;
       const trackResponse = NextResponse.rewrite(trackUrl);

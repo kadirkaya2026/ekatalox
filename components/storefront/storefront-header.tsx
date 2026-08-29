@@ -1,7 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { ChevronDown, ChevronRight, Search, ShoppingCart, Store, Ticket } from "lucide-react";
+import { ChevronDown, ChevronRight, PackageSearch, Search, ShoppingCart, Store, Ticket } from "lucide-react";
 import type { CategoryNode } from "@/lib/categories/tree";
 import { getDescendantCategoryIds } from "@/lib/categories/tree";
 import type { Category } from "@/lib/types";
@@ -62,6 +62,9 @@ export interface StorefrontHeaderProps {
   // paneline üst başlıktan erişiliyor. Kampanyası olmayan bayide boş
   // buton durmasın diye çağıran taraf kampanya varsa gönderiyor.
   onOpenCampaigns?: () => void;
+  // Market/tekel vitrinlerinde dil seçicinin solunda "Sipariş Takip" ikonu:
+  // müşteri telefon numarasıyla siparişlerini görür (/siparislerim).
+  orderTrackingHref?: string;
 }
 
 function HeaderActions({
@@ -93,6 +96,16 @@ function HeaderActions({
         >
           <Ticket className="size-5" />
         </button>
+      ) : null}
+      {props.orderTrackingHref ? (
+        <a
+          href={props.orderTrackingHref}
+          className={cn(theme.headerIconButton, "size-11 lg:size-12")}
+          aria-label={t("header.trackOrders")}
+          title={t("header.trackOrders")}
+        >
+          <PackageSearch className="size-5" />
+        </a>
       ) : null}
       <StorefrontLanguageSwitcher />
       {props.storefrontSettings.is_theme_toggle_visible !== false ? (
