@@ -49,8 +49,8 @@ export function DealerPushOptIn({ vapidPublicKey }: { vapidPublicKey: string }) 
 
   if (state === "on") {
     return (
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900">
-        <span className="flex items-center gap-2"><BellRing className="size-4" /> Yeni sipariş bildirimleri bu cihazda açık.</span>
+      <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-emerald-200 bg-emerald-50/60 px-3 py-1.5 text-xs text-emerald-900">
+        <span className="flex items-center gap-2"><BellRing className="size-3.5" /> Yeni sipariş bildirimleri bu cihazda açık.</span>
         <span className="flex items-center gap-1">
           <Button variant="ghost" onClick={playOrderRing} className="text-emerald-900" title="Panel açıkken çalan sipariş zili">
             <Volume2 className="size-4" /> Sesi dene

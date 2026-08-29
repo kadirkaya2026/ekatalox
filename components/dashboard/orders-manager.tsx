@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ArrowLeft, ChevronRight, Loader2, MessageCircle, Printer, Search, XCircle } from "lucide-react";
+import { ArrowLeft, Loader2, MessageCircle, Printer, Search } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -19,7 +19,6 @@ import {
   ORDER_STATUS_TONES,
   getNextActions,
   getStatusLabel,
-  isTerminalStatus,
 } from "@/lib/orders/status";
 import { buildOrderStatusWhatsAppHref } from "@/lib/orders/whatsapp-status-message";
 
@@ -338,35 +337,6 @@ export function OrdersManager({
             </div>
           )}
 
-          {/* Geçmiş + kâr notu: katlanır, göz önünde değil */}
-          <details className="group text-sm">
-            <summary className="cursor-pointer select-none text-xs font-semibold uppercase tracking-wide text-slate-400 hover:text-slate-600">
-              Geçmiş ve kâr bilgisi
-            </summary>
-            <div className="mt-3 space-y-3">
-              {order.currency !== "CATALOG" ? (
-                <p className="text-slate-600">
-                  {order.cost_missing_count > 0
-                    ? `Kâr hesaplanamıyor: ${order.cost_missing_count} ürünün alış fiyatı girilmemiş (Ürünler sayfasından ekleyebilirsiniz).`
-                    : order.cost_total !== null
-                      ? `Tahmini kâr: ${formatCurrency(order.total_amount - order.cost_total, order.currency as CurrencyCode)}`
-                      : null}
-                </p>
-              ) : null}
-              <ol className="space-y-1.5">
-                {selected.events.map((ev) => (
-                  <li key={ev.id} className="flex flex-wrap items-center gap-2 text-slate-600">
-                    <span className="text-xs text-slate-400">{new Date(ev.created_at).toLocaleString("tr-TR")}</span>
-                    <StatusBadge status={ev.to_status} isTekel={isTekel} />
-                    {ev.reason && ev.reason !== "legacy-backfill" ? <span className="text-slate-500">{ev.reason}</span> : null}
-                    <span className="text-xs text-slate-400">
-                      {ev.actor === "dealer" ? "siz" : ev.actor === "customer" ? "müşteri" : "sistem"}
-                    </span>
-                  </li>
-                ))}
-              </ol>
-            </div>
-          </details>
         </div>
       </Card>
     );
@@ -377,7 +347,7 @@ export function OrdersManager({
       <InlineAlert tone="error" message={error} />
 
       <div className="flex flex-wrap items-center gap-2">
-        {(["all", ...ORDER_STATUSES] as StatusFilter[]).map((key) => (
+        {(["all", ...ORDER_STATUSES] as StatusFilter[]).filter((key) => key === "all" || key === status || (page.counts[key] ?? 0) > 0).map((key) => (
           <button
             key={key}
             type="button"
@@ -429,58 +399,57 @@ export function OrdersManager({
         {page.orders.length === 0 ? (
           <p className="p-6 text-sm text-slate-600">Bu süzgeçte sipariş yok.</p>
         ) : (
-          <div className="divide-y">
+          <div className="divide-y divide-slate-100">
+            <div className="hidden grid-cols-[150px_minmax(0,1fr)_120px_110px_170px_44px] items-center gap-3 bg-slate-50 px-4 py-2 text-[11px] font-semibold uppercase tracking-wide text-slate-500 md:grid">
+              <span>Sipariş</span><span>Müşteri</span><span>Tarih</span><span className="text-right">Tutar</span><span>İşlem</span><span />
+            </div>
             {page.orders.map((order) => {
               const next = getNextActions(order.status)[0];
+              const nextLabel = next
+                ? next === "confirmed" ? "Onayla"
+                  : next === "preparing" ? "Hazırlanıyor"
+                  : next === "shipped" ? (isTekel ? "Hazır" : "Yola çıktı")
+                  : "Teslim edildi"
+                : null;
               return (
-                <div key={order.id} className="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3">
-                  <button
-                    type="button"
-                    onClick={() => void openOrder(order)}
-                    className="group flex min-w-0 flex-1 items-center gap-3 text-left"
-                  >
-                    <div className="min-w-0">
-                      <p className="flex flex-wrap items-center gap-2 text-sm font-semibold text-slate-900">
-                        {formatOrderNo(order)}
-                        <StatusBadge status={order.status} isTekel={isTekel} />
-                        {order.cost_missing_count > 0 && order.currency !== "CATALOG" ? (
-                          <span className="text-[11px] font-medium text-amber-700">maliyet eksik</span>
-                        ) : null}
-                      </p>
-                      <p className="truncate text-sm text-slate-600">
-                        {order.customer_name} · {order.customer_phone} · {formatDate(order.created_at)}
-                      </p>
-                    </div>
-                    <ChevronRight className="size-4 shrink-0 text-slate-300 transition-transform group-hover:translate-x-0.5" />
+                <div
+                  key={order.id}
+                  className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1 px-4 py-3 md:grid-cols-[150px_minmax(0,1fr)_120px_110px_170px_44px]"
+                >
+                  <button type="button" onClick={() => void openOrder(order)} className="flex items-center gap-2 text-left">
+                    <span className="text-sm font-semibold text-slate-900">{formatOrderNo(order)}</span>
+                    <StatusBadge status={order.status} isTekel={isTekel} />
                   </button>
-                  <span className="text-sm font-semibold text-slate-900">{formatOrderTotal(order)}</span>
-                  {next ? (
-                    <Button
-                      variant={next === "delivered" ? "primary" : "secondary"}
-                      disabled={pending === order.id}
-                      onClick={() => void transition(order, next)}
-                    >
-                      {pending === order.id ? <Loader2 className="size-4 animate-spin" /> : null}
-                      {getStatusLabel(next, { isTekel })}
-                    </Button>
-                  ) : null}
-                  <Button asChild variant="ghost" title="Fişi yazdır">
-                    <a href={`/yazdir/siparis/${order.id}`} target="_blank" rel="noreferrer">
-                      <Printer className="size-4" />
-                    </a>
-                  </Button>
-                  {!isTerminalStatus(order.status) ? (
-                    <Button
-                      variant="ghost"
-                      disabled={pending === order.id}
-                      onClick={() => void openOrder(order, { openCancel: true })}
-                      className="text-rose-600"
-                      title="Siparişi iptal et"
-                    >
-                      <XCircle className="size-4" />
-                      İptal
-                    </Button>
-                  ) : null}
+                  <span className="text-right text-sm font-semibold tabular-nums text-slate-900 md:hidden">{formatOrderTotal(order)}</span>
+                  <button type="button" onClick={() => void openOrder(order)} className="col-span-2 min-w-0 truncate text-left text-sm text-slate-700 hover:underline md:col-span-1">
+                    {order.customer_name} <span className="text-slate-400">· {order.customer_phone}</span>
+                  </button>
+                  <span className="hidden text-sm text-slate-500 md:block">{formatDate(order.created_at)}</span>
+                  <span className="hidden text-right text-sm font-semibold tabular-nums text-slate-900 md:block">{formatOrderTotal(order)}</span>
+                  <div className="col-span-2 flex items-center gap-2 md:col-span-1">
+                    {next && nextLabel ? (
+                      <Button
+                        variant={next === "delivered" ? "primary" : "secondary"}
+                        disabled={pending === order.id}
+                        onClick={() => void transition(order, next)}
+                        className="h-9 w-full justify-center md:w-auto"
+                      >
+                        {pending === order.id ? <Loader2 className="size-4 animate-spin" /> : null}
+                        {nextLabel}
+                      </Button>
+                    ) : (
+                      <span className="text-xs text-slate-400 md:pl-1">{order.status === "cancelled" ? "İptal edildi" : "Tamamlandı"}</span>
+                    )}
+                  </div>
+                  <a
+                    href={`/yazdir/siparis/${order.id}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    title="Fişi yazdır"
+                    className="hidden size-9 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-700 md:inline-flex"
+                  >
+                    <Printer className="size-4" />
+                  </a>
                 </div>
               );
             })}
