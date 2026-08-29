@@ -117,7 +117,6 @@ const tenantLinks: SidebarLink[] = [
     ],
   },
   { href: "/access-codes", label: "Şifreler", icon: KeyRound },
-  { href: "/magnetler", label: "Magnetlerim", icon: Magnet },
   {
     href: "/customers",
     label: "Cari Hesaplar",
@@ -136,6 +135,7 @@ const tenantLinks: SidebarLink[] = [
     icon: BarChart3,
     children: [
       { href: "/reports", label: "Mağaza Raporları", icon: BarChart3 },
+      { href: "/magnetler", label: "Magnetlerim", icon: Magnet },
       {
         href: "/reports/satis",
         label: "Satış & Kârlılık",
