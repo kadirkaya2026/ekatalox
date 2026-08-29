@@ -5,10 +5,8 @@ export const dynamic = "force-dynamic";
 
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import QRCode from "qrcode";
 import { requireTenantAdminPage } from "@/lib/auth/session";
 import { getTenantStorefrontSettings } from "@/lib/data";
-import { appEnv } from "@/lib/env";
 import { getTenantOrderWithEvents } from "@/lib/orders/data";
 import { formatOrderNo, formatPaymentMethod } from "@/lib/orders/format";
 import { getStatusLabel } from "@/lib/orders/status";
@@ -37,12 +35,6 @@ export default async function OrderReceiptPrintPage(props: Props) {
   const settings = await getTenantStorefrontSettings(tenant.id);
   const storeName = settings.storefront_title?.trim() || tenant.company_name;
 
-  const origin = tenant.custom_domain?.trim()
-    ? `https://${tenant.custom_domain.trim()}`
-    : `https://${tenant.subdomain}.${appEnv.rootDomain}`;
-  const trackingUrl = order.tracking_token ? `${origin}/siparis/${order.tracking_token}` : null;
-  const qr = trackingUrl ? await QRCode.toDataURL(trackingUrl, { margin: 0, width: 220, errorCorrectionLevel: "M" }) : null;
-
   const money = (v: number) => (order.currency === "CATALOG" ? "" : formatCurrency(v, order.currency as CurrencyCode));
   const paperMm = width === 80 ? 72 : 48;
   const fontPx = width === 80 ? 12.5 : 11;
@@ -63,7 +55,6 @@ export default async function OrderReceiptPrintPage(props: Props) {
         .receipt .row span:last-child { white-space: nowrap; }
         .receipt .item { margin: 3px 0; }
         .receipt .sub { opacity: .8; font-size: .92em; }
-        .receipt img { display: block; margin: 6px auto 2px; width: ${width === 80 ? 30 : 22}mm; height: auto; }
         @media print { .no-print { display: none !important; } .receipt { margin: 0 auto; } }
       `}</style>
       <ReceiptPrintControls width={width} autoPrint={search.preview !== "1"} />
@@ -100,14 +91,6 @@ export default async function OrderReceiptPrintPage(props: Props) {
       <div className="row b lg"><span>TOPLAM</span><span>{order.currency === "CATALOG" ? `${order.item_count} kalem` : money(order.total_amount)}</span></div>
       {payment ? <div className="row"><span>Ödeme</span><span>{payment}</span></div> : null}
       {order.note ? (<><hr /><div className="b">Not:</div><div>{order.note}</div></>) : null}
-      {qr ? (
-        <>
-          <hr />
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={qr} alt="Sipariş takip" />
-          <div className="c sub">Sipariş takibi için okutun</div>
-        </>
-      ) : null}
       <hr />
       <div className="c sub">Teşekkür ederiz · {storeName}</div>
     </div>
