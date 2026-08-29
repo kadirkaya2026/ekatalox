@@ -1314,6 +1314,8 @@ export function StorefrontClient({
 
   const cartPaymentSummary = useMemo(() => {
     if (!selectedPaymentMethod || !cart.length) return null;
+    // Fiyatsız katalogda tutar yok; ödeme yöntemi sadece bilgi olarak taşınır.
+    if (isCatalogOnly) return null;
 
     const cashConfig = {
       tiers: storefrontSettings.cash_discount_tiers ?? [],
@@ -1353,6 +1355,7 @@ export function StorefrontClient({
     storefrontSettings.card_campaign_tiers,
     storefrontSettings.is_card_campaign_active,
     storefrontSettings.card_installment_options,
+    isCatalogOnly,
   ]);
   const cartQuantityByProductId = useMemo(
     () => new Map(cart.map((item) => [item.id, item.quantity])),
@@ -1805,7 +1808,7 @@ export function StorefrontClient({
           customer_reference_name: customerReferenceName.trim(),
           customer_phone: isMarketTenant ? customerPhone.trim() : "",
           customer_address: isMarketTenant ? customerAddress.trim() : "",
-          paymentMethod: isCatalogOnly ? null : selectedPaymentMethod,
+          paymentMethod: selectedPaymentMethod,
           selectedInstallmentCount: isCatalogOnly ? null : selectedInstallmentCount,
           cashDiscountTiers: storefrontSettings.cash_discount_tiers ?? [],
           isCashDiscountActive: storefrontSettings.is_cash_discount_active,
