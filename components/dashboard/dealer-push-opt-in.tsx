@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Bell, BellOff, BellRing, Share } from "lucide-react";
+import { Bell, BellOff, BellRing, Share, Volume2 } from "lucide-react";
+import { playOrderRing } from "@/lib/dashboard/order-ring";
 import { Button } from "@/components/ui/button";
 import { getPushSupport, isSubscribedToPush, subscribeToDealerPush, unsubscribeDealerPush, type PushSupport } from "@/lib/push/client";
 
@@ -50,9 +51,14 @@ export function DealerPushOptIn({ vapidPublicKey }: { vapidPublicKey: string }) 
     return (
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900">
         <span className="flex items-center gap-2"><BellRing className="size-4" /> Yeni sipariş bildirimleri bu cihazda açık.</span>
-        <Button variant="ghost" onClick={() => void disable()} className="text-emerald-900">
-          <BellOff className="size-4" /> Kapat
-        </Button>
+        <span className="flex items-center gap-1">
+          <Button variant="ghost" onClick={playOrderRing} className="text-emerald-900" title="Panel açıkken çalan sipariş zili">
+            <Volume2 className="size-4" /> Sesi dene
+          </Button>
+          <Button variant="ghost" onClick={() => void disable()} className="text-emerald-900">
+            <BellOff className="size-4" /> Kapat
+          </Button>
+        </span>
       </div>
     );
   }
@@ -69,9 +75,14 @@ export function DealerPushOptIn({ vapidPublicKey }: { vapidPublicKey: string }) 
         <Bell className="size-4 text-slate-500" />
         Sipariş gelince telefonunuza / bilgisayarınıza bildirim gelsin; dokununca onay ekranı açılır.
       </span>
-      <Button onClick={() => void enable()} disabled={state === "busy"}>
-        {state === "busy" ? "Açılıyor…" : "Bildirimleri aç"}
-      </Button>
+      <span className="flex items-center gap-1">
+        <Button variant="ghost" onClick={playOrderRing} title="Panel açıkken çalan sipariş zili">
+          <Volume2 className="size-4" /> Sesi dene
+        </Button>
+        <Button onClick={() => void enable()} disabled={state === "busy"}>
+          {state === "busy" ? "Açılıyor…" : "Bildirimleri aç"}
+        </Button>
+      </span>
       {state === "error" ? <span className="w-full text-xs text-rose-600">Abonelik kaydedilemedi, tekrar deneyin.</span> : null}
     </div>
   );

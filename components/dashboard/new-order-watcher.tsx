@@ -5,33 +5,9 @@ import { useRouter } from "next/navigation";
 import { ShoppingBag, X } from "lucide-react";
 import type { OrdersPage } from "@/lib/orders/data";
 import { formatOrderNo, formatOrderTotal } from "@/lib/orders/format";
+import { playOrderRing } from "@/lib/dashboard/order-ring";
 
 const POLL_MS = 15_000;
-
-function beep() {
-  try {
-    const Ctx = window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
-    if (!Ctx) return;
-    const ctx = new Ctx();
-    const play = (freq: number, at: number) => {
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.type = "sine";
-      osc.frequency.value = freq;
-      gain.gain.setValueAtTime(0.0001, ctx.currentTime + at);
-      gain.gain.exponentialRampToValueAtTime(0.3, ctx.currentTime + at + 0.02);
-      gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + at + 0.3);
-      osc.connect(gain).connect(ctx.destination);
-      osc.start(ctx.currentTime + at);
-      osc.stop(ctx.currentTime + at + 0.35);
-    };
-    play(880, 0);
-    play(1175, 0.2);
-    play(1568, 0.4);
-  } catch {
-    /* tarayıcı sese izin vermedi: görsel uyarı yine çıkar */
-  }
-}
 
 // Panelin HER sayfasında çalışır (layout'ta). 15 sn'de bir "yeni" sipariş
 // sayısını yoklar; artmışsa ses + sağ altta uyarı kartı + kenar rozetini
@@ -51,7 +27,7 @@ export function NewOrderWatcher({ initialNewCount }: { initialNewCount: number }
         const d = (await r.json()) as OrdersPage;
         const n = d.counts?.new ?? 0;
         if (!stopped && n > last.current) {
-          beep();
+          playOrderRing();
           const o = d.orders[0];
           if (o) setToast({ id: o.id, label: `${formatOrderNo(o)} · ${o.customer_name}`, total: formatOrderTotal(o) });
           router.refresh();
