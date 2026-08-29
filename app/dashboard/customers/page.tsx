@@ -5,6 +5,7 @@ import { IpBlocksManager } from "@/components/dashboard/ip-blocks-manager";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { requireTenantAdminPage } from "@/lib/auth/session";
 import { getTenantCustomersOverview } from "@/lib/customers/data";
+import { getTenantCategories } from "@/lib/data";
 
 export default async function TenantCustomersPage() {
   const session = await requireTenantAdminPage();
@@ -26,7 +27,7 @@ export default async function TenantCustomersPage() {
   }
 
   const supabase = createSupabaseAdminClient();
-  const [customers, { data: ipBlockRows }] = await Promise.all([
+  const [customers, { data: ipBlockRows }, categories] = await Promise.all([
     getTenantCustomersOverview(tenant.id),
     supabase
       ? supabase
@@ -35,6 +36,7 @@ export default async function TenantCustomersPage() {
           .eq("tenant_id", tenant.id)
           .order("created_at", { ascending: false })
       : Promise.resolve({ data: [] }),
+    getTenantCategories(tenant.id),
   ]);
 
   return (
@@ -44,7 +46,7 @@ export default async function TenantCustomersPage() {
         title="Müşteriler"
         description="Sipariş veren her müşteri burada: kim ne kadar alışveriş yaptı, en son ne zaman sipariş verdi."
       />
-      <CustomersManager initialCustomers={customers} isTekel={Boolean(tenant.is_tekel)} />
+      <CustomersManager initialCustomers={customers} isTekel={Boolean(tenant.is_tekel)} categories={categories} />
       <IpBlocksManager initialBlocks={ipBlockRows ?? []} />
     </div>
   );

@@ -215,6 +215,10 @@ export interface StorefrontCoupon {
   title: string;
   message: string | null;
   expires_at: string | null;
+  /** Kapsam: null = tüm ürünler; doluysa alt kategorilerle GENİŞLETİLMİŞ id listesi */
+  category_ids: string[] | null;
+  /** Seçilen üst kategorilerin adları (metin için) */
+  category_names: string[];
 }
 
 export interface MarketCatalogProduct {

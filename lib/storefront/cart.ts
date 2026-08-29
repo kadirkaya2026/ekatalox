@@ -366,7 +366,7 @@ export function getCartPaymentSummary(
 
   // ── Müşteriye özel kupon ── (kampanya/nakit indiriminden sonra, kart
   // vade farkından önce; ara toplam üzerinden hesaplanır)
-  const couponResult = computeCouponDiscount(coupon, roundedSubtotal, currency);
+  const couponResult = computeCouponDiscount(coupon, items, currency);
   const couponDiscountAmount = couponResult.eligible
     ? roundCurrencyAmount(Math.min(couponResult.amount, Math.max(roundedSubtotal - discountAmount - campaignDiscountAmount, 0)))
     : 0;

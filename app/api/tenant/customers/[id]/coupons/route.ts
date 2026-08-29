@@ -14,6 +14,7 @@ const createSchema = z.object({
   min_order_amount: z.number().min(0).max(1_000_000).nullable().optional(),
   expires_in_days: z.number().int().min(1).max(365).nullable().optional(),
   message: z.string().trim().max(200).optional().default(""),
+  category_ids: z.array(z.string().uuid()).max(50).optional().default([]),
 }).refine((v) => v.kind !== "percent" || v.value <= 100, { message: "Yüzde 100'ü aşamaz.", path: ["value"] });
 
 async function guard() {
@@ -35,7 +36,7 @@ export async function GET(_request: Request, ctx: { params: Promise<{ id: string
   if (!supabase) return NextResponse.json({ coupons: [] });
   const { data } = await supabase
     .from("customer_coupons")
-    .select("id, kind, value, min_order_amount, currency, title, message, expires_at, single_use, status, used_at, created_at")
+    .select("id, kind, value, min_order_amount, currency, title, message, expires_at, single_use, status, used_at, created_at, category_ids")
     .eq("tenant_id", g.tenant.id)
     .eq("customer_id", id)
     .order("created_at", { ascending: false })
@@ -66,7 +67,16 @@ export async function POST(request: Request, ctx: { params: Promise<{ id: string
   const input = parsed.data;
   const currency = "TRY";
   const benefit = formatCouponBenefit({ kind: input.kind, value: input.value, currency });
-  const title = `Size özel ${benefit} indirim`;
+  // Kategori kapsamı: yalnız bu tenant'ın kategorileri kabul edilir
+  let categoryIds: string[] = [];
+  let categoryNames: string[] = [];
+  if (input.category_ids.length) {
+    const { data: cats } = await supabase.from("categories").select("id, name").eq("tenant_id", g.tenant.id).in("id", input.category_ids);
+    categoryIds = (cats ?? []).map((c) => c.id as string);
+    categoryNames = (cats ?? []).map((c) => c.name as string);
+  }
+  const scope = categoryNames.length ? (categoryNames.length <= 2 ? categoryNames.join(", ") : `${categoryNames.slice(0, 2).join(", ")} +${categoryNames.length - 2}`) : null;
+  const title = scope ? `${scope} kategorisinde size özel ${benefit} indirim` : `Size özel ${benefit} indirim`;
   const expiresAt = input.expires_in_days
     ? new Date(Date.now() + input.expires_in_days * 86_400_000).toISOString()
     : null;
@@ -94,9 +104,10 @@ export async function POST(request: Request, ctx: { params: Promise<{ id: string
       message: input.message || null,
       expires_at: expiresAt,
       single_use: true,
+      category_ids: categoryIds.length ? categoryIds : null,
       created_by: g.session.profile?.id ?? null,
     })
-    .select("id, kind, value, min_order_amount, currency, title, message, expires_at, single_use, status, used_at, created_at")
+    .select("id, kind, value, min_order_amount, currency, title, message, expires_at, single_use, status, used_at, created_at, category_ids")
     .single();
   if (error || !coupon) return NextResponse.json({ error: "Kupon kaydedilemedi." }, { status: 500 });
 
@@ -108,7 +119,7 @@ export async function POST(request: Request, ctx: { params: Promise<{ id: string
     const origin = tenant.custom_domain?.trim()
       ? `https://${tenant.custom_domain.trim()}`
       : `https://${tenant.subdomain}.${appEnv.rootDomain}`;
-    const minPart = input.min_order_amount ? ` (${input.min_order_amount.toLocaleString("tr-TR")} ₺ ve üzeri)` : "";
+    const minPart = input.min_order_amount ? ` (${scope ? `${scope} kategorisinden ` : ""}${input.min_order_amount.toLocaleString("tr-TR")} ₺ ve üzeri)` : scope ? ` (${scope} kategorisinde)` : "";
     const datePart = expiresAt ? ` · ${input.expires_in_days} gün geçerli` : "";
     await sendCustomerPush({
       tenantId: tenant.id,

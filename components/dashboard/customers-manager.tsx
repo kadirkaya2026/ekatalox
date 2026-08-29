@@ -24,7 +24,7 @@ import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { cn, formatCurrency, formatDate } from "@/lib/utils";
 import type { CurrencyCode } from "@/lib/products/constants";
-import type { OrderStatus, StorefrontCustomerWithStats, StorefrontOrder } from "@/lib/types";
+import type { Category, OrderStatus, StorefrontCustomerWithStats, StorefrontOrder } from "@/lib/types";
 import { formatOrderTotal, formatPaymentMethod, formatOrderNo } from "@/lib/orders/format";
 import { ORDER_STATUS_TONES, getStatusLabel } from "@/lib/orders/status";
 import { formatMagnetCodeForPrint } from "@/lib/magnet/code-format";
@@ -82,6 +82,7 @@ function CustomerLedger({
   onBack,
   onToggleBlock,
   blockPending,
+  categories,
 }: {
   customer: Customer;
   orders: StorefrontOrder[] | undefined;
@@ -90,6 +91,7 @@ function CustomerLedger({
   onBack: () => void;
   onToggleBlock: (customer: Customer) => void;
   blockPending: boolean;
+  categories: Category[];
 }) {
   const rows = useMemo(
     () => (orders ? [...orders].sort((a, b) => b.created_at.localeCompare(a.created_at)) : []),
@@ -154,7 +156,7 @@ function CustomerLedger({
         </div>
 
         {/* Müşteriye özel kupon */}
-        <CustomerCouponPanel customerId={customer.id} hasPush={customer.has_push} initialActive={customer.active_coupon} />
+        <CustomerCouponPanel customerId={customer.id} hasPush={customer.has_push} initialActive={customer.active_coupon} categories={categories} />
 
         {/* Siparişler */}
         <div className="overflow-hidden rounded-xl border border-slate-200">
@@ -210,10 +212,12 @@ export function CustomersManager({
   initialCustomers,
   ordersEndpointBase = "/api/tenant/customers",
   isTekel = false,
+  categories = [],
 }: {
   initialCustomers: Customer[];
   ordersEndpointBase?: string;
   isTekel?: boolean;
+  categories?: Category[];
 }) {
   const [customers, setCustomers] = useState(initialCustomers);
   const [selected, setSelected] = useState<Customer | null>(null);
@@ -325,6 +329,7 @@ export function CustomersManager({
           onBack={() => setSelected(null)}
           onToggleBlock={toggleBlock}
           blockPending={blockPending}
+          categories={categories}
         />
       </div>
     );

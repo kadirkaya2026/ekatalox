@@ -149,7 +149,11 @@ export function StorefrontCampaignsSheet({
                           {personalCouponStatus?.applied
                             ? `✓ ${t("coupon.appliedInCart")}: -${formatCurrency(personalCouponStatus.applied, currency)}`
                             : personalCouponStatus?.missing
-                              ? t("coupon.addMore", { amount: formatCurrency(personalCouponStatus.missing, currency) })
+                              ? t(personalCoupon.category_names?.length ? "coupon.addMoreCategory" : "coupon.addMore", {
+                                  amount: formatCurrency(personalCouponStatus.missing, currency),
+                                  benefit: formatCouponBenefit(personalCoupon),
+                                  category: personalCoupon.category_names?.join(", ") ?? "",
+                                })
                               : t("coupon.autoApply")}
                         </p>
                       </div>

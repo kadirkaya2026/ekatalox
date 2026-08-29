@@ -5,6 +5,7 @@ import { Gift, Loader2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { formatCouponBenefit } from "@/lib/coupons/shared";
+import type { Category } from "@/lib/types";
 
 interface CouponRow {
   id: string;
@@ -18,6 +19,7 @@ interface CouponRow {
   status: "active" | "used" | "cancelled";
   used_at: string | null;
   created_at: string;
+  category_ids?: string[] | null;
 }
 
 function fmtDate(iso: string | null) {
@@ -31,11 +33,16 @@ export function CustomerCouponPanel({
   customerId,
   hasPush,
   initialActive,
+  categories = [],
 }: {
   customerId: string;
   hasPush: boolean;
   initialActive: { id: string; title: string; expires_at: string | null } | null;
+  categories?: Category[];
 }) {
+  // Kapsam: üst kategoriler seçilir (alt kategoriler sunucuda otomatik dahil)
+  const topCategories = categories.filter((c) => !c.parent_id).sort((a, b) => a.display_order - b.display_order);
+  const [selectedCats, setSelectedCats] = useState<string[]>([]);
   const [open, setOpen] = useState(false);
   const [coupons, setCoupons] = useState<CouponRow[] | null>(null);
   const [kind, setKind] = useState<"percent" | "amount">("percent");
@@ -64,7 +71,7 @@ export function CustomerCouponPanel({
     const r = await fetch(`/api/tenant/customers/${customerId}/coupons`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ kind, value: num, min_order_amount: min, expires_in_days: days.trim() ? Number(days) : null, message: message.trim() }),
+      body: JSON.stringify({ kind, value: num, min_order_amount: min, expires_in_days: days.trim() ? Number(days) : null, message: message.trim(), category_ids: selectedCats }),
     });
     const d = await r.json().catch(() => ({}));
     if (!r.ok) {
@@ -72,6 +79,7 @@ export function CustomerCouponPanel({
     } else {
       setOpen(false);
       setMessage("");
+      setSelectedCats([]);
       setNotice(hasPush ? "Kupon tanımlandı ve müşterinin telefonuna bildirim gönderildi." : "Kupon tanımlandı. Müşteri bildirim izni vermediği için telefonuna bildirim gitmedi; vitrine girince ve sepette görecek.");
       await load();
     }
@@ -146,14 +154,36 @@ export function CustomerCouponPanel({
               <Input inputMode="numeric" value={days} onChange={(e) => setDays(e.target.value)} placeholder="7" />
             </div>
           </div>
+          {topCategories.length ? (
+            <div className="mt-3">
+              <p className="mb-1 text-xs font-semibold text-slate-600">
+                Kategori kapsamı <span className="font-normal text-slate-400">(boş = tüm ürünler; seçilirse yalnız bu kategorilerdeki ürünler kupona sayılır)</span>
+              </p>
+              <div className="flex flex-wrap gap-1.5">
+                {topCategories.map((c) => {
+                  const on = selectedCats.includes(c.id);
+                  return (
+                    <button
+                      key={c.id}
+                      type="button"
+                      onClick={() => setSelectedCats((curr) => (on ? curr.filter((x) => x !== c.id) : [...curr, c.id]))}
+                      className={`rounded-full border px-3 py-1 text-xs font-semibold transition ${on ? "border-slate-900 bg-slate-900 text-white" : "border-slate-200 bg-white text-slate-600 hover:border-slate-400"}`}
+                    >
+                      {c.name}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ) : null}
           <div className="mt-3">
             <p className="mb-1 text-xs font-semibold text-slate-600">Müşteriye mesaj (isteğe bağlı, bildirimde görünür)</p>
             <Input value={message} maxLength={200} onChange={(e) => setMessage(e.target.value)} placeholder="Örn: Sizi özledik, bu hafta size özel 🙂" />
           </div>
           <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
             <p className="text-xs text-slate-500">
-              Önizleme: <strong>Size özel {formatCouponBenefit({ kind, value: Number(value.replace(",", ".")) || 0, currency: "TRY" })} indirim</strong>
-              {minOrder.trim() ? ` · ${minOrder} ₺ ve üzeri` : ""}{days.trim() ? ` · ${days} gün` : ""} — sepette kendiliğinden uygulanır, tek kullanımlık.
+              Önizleme: <strong>{selectedCats.length ? `${topCategories.filter((c) => selectedCats.includes(c.id)).map((c) => c.name).join(", ")} kategorisinde ` : ""}size özel {formatCouponBenefit({ kind, value: Number(value.replace(",", ".")) || 0, currency: "TRY" })} indirim</strong>
+              {minOrder.trim() ? ` · ${selectedCats.length ? "bu kategorilerden " : ""}${minOrder} ₺ ve üzeri` : ""}{days.trim() ? ` · ${days} gün` : ""} — sepette kendiliğinden uygulanır, tek kullanımlık.
               {hasPush ? " Telefonuna bildirim gider." : " Müşteri bildirim izni vermemiş; vitrinde ve sepette görecek."}
             </p>
             <div className="flex gap-2">
