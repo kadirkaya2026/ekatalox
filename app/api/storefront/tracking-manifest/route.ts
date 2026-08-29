@@ -27,7 +27,7 @@ export async function GET(request: Request) {
   return NextResponse.json(
     {
       name,
-      short_name: name.length > 12 ? name.slice(0, 12) : name,
+      short_name: name,
       // ?app=1: ana ekrandan açılınca sayfa müşterinin EN SON siparişine yönlendirir
       // (bkz. siparis/[token]/page.tsx). Böylece ikon bir kez eklenir, hep güncel kalır.
       start_url: `/siparis/${token}?app=1`,

@@ -24,7 +24,7 @@ export async function GET(request: Request) {
   return NextResponse.json(
     {
       name: `${name} Panel`,
-      short_name: name.length > 12 ? name.slice(0, 12) : name,
+      short_name: name,
       start_url: "/dashboard/siparisler",
       scope: "/",
       display: "standalone",
