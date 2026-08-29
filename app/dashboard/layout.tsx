@@ -4,7 +4,8 @@ import { NewOrderWatcher } from "@/components/dashboard/new-order-watcher";
 import { Sidebar } from "@/components/dashboard/sidebar";
 import { TrialExpiredModal } from "@/components/dashboard/trial-expired-modal";
 import { VisitorQuotaBanner } from "@/components/dashboard/visitor-quota-banner";
-import { requireTenantAdminPage } from "@/lib/auth/session";
+import { getSessionContext, requireTenantAdminPage } from "@/lib/auth/session";
+import { getTenantStorefrontSettings } from "@/lib/data";
 import { getCurrentMonthVisitorCount } from "@/lib/analytics/queries";
 import { getVisitorLimitForPlan } from "@/lib/billing/plans";
 import { getTenantSuggestionNoticeCount } from "@/lib/products/suggestions";
@@ -15,13 +16,22 @@ import {
   isTrialTenant,
 } from "@/lib/billing/trial";
 
-// iPhone'da bildirim yalnız ana ekrana eklenmiş panelde çalışır; manifest
-// paneli "eKatalox Panel" adıyla, Siparişler sayfasından açılacak şekilde tanıtır.
-export const metadata: Metadata = {
-  manifest: "/panel.webmanifest",
-  appleWebApp: { capable: true, title: "eKatalox", statusBarStyle: "default" },
-  icons: { apple: "/ekatalox-logo-v2.png" },
-};
+// iPhone'da bildirim yalnız ana ekrana eklenmiş panelde çalışır. Ana ekran
+// ikonu ve adı BAYİNİN logosu/adı olsun (eKatalox değil): manifest tenant'a
+// özel üretilir, apple-touch-icon bayinin logosundan gelir.
+export async function generateMetadata(): Promise<Metadata> {
+  const session = await getSessionContext();
+  const tenant = session.tenant;
+  if (!tenant) return { manifest: "/panel.webmanifest" };
+  const settings = await getTenantStorefrontSettings(tenant.id);
+  const name = settings.storefront_title?.trim() || tenant.company_name;
+  const icon = settings.logo_url || settings.site_favicon_url || "/ekatalox-logo-v2.png";
+  return {
+    manifest: `/api/tenant/panel-manifest?tenant=${tenant.id}`,
+    appleWebApp: { capable: true, title: name, statusBarStyle: "default" },
+    icons: { apple: icon },
+  };
+}
 
 export default async function DashboardLayout({
   children,
