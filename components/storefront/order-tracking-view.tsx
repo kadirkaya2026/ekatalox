@@ -59,6 +59,42 @@ function TrackingCard({
 }) {
   const theme = useStorefrontTheme();
   const [snap, setSnap] = useState(initial);
+  // Müşteri iptali (yalnız 'new'): onay kutusu + isteğe bağlı sebep
+  const [cancelOpen, setCancelOpen] = useState(false);
+  const [cancelReason, setCancelReason] = useState("");
+  const [cancelBusy, setCancelBusy] = useState(false);
+  const [cancelError, setCancelError] = useState<string | null>(null);
+
+  const cancelByCustomer = async () => {
+    setCancelBusy(true);
+    setCancelError(null);
+    try {
+      const r = await fetch("/api/storefront/order-cancel", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token, reason: cancelReason.trim() }),
+      });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) {
+        setCancelError(d.error ?? "İptal edilemedi.");
+        // Bayi bu arada onayladıysa sayfayı güncel duruma getir
+        if (d.current_status) setSnap((s) => ({ ...s, status: d.current_status }));
+        return;
+      }
+      setSnap((s) => ({
+        ...s,
+        status: "cancelled",
+        statusUpdatedAt: d.status_updated_at ?? new Date().toISOString(),
+        cancelReason: d.cancel_reason ?? null,
+        events: [...s.events, { status: "cancelled", at: d.status_updated_at ?? new Date().toISOString() }],
+      }));
+      setCancelOpen(false);
+    } catch {
+      setCancelError("Bağlantı hatası, tekrar deneyin.");
+    } finally {
+      setCancelBusy(false);
+    }
+  };
 
   // Bu sayfayı gören müşteri bu siparişin son durumunu görmüş sayılır
   // (başlıktaki kırmızı rozet buna göre düşer).
@@ -91,6 +127,13 @@ function TrackingCard({
     message: `Merhaba, ${displayNo(snap)} numaralı siparişim hakkında bilgi almak istiyorum.`,
     directToRegisteredNumber: true,
   });
+  const waCancelHref = buildWhatsAppOrderHref({
+    phone: whatsappNumber,
+    message: `Merhaba, ${displayNo(snap)} numaralı siparişimi iptal etmek istiyorum.`,
+    directToRegisteredNumber: true,
+  });
+  const canSelfCancel = snap.status === "new";
+  const needsStoreForCancel = snap.status === "confirmed" || snap.status === "preparing" || snap.status === "shipped";
   const text = theme.text;
   const muted = theme.textMuted;
 
@@ -160,6 +203,62 @@ function TrackingCard({
             </div>
           ))}
         </div>
+
+        {canSelfCancel ? (
+          <div className={cn("mt-5 rounded-xl border p-3", theme.border)}>
+            {!cancelOpen ? (
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <p className={cn("text-xs", muted)}>Mağaza onaylayana kadar siparişinizi iptal edebilirsiniz.</p>
+                <button
+                  type="button"
+                  onClick={() => setCancelOpen(true)}
+                  className="text-xs font-semibold text-rose-500 underline-offset-2 hover:underline"
+                >
+                  Siparişi iptal et
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <p className={cn("text-sm font-semibold", text)}>Siparişi iptal etmek istediğinize emin misiniz?</p>
+                <input
+                  type="text"
+                  value={cancelReason}
+                  onChange={(e) => setCancelReason(e.target.value)}
+                  maxLength={300}
+                  placeholder="Sebep (isteğe bağlı)"
+                  className={cn("w-full rounded-lg border bg-transparent px-3 py-2 text-sm outline-none placeholder:opacity-50", theme.border, text)}
+                />
+                {cancelError ? <p className="text-xs font-medium text-rose-500">{cancelError}</p> : null}
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    disabled={cancelBusy}
+                    onClick={() => void cancelByCustomer()}
+                    className="inline-flex h-10 items-center justify-center rounded-full bg-rose-600 px-4 text-sm font-semibold text-white disabled:opacity-60"
+                  >
+                    {cancelBusy ? "İptal ediliyor…" : "Evet, iptal et"}
+                  </button>
+                  <button
+                    type="button"
+                    disabled={cancelBusy}
+                    onClick={() => { setCancelOpen(false); setCancelError(null); }}
+                    className={cn("inline-flex h-10 items-center justify-center rounded-full border px-4 text-sm font-semibold", theme.border, text)}
+                  >
+                    Vazgeç
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        ) : needsStoreForCancel ? (
+          <p className={cn("mt-5 text-xs", muted)}>
+            Mağaza siparişinizi onayladı. İptal için{" "}
+            <a href={waCancelHref} target="_blank" rel="noreferrer" className={cn("font-semibold underline underline-offset-2", text)}>
+              WhatsApp&apos;tan mağazaya yazın
+            </a>
+            .
+          </p>
+        ) : null}
 
         <div className="mt-6 flex flex-col gap-2">
           <a
