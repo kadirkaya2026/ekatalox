@@ -24,6 +24,7 @@ export function buildOrderStatusWhatsAppHref(params: {
   if (params.status === "cancelled" && params.order.cancel_reason) {
     lines.push(`Sebep: ${params.order.cancel_reason}`);
   }
-  if (params.trackingUrl) lines.push(`🔎 Takip: ${params.trackingUrl}`);
+  // Takip linki mesaja eklenmiyor (kullanıcı kararı, 29 Ağu 2026); müşteri
+  // vitrindeki "Sipariş Takip" ikonundan numarasıyla ulaşıyor.
   return `https://wa.me/${intl}?text=${encodeURIComponent(lines.join("\n"))}`;
 }

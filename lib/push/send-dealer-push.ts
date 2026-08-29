@@ -38,9 +38,8 @@ export async function sendDealerOrderPush(params: {
   const firstName = o.customerName.trim().split(/\s+/).slice(0, 2).join(" ");
   const bodyParts = [firstName, `${o.itemCount} ürün`, total, payment].filter(Boolean);
 
-  // Panel www altında yaşıyor (apex 308 ile www'ya gider); bildirim tıklaması
-  // yönlendirme beklemesin diye doğrudan www.
-  const url = `https://www.${appEnv.rootDomain}/dashboard/siparisler?order=${o.id}`;
+  // Bayi paneli app.ekatalox.com (appEnv.appDomain); /dashboard/... orada da geçerli.
+  const url = `https://${appEnv.appDomain}/dashboard/siparisler?order=${o.id}`;
   const payload = JSON.stringify({
     title: params.kind === "new" ? `Yeni sipariş ${no} 🛒` : `Sipariş ${no} iptal edildi (müşteri)`,
     body: bodyParts.join(" · "),

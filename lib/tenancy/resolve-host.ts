@@ -94,6 +94,11 @@ export function getInternalPathFromResolution(
     if (pathname === "/dashboard" || pathname.startsWith("/dashboard/")) {
       return pathname;
     }
+    // Fiş yazdırma sayfası panel layout'unun dışında (kenar çubuksuz);
+    // app.ekatalox.com/yazdir/... /dashboard altına taşınmamalı.
+    if (pathname.startsWith("/yazdir/")) {
+      return pathname;
+    }
 
     return pathname === "/" ? "/dashboard" : `/dashboard${pathname}`;
   }
