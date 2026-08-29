@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState, type FormEvent } from "react";
-import { ArrowLeft, ChevronRight, PackageSearch, Phone } from "lucide-react";
+import { Bell, ChevronRight, History, PackageSearch, Phone, Radar } from "lucide-react";
+import { StorefrontSubpageShell } from "@/components/storefront/storefront-subpage-shell";
 import {
   StorefrontThemeProvider,
   useStorefrontTheme,
@@ -49,7 +50,7 @@ function fmtDate(iso: string) {
   return new Date(iso).toLocaleString("tr-TR", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
 }
 
-function MyOrdersCard({ subdomain, tenantName, isTekel }: { subdomain: string; tenantName: string; isTekel: boolean }) {
+function MyOrdersCard({ subdomain, tenantName, logoUrl, isTekel }: { subdomain: string; tenantName: string; logoUrl: string | null; isTekel: boolean }) {
   const theme = useStorefrontTheme();
   const { t } = useStorefrontLocale();
   const [phone, setPhone] = useState("");
@@ -119,28 +120,31 @@ function MyOrdersCard({ subdomain, tenantName, isTekel }: { subdomain: string; t
   const renderOrder = (o: OrderRow) => {
     const inner = (
       <>
-        <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-            <span className={cn("text-sm font-semibold", text)}>{displayNo(o)}</span>
-            <span className={cn("inline-flex items-center gap-1.5 text-xs font-medium", text)}>
-              <span className={cn("size-2 rounded-full", STATUS_DOT[o.status])} />
-              {getStatusLabel(o.status, { isTekel })}
-            </span>
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className={cn("text-base font-semibold", text)}>{displayNo(o)}</p>
+            <p className={cn("mt-0.5 text-xs", muted)}>{fmtDate(o.created_at)}</p>
           </div>
-          <p className={cn("mt-0.5 text-xs", muted)}>
-            {fmtDate(o.created_at)} · {o.item_count} {t("orders.items")}
-            {o.preview.length ? ` · ${o.preview.join(", ")}${o.item_count > o.preview.length ? "…" : ""}` : ""}
-          </p>
-        </div>
-        <div className="flex shrink-0 items-center gap-2">
-          <span className={cn("text-sm font-semibold tabular-nums", o.status === "cancelled" ? cn("line-through", muted) : text)}>
-            {o.currency === "CATALOG" ? "—" : formatCurrency(o.total_amount, o.currency as CurrencyCode)}
+          <span className={cn("inline-flex shrink-0 items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold", theme.border, text)}>
+            <span className={cn("size-2 rounded-full", STATUS_DOT[o.status])} />
+            {getStatusLabel(o.status, { isTekel })}
           </span>
-          {o.tracking_token ? <ChevronRight className={cn("size-4", muted)} /> : null}
+        </div>
+        <p className={cn("mt-3 line-clamp-2 text-sm", muted)}>
+          {o.preview.length ? `${o.preview.join(", ")}${o.item_count > o.preview.length ? "…" : ""}` : `${o.item_count} ${t("orders.items")}`}
+        </p>
+        <div className={cn("mt-3 flex items-center justify-between gap-3 border-t pt-3", theme.border)}>
+          <span className={cn("text-xs", muted)}>{o.item_count} {t("orders.items")}</span>
+          <span className="flex items-center gap-2">
+            <span className={cn("text-sm font-bold tabular-nums", o.status === "cancelled" ? cn("line-through", muted) : text)}>
+              {o.currency === "CATALOG" ? "—" : formatCurrency(o.total_amount, o.currency as CurrencyCode)}
+            </span>
+            {o.tracking_token ? <ChevronRight className={cn("size-4", muted)} /> : null}
+          </span>
         </div>
       </>
     );
-    const cls = cn("flex items-center gap-3 rounded-xl border px-3 py-3 transition", theme.border, theme.surface, o.tracking_token && "hover:opacity-90");
+    const cls = cn("block rounded-2xl border p-4 transition", theme.border, theme.surface, o.tracking_token && "hover:-translate-y-0.5 hover:shadow-md");
     return o.tracking_token ? (
       <a key={o.id} href={`/siparis/${o.tracking_token}`} className={cls} title={t("orders.detail")}>{inner}</a>
     ) : (
@@ -148,21 +152,44 @@ function MyOrdersCard({ subdomain, tenantName, isTekel }: { subdomain: string; t
     );
   };
 
-  return (
-    <div data-storefront className={cn(theme.page, "min-h-screen")}>
-      <div className="container-shell flex items-start justify-center py-6">
-      <div className={cn(theme.gateCard, "w-full max-w-lg")}>
-        <a href="/" className={cn("inline-flex items-center gap-1 text-xs font-medium", muted)}>
-          <ArrowLeft className="size-3.5" /> {tenantName}
-        </a>
-        <h1 className={cn("mt-2 flex items-center gap-2 text-2xl font-semibold", text)}>
-          <PackageSearch className="size-6" /> {t("orders.title")}
-        </h1>
+  const features = [
+    { icon: Radar, label: t("orders.feature1") },
+    { icon: Bell, label: t("orders.feature2") },
+    { icon: History, label: t("orders.feature3") },
+  ];
 
-        {orders === null ? (
-          <form onSubmit={onSubmit} className="mt-4 space-y-3">
-            <p className={cn("text-sm", muted)}>{t("orders.intro")}</p>
-            <label className={cn("flex items-center gap-2 rounded-xl border px-3 py-2.5", theme.border, theme.surface)}>
+  return (
+    <StorefrontSubpageShell logoUrl={logoUrl} title={tenantName}>
+      {orders === null ? (
+        <section className="grid items-center gap-10 lg:grid-cols-[1.1fr_1fr] lg:gap-16">
+          <div>
+            <p className={cn("text-xs font-semibold uppercase tracking-[0.22em]", muted)}>{t("orders.eyebrow")}</p>
+            <h1 className={cn("mt-3 text-3xl font-semibold leading-tight sm:text-4xl", text)} style={{ textWrap: "balance" }}>
+              {t("orders.heroTitle")}
+            </h1>
+            <p className={cn("mt-4 max-w-md text-base leading-7", muted)}>{t("orders.intro")}</p>
+            <ul className="mt-8 space-y-4">
+              {features.map(({ icon: Icon, label }) => (
+                <li key={label} className="flex items-start gap-3">
+                  <span className={cn("flex size-9 shrink-0 items-center justify-center rounded-xl border", theme.border, theme.surface)}>
+                    <Icon className={cn("size-4", text)} />
+                  </span>
+                  <span className={cn("pt-1.5 text-sm leading-6", text)}>{label}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+          <form onSubmit={onSubmit} className={cn(theme.gateCard, "w-full space-y-4")}>
+            <div className="flex items-center gap-3">
+              <span className={cn("flex size-11 items-center justify-center rounded-2xl border", theme.border, theme.surface)}>
+                <PackageSearch className={cn("size-5", text)} />
+              </span>
+              <div>
+                <p className={cn("text-base font-semibold", text)}>{t("orders.title")}</p>
+                <p className={cn("text-xs", muted)}>{t("orders.showingFor").replace(/:?$/, "")}</p>
+              </div>
+            </div>
+            <label className={cn("flex items-center gap-2 rounded-xl border px-3 py-3", theme.border, theme.surface)}>
               <Phone className={cn("size-4 shrink-0", muted)} />
               <input
                 type="tel"
@@ -176,44 +203,60 @@ function MyOrdersCard({ subdomain, tenantName, isTekel }: { subdomain: string; t
               />
             </label>
             {error ? <p className={theme.gateError}>{error}</p> : null}
-            <button type="submit" disabled={loading} className={cn(theme.primaryButton, "w-full justify-center disabled:opacity-60")}>
+            <button type="submit" disabled={loading} className={cn(theme.primaryButton, "h-12 w-full justify-center text-base disabled:opacity-60")}>
               {loading ? t("orders.loading") : t("orders.submit")}
             </button>
           </form>
-        ) : (
-          <div className="mt-4 space-y-5">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <p className={cn("text-xs", muted)}>{t("orders.showingFor")}: <span className={cn("font-semibold", text)}>{activePhone}</span></p>
-              <button type="button" onClick={reset} className={cn("text-xs font-semibold underline-offset-2 hover:underline", text)}>
-                {t("orders.changePhone")}
-              </button>
+        </section>
+      ) : (
+        <section>
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <p className={cn("text-xs font-semibold uppercase tracking-[0.22em]", muted)}>{t("orders.eyebrow")}</p>
+              <h1 className={cn("mt-2 text-2xl font-semibold sm:text-3xl", text)}>{t("orders.title")}</h1>
+              <p className={cn("mt-1 text-sm", muted)}>
+                {t("orders.showingFor")}: <span className={cn("font-semibold", text)}>{activePhone}</span>
+              </p>
             </div>
-            {orders.length === 0 ? (
-              <p className={cn("rounded-xl border px-3 py-4 text-center text-sm", theme.border, muted)}>{t("orders.notFound")}</p>
-            ) : null}
-            {active.length ? (
-              <section className="space-y-2">
-                <h2 className={cn("text-xs font-semibold uppercase tracking-wide", muted)}>{t("orders.active")}</h2>
-                {active.map(renderOrder)}
-              </section>
-            ) : null}
-            {past.length ? (
-              <section className="space-y-2">
-                <h2 className={cn("text-xs font-semibold uppercase tracking-wide", muted)}>{t("orders.past")}</h2>
-                {past.map(renderOrder)}
-              </section>
-            ) : null}
+            <button
+              type="button"
+              onClick={reset}
+              className={cn("inline-flex h-10 items-center rounded-full border px-4 text-xs font-semibold transition hover:opacity-80", theme.border, text)}
+            >
+              {t("orders.changePhone")}
+            </button>
           </div>
-        )}
-      </div>
-      </div>
-    </div>
+
+          {orders.length === 0 ? (
+            <div className={cn("mt-8 rounded-2xl border px-6 py-12 text-center", theme.border, theme.surface)}>
+              <PackageSearch className={cn("mx-auto size-8", muted)} />
+              <p className={cn("mt-3 text-sm font-semibold", text)}>{t("orders.noPastOrders")}</p>
+              <p className={cn("mt-1 text-sm", muted)}>{t("orders.notFound")}</p>
+            </div>
+          ) : null}
+
+          {active.length ? (
+            <div className="mt-8">
+              <h2 className={cn("text-xs font-semibold uppercase tracking-wide", muted)}>{t("orders.active")} · {active.length}</h2>
+              <div className="mt-3 grid gap-3 sm:grid-cols-2">{active.map(renderOrder)}</div>
+            </div>
+          ) : null}
+          {past.length ? (
+            <div className="mt-10">
+              <h2 className={cn("text-xs font-semibold uppercase tracking-wide", muted)}>{t("orders.past")} · {past.length}</h2>
+              <div className="mt-3 grid gap-3 sm:grid-cols-2">{past.map(renderOrder)}</div>
+            </div>
+          ) : null}
+        </section>
+      )}
+    </StorefrontSubpageShell>
   );
 }
 
 export function MyOrdersView(props: {
   subdomain: string;
   tenantName: string;
+  logoUrl: string | null;
   isTekel: boolean;
   appearance?: StorefrontAppearanceSettings;
 }) {
@@ -223,7 +266,7 @@ export function MyOrdersView(props: {
       brandPrimaryColor={props.appearance?.brand_primary_color}
       brandAccentColor={props.appearance?.brand_accent_color}
     >
-      <MyOrdersCard subdomain={props.subdomain} tenantName={props.tenantName} isTekel={props.isTekel} />
+      <MyOrdersCard subdomain={props.subdomain} tenantName={props.tenantName} logoUrl={props.logoUrl} isTekel={props.isTekel} />
     </StorefrontThemeProvider>
   );
 }

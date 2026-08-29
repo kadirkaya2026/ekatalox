@@ -80,6 +80,7 @@ export default async function OrderTrackingPage(props: TrackingPageProps) {
       <OrderTrackingView
         token={token}
         tenantName={settings.storefront_title?.trim() || tenant.company_name}
+        logoUrl={settings.logo_url ?? null}
         whatsappNumber={tenant.whatsapp_number}
         isTekel={Boolean(tenant.is_tekel)}
         appearance={getAppearanceFromSettings(settings)}

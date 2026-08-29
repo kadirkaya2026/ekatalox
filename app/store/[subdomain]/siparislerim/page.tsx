@@ -35,6 +35,7 @@ export default async function MyOrdersPage(props: MyOrdersPageProps) {
       <MyOrdersView
         subdomain={subdomain}
         tenantName={settings.storefront_title?.trim() || tenant.company_name}
+        logoUrl={settings.logo_url ?? null}
         isTekel={Boolean(tenant.is_tekel)}
         appearance={getAppearanceFromSettings(settings)}
       />

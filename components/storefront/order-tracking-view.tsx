@@ -13,6 +13,7 @@ import type { OrderStatus } from "@/lib/types";
 import { getStatusDescription, getStatusLabel } from "@/lib/orders/status";
 import { buildWhatsAppOrderHref } from "@/lib/storefront/whatsapp-order";
 import { markSeen } from "@/lib/storefront/tracking-phone";
+import { StorefrontSubpageShell } from "@/components/storefront/storefront-subpage-shell";
 import { PushOptInBanner } from "@/components/storefront/push-opt-in-button";
 
 export interface TrackingSnapshot {
@@ -47,12 +48,14 @@ function displayNo(snap: Pick<TrackingSnapshot, "orderNo" | "orderNumber">) {
 function TrackingCard({
   token,
   tenantName,
+  logoUrl,
   whatsappNumber,
   isTekel,
   initial,
 }: {
   token: string;
   tenantName: string;
+  logoUrl: string | null;
   whatsappNumber: string;
   isTekel: boolean;
   initial: TrackingSnapshot;
@@ -138,11 +141,11 @@ function TrackingCard({
   const muted = theme.textMuted;
 
   return (
-    <div data-storefront className={cn(theme.page, "min-h-screen")}>
-      <div className="container-shell flex items-start justify-center py-6">
-      <div className={cn(theme.gateCard, "w-full max-w-lg")}>
-        <p className={cn("text-xs font-semibold uppercase tracking-wide", muted)}>{tenantName}</p>
-        <h1 className={cn("mt-1 text-2xl font-semibold", text)}>Sipariş {displayNo(snap)}</h1>
+    <StorefrontSubpageShell logoUrl={logoUrl} title={tenantName} maxWidthClassName="max-w-2xl">
+      <div className="flex items-start justify-center">
+      <div className={cn(theme.gateCard, "w-full")}>
+        <a href="/siparislerim" className={cn("text-xs font-semibold uppercase tracking-wide underline-offset-2 hover:underline", muted)}>← Sipariş Takip</a>
+        <h1 className={cn("mt-2 text-2xl font-semibold sm:text-3xl", text)}>Sipariş {displayNo(snap)}</h1>
         <p className={cn("mt-1 text-sm", muted)}>
           {fmtTime(snap.createdAt)} · {snap.currency === "CATALOG" ? "Fiyatsız katalog siparişi" : formatCurrency(snap.totalAmount, snap.currency as CurrencyCode)}
         </p>
@@ -274,13 +277,14 @@ function TrackingCard({
         </div>
       </div>
       </div>
-    </div>
+    </StorefrontSubpageShell>
   );
 }
 
 export function OrderTrackingView(props: {
   token: string;
   tenantName: string;
+  logoUrl: string | null;
   whatsappNumber: string;
   isTekel: boolean;
   appearance?: StorefrontAppearanceSettings;
