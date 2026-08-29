@@ -14,7 +14,7 @@ import { normalizeCategoryName } from "@/lib/categories/ensure-hierarchy";
 // olduğu için ürünler "gerçekten kategorisiz" kalamaz; tenant'ın kök
 // seviyedeki "Kategorisiz" kategorisine taşınır (yoksa oluşturulur). Vitrin
 // bu kovayı kategori menüsünde göstermez (bkz. lib/categories/tree.ts).
-import { UNCATEGORIZED_CATEGORY_NAME } from "@/lib/categories/tree";
+import { getDescendantCategoryIds, UNCATEGORIZED_CATEGORY_NAME } from "@/lib/categories/tree";
 import type { BannerItem, Category } from "@/lib/types";
 import { categorySchema } from "@/lib/validators/category";
 
@@ -186,35 +186,35 @@ export async function DELETE(request: Request) {
     return NextResponse.json({ success: true });
   }
 
-  const { count: childCount } = await supabase
+  // Tenant'ın tüm kategorileri (sadece bu tenant — tenant_id süzgeci) çekilip
+  // silinecek kategorinin alt ağacı (kendisi dahil) hesaplanıyor: ana kategori
+  // silinince alt kategorileri de silinir, ağaçtaki tüm ürünler "Kategorisiz"e
+  // taşınır.
+  const { data: tenantCategoriesRaw, error: categoriesError } = await supabase
     .from("categories")
-    .select("*", { count: "exact", head: true })
-    .eq("tenant_id", session.tenant!.id)
-    .eq("parent_id", id);
+    .select("*")
+    .eq("tenant_id", session.tenant!.id);
 
-  if ((childCount ?? 0) > 0) {
-    return NextResponse.json(
-      { error: "Bu kategoriye bağlı alt kategoriler olduğu için silinemez." },
-      { status: 400 },
-    );
+  if (categoriesError) {
+    return NextResponse.json({ error: categoriesError.message }, { status: 400 });
   }
 
-  const { data: categoryToDelete } = await supabase
-    .from("categories")
-    .select("name, banner_item, tile_image_url")
-    .eq("id", id)
-    .eq("tenant_id", session.tenant!.id)
-    .maybeSingle();
+  const tenantCategories = (tenantCategoriesRaw ?? []) as Category[];
+  const categoryToDelete = tenantCategories.find((category) => category.id === id) ?? null;
 
   if (!categoryToDelete) {
     return NextResponse.json({ error: "Kategori bulunamadı." }, { status: 404 });
   }
 
+  const deletedIds = getDescendantCategoryIds(tenantCategories, id);
+  const deletedCategories = tenantCategories.filter((category) => deletedIds.includes(category.id));
+  const deletedSubcategoryCount = deletedIds.length - 1;
+
   const { count: productCount } = await supabase
     .from("products")
     .select("*", { count: "exact", head: true })
     .eq("tenant_id", session.tenant!.id)
-    .eq("category_id", id);
+    .in("category_id", deletedIds);
 
   const movedCount = productCount ?? 0;
   let uncategorizedCategory: Category | null = null;
@@ -223,11 +223,15 @@ export async function DELETE(request: Request) {
   if (movedCount > 0) {
     // Ürünler "Kategorisiz" kovasına taşınır; ürün fiyatları/stokları değişmez,
     // vitrinde kategori ataması olmadan yayınlanmaya devam ederler.
-    const isDeletingUncategorizedBucket =
-      normalizeCategoryName(categoryToDelete.name as string) ===
-      normalizeCategoryName(UNCATEGORIZED_CATEGORY_NAME);
+    const existingBucket =
+      tenantCategories.find(
+        (category) =>
+          category.parent_id === null &&
+          normalizeCategoryName(category.name) ===
+            normalizeCategoryName(UNCATEGORIZED_CATEGORY_NAME),
+      ) ?? null;
 
-    if (isDeletingUncategorizedBucket) {
+    if (existingBucket && deletedIds.includes(existingBucket.id)) {
       return NextResponse.json(
         {
           error:
@@ -237,25 +241,13 @@ export async function DELETE(request: Request) {
       );
     }
 
-    const { data: existingBucket } = await supabase
-      .from("categories")
-      .select("*")
-      .eq("tenant_id", session.tenant!.id)
-      .is("parent_id", null)
-      .ilike("name", UNCATEGORIZED_CATEGORY_NAME)
-      .limit(1)
-      .maybeSingle<Category>();
-
-    uncategorizedCategory = existingBucket ?? null;
+    uncategorizedCategory = existingBucket;
 
     if (!uncategorizedCategory) {
-      const { data: lastCategory } = await supabase
-        .from("categories")
-        .select("display_order")
-        .eq("tenant_id", session.tenant!.id)
-        .order("display_order", { ascending: false })
-        .limit(1)
-        .maybeSingle();
+      const lastDisplayOrder = tenantCategories.reduce(
+        (max, category) => Math.max(max, category.display_order ?? 0),
+        0,
+      );
 
       const { data: createdBucket, error: createError } = await supabase
         .from("categories")
@@ -263,7 +255,7 @@ export async function DELETE(request: Request) {
           tenant_id: session.tenant!.id,
           name: UNCATEGORIZED_CATEGORY_NAME,
           parent_id: null,
-          display_order: (lastCategory?.display_order ?? 0) + 1,
+          display_order: lastDisplayOrder + 1,
           // Silinen kategorinin ürünleri vitrinde yayınlanmaya devam etmeli;
           // bu yüzden kova gizli oluşturulmaz (import'un kovasından farklı).
           is_hidden_from_storefront: false,
@@ -286,41 +278,38 @@ export async function DELETE(request: Request) {
       .from("products")
       .update({ category_id: uncategorizedCategory.id })
       .eq("tenant_id", session.tenant!.id)
-      .eq("category_id", id);
+      .in("category_id", deletedIds);
 
     if (moveError) {
       return NextResponse.json({ error: moveError.message }, { status: 400 });
     }
   }
 
-  const bannerItem = categoryToDelete?.banner_item as BannerItem | null;
-  const bannerImageUrl = bannerItem?.image_url ?? null;
-  const tileImageUrl = (categoryToDelete?.tile_image_url as string | null) ?? null;
+  // Silinen tüm kategorilerin (alt ağaç dahil) banner/kutucuk görselleri.
+  const imageObjectPaths = deletedCategories
+    .flatMap((category) => {
+      const bannerItem = category.banner_item as BannerItem | null;
+      return [bannerItem?.image_url ?? null, category.tile_image_url ?? null];
+    })
+    .filter((url): url is string => Boolean(url))
+    .map((url) => getBannerObjectPath(url))
+    .filter((objectPath): objectPath is string =>
+      Boolean(objectPath && objectPath.startsWith(`${session.tenant!.id}/`)),
+    );
 
+  // parent_id FK "on delete set null" — alt ağaç tek seferde silinebilir.
   const { error } = await supabase
     .from("categories")
     .delete()
-    .eq("id", id)
-    .eq("tenant_id", session.tenant!.id);
+    .eq("tenant_id", session.tenant!.id)
+    .in("id", deletedIds);
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 400 });
   }
 
-  if (bannerImageUrl) {
-    const objectPath = getBannerObjectPath(bannerImageUrl);
-
-    if (objectPath?.startsWith(`${session.tenant!.id}/`)) {
-      await supabase.storage.from(STOREFRONT_BANNERS_BUCKET).remove([objectPath]);
-    }
-  }
-
-  if (tileImageUrl) {
-    const objectPath = getBannerObjectPath(tileImageUrl);
-
-    if (objectPath?.startsWith(`${session.tenant!.id}/`)) {
-      await supabase.storage.from(STOREFRONT_BANNERS_BUCKET).remove([objectPath]);
-    }
+  if (imageObjectPaths.length) {
+    await supabase.storage.from(STOREFRONT_BANNERS_BUCKET).remove(imageObjectPaths);
   }
 
   revalidateStorefrontCache({
@@ -330,6 +319,8 @@ export async function DELETE(request: Request) {
 
   return NextResponse.json({
     success: true,
+    deletedIds,
+    deletedSubcategoryCount,
     movedCount,
     uncategorizedCategory: createdUncategorized ? uncategorizedCategory : null,
     uncategorizedHidden: uncategorizedCategory?.is_hidden_from_storefront ?? false,

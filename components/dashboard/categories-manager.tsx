@@ -42,6 +42,7 @@ import { Input } from "@/components/ui/input";
 import {
   buildCategoryTree,
   flattenCategoryTree,
+  getDescendantCategoryIds,
 } from "@/lib/categories/tree";
 import type { Category, Tenant } from "@/lib/types";
 
@@ -62,6 +63,8 @@ interface RowProps {
   inlineParentId: string | null;
   inlineName: string;
   deleteConfirmId: string | null;
+  /** Silinecek kategorinin alt ağacındaki kategori sayısı (kendisi hariç). */
+  deleteSubcategoryCount: number;
   bannerPanelId: string | null;
   pending: boolean;
   onStartEdit: (category: Category) => void;
@@ -310,8 +313,19 @@ function SortableCategoryRow(props: RowProps) {
       {props.deleteConfirmId === props.category.id ? (
         <div className="mt-1 flex items-center gap-3 rounded-xl border border-red-100 bg-red-50 p-3">
           <p className="flex-1 text-sm text-red-800">
-            <strong>&quot;{props.category.name}&quot;</strong> silinecek. Bu kategorideki ürünler silinmez,
-            &quot;Kategorisiz&quot; olarak yayınlanmaya devam eder. Yine de devam etmek istiyor musunuz?
+            {props.deleteSubcategoryCount > 0 ? (
+              <>
+                <strong>&quot;{props.category.name}&quot;</strong> ve alt kategorileri dahil{" "}
+                <strong>{props.deleteSubcategoryCount + 1} kategori</strong> silinecek. Bu kategorilerdeki
+                ürünler silinmez, &quot;Kategorisiz&quot; kategorisinde kalır ve yayınlanmaya devam eder.
+                Yine de devam etmek istiyor musunuz?
+              </>
+            ) : (
+              <>
+                <strong>&quot;{props.category.name}&quot;</strong> silinecek. Bu kategorideki ürünler silinmez,
+                &quot;Kategorisiz&quot; olarak yayınlanmaya devam eder. Yine de devam etmek istiyor musunuz?
+              </>
+            )}
           </p>
           <Button variant="danger" className="h-8 shrink-0 px-3 text-xs" onClick={() => props.onConfirmDelete(props.category.id)} disabled={props.pending}>Evet, devam et</Button>
           <Button variant="secondary" className="h-8 shrink-0 px-3 text-xs" onClick={props.onCancelDelete} disabled={props.pending}>İptal</Button>
@@ -523,8 +537,11 @@ export function CategoriesManager({
       const result = await res.json();
       if (!res.ok) { showMessage(result.error ?? "Kategori silinemedi.", "error"); setDeleteConfirmId(null); return; }
       const createdBucket = result.uncategorizedCategory as Category | null | undefined;
+      const deletedIds = new Set<string>(
+        Array.isArray(result.deletedIds) && result.deletedIds.length ? result.deletedIds : [id],
+      );
       setCategories((c) => {
-        const next = c.filter((cat) => cat.id !== id);
+        const next = c.filter((cat) => !deletedIds.has(cat.id));
         // Sunucu bu silmede "Kategorisiz" kovasını yeni oluşturduysa listeye ekle
         // (zaten varsa null döner, liste değişmez).
         return createdBucket && !next.some((cat) => cat.id === createdBucket.id)
@@ -533,14 +550,16 @@ export function CategoriesManager({
       });
       setDeleteConfirmId(null);
       const movedCount = Number(result.movedCount ?? 0);
+      const subCount = Number(result.deletedSubcategoryCount ?? 0);
+      const deletedLabel = subCount > 0 ? `Kategori ve ${subCount} alt kategorisi silindi.` : "Kategori silindi.";
       if (movedCount > 0) {
         showMessage(
           result.uncategorizedHidden
-            ? `Kategori silindi. ${movedCount} ürün "Kategorisiz" kategorisine taşındı (bu kategori vitrinde gizli).`
-            : `Kategori silindi. ${movedCount} ürün "Kategorisiz" olarak yayınlanmaya devam ediyor.`,
+            ? `${deletedLabel} ${movedCount} ürün "Kategorisiz" kategorisine taşındı (bu kategori vitrinde gizli).`
+            : `${deletedLabel} ${movedCount} ürün "Kategorisiz" olarak yayınlanmaya devam ediyor.`,
         );
       } else {
-        showMessage("Kategori silindi.");
+        showMessage(deletedLabel);
       }
     });
   }
@@ -780,6 +799,11 @@ export function CategoriesManager({
                     inlineParentId={inlineParentId}
                     inlineName={inlineName}
                     deleteConfirmId={deleteConfirmId}
+                    deleteSubcategoryCount={
+                      deleteConfirmId === category.id
+                        ? getDescendantCategoryIds(categories, category.id).length - 1
+                        : 0
+                    }
                     bannerPanelId={bannerPanelId}
                     pending={pending}
                     onStartEdit={(cat) => { closeAllInline(); setEditingId(cat.id); setEditingName(cat.name); }}
