@@ -898,36 +898,55 @@ export function StorefrontCartDrawer({
                   >
                     {t("cart.sendViaWhatsApp")}
                   </a>
-                  {whatsappHandoff.trackingUrl ? (
-                    <a
-                      href={whatsappHandoff.trackingUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      className={cn("block w-full text-center text-xs font-semibold underline underline-offset-2 transition hover:opacity-80", theme.textMuted)}
+                  {isMarketTenant ? (
+                    // Market/tekel: WhatsApp'a gönder + sepeti boşalt, o kadar.
+                    // Takip linki WhatsApp mesajının içinde ve başlıktaki
+                    // "Sipariş Takip" ikonunda; "mesajı kopyala / yeniden hazırla"
+                    // kafa karıştırıyordu (kullanıcı kararı, 29 Ağu 2026).
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setCopyFeedback(null);
+                        clearCart();
+                      }}
+                      className={cn("w-full text-center text-[11px] font-medium transition hover:text-rose-500", theme.textMuted)}
                     >
-                      {t("cart.trackOrder")}
-                    </a>
-                  ) : null}
-                  <button
-                    type="button"
-                    onClick={copyOrderMessage}
-                    className={cn("w-full text-center text-xs font-semibold transition hover:opacity-80", theme.textMuted)}
-                  >
-                    {t("cart.copyMessage")}
-                  </button>
-                  {copyFeedback ? (
-                    <p className={cn("text-center text-xs font-medium", theme.successText)}>{copyFeedback}</p>
-                  ) : null}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setCopyFeedback(null);
-                      onClearWhatsappHandoff();
-                    }}
-                    className={cn("w-full text-center text-[11px] font-medium transition hover:text-rose-500", theme.textMuted)}
-                  >
-                    {t("cart.startOver")}
-                  </button>
+                      {t("cart.clearCart")}
+                    </button>
+                  ) : (
+                    <>
+                      {whatsappHandoff.trackingUrl ? (
+                        <a
+                          href={whatsappHandoff.trackingUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className={cn("block w-full text-center text-xs font-semibold underline underline-offset-2 transition hover:opacity-80", theme.textMuted)}
+                        >
+                          {t("cart.trackOrder")}
+                        </a>
+                      ) : null}
+                      <button
+                        type="button"
+                        onClick={copyOrderMessage}
+                        className={cn("w-full text-center text-xs font-semibold transition hover:opacity-80", theme.textMuted)}
+                      >
+                        {t("cart.copyMessage")}
+                      </button>
+                      {copyFeedback ? (
+                        <p className={cn("text-center text-xs font-medium", theme.successText)}>{copyFeedback}</p>
+                      ) : null}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setCopyFeedback(null);
+                          onClearWhatsappHandoff();
+                        }}
+                        className={cn("w-full text-center text-[11px] font-medium transition hover:text-rose-500", theme.textMuted)}
+                      >
+                        {t("cart.startOver")}
+                      </button>
+                    </>
+                  )}
                 </div>
               ) : (
                 <Button
