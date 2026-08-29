@@ -164,6 +164,10 @@ export async function POST(request: Request) {
   const catalogMode = parsed.data.catalog_mode;
 
   if (catalogMode) {
+    // Fiyatsız katalogda da ödeme yöntemi seçilebilir (tutar hesabı yok, sadece bilgi).
+    const catalogPaymentMethod = parsed.data.paymentMethod ?? null;
+    const catalogPaymentMethodLabel =
+      catalogPaymentMethod === "cash" ? "Nakit" : catalogPaymentMethod === "card" ? "Kredi Kartı" : null;
     const storefrontSettings = await getTenantStorefrontSettings(tenant.id);
     const tenantDisplayName =
       storefrontSettings.storefront_title?.trim() || tenant.company_name;
@@ -183,7 +187,7 @@ export async function POST(request: Request) {
       orderNumber,
       currency: "CATALOG",
       totalAmount: 0,
-      paymentMethod: null,
+      paymentMethod: catalogPaymentMethod,
       items,
       note: parsed.data.note,
       magnetCodeId,
@@ -199,7 +203,7 @@ export async function POST(request: Request) {
         orderDate,
         items,
         paymentSummary: null,
-        paymentMethodLabel: null,
+        paymentMethodLabel: catalogPaymentMethodLabel,
         note: parsed.data.note,
         catalogMode: true,
       });

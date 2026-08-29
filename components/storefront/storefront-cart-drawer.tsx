@@ -415,8 +415,9 @@ export function StorefrontCartDrawer({
                 ))}
 
                 <div className={theme.panelSurface}>
-                  {!isCatalogOnly ? (
-                    <>
+                  {/* Ödeme yöntemi fiyatsız katalogda da seçilebilir (kullanıcı kararı, 29 Ağu 2026):
+                      tutar hesabı yok ama "nakit / kart" bilgisi fişe ve siparişe işlenir. */}
+                  <>
                   <div className="mb-3 flex items-center justify-between gap-3">
                     <p className={cn("text-sm font-semibold", theme.text)}>{t("cart.paymentMethod")}</p>
                     <span className={cn("rounded-full px-3 py-1 text-[11px] font-semibold", theme.surfaceMuted, theme.textMuted)}>
@@ -461,8 +462,7 @@ export function StorefrontCartDrawer({
                   {paymentMethodError ? (
                     <p className={cn("mt-2 text-xs font-medium", theme.dangerText)}>{paymentMethodError}</p>
                   ) : null}
-                    </>
-                  ) : null}
+                  </>
                   {isMarketTenant ? (
                     <div className="mt-3">
                       <div className="mb-2 flex items-center justify-between gap-3">

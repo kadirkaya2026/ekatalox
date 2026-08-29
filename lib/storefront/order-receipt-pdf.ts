@@ -285,6 +285,10 @@ export async function generateOrderReceiptPdf(
   } else if (catalogMode) {
     setPdfFont(doc, "normal");
     doc.setFontSize(PDF_FONT_SIZE.body);
+    if (params.paymentMethodLabel) {
+      doc.text(`Ödeme: ${params.paymentMethodLabel}`, margin, cursorY);
+      cursorY += 7;
+    }
     doc.text("Fiyatsız katalog siparişi", margin, cursorY);
     cursorY += 7;
   }
