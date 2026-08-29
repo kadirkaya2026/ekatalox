@@ -26,7 +26,7 @@ type StatusFilter = OrderStatus | "all";
 
 function StatusBadge({ status, isTekel }: { status: OrderStatus; isTekel: boolean }) {
   return (
-    <Badge className={cn("px-2.5 py-0.5 text-[11px]", ORDER_STATUS_TONES[status])}>
+    <Badge className={cn("whitespace-nowrap px-2.5 py-0.5 text-[11px]", ORDER_STATUS_TONES[status])}>
       {getStatusLabel(status, { isTekel })}
     </Badge>
   );
@@ -400,7 +400,7 @@ export function OrdersManager({
           <p className="p-6 text-sm text-slate-600">Bu süzgeçte sipariş yok.</p>
         ) : (
           <div className="divide-y divide-slate-100">
-            <div className="hidden grid-cols-[150px_minmax(0,1fr)_120px_110px_170px_44px] items-center gap-3 bg-slate-50 px-4 py-2 text-[11px] font-semibold uppercase tracking-wide text-slate-500 md:grid">
+            <div className="hidden grid-cols-[200px_minmax(0,1fr)_120px_110px_170px_44px] items-center gap-3 bg-slate-50 px-4 py-2 text-[11px] font-semibold uppercase tracking-wide text-slate-500 md:grid">
               <span>Sipariş</span><span>Müşteri</span><span>Tarih</span><span className="text-right">Tutar</span><span>İşlem</span><span />
             </div>
             {page.orders.map((order) => {
@@ -414,7 +414,7 @@ export function OrdersManager({
               return (
                 <div
                   key={order.id}
-                  className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1 px-4 py-3 md:grid-cols-[150px_minmax(0,1fr)_120px_110px_170px_44px]"
+                  className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1 px-4 py-3 md:grid-cols-[200px_minmax(0,1fr)_120px_110px_170px_44px]"
                 >
                   <button type="button" onClick={() => void openOrder(order)} className="flex items-center gap-2 text-left">
                     <span className="text-sm font-semibold text-slate-900">{formatOrderNo(order)}</span>
