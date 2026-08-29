@@ -150,7 +150,8 @@ function MyOrdersCard({ subdomain, tenantName, isTekel }: { subdomain: string; t
   };
 
   return (
-    <div data-storefront className="container-shell flex min-h-screen items-start justify-center py-6">
+    <div data-storefront className={cn(theme.page, "min-h-screen")}>
+      <div className="container-shell flex items-start justify-center py-6">
       <div className={cn(theme.gateCard, "w-full max-w-lg")}>
         <a href="/" className={cn("inline-flex items-center gap-1 text-xs font-medium", muted)}>
           <ArrowLeft className="size-3.5" /> {tenantName}
@@ -205,6 +206,7 @@ function MyOrdersCard({ subdomain, tenantName, isTekel }: { subdomain: string; t
             ) : null}
           </div>
         )}
+      </div>
       </div>
     </div>
   );

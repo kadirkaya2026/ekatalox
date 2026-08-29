@@ -88,7 +88,8 @@ function TrackingCard({
   const muted = theme.textMuted;
 
   return (
-    <div data-storefront className="container-shell flex min-h-screen items-start justify-center py-6">
+    <div data-storefront className={cn(theme.page, "min-h-screen")}>
+      <div className="container-shell flex items-start justify-center py-6">
       <div className={cn(theme.gateCard, "w-full max-w-lg")}>
         <p className={cn("text-xs font-semibold uppercase tracking-wide", muted)}>{tenantName}</p>
         <h1 className={cn("mt-1 text-2xl font-semibold", text)}>Sipariş {displayNo(snap)}</h1>
@@ -165,6 +166,7 @@ function TrackingCard({
           </a>
           <p className={cn("text-center text-[11px]", muted)}>Bu sayfa durum değiştikçe kendiliğinden güncellenir.</p>
         </div>
+      </div>
       </div>
     </div>
   );
