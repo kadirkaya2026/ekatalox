@@ -4,11 +4,12 @@ import { useEffect } from "react";
 
 // Sayfa açılır açılmaz yazdırma penceresi; üstte kağıt genişliği seçimi
 // (58 / 80 mm) ve tekrar yazdır. Yazdırırken bu şerit gizlenir.
-export function ReceiptPrintControls({ width }: { width: 58 | 80 }) {
+export function ReceiptPrintControls({ width, autoPrint = true }: { width: 58 | 80; autoPrint?: boolean }) {
   useEffect(() => {
+    if (!autoPrint) return;
     const t = window.setTimeout(() => window.print(), 300);
     return () => window.clearTimeout(t);
-  }, []);
+  }, [autoPrint]);
   const other = width === 80 ? 58 : 80;
   return (
     <div className="no-print" style={{ position: "fixed", top: 0, left: 0, right: 0, display: "flex", gap: 8, alignItems: "center", justifyContent: "center", padding: 8, background: "#0f172a", color: "#fff", fontFamily: "system-ui, sans-serif", fontSize: 13 }}>

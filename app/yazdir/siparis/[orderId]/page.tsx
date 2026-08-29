@@ -18,7 +18,7 @@ import { ReceiptPrintControls } from "@/components/print/receipt-print-controls"
 
 export const metadata: Metadata = { title: "Sipariş fişi", robots: { index: false, follow: false } };
 
-type Props = { params: Promise<{ orderId: string }>; searchParams?: Promise<{ w?: string }> };
+type Props = { params: Promise<{ orderId: string }>; searchParams?: Promise<{ w?: string; preview?: string }> };
 
 function fmt(iso: string) {
   return new Date(iso).toLocaleString("tr-TR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit", timeZone: "Europe/Istanbul" });
@@ -66,7 +66,7 @@ export default async function OrderReceiptPrintPage(props: Props) {
         .receipt img { display: block; margin: 6px auto 2px; width: ${width === 80 ? 30 : 22}mm; height: auto; }
         @media print { .no-print { display: none !important; } .receipt { margin: 0 auto; } }
       `}</style>
-      <ReceiptPrintControls width={width} />
+      <ReceiptPrintControls width={width} autoPrint={search.preview !== "1"} />
 
       <div className="c b lg">{storeName}</div>
       {tenant.whatsapp_number ? <div className="c sub">{tenant.whatsapp_number}</div> : null}
