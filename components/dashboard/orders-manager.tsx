@@ -117,53 +117,13 @@ export function OrdersManager({
     })();
   }, [searchParams, router]);
 
-  // Sayfa açıkken (kasa ekranı) 30 sn'de bir yeni sipariş sayısını yoklar;
-  // artmışsa kısa bir uyarı sesi çalar, listeyi ve kenar rozetini yeniler.
-  const lastNewCount = useRef<number>(initialPage.counts?.new ?? 0);
+  // Yeni sipariş yoklaması panel genelinde (new-order-watcher.tsx); burada
+  // yalnız olayı dinleyip listeyi tazeliyoruz.
   useEffect(() => {
-    const beep = () => {
-      try {
-        const Ctx = window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
-        if (!Ctx) return;
-        const ctx = new Ctx();
-        const play = (freq: number, at: number) => {
-          const osc = ctx.createOscillator();
-          const gain = ctx.createGain();
-          osc.type = "sine";
-          osc.frequency.value = freq;
-          gain.gain.setValueAtTime(0.0001, ctx.currentTime + at);
-          gain.gain.exponentialRampToValueAtTime(0.25, ctx.currentTime + at + 0.02);
-          gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + at + 0.25);
-          osc.connect(gain).connect(ctx.destination);
-          osc.start(ctx.currentTime + at);
-          osc.stop(ctx.currentTime + at + 0.3);
-        };
-        play(880, 0);
-        play(1175, 0.18);
-      } catch {
-        /* ses çalınamadı: rozet yine güncellenir */
-      }
-    };
-    const tick = async () => {
-      if (document.visibilityState !== "visible") return;
-      try {
-        const r = await fetch("/api/tenant/orders?status=new&page=1&pageSize=1", { cache: "no-store" });
-        if (!r.ok) return;
-        const d = (await r.json()) as OrdersPage;
-        const n = d.counts?.new ?? 0;
-        if (n > lastNewCount.current) {
-          beep();
-          await load();
-          router.refresh();
-        }
-        lastNewCount.current = n;
-      } catch {
-        /* ağ hatası: sonraki turda */
-      }
-    };
-    const timer = window.setInterval(tick, 30_000);
-    return () => window.clearInterval(timer);
-  }, [load, router]);
+    const onNew = () => { void load(); };
+    window.addEventListener("ekx-new-order", onNew);
+    return () => window.removeEventListener("ekx-new-order", onNew);
+  }, [load]);
 
   useEffect(() => {
     if (!selected) return;
