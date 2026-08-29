@@ -19,6 +19,8 @@ export interface GenerateOrderReceiptPdfParams {
   customerPhone?: string | null;
   customerAddress?: string | null;
   orderNumber: string;
+  // Fişte görünen kısa numara (#100042). Uzun orderNumber yalnız dosya adı.
+  orderNo?: number | null;
   orderDate: Date;
   items: CartItem[];
   paymentSummary: CartPaymentSummary | null;
@@ -104,6 +106,11 @@ export async function generateOrderReceiptPdf(
   doc.text(`Saat: ${formatOrderTime(params.orderDate)}`, headerRightX, cursorY + 11, {
     align: "right",
   });
+  if (typeof params.orderNo === "number") {
+    setPdfFont(doc, "bold");
+    doc.text(`Sipariş No: #${params.orderNo}`, headerRightX, cursorY + 18, { align: "right" });
+    setPdfFont(doc, "normal");
+  }
   doc.text(
     `Müşteri / Cari: ${params.customerReferenceName.trim()}`,
     margin,

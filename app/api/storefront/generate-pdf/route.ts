@@ -200,6 +200,7 @@ export async function POST(request: Request) {
         customerPhone: parsed.data.customer_phone,
         customerAddress: parsed.data.customer_address,
         orderNumber,
+        orderNo: recorded?.orderNo ?? null,
         orderDate,
         items,
         paymentSummary: null,
@@ -226,7 +227,7 @@ export async function POST(request: Request) {
       });
 
       const pdfUrl = buildSecureOrderReceiptUrl(securePdfId, getPublicOrigin(request));
-      return NextResponse.json({ pdfUrl, orderNumber, securePdfId, requestId, trackingUrl: buildTrackingUrl(request, recorded) });
+      return NextResponse.json({ pdfUrl, orderNumber, orderNo: recorded?.orderNo ?? null, securePdfId, requestId, trackingUrl: buildTrackingUrl(request, recorded) });
     } catch (error) {
       logOrderPdfServerEvent("error", "request_failed", {
         requestId,
@@ -325,6 +326,7 @@ export async function POST(request: Request) {
       customerPhone: parsed.data.customer_phone,
       customerAddress: parsed.data.customer_address,
       orderNumber,
+      orderNo: recorded?.orderNo ?? null,
       orderDate,
       items,
       paymentSummary,
@@ -380,7 +382,7 @@ export async function POST(request: Request) {
       durationMs,
     });
 
-    return NextResponse.json({ pdfUrl, orderNumber, securePdfId, requestId, trackingUrl: buildTrackingUrl(request, recorded) });
+    return NextResponse.json({ pdfUrl, orderNumber, orderNo: recorded?.orderNo ?? null, securePdfId, requestId, trackingUrl: buildTrackingUrl(request, recorded) });
   } catch (error) {
     logOrderPdfServerEvent("error", "request_failed", {
       requestId,

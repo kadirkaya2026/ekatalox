@@ -13,7 +13,7 @@ import { cn, formatCurrency, formatDate } from "@/lib/utils";
 import type { CurrencyCode } from "@/lib/products/constants";
 import type { OrderStatus, OrderStatusEvent, StorefrontOrder } from "@/lib/types";
 import type { OrdersPage } from "@/lib/orders/data";
-import { formatOrderTotal, formatPaymentMethod } from "@/lib/orders/format";
+import { formatOrderTotal, formatPaymentMethod, formatOrderNo } from "@/lib/orders/format";
 import {
   ORDER_STATUSES,
   ORDER_STATUS_TONES,
@@ -156,7 +156,7 @@ export function OrdersManager({
 
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-2">
-            <h3 className="text-base font-semibold text-slate-900">{order.order_number}</h3>
+            <h3 className="text-base font-semibold text-slate-900">{formatOrderNo(order)}</h3>
             <StatusBadge status={order.status} isTekel={isTekel} />
           </div>
           <span className="text-sm text-slate-500">{formatDate(order.created_at)}</span>
@@ -394,7 +394,7 @@ export function OrdersManager({
                   >
                     <div className="min-w-0">
                       <p className="flex flex-wrap items-center gap-2 text-sm font-semibold text-slate-900">
-                        {order.order_number}
+                        {formatOrderNo(order)}
                         <StatusBadge status={order.status} isTekel={isTekel} />
                         {order.cost_missing_count > 0 && order.currency !== "CATALOG" ? (
                           <span className="text-[11px] font-medium text-amber-700">maliyet eksik</span>

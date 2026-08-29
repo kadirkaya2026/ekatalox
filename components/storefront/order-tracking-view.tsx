@@ -16,6 +16,8 @@ import { PushOptInBanner } from "@/components/storefront/push-opt-in-button";
 
 export interface TrackingSnapshot {
   orderNumber: string;
+  // 0093: bayi başına sıralı numara; yoksa orderNumber'ın son parçası gösterilir
+  orderNo: number | null;
   createdAt: string;
   status: OrderStatus;
   statusUpdatedAt: string;
@@ -33,10 +35,12 @@ function fmtTime(iso: string) {
   return new Date(iso).toLocaleString("tr-TR", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
 }
 
-// "76b0d05b_20260829093612_n4mx" → "N4MX" (müşterinin mağazaya söyleyeceği kısa kod)
-function shortCode(orderNumber: string) {
-  const parts = orderNumber.split("_");
-  return (parts[parts.length - 1] ?? orderNumber).toUpperCase();
+// Müşterinin mağazaya söyleyeceği kısa kod: "#100042". Uzun depolama kodu
+// hiçbir yerde gösterilmez; order_no yoksa eski kodun son parçası ("N4MX").
+function displayNo(snap: Pick<TrackingSnapshot, "orderNo" | "orderNumber">) {
+  if (typeof snap.orderNo === "number") return `#${snap.orderNo}`;
+  const parts = snap.orderNumber.split("_");
+  return `#${(parts[parts.length - 1] ?? snap.orderNumber).toUpperCase()}`;
 }
 
 function TrackingCard({
@@ -77,7 +81,7 @@ function TrackingCard({
   const activeIndex = STEPS.indexOf(snap.status);
   const waHref = buildWhatsAppOrderHref({
     phone: whatsappNumber,
-    message: `Merhaba, ${shortCode(snap.orderNumber)} kodlu siparişim hakkında bilgi almak istiyorum.`,
+    message: `Merhaba, ${displayNo(snap)} numaralı siparişim hakkında bilgi almak istiyorum.`,
     directToRegisteredNumber: true,
   });
   const text = theme.text;
@@ -87,7 +91,7 @@ function TrackingCard({
     <div data-storefront className="container-shell flex min-h-screen items-start justify-center py-6">
       <div className={cn(theme.gateCard, "w-full max-w-lg")}>
         <p className={cn("text-xs font-semibold uppercase tracking-wide", muted)}>{tenantName}</p>
-        <h1 className={cn("mt-1 text-2xl font-semibold", text)}>Sipariş #{shortCode(snap.orderNumber)}</h1>
+        <h1 className={cn("mt-1 text-2xl font-semibold", text)}>Sipariş {displayNo(snap)}</h1>
         <p className={cn("mt-1 text-sm", muted)}>
           {fmtTime(snap.createdAt)} · {snap.currency === "CATALOG" ? "Fiyatsız katalog siparişi" : formatCurrency(snap.totalAmount, snap.currency as CurrencyCode)}
         </p>
@@ -159,7 +163,7 @@ function TrackingCard({
             <MessageCircle className="size-4" />
             Mağazaya WhatsApp&apos;tan yaz
           </a>
-          <p className={cn("break-all text-center text-[11px]", muted)}>Sipariş no: {snap.orderNumber} · Bu sayfa durum değiştikçe kendiliğinden güncellenir.</p>
+          <p className={cn("text-center text-[11px]", muted)}>Bu sayfa durum değiştikçe kendiliğinden güncellenir.</p>
         </div>
       </div>
     </div>

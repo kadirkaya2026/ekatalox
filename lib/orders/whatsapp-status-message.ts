@@ -1,11 +1,12 @@
 import type { OrderStatus, StorefrontOrder } from "@/lib/types";
 import { getStatusDescription, getStatusLabel } from "@/lib/orders/status";
 import { normalizeCustomerPhone } from "@/lib/storefront/customer-phone";
+import { formatOrderNo } from "@/lib/orders/format";
 
 // Bayinin tek tıkla göndereceği durum mesajı. WhatsApp Business API yok;
 // otomatik gönderim yapılamaz, bu yüzden hazır metinle wa.me linki.
 export function buildOrderStatusWhatsAppHref(params: {
-  order: Pick<StorefrontOrder, "customer_phone" | "customer_name" | "order_number" | "cancel_reason" | "tracking_token">;
+  order: Pick<StorefrontOrder, "customer_phone" | "customer_name" | "order_number" | "order_no" | "cancel_reason" | "tracking_token">;
   status: OrderStatus;
   tenantName: string;
   isTekel: boolean;
@@ -16,7 +17,7 @@ export function buildOrderStatusWhatsAppHref(params: {
   const intl = digits.startsWith("0") ? `9${digits}` : digits.startsWith("90") ? digits : `90${digits}`;
   const ad = params.order.customer_name.trim().split(/\s+/)[0] ?? "";
   const lines = [
-    `Merhaba ${ad}, ${params.tenantName} — ${params.order.order_number} numaralı siparişiniz için bilgilendirme:`,
+    `Merhaba ${ad}, ${params.tenantName} — ${formatOrderNo(params.order)} numaralı siparişiniz:`,
     `✅ Durum: ${getStatusLabel(params.status, { isTekel: params.isTekel })}`,
     getStatusDescription(params.status, { isTekel: params.isTekel }),
   ];

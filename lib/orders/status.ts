@@ -32,19 +32,19 @@ export function getStatusLabel(status: OrderStatus, options?: { isTekel?: boolea
 export function getStatusDescription(status: OrderStatus, options?: { isTekel?: boolean }) {
   switch (status) {
     case "new":
-      return "Siparişiniz alındı, mağaza en kısa sürede onaylayacak.";
+      return "Mağaza en kısa sürede onaylayacak.";
     case "confirmed":
-      return "Siparişiniz onaylandı.";
+      return "Mağaza siparişinizi onayladı, hazırlığa alınıyor.";
     case "preparing":
-      return "Siparişiniz hazırlanıyor.";
+      return "Ürünleriniz paketleniyor.";
     case "shipped":
       return options?.isTekel
-        ? "Siparişiniz hazır, mağazadan teslim alabilirsiniz."
-        : "Siparişiniz yola çıktı.";
+        ? "Mağazadan teslim alabilirsiniz."
+        : "Kurye yola çıktı, kısa süre içinde kapınızda.";
     case "delivered":
-      return "Siparişiniz teslim edildi, iyi günlerde kullanın.";
+      return "Teslim edildi, afiyet olsun.";
     case "cancelled":
-      return "Siparişiniz iptal edildi.";
+      return "Mağaza siparişi iptal etti. Sorunuz için WhatsApp'tan yazabilirsiniz.";
   }
 }
 

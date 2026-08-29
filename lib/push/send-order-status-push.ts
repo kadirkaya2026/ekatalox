@@ -1,18 +1,38 @@
 import webpush from "web-push";
 import { appEnv, hasWebPushEnv } from "@/lib/env";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
-import { getStatusDescription, getStatusLabel } from "@/lib/orders/status";
+import { getStatusDescription } from "@/lib/orders/status";
 import type { OrderStatus } from "@/lib/types";
 
 // Durum değişince müşterinin abone cihazlarına bildirim. Best-effort:
 // hata sipariş akışını etkilemez; ölü abonelikler (404/410) silinir,
 // 5 kez üst üste başarısız olanlar temizlenir.
+function getPushTitle(status: OrderStatus, isTekel: boolean) {
+  switch (status) {
+    case "new":
+      return "Siparişiniz alındı";
+    case "confirmed":
+      return "Siparişiniz onaylandı ✅";
+    case "preparing":
+      return "Siparişiniz hazırlanıyor 🛒";
+    case "shipped":
+      return isTekel ? "Siparişiniz hazır 🛍️" : "Siparişiniz yola çıktı 🛵";
+    case "delivered":
+      return "Siparişiniz teslim edildi ✅";
+    case "cancelled":
+      return "Siparişiniz iptal edildi";
+  }
+}
+
 export async function sendOrderStatusPush(params: {
   tenantId: string;
   orderId: string;
   customerId: string | null;
-  orderNumber: string;
+  // Görünen numara (#100042). Bildirimde uzun depolama kodu asla yer almaz.
+  orderNo: string;
   status: OrderStatus;
+  // Bildirim ikonu (Android/masaüstü). iOS kendi uygulama ikonunu kullanır.
+  iconUrl: string | null;
   tenantName: string;
   isTekel: boolean;
   trackingUrl: string | null;
@@ -32,9 +52,12 @@ export async function sendOrderStatusPush(params: {
   if (!subs?.length) return;
 
   webpush.setVapidDetails(appEnv.vapidSubject, appEnv.vapidPublicKey, appEnv.vapidPrivateKey);
+  // iOS bildirimi zaten "from {uygulama adı}" satırı ekliyor; başlıkta mağaza
+  // adını tekrar etmiyoruz. Başlık = olay, gövde = numara + kısa açıklama.
   const payload = JSON.stringify({
-    title: `${params.tenantName} — Sipariş ${params.orderNumber}`,
-    body: `${getStatusLabel(params.status, { isTekel: params.isTekel })}: ${getStatusDescription(params.status, { isTekel: params.isTekel })}`,
+    title: getPushTitle(params.status, params.isTekel),
+    body: `Sipariş ${params.orderNo} · ${getStatusDescription(params.status, { isTekel: params.isTekel })}`,
+    icon: params.iconUrl ?? undefined,
     url: params.trackingUrl ?? "/",
     tag: `order-${params.orderId}`,
   });

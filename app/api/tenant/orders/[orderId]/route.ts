@@ -6,6 +6,8 @@ import { ensureTenantAdminResponse } from "@/lib/tenancy/guards";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { getTenantOrderWithEvents } from "@/lib/orders/data";
 import { orderStatusPatchSchema } from "@/lib/validators/orders";
+import { formatOrderNo } from "@/lib/orders/format";
+import { getTenantStorefrontSettings } from "@/lib/data";
 
 export async function GET(_request: Request, ctx: { params: Promise<{ orderId: string }> }) {
   const guard = await ensureTenantAdminResponse();
@@ -77,18 +79,20 @@ export async function PATCH(request: Request, ctx: { params: Promise<{ orderId: 
     const origin = tenant.custom_domain?.trim()
       ? `https://${tenant.custom_domain.trim()}`
       : `https://${tenant.subdomain}.${process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? "ekatalox.com"}`;
-    after(() =>
-      sendOrderStatusPush({
+    after(async () => {
+      const settings = await getTenantStorefrontSettings(tenant.id).catch(() => null);
+      await sendOrderStatusPush({
         tenantId: tenant.id,
         orderId: order.id,
         customerId: order.customer_id,
-        orderNumber: order.order_number,
+        orderNo: formatOrderNo(order),
         status: order.status,
-        tenantName: tenant.company_name,
+        tenantName: settings?.storefront_title?.trim() || tenant.company_name,
         isTekel: Boolean(tenant.is_tekel),
+        iconUrl: settings?.logo_url || settings?.site_favicon_url || null,
         trackingUrl: order.tracking_token ? `${origin}/siparis/${order.tracking_token}` : null,
-      }).catch((err) => console.error("[push] gönderim hatası:", err)),
-    );
+      }).catch((err) => console.error("[push] gönderim hatası:", err));
+    });
   }
 
   return NextResponse.json({ order });

@@ -59,6 +59,7 @@ export default async function OrderTrackingPage(props: TrackingPageProps) {
         appearance={getAppearanceFromSettings(settings)}
         initial={{
           orderNumber: order.order_number,
+          orderNo: order.order_no ?? null,
           createdAt: order.created_at,
           status: order.status,
           statusUpdatedAt: order.status_updated_at,

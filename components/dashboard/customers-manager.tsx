@@ -22,7 +22,7 @@ import { Select } from "@/components/ui/select";
 import { cn, formatCurrency, formatDate } from "@/lib/utils";
 import type { CurrencyCode } from "@/lib/products/constants";
 import type { OrderStatus, StorefrontCustomerWithStats, StorefrontOrder } from "@/lib/types";
-import { formatOrderTotal, formatPaymentMethod } from "@/lib/orders/format";
+import { formatOrderTotal, formatPaymentMethod, formatOrderNo } from "@/lib/orders/format";
 import { ORDER_STATUS_TONES, getStatusLabel } from "@/lib/orders/status";
 import { formatMagnetCodeForPrint } from "@/lib/magnet/code-format";
 
@@ -124,7 +124,7 @@ function CustomerLedger({
         <BackButton label="Cari dökümüne dön" onClick={() => setOpenOrder(null)} />
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h3 className="flex items-center gap-2 text-base font-semibold text-slate-900">
-            {openOrder.order_number}
+            {formatOrderNo(openOrder)}
             <StatusBadge status={openOrder.status} isTekel={isTekel} />
           </h3>
           <span className="text-sm text-slate-500">{formatDate(openOrder.created_at)}</span>
@@ -249,7 +249,7 @@ function CustomerLedger({
                 {ledger.map(({ order, running }) => (
                   <tr key={order.id} className="cursor-pointer hover:bg-slate-50" onClick={() => setOpenOrder(order)}>
                     <td className="whitespace-nowrap px-4 py-2 text-slate-600">{formatDate(order.created_at)}</td>
-                    <td className="px-4 py-2 font-medium text-slate-900">{order.order_number}</td>
+                    <td className="px-4 py-2 font-medium text-slate-900">{formatOrderNo(order)}</td>
                     <td className="px-4 py-2"><StatusBadge status={order.status} isTekel={isTekel} /></td>
                     <td className="px-4 py-2 text-slate-600">{formatPaymentMethod(order.payment_method) ?? "—"}</td>
                     <td className={cn("px-4 py-2 text-right tabular-nums", order.status === "cancelled" ? "text-slate-400 line-through" : "text-slate-900")}>{formatOrderTotal(order)}</td>

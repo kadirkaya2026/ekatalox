@@ -18,6 +18,7 @@ export async function GET(request: Request) {
   return NextResponse.json(
     {
       order_number: order.order_number,
+      order_no: order.order_no,
       status: order.status,
       status_updated_at: order.status_updated_at,
       cancel_reason: order.cancel_reason,

@@ -149,6 +149,8 @@ export interface StorefrontOrder {
   tenant_id: string;
   customer_id: string | null;
   order_number: string;
+  // 0093: bayi başına sıralı 6 haneli numara (100001…). Müşteriye/bayiye gösterilen bu.
+  order_no: number | null;
   customer_name: string;
   customer_phone: string;
   customer_address: string;

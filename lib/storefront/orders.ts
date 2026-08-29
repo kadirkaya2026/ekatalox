@@ -22,7 +22,7 @@ export async function recordStorefrontOrder(params: {
   // Siparişin geldiği magnetin magnet_codes.id'si. RPC içinde sipariş
   // satırına yazılır ve İLK siparişse magnet sessizce sahiplenilir.
   magnetCodeId?: string | null;
-}): Promise<{ orderId: string; trackingToken: string | null } | null> {
+}): Promise<{ orderId: string; trackingToken: string | null; orderNo: number | null } | null> {
   const phone = normalizeCustomerPhone(params.customerPhone);
   const name = params.customerName.trim();
   const address = params.customerAddress.trim();
@@ -107,9 +107,13 @@ export async function recordStorefrontOrder(params: {
   // sessizce null: sipariş yine kaydedildi, sadece takip linki üretilmez.
   const { data: tokenRow } = await params.supabase
     .from("orders")
-    .select("tracking_token")
+    .select("tracking_token, order_no")
     .eq("id", orderId)
     .maybeSingle();
 
-  return { orderId, trackingToken: tokenRow?.tracking_token ?? null };
+  return {
+    orderId,
+    trackingToken: tokenRow?.tracking_token ?? null,
+    orderNo: typeof tokenRow?.order_no === "number" ? tokenRow.order_no : null,
+  };
 }
