@@ -58,7 +58,7 @@ export function PushOptInBanner({ token, vapidPublicKey }: { token: string; vapi
         <p className={`mt-1 text-sm ${theme.textMuted}`}>
           iPhone&apos;da bildirim için bu sayfayı ana ekrana ekleyin: alttaki{" "}
           <Share className="inline size-4 align-text-bottom" /> <strong>Paylaş</strong> → <strong>Ana Ekrana Ekle</strong>, sonra oradan açın.
-          Ayrıca mağaza her adımda WhatsApp&apos;tan da bilgilendirir.
+          Bu tek seferlik: daha önce eklediyseniz sonraki siparişlerinizin bildirimi de aynı ikondan gelir, tekrar eklemeyin.
         </p>
       </div>
     );

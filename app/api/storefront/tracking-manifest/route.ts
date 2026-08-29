@@ -28,7 +28,9 @@ export async function GET(request: Request) {
     {
       name,
       short_name: name.length > 12 ? name.slice(0, 12) : name,
-      start_url: `/siparis/${token}`,
+      // ?app=1: ana ekrandan açılınca sayfa müşterinin EN SON siparişine yönlendirir
+      // (bkz. siparis/[token]/page.tsx). Böylece ikon bir kez eklenir, hep güncel kalır.
+      start_url: `/siparis/${token}?app=1`,
       scope: "/",
       display: "standalone",
       background_color: "#ffffff",

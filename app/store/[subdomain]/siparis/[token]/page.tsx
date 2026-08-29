@@ -4,7 +4,8 @@
 export const dynamic = "force-dynamic";
 
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { OrderTrackingView } from "@/components/storefront/order-tracking-view";
 import { getStorefrontTenantCached, getTenantStorefrontSettings } from "@/lib/data";
 import { getOrderByTrackingToken } from "@/lib/orders/data";
@@ -14,7 +15,10 @@ import { buildStorefrontIcons, buildStorefrontTitle } from "@/lib/storefront/whi
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-type TrackingPageProps = { params: Promise<{ subdomain: string; token: string }> };
+type TrackingPageProps = {
+  params: Promise<{ subdomain: string; token: string }>;
+  searchParams?: Promise<{ app?: string }>;
+};
 
 export async function generateMetadata(props: TrackingPageProps): Promise<Metadata> {
   const { subdomain, token } = await props.params;
@@ -45,6 +49,28 @@ export default async function OrderTrackingPage(props: TrackingPageProps) {
   const result = await getOrderByTrackingToken(token);
   // Token başka bir bayinin siparişine aitse bu host'ta gösterilmez.
   if (!result || result.order.tenant_id !== tenant.id) notFound();
+
+  // Ana ekrandaki ikon (manifest start_url ?app=1) ilk siparişin token'ıyla
+  // kurulur; müşteri her siparişte yeniden eklemesin diye burada aynı
+  // müşterinin EN SON siparişine yönlendirilir. WhatsApp'tan gelen normal
+  // linkler (app parametresi yok) her zaman kendi siparişini gösterir.
+  const search = (await props.searchParams) ?? {};
+  if (search.app === "1" && result.order.customer_id) {
+    const admin = createSupabaseAdminClient();
+    const { data: latest } = admin
+      ? await admin
+          .from("orders")
+          .select("id, tracking_token")
+          .eq("tenant_id", tenant.id)
+          .eq("customer_id", result.order.customer_id)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle()
+      : { data: null };
+    if (latest?.tracking_token && latest.id !== result.order.id) {
+      redirect(`/siparis/${latest.tracking_token}`);
+    }
+  }
 
   const settings = await getTenantStorefrontSettings(tenant.id);
   const { order, events } = result;
