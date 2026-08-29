@@ -52,3 +52,39 @@ export async function isSubscribedToPush() {
   const sub = await registration?.pushManager.getSubscription();
   return Boolean(sub) && Notification.permission === "granted";
 }
+
+// Bayi paneli: yeni sipariş bildirimi aboneliği (oturumdaki tenant'a bağlanır).
+export async function subscribeToDealerPush(params: { vapidPublicKey: string }) {
+  const permission = await Notification.requestPermission();
+  if (permission !== "granted") return { ok: false as const, reason: "denied" as const };
+
+  const registration = await navigator.serviceWorker.register("/sw.js", { scope: "/" });
+  await navigator.serviceWorker.ready;
+  const existing = await registration.pushManager.getSubscription();
+  const subscription =
+    existing ??
+    (await registration.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(params.vapidPublicKey),
+    }));
+
+  const response = await fetch("/api/tenant/push/subscribe", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ subscription: subscription.toJSON(), user_agent: navigator.userAgent }),
+  });
+  if (!response.ok) return { ok: false as const, reason: "server" as const };
+  return { ok: true as const };
+}
+
+export async function unsubscribeDealerPush() {
+  const registration = await navigator.serviceWorker.getRegistration("/");
+  const sub = await registration?.pushManager.getSubscription();
+  if (!sub) return;
+  await fetch("/api/tenant/push/subscribe", {
+    method: "DELETE",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ endpoint: sub.endpoint }),
+  }).catch(() => undefined);
+  await sub.unsubscribe().catch(() => undefined);
+}

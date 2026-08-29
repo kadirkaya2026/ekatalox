@@ -1,7 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft, ChevronRight, Copy, Loader2, MessageCircle, Search, XCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -53,6 +53,7 @@ export function OrdersManager({
   storefrontOrigin?: string | null;
 }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [page, setPage] = useState<OrdersPage>(initialPage);
   const [status, setStatus] = useState<StatusFilter>("all");
   const [q, setQ] = useState("");
@@ -94,6 +95,75 @@ export function OrdersManager({
     },
     [status, q, from, to, pageNo],
   );
+
+  // Bildirime dokununca /siparisler?order={id} açılır → sipariş doğrudan
+  // onay ekranında. Parametre tüketilince URL temizlenir (geri tuşu kirlenmesin).
+  const openedFromUrl = useRef<string | null>(null);
+  useEffect(() => {
+    const id = searchParams.get("order");
+    if (!id || openedFromUrl.current === id) return;
+    openedFromUrl.current = id;
+    void (async () => {
+      const response = await fetch(`/api/tenant/orders/${id}`);
+      const result = await response.json().catch(() => ({}));
+      if (response.ok) {
+        setSelected(result);
+        setCancelOpen(false);
+        setCancelReason("");
+      } else {
+        setError(result.error ?? "Sipariş bulunamadı.");
+      }
+      router.replace("/dashboard/siparisler");
+    })();
+  }, [searchParams, router]);
+
+  // Sayfa açıkken (kasa ekranı) 30 sn'de bir yeni sipariş sayısını yoklar;
+  // artmışsa kısa bir uyarı sesi çalar, listeyi ve kenar rozetini yeniler.
+  const lastNewCount = useRef<number>(initialPage.counts?.new ?? 0);
+  useEffect(() => {
+    const beep = () => {
+      try {
+        const Ctx = window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+        if (!Ctx) return;
+        const ctx = new Ctx();
+        const play = (freq: number, at: number) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = "sine";
+          osc.frequency.value = freq;
+          gain.gain.setValueAtTime(0.0001, ctx.currentTime + at);
+          gain.gain.exponentialRampToValueAtTime(0.25, ctx.currentTime + at + 0.02);
+          gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + at + 0.25);
+          osc.connect(gain).connect(ctx.destination);
+          osc.start(ctx.currentTime + at);
+          osc.stop(ctx.currentTime + at + 0.3);
+        };
+        play(880, 0);
+        play(1175, 0.18);
+      } catch {
+        /* ses çalınamadı: rozet yine güncellenir */
+      }
+    };
+    const tick = async () => {
+      if (document.visibilityState !== "visible") return;
+      try {
+        const r = await fetch("/api/tenant/orders?status=new&page=1&pageSize=1", { cache: "no-store" });
+        if (!r.ok) return;
+        const d = (await r.json()) as OrdersPage;
+        const n = d.counts?.new ?? 0;
+        if (n > lastNewCount.current) {
+          beep();
+          await load();
+          router.refresh();
+        }
+        lastNewCount.current = n;
+      } catch {
+        /* ağ hatası: sonraki turda */
+      }
+    };
+    const timer = window.setInterval(tick, 30_000);
+    return () => window.clearInterval(timer);
+  }, [load, router]);
 
   useEffect(() => {
     if (!selected) return;

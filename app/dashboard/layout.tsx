@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { MobileDashboardNav } from "@/components/dashboard/mobile-dashboard-nav";
 import { Sidebar } from "@/components/dashboard/sidebar";
 import { TrialExpiredModal } from "@/components/dashboard/trial-expired-modal";
@@ -12,6 +13,14 @@ import {
   isTrialExpired,
   isTrialTenant,
 } from "@/lib/billing/trial";
+
+// iPhone'da bildirim yalnız ana ekrana eklenmiş panelde çalışır; manifest
+// paneli "eKatalox Panel" adıyla, Siparişler sayfasından açılacak şekilde tanıtır.
+export const metadata: Metadata = {
+  manifest: "/panel.webmanifest",
+  appleWebApp: { capable: true, title: "eKatalox", statusBarStyle: "default" },
+  icons: { apple: "/ekatalox-logo-v2.png" },
+};
 
 export default async function DashboardLayout({
   children,

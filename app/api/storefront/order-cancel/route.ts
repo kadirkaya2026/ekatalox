@@ -1,4 +1,5 @@
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
+import { sendDealerOrderPush } from "@/lib/push/send-dealer-push";
 import { getOrderByTrackingToken } from "@/lib/orders/data";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
@@ -41,6 +42,22 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "İptal edilemedi." }, { status: 500 });
   }
   const order = data as { status: string; status_updated_at: string; cancel_reason: string | null };
+  const o = result.order;
+  after(() =>
+    sendDealerOrderPush({
+      tenantId: o.tenant_id,
+      kind: "customer_cancelled",
+      order: {
+        id: o.id,
+        orderNo: o.order_no,
+        customerName: o.customer_name,
+        itemCount: o.item_count,
+        totalAmount: o.total_amount,
+        currency: o.currency,
+        paymentMethod: o.payment_method,
+      },
+    }).catch((err) => console.error("[dealer-push] hata:", err)),
+  );
   return NextResponse.json(
     { status: order.status, status_updated_at: order.status_updated_at, cancel_reason: order.cancel_reason },
     { headers: { "Cache-Control": "no-store" } },

@@ -1,4 +1,5 @@
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
+import { sendDealerOrderPush } from "@/lib/push/send-dealer-push";
 import { cookies } from "next/headers";
 import { getStorefrontTenant, getTenantStorefrontSettings } from "@/lib/data";
 import { getCartPaymentSummary } from "@/lib/storefront/cart";
@@ -192,6 +193,24 @@ export async function POST(request: Request) {
       note: parsed.data.note,
       magnetCodeId,
     });
+    if (recorded) {
+      const rec = recorded;
+      after(() =>
+        sendDealerOrderPush({
+          tenantId: tenant.id,
+          kind: "new",
+          order: {
+            id: rec.orderId,
+            orderNo: rec.orderNo,
+            customerName: parsed.data.customer_reference_name,
+            itemCount: items.length,
+            totalAmount: 0,
+            currency: "CATALOG",
+            paymentMethod: catalogPaymentMethod,
+          },
+        }).catch((err) => console.error("[dealer-push] hata:", err)),
+      );
+    }
 
     try {
       const pdfBytes = await generateOrderReceiptPdf({
@@ -318,6 +337,24 @@ export async function POST(request: Request) {
     note: parsed.data.note,
     magnetCodeId,
   });
+  if (recorded) {
+    const rec = recorded;
+    after(() =>
+      sendDealerOrderPush({
+        tenantId: tenant.id,
+        kind: "new",
+        order: {
+          id: rec.orderId,
+          orderNo: rec.orderNo,
+          customerName: parsed.data.customer_reference_name,
+          itemCount: items.length,
+          totalAmount: paymentSummary.finalTotal,
+          currency: paymentSummary.currency,
+          paymentMethod,
+        },
+      }).catch((err) => console.error("[dealer-push] hata:", err)),
+    );
+  }
 
   try {
     const pdfBytes = await generateOrderReceiptPdf({

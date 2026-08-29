@@ -1,6 +1,7 @@
 import { Header } from "@/components/dashboard/header";
 import { Card } from "@/components/ui/card";
 import { OrdersManager } from "@/components/dashboard/orders-manager";
+import { DealerPushOptIn } from "@/components/dashboard/dealer-push-opt-in";
 import { requireTenantAdminPage } from "@/lib/auth/session";
 import { getTenantOrdersPage } from "@/lib/orders/data";
 
@@ -32,6 +33,7 @@ export default async function TenantOrdersPage() {
         title="Siparişler"
         description="Vitrinden gelen siparişleri onaylayın, hazırlanıyor / yola çıktı / teslim edildi olarak işaretleyin. Müşteri, takip sayfasından ve açtıysa tarayıcı bildirimiyle her adımı görür. Ciro ve kâr yalnızca teslim edilen siparişlerden hesaplanır."
       />
+      <DealerPushOptIn vapidPublicKey={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? ""} />
       <OrdersManager
         initialPage={initialPage}
         tenantName={tenant.company_name}

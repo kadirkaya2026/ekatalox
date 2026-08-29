@@ -1,0 +1,13 @@
+{
+  "name": "eKatalox Panel",
+  "short_name": "eKatalox",
+  "start_url": "/dashboard/siparisler",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#0f172a",
+  "icons": [
+    { "src": "/ekatalox-logo-v2.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/ekatalox-logo-v2.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}
