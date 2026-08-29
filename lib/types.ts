@@ -168,6 +168,8 @@ export interface StorefrontOrder {
   delivered_at: string | null;
   cancelled_at: string | null;
   cancel_reason: string | null;
+  coupon_id?: string | null;
+  coupon_discount?: number;
   cost_total: number | null;
   cost_missing_count: number;
   tracking_token: string;
@@ -197,6 +199,22 @@ export interface StorefrontCustomerWithStats extends StorefrontCustomer {
   magnet_code: string | null;
   is_blocked: boolean;
   blocked_id: string | null;
+  /** Bildirim izni vermiş en az bir cihazı var (push_subscriptions). */
+  has_push: boolean;
+  /** Aktif (kullanılmamış, süresi geçmemiş) kupon özeti. */
+  active_coupon: { id: string; title: string; expires_at: string | null } | null;
+}
+
+// Müşteriye özel kupon (vitrine giden güvenli alt küme; 0097)
+export interface StorefrontCoupon {
+  id: string;
+  kind: "percent" | "amount";
+  value: number;
+  min_order_amount: number | null;
+  currency: string;
+  title: string;
+  message: string | null;
+  expires_at: string | null;
 }
 
 export interface MarketCatalogProduct {

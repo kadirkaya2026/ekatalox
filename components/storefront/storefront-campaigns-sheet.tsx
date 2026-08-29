@@ -3,7 +3,9 @@
 import type { ReactNode } from "react";
 import { useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowRight, Check, X } from "lucide-react";
+import { ArrowRight, Check, Gift, X } from "lucide-react";
+import type { StorefrontCoupon } from "@/lib/types";
+import { describeCoupon, formatCouponBenefit } from "@/lib/coupons/shared";
 import { StorefrontImage } from "@/components/storefront/storefront-image";
 import { useStorefrontLocale } from "@/lib/storefront/locale-context";
 import { useStorefrontTheme } from "@/lib/storefront/theme-context";
@@ -33,6 +35,8 @@ export function StorefrontCampaignsSheet({
   currency,
   onOpenCategory,
   paymentCampaignBars,
+  personalCoupon = null,
+  personalCouponStatus = null,
 }: {
   isOpen: boolean;
   onClose: () => void;
@@ -46,6 +50,9 @@ export function StorefrontCampaignsSheet({
   onOpenCategory: (categoryId: string) => void;
   /** Ayarlardaki eski nakit/kart kampanya barları — varsa altta gösterilir */
   paymentCampaignBars?: ReactNode;
+  /** Müşteriye özel kupon (telefona bağlı) — en üstte, ayrı kart */
+  personalCoupon?: StorefrontCoupon | null;
+  personalCouponStatus?: { applied: number; missing: number } | null;
 }) {
   const theme = useStorefrontTheme();
   const { t } = useStorefrontLocale();
@@ -67,7 +74,7 @@ export function StorefrontCampaignsSheet({
   }, [isOpen, onClose]);
 
   const appliedId = campaignStatus?.applied?.campaign.id ?? null;
-  const hasContent = campaigns.length > 0 || Boolean(paymentCampaignBars);
+  const hasContent = campaigns.length > 0 || Boolean(paymentCampaignBars) || Boolean(personalCoupon);
 
   return (
     <AnimatePresence>
@@ -125,6 +132,31 @@ export function StorefrontCampaignsSheet({
               </div>
 
               <div className="safe-bottom-padding max-h-[min(72dvh,560px)] space-y-3 overflow-y-auto px-4 py-4 sm:px-5 lg:max-h-none lg:flex-1">
+                {personalCoupon ? (
+                  <div className={cn("rounded-2xl border p-4", theme.border, theme.surface)}>
+                    <div className="flex items-start gap-3">
+                      <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-500">
+                        <Gift className="size-5" />
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <p className={cn("text-xs font-semibold uppercase tracking-wide", theme.textMuted)}>{t("coupon.personal")}</p>
+                        <p className={cn("mt-0.5 text-lg font-bold", theme.text)}>
+                          {formatCouponBenefit(personalCoupon)} {t("coupon.discount")}
+                        </p>
+                        <p className={cn("mt-1 text-sm", theme.textMuted)}>{describeCoupon(personalCoupon)}</p>
+                        {personalCoupon.message ? <p className={cn("mt-1 text-sm", theme.text)}>“{personalCoupon.message}”</p> : null}
+                        <p className={cn("mt-2 text-xs font-medium", personalCouponStatus?.applied ? "text-emerald-500" : theme.textMuted)}>
+                          {personalCouponStatus?.applied
+                            ? `✓ ${t("coupon.appliedInCart")}: -${formatCurrency(personalCouponStatus.applied, currency)}`
+                            : personalCouponStatus?.missing
+                              ? t("coupon.addMore", { amount: formatCurrency(personalCouponStatus.missing, currency) })
+                              : t("coupon.autoApply")}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ) : null}
+
                 {campaigns.map((campaign) => (
                   <CampaignCard
                     key={campaign.id}

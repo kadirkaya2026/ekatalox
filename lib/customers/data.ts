@@ -12,7 +12,7 @@ export async function getTenantCustomersOverview(
     return [];
   }
 
-  const [{ data: customers }, { data: orders }, { data: magnets }, { data: blocked }] = await Promise.all([
+  const [{ data: customers }, { data: orders }, { data: magnets }, { data: blocked }, { data: pushRows }, { data: couponRows }] = await Promise.all([
     supabase.from("customers").select("*").eq("tenant_id", tenantId).order("last_order_at", { ascending: false }),
     supabase
       .from("orders")
@@ -21,7 +21,20 @@ export async function getTenantCustomersOverview(
       .order("created_at", { ascending: false }),
     supabase.from("magnet_codes").select("code, customer_id").eq("tenant_id", tenantId).not("customer_id", "is", null),
     supabase.from("blocked_customer_phones").select("id, phone").eq("tenant_id", tenantId),
+    supabase.from("push_subscriptions").select("customer_id").eq("tenant_id", tenantId).not("customer_id", "is", null),
+    supabase
+      .from("customer_coupons")
+      .select("id, customer_id, title, expires_at, created_at")
+      .eq("tenant_id", tenantId)
+      .eq("status", "active")
+      .or(`expires_at.is.null,expires_at.gt.${new Date().toISOString()}`)
+      .order("created_at", { ascending: false }),
   ]);
+  const pushCustomers = new Set<string>((pushRows ?? []).map((r) => r.customer_id as string));
+  const couponByCustomer = new Map<string, { id: string; title: string; expires_at: string | null }>();
+  for (const c of couponRows ?? []) {
+    if (!couponByCustomer.has(c.customer_id)) couponByCustomer.set(c.customer_id, { id: c.id, title: c.title, expires_at: c.expires_at ?? null });
+  }
 
   const stats = new Map<
     string,
@@ -85,6 +98,8 @@ export async function getTenantCustomersOverview(
       magnet_code: magnetByCustomer.get(customer.id) ?? null,
       is_blocked: blockedByPhone.has(customer.phone),
       blocked_id: blockedByPhone.get(customer.phone) ?? null,
+      has_push: pushCustomers.has(customer.id),
+      active_coupon: couponByCustomer.get(customer.id) ?? null,
     } satisfies StorefrontCustomerWithStats;
   });
 }

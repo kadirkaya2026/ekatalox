@@ -3,6 +3,7 @@ import { getStorefrontTenant } from "@/lib/data";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { isLikelyCompletePhone, normalizeCustomerPhone } from "@/lib/storefront/customer-phone";
 import { getClientIp } from "@/lib/storefront/client-ip";
+import { findActiveCouponForPhone } from "@/lib/coupons/data";
 
 // Telefonla otomatik doldurma: tam numara eşleşmesinde önceki sipariş
 // bilgisini döner. Bir müşterinin başka müşterinin bilgisini görebilmesi
@@ -68,10 +69,15 @@ export async function GET(request: Request) {
     .maybeSingle();
 
   if (!data) {
-    return NextResponse.json({ customer: null });
+    return NextResponse.json({ customer: null, coupon: null });
   }
+
+  // Müşteriye özel kupon: yalnız indirim bilgisi döner (ad/adres zaten
+  // autofill için dönüyor; kupon bunun ötesinde kişisel veri taşımıyor).
+  const coupon = await findActiveCouponForPhone(supabase, tenant.id, phone);
 
   return NextResponse.json({
     customer: { full_name: data.full_name, address: data.address },
+    coupon,
   });
 }

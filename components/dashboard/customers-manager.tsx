@@ -3,8 +3,10 @@
 import { useMemo, useState } from "react";
 import {
   ArrowLeft,
+  BellRing,
   ChevronRight,
   Download,
+  Gift,
   Loader2,
   Magnet,
   MessageCircle,
@@ -13,6 +15,7 @@ import {
   ShieldOff,
   Users,
 } from "lucide-react";
+import { CustomerCouponPanel } from "@/components/dashboard/customer-coupon-panel";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -127,6 +130,11 @@ function CustomerLedger({
               <h3 className="flex flex-wrap items-center gap-2 text-xl font-semibold text-slate-900">
                 {customer.full_name}
                 {customer.is_blocked ? <Badge variant="danger" className="px-2 py-0.5 text-[11px]">Engelli</Badge> : null}
+                {customer.has_push ? (
+                  <Badge variant="success" className="gap-1 px-2 py-0.5 text-[11px]">
+                    <BellRing className="size-3" /> Bildirim açık
+                  </Badge>
+                ) : null}
                 {customer.magnet_code ? (
                   <Badge variant="info" className="gap-1 px-2 py-0.5 text-[11px]">
                     <Magnet className="size-3" /> {formatMagnetCodeForPrint(customer.magnet_code)}
@@ -144,6 +152,9 @@ function CustomerLedger({
             </p>
           </div>
         </div>
+
+        {/* Müşteriye özel kupon */}
+        <CustomerCouponPanel customerId={customer.id} hasPush={customer.has_push} initialActive={customer.active_coupon} />
 
         {/* Siparişler */}
         <div className="overflow-hidden rounded-xl border border-slate-200">
@@ -389,7 +400,9 @@ export function CustomersManager({
                       <span className="flex items-center gap-1.5 truncate text-sm font-semibold text-slate-900">
                         {c.full_name}
                         {c.is_blocked ? <Badge variant="danger" className="px-1.5 py-0 text-[10px]">Engelli</Badge> : null}
+                        {c.has_push ? <BellRing className="size-3.5 text-emerald-600" aria-label="Bildirim izni verdi" /> : null}
                         {c.magnet_code ? <Magnet className="size-3.5 text-sky-600" aria-label="Magnetli müşteri" /> : null}
+                        {c.active_coupon ? <Gift className="size-3.5 text-amber-600" aria-label={`Aktif kupon: ${c.active_coupon.title}`} /> : null}
                       </span>
                       <span className="block text-xs text-slate-500">{c.phone}</span>
                     </span>

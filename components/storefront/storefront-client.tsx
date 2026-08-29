@@ -124,7 +124,9 @@ import { flyToCart } from "@/components/storefront/fly-to-cart";
 import { StorefrontCampaignsSheet } from "@/components/storefront/storefront-campaigns-sheet";
 import { StorefrontSearchSheet } from "@/components/storefront/storefront-search-sheet";
 import { isMarketOrTekelTenant } from "@/lib/storefront/white-label";
-import { saveTrackingPhone } from "@/lib/storefront/tracking-phone";
+import { readTrackingPhone, saveTrackingPhone } from "@/lib/storefront/tracking-phone";
+import { StorefrontCouponBanner } from "@/components/storefront/storefront-coupon-banner";
+import type { StorefrontCoupon } from "@/lib/types";
 import { StorefrontHeader } from "@/components/storefront/storefront-header";
 import { StorefrontHeroBlock } from "@/components/storefront/storefront-hero-block";
 import {
@@ -907,6 +909,10 @@ export function StorefrontClient({
   const [isStickyCartBarDismissed, setIsStickyCartBarDismissed] = useState(false);
   const [isSearchSheetOpen, setIsSearchSheetOpen] = useState(false);
   const [isCampaignsSheetOpen, setIsCampaignsSheetOpen] = useState(false);
+  // Müşteriye özel kupon (telefona bağlı). Sepette numara yazılınca lookup'tan
+  // gelir; sayfa açılışında cihazda kayıtlı numara (önceki sipariş) varsa
+  // sessizce bulunur ve üst şeritte duyurulur.
+  const [customerCoupon, setCustomerCoupon] = useState<StorefrontCoupon | null>(null);
   const [note, setNote] = useState("");
   const [customerReferenceName, setCustomerReferenceName] = useState("");
   const [customerReferenceNameError, setCustomerReferenceNameError] = useState<string | null>(
@@ -1071,7 +1077,8 @@ export function StorefrontClient({
       { signal: controller.signal },
     )
       .then((response) => (response.ok ? response.json() : null))
-      .then((data: { customer?: { full_name: string; address: string } | null } | null) => {
+      .then((data: { customer?: { full_name: string; address: string } | null; coupon?: StorefrontCoupon | null } | null) => {
+        setCustomerCoupon(data?.coupon ?? null);
         const customer = data?.customer;
         if (!customer) {
           return;
@@ -1086,6 +1093,24 @@ export function StorefrontClient({
 
     return () => controller.abort();
   }, [debouncedCustomerPhoneForLookup, isMarketTenant, analyticsSubdomain]);
+
+  useEffect(() => {
+    if (!isMarketTenant) return;
+    const saved = readTrackingPhone();
+    if (!saved || saved.replace(/\D/g, "").length < 10) return;
+    const controller = new AbortController();
+    fetch(
+      `/api/storefront/customer-lookup?subdomain=${encodeURIComponent(analyticsSubdomain)}&phone=${encodeURIComponent(saved)}`,
+      { signal: controller.signal },
+    )
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data: { coupon?: StorefrontCoupon | null } | null) => {
+        if (data?.coupon) setCustomerCoupon(data.coupon);
+      })
+      .catch(() => undefined);
+    return () => controller.abort();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isMarketTenant, analyticsSubdomain]);
 
   const theme = useResolvedStorefrontTheme(
     storefrontSettings.theme_key,
@@ -1344,10 +1369,12 @@ export function StorefrontClient({
       selectedInstallment,
       campaigns,
       excludedCategoriesByCampaign,
+      customerCoupon,
     );
   }, [
     excludedCategoriesByCampaign,
     campaigns,
+    customerCoupon,
     cart,
     selectedPaymentMethod,
     selectedInstallmentCount,
@@ -3241,7 +3268,7 @@ export function StorefrontClient({
         onOpenCategoryDrawer={() => setIsCategoryDrawerOpen(true)}
         hideSearchAndCart={usesBottomNav}
         onOpenCampaigns={
-          campaigns.length
+          campaigns.length || customerCoupon
             ? () => {
                 setIsSearchSheetOpen(false);
                 setIsCampaignsSheetOpen(true);
@@ -3249,6 +3276,16 @@ export function StorefrontClient({
             : undefined
         }
       />
+
+      {customerCoupon ? (
+        <StorefrontCouponBanner
+          coupon={customerCoupon}
+          onOpenCampaigns={() => {
+            setIsSearchSheetOpen(false);
+            setIsCampaignsSheetOpen(true);
+          }}
+        />
+      ) : null}
 
       <main
         className={cn(
@@ -3789,6 +3826,12 @@ export function StorefrontClient({
         onOpenCategory={handleCategoryChange}
         paymentCampaignBars={
           hasVisibleHomeCampaignBars ? renderCampaignBarsForSurface("home", false) : null
+        }
+        personalCoupon={customerCoupon}
+        personalCouponStatus={
+          cartPaymentSummary
+            ? { applied: cartPaymentSummary.couponDiscountAmount, missing: cartPaymentSummary.couponMissingAmount }
+            : null
         }
       />
 

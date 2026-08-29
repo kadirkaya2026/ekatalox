@@ -243,6 +243,20 @@ export async function generateOrderReceiptPdf(
       });
     }
 
+    if (summary.campaignDiscountAmount > 0 && summary.appliedCampaign) {
+      summaryLines.push({
+        label: `Kampanya (${summary.appliedCampaign.title})`,
+        value: `-${formatReceiptMoney(summary.campaignDiscountAmount, currency)}`,
+      });
+    }
+
+    if (summary.couponDiscountAmount > 0) {
+      summaryLines.push({
+        label: "Size özel kupon",
+        value: `-${formatReceiptMoney(summary.couponDiscountAmount, currency)}`,
+      });
+    }
+
     if (summary.paymentMethod === "card") {
       summaryLines.push({
         label:

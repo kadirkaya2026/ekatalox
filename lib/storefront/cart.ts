@@ -1,15 +1,10 @@
+import { computeCouponDiscount } from "@/lib/coupons/shared";
 import {
   defaultCurrencyCode,
   supportedCurrencyCodes,
   type CurrencyCode,
 } from "@/lib/products/constants";
-import type {
-  CartItem,
-  CashDiscountTier,
-  CardCampaignTier,
-  InstallmentOption,
-  TenantCampaign,
-} from "@/lib/types";
+import type { CartItem, CashDiscountTier, CardCampaignTier, InstallmentOption, TenantCampaign, StorefrontCoupon } from "@/lib/types";
 
 export function getCartTotal(items: CartItem[]) {
   return items.reduce((total, item) => total + (item.price ?? 0) * item.quantity, 0);
@@ -88,6 +83,11 @@ export interface CartPaymentSummary {
   /** Bayinin kendi kampanyalarından uygulanan (varsa) — bkz. getBestCampaignDiscount */
   appliedCampaign: TenantCampaign | null;
   campaignDiscountAmount: number;
+  /** Müşteriye özel kupon (telefona bağlı, 0097) */
+  appliedCoupon: StorefrontCoupon | null;
+  couponDiscountAmount: number;
+  /** Kupon var ama minimum sepet tutmuyor: eksik tutar */
+  couponMissingAmount: number;
 }
 
 // ─── Tier seçim helpers ────────────────────────────────────────────────────────
@@ -325,6 +325,7 @@ export function getCartPaymentSummary(
   selectedInstallment: InstallmentOption | null,
   campaigns: TenantCampaign[] = [],
   excludedByCampaign?: Map<string, Set<string>>,
+  coupon: StorefrontCoupon | null = null,
 ): CartPaymentSummary | null {
   if (!items.length) return null;
 
@@ -363,8 +364,15 @@ export function getCartPaymentSummary(
   const appliedCampaign = campaignStatus?.applied?.campaign ?? null;
   const campaignDiscountAmount = campaignStatus?.applied?.amount ?? 0;
 
+  // ── Müşteriye özel kupon ── (kampanya/nakit indiriminden sonra, kart
+  // vade farkından önce; ara toplam üzerinden hesaplanır)
+  const couponResult = computeCouponDiscount(coupon, roundedSubtotal, currency);
+  const couponDiscountAmount = couponResult.eligible
+    ? roundCurrencyAmount(Math.min(couponResult.amount, Math.max(roundedSubtotal - discountAmount - campaignDiscountAmount, 0)))
+    : 0;
+
   const afterDiscount = roundCurrencyAmount(
-    Math.max(roundedSubtotal - discountAmount - campaignDiscountAmount, 0),
+    Math.max(roundedSubtotal - discountAmount - campaignDiscountAmount - couponDiscountAmount, 0),
   );
 
   // ── Kart ──
@@ -422,6 +430,9 @@ export function getCartPaymentSummary(
     appliedCardTier,
     appliedCampaign,
     campaignDiscountAmount,
+    appliedCoupon: couponDiscountAmount > 0 ? coupon : null,
+    couponDiscountAmount,
+    couponMissingAmount: coupon && !couponResult.eligible ? couponResult.missing : 0,
   };
 }
 
@@ -544,6 +555,10 @@ export function buildAppliedCampaignBenefitNotes(summary: CartPaymentSummary): s
 
   // Bayinin kendi kampanyası — WhatsApp mesajı ve sipariş PDF'i bu notları
   // kullandığı için indirim burada da yazılı kalıyor.
+  if (summary.appliedCoupon && summary.couponDiscountAmount > 0) {
+    notes.push(`Size özel kupon uygulanmıştır: -${summary.couponDiscountAmount} ${summary.currency} (${summary.appliedCoupon.title}).`);
+  }
+
   if (summary.appliedCampaign && summary.campaignDiscountAmount > 0) {
     const campaign = summary.appliedCampaign;
     const benefit =

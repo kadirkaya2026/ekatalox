@@ -700,6 +700,7 @@ export function StorefrontCartDrawer({
                   <div className="space-y-2.5">
                     {(cartPaymentSummary.isQualified && cartPaymentSummary.discountAmount > 0) ||
                     cartPaymentSummary.campaignDiscountAmount > 0 ||
+                    cartPaymentSummary.couponDiscountAmount > 0 ||
                     cartPaymentSummary.surchargeAmount > 0 ? (
                       <>
                         <div className="flex items-center justify-between gap-3">
@@ -709,7 +710,8 @@ export function StorefrontCartDrawer({
                               "text-sm font-semibold tracking-tight",
                               (cartPaymentSummary.isQualified &&
                                 cartPaymentSummary.discountAmount > 0) ||
-                              cartPaymentSummary.campaignDiscountAmount > 0
+                              cartPaymentSummary.campaignDiscountAmount > 0 ||
+                              cartPaymentSummary.couponDiscountAmount > 0
                                 ? cn(theme.cartSummaryMuted, "line-through")
                                 : "text-white",
                             )}
@@ -747,6 +749,17 @@ export function StorefrontCartDrawer({
                                 cartPaymentSummary.campaignDiscountAmount,
                                 cartPaymentSummary.currency,
                               )}
+                            </p>
+                          </div>
+                        ) : null}
+                        {cartPaymentSummary.appliedCoupon && cartPaymentSummary.couponDiscountAmount > 0 ? (
+                          <div className="flex items-center justify-between gap-3">
+                            <div className="min-w-0">
+                              <p className={cn("text-sm font-medium", theme.cartSummaryMuted)}>🎁 {t("coupon.cartLine")}</p>
+                              <p className={cn("truncate text-[11px]", theme.cartSummaryMuted)}>{cartPaymentSummary.appliedCoupon.title}</p>
+                            </div>
+                            <p className="shrink-0 text-base font-bold tracking-tight text-emerald-300">
+                              -{formatCurrency(cartPaymentSummary.couponDiscountAmount, cartPaymentSummary.currency)}
                             </p>
                           </div>
                         ) : null}

@@ -1,5 +1,6 @@
 import { NextResponse, after } from "next/server";
 import { sendDealerOrderPush } from "@/lib/push/send-dealer-push";
+import { findActiveCouponForPhone } from "@/lib/coupons/data";
 import { cookies } from "next/headers";
 import { getStorefrontTenant, getTenantStorefrontSettings } from "@/lib/data";
 import { getCartPaymentSummary } from "@/lib/storefront/cart";
@@ -290,12 +291,20 @@ export async function POST(request: Request) {
         }
       : null;
 
+  // Müşteriye özel kupon (telefona bağlı): istemcinin gösterdiğiyle aynı
+  // kaynaktan, sunucuda yeniden bulunur — istemciye güvenilmez.
+  const couponPhone = normalizeCustomerPhone(parsed.data.customer_phone ?? "");
+  const coupon = couponPhone.length >= 10 ? await findActiveCouponForPhone(supabase, tenant.id, couponPhone) : null;
+
   const paymentSummary = getCartPaymentSummary(
     items,
     paymentMethod ?? "cash",
     cashConfig,
     cardConfig,
     selectedInstallment,
+    [],
+    undefined,
+    coupon,
   );
 
   if (!paymentSummary) {
@@ -337,6 +346,15 @@ export async function POST(request: Request) {
     note: parsed.data.note,
     magnetCodeId,
   });
+  if (recorded && paymentSummary.appliedCoupon && paymentSummary.couponDiscountAmount > 0) {
+    // Kuponu tüket ve siparişe işle (atomik; ikinci kullanımda false döner)
+    await supabase.rpc("redeem_customer_coupon", {
+      p_tenant_id: tenant.id,
+      p_coupon_id: paymentSummary.appliedCoupon.id,
+      p_order_id: recorded.orderId,
+      p_discount: paymentSummary.couponDiscountAmount,
+    });
+  }
   if (recorded) {
     const rec = recorded;
     after(() =>
