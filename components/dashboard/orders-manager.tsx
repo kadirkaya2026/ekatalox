@@ -101,7 +101,7 @@ export function OrdersManager({
     if (fresh) setSelected((curr) => (curr ? { ...curr, order: fresh } : curr));
   }, [page.orders, selected?.order.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  async function openOrder(order: StorefrontOrder) {
+  async function openOrder(order: StorefrontOrder, options?: { openCancel?: boolean }) {
     setError(null);
     const response = await fetch(`/api/tenant/orders/${order.id}`);
     const result = await response.json().catch(() => ({}));
@@ -110,7 +110,7 @@ export function OrdersManager({
       return;
     }
     setSelected(result);
-    setCancelOpen(false);
+    setCancelOpen(Boolean(options?.openCancel));
     setCancelReason("");
   }
 
@@ -415,6 +415,18 @@ export function OrdersManager({
                     >
                       {pending === order.id ? <Loader2 className="size-4 animate-spin" /> : null}
                       {getStatusLabel(next, { isTekel })}
+                    </Button>
+                  ) : null}
+                  {order.status !== "cancelled" ? (
+                    <Button
+                      variant="ghost"
+                      disabled={pending === order.id}
+                      onClick={() => void openOrder(order, { openCancel: true })}
+                      className="text-rose-600"
+                      title="Siparişi iptal et"
+                    >
+                      <XCircle className="size-4" />
+                      İptal
                     </Button>
                   ) : null}
                 </div>

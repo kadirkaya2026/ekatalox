@@ -63,7 +63,8 @@ export const ALLOWED_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
   confirmed: ["preparing", "shipped", "delivered", "cancelled"],
   preparing: ["shipped", "delivered", "cancelled"],
   shipped: ["delivered", "cancelled"],
-  delivered: [],
+  // Teslim edilen sipariş de iptal edilebilir (0094): yanlış tık / iade.
+  delivered: ["cancelled"],
   cancelled: [],
 };
 
@@ -78,8 +79,8 @@ export const isRevenueStatus = (status: OrderStatus) => status === "delivered";
 export const isPendingStatus = (status: OrderStatus) =>
   status === "new" || status === "confirmed" || status === "preparing" || status === "shipped";
 
-export const isTerminalStatus = (status: OrderStatus) =>
-  status === "delivered" || status === "cancelled";
+// Yalnız iptal kesin son; teslim edilen sipariş hâlâ iptal edilebilir (0094).
+export const isTerminalStatus = (status: OrderStatus) => status === "cancelled";
 
 /** Arayüzde gösterilecek ileri adımlar (iptal ayrı düğme). */
 export function getNextActions(status: OrderStatus): OrderStatus[] {
