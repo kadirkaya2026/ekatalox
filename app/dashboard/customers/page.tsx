@@ -14,8 +14,8 @@ export default async function TenantCustomersPage() {
     return (
       <div className="space-y-6">
         <Header
-          eyebrow="Raporlar"
-          title="Cari Hesaplar"
+          eyebrow="Müşteriler"
+          title="Müşteriler"
           description="Bu özellik sadece market tipi hesaplar için kullanılabilir."
         />
         <Card className="p-6 text-sm text-slate-600">
@@ -40,8 +40,8 @@ export default async function TenantCustomersPage() {
   return (
     <div className="space-y-6">
       <Header
-        eyebrow="Raporlar"
-        title="Cari Hesaplar"
+        eyebrow="Müşteriler"
+        title="Müşteriler"
         description="Sipariş veren her müşteri burada: kim ne kadar alışveriş yaptı, en son ne zaman sipariş verdi."
       />
       <CustomersManager initialCustomers={customers} isTekel={Boolean(tenant.is_tekel)} />

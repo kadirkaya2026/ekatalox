@@ -99,7 +99,7 @@ function CustomerLedger({
   return (
     <Card className="overflow-hidden p-0">
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 px-4 py-3">
-        <BackButton label="Cari Hesaplar" onClick={onBack} />
+        <BackButton label="Müşteriler" onClick={onBack} />
         <div className="flex items-center gap-2">
           <Button asChild variant="secondary">
             <a href={waHref(customer.phone, `Merhaba ${customer.full_name.split(" ")[0] ?? ""},`)} target="_blank" rel="noreferrer">
@@ -280,7 +280,7 @@ export function CustomersManager({
       : await fetch("/api/tenant/blocked-phones", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ phone: customer.phone, reason: `Cari: ${customer.full_name}` }),
+          body: JSON.stringify({ phone: customer.phone, reason: `Müşteri: ${customer.full_name}` }),
         });
     const result = await response.json().catch(() => ({}));
     if (!response.ok) {
@@ -309,8 +309,8 @@ export function CustomersManager({
     ];
     const ws = XLSX.utils.aoa_to_sheet(rows);
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Cari");
-    XLSX.writeFile(wb, `cari-listesi-${new Date().toISOString().slice(0, 10)}.xlsx`);
+    XLSX.utils.book_append_sheet(wb, ws, "Müşteriler");
+    XLSX.writeFile(wb, `musteri-listesi-${new Date().toISOString().slice(0, 10)}.xlsx`);
   }
 
   if (selected) {

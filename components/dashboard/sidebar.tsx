@@ -119,7 +119,7 @@ const tenantLinks: SidebarLink[] = [
   { href: "/access-codes", label: "Şifreler", icon: KeyRound },
   {
     href: "/customers",
-    label: "Cari Hesaplar",
+    label: "Müşteriler",
     icon: Contact,
     requiredBusinessType: "market",
   },
