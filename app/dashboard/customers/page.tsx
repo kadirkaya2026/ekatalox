@@ -42,7 +42,7 @@ export default async function TenantCustomersPage() {
       <Header
         eyebrow="Raporlar"
         title="Cari Hesaplar"
-        description="Sipariş veren her müşteri otomatik cari kaydı olur: toplam alışveriş, bekleyen siparişler, hareket dökümü, magnet ve engel durumu. Ciro yalnızca teslim edilen siparişleri kapsar."
+        description="Sipariş veren her müşteri burada: kim ne kadar alışveriş yaptı, en son ne zaman sipariş verdi."
       />
       <CustomersManager initialCustomers={customers} isTekel={Boolean(tenant.is_tekel)} />
       <IpBlocksManager initialBlocks={ipBlockRows ?? []} />

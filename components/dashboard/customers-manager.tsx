@@ -27,7 +27,7 @@ import { ORDER_STATUS_TONES, getStatusLabel } from "@/lib/orders/status";
 import { formatMagnetCodeForPrint } from "@/lib/magnet/code-format";
 
 type Customer = StorefrontCustomerWithStats;
-type Filter = "all" | "active" | "quiet" | "magnet" | "blocked";
+type Filter = "all" | "active" | "quiet" | "blocked";
 type SortKey = "last" | "total" | "count" | "name";
 
 const DAY = 86_400_000;
@@ -71,19 +71,6 @@ function StatusBadge({ status, isTekel }: { status: OrderStatus; isTekel: boolea
   );
 }
 
-function Kpi({ label, value, hint }: { label: string; value: string; hint?: string }) {
-  return (
-    <Card className="p-4">
-      <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{label}</p>
-      <p className="mt-1 text-xl font-bold tracking-tight text-foreground">{value}</p>
-      {hint ? <p className="mt-0.5 text-xs text-slate-500">{hint}</p> : null}
-    </Card>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Cari detay: müşteri kartı + hareket dökümü (kümülatif bakiye ile)
-// ---------------------------------------------------------------------------
 function CustomerLedger({
   customer,
   orders,
@@ -101,168 +88,94 @@ function CustomerLedger({
   onToggleBlock: (customer: Customer) => void;
   blockPending: boolean;
 }) {
-  const [openOrder, setOpenOrder] = useState<StorefrontOrder | null>(null);
-  const avg =
-    customer.delivered_count > 0 ? primaryAmount(customer.totals_by_currency) / customer.delivered_count : 0;
-  const mainCurrency = typeof customer.totals_by_currency.TRY === "number" ? "TRY" : Object.keys(customer.totals_by_currency)[0] ?? "TRY";
-
-  // Kümülatif: eskiden yeniye teslim edilen tutar toplanır (cari bakiye gibi)
-  const ledger = useMemo(() => {
-    if (!orders) return [];
-    const asc = [...orders].sort((a, b) => a.created_at.localeCompare(b.created_at));
-    let running = 0;
-    const rows = asc.map((o) => {
-      if (o.status === "delivered" && o.currency === mainCurrency) running += o.total_amount;
-      return { order: o, running };
-    });
-    return rows.reverse();
-  }, [orders, mainCurrency]);
-
-  if (openOrder) {
-    return (
-      <Card className="p-5">
-        <BackButton label="Cari dökümüne dön" onClick={() => setOpenOrder(null)} />
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <h3 className="flex items-center gap-2 text-base font-semibold text-slate-900">
-            {formatOrderNo(openOrder)}
-            <StatusBadge status={openOrder.status} isTekel={isTekel} />
-          </h3>
-          <span className="text-sm text-slate-500">{formatDate(openOrder.created_at)}</span>
-        </div>
-        <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-slate-600">
-          <span className="font-semibold text-slate-900">{formatOrderTotal(openOrder)}</span>
-          {formatPaymentMethod(openOrder.payment_method) ? (
-            <>
-              <span className="text-slate-300">•</span>
-              <span>{formatPaymentMethod(openOrder.payment_method)}</span>
-            </>
-          ) : null}
-        </div>
-        {openOrder.note ? (
-          <p className="mt-3 rounded-xl bg-slate-50 p-3 text-sm text-slate-600">
-            <span className="font-medium text-slate-700">Not: </span>
-            {openOrder.note}
-          </p>
-        ) : null}
-        {openOrder.status === "cancelled" && openOrder.cancel_reason ? (
-          <p className="mt-3 rounded-xl bg-rose-50 p-3 text-sm text-rose-700">İptal sebebi: {openOrder.cancel_reason}</p>
-        ) : null}
-        <div className="mt-4 space-y-2">
-          {openOrder.items.map((item, i) => (
-            <div key={i} className="flex items-center justify-between gap-3 rounded-xl border border-slate-100 bg-slate-50 px-4 py-2.5 text-sm">
-              <div>
-                <p className="font-medium text-slate-900">
-                  {item.product_name}
-                  {item.variant_name ? <span className="text-slate-500"> · {item.variant_name}</span> : null}
-                </p>
-                <p className="text-slate-500">{item.quantity} {item.sales_unit ?? "adet"}</p>
-              </div>
-              {item.price !== null ? (
-                <p className="font-medium text-slate-700">{money(item.price * item.quantity, item.currency)}</p>
-              ) : null}
-            </div>
-          ))}
-        </div>
-      </Card>
-    );
-  }
+  const rows = useMemo(
+    () => (orders ? [...orders].sort((a, b) => b.created_at.localeCompare(a.created_at)) : []),
+    [orders],
+  );
 
   return (
-    <div className="space-y-4">
-      <Card className="p-5">
-        <BackButton label="Cari listesine dön" onClick={onBack} />
+    <Card className="overflow-hidden p-0">
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 px-4 py-3">
+        <BackButton label="Cari Hesaplar" onClick={onBack} />
+        <div className="flex items-center gap-2">
+          <Button asChild variant="secondary">
+            <a href={waHref(customer.phone, `Merhaba ${customer.full_name.split(" ")[0] ?? ""},`)} target="_blank" rel="noreferrer">
+              <MessageCircle className="size-4" /> WhatsApp
+            </a>
+          </Button>
+          <Button
+            variant="secondary"
+            disabled={blockPending}
+            onClick={() => onToggleBlock(customer)}
+            className={customer.is_blocked ? "" : "text-rose-600"}
+            title={customer.is_blocked ? "Bu numara tekrar sipariş verebilsin" : "Bu numaradan sipariş alınmasın"}
+          >
+            {blockPending ? <Loader2 className="size-4 animate-spin" /> : customer.is_blocked ? <ShieldOff className="size-4" /> : <ShieldBan className="size-4" />}
+            {customer.is_blocked ? "Engeli kaldır" : "Engelle"}
+          </Button>
+        </div>
+      </div>
+
+      <div className="space-y-5 p-5">
+        {/* Kimlik */}
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="flex items-center gap-3">
             <span className="flex size-12 items-center justify-center rounded-full bg-slate-900 text-base font-bold text-white">
               {getInitials(customer.full_name)}
             </span>
             <div>
-              <h3 className="flex flex-wrap items-center gap-2 text-lg font-semibold text-slate-900">
+              <h3 className="flex flex-wrap items-center gap-2 text-xl font-semibold text-slate-900">
                 {customer.full_name}
+                {customer.is_blocked ? <Badge variant="danger" className="px-2 py-0.5 text-[11px]">Engelli</Badge> : null}
                 {customer.magnet_code ? (
                   <Badge variant="info" className="gap-1 px-2 py-0.5 text-[11px]">
                     <Magnet className="size-3" /> {formatMagnetCodeForPrint(customer.magnet_code)}
                   </Badge>
                 ) : null}
-                {customer.is_blocked ? (
-                  <Badge variant="danger" className="px-2 py-0.5 text-[11px]">Engelli</Badge>
-                ) : null}
               </h3>
-              <p className="text-sm text-slate-600">{customer.phone}</p>
+              <a href={`tel:${customer.phone}`} className="text-sm text-slate-700 hover:underline">{customer.phone}</a>
               {customer.address ? <p className="text-sm text-slate-500">{customer.address}</p> : null}
             </div>
           </div>
-          <div className="flex flex-wrap gap-2">
-            <Button asChild variant="secondary">
-              <a href={waHref(customer.phone, `Merhaba ${customer.full_name.split(" ")[0] ?? ""},`)} target="_blank" rel="noreferrer">
-                <MessageCircle className="size-4" /> WhatsApp
+          <div className="text-right">
+            <p className="text-2xl font-semibold tabular-nums text-slate-900">{formatTotals(customer.totals_by_currency)}</p>
+            <p className="text-sm text-slate-500">
+              {customer.orders_count} sipariş · son {formatDate(customer.last_order_at)}
+            </p>
+          </div>
+        </div>
+
+        {/* Siparişler */}
+        <div className="overflow-hidden rounded-xl border border-slate-200">
+          <div className="hidden grid-cols-[130px_minmax(0,1fr)_150px_120px] gap-3 bg-slate-50 px-4 py-2 text-[11px] font-semibold uppercase tracking-wide text-slate-500 md:grid">
+            <span>Tarih</span><span>Sipariş</span><span>Durum</span><span className="text-right">Tutar</span>
+          </div>
+          {loading ? (
+            <p className="flex items-center gap-2 p-4 text-sm text-slate-500"><Loader2 className="size-4 animate-spin" /> Yükleniyor…</p>
+          ) : rows.length === 0 ? (
+            <p className="p-4 text-sm text-slate-500">Sipariş yok.</p>
+          ) : (
+            rows.map((order) => (
+              <a
+                key={order.id}
+                href={`/dashboard/siparisler?order=${order.id}`}
+                className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1 border-t border-slate-100 px-4 py-2.5 text-sm hover:bg-slate-50 md:grid-cols-[130px_minmax(0,1fr)_150px_120px]"
+                title="Siparişi aç"
+              >
+                <span className="text-slate-500">{formatDate(order.created_at)}</span>
+                <span className={cn("text-right font-semibold tabular-nums md:hidden", order.status === "cancelled" ? "text-slate-400 line-through" : "text-slate-900")}>{formatOrderTotal(order)}</span>
+                <span className="truncate font-medium text-slate-900">
+                  {formatOrderNo(order)}
+                  <span className="font-normal text-slate-500"> · {order.item_count} ürün{formatPaymentMethod(order.payment_method) ? ` · ${formatPaymentMethod(order.payment_method)}` : ""}</span>
+                </span>
+                <span><StatusBadge status={order.status} isTekel={isTekel} /></span>
+                <span className={cn("hidden text-right font-semibold tabular-nums md:block", order.status === "cancelled" ? "text-slate-400 line-through" : "text-slate-900")}>{formatOrderTotal(order)}</span>
               </a>
-            </Button>
-            <Button variant="ghost" disabled={blockPending} onClick={() => onToggleBlock(customer)} className={customer.is_blocked ? "" : "text-rose-600"}>
-              {blockPending ? <Loader2 className="size-4 animate-spin" /> : customer.is_blocked ? <ShieldOff className="size-4" /> : <ShieldBan className="size-4" />}
-              {customer.is_blocked ? "Engeli kaldır" : "Numarayı engelle"}
-            </Button>
-          </div>
+            ))
+          )}
         </div>
-
-        <dl className="mt-5 grid gap-3 sm:grid-cols-3 lg:grid-cols-6">
-          {[
-            ["Toplam alışveriş", formatTotals(customer.totals_by_currency)],
-            ["Bekleyen", formatTotals(customer.pending_by_currency)],
-            ["Sipariş", `${customer.orders_count} · ${customer.delivered_count} teslim · ${customer.cancelled_count} iptal`],
-            ["Ortalama sepet", customer.delivered_count ? money(avg, mainCurrency) : "—"],
-            ["İlk sipariş", formatDate(customer.first_order_at)],
-            ["Son sipariş", `${formatDate(customer.last_order_at)} (${daysSince(customer.last_order_at)} gün önce)`],
-          ].map(([k, v]) => (
-            <div key={k} className="rounded-xl bg-slate-50 px-3 py-2">
-              <dt className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">{k}</dt>
-              <dd className="mt-0.5 text-sm font-semibold text-slate-900">{v}</dd>
-            </div>
-          ))}
-        </dl>
-      </Card>
-
-      <Card className="overflow-hidden p-0">
-        <div className="flex items-center justify-between px-5 pt-5">
-          <h4 className="text-base font-semibold text-slate-900">Cari hareketleri</h4>
-          <span className="text-xs text-slate-500">Kümülatif: yalnız teslim edilen {mainCurrency}</span>
-        </div>
-        {loading ? (
-          <p className="flex items-center gap-2 p-5 text-sm text-slate-500"><Loader2 className="size-4 animate-spin" /> Yükleniyor…</p>
-        ) : !orders?.length ? (
-          <p className="p-5 text-sm text-slate-500">Hareket yok.</p>
-        ) : (
-          <div className="mt-3 overflow-x-auto">
-            <table className="min-w-full text-sm">
-              <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
-                <tr>
-                  <th className="px-4 py-2 text-left">Tarih</th>
-                  <th className="px-4 py-2 text-left">Sipariş</th>
-                  <th className="px-4 py-2 text-left">Durum</th>
-                  <th className="px-4 py-2 text-left">Ödeme</th>
-                  <th className="px-4 py-2 text-right">Tutar</th>
-                  <th className="px-4 py-2 text-right">Kümülatif</th>
-                  <th className="px-2 py-2" />
-                </tr>
-              </thead>
-              <tbody className="divide-y">
-                {ledger.map(({ order, running }) => (
-                  <tr key={order.id} className="cursor-pointer hover:bg-slate-50" onClick={() => setOpenOrder(order)}>
-                    <td className="whitespace-nowrap px-4 py-2 text-slate-600">{formatDate(order.created_at)}</td>
-                    <td className="px-4 py-2 font-medium text-slate-900">{formatOrderNo(order)}</td>
-                    <td className="px-4 py-2"><StatusBadge status={order.status} isTekel={isTekel} /></td>
-                    <td className="px-4 py-2 text-slate-600">{formatPaymentMethod(order.payment_method) ?? "—"}</td>
-                    <td className={cn("px-4 py-2 text-right tabular-nums", order.status === "cancelled" ? "text-slate-400 line-through" : "text-slate-900")}>{formatOrderTotal(order)}</td>
-                    <td className="px-4 py-2 text-right tabular-nums text-slate-600">{money(running, mainCurrency)}</td>
-                    <td className="px-2 py-2 text-slate-300"><ChevronRight className="size-4" /></td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </Card>
-    </div>
+      </div>
+    </Card>
   );
 }
 
@@ -319,7 +232,6 @@ export function CustomersManager({
       if (needle && !`${c.full_name} ${c.phone} ${c.address}`.toLocaleLowerCase("tr-TR").includes(needle)) return false;
       if (filter === "active") return daysSince(c.last_order_at) <= 30;
       if (filter === "quiet") return daysSince(c.last_order_at) > 30;
-      if (filter === "magnet") return Boolean(c.magnet_code);
       if (filter === "blocked") return c.is_blocked;
       return true;
     });
@@ -409,22 +321,14 @@ export function CustomersManager({
 
   return (
     <div className="space-y-4">
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <Kpi label="Toplam müşteri" value={String(customers.length)} hint={`${kpis.active} aktif (son 30 gün)`} />
-        <Kpi label="Sessizleşen" value={String(kpis.quiet)} hint="30 günden uzun süredir sipariş yok" />
-        <Kpi label="Toplam ciro (teslim)" value={formatTotals(kpis.totals)} />
-        <Kpi label="Bekleyen tutar" value={formatTotals(kpis.pending)} hint="henüz teslim edilmemiş" />
-      </div>
-
       <InlineAlert tone="error" message={error} />
 
       <div className="flex flex-wrap items-center gap-2">
         {(
           [
             ["all", "Tümü"],
-            ["active", "Aktif (30 gün)"],
+            ["active", "Son 30 gün"],
             ["quiet", "Sessizleşen"],
-            ["magnet", "Magnetli"],
             ["blocked", "Engelli"],
           ] as Array<[Filter, string]>
         ).map(([key, label]) => (
@@ -443,7 +347,7 @@ export function CustomersManager({
         <div className="ml-auto flex flex-wrap items-center gap-2">
           <div className="relative">
             <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
-            <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Ad, telefon, adres" className="w-56 pl-9" />
+            <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Ad veya telefon" className="w-52 pl-9" />
           </div>
           <Select value={sort} onChange={(e) => setSort(e.target.value as SortKey)} className="w-44">
             <option value="last">Son siparişe göre</option>
@@ -464,76 +368,47 @@ export function CustomersManager({
             {customers.length === 0 ? "Henüz müşteri yok. Vitrinden gelen ilk sipariş cari kaydı oluşturur." : "Bu süzgeçte müşteri yok."}
           </div>
         ) : (
-          <>
-            {/* Masaüstü: tablo */}
-            <div className="hidden overflow-x-auto md:block">
-              <table className="min-w-full text-sm">
-                <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
-                  <tr>
-                    <th className="px-4 py-2.5 text-left">Müşteri</th>
-                    <th className="px-4 py-2.5 text-left">Adres</th>
-                    <th className="px-4 py-2.5 text-left">Son sipariş</th>
-                    <th className="px-4 py-2.5 text-right">Sipariş</th>
-                    <th className="px-4 py-2.5 text-right">Toplam alışveriş</th>
-                    <th className="px-4 py-2.5 text-right">Bekleyen</th>
-                    <th className="px-2 py-2.5" />
-                  </tr>
-                </thead>
-                <tbody className="divide-y">
-                  {visible.map((c) => (
-                    <tr key={c.id} className="cursor-pointer hover:bg-emerald-50/40" onClick={() => void open(c)}>
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-3">
-                          <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-slate-900 text-xs font-bold text-white">
-                            {getInitials(c.full_name)}
-                          </span>
-                          <div className="min-w-0">
-                            <p className="flex flex-wrap items-center gap-1.5 font-semibold text-slate-900">
-                              {c.full_name}
-                              {c.magnet_code ? <Magnet className="size-3.5 text-sky-600" aria-label="Magnetli müşteri" /> : null}
-                              {c.is_blocked ? <Badge variant="danger" className="px-1.5 py-0 text-[10px]">Engelli</Badge> : null}
-                            </p>
-                            <p className="text-slate-500">{c.phone}</p>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="max-w-[16rem] truncate px-4 py-3 text-slate-600">{c.address || "—"}</td>
-                      <td className="px-4 py-3">
-                        <div className="flex flex-col gap-1">
-                          <span className="text-slate-700">{formatDate(c.last_order_at)}</span>
-                          {c.last_order_status ? <StatusBadge status={c.last_order_status} isTekel={isTekel} /> : null}
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 text-right tabular-nums">
-                        <span className="font-semibold text-slate-900">{c.orders_count}</span>
-                        {c.cancelled_count ? <span className="ml-1 text-xs text-rose-600">({c.cancelled_count} iptal)</span> : null}
-                      </td>
-                      <td className="px-4 py-3 text-right font-semibold tabular-nums text-slate-900">{formatTotals(c.totals_by_currency)}</td>
-                      <td className="px-4 py-3 text-right tabular-nums text-amber-700">{formatTotals(c.pending_by_currency)}</td>
-                      <td className="px-2 py-3 text-slate-300"><ChevronRight className="size-4" /></td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+          <div className="divide-y divide-slate-100">
+            <div className="hidden grid-cols-[minmax(0,1fr)_140px_90px_150px_130px_32px] items-center gap-3 bg-slate-50 px-4 py-2 text-[11px] font-semibold uppercase tracking-wide text-slate-500 md:grid">
+              <span>Müşteri</span><span>Son sipariş</span><span className="text-right">Sipariş</span><span className="text-right">Toplam alışveriş</span><span className="text-right">Bekleyen</span><span />
             </div>
-            {/* Mobil: kart listesi */}
-            <div className="divide-y md:hidden">
-              {visible.map((c) => (
-                <button key={c.id} type="button" onClick={() => void open(c)} className="flex w-full items-center gap-3 px-4 py-3 text-left">
-                  <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-slate-900 text-xs font-bold text-white">{getInitials(c.full_name)}</span>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate font-semibold text-slate-900">{c.full_name}</p>
-                    <p className="text-xs text-slate-500">{c.phone} · {c.orders_count} sipariş · {formatDate(c.last_order_at)}</p>
-                  </div>
-                  <span className="text-sm font-semibold tabular-nums text-slate-900">{formatTotals(c.totals_by_currency)}</span>
-                  <ChevronRight className="size-4 text-slate-300" />
+            {visible.map((c) => {
+              const pending = primaryAmount(c.pending_by_currency);
+              return (
+                <button
+                  key={c.id}
+                  type="button"
+                  onClick={() => void open(c)}
+                  className="grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-0.5 px-4 py-3 text-left hover:bg-slate-50 md:grid-cols-[minmax(0,1fr)_140px_90px_150px_130px_32px]"
+                >
+                  <span className="flex min-w-0 items-center gap-3">
+                    <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-slate-900 text-xs font-bold text-white">
+                      {getInitials(c.full_name)}
+                    </span>
+                    <span className="min-w-0">
+                      <span className="flex items-center gap-1.5 truncate text-sm font-semibold text-slate-900">
+                        {c.full_name}
+                        {c.is_blocked ? <Badge variant="danger" className="px-1.5 py-0 text-[10px]">Engelli</Badge> : null}
+                        {c.magnet_code ? <Magnet className="size-3.5 text-sky-600" aria-label="Magnetli müşteri" /> : null}
+                      </span>
+                      <span className="block text-xs text-slate-500">{c.phone}</span>
+                    </span>
+                  </span>
+                  <span className="text-right text-sm font-semibold tabular-nums text-slate-900 md:hidden">{formatTotals(c.totals_by_currency)}</span>
+                  <span className="col-span-2 text-xs text-slate-500 md:col-span-1 md:text-sm md:text-slate-600">{formatDate(c.last_order_at)}<span className="md:hidden"> · {c.orders_count} sipariş</span></span>
+                  <span className="hidden text-right text-sm tabular-nums text-slate-700 md:block">{c.orders_count}</span>
+                  <span className="hidden text-right text-sm font-semibold tabular-nums text-slate-900 md:block">{formatTotals(c.totals_by_currency)}</span>
+                  <span className={cn("hidden text-right text-sm tabular-nums md:block", pending > 0 ? "text-amber-700" : "text-slate-300")}>{pending > 0 ? formatTotals(c.pending_by_currency) : "—"}</span>
+                  <ChevronRight className="hidden size-4 text-slate-300 md:block" />
                 </button>
-              ))}
-            </div>
-          </>
+              );
+            })}
+          </div>
         )}
       </Card>
-      <p className="text-xs text-slate-500">{visible.length} müşteri gösteriliyor · Toplam alışveriş yalnız teslim edilen siparişleri kapsar.</p>
+      <p className="text-xs text-slate-500">
+        {visible.length} müşteri · toplam alışveriş {formatTotals(kpis.totals)}{primaryAmount(kpis.pending) > 0 ? ` · bekleyen ${formatTotals(kpis.pending)}` : ""}. Toplamlar yalnız teslim edilen siparişleri kapsar.
+      </p>
     </div>
   );
 }
