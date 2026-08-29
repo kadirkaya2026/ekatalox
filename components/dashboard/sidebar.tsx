@@ -83,6 +83,7 @@ const tenantLinks: SidebarLink[] = [
     label: "Ürünler",
     icon: Building2,
     children: [
+      { href: "/categories", label: "Kategoriler", icon: FolderTree },
       { href: "/products/add", label: "Ürün Ekle", icon: PlusCircle },
       { href: "/products/bulk", label: "Toplu Ürün Ekleme", icon: UploadCloud },
       {
@@ -115,9 +116,14 @@ const tenantLinks: SidebarLink[] = [
       },
     ],
   },
-  { href: "/categories", label: "Kategoriler", icon: FolderTree },
   { href: "/access-codes", label: "Şifreler", icon: KeyRound },
   { href: "/magnetler", label: "Magnetlerim", icon: Magnet },
+  {
+    href: "/customers",
+    label: "Cari Hesaplar",
+    icon: Contact,
+    requiredBusinessType: "market",
+  },
   {
     href: "/siparisler",
     label: "Siparişler",
@@ -138,12 +144,6 @@ const tenantLinks: SidebarLink[] = [
         requiredBusinessType: "market",
       },
     ],
-  },
-  {
-    href: "/customers",
-    label: "Cari Hesaplar",
-    icon: Contact,
-    requiredBusinessType: "market",
   },
   {
     href: "/settings",
