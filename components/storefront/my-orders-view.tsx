@@ -13,6 +13,7 @@ import type { CurrencyCode } from "@/lib/products/constants";
 import type { OrderStatus } from "@/lib/types";
 import { getStatusLabel } from "@/lib/orders/status";
 import { normalizeCustomerPhone } from "@/lib/storefront/customer-phone";
+import { clearTrackingPhone, markSeen, readTrackingPhone, saveTrackingPhone } from "@/lib/storefront/tracking-phone";
 
 interface OrderRow {
   id: string;
@@ -20,6 +21,7 @@ interface OrderRow {
   order_number: string;
   created_at: string;
   status: OrderStatus;
+  status_updated_at: string;
   currency: string;
   total_amount: number;
   item_count: number;
@@ -27,9 +29,6 @@ interface OrderRow {
   tracking_token: string | null;
 }
 
-// Aynı cihazdan bir daha girmesin diye numara tarayıcıda tutulur (yalnız bu
-// vitrin için). Kişisel veri sunucuya gitmez; müşteri "Başka numara" ile siler.
-const STORAGE_KEY = "ekx-track-phone";
 
 const STATUS_DOT: Record<OrderStatus, string> = {
   new: "bg-amber-400",
@@ -80,7 +79,9 @@ function MyOrdersCard({ subdomain, tenantName, isTekel }: { subdomain: string; t
       const d = (await r.json()) as { orders: OrderRow[] };
       setOrders(d.orders);
       setActivePhone(raw);
-      try { window.localStorage.setItem(STORAGE_KEY, raw); } catch { /* özel pencere */ }
+      saveTrackingPhone(raw);
+      // Listeyi gören müşteri güncellemeleri görmüş sayılır → başlık rozeti söner.
+      markSeen(d.orders.map((o) => ({ orderNo: o.order_no, statusUpdatedAt: o.status_updated_at })));
     } catch {
       setError(t("orders.error"));
     } finally {
@@ -89,13 +90,11 @@ function MyOrdersCard({ subdomain, tenantName, isTekel }: { subdomain: string; t
   };
 
   useEffect(() => {
-    try {
-      const saved = window.localStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        setPhone(saved);
-        void lookup(saved);
-      }
-    } catch { /* depolama kapalı */ }
+    const saved = readTrackingPhone();
+    if (saved) {
+      setPhone(saved);
+      void lookup(saved);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -109,7 +108,7 @@ function MyOrdersCard({ subdomain, tenantName, isTekel }: { subdomain: string; t
     setActivePhone(null);
     setPhone("");
     setError(null);
-    try { window.localStorage.removeItem(STORAGE_KEY); } catch { /* yok say */ }
+    clearTrackingPhone();
   };
 
   const text = theme.text;

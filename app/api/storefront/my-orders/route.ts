@@ -30,7 +30,7 @@ export async function POST(request: Request) {
   // Sipariş kaydı customer_phone'u normalize (yalnız rakam) saklar; bkz. orders.ts.
   const { data, error } = await supabase
     .from("orders")
-    .select("id, order_no, order_number, created_at, status, currency, total_amount, item_count, items, tracking_token")
+    .select("id, order_no, order_number, created_at, status, status_updated_at, currency, total_amount, item_count, items, tracking_token")
     .eq("tenant_id", tenant.id)
     .eq("customer_phone", phone)
     .order("created_at", { ascending: false })
@@ -45,6 +45,7 @@ export async function POST(request: Request) {
       order_number: o.order_number as string,
       created_at: o.created_at as string,
       status: o.status as OrderStatus,
+      status_updated_at: (o.status_updated_at as string | null) ?? (o.created_at as string),
       currency: o.currency as string,
       total_amount: Number(o.total_amount ?? 0),
       item_count: Number(o.item_count ?? items.length),

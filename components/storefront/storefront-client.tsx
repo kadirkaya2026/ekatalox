@@ -124,6 +124,7 @@ import { flyToCart } from "@/components/storefront/fly-to-cart";
 import { StorefrontCampaignsSheet } from "@/components/storefront/storefront-campaigns-sheet";
 import { StorefrontSearchSheet } from "@/components/storefront/storefront-search-sheet";
 import { isMarketOrTekelTenant } from "@/lib/storefront/white-label";
+import { saveTrackingPhone } from "@/lib/storefront/tracking-phone";
 import { StorefrontHeader } from "@/components/storefront/storefront-header";
 import { StorefrontHeroBlock } from "@/components/storefront/storefront-hero-block";
 import {
@@ -1820,6 +1821,9 @@ export function StorefrontClient({
       pdfUrl = result.pdfUrl;
       pdfIncluded = true;
       trackingUrl = result.trackingUrl ?? null;
+      // Sipariş kaydedildi: bu numara takip sayfasına "giriş yapmış" olur.
+      // Başka numarayla sipariş verilirse üzerine yazılır.
+      if (isMarketTenant && customerPhone.trim()) saveTrackingPhone(customerPhone);
     } catch (error) {
       const apiError =
         error instanceof OrderPdfRequestError && error.apiError?.trim()

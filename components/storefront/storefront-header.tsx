@@ -14,6 +14,7 @@ import { StorefrontImage } from "@/components/storefront/storefront-image";
 import { StorefrontLogoutButton } from "@/components/storefront/storefront-logout-button";
 import { StorefrontThemeToggle } from "@/components/storefront/storefront-theme-toggle";
 import { StorefrontLanguageSwitcher } from "@/components/storefront/storefront-language-switcher";
+import { OrderTrackingBadge, useUnseenOrderUpdates } from "@/components/storefront/order-tracking-badge";
 
 export interface StorefrontHeaderProps {
   headerStyleKey: StorefrontHeaderStyleKey;
@@ -76,6 +77,7 @@ function HeaderActions({
 }) {
   const theme = useStorefrontTheme();
   const { t } = useStorefrontLocale();
+  const unseenOrderUpdates = useUnseenOrderUpdates(props.orderTrackingHref ? props.subdomain : undefined);
 
   return (
     <div className={cn("flex items-center justify-end gap-3", compact ? "gap-2" : "lg:gap-4")}>
@@ -100,11 +102,12 @@ function HeaderActions({
       {props.orderTrackingHref ? (
         <a
           href={props.orderTrackingHref}
-          className={cn(theme.headerIconButton, "size-11 lg:size-12")}
+          className={cn(theme.headerIconButton, "relative size-11 lg:size-12")}
           aria-label={t("header.trackOrders")}
           title={t("header.trackOrders")}
         >
           <PackageSearch className="size-5" />
+          <OrderTrackingBadge count={unseenOrderUpdates} />
         </a>
       ) : null}
       <StorefrontLanguageSwitcher />

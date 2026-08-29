@@ -12,6 +12,7 @@ import type { CurrencyCode } from "@/lib/products/constants";
 import type { OrderStatus } from "@/lib/types";
 import { getStatusDescription, getStatusLabel } from "@/lib/orders/status";
 import { buildWhatsAppOrderHref } from "@/lib/storefront/whatsapp-order";
+import { markSeen } from "@/lib/storefront/tracking-phone";
 import { PushOptInBanner } from "@/components/storefront/push-opt-in-button";
 
 export interface TrackingSnapshot {
@@ -58,6 +59,12 @@ function TrackingCard({
 }) {
   const theme = useStorefrontTheme();
   const [snap, setSnap] = useState(initial);
+
+  // Bu sayfayı gören müşteri bu siparişin son durumunu görmüş sayılır
+  // (başlıktaki kırmızı rozet buna göre düşer).
+  useEffect(() => {
+    markSeen([{ orderNo: snap.orderNo, statusUpdatedAt: snap.statusUpdatedAt }]);
+  }, [snap.orderNo, snap.statusUpdatedAt]);
 
   useEffect(() => {
     const tick = async () => {
