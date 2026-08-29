@@ -7,8 +7,15 @@ import {
   getBannerObjectPath,
   STOREFRONT_BANNERS_BUCKET,
 } from "@/lib/storage/banners";
+import { revalidateStorefrontCache } from "@/lib/storefront/cache";
 import { ensureTenantAdminResponse } from "@/lib/tenancy/guards";
-import type { BannerItem } from "@/lib/types";
+import { normalizeCategoryName } from "@/lib/categories/ensure-hierarchy";
+// Silinen kategorinin ürünlerinin düştüğü kova. products.category_id NOT NULL
+// olduğu için ürünler "gerçekten kategorisiz" kalamaz; tenant'ın kök
+// seviyedeki "Kategorisiz" kategorisine taşınır (yoksa oluşturulur). Vitrin
+// bu kovayı kategori menüsünde göstermez (bkz. lib/categories/tree.ts).
+import { UNCATEGORIZED_CATEGORY_NAME } from "@/lib/categories/tree";
+import type { BannerItem, Category } from "@/lib/types";
 import { categorySchema } from "@/lib/validators/category";
 
 export async function POST(request: Request) {
@@ -179,19 +186,6 @@ export async function DELETE(request: Request) {
     return NextResponse.json({ success: true });
   }
 
-  const { count } = await supabase
-    .from("products")
-    .select("*", { count: "exact", head: true })
-    .eq("tenant_id", session.tenant!.id)
-    .eq("category_id", id);
-
-  if ((count ?? 0) > 0) {
-    return NextResponse.json(
-      { error: "Bu kategoriye bağlı ürünler olduğu için silinemez." },
-      { status: 400 },
-    );
-  }
-
   const { count: childCount } = await supabase
     .from("categories")
     .select("*", { count: "exact", head: true })
@@ -207,10 +201,97 @@ export async function DELETE(request: Request) {
 
   const { data: categoryToDelete } = await supabase
     .from("categories")
-    .select("banner_item, tile_image_url")
+    .select("name, banner_item, tile_image_url")
     .eq("id", id)
     .eq("tenant_id", session.tenant!.id)
     .maybeSingle();
+
+  if (!categoryToDelete) {
+    return NextResponse.json({ error: "Kategori bulunamadı." }, { status: 404 });
+  }
+
+  const { count: productCount } = await supabase
+    .from("products")
+    .select("*", { count: "exact", head: true })
+    .eq("tenant_id", session.tenant!.id)
+    .eq("category_id", id);
+
+  const movedCount = productCount ?? 0;
+  let uncategorizedCategory: Category | null = null;
+  let createdUncategorized = false;
+
+  if (movedCount > 0) {
+    // Ürünler "Kategorisiz" kovasına taşınır; ürün fiyatları/stokları değişmez,
+    // vitrinde kategori ataması olmadan yayınlanmaya devam ederler.
+    const isDeletingUncategorizedBucket =
+      normalizeCategoryName(categoryToDelete.name as string) ===
+      normalizeCategoryName(UNCATEGORIZED_CATEGORY_NAME);
+
+    if (isDeletingUncategorizedBucket) {
+      return NextResponse.json(
+        {
+          error:
+            '"Kategorisiz" kategorisi içinde ürün varken silinemez. Önce ürünleri başka bir kategoriye taşıyın.',
+        },
+        { status: 400 },
+      );
+    }
+
+    const { data: existingBucket } = await supabase
+      .from("categories")
+      .select("*")
+      .eq("tenant_id", session.tenant!.id)
+      .is("parent_id", null)
+      .ilike("name", UNCATEGORIZED_CATEGORY_NAME)
+      .limit(1)
+      .maybeSingle<Category>();
+
+    uncategorizedCategory = existingBucket ?? null;
+
+    if (!uncategorizedCategory) {
+      const { data: lastCategory } = await supabase
+        .from("categories")
+        .select("display_order")
+        .eq("tenant_id", session.tenant!.id)
+        .order("display_order", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      const { data: createdBucket, error: createError } = await supabase
+        .from("categories")
+        .insert({
+          tenant_id: session.tenant!.id,
+          name: UNCATEGORIZED_CATEGORY_NAME,
+          parent_id: null,
+          display_order: (lastCategory?.display_order ?? 0) + 1,
+          // Silinen kategorinin ürünleri vitrinde yayınlanmaya devam etmeli;
+          // bu yüzden kova gizli oluşturulmaz (import'un kovasından farklı).
+          is_hidden_from_storefront: false,
+        })
+        .select("*")
+        .single<Category>();
+
+      if (createError || !createdBucket) {
+        return NextResponse.json(
+          { error: createError?.message ?? '"Kategorisiz" kategorisi oluşturulamadı.' },
+          { status: 400 },
+        );
+      }
+
+      uncategorizedCategory = createdBucket;
+      createdUncategorized = true;
+    }
+
+    const { error: moveError } = await supabase
+      .from("products")
+      .update({ category_id: uncategorizedCategory.id })
+      .eq("tenant_id", session.tenant!.id)
+      .eq("category_id", id);
+
+    if (moveError) {
+      return NextResponse.json({ error: moveError.message }, { status: 400 });
+    }
+  }
 
   const bannerItem = categoryToDelete?.banner_item as BannerItem | null;
   const bannerImageUrl = bannerItem?.image_url ?? null;
@@ -242,5 +323,15 @@ export async function DELETE(request: Request) {
     }
   }
 
-  return NextResponse.json({ success: true });
+  revalidateStorefrontCache({
+    tenantId: session.tenant!.id,
+    subdomain: session.tenant!.subdomain,
+  });
+
+  return NextResponse.json({
+    success: true,
+    movedCount,
+    uncategorizedCategory: createdUncategorized ? uncategorizedCategory : null,
+    uncategorizedHidden: uncategorizedCategory?.is_hidden_from_storefront ?? false,
+  });
 }

@@ -310,9 +310,10 @@ function SortableCategoryRow(props: RowProps) {
       {props.deleteConfirmId === props.category.id ? (
         <div className="mt-1 flex items-center gap-3 rounded-xl border border-red-100 bg-red-50 p-3">
           <p className="flex-1 text-sm text-red-800">
-            <strong>"{props.category.name}"</strong> silinecek. Emin misiniz?
+            <strong>&quot;{props.category.name}&quot;</strong> silinecek. Bu kategorideki ürünler silinmez,
+            &quot;Kategorisiz&quot; olarak yayınlanmaya devam eder. Yine de devam etmek istiyor musunuz?
           </p>
-          <Button variant="danger" className="h-8 shrink-0 px-3 text-xs" onClick={() => props.onConfirmDelete(props.category.id)} disabled={props.pending}>Evet, sil</Button>
+          <Button variant="danger" className="h-8 shrink-0 px-3 text-xs" onClick={() => props.onConfirmDelete(props.category.id)} disabled={props.pending}>Evet, devam et</Button>
           <Button variant="secondary" className="h-8 shrink-0 px-3 text-xs" onClick={props.onCancelDelete} disabled={props.pending}>İptal</Button>
         </div>
       ) : null}
@@ -521,9 +522,26 @@ export function CategoriesManager({
       });
       const result = await res.json();
       if (!res.ok) { showMessage(result.error ?? "Kategori silinemedi.", "error"); setDeleteConfirmId(null); return; }
-      setCategories((c) => c.filter((cat) => cat.id !== id));
+      const createdBucket = result.uncategorizedCategory as Category | null | undefined;
+      setCategories((c) => {
+        const next = c.filter((cat) => cat.id !== id);
+        // Sunucu bu silmede "Kategorisiz" kovasını yeni oluşturduysa listeye ekle
+        // (zaten varsa null döner, liste değişmez).
+        return createdBucket && !next.some((cat) => cat.id === createdBucket.id)
+          ? [...next, createdBucket]
+          : next;
+      });
       setDeleteConfirmId(null);
-      showMessage("Kategori silindi.");
+      const movedCount = Number(result.movedCount ?? 0);
+      if (movedCount > 0) {
+        showMessage(
+          result.uncategorizedHidden
+            ? `Kategori silindi. ${movedCount} ürün "Kategorisiz" kategorisine taşındı (bu kategori vitrinde gizli).`
+            : `Kategori silindi. ${movedCount} ürün "Kategorisiz" olarak yayınlanmaya devam ediyor.`,
+        );
+      } else {
+        showMessage("Kategori silindi.");
+      }
     });
   }
 

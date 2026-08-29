@@ -41,6 +41,7 @@ import {
 import {
   getEmptyStorefrontCategoryIds,
   getHiddenStorefrontCategoryIds,
+  isUncategorizedBucketCategory,
 } from "@/lib/categories/tree";
 import type { Category } from "@/lib/types";
 import { getNextOpening, isStoreOpenNow } from "@/lib/storefront/business-hours";
@@ -164,8 +165,13 @@ export default async function StorefrontPage(props: PageProps<"/store/[subdomain
     ? new Set(getEmptyStorefrontCategoryIds(rawCategories, categoryCounts))
     : new Set<string>();
 
+  // "Kategorisiz" kovası kategori menüsünde/kutucuklarda gösterilmez; ürünleri
+  // hiddenCategoryIds'e EKLENMEDİĞİ için "Tüm Ürünler" ve aramada yayında kalır.
   const categories = rawCategories.filter(
-    (category) => !hiddenCategoryIds.includes(category.id) && !emptyCategoryIds.has(category.id),
+    (category) =>
+      !hiddenCategoryIds.includes(category.id) &&
+      !emptyCategoryIds.has(category.id) &&
+      !isUncategorizedBucketCategory(category),
   );
 
   const pricingParams = {

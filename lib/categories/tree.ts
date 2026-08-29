@@ -143,6 +143,23 @@ export function filterHiddenCategoriesAndProducts<P extends { category_id: strin
  *
  * counts: kategori id -> o kategoriye DOGRUDAN bagli urun sayisi.
  */
+// "Kategorisiz" — kategorisi silinen ürünlerin düştüğü kök kova (bkz.
+// app/api/tenant/categories/route.ts DELETE). Vitrinde KATEGORİ OLARAK
+// (nav, kutucuklar) görünmez ama ürünleri "Tüm Ürünler"/arama/kampanya
+// sorgularında yayınlanmaya devam eder — yani is_hidden_from_storefront'tan
+// farklı: o bayrak ürünleri de tamamen gizler. is_hidden_from_storefront
+// olan bir "Kategorisiz" (Master Katalog import kovası) eski davranışını
+// korur; bu fonksiyon sadece nav listesini süzmek için kullanılır.
+export const UNCATEGORIZED_CATEGORY_NAME = "Kategorisiz";
+
+export function isUncategorizedBucketCategory(category: Pick<Category, "name" | "parent_id">) {
+  return (
+    category.parent_id === null &&
+    category.name.trim().toLocaleLowerCase("tr-TR") ===
+      UNCATEGORIZED_CATEGORY_NAME.toLocaleLowerCase("tr-TR")
+  );
+}
+
 export function getEmptyStorefrontCategoryIds(
   categories: Category[],
   counts: Map<string, number>,
