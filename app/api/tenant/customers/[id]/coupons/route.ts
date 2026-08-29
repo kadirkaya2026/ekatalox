@@ -15,6 +15,7 @@ const createSchema = z.object({
   expires_in_days: z.number().int().min(1).max(365).nullable().optional(),
   message: z.string().trim().max(200).optional().default(""),
   category_ids: z.array(z.string().uuid()).max(50).optional().default([]),
+  max_uses: z.number().int().min(1).max(100).optional().default(1),
 }).refine((v) => v.kind !== "percent" || v.value <= 100, { message: "Yüzde 100'ü aşamaz.", path: ["value"] });
 
 async function guard() {
@@ -36,7 +37,7 @@ export async function GET(_request: Request, ctx: { params: Promise<{ id: string
   if (!supabase) return NextResponse.json({ coupons: [] });
   const { data } = await supabase
     .from("customer_coupons")
-    .select("id, kind, value, min_order_amount, currency, title, message, expires_at, single_use, status, used_at, created_at, category_ids")
+    .select("id, kind, value, min_order_amount, currency, title, message, expires_at, single_use, status, used_at, created_at, category_ids, max_uses, used_count")
     .eq("tenant_id", g.tenant.id)
     .eq("customer_id", id)
     .order("created_at", { ascending: false })
@@ -103,11 +104,12 @@ export async function POST(request: Request, ctx: { params: Promise<{ id: string
       title,
       message: input.message || null,
       expires_at: expiresAt,
-      single_use: true,
+      single_use: input.max_uses === 1,
+      max_uses: input.max_uses,
       category_ids: categoryIds.length ? categoryIds : null,
       created_by: g.session.profile?.id ?? null,
     })
-    .select("id, kind, value, min_order_amount, currency, title, message, expires_at, single_use, status, used_at, created_at, category_ids")
+    .select("id, kind, value, min_order_amount, currency, title, message, expires_at, single_use, status, used_at, created_at, category_ids, max_uses, used_count")
     .single();
   if (error || !coupon) return NextResponse.json({ error: "Kupon kaydedilemedi." }, { status: 500 });
 
