@@ -117,12 +117,13 @@ export async function POST(request: Request, ctx: { params: Promise<{ id: string
   const tenant = g.tenant;
   after(async () => {
     const settings = await getTenantStorefrontSettings(tenant.id).catch(() => null);
-    const storeName = settings?.storefront_title?.trim() || tenant.company_name;
     const origin = tenant.custom_domain?.trim()
       ? `https://${tenant.custom_domain.trim()}`
       : `https://${tenant.subdomain}.${appEnv.rootDomain}`;
-    // Başlık: "Mağaza Adı - Size Özel ₺100 İndirim!"; gövde: bayinin mesajı
-    // (yoksa şartların kısa özeti). Kupon adı zaten kapsamı taşıyor.
+    // Başlık: "Size Özel ₺100 İndirim!" — mağaza adı BAŞLIKTA YOK: iOS her web
+    // bildiriminin altına "from {uygulama adı}" satırını kendisi ekliyor
+    // (kaldırılamıyor), Android ise site adını üstte gösteriyor; ikisinde de
+    // mağaza adı zaten görünür. Gövde: bayinin mesajı (yoksa şartların özeti).
     const conditions = [
       input.min_order_amount ? `${scope ? `${scope} kategorisinden ` : ""}${input.min_order_amount.toLocaleString("tr-TR")} ₺ ve üzeri` : scope ? `${scope} kategorisinde` : null,
       expiresAt ? `${input.expires_in_days} gün geçerli` : null,
@@ -130,7 +131,7 @@ export async function POST(request: Request, ctx: { params: Promise<{ id: string
     await sendCustomerPush({
       tenantId: tenant.id,
       customerId: customer.id,
-      title: `${storeName} - Size Özel ${benefit} İndirim!`,
+      title: `Size Özel ${benefit} İndirim!`,
       body: input.message || (conditions ? `${conditions} · sepette kendiliğinden uygulanır.` : "Bir sonraki siparişinizde sepette kendiliğinden uygulanır."),
       url: `${origin}/?kampanya=1`,
       iconUrl: settings?.logo_url || settings?.site_favicon_url || null,

@@ -35,7 +35,6 @@ export async function POST(request: Request, ctx: { params: Promise<{ id: string
   }
 
   const settings = await getTenantStorefrontSettings(tenant.id).catch(() => null);
-  const storeName = settings?.storefront_title?.trim() || tenant.company_name;
   const origin = tenant.custom_domain?.trim()
     ? `https://${tenant.custom_domain.trim()}`
     : `https://${tenant.subdomain}.${appEnv.rootDomain}`;
@@ -47,7 +46,7 @@ export async function POST(request: Request, ctx: { params: Promise<{ id: string
   const sent = await sendCustomerPush({
     tenantId: tenant.id,
     customerId: id,
-    title: `${storeName} - Size Özel ${benefit} İndirim!`,
+    title: `Size Özel ${benefit} İndirim!`,
     body: message || coupon.message || (conditions ? `${conditions} · sepette kendiliğinden uygulanır.` : "Sepette kendiliğinden uygulanır."),
     url: `${origin}/?kampanya=1`,
     iconUrl: settings?.logo_url || settings?.site_favicon_url || null,
