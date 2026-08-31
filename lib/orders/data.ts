@@ -7,6 +7,41 @@ import { ORDER_STATUSES } from "@/lib/orders/status";
 
 const ORDER_SELECT = "*";
 
+// Siparişin geldiği magnetin kodu + tanımlı müşterisi. Sipariş magnet
+// sahibinden FARKLI bir müşteriye aitse magnet_mismatch=true — bayi
+// "magnet yabancı elde olabilir" uyarısını görür, teyit edip magneti
+// pasife alabilir (bkz. kullanıcı kararı, 31 Ağu 2026).
+async function attachMagnetInfo(
+  supabase: NonNullable<ReturnType<typeof createSupabaseAdminClient>>,
+  tenantId: string,
+  orders: StorefrontOrder[],
+): Promise<StorefrontOrder[]> {
+  const magnetIds = [...new Set(orders.map((o) => o.magnet_code_id).filter(Boolean))] as string[];
+  if (!magnetIds.length) return orders;
+
+  const { data } = await supabase
+    .from("magnet_codes")
+    .select("id, code, customer_id, customers(full_name)")
+    .eq("tenant_id", tenantId)
+    .in("id", magnetIds);
+
+  const byId = new Map((data ?? []).map((row) => [row.id as string, row]));
+
+  return orders.map((order) => {
+    const magnet = order.magnet_code_id ? byId.get(order.magnet_code_id) : undefined;
+    if (!magnet) return order;
+    const owner = magnet.customers as unknown as { full_name: string } | null;
+    return {
+      ...order,
+      magnet_code: (magnet.code as string) ?? null,
+      magnet_owner_name: owner?.full_name ?? null,
+      magnet_mismatch: Boolean(
+        magnet.customer_id && order.customer_id && magnet.customer_id !== order.customer_id,
+      ),
+    };
+  });
+}
+
 function istanbulDayStart(iso: string) {
   return `${iso}T00:00:00+03:00`;
 }
@@ -64,7 +99,7 @@ export async function getTenantOrdersPage(
   counts.all = ORDER_STATUSES.reduce((t, s) => t + counts[s], 0);
 
   return {
-    orders: (listResult.data ?? []) as StorefrontOrder[],
+    orders: await attachMagnetInfo(supabase, tenantId, (listResult.data ?? []) as StorefrontOrder[]),
     total: listResult.count ?? 0,
     page,
     pageSize,
@@ -85,7 +120,8 @@ export async function getTenantOrderWithEvents(tenantId: string, orderId: string
       .order("created_at", { ascending: true }),
   ]);
   if (!order) return null;
-  return { order: order as StorefrontOrder, events: (events ?? []) as OrderStatusEvent[] };
+  const [enriched] = await attachMagnetInfo(supabase, tenantId, [order as StorefrontOrder]);
+  return { order: enriched, events: (events ?? []) as OrderStatusEvent[] };
 }
 
 /** Kenar çubuğu rozeti: bayinin henüz bakmadığı ("Yeni") siparişler. */

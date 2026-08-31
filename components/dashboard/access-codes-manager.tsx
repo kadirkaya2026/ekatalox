@@ -29,6 +29,11 @@ export function AccessCodesManager({
   const [priceListMessage, setPriceListMessage] = useState<string | null>(null);
   const [isPasswordProtected, setIsPasswordProtected] = useState(tenant.is_password_protected);
   const [passwordModeMessage, setPasswordModeMessage] = useState<string | null>(null);
+  // Magnetle şifresiz giriş: magnet QR'ı okutan şifre görmeden girer,
+  // düz linkle gelen şifre kapısına düşer (bkz. proxy.ts + magnet-enter).
+  const [magnetLoginEnabled, setMagnetLoginEnabled] = useState(tenant.magnet_login_enabled);
+  const [magnetLoginMessage, setMagnetLoginMessage] = useState<string | null>(null);
+  const [magnetLoginPending, startMagnetLoginTransition] = useTransition();
   const [showDisablePicker, setShowDisablePicker] = useState(false);
   const pricedPriceLists = initialPriceLists.filter((list) => !list.is_catalog_only);
   const [pendingPublicPriceListId, setPendingPublicPriceListId] = useState(
@@ -38,6 +43,34 @@ export function AccessCodesManager({
   const [priceListPending, startPriceListTransition] = useTransition();
   const [passwordModePending, startPasswordModeTransition] = useTransition();
   const router = useRouter();
+
+  function toggleMagnetLogin(nextValue: boolean) {
+    setMagnetLoginMessage(null);
+
+    startMagnetLoginTransition(async () => {
+      const response = await fetch("/api/tenant/access-codes", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        // Bu düğme yalnızca şifre koruması açıkken görünür; koruma durumu
+        // olduğu gibi geri gönderilir.
+        body: JSON.stringify({ is_password_protected: true, magnet_login_enabled: nextValue }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        setMagnetLoginMessage(result.error ?? "Ayar güncellenemedi.");
+        return;
+      }
+
+      setMagnetLoginEnabled(nextValue);
+      setMagnetLoginMessage(
+        nextValue
+          ? "Açıldı: magnet QR'ı okutan müşteri şifre görmeden girer, linkle gelen şifre girer."
+          : "Kapatıldı: magnetle gelenler de dahil herkes şifre girer.",
+      );
+    });
+  }
 
   function togglePasswordProtection(nextValue: boolean, publicPriceListId?: string) {
     setPasswordModeMessage(null);
@@ -268,6 +301,35 @@ export function AccessCodesManager({
           <div className="mt-4 rounded-xl border border-violet-200 bg-white px-4 py-3 text-sm text-violet-800">
             Şifre koruması şu anda kapalı — mağaza şifresiz açık. Aşağıdan tekrar
             açabilirsiniz.
+          </div>
+        ) : null}
+
+        {isPasswordProtected ? (
+          <div className="mt-4 rounded-xl border border-violet-200 bg-white px-4 py-4">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="text-sm font-semibold text-slate-900">Magnet QR ile şifresiz giriş</p>
+                <p className="mt-1 max-w-xl text-xs text-slate-600">
+                  Açıkken magnetteki QR&apos;ı okutan müşteri şifre görmeden girer (şifresiz
+                  ziyaretçi listesiyle); mağaza linkini elden ele alan herkes şifre girmek
+                  zorunda kalır. Adres çubuğundan kopyalanan link de şifre ekranına düşer —
+                  giriş yetkisi linkte değil, QR okutulan cihazdadır.
+                </p>
+              </div>
+              <label className="flex shrink-0 items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700">
+                <input
+                  type="checkbox"
+                  checked={magnetLoginEnabled}
+                  onChange={(event) => toggleMagnetLogin(event.target.checked)}
+                  disabled={magnetLoginPending}
+                  className="size-4 accent-violet-600"
+                />
+                Açık
+              </label>
+            </div>
+            {magnetLoginMessage ? (
+              <p className="mt-3 text-sm text-emerald-700">{magnetLoginMessage}</p>
+            ) : null}
           </div>
         ) : null}
       </Card>

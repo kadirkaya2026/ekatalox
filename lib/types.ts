@@ -98,6 +98,9 @@ export interface Tenant {
   // listesi hazırlama" diline döner (kullanıcı isteği, 20 Ağu 2026).
   is_tekel: boolean;
   is_password_protected: boolean;
+  // Magnetle şifresiz giriş: magnet QR'ı okutan şifre görmeden girer, düz
+  // linkle gelen şifre kapısına düşer (bkz. 0104, proxy.ts, magnet-enter).
+  magnet_login_enabled: boolean;
   public_price_list_id: string | null;
   age_verification_required: boolean;
   created_at: string;
@@ -174,6 +177,12 @@ export interface StorefrontOrder {
   cost_missing_count: number;
   tracking_token: string;
   magnet_code_id?: string | null;
+  // Bayi paneli için veri katmanında doldurulur (lib/orders/data.ts):
+  // siparişin geldiği magnetin kodu, magnetin tanımlı müşterisi ve siparişi
+  // verenin magnet sahibinden FARKLI kişi olup olmadığı (teyit uyarısı).
+  magnet_code?: string | null;
+  magnet_owner_name?: string | null;
+  magnet_mismatch?: boolean;
 }
 
 export interface OrderStatusEvent {

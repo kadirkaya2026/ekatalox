@@ -241,6 +241,27 @@ export async function proxy(request: NextRequest) {
       const cleanUrl = request.nextUrl.clone();
       cleanUrl.searchParams.delete(MAGNET_QUERY_PARAM);
 
+      // Magnetle şifresiz giriş açık tenant'ta kod DB'den doğrulanıp fiyat
+      // listesi çerezi de kurulmalı; DB işi proxy'de değil magnet-enter
+      // route'unda yapılır (çerezleri o kurar, temiz adrese o döndürür).
+      const magnetTenant = await cachedTenantLookup(
+        `subdomain:${hostResolution.subdomain}`,
+        () => getStorefrontTenant(hostResolution.subdomain as string),
+      );
+
+      if (magnetTenant?.is_password_protected && magnetTenant.magnet_login_enabled) {
+        const enterUrl = request.nextUrl.clone();
+        enterUrl.pathname = "/api/storefront/magnet-enter";
+        enterUrl.search = "";
+        enterUrl.searchParams.set("subdomain", hostResolution.subdomain);
+        enterUrl.searchParams.set("code", magnetCode);
+        enterUrl.searchParams.set("redirectTo", `${cleanUrl.pathname}${cleanUrl.search}`);
+
+        const enterResponse = NextResponse.redirect(enterUrl, 302);
+        enterResponse.headers.set("Cache-Control", "no-store, max-age=0");
+        return enterResponse;
+      }
+
       const magnetResponse = NextResponse.redirect(cleanUrl, 302);
       magnetResponse.cookies.set({
         name: getStorefrontMagnetCookieName(hostResolution.subdomain),
@@ -314,6 +335,33 @@ export async function proxy(request: NextRequest) {
     );
 
     if (!hasTierCookie) {
+      // Magnetle şifresiz giriş: daha önce magnet okutmuş cihazda (kalıcı
+      // magnet çerezi) fiyat listesi çerezi yoksa/süresi dolduysa şifre
+      // ekranı yerine magnet-enter'dan sessizce yeniden girilir. Kod orada
+      // DB'den doğrulanır; geçersizse çerez silinir ve bir sonraki istek
+      // normal şifre kapısına düşer (döngü yok).
+      if (tenant?.is_password_protected && tenant.magnet_login_enabled) {
+        const magnetCookie =
+          request.cookies.get(getStorefrontMagnetCookieName(hostResolution.subdomain))
+            ?.value ?? "";
+
+        if (/^[a-z0-9]{4,16}$/.test(magnetCookie)) {
+          const enterUrl = request.nextUrl.clone();
+          enterUrl.pathname = "/api/storefront/magnet-enter";
+          enterUrl.search = "";
+          enterUrl.searchParams.set("subdomain", hostResolution.subdomain);
+          enterUrl.searchParams.set("code", magnetCookie);
+          enterUrl.searchParams.set(
+            "redirectTo",
+            `${pathname}${request.nextUrl.search}`,
+          );
+
+          const enterResponse = NextResponse.redirect(enterUrl, 302);
+          enterResponse.headers.set("Cache-Control", "no-store, max-age=0");
+          return enterResponse;
+        }
+      }
+
       const gateUrl = request.nextUrl.clone();
       gateUrl.pathname = `/store/${hostResolution.subdomain}/gate`;
       gateUrl.search = "";

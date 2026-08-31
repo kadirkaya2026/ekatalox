@@ -26,6 +26,11 @@ export async function PATCH(request: Request) {
   const tenant = session.tenant!;
   const supabase = createSupabaseAdminClient();
 
+  // Magnetle şifresiz giriş anahtarı (bkz. 0104) — opsiyonel; yalnızca
+  // boolean gönderildiyse güncellenir.
+  const magnetLoginEnabled =
+    typeof body.magnet_login_enabled === "boolean" ? body.magnet_login_enabled : undefined;
+
   // Şifre koruması kapatılırken ziyaretçiye hangi fiyat listesinden
   // gösterileceği zorunlu — belirtilmezse ürünler otomatik en ucuz/rastgele
   // (ya da katalog-only, fiyatsız) listeye düşerdi.
@@ -72,6 +77,7 @@ export async function PATCH(request: Request) {
       tenant: {
         ...tenant,
         is_password_protected: body.is_password_protected,
+        ...(magnetLoginEnabled !== undefined ? { magnet_login_enabled: magnetLoginEnabled } : {}),
         ...(publicPriceListId !== undefined ? { public_price_list_id: publicPriceListId } : {}),
       },
     });
@@ -81,6 +87,7 @@ export async function PATCH(request: Request) {
     .from("tenants")
     .update({
       is_password_protected: body.is_password_protected,
+      ...(magnetLoginEnabled !== undefined ? { magnet_login_enabled: magnetLoginEnabled } : {}),
       ...(publicPriceListId !== undefined ? { public_price_list_id: publicPriceListId } : {}),
     })
     .eq("id", tenant.id)

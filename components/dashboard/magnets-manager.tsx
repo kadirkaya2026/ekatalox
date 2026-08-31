@@ -191,6 +191,14 @@ export function MagnetsManager({
                 </div>
 
                 <div className="ml-auto flex items-center gap-2">
+                  {row.customer && row.order_customers.length ? (
+                    <span
+                      className="rounded-full bg-red-100 px-2.5 py-1 text-[11px] font-semibold text-red-700"
+                      title="Bu magnetten, tanımlı müşteriden farklı kişiler de sipariş verdi — teyit edin"
+                    >
+                      ⚠ farklı kişi siparişi
+                    </span>
+                  ) : null}
                   {row.order_customers.length ? (
                     <Select
                       value=""

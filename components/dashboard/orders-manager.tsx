@@ -243,6 +243,24 @@ export function OrdersManager({
                 <span className="font-semibold">Müşteri notu: </span>{order.note}
               </p>
             ) : null}
+            {order.magnet_code ? (
+              <p
+                className={`mt-2 rounded-lg px-3 py-2 ${
+                  order.magnet_mismatch ? "bg-red-50 text-red-800" : "bg-slate-100 text-slate-600"
+                }`}
+              >
+                <span className="font-semibold">Magnet: </span>
+                {order.magnet_code.toUpperCase()}
+                {order.magnet_mismatch ? (
+                  <>
+                    {" — "}⚠ magnetin tanımlı sahibi
+                    {order.magnet_owner_name ? ` ${order.magnet_owner_name}` : ""}, siparişi veren
+                    farklı bir kişi. Teyit edin; gerekirse Magnetler sayfasından bu magneti pasife
+                    alabilirsiniz.
+                  </>
+                ) : null}
+              </p>
+            ) : null}
           </div>
 
           {/* Ürünler */}
@@ -423,6 +441,14 @@ export function OrdersManager({
                   <span className="text-right text-sm font-semibold tabular-nums text-slate-900 md:hidden">{formatOrderTotal(order)}</span>
                   <button type="button" onClick={() => void openOrder(order)} className="col-span-2 min-w-0 truncate text-left text-sm text-slate-700 hover:underline md:col-span-1">
                     {order.customer_name} <span className="text-slate-400">· {order.customer_phone}</span>
+                    {order.magnet_mismatch ? (
+                      <span
+                        className="ml-1.5 rounded-full bg-red-100 px-2 py-0.5 text-[11px] font-semibold text-red-700"
+                        title="Sipariş, magnetin tanımlı sahibinden farklı bir kişiden geldi — teyit edin"
+                      >
+                        ⚠ magnet farklı kişi
+                      </span>
+                    ) : null}
                   </button>
                   <span className="hidden text-sm text-slate-500 md:block">{formatDate(order.created_at)}</span>
                   <span className="hidden text-right text-sm font-semibold tabular-nums text-slate-900 md:block">{formatOrderTotal(order)}</span>
