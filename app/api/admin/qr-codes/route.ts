@@ -31,11 +31,14 @@ export async function GET(request: Request) {
   const durum = url.searchParams.get("status");        // free | assigned | disabled
   const arama = (url.searchParams.get("q") ?? "").trim().toLowerCase();
   const tenantId = url.searchParams.get("tenant");
+  // Baskı paketi süzgeci (A01..J10) — panel "paketin kodlarını göster" der.
+  const paketParam = (url.searchParams.get("paket") ?? "").trim().toUpperCase();
+  const paket = /^[A-J]\d{2}$/.test(paketParam) ? paketParam : null;
 
   let query = supabase
     .from("magnet_codes")
     .select(
-      "id, code, tenant_id, label, assigned_at, created_at, city, district, neighborhood, placed_at, is_disabled, scan_count, last_scan_at, customer_id, claimed_at" + ", tenants(subdomain, company_name)",
+      "id, code, tenant_id, label, package_code, assigned_at, created_at, city, district, neighborhood, placed_at, is_disabled, scan_count, last_scan_at, customer_id, claimed_at" + ", tenants(subdomain, company_name)",
       { count: "exact" },
     )
     .order("created_at", { ascending: false });
@@ -45,6 +48,7 @@ export async function GET(request: Request) {
   else if (durum === "disabled") query = query.eq("is_disabled", true);
 
   if (tenantId) query = query.eq("tenant_id", tenantId);
+  if (paket) query = query.eq("package_code", paket);
   if (arama) query = query.ilike("code", `%${arama}%`);
 
   const from = (page - 1) * PAGE_SIZE;

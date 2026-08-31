@@ -2,6 +2,7 @@ import { Header } from "@/components/dashboard/header";
 import {
   QrCodeManager,
   type MagnetCodeRow,
+  type PackageSummary,
   type TenantOption,
 } from "@/components/admin/qr-code-manager";
 import { requireSuperAdminPage } from "@/lib/auth/session";
@@ -19,7 +20,7 @@ export const dynamic = "force-dynamic";
 export default async function Page({
   searchParams,
 }: {
-  searchParams: Promise<{ page?: string; durum?: string }>;
+  searchParams: Promise<{ page?: string; durum?: string; paket?: string }>;
 }) {
   await requireSuperAdminPage();
 
@@ -27,7 +28,11 @@ export default async function Page({
 
   // Sayfalama: 10.000 kodla calisacak. Eskiden .limit(1000) vardi.
   const PAGE_SIZE = 100;
-  const { page: sayfaParam, durum: durumParam } = await searchParams;
+  const { page: sayfaParam, durum: durumParam, paket: paketParam } = await searchParams;
+  // Baskı paketi süzgeci (A01..J10) — bir paket tam 100 kod olduğu için
+  // seçili paket tek sayfada eksiksiz listelenir.
+  const paketTemiz = (paketParam ?? "").trim().toUpperCase();
+  const paket = /^[A-J]\d{2}$/.test(paketTemiz) ? paketTemiz : null;
   const page = Math.max(1, Number.parseInt(sayfaParam ?? "1", 10) || 1);
   const from = (page - 1) * PAGE_SIZE;
   // Durum suzgeci de sunucuda. Sayfa basina 100 satir cekildigi icin istemci
@@ -43,7 +48,7 @@ export default async function Page({
     let query = supabase
       .from("magnet_codes")
       .select(
-        "id, code, tenant_id, label, assigned_at, created_at, city, district, neighborhood, placed_at, is_disabled, scan_count, last_scan_at, customer_id, claimed_at",
+        "id, code, tenant_id, label, package_code, assigned_at, created_at, city, district, neighborhood, placed_at, is_disabled, scan_count, last_scan_at, customer_id, claimed_at",
         { count: "exact" },
       )
       .order("created_at", { ascending: false })
@@ -51,11 +56,12 @@ export default async function Page({
     if (durum === "free") query = query.is("tenant_id", null);
     else if (durum === "assigned") query = query.not("tenant_id", "is", null);
     else if (durum === "disabled") query = query.eq("is_disabled", true);
+    if (paket) query = query.eq("package_code", paket);
     return await query;
   }
 
   // Rozetlerdeki sayilar tum tabloyu anlatmali; head:true satir tasimaz.
-  const [{ data: codeRows, count }, toplamSonuc, bostaSonuc] = await Promise.all([
+  const [{ data: codeRows, count }, toplamSonuc, bostaSonuc, paketSonuc] = await Promise.all([
     fetchCodes(),
     supabase
       ? supabase.from("magnet_codes").select("id", { count: "exact", head: true })
@@ -66,10 +72,15 @@ export default async function Page({
           .select("id", { count: "exact", head: true })
           .is("tenant_id", null)
       : Promise.resolve({ count: 0 }),
+    // Baskı paketi özetleri (A01..J10): kaçı boşta, kaçı atanmış.
+    supabase
+      ? supabase.rpc("magnet_package_summary")
+      : Promise.resolve({ data: [] as PackageSummary[] }),
   ]);
 
   const toplamKod = toplamSonuc.count ?? 0;
   const bostaKod = bostaSonuc.count ?? 0;
+  const packages: PackageSummary[] = (paketSonuc.data as PackageSummary[] | null) ?? [];
 
   // Okutma sayisi artik magnet_codes.scan_count sutununda (0087 trigger'i).
   // Eskiden TUM magnet_scans satirlari belege cekilip JS'te sayiliyordu ve
@@ -79,6 +90,7 @@ export default async function Page({
     code: row.code,
     tenant_id: row.tenant_id,
     label: row.label,
+    package_code: row.package_code ?? null,
     assigned_at: row.assigned_at,
     created_at: row.created_at,
     scan_count: row.scan_count ?? 0,
@@ -118,6 +130,8 @@ export default async function Page({
         page={page}
         pageSize={PAGE_SIZE}
         durum={durum}
+        paket={paket}
+        packages={packages}
         toplamKod={toplamKod}
         bostaKod={bostaKod}
       />

@@ -36,6 +36,8 @@ export interface MagnetCodeRow {
   code: string;
   tenant_id: string | null;
   label: string | null;
+  /** Baskı paketi (A01..J10) — 100'lük fiziksel kutu, bkz. 0100/0101 migration. */
+  package_code: string | null;
   assigned_at: string | null;
   created_at: string;
   scan_count: number;
@@ -48,6 +50,14 @@ export interface MagnetCodeRow {
   last_scan_at: string | null;
   customer_id: string | null;
   claimed_at: string | null;
+}
+
+export interface PackageSummary {
+  package_code: string;
+  total: number;
+  free: number;
+  assigned: number;
+  disabled: number;
 }
 
 export interface TenantOption {
@@ -64,6 +74,8 @@ export function QrCodeManager({
   page,
   pageSize,
   durum,
+  paket,
+  packages,
   toplamKod,
   bostaKod,
 }: {
@@ -74,6 +86,8 @@ export function QrCodeManager({
   page: number;
   pageSize: number;
   durum: "all" | "free" | "assigned" | "disabled";
+  paket: string | null;
+  packages: PackageSummary[];
   toplamKod: number;
   bostaKod: number;
 }) {
@@ -95,6 +109,12 @@ export function QrCodeManager({
   const [rangeLabel, setRangeLabel] = useState("");
   const [rangePending, setRangePending] = useState(false);
   const [rangeResult, setRangeResult] = useState<string | null>(null);
+  // Baskı paketi ataması: A01 gibi 100'lük kutunun tamamı tek tıkla bayiye.
+  const [selectedPack, setSelectedPack] = useState<string | null>(null);
+  const [packTenant, setPackTenant] = useState("");
+  const [packPending, setPackPending] = useState(false);
+  const [packResult, setPackResult] = useState<string | null>(null);
+
   // Kod arama: elde magnet, "kimin bu?" sorusu.
   const [searchInput, setSearchInput] = useState("");
   const [searchPending, setSearchPending] = useState(false);
@@ -240,7 +260,9 @@ export function QrCodeManager({
 
   async function refresh() {
     // Bulundugumuz sayfayi ve suzgeci tazele — liste artik sunucu tarafli.
-    const response = await fetch(`/api/admin/qr-codes?page=${page}&status=${durum}`);
+    const response = await fetch(
+      `/api/admin/qr-codes?page=${page}&status=${durum}${paket ? `&paket=${paket}` : ""}`,
+    );
     const result = await response.json().catch(() => ({}));
     if (response.ok) setCodes(result.codes ?? []);
   }
@@ -264,6 +286,35 @@ export function QrCodeManager({
     setMessage(`${result.created.length} kod üretildi.`);
     setLabel("");
     await refresh();
+  }
+
+  async function assignPackage(packageCode: string) {
+    if (!packTenant) return;
+    setPackPending(true);
+    setPackResult(null);
+
+    const response = await fetch("/api/admin/qr-codes/assign-package", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ tenant_id: packTenant, package_code: packageCode }),
+    });
+    const result = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      setPackResult(result.error ?? "Atama yapılamadı.");
+    } else {
+      const bayi = tenants.find((t) => t.id === packTenant);
+      const bayiAd = bayi ? bayi.company_name || bayi.subdomain : "bayi";
+      // Paketten daha önce tek tek atanmış kod varsa 100'den az döner.
+      setPackResult(
+        `${packageCode} paketinden ${result.assigned} kod ${bayiAd} bayisine atandı.` +
+          (result.assigned < 100 ? " (Kalanı daha önce başka bayiye atanmıştı.)" : ""),
+      );
+      await refresh();
+      // Sunucudan gelen paket özetleri (boşta sayıları) tazelensin.
+      router.refresh();
+    }
+    setPackPending(false);
   }
 
   async function assignRange() {
@@ -569,6 +620,98 @@ export function QrCodeManager({
         ) : null}
       </Card>
 
+      {packages.length ? (
+        <Card className="p-5">
+          <p className="text-sm font-semibold text-foreground">
+            Baskı paketleri <span className="font-normal text-muted-foreground">(100&apos;lük kutular)</span>
+          </p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Matbaa magnetleri 100&apos;erli paketliyor (4 tabaka × 25). Pakete tıklayın: içindeki
+            magnetleri görün, kutunun tamamını tek tıkla bir markete tanımlayın. Harf tabaka
+            PDF&apos;ini, sayı dosyadaki 4 sayfalık grubu söyler (A01 = tabaka-01.pdf, sayfa 1-4).
+          </p>
+
+          <div className="mt-4 grid grid-cols-5 gap-1.5 sm:grid-cols-10">
+            {packages.map((pack) => {
+              const secili = selectedPack === pack.package_code;
+              const renk =
+                pack.free === 0
+                  ? "border-slate-200 bg-slate-100 text-slate-400"
+                  : pack.free < pack.total
+                    ? "border-amber-300 bg-amber-50 text-amber-800"
+                    : "border-emerald-200 bg-emerald-50 text-emerald-800";
+              return (
+                <button
+                  key={pack.package_code}
+                  type="button"
+                  onClick={() => {
+                    setSelectedPack(secili ? null : pack.package_code);
+                    setPackResult(null);
+                  }}
+                  className={`rounded-lg border px-1 py-1.5 text-center font-mono text-xs font-bold ${renk} ${
+                    secili ? "ring-2 ring-foreground" : ""
+                  }`}
+                  title={`${pack.package_code}: ${pack.free} boşta / ${pack.total} kod`}
+                >
+                  {pack.package_code}
+                  <span className="block text-[10px] font-medium">
+                    {pack.free === 0 ? "dolu" : `${pack.free} boşta`}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+
+          {selectedPack ? (
+            (() => {
+              const pack = packages.find((x) => x.package_code === selectedPack);
+              if (!pack) return null;
+              return (
+                <div className="mt-4 space-y-3 rounded-xl border bg-slate-50/70 p-4">
+                  <p className="text-sm">
+                    <span className="font-mono font-bold">{pack.package_code}</span> — {pack.total}{" "}
+                    magnet: {pack.free} boşta, {pack.assigned} atanmış
+                    {pack.disabled ? `, ${pack.disabled} pasif` : ""}.{" "}
+                    <button
+                      type="button"
+                      onClick={() => router.push(`?paket=${pack.package_code}`)}
+                      className="font-semibold underline"
+                    >
+                      Magnetleri listede göster
+                    </button>
+                  </p>
+                  <div className="flex flex-wrap items-end gap-3">
+                    <div className="min-w-52 flex-1">
+                      <label className="mb-1.5 block text-sm font-medium text-foreground">
+                        Bu paketi markete tanımla
+                      </label>
+                      <Select value={packTenant} onChange={(event) => setPackTenant(event.target.value)}>
+                        <option value="">— market seçin —</option>
+                        {tenants.map((tenant) => (
+                          <option key={tenant.id} value={tenant.id}>
+                            {tenant.company_name || tenant.subdomain} ({tenant.subdomain})
+                          </option>
+                        ))}
+                      </Select>
+                    </div>
+                    <Button
+                      onClick={() => void assignPackage(pack.package_code)}
+                      disabled={packPending || !packTenant || pack.free === 0}
+                    >
+                      {packPending ? <Loader2 className="size-4 animate-spin" /> : <Check className="size-4" />}
+                      {pack.free === 0 ? "Paket dolu" : `${pack.free} kodu ata`}
+                    </Button>
+                  </div>
+                  {packResult ? (
+                    <p className="text-sm font-medium text-emerald-700">{packResult}</p>
+                  ) : null}
+                </div>
+              );
+            })()
+          ) : null}
+        </Card>
+      ) : null}
+
       <Card className="p-5">
         <p className="text-sm font-semibold text-foreground">Kod sorgula</p>
         <p className="mt-1 text-sm text-muted-foreground">
@@ -721,6 +864,16 @@ export function QrCodeManager({
             Mahalle: {hoodFilter}
           </span>
         ) : null}
+        {paket ? (
+          <button
+            type="button"
+            onClick={() => router.push(`?durum=${durum}`)}
+            className="rounded-full bg-violet-100 px-3 py-1.5 text-sm font-semibold text-violet-800"
+            title="Paket süzgecini kaldır"
+          >
+            Paket: {paket} ✕
+          </button>
+        ) : null}
       </div>
 
       <Card className="overflow-hidden p-0">
@@ -825,6 +978,11 @@ export function QrCodeManager({
                   </button>
                 )}
 
+                {row.package_code ? (
+                  <span className="rounded-full bg-violet-100 px-2.5 py-1 font-mono text-[11px] font-semibold text-violet-800">
+                    {row.package_code}
+                  </span>
+                ) : null}
                 {row.label ? (
                   <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] text-slate-600">
                     {row.label}
