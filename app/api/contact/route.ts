@@ -1,6 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
 import nodemailer from 'nodemailer'
 
+// Hizmet alanı: satış ekibi maili açar açmaz hangi senaryoyu anlatacağını
+// bilsin (Market/Tekel → Kapına Gelsin; Toptancı → fiyat listeleri/bayi).
+const sectorLabels: Record<string, string> = {
+  market: 'Market / Tekel',
+  hirdavat: 'Hırdavat / Yapı Market',
+  toptanci: 'Toptancı / Distribütör',
+  gida: 'Gıda / Şarküteri',
+  diger: 'Diğer',
+}
+
 const subjectLabels: Record<string, string> = {
   demo: 'Demo Talep Etmek İstiyorum',
   satis: 'Satış / Fiyat Teklifi',
@@ -12,7 +22,7 @@ const subjectLabels: Record<string, string> = {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
-    const { name, company, email, phone, subject, message } = body
+    const { name, company, email, phone, subject, sector, message } = body
 
     if (!name?.trim() || !email?.trim() || !message?.trim()) {
       return NextResponse.json({ error: 'Eksik alanlar' }, { status: 400 })
@@ -32,7 +42,7 @@ export async function POST(req: NextRequest) {
       from: `"Ekatalox İletişim Formu" <${process.env.SMTP_USER}>`,
       to: process.env.CONTACT_RECIPIENT ?? process.env.SMTP_USER,
       replyTo: `"${name}" <${email}>`,
-      subject: `[İletişim] ${subjectLabels[subject] ?? subject} — ${name}`,
+      subject: `[İletişim] ${subjectLabels[subject] ?? subject} — ${name}${sector ? ` (${sectorLabels[sector] ?? sector})` : ''}`,
       html: `
         <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:24px;background:#f9f9f9;border-radius:8px;">
           <h2 style="color:#1a1a2e;margin-bottom:20px;">Yeni İletişim Formu Mesajı</h2>
@@ -42,6 +52,7 @@ export async function POST(req: NextRequest) {
             <tr><td style="padding:8px 0;color:#555;font-weight:bold;">E-posta</td><td style="padding:8px 0;color:#222;">${email}</td></tr>
             ${phone ? `<tr><td style="padding:8px 0;color:#555;font-weight:bold;">Telefon</td><td style="padding:8px 0;color:#222;">${phone}</td></tr>` : ''}
             <tr><td style="padding:8px 0;color:#555;font-weight:bold;">Konu</td><td style="padding:8px 0;color:#222;">${subjectLabels[subject] ?? subject}</td></tr>
+            ${sector ? `<tr><td style="padding:8px 0;color:#555;font-weight:bold;">Hizmet Alanı</td><td style="padding:8px 0;"><span style="display:inline-block;background:#ecfdf5;color:#047857;border:1px solid #a7f3d0;border-radius:999px;padding:3px 12px;font-weight:bold;">${sectorLabels[sector] ?? sector}</span></td></tr>` : ''}
           </table>
           <hr style="margin:20px 0;border:none;border-top:1px solid #ddd;" />
           <p style="color:#555;font-weight:bold;margin-bottom:8px;">Mesaj:</p>

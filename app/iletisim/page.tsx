@@ -12,7 +12,7 @@ const departments = [
 ]
 
 const Page = () => {
-  const [form, setForm] = useState({ name: '', company: '', email: '', phone: '', subject: 'demo', message: '' })
+  const [form, setForm] = useState({ name: '', company: '', email: '', phone: '', subject: 'demo', sector: '', message: '' })
   const [sent, setSent] = useState(false)
   const [sending, setSending] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
@@ -25,6 +25,7 @@ const Page = () => {
     e.preventDefault()
     const errs: Record<string, string> = {}
     if (!form.name.trim()) errs.name = 'Adınızı girin'
+    if (!form.sector) errs.sector = 'Hizmet alanınızı seçin'
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) errs.email = 'Geçerli e-posta girin'
     if (form.message.trim().length < 10) errs.message = 'En az 10 karakter yazın'
     setErrors(errs)
@@ -98,6 +99,21 @@ const Page = () => {
                   <div className="grid sm:grid-cols-2 gap-4">
                     <FormField id="contact-email" label="E-posta" type="email" placeholder="isim@firmaniz.com" value={form.email} onChange={set('email')} error={errors.email} />
                     <FormField id="contact-phone" label="Telefon" placeholder="+90 …" value={form.phone} onChange={set('phone')} />
+                  </div>
+                  <div>
+                    <label htmlFor="contact-sector" className="text-xs text-slate-400 mb-1.5 block uppercase tracking-wider">Hizmet Alanınız</label>
+                    <select id="contact-sector" value={form.sector} onChange={set('sector')}
+                      className={`w-full px-4 py-3 rounded-xl bg-black/30 border text-sm outline-none transition-colors ${
+                        form.sector ? 'text-white' : 'text-slate-500'
+                      } ${errors.sector ? 'border-red-500/60' : 'border-white/10 focus:border-[var(--marketing-primary)]/60'}`}>
+                      <option value="">— Seçin: hangi alanda hizmet veriyorsunuz? —</option>
+                      <option value="market">Market / Tekel</option>
+                      <option value="hirdavat">Hırdavat / Yapı Market</option>
+                      <option value="toptanci">Toptancı / Distribütör</option>
+                      <option value="gida">Gıda / Şarküteri</option>
+                      <option value="diger">Diğer</option>
+                    </select>
+                    {errors.sector && <div className="mt-1 text-[11px] text-red-400">{errors.sector}</div>}
                   </div>
                   <div>
                     <label htmlFor="contact-subject" className="text-xs text-slate-400 mb-1.5 block uppercase tracking-wider">Konu</label>

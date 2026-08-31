@@ -125,6 +125,7 @@ import { StorefrontCampaignsSheet } from "@/components/storefront/storefront-cam
 import { StorefrontSearchSheet } from "@/components/storefront/storefront-search-sheet";
 import { isMarketOrTekelTenant } from "@/lib/storefront/white-label";
 import { readTrackingPhone, saveTrackingPhone } from "@/lib/storefront/tracking-phone";
+import { validateCustomerPhoneInput } from "@/lib/storefront/customer-phone";
 import { StorefrontCouponBanner } from "@/components/storefront/storefront-coupon-banner";
 import type { StorefrontCoupon } from "@/lib/types";
 import { StorefrontHeader } from "@/components/storefront/storefront-header";
@@ -1809,6 +1810,10 @@ export function StorefrontClient({
 
       if (!customerPhone.trim()) {
         setCustomerPhoneError(t("cart.customerPhoneRequiredError"));
+        hasValidationError = true;
+      } else if (!validateCustomerPhoneInput(customerPhone)) {
+        // TR numarası 05xx biçimine oturmalı; yabancı numara + ülke koduyla.
+        setCustomerPhoneError(t("cart.customerPhoneFormatError"));
         hasValidationError = true;
       }
 
