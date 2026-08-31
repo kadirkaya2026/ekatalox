@@ -38,6 +38,8 @@ export interface MagnetCodeRow {
   label: string | null;
   /** Baskı paketi (A01..J10) — 100'lük fiziksel kutu, bkz. 0100/0101 migration. */
   package_code: string | null;
+  /** Paket içi fiziksel sıra (1..100): destede üstten kaçıncı magnet. */
+  package_position: number | null;
   assigned_at: string | null;
   created_at: string;
   scan_count: number;
@@ -979,8 +981,12 @@ export function QrCodeManager({
                 )}
 
                 {row.package_code ? (
-                  <span className="rounded-full bg-violet-100 px-2.5 py-1 font-mono text-[11px] font-semibold text-violet-800">
+                  <span
+                    className="rounded-full bg-violet-100 px-2.5 py-1 font-mono text-[11px] font-semibold text-violet-800"
+                    title="Baskı paketi · destedeki sıra"
+                  >
                     {row.package_code}
+                    {row.package_position ? ` · ${row.package_position}` : ""}
                   </span>
                 ) : null}
                 {row.label ? (

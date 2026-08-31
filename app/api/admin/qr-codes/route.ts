@@ -38,10 +38,11 @@ export async function GET(request: Request) {
   let query = supabase
     .from("magnet_codes")
     .select(
-      "id, code, tenant_id, label, package_code, assigned_at, created_at, city, district, neighborhood, placed_at, is_disabled, scan_count, last_scan_at, customer_id, claimed_at" + ", tenants(subdomain, company_name)",
+      "id, code, tenant_id, label, package_code, package_position, assigned_at, created_at, city, district, neighborhood, placed_at, is_disabled, scan_count, last_scan_at, customer_id, claimed_at" + ", tenants(subdomain, company_name)",
       { count: "exact" },
     )
-    .order("created_at", { ascending: false });
+    // Paket süzgecinde fiziksel baskı sırası, genel listede en yeni üstte.
+    .order(paket ? "package_position" : "created_at", { ascending: Boolean(paket) });
 
   if (durum === "free") query = query.is("tenant_id", null);
   else if (durum === "assigned") query = query.not("tenant_id", "is", null);

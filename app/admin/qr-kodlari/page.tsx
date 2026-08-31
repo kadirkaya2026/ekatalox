@@ -48,10 +48,12 @@ export default async function Page({
     let query = supabase
       .from("magnet_codes")
       .select(
-        "id, code, tenant_id, label, package_code, assigned_at, created_at, city, district, neighborhood, placed_at, is_disabled, scan_count, last_scan_at, customer_id, claimed_at",
+        "id, code, tenant_id, label, package_code, package_position, assigned_at, created_at, city, district, neighborhood, placed_at, is_disabled, scan_count, last_scan_at, customer_id, claimed_at",
         { count: "exact" },
       )
-      .order("created_at", { ascending: false })
+      // Paket görünümünde sıra = matbaadan çıkan destedeki FİZİKSEL sıra
+      // (package_position, tabaka PDF'inden çıkarıldı); genel listede en yeni üstte.
+      .order(paket ? "package_position" : "created_at", { ascending: Boolean(paket) })
       .range(from, from + PAGE_SIZE - 1);
     if (durum === "free") query = query.is("tenant_id", null);
     else if (durum === "assigned") query = query.not("tenant_id", "is", null);
@@ -91,6 +93,7 @@ export default async function Page({
     tenant_id: row.tenant_id,
     label: row.label,
     package_code: row.package_code ?? null,
+    package_position: row.package_position ?? null,
     assigned_at: row.assigned_at,
     created_at: row.created_at,
     scan_count: row.scan_count ?? 0,
