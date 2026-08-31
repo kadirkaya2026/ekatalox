@@ -34,6 +34,8 @@ export function AccessCodesManager({
   const [magnetLoginEnabled, setMagnetLoginEnabled] = useState(tenant.magnet_login_enabled);
   const [magnetLoginMessage, setMagnetLoginMessage] = useState<string | null>(null);
   const [magnetLoginPending, startMagnetLoginTransition] = useTransition();
+  // "" = şifresiz ziyaretçi listesiyle aynı (varsayılan).
+  const [magnetPriceListId, setMagnetPriceListId] = useState(tenant.magnet_price_list_id ?? "");
   const [showDisablePicker, setShowDisablePicker] = useState(false);
   const pricedPriceLists = initialPriceLists.filter((list) => !list.is_catalog_only);
   const [pendingPublicPriceListId, setPendingPublicPriceListId] = useState(
@@ -68,6 +70,35 @@ export function AccessCodesManager({
         nextValue
           ? "Açıldı: magnet QR'ı okutan müşteri şifre görmeden girer, linkle gelen şifre girer."
           : "Kapatıldı: magnetle gelenler de dahil herkes şifre girer.",
+      );
+    });
+  }
+
+  function changeMagnetPriceList(nextValue: string) {
+    setMagnetLoginMessage(null);
+
+    startMagnetLoginTransition(async () => {
+      const response = await fetch("/api/tenant/access-codes", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          is_password_protected: true,
+          magnet_price_list_id: nextValue || null,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        setMagnetLoginMessage(result.error ?? "Ayar güncellenemedi.");
+        return;
+      }
+
+      setMagnetPriceListId(nextValue);
+      setMagnetLoginMessage(
+        nextValue
+          ? "Magnetle girenler artık seçtiğiniz fiyat listesini görecek."
+          : "Magnetle girenler şifresiz ziyaretçi listesiyle aynı listeyi görecek.",
       );
     });
   }
@@ -327,6 +358,30 @@ export function AccessCodesManager({
                 Açık
               </label>
             </div>
+            {magnetLoginEnabled ? (
+              <div className="mt-3 border-t border-slate-100 pt-3">
+                <label className="mb-1.5 block text-sm font-medium text-slate-900">
+                  Magnetle girenler hangi fiyat listesini görsün?
+                </label>
+                <Select
+                  value={magnetPriceListId}
+                  onChange={(event) => changeMagnetPriceList(event.target.value)}
+                  disabled={magnetLoginPending}
+                  className="max-w-md"
+                >
+                  <option value="">— Şifresiz ziyaretçi listesiyle aynı (varsayılan) —</option>
+                  {pricedPriceLists.map((list) => (
+                    <option key={list.id} value={list.id}>
+                      {getPriceListDisplayName(list)}
+                    </option>
+                  ))}
+                </Select>
+                <p className="mt-1.5 text-xs text-slate-500">
+                  Değişiklik yeni girişlerde geçerli olur; daha önce girmiş cihazlar mevcut
+                  oturum çerezleri süresince eski listeyi görmeye devam edebilir.
+                </p>
+              </div>
+            ) : null}
             {magnetLoginMessage ? (
               <p className="mt-3 text-sm text-emerald-700">{magnetLoginMessage}</p>
             ) : null}

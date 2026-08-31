@@ -31,6 +31,39 @@ export async function PATCH(request: Request) {
   const magnetLoginEnabled =
     typeof body.magnet_login_enabled === "boolean" ? body.magnet_login_enabled : undefined;
 
+  // Magnetle girenlerin fiyat listesi (opsiyonel): null/"" = genel listeyle
+  // aynı; dolu id gönderildiyse bu tenant'a ait FİYATLI bir liste olmalı.
+  let magnetPriceListId: string | null | undefined;
+
+  if ("magnet_price_list_id" in body) {
+    if (body.magnet_price_list_id === null || body.magnet_price_list_id === "") {
+      magnetPriceListId = null;
+    } else if (typeof body.magnet_price_list_id === "string") {
+      if (supabase) {
+        const { data: magnetList } = await supabase
+          .from("price_lists")
+          .select("id, is_catalog_only")
+          .eq("id", body.magnet_price_list_id)
+          .eq("tenant_id", tenant.id)
+          .maybeSingle();
+
+        if (!magnetList || magnetList.is_catalog_only) {
+          return NextResponse.json(
+            { error: "Geçersiz magnet fiyat listesi seçimi." },
+            { status: 400 },
+          );
+        }
+      }
+
+      magnetPriceListId = body.magnet_price_list_id;
+    } else {
+      return NextResponse.json(
+        { error: "magnet_price_list_id geçersiz." },
+        { status: 400 },
+      );
+    }
+  }
+
   // Şifre koruması kapatılırken ziyaretçiye hangi fiyat listesinden
   // gösterileceği zorunlu — belirtilmezse ürünler otomatik en ucuz/rastgele
   // (ya da katalog-only, fiyatsız) listeye düşerdi.
@@ -78,6 +111,7 @@ export async function PATCH(request: Request) {
         ...tenant,
         is_password_protected: body.is_password_protected,
         ...(magnetLoginEnabled !== undefined ? { magnet_login_enabled: magnetLoginEnabled } : {}),
+        ...(magnetPriceListId !== undefined ? { magnet_price_list_id: magnetPriceListId } : {}),
         ...(publicPriceListId !== undefined ? { public_price_list_id: publicPriceListId } : {}),
       },
     });
@@ -88,6 +122,7 @@ export async function PATCH(request: Request) {
     .update({
       is_password_protected: body.is_password_protected,
       ...(magnetLoginEnabled !== undefined ? { magnet_login_enabled: magnetLoginEnabled } : {}),
+      ...(magnetPriceListId !== undefined ? { magnet_price_list_id: magnetPriceListId } : {}),
       ...(publicPriceListId !== undefined ? { public_price_list_id: publicPriceListId } : {}),
     })
     .eq("id", tenant.id)

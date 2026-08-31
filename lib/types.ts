@@ -101,6 +101,9 @@ export interface Tenant {
   // Magnetle şifresiz giriş: magnet QR'ı okutan şifre görmeden girer, düz
   // linkle gelen şifre kapısına düşer (bkz. 0104, proxy.ts, magnet-enter).
   magnet_login_enabled: boolean;
+  // Magnetle girenlerin göreceği fiyat listesi; NULL = şifresiz ziyaretçi
+  // listesiyle aynı (public_price_list_id → ilk fiyatlı liste).
+  magnet_price_list_id: string | null;
   public_price_list_id: string | null;
   age_verification_required: boolean;
   created_at: string;

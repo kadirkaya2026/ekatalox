@@ -74,11 +74,13 @@ export async function GET(request: Request) {
     return response;
   }
 
-  // Magnet ziyaretçisi, şifre kapatılsaydı gösterilecek genel listeyi görür
-  // (public_price_list_id; seçilmemişse ilk fiyatlı listeye düşer).
+  // Magnet ziyaretçisinin listesi: önce bayinin magnet'e özel seçimi
+  // (magnet_price_list_id), yoksa şifresiz ziyaretçi listesi
+  // (public_price_list_id), o da yoksa ilk fiyatlı liste. Seçilen liste
+  // silinmişse resolveDefault... geçersiz id'yi eleyip fallback'e düşer.
   const priceList = await resolveDefaultPriceListForTenant(
     tenant.id,
-    tenant.public_price_list_id,
+    tenant.magnet_price_list_id ?? tenant.public_price_list_id,
   );
 
   if (!priceList) {
