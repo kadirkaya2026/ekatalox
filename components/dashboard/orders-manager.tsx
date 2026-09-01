@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ArrowLeft, CreditCard, Loader2, MessageCircle, Printer, Search } from "lucide-react";
+import { ArrowLeft, Loader2, MessageCircle, NotebookText, Printer, Search } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -337,12 +337,12 @@ export function OrdersManager({
 
           {/* Veresiye: tekel/market açık hesabı */}
           {order.credit_marked_at && !order.credit_paid_at ? (
-            <div className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm">
+            <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm">
               <div className="flex flex-wrap items-center gap-2">
-                <p className="inline-flex items-center gap-1.5 font-semibold text-amber-900">
-                  <CreditCard className="size-4 shrink-0" />
+                <p className="inline-flex items-center gap-1.5 font-semibold text-red-800">
+                  <NotebookText className="size-4 shrink-0 text-red-600" />
                   Veresiye — tahsil edilmedi
-                  <span className="font-normal text-amber-700">({formatDate(order.credit_marked_at)})</span>
+                  <span className="font-normal text-red-600">({formatDate(order.credit_marked_at)})</span>
                 </p>
                 <div className="ml-auto flex flex-wrap gap-2">
                   <Button variant="secondary" disabled={pending === order.id} onClick={() => void creditAction(order, "paid")}>
@@ -361,11 +361,11 @@ export function OrdersManager({
                   </Button>
                 </div>
               </div>
-              {creditMsg ? <p className="mt-2 text-xs font-medium text-amber-800">{creditMsg}</p> : null}
+              {creditMsg ? <p className="mt-2 text-xs font-medium text-red-700">{creditMsg}</p> : null}
             </div>
           ) : order.credit_paid_at ? (
             <div className="flex items-center gap-1.5 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
-              <CreditCard className="size-4 shrink-0" />
+              <NotebookText className="size-4 shrink-0" />
               Veresiye tahsil edildi · {formatDate(order.credit_paid_at)}
             </div>
           ) : order.status !== "cancelled" ? (
@@ -373,9 +373,9 @@ export function OrdersManager({
               type="button"
               disabled={pending === order.id}
               onClick={() => void creditAction(order, "mark")}
-              className="inline-flex items-center gap-1.5 text-left text-sm font-medium text-amber-700 hover:underline"
+              className="inline-flex items-center gap-1.5 text-left text-sm font-medium text-red-700 hover:underline"
             >
-              <CreditCard className="size-4 shrink-0" />
+              <NotebookText className="size-4 shrink-0" />
               Veresiye olarak işaretle
             </button>
           ) : null}
@@ -482,10 +482,10 @@ export function OrdersManager({
           }}
           className={cn(
             "inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 py-1.5 text-sm font-semibold",
-            status === "credit" ? "bg-amber-500 text-white" : "border border-amber-300 text-amber-700",
+            status === "credit" ? "bg-red-600 text-white" : "border border-red-200 text-red-700",
           )}
         >
-          <CreditCard className="size-4 shrink-0" />
+          <NotebookText className="size-4 shrink-0" />
           Veresiye ({page.creditOpenCount ?? 0})
         </button>
       </div>
@@ -520,13 +520,16 @@ export function OrdersManager({
       </div>
 
       {status === "credit" && page.orders.length ? (
-        <Card className="border-amber-200 bg-amber-50/50 p-4">
-          <p className="text-sm font-semibold text-amber-900">Müşteri bazında açık veresiye</p>
-          <p className="mt-0.5 text-xs text-amber-700">
+        <Card className="border-red-200 bg-red-50/40 p-4">
+          <p className="inline-flex items-center gap-1.5 text-sm font-semibold text-red-800">
+            <NotebookText className="size-4 shrink-0 text-red-600" />
+            Müşteri bazında açık veresiye
+          </p>
+          <p className="mt-0.5 text-xs text-red-600">
             Tahsilat bildirimi, sipariş takip sayfasından bildirimleri açmış müşterilerin cihazına gider.
           </p>
           {creditMsg ? <p className="mt-2 text-xs font-medium text-emerald-700">{creditMsg}</p> : null}
-          <div className="mt-3 divide-y divide-amber-100 rounded-xl border border-amber-200 bg-white">
+          <div className="mt-3 divide-y divide-red-100 rounded-xl border border-red-200 bg-white">
             {(() => {
               const groups = new Map<
                 string,
@@ -550,7 +553,7 @@ export function OrdersManager({
                       <p className="font-semibold text-slate-900">{g.name}</p>
                       <p className="text-xs text-slate-500">{g.phone} · {g.count} sipariş</p>
                     </div>
-                    <span className="ml-auto font-semibold tabular-nums text-amber-800">
+                    <span className="ml-auto font-semibold tabular-nums text-red-700">
                       {g.currency === "CATALOG" ? "—" : formatCurrency(g.total, g.currency as CurrencyCode)}
                     </span>
                     <Button
@@ -594,10 +597,13 @@ export function OrdersManager({
                     <span className="text-sm font-semibold text-slate-900">{formatOrderNo(order)}</span>
                     <StatusBadge status={order.status} isTekel={isTekel} />
                     {order.credit_marked_at && !order.credit_paid_at ? (
-                      <span className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-800">
-                        <CreditCard className="size-3 shrink-0" />
-                        Veresiye
-                      </span>
+                      // Veresiye defteri: çerçevesiz, sadece kırmızı defter
+                      // ikonu (kullanıcı isteği, 1 Eyl 2026) — dar sütuna
+                      // sığar, metinlerin üstüne taşmaz.
+                      <NotebookText
+                        className="size-4 shrink-0 text-red-600"
+                        aria-label="Veresiye — tahsil edilmedi"
+                      />
                     ) : null}
                   </button>
                   <span className="text-right text-sm font-semibold tabular-nums text-slate-900 md:hidden">{formatOrderTotal(order)}</span>

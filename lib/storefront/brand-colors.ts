@@ -104,6 +104,7 @@ export function applyBrandColorOverrides(
     // (kullanıcı isteği, 1 Eyl 2026): marka rengi ayarlıysa çerçeve de
     // --brand-primary'den beslenir; tema accent'i devre dışı kalır.
     productImageInCartBorder: "border-[var(--brand-primary)]",
+    productImageSparkle: brandPrimaryText,
     productPrice: cn("min-w-0 font-extrabold tracking-tight", brandPrimaryText),
     gateEyebrow: cn("text-xs font-bold uppercase tracking-[0.24em]", brandPrimaryText),
     indicatorActive: cn("bg-[var(--brand-primary)]"),

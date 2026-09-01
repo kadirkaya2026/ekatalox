@@ -2,7 +2,7 @@
 
 import { memo, useEffect, useRef } from "react";
 import { AnimatePresence, motion, useAnimationControls } from "framer-motion";
-import { Minus, Plus, Trash2 } from "lucide-react";
+import { Minus, Plus, Sparkles, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import type { StorefrontProduct } from "@/lib/types";
 import { STOREFRONT_PRODUCT_GRID_SIZES } from "@/lib/storefront/image-sizes";
@@ -274,6 +274,7 @@ export const StorefrontProductCard = memo(function StorefrontProductCard({
   // minik bir "pop" yapar (küçülüp esneyerek yerine oturur); sepette olduğu
   // sürece + butonuyla aynı renkte ince çerçeve durur, 0'a düşünce kaybolur.
   const imagePulse = useAnimationControls();
+  const sparkle = useAnimationControls();
   const previousQuantityRef = useRef(cartQuantity);
   useEffect(() => {
     if (cartQuantity > previousQuantityRef.current) {
@@ -281,9 +282,16 @@ export const StorefrontProductCard = memo(function StorefrontProductCard({
         scale: [1, 0.92, 1.04, 1],
         transition: { duration: 0.45, ease: [0.34, 1.35, 0.64, 1] },
       });
+      // Getir videosundaki kısa parıltı: tile'ın köşesinde ✦ belirip söner.
+      void sparkle.start({
+        opacity: [0, 1, 0],
+        scale: [0.3, 1.2, 0.5],
+        rotate: [0, 25],
+        transition: { duration: 0.55, ease: "easeOut" },
+      });
     }
     previousQuantityRef.current = cartQuantity;
-  }, [cartQuantity, imagePulse]);
+  }, [cartQuantity, imagePulse, sparkle]);
 
   return (
     <article
@@ -323,6 +331,17 @@ export const StorefrontProductCard = memo(function StorefrontProductCard({
           cartQuantity > 0 ? theme.productImageInCartBorder : "border-transparent",
         )}
       >
+        <motion.span
+          aria-hidden="true"
+          initial={{ opacity: 0 }}
+          animate={sparkle}
+          className={cn(
+            "pointer-events-none absolute left-1.5 top-1.5 z-20",
+            theme.productImageSparkle,
+          )}
+        >
+          <Sparkles className="size-4" fill="currentColor" />
+        </motion.span>
         <DiscountSticker product={product} />
         {product.image_url ? (
           <StorefrontImage

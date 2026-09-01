@@ -48,6 +48,8 @@ export interface StorefrontTheme {
   // "border-2 border-transparent" tabanla birlikte kullanılır — kenarlık
   // hep var, sadece rengi görünür olur; layout kayması olmaz.
   productImageInCartBorder: string;
+  // Sepete ekleme anında görselde beliren kısa parıltının (✦) rengi.
+  productImageSparkle: string;
   stockBadgeIn: string;
   stockBadgeOut: string;
   variantBadge: string;
@@ -753,6 +755,7 @@ function buildTheme(
             : cn("border", neutrals.chipInactiveBorder, neutrals.surface, modalInactiveText),
       ),
     productImageInCartBorder: accent.navMobileActive,
+    productImageSparkle: accent.price,
     floatingCartStepper: accent.stepper,
     floatingCartAddButton: cn(
       "flex items-center justify-center rounded-xl text-white shadow-[0_14px_30px_rgba(15,23,42,0.18)] transition-all duration-200",
