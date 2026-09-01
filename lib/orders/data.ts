@@ -55,17 +55,19 @@ export interface OrdersPage {
   page: number;
   pageSize: number;
   counts: Record<OrderStatus | "all", number>;
+  // Açık veresiye adedi — "Veresiye" süzgeç rozeti her görünümde doğru sayıyı göstersin.
+  creditOpenCount: number;
 }
 
 export async function getTenantOrdersPage(
   tenantId: string,
-  params: { status?: string; q?: string; from?: string; to?: string; page?: number; pageSize?: number },
+  params: { status?: string; q?: string; from?: string; to?: string; page?: number; pageSize?: number; credit?: string },
 ): Promise<OrdersPage> {
   const page = Math.max(1, params.page ?? 1);
   const pageSize = Math.min(50, Math.max(1, params.pageSize ?? 25));
   const counts = Object.fromEntries([...ORDER_STATUSES, "all"].map((s) => [s, 0])) as OrdersPage["counts"];
   const supabase = createSupabaseAdminClient();
-  if (!supabase) return { orders: [], total: 0, page, pageSize, counts };
+  if (!supabase) return { orders: [], total: 0, page, pageSize, counts, creditOpenCount: 0 };
 
   const applyFilters = <T extends { eq: any; gte: any; lte: any; or: any }>(query: T) => {
     let q: any = query.eq("tenant_id", tenantId);
@@ -85,6 +87,9 @@ export async function getTenantOrdersPage(
   const from = (page - 1) * pageSize;
   let listQuery = applyFilters(supabase.from("orders").select(ORDER_SELECT, { count: "exact" }));
   if (params.status && params.status !== "all") listQuery = listQuery.eq("status", params.status);
+  if (params.credit === "open") {
+    listQuery = listQuery.not("credit_marked_at", "is", null).is("credit_paid_at", null);
+  }
   listQuery = listQuery.order("created_at", { ascending: false }).range(from, from + pageSize - 1);
 
   // Durum rozetleri: aynı süzgeçle (durum hariç) her durumun adedi.
@@ -92,11 +97,22 @@ export async function getTenantOrdersPage(
     applyFilters(supabase.from("orders").select("id", { count: "exact", head: true })).eq("status", status),
   );
 
-  const [listResult, ...countResults] = await Promise.all([listQuery, ...countQueries]);
+  const creditCountQuery = applyFilters(
+    supabase.from("orders").select("id", { count: "exact", head: true }),
+  )
+    .not("credit_marked_at", "is", null)
+    .is("credit_paid_at", null);
+
+  const [listResult, creditCountResult, ...countResults] = await Promise.all([
+    listQuery,
+    creditCountQuery,
+    ...countQueries,
+  ]);
   ORDER_STATUSES.forEach((status, i) => {
     counts[status] = countResults[i]?.count ?? 0;
   });
   counts.all = ORDER_STATUSES.reduce((t, s) => t + counts[s], 0);
+  const creditOpenCount = creditCountResult?.count ?? 0;
 
   return {
     orders: await attachMagnetInfo(supabase, tenantId, (listResult.data ?? []) as StorefrontOrder[]),
@@ -104,6 +120,7 @@ export async function getTenantOrdersPage(
     page,
     pageSize,
     counts,
+    creditOpenCount,
   };
 }
 

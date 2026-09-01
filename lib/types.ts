@@ -179,6 +179,10 @@ export interface StorefrontOrder {
   cost_total: number | null;
   cost_missing_count: number;
   tracking_token: string;
+  // Veresiye (0107): işaretlenme + tahsil zamanı. Açık veresiye = marked
+  // dolu, paid boş. Bayi panelinden yönetilir.
+  credit_marked_at?: string | null;
+  credit_paid_at?: string | null;
   magnet_code_id?: string | null;
   // Bayi paneli için veri katmanında doldurulur (lib/orders/data.ts):
   // siparişin geldiği magnetin kodu, magnetin tanımlı müşterisi ve siparişi

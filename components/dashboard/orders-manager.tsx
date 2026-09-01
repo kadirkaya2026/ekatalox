@@ -22,7 +22,8 @@ import {
 } from "@/lib/orders/status";
 import { buildOrderStatusWhatsAppHref } from "@/lib/orders/whatsapp-status-message";
 
-type StatusFilter = OrderStatus | "all";
+// "credit": durumdan bağımsız özel görünüm — açık veresiyeler.
+type StatusFilter = OrderStatus | "all" | "credit";
 
 function StatusBadge({ status, isTekel }: { status: OrderStatus; isTekel: boolean }) {
   return (
@@ -65,15 +66,19 @@ export function OrdersManager({
   const [pending, setPending] = useState<string | null>(null);
   const [cancelOpen, setCancelOpen] = useState(false);
   const [cancelReason, setCancelReason] = useState("");
+  const [creditReminderPending, setCreditReminderPending] = useState<string | null>(null);
+  const [creditMsg, setCreditMsg] = useState<string | null>(null);
 
   const load = useCallback(
     async (override?: Partial<{ status: StatusFilter; q: string; from: string; to: string; page: number }>) => {
       const s = override?.status ?? status;
       const params = new URLSearchParams({
-        status: s,
+        // "credit" özel görünüm: durum süzgeci uygulanmaz, açık veresiyeler gelir.
+        status: s === "credit" ? "all" : s,
         page: String(override?.page ?? pageNo),
-        pageSize: "25",
+        pageSize: s === "credit" ? "50" : "25",
       });
+      if (s === "credit") params.set("credit", "open");
       const qq = override?.q ?? q;
       const ff = override?.from ?? from;
       const tt = override?.to ?? to;
@@ -162,6 +167,47 @@ export function OrdersManager({
       router.refresh(); // kenar çubuğundaki "Yeni" rozeti
     }
     setPending(null);
+  }
+
+  async function creditAction(order: StorefrontOrder, action: "mark" | "unmark" | "paid") {
+    setPending(order.id);
+    setError(null);
+    setCreditMsg(null);
+    const response = await fetch(`/api/tenant/orders/${order.id}/credit`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action }),
+    });
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      setError(result.error ?? "Veresiye durumu güncellenemedi.");
+    } else {
+      await load();
+      if (selected?.order.id === order.id) await openOrder(order);
+    }
+    setPending(null);
+  }
+
+  async function sendCreditReminder(customerId: string) {
+    setCreditReminderPending(customerId);
+    setCreditMsg(null);
+    setError(null);
+    const response = await fetch("/api/tenant/orders/credit-reminder", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ customer_id: customerId }),
+    });
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      setError(result.error ?? "Bildirim gönderilemedi.");
+    } else if (result.sent > 0) {
+      setCreditMsg(`Tahsilat bildirimi gönderildi (${result.sent} cihaz, ${result.totalLabel}).`);
+    } else {
+      setCreditMsg(
+        "Bu müşterinin bildirim aboneliği yok — müşteri sipariş takip sayfasından bildirimleri açarsa gönderilebilir.",
+      );
+    }
+    setCreditReminderPending(null);
   }
 
   const pageCount = Math.max(1, Math.ceil(page.total / page.pageSize));
@@ -289,6 +335,48 @@ export function OrdersManager({
             </div>
           </div>
 
+          {/* Veresiye: tekel/market açık hesabı */}
+          {order.credit_marked_at && !order.credit_paid_at ? (
+            <div className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm">
+              <div className="flex flex-wrap items-center gap-2">
+                <p className="font-semibold text-amber-900">
+                  💳 Veresiye — tahsil edilmedi
+                  <span className="ml-1 font-normal text-amber-700">({formatDate(order.credit_marked_at)})</span>
+                </p>
+                <div className="ml-auto flex flex-wrap gap-2">
+                  <Button variant="secondary" disabled={pending === order.id} onClick={() => void creditAction(order, "paid")}>
+                    Tahsil edildi
+                  </Button>
+                  <Button
+                    disabled={!order.customer_id || creditReminderPending === order.customer_id}
+                    onClick={() => order.customer_id && void sendCreditReminder(order.customer_id)}
+                    title="Bildirimi açık olan müşterinin cihazına toplam borç hatırlatması gönderir"
+                  >
+                    {creditReminderPending === order.customer_id ? <Loader2 className="size-4 animate-spin" /> : null}
+                    Tahsilat bildirimi gönder
+                  </Button>
+                  <Button variant="ghost" disabled={pending === order.id} onClick={() => void creditAction(order, "unmark")}>
+                    İşareti kaldır
+                  </Button>
+                </div>
+              </div>
+              {creditMsg ? <p className="mt-2 text-xs font-medium text-amber-800">{creditMsg}</p> : null}
+            </div>
+          ) : order.credit_paid_at ? (
+            <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+              💳 Veresiye tahsil edildi · {formatDate(order.credit_paid_at)}
+            </div>
+          ) : order.status !== "cancelled" ? (
+            <button
+              type="button"
+              disabled={pending === order.id}
+              onClick={() => void creditAction(order, "mark")}
+              className="text-left text-sm font-medium text-amber-700 hover:underline"
+            >
+              💳 Veresiye olarak işaretle
+            </button>
+          ) : null}
+
           {/* Ne yapmalı? — tek net adım */}
           {order.status === "cancelled" ? (
             <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
@@ -365,7 +453,7 @@ export function OrdersManager({
       <InlineAlert tone="error" message={error} />
 
       <div className="flex flex-wrap items-center gap-2">
-        {(["all", ...ORDER_STATUSES] as StatusFilter[]).filter((key) => key === "all" || key === status || (page.counts[key] ?? 0) > 0).map((key) => (
+        {(["all", ...ORDER_STATUSES] as (OrderStatus | "all")[]).filter((key) => key === "all" || key === status || (page.counts[key] ?? 0) > 0).map((key) => (
           <button
             key={key}
             type="button"
@@ -382,6 +470,20 @@ export function OrdersManager({
             {key === "all" ? "Tümü" : getStatusLabel(key, { isTekel })} ({page.counts[key] ?? 0})
           </button>
         ))}
+        <button
+          type="button"
+          onClick={() => {
+            setStatus("credit");
+            setPageNo(1);
+            void load({ status: "credit", page: 1 });
+          }}
+          className={cn(
+            "rounded-full px-3.5 py-1.5 text-sm font-semibold",
+            status === "credit" ? "bg-amber-500 text-white" : "border border-amber-300 text-amber-700",
+          )}
+        >
+          💳 Veresiye ({page.creditOpenCount ?? 0})
+        </button>
       </div>
 
       <div className="flex flex-wrap items-end gap-2">
@@ -413,6 +515,56 @@ export function OrdersManager({
         </Button>
       </div>
 
+      {status === "credit" && page.orders.length ? (
+        <Card className="border-amber-200 bg-amber-50/50 p-4">
+          <p className="text-sm font-semibold text-amber-900">Müşteri bazında açık veresiye</p>
+          <p className="mt-0.5 text-xs text-amber-700">
+            Tahsilat bildirimi, sipariş takip sayfasından bildirimleri açmış müşterilerin cihazına gider.
+          </p>
+          {creditMsg ? <p className="mt-2 text-xs font-medium text-emerald-700">{creditMsg}</p> : null}
+          <div className="mt-3 divide-y divide-amber-100 rounded-xl border border-amber-200 bg-white">
+            {(() => {
+              const groups = new Map<
+                string,
+                { name: string; phone: string; customerId: string | null; count: number; total: number; currency: string }
+              >();
+              for (const o of page.orders) {
+                const key = o.customer_phone || o.id;
+                const g =
+                  groups.get(key) ??
+                  { name: o.customer_name, phone: o.customer_phone, customerId: o.customer_id, count: 0, total: 0, currency: o.currency };
+                g.count += 1;
+                if (o.currency === g.currency) g.total += o.total_amount;
+                if (!g.customerId && o.customer_id) g.customerId = o.customer_id;
+                groups.set(key, g);
+              }
+              return [...groups.values()]
+                .sort((a, b) => b.total - a.total)
+                .map((g) => (
+                  <div key={g.phone} className="flex flex-wrap items-center gap-3 px-4 py-2.5 text-sm">
+                    <div className="min-w-0">
+                      <p className="font-semibold text-slate-900">{g.name}</p>
+                      <p className="text-xs text-slate-500">{g.phone} · {g.count} sipariş</p>
+                    </div>
+                    <span className="ml-auto font-semibold tabular-nums text-amber-800">
+                      {g.currency === "CATALOG" ? "—" : formatCurrency(g.total, g.currency as CurrencyCode)}
+                    </span>
+                    <Button
+                      variant="secondary"
+                      className="h-8 px-3 text-xs"
+                      disabled={!g.customerId || creditReminderPending === g.customerId}
+                      onClick={() => g.customerId && void sendCreditReminder(g.customerId)}
+                    >
+                      {creditReminderPending === g.customerId ? <Loader2 className="size-3.5 animate-spin" /> : null}
+                      Tahsilat bildirimi
+                    </Button>
+                  </div>
+                ));
+            })()}
+          </div>
+        </Card>
+      ) : null}
+
       <Card className="overflow-hidden p-0">
         {page.orders.length === 0 ? (
           <p className="p-6 text-sm text-slate-600">Bu süzgeçte sipariş yok.</p>
@@ -437,6 +589,11 @@ export function OrdersManager({
                   <button type="button" onClick={() => void openOrder(order)} className="flex items-center gap-2 text-left">
                     <span className="text-sm font-semibold text-slate-900">{formatOrderNo(order)}</span>
                     <StatusBadge status={order.status} isTekel={isTekel} />
+                    {order.credit_marked_at && !order.credit_paid_at ? (
+                      <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-800">
+                        💳 Veresiye
+                      </span>
+                    ) : null}
                   </button>
                   <span className="text-right text-sm font-semibold tabular-nums text-slate-900 md:hidden">{formatOrderTotal(order)}</span>
                   <button type="button" onClick={() => void openOrder(order)} className="col-span-2 min-w-0 truncate text-left text-sm text-slate-700 hover:underline md:col-span-1">
