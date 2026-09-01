@@ -1,7 +1,7 @@
 "use client";
 
-import { memo } from "react";
-import { AnimatePresence, motion } from "framer-motion";
+import { memo, useEffect, useRef } from "react";
+import { AnimatePresence, motion, useAnimationControls } from "framer-motion";
 import { Minus, Plus, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import type { StorefrontProduct } from "@/lib/types";
@@ -270,6 +270,21 @@ export const StorefrontProductCard = memo(function StorefrontProductCard({
   const { t } = useStorefrontLocale();
   const handleOpenDetail = () => onOpenDetail(product.id);
 
+  // Getir tarzı sepete ekleme geri bildirimi: adet ARTTIĞINDA görsel kutusu
+  // minik bir "pop" yapar (küçülüp esneyerek yerine oturur); sepette olduğu
+  // sürece + butonuyla aynı renkte ince çerçeve durur, 0'a düşünce kaybolur.
+  const imagePulse = useAnimationControls();
+  const previousQuantityRef = useRef(cartQuantity);
+  useEffect(() => {
+    if (cartQuantity > previousQuantityRef.current) {
+      void imagePulse.start({
+        scale: [1, 0.92, 1.04, 1],
+        transition: { duration: 0.45, ease: [0.34, 1.35, 0.64, 1] },
+      });
+    }
+    previousQuantityRef.current = cartQuantity;
+  }, [cartQuantity, imagePulse]);
+
   return (
     <article
       role="button"
@@ -298,12 +313,13 @@ export const StorefrontProductCard = memo(function StorefrontProductCard({
         onDecrease={onDecrease}
         onOpenAddToCart={onOpenAddToCart}
       />
-      <div
+      <motion.div
+        animate={imagePulse}
         className={cn(
           productImageWrapClassName,
           "overflow-hidden rounded-[1.2rem] border-2 p-2.5 transition-colors duration-300 sm:p-4",
-          // Getir tarzı geri bildirim: sepette adedi >0 iken görsel, tema
-          // renginde ince bir çerçeveyle sarılır; 0'a düşünce kaybolur.
+          // Sepette adedi >0 iken çerçeve: marka rengi ayarlıysa + butonuyla
+          // aynı renk (bkz. brand-colors.ts), yoksa tema accent rengi.
           cartQuantity > 0 ? theme.productImageInCartBorder : "border-transparent",
         )}
       >
@@ -331,7 +347,7 @@ export const StorefrontProductCard = memo(function StorefrontProductCard({
             </span>
           </div>
         ) : null}
-      </div>
+      </motion.div>
 
       <div className="flex flex-1 flex-col gap-1 p-2.5 sm:p-3.5">
         <ProductPrice product={product} size="card" />

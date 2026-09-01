@@ -100,6 +100,10 @@ export function applyBrandColorOverrides(
       theme.quantityStepper,
       "border-slate-200 bg-white shadow-sm dark:border-0 dark:bg-neutral-800",
     ),
+    // Sepetteki ürünün görsel çerçevesi + butonuyla AYNI renkte olsun
+    // (kullanıcı isteği, 1 Eyl 2026): marka rengi ayarlıysa çerçeve de
+    // --brand-primary'den beslenir; tema accent'i devre dışı kalır.
+    productImageInCartBorder: "border-[var(--brand-primary)]",
     productPrice: cn("min-w-0 font-extrabold tracking-tight", brandPrimaryText),
     gateEyebrow: cn("text-xs font-bold uppercase tracking-[0.24em]", brandPrimaryText),
     indicatorActive: cn("bg-[var(--brand-primary)]"),
