@@ -2,8 +2,9 @@
 
 import { memo, useEffect, useRef } from "react";
 import { AnimatePresence, motion, useAnimationControls } from "framer-motion";
-import { Minus, Plus, Sparkles, Trash2 } from "lucide-react";
+import { Minus, Plus, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { BorderTrace, type BorderTraceHandle } from "@/components/storefront/border-trace";
 import type { StorefrontProduct } from "@/lib/types";
 import { STOREFRONT_PRODUCT_GRID_SIZES } from "@/lib/storefront/image-sizes";
 import { formatProductModelNo } from "@/lib/products/constants";
@@ -274,24 +275,20 @@ export const StorefrontProductCard = memo(function StorefrontProductCard({
   // minik bir "pop" yapar (küçülüp esneyerek yerine oturur); sepette olduğu
   // sürece + butonuyla aynı renkte ince çerçeve durur, 0'a düşünce kaybolur.
   const imagePulse = useAnimationControls();
-  const sparkle = useAnimationControls();
+  const borderTraceRef = useRef<BorderTraceHandle>(null);
   const previousQuantityRef = useRef(cartQuantity);
   useEffect(() => {
     if (cartQuantity > previousQuantityRef.current) {
       void imagePulse.start({
-        scale: [1, 0.92, 1.04, 1],
+        scale: [1, 0.94, 1.02, 1],
         transition: { duration: 0.45, ease: [0.34, 1.35, 0.64, 1] },
       });
-      // Getir videosundaki kısa parıltı: tile'ın köşesinde ✦ belirip söner.
-      void sparkle.start({
-        opacity: [0, 1, 0],
-        scale: [0.3, 1.2, 0.5],
-        rotate: [0, 25],
-        transition: { duration: 0.55, ease: "easeOut" },
-      });
+      // Getir tarzı: çizgi görselin çevresini ~yarım saniyede bir kez
+      // dolanıp kaybolur (bkz. border-trace.tsx).
+      borderTraceRef.current?.play();
     }
     previousQuantityRef.current = cartQuantity;
-  }, [cartQuantity, imagePulse, sparkle]);
+  }, [cartQuantity, imagePulse]);
 
   return (
     <article
@@ -331,17 +328,9 @@ export const StorefrontProductCard = memo(function StorefrontProductCard({
           cartQuantity > 0 ? theme.productImageInCartBorder : "border-transparent",
         )}
       >
-        <motion.span
-          aria-hidden="true"
-          initial={{ opacity: 0 }}
-          animate={sparkle}
-          className={cn(
-            "pointer-events-none absolute left-1.5 top-1.5 z-20",
-            theme.productImageSparkle,
-          )}
-        >
-          <Sparkles className="size-4" fill="currentColor" />
-        </motion.span>
+        {/* Çevreyi dolanan çizgi: rengi + butonuyla aynı (marka rengi
+            ayarlıysa --brand-primary, yoksa tema accent'i). */}
+        <BorderTrace ref={borderTraceRef} className={theme.productImageSparkle} radius={19} />
         <DiscountSticker product={product} />
         {product.image_url ? (
           <StorefrontImage
