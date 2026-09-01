@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ArrowLeft, Loader2, MessageCircle, Printer, Search } from "lucide-react";
+import { ArrowLeft, CreditCard, Loader2, MessageCircle, Printer, Search } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -339,9 +339,10 @@ export function OrdersManager({
           {order.credit_marked_at && !order.credit_paid_at ? (
             <div className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm">
               <div className="flex flex-wrap items-center gap-2">
-                <p className="font-semibold text-amber-900">
-                  💳 Veresiye — tahsil edilmedi
-                  <span className="ml-1 font-normal text-amber-700">({formatDate(order.credit_marked_at)})</span>
+                <p className="inline-flex items-center gap-1.5 font-semibold text-amber-900">
+                  <CreditCard className="size-4 shrink-0" />
+                  Veresiye — tahsil edilmedi
+                  <span className="font-normal text-amber-700">({formatDate(order.credit_marked_at)})</span>
                 </p>
                 <div className="ml-auto flex flex-wrap gap-2">
                   <Button variant="secondary" disabled={pending === order.id} onClick={() => void creditAction(order, "paid")}>
@@ -363,17 +364,19 @@ export function OrdersManager({
               {creditMsg ? <p className="mt-2 text-xs font-medium text-amber-800">{creditMsg}</p> : null}
             </div>
           ) : order.credit_paid_at ? (
-            <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
-              💳 Veresiye tahsil edildi · {formatDate(order.credit_paid_at)}
+            <div className="flex items-center gap-1.5 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+              <CreditCard className="size-4 shrink-0" />
+              Veresiye tahsil edildi · {formatDate(order.credit_paid_at)}
             </div>
           ) : order.status !== "cancelled" ? (
             <button
               type="button"
               disabled={pending === order.id}
               onClick={() => void creditAction(order, "mark")}
-              className="text-left text-sm font-medium text-amber-700 hover:underline"
+              className="inline-flex items-center gap-1.5 text-left text-sm font-medium text-amber-700 hover:underline"
             >
-              💳 Veresiye olarak işaretle
+              <CreditCard className="size-4 shrink-0" />
+              Veresiye olarak işaretle
             </button>
           ) : null}
 
@@ -478,11 +481,12 @@ export function OrdersManager({
             void load({ status: "credit", page: 1 });
           }}
           className={cn(
-            "rounded-full px-3.5 py-1.5 text-sm font-semibold",
+            "inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 py-1.5 text-sm font-semibold",
             status === "credit" ? "bg-amber-500 text-white" : "border border-amber-300 text-amber-700",
           )}
         >
-          💳 Veresiye ({page.creditOpenCount ?? 0})
+          <CreditCard className="size-4 shrink-0" />
+          Veresiye ({page.creditOpenCount ?? 0})
         </button>
       </div>
 
@@ -590,8 +594,9 @@ export function OrdersManager({
                     <span className="text-sm font-semibold text-slate-900">{formatOrderNo(order)}</span>
                     <StatusBadge status={order.status} isTekel={isTekel} />
                     {order.credit_marked_at && !order.credit_paid_at ? (
-                      <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-800">
-                        💳 Veresiye
+                      <span className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-800">
+                        <CreditCard className="size-3 shrink-0" />
+                        Veresiye
                       </span>
                     ) : null}
                   </button>

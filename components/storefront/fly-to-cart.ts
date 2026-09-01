@@ -11,7 +11,7 @@
  *          (masaüstünde header, mobilde alt bar; hangisi görünürse o)
  */
 
-const FLIGHT_MS = 520;
+const FLIGHT_MS = 720;
 
 function prefersReducedMotion() {
   return (
@@ -103,25 +103,41 @@ export function flyToCart(productId: string): Promise<void> {
     0.1,
     Math.min(1, (Math.min(to.width, to.height) * 0.7) / Math.max(from.width, from.height)),
   );
-  // ortada hafif bir kavis: önce yukarı kalkıp sonra sepete düşsün
-  const lift = Math.min(46, Math.max(18, Math.abs(dy) * 0.22));
 
-  const flight = ghost.animate(
-    [
-      { transform: "translate(0px, 0px) scale(1)", opacity: 1, offset: 0 },
-      {
-        transform: `translate(${dx * 0.45}px, ${dy * 0.3 - lift}px) scale(${(1 + scale) / 2})`,
-        opacity: 0.96,
-        offset: 0.45,
-      },
-      {
-        transform: `translate(${dx}px, ${dy}px) scale(${scale})`,
-        opacity: 0.2,
-        offset: 1,
-      },
-    ],
-    { duration: FLIGHT_MS, easing: "cubic-bezier(0.4, 0.06, 0.2, 1)", fill: "forwards" },
-  );
+  // Gerçek bir yay (quadratic bézier): görsel önce hafifçe yükselip yana
+  // açılır, sonra sepete süzülerek iner — düz çizgide "füze gibi" gitmesin.
+  // Kontrol noktası: yatayda yolun ~%40'ı, dikeyde belirgin bir tepe.
+  const lift = Math.min(150, Math.max(70, Math.abs(dy) * 0.35));
+  const cpX = dx * 0.4;
+  const cpY = Math.min(dy * 0.25, 0) - lift;
+  // Kavis yönüne doğru minik bir eğilme — kartondan fırlamış gibi değil,
+  // sepete bırakılıyormuş gibi dursun.
+  const tilt = Math.max(-10, Math.min(10, dx * 0.02));
+
+  const easeInOut = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+  const STEPS = 16;
+  const frames: Keyframe[] = [];
+
+  for (let i = 0; i <= STEPS; i += 1) {
+    const t = easeInOut(i / STEPS);
+    const x = 2 * (1 - t) * t * cpX + t * t * dx;
+    const y = 2 * (1 - t) * t * cpY + t * t * dy;
+    // Başta minik bir "kalkış büyümesi", sonra sepete doğru küçülme.
+    const pop = t < 0.18 ? 1 + 0.06 * (t / 0.18) : 1.06 - (1.06 - scale) * ((t - 0.18) / 0.82);
+    // Yol boyunca tam görünür kalsın, sadece son ~%20'de eriyerek insin.
+    const fade = t < 0.8 ? 1 : 1 - ((t - 0.8) / 0.2) * 0.85;
+    frames.push({
+      transform: `translate(${x}px, ${y}px) scale(${pop}) rotate(${tilt * Math.sin(Math.PI * t)}deg)`,
+      opacity: fade,
+      offset: i / STEPS,
+    });
+  }
+
+  const flight = ghost.animate(frames, {
+    duration: FLIGHT_MS,
+    easing: "linear", // hız profili keyframe offset'lerinde (easeInOut) taşınıyor
+    fill: "forwards",
+  });
 
   return flight.finished
     .catch(() => undefined)
@@ -131,10 +147,11 @@ export function flyToCart(productId: string): Promise<void> {
       target.animate(
         [
           { transform: "scale(1)" },
-          { transform: "scale(1.16)" },
+          { transform: "scale(1.12)" },
+          { transform: "scale(0.98)" },
           { transform: "scale(1)" },
         ],
-        { duration: 280, easing: "cubic-bezier(0.34, 1.56, 0.64, 1)" },
+        { duration: 340, easing: "cubic-bezier(0.34, 1.4, 0.64, 1)" },
       );
     });
 }
