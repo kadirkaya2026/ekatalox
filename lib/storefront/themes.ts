@@ -43,6 +43,11 @@ export interface StorefrontTheme {
   productThumbText: string;
   productThumbMeta: string;
   productOutOverlay: string;
+  // Sepette adedi >0 olan ürünün görsel kutusunu saran ince, tema renginde
+  // çerçeve (Getir tarzı; kullanıcı isteği 1 Eyl 2026). Kart tarafında
+  // "border-2 border-transparent" tabanla birlikte kullanılır — kenarlık
+  // hep var, sadece rengi görünür olur; layout kayması olmaz.
+  productImageInCartBorder: string;
   stockBadgeIn: string;
   stockBadgeOut: string;
   variantBadge: string;
@@ -747,6 +752,7 @@ function buildTheme(
             ? cn("border", chipActiveBg, chipActiveText)
             : cn("border", neutrals.chipInactiveBorder, neutrals.surface, modalInactiveText),
       ),
+    productImageInCartBorder: accent.navMobileActive,
     floatingCartStepper: accent.stepper,
     floatingCartAddButton: cn(
       "flex items-center justify-center rounded-xl text-white shadow-[0_14px_30px_rgba(15,23,42,0.18)] transition-all duration-200",

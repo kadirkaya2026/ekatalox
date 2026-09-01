@@ -299,12 +299,12 @@ export const StorefrontProductCard = memo(function StorefrontProductCard({
         onOpenAddToCart={onOpenAddToCart}
       />
       <div
-        // Sepete uçma animasyonunun kaynağı: flyToCart bu kutunun
-        // içindeki görseli klonlayıp sepet butonuna taşıyor.
-        data-fly-source={product.id}
         className={cn(
           productImageWrapClassName,
-          "overflow-hidden rounded-[1.2rem] p-2.5 sm:p-4",
+          "overflow-hidden rounded-[1.2rem] border-2 p-2.5 transition-colors duration-300 sm:p-4",
+          // Getir tarzı geri bildirim: sepette adedi >0 iken görsel, tema
+          // renginde ince bir çerçeveyle sarılır; 0'a düşünce kaybolur.
+          cartQuantity > 0 ? theme.productImageInCartBorder : "border-transparent",
         )}
       >
         <DiscountSticker product={product} />

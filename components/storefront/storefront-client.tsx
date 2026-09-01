@@ -120,7 +120,6 @@ import {
   isHomepageBlockVisible,
 } from "@/lib/storefront/homepage-blocks";
 import { StorefrontBottomNav } from "@/components/storefront/storefront-bottom-nav";
-import { flyToCart } from "@/components/storefront/fly-to-cart";
 import { StorefrontCampaignsSheet } from "@/components/storefront/storefront-campaigns-sheet";
 import { StorefrontSearchSheet } from "@/components/storefront/storefront-search-sheet";
 import { isMarketOrTekelTenant } from "@/lib/storefront/white-label";
@@ -1469,11 +1468,11 @@ export function StorefrontClient({
     [analyticsSubdomain, productsById, tenant.id],
   );
 
-  /* Sepete uçma animasyonu ---------------------------------------------
-     Sepetin kendisi tıklama anında güncelleniyor (kart üstündeki adet
-     doğru kalsın diye). Rozetteki sayı ise görsel sepete varana kadar
-     bekliyor — istenen his bu. Uçuş çalışamazsa (reduced-motion, kart
-     ekranda değil) promise hemen çözülüyor, sayı anında artıyor. */
+  /* Sepete ekleme geri bildirimi ----------------------------------------
+     Uçuş animasyonu kaldırıldı (kullanıcı kararı, 1 Eyl 2026): geri
+     bildirim artık Getir tarzı — sepetteki ürünün görseli tema renginde
+     ince bir çerçeveyle sarılıyor (bkz. storefront-product-card.tsx).
+     Rozet sayısı beklemeden güncellenir. */
   const cartItemCountRef = useRef(0);
   const pendingFlightsRef = useRef(0);
   const [badgeCartCount, setBadgeCartCount] = useState(0);
@@ -1484,13 +1483,10 @@ export function StorefrontClient({
       pendingFlightsRef.current = Math.max(0, pendingFlightsRef.current - 1);
       setBadgeCartCount(cartItemCountRef.current);
     };
-    const launch = () => {
-      void flyToCart(productId).then(settle, settle);
-    };
-    // modaldan eklerken kart perdenin arkasında kalıyor; kapanması için
-    // bir kare bekleyip öyle uçuruyoruz
-    if (nextFrame) requestAnimationFrame(launch);
-    else launch();
+    // Animasyon yok; parametreler çağıran yerler bozulmasın diye duruyor.
+    void productId;
+    void nextFrame;
+    settle();
   }, []);
 
   const handleIncreaseCartItem = useCallback(
