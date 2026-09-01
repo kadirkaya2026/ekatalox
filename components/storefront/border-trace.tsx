@@ -70,7 +70,9 @@ export const BorderTrace = forwardRef<
   return (
     <svg
       aria-hidden="true"
-      className={cn("pointer-events-none absolute inset-0 z-20 h-full w-full", className)}
+      // z-[5]: görselin üstünde ama indirim etiketi / rozetlerin (z-10+) ALTINDA
+      // kalmalı — çizgi etiketlerin üzerine binmesin.
+      className={cn("pointer-events-none absolute inset-0 z-[5] h-full w-full", className)}
     >
       <motion.rect
         initial={{
