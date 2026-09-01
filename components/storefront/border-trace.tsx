@@ -1,6 +1,6 @@
 "use client";
 
-import { forwardRef, useImperativeHandle } from "react";
+import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
 import { motion, useAnimationControls } from "framer-motion";
 import { cn } from "@/lib/utils";
 
@@ -95,3 +95,38 @@ export const BorderTrace = forwardRef<
     </svg>
   );
 });
+
+/**
+ * Sepete ekleme geri bildiriminin ortak mantığı: ürün kartı, indirimli
+ * ürün şeridi gibi her yüzeyde aynı davranış —
+ *  - 0→1: çizgi çevreyi dolanır ve kalır (traceRef.show)
+ *  - sonraki artışlar: basma hissi veren pop (imagePulse)
+ *  - adet 0: çizgi geri sarılır (traceRef.hide)
+ * Kullanım: görsel kutusunu motion.div (animate={imagePulse}) yapıp içine
+ * <BorderTrace ref={traceRef} defaultVisible={initiallyInCart} /> koyun.
+ */
+export function useCartAddFeedback(cartQuantity: number) {
+  const imagePulse = useAnimationControls();
+  const traceRef = useRef<BorderTraceHandle>(null);
+  // Mount anında zaten sepetteyse çizgi animasyonsuz görünür başlar.
+  const [initiallyInCart] = useState(cartQuantity > 0);
+  const previousQuantityRef = useRef(cartQuantity);
+
+  useEffect(() => {
+    const previous = previousQuantityRef.current;
+    if (previous === 0 && cartQuantity > 0) {
+      traceRef.current?.show();
+    } else if (cartQuantity > previous) {
+      void imagePulse.start({
+        scale: [1, 0.94, 1.02, 1],
+        transition: { duration: 0.4, ease: [0.34, 1.35, 0.64, 1] },
+      });
+    }
+    if (previous > 0 && cartQuantity === 0) {
+      traceRef.current?.hide();
+    }
+    previousQuantityRef.current = cartQuantity;
+  }, [cartQuantity, imagePulse]);
+
+  return { imagePulse, traceRef, initiallyInCart };
+}

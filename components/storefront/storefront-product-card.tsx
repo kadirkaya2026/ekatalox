@@ -1,10 +1,10 @@
 "use client";
 
-import { memo, useEffect, useRef, useState } from "react";
-import { AnimatePresence, motion, useAnimationControls } from "framer-motion";
+import { memo } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import { Minus, Plus, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { BorderTrace, type BorderTraceHandle } from "@/components/storefront/border-trace";
+import { BorderTrace, useCartAddFeedback } from "@/components/storefront/border-trace";
 import type { StorefrontProduct } from "@/lib/types";
 import { STOREFRONT_PRODUCT_GRID_SIZES } from "@/lib/storefront/image-sizes";
 import { formatProductModelNo } from "@/lib/products/constants";
@@ -271,34 +271,10 @@ export const StorefrontProductCard = memo(function StorefrontProductCard({
   const { t } = useStorefrontLocale();
   const handleOpenDetail = () => onOpenDetail(product.id);
 
-  // Getir tarzı sepete ekleme geri bildirimi: adet ARTTIĞINDA görsel kutusu
-  // minik bir "pop" yapar (küçülüp esneyerek yerine oturur); sepette olduğu
-  // sürece + butonuyla aynı renkte ince çerçeve durur, 0'a düşünce kaybolur.
-  const imagePulse = useAnimationControls();
-  const borderTraceRef = useRef<BorderTraceHandle>(null);
-  // Sayfa açıldığında ürün zaten sepetteyse çizgi animasyonsuz görünür
-  // (mount anındaki değer; sonrası show/hide ile yönetilir).
-  const [initiallyInCart] = useState(cartQuantity > 0);
-  const previousQuantityRef = useRef(cartQuantity);
-  useEffect(() => {
-    const previous = previousQuantityRef.current;
-    if (previous === 0 && cartQuantity > 0) {
-      // İLK ekleme: çizgi çevreyi dolanır ve kalıcı çerçeve olarak KALIR.
-      borderTraceRef.current?.show();
-    } else if (cartQuantity > previous) {
-      // Sonraki + basışları: çizgi tekrar dönmez; "butona basılmış" hissi
-      // veren kısa pop yeter.
-      void imagePulse.start({
-        scale: [1, 0.94, 1.02, 1],
-        transition: { duration: 0.4, ease: [0.34, 1.35, 0.64, 1] },
-      });
-    }
-    if (previous > 0 && cartQuantity === 0) {
-      // Adet sıfırlandı: aynı çizgi geri sarılarak kaybolur.
-      borderTraceRef.current?.hide();
-    }
-    previousQuantityRef.current = cartQuantity;
-  }, [cartQuantity, imagePulse]);
+  // Getir tarzı sepete ekleme geri bildirimi (ortak mantık: border-trace.tsx
+  // useCartAddFeedback) — indirimli ürün şeridiyle birebir aynı davranış.
+  const { imagePulse, traceRef: borderTraceRef, initiallyInCart } =
+    useCartAddFeedback(cartQuantity);
 
   return (
     <article
@@ -373,7 +349,8 @@ export const StorefrontProductCard = memo(function StorefrontProductCard({
 
       <div className="flex flex-1 flex-col gap-1 p-2.5 sm:p-3.5">
         <ProductPrice product={product} size="card" />
-        <p className={cn("line-clamp-2 text-[11px] leading-4 sm:text-[13px] sm:leading-5", theme.productTitle)}>
+        {/* Mobilde 3 satır: dar kartta ürün adı anlaşılmaz kalmasın. */}
+        <p className={cn("line-clamp-3 text-[11px] leading-4 sm:line-clamp-2 sm:text-[13px] sm:leading-5", theme.productTitle)}>
           {product.product_name}
         </p>
         {theme.showProductModelNo ? (

@@ -11,6 +11,9 @@ import { useStorefrontLocale } from "@/lib/storefront/locale-context";
 import { cn, formatCurrency } from "@/lib/utils";
 import { StorefrontImage } from "@/components/storefront/storefront-image";
 import { StorefrontFloatingCartAction } from "@/components/storefront/storefront-product-card";
+import { motion } from "framer-motion";
+import { BorderTrace, useCartAddFeedback } from "@/components/storefront/border-trace";
+import type { StorefrontTheme } from "@/lib/storefront/themes";
 
 const CLUSTER_GRADIENTS = [
   "linear-gradient(135deg, #0f172a 0%, #1e293b 100%)",
@@ -175,82 +178,130 @@ export function StorefrontPromoTiles({
       </div>
       <div className="scrollbar-hide -mx-4 flex gap-3 overflow-x-auto px-4 sm:mx-0 sm:grid sm:grid-cols-3 sm:gap-4 sm:overflow-visible sm:px-0 lg:grid-cols-6">
         {discounted.map((product) => (
-          <div
+          <PromoTileCard
             key={product.id}
-            role={onOpenDetail ? "button" : undefined}
-            tabIndex={onOpenDetail ? 0 : undefined}
-            onClick={onOpenDetail ? () => onOpenDetail(product.id) : undefined}
-            onKeyDown={
-              onOpenDetail
-                ? (event) => {
-                    if (event.key === "Enter" || event.key === " ") {
-                      event.preventDefault();
-                      onOpenDetail(product.id);
-                    }
-                  }
-                : undefined
+            product={product}
+            theme={theme}
+            cartQuantity={
+              product.has_variants
+                ? cartVariantCountByProductId?.get(product.id) ?? 0
+                : cartQuantityByProductId?.get(product.id) ?? 0
             }
-            className={cn(
-              "relative w-40 shrink-0 rounded-2xl p-3 sm:w-auto",
-              onOpenDetail && "cursor-pointer transition hover:opacity-90",
-              theme.border,
-              theme.surface,
-              theme.elevation1,
-            )}
-          >
-            {/* İndirim etiketi solda, + butonu sağda — ikisi de kartın
-                İÇİNDE. Buton kart kenarından taşırsa yatay kaydırma kabı
-                (overflow-x-auto) üstünü kırpıyor. */}
-            <span className="absolute left-2 top-2 z-10 inline-flex items-center gap-1 rounded-full bg-rose-600 px-2 py-0.5 text-[10px] font-bold text-white">
-              <Tag className="size-2.5" />%{Math.round(product.discount_percentage ?? 0)}
-            </span>
-            {onOpenAddToCart && onIncrease && onDecrease ? (
-              <StorefrontFloatingCartAction
-                product={product}
-                cartQuantity={
-                  product.has_variants
-                    ? cartVariantCountByProductId?.get(product.id) ?? 0
-                    : cartQuantityByProductId?.get(product.id) ?? 0
-                }
-                compact
-                // Şerit yatay kaydırıcı; kart dışına taşan konum kırpılıyor.
-                positionClassName="right-2 top-2"
-                onIncrease={onIncrease}
-                onDecrease={onDecrease}
-                onOpenAddToCart={onOpenAddToCart}
-              />
-            ) : null}
-            <div className={cn("relative aspect-square overflow-hidden rounded-xl", theme.productImageWrap)}>
-              {product.image_url ? (
-                <StorefrontImage
-                  src={product.image_url}
-                  alt={product.product_name}
-                  className="object-contain p-3"
-                  sizes={STOREFRONT_PRODUCT_GRID_SIZES}
-                />
-              ) : (
-                <div className="flex h-full items-center justify-center">
-                  <Store className={cn("size-6", theme.textMuted)} />
-                </div>
-              )}
-            </div>
-            <p className={cn("mt-2 line-clamp-2 text-xs font-semibold", theme.text)}>{product.product_name}</p>
-            {product.price ? (
-              <div className="mt-1 flex items-baseline gap-1.5">
-                <span className={cn("text-sm font-extrabold", theme.productPrice)}>
-                  {formatCurrency(product.price, product.currency)}
-                </span>
-                {product.original_price ? (
-                  <span className={cn("text-[11px] font-medium line-through", theme.textMuted)}>
-                    {formatCurrency(product.original_price, product.currency)}
-                  </span>
-                ) : null}
-              </div>
-            ) : null}
-          </div>
+            variantCount={cartVariantCountByProductId?.get(product.id) ?? 0}
+            onOpenDetail={onOpenDetail}
+            onIncrease={onIncrease}
+            onDecrease={onDecrease}
+            onOpenAddToCart={onOpenAddToCart}
+          />
         ))}
       </div>
     </section>
+  );
+}
+
+// İndirimli ürün şeridi kartı. Ayrı bileşen olmasının nedeni sepete
+// ekleme geri bildirimi (useCartAddFeedback hook'u): ana ürün kartıyla
+// birebir aynı davranış — ilk eklemede çizgi çevreyi dolanıp kalır,
+// sonraki artışlarda pop, sıfırda çizgi geri sarılır.
+function PromoTileCard({
+  product,
+  theme,
+  cartQuantity,
+  variantCount,
+  onOpenDetail,
+  onIncrease,
+  onDecrease,
+  onOpenAddToCart,
+}: {
+  product: StorefrontProduct;
+  theme: StorefrontTheme;
+  cartQuantity: number;
+  variantCount: number;
+  onOpenDetail?: (productId: string) => void;
+  onIncrease?: (productId: string) => void;
+  onDecrease?: (productId: string) => void;
+  onOpenAddToCart?: (productId: string) => void;
+}) {
+  const { imagePulse, traceRef, initiallyInCart } = useCartAddFeedback(cartQuantity);
+
+  return (
+    <div
+      role={onOpenDetail ? "button" : undefined}
+      tabIndex={onOpenDetail ? 0 : undefined}
+      onClick={onOpenDetail ? () => onOpenDetail(product.id) : undefined}
+      onKeyDown={
+        onOpenDetail
+          ? (event) => {
+              if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                onOpenDetail(product.id);
+              }
+            }
+          : undefined
+      }
+      className={cn(
+        "relative w-40 shrink-0 rounded-2xl p-3 sm:w-auto",
+        onOpenDetail && "cursor-pointer transition hover:opacity-90",
+        theme.border,
+        theme.surface,
+        theme.elevation1,
+      )}
+    >
+      {/* İndirim etiketi solda, + butonu sağda — ikisi de kartın
+          İÇİNDE. Buton kart kenarından taşırsa yatay kaydırma kabı
+          (overflow-x-auto) üstünü kırpıyor. */}
+      <span className="absolute left-2 top-2 z-10 inline-flex items-center gap-1 rounded-full bg-rose-600 px-2 py-0.5 text-[10px] font-bold text-white">
+        <Tag className="size-2.5" />%{Math.round(product.discount_percentage ?? 0)}
+      </span>
+      {onOpenAddToCart && onIncrease && onDecrease ? (
+        <StorefrontFloatingCartAction
+          product={product}
+          cartQuantity={product.has_variants ? variantCount : cartQuantity}
+          compact
+          // Şerit yatay kaydırıcı; kart dışına taşan konum kırpılıyor.
+          positionClassName="right-2 top-2"
+          onIncrease={onIncrease}
+          onDecrease={onDecrease}
+          onOpenAddToCart={onOpenAddToCart}
+        />
+      ) : null}
+      <motion.div
+        animate={imagePulse}
+        className={cn("relative aspect-square overflow-hidden rounded-xl", theme.productImageWrap)}
+      >
+        <BorderTrace
+          ref={traceRef}
+          defaultVisible={initiallyInCart}
+          className={theme.productImageSparkle}
+          radius={11}
+        />
+        {product.image_url ? (
+          <StorefrontImage
+            src={product.image_url}
+            alt={product.product_name}
+            className="object-contain p-3"
+            sizes={STOREFRONT_PRODUCT_GRID_SIZES}
+          />
+        ) : (
+          <div className="flex h-full items-center justify-center">
+            <Store className={cn("size-6", theme.textMuted)} />
+          </div>
+        )}
+      </motion.div>
+      <p className={cn("mt-2 line-clamp-2 text-xs font-semibold", theme.text)}>{product.product_name}</p>
+      {product.price ? (
+        <div className="mt-1 flex items-baseline gap-1.5">
+          <span className={cn("text-sm font-extrabold", theme.productPrice)}>
+            {formatCurrency(product.price, product.currency)}
+          </span>
+          {product.original_price ? (
+            <span className={cn("text-[11px] font-medium line-through", theme.textMuted)}>
+              {formatCurrency(product.original_price, product.currency)}
+            </span>
+          ) : null}
+        </div>
+      ) : null}
+    </div>
   );
 }
 

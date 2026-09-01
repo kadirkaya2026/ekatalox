@@ -18,8 +18,10 @@ export const storefrontLayouts: Record<StorefrontLayoutKey, StorefrontLayout> = 
     key: "classic-grid",
     productView: "grid-card",
     categoryNav: "top-chips",
-    productGridClass: "grid grid-cols-3 gap-2 sm:gap-3 lg:grid-cols-4 xl:grid-cols-5",
-    sectionProductGridClass: "grid grid-cols-3 gap-2 sm:gap-3 lg:grid-cols-4 xl:grid-cols-5",
+    // Mobilde 2 sütun: 3'lüde görsel küçük, ürün adı okunmuyordu
+    // (kullanıcı isteği, 1 Eyl 2026). sm ve üzeri eski düzeninde.
+    productGridClass: "grid grid-cols-2 gap-2.5 sm:grid-cols-3 sm:gap-3 lg:grid-cols-4 xl:grid-cols-5",
+    sectionProductGridClass: "grid grid-cols-2 gap-2.5 sm:grid-cols-3 sm:gap-3 lg:grid-cols-4 xl:grid-cols-5",
     listContainerClass: "",
     catalogShellClass: "min-w-0",
   },
@@ -28,9 +30,9 @@ export const storefrontLayouts: Record<StorefrontLayoutKey, StorefrontLayout> = 
     productView: "grid-card",
     categoryNav: "top-chips",
     productGridClass:
-      "grid grid-cols-3 gap-1.5 sm:grid-cols-4 sm:gap-2 lg:grid-cols-5 xl:grid-cols-6",
+      "grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-2 lg:grid-cols-5 xl:grid-cols-6",
     sectionProductGridClass:
-      "grid grid-cols-3 gap-1.5 sm:grid-cols-4 sm:gap-2 lg:grid-cols-5 xl:grid-cols-6",
+      "grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-2 lg:grid-cols-5 xl:grid-cols-6",
     listContainerClass: "",
     catalogShellClass: "min-w-0",
   },
