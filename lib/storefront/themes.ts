@@ -158,6 +158,10 @@ interface ThemeAccent {
   subChipActive: string;
   floatingAddBorder: string;
   floatingAddBg: string;
+  /** floatingAddBg'nin text-* karşılığı: çevreyi dolanan çizgi + butonuyla
+      BİREBİR aynı renkte olsun (kullanıcı tespiti, 1 Eyl 2026 — çizgi
+      eskiden accent.price kullanıyordu, ton farklıydı: 600 vs 700). */
+  floatingAddText: string;
   floatingAddHover: string;
   chipActiveBgDark: string;
   chipActiveTextDark: string;
@@ -755,7 +759,7 @@ function buildTheme(
             : cn("border", neutrals.chipInactiveBorder, neutrals.surface, modalInactiveText),
       ),
     productImageInCartBorder: accent.navMobileActive,
-    productImageSparkle: accent.price,
+    productImageSparkle: accent.floatingAddText,
     floatingCartStepper: accent.stepper,
     floatingCartAddButton: cn(
       "flex items-center justify-center rounded-xl text-white shadow-[0_14px_30px_rgba(15,23,42,0.18)] transition-all duration-200",
@@ -896,6 +900,7 @@ const minimalAccent: ThemeAccent = {
   subChipActive: "border-emerald-700 bg-emerald-700 text-white",
   floatingAddBorder: "border-emerald-700",
   floatingAddBg: "bg-emerald-700",
+  floatingAddText: "text-emerald-700",
   floatingAddHover: "hover:border-emerald-800 hover:bg-emerald-800",
   chipActiveBgDark: "",
   chipActiveTextDark: "",
@@ -939,6 +944,7 @@ const proBlueAccent: ThemeAccent = {
   subChipActive: "border-blue-600 bg-blue-600 text-white",
   floatingAddBorder: "border-blue-600",
   floatingAddBg: "bg-blue-500",
+  floatingAddText: "text-blue-500",
   floatingAddHover: "hover:border-blue-500 hover:bg-blue-400",
   chipActiveBgDark: "",
   chipActiveTextDark: "",
@@ -989,6 +995,7 @@ const neutralAccent: ThemeAccent = {
   subChipActive: "border-slate-900 bg-slate-900 text-white",
   floatingAddBorder: "border-slate-900",
   floatingAddBg: "bg-slate-800",
+  floatingAddText: "text-slate-800",
   floatingAddHover: "hover:border-slate-700 hover:bg-slate-700",
   chipActiveBgDark: "",
   chipActiveTextDark: "",
@@ -1059,6 +1066,7 @@ const industrialAccent: ThemeAccent = {
   subChipActive: "border-zinc-700 bg-zinc-700 text-white",
   floatingAddBorder: "border-zinc-700",
   floatingAddBg: "bg-zinc-700",
+  floatingAddText: "text-zinc-700",
   floatingAddHover: "hover:border-zinc-600 hover:bg-zinc-600",
   campaignBarQualifiedLight:
     "border-zinc-300 bg-[radial-gradient(circle_at_top_right,rgba(63,63,70,0.12),transparent_42%),linear-gradient(135deg,#f4f4f5_0%,#ffffff_50%,#fafafa_100%)]",
@@ -1151,6 +1159,7 @@ const marketAccent: ThemeAccent = {
   subChipActive: "border-orange-700 bg-orange-700 text-white",
   floatingAddBorder: "border-orange-700",
   floatingAddBg: "bg-orange-700",
+  floatingAddText: "text-orange-700",
   floatingAddHover: "hover:border-orange-800 hover:bg-orange-800",
   chipActiveBgDark: "",
   chipActiveTextDark: "",
@@ -1200,6 +1209,7 @@ const vitrinProAccent: ThemeAccent = {
   subChipActive: "border-teal-700 bg-teal-700 text-white",
   floatingAddBorder: "border-teal-700",
   floatingAddBg: "bg-teal-700",
+  floatingAddText: "text-teal-700",
   floatingAddHover: "hover:border-teal-800 hover:bg-teal-800",
   chipActiveBgDark: "",
   chipActiveTextDark: "",
@@ -1268,6 +1278,7 @@ const noirAccent: ThemeAccent = {
   subChipActive: "border-amber-600 bg-amber-600 text-white",
   floatingAddBorder: "border-amber-600",
   floatingAddBg: "bg-amber-600",
+  floatingAddText: "text-amber-600",
   floatingAddHover: "hover:border-amber-500 hover:bg-amber-500",
   chipActiveBgDark: "bg-amber-600",
   chipActiveTextDark: "text-white",
