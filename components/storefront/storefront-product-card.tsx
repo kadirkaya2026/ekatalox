@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, useEffect, useRef } from "react";
+import { memo, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion, useAnimationControls } from "framer-motion";
 import { Minus, Plus, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -276,16 +276,26 @@ export const StorefrontProductCard = memo(function StorefrontProductCard({
   // sürece + butonuyla aynı renkte ince çerçeve durur, 0'a düşünce kaybolur.
   const imagePulse = useAnimationControls();
   const borderTraceRef = useRef<BorderTraceHandle>(null);
+  // Sayfa açıldığında ürün zaten sepetteyse çizgi animasyonsuz görünür
+  // (mount anındaki değer; sonrası show/hide ile yönetilir).
+  const [initiallyInCart] = useState(cartQuantity > 0);
   const previousQuantityRef = useRef(cartQuantity);
   useEffect(() => {
-    if (cartQuantity > previousQuantityRef.current) {
+    const previous = previousQuantityRef.current;
+    if (previous === 0 && cartQuantity > 0) {
+      // İLK ekleme: çizgi çevreyi dolanır ve kalıcı çerçeve olarak KALIR.
+      borderTraceRef.current?.show();
+    } else if (cartQuantity > previous) {
+      // Sonraki + basışları: çizgi tekrar dönmez; "butona basılmış" hissi
+      // veren kısa pop yeter.
       void imagePulse.start({
         scale: [1, 0.94, 1.02, 1],
-        transition: { duration: 0.45, ease: [0.34, 1.35, 0.64, 1] },
+        transition: { duration: 0.4, ease: [0.34, 1.35, 0.64, 1] },
       });
-      // Getir tarzı: çizgi görselin çevresini ~yarım saniyede bir kez
-      // dolanıp kaybolur (bkz. border-trace.tsx).
-      borderTraceRef.current?.play();
+    }
+    if (previous > 0 && cartQuantity === 0) {
+      // Adet sıfırlandı: aynı çizgi geri sarılarak kaybolur.
+      borderTraceRef.current?.hide();
     }
     previousQuantityRef.current = cartQuantity;
   }, [cartQuantity, imagePulse]);
@@ -322,15 +332,19 @@ export const StorefrontProductCard = memo(function StorefrontProductCard({
         animate={imagePulse}
         className={cn(
           productImageWrapClassName,
-          "overflow-hidden rounded-[1.2rem] border-2 p-2.5 transition-colors duration-300 sm:p-4",
-          // Sepette adedi >0 iken çerçeve: marka rengi ayarlıysa + butonuyla
-          // aynı renk (bkz. brand-colors.ts), yoksa tema accent rengi.
-          cartQuantity > 0 ? theme.productImageInCartBorder : "border-transparent",
+          "overflow-hidden rounded-[1.2rem] p-2.5 sm:p-4",
         )}
       >
-        {/* Çevreyi dolanan çizgi: rengi + butonuyla aynı (marka rengi
-            ayarlıysa --brand-primary, yoksa tema accent'i). */}
-        <BorderTrace ref={borderTraceRef} className={theme.productImageSparkle} radius={19} />
+        {/* Sepetteki ürünün çerçevesi = çevreyi dolanan çizginin kendisi.
+            İlk eklemede çizilir ve kalır, sıfırlanınca geri sarılıp kaybolur.
+            Rengi + butonuyla aynı (marka rengi ayarlıysa --brand-primary,
+            yoksa tema accent'i). */}
+        <BorderTrace
+          ref={borderTraceRef}
+          defaultVisible={initiallyInCart}
+          className={theme.productImageSparkle}
+          radius={19}
+        />
         <DiscountSticker product={product} />
         {product.image_url ? (
           <StorefrontImage
