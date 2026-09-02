@@ -1596,7 +1596,7 @@ export function StorefrontClient({
       map.set(product.id, product);
     }
     return map;
-  }, [products, sections, promoProducts, bestSellerProducts, recommendationPool complementProducts, pairPreviewProducts, nudgeProducts,]);
+  }, [products, sections, promoProducts, bestSellerProducts, recommendationPool, complementProducts, pairPreviewProducts, nudgeProducts]);
   const cartVariantCountByProductId = useMemo(
     () =>
       new Map(
@@ -3172,7 +3172,6 @@ export function StorefrontClient({
                 textClassName={cn(compact ? "text-[9px]" : "text-[10px]", theme.textMuted)}
               />
             </div>
-        </CrossSellCardFx>
           )}
         </div>
         </CrossSellCardFx>
