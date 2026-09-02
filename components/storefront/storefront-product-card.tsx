@@ -132,6 +132,10 @@ export const StorefrontFloatingCartAction = memo(function StorefrontFloatingCart
 }) {
   const theme = useStorefrontTheme();
   const { t } = useStorefrontLocale();
+  // Paket/koli seçimli ürünlerde satır kimliği birime bağlı: +/- doğrudan
+  // adet artıramaz, birim seçme penceresi açılır (modeller gibi).
+  const unitBased =
+    product.has_variants || Boolean(product.package_quantity) || Boolean(product.carton_quantity);
 
   if (!product.is_in_stock) {
     return null;
@@ -161,7 +165,7 @@ export const StorefrontFloatingCartAction = memo(function StorefrontFloatingCart
             whileTap={{ scale: 0.92 }}
             onClick={(event) => {
               event.stopPropagation();
-              if (!product.has_variants) {
+              if (!unitBased) {
                 onIncrease(product.id);
               } else {
                 onOpenAddToCart(product.id);
@@ -188,7 +192,7 @@ export const StorefrontFloatingCartAction = memo(function StorefrontFloatingCart
             whileTap={{ scale: 0.92 }}
             onClick={(event) => {
               event.stopPropagation();
-              if (!product.has_variants) {
+              if (!unitBased) {
                 onDecrease(product.id);
               } else {
                 onOpenAddToCart(product.id);
@@ -206,7 +210,7 @@ export const StorefrontFloatingCartAction = memo(function StorefrontFloatingCart
                   : t("product.decreaseAria")
             }
           >
-            {!product.has_variants && cartQuantity === 1 ? (
+            {!unitBased && cartQuantity === 1 ? (
               <Trash2 className={compact ? "size-4" : "size-4 sm:size-5"} />
             ) : (
               <Minus className={compact ? "size-4" : "size-4 sm:size-5"} />

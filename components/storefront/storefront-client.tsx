@@ -114,6 +114,7 @@ import { isMarketOrTekelTenant } from "@/lib/storefront/white-label";
 import { readTrackingPhone, saveTrackingPhone } from "@/lib/storefront/tracking-phone";
 import { validateCustomerPhoneInput } from "@/lib/storefront/customer-phone";
 import { StorefrontCouponBanner } from "@/components/storefront/storefront-coupon-banner";
+import { BorderTrace, useCartAddFeedback } from "@/components/storefront/border-trace";
 import type { StorefrontCoupon } from "@/lib/types";
 import { StorefrontHeader } from "@/components/storefront/storefront-header";
 import { StorefrontHeroBlock } from "@/components/storefront/storefront-hero-block";
@@ -574,6 +575,13 @@ function hashStringToUnitInterval(input: string): number {
     hash = (hash * 31 + input.charCodeAt(index)) | 0;
   }
   return (hash >>> 0) / 0xffffffff;
+}
+
+// Çapraz satış kartında "Getir tarzı" ekleme geri bildirimi: ana karttaki
+// BorderTrace çizgisinin küçük hali. Hook per-kart çalışsın diye ayrı bileşen.
+function CrossSellAddRing({ quantity, sparkleClassName }: { quantity: number; sparkleClassName?: string }) {
+  const { traceRef, initiallyInCart } = useCartAddFeedback(quantity);
+  return <BorderTrace ref={traceRef} defaultVisible={initiallyInCart} className={sparkleClassName} radius={12} />;
 }
 
 function shuffleProductsBySeed(items: StorefrontProduct[], seed: string) {
@@ -1519,6 +1527,16 @@ export function StorefrontClient({
     () => new Map(cart.map((item) => [item.id, item.quantity])),
     [cart],
   );
+  // Paket/koli satırları farklı satır kimliği taşır; ürün bazında TOPLAM adet
+  // (varyantsız) — çapraz satış kartlarındaki sayaç/çizgi bunu kullanır.
+  const cartUnitTotalsByProductId = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const item of cart) {
+      if (item.variant_id) continue;
+      map.set(item.product_id, (map.get(item.product_id) ?? 0) + item.quantity);
+    }
+    return map;
+  }, [cart]);
   // Sayfa üzerinde herhangi bir yerde (ana katalog sayfası, öne çıkan
   // bölümler, promosyon şeridi, öneri widget'ı) gösterilen ürünler artık
   // ayrı, küçük sunucu sorgularından geliyor — `products` yalnızca ana
@@ -3058,7 +3076,7 @@ export function StorefrontClient({
   ) {
     const cartQuantity = product.has_variants
       ? cartVariantCountByProductId.get(product.id) ?? 0
-      : cartQuantityByProductId.get(product.id) ?? 0;
+      : cartUnitTotalsByProductId.get(product.id) ?? 0;
 
     return (
       <article
@@ -3102,6 +3120,7 @@ export function StorefrontClient({
             theme.productImageWrap,
           )}
         >
+          <CrossSellAddRing quantity={cartQuantity} sparkleClassName={theme.productImageSparkle} />
           <DiscountSticker product={product} />
           {product.image_url ? (
             <StorefrontImage
@@ -3977,7 +3996,7 @@ export function StorefrontClient({
       ) : null}
 
       {nudgeOpen ? (
-        <div className={cn(theme.modalOverlay, "z-[70] flex items-end justify-center p-0 sm:items-center sm:p-4")}>
+        <div className={cn(theme.modalOverlay, "!z-[55] flex items-end justify-center p-0 sm:items-center sm:p-4")}>
           <div className={cn(theme.modalPanel, "flex max-h-[92dvh] w-full max-w-xl flex-col overflow-hidden rounded-t-3xl sm:rounded-3xl")}>
             {/* Başlık */}
             <div className="relative shrink-0 overflow-hidden bg-gradient-to-br from-emerald-600 to-emerald-700 px-5 pb-5 pt-6 text-white">
