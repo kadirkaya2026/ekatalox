@@ -3143,7 +3143,11 @@ export function StorefrontClient({
         <div className={compact ? "mt-1.5 space-y-1" : "mt-3 space-y-1.5"}>
           <p
             className={cn(
-              compact ? "line-clamp-1 text-xs font-semibold leading-4" : "line-clamp-2 text-sm font-semibold leading-5",
+              // Kompakt kartta 2 satır + küçük punto: uzun ürün adının en
+              // azından büyük kısmı okunsun, müşteri resimden tahmin etmesin.
+              compact
+                ? "line-clamp-2 min-h-7 text-[10.5px] font-semibold leading-[13px]"
+                : "line-clamp-2 text-sm font-semibold leading-5",
               theme.productThumbText,
             )}
           >
@@ -3161,7 +3165,7 @@ export function StorefrontClient({
           ) : null}
         </div>
 
-        <div className={cn("flex items-end justify-between gap-2", compact ? "mt-1.5" : "mt-3")}>
+        <div className={cn("flex items-end justify-between gap-2", compact ? "mt-1 [&_p]:!text-[11.5px] [&_p]:!leading-4" : "mt-3")}>
           <ProductPrice product={product} size="crossSell" />
           {cartQuantity > 0 ? (
             <span className={cn(theme.stockBadgeIn, "px-2.5 py-1 text-[10px]")}>
