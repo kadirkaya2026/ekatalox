@@ -13,6 +13,7 @@ import {
   Search,
   ShieldBan,
   ShieldOff,
+  Trash2,
   Users,
 } from "lucide-react";
 import { CustomerCouponPanel } from "@/components/dashboard/customer-coupon-panel";
@@ -83,6 +84,8 @@ function CustomerLedger({
   onToggleBlock,
   blockPending,
   categories,
+  onDelete,
+  deletePending,
 }: {
   customer: Customer;
   orders: StorefrontOrder[] | undefined;
@@ -92,7 +95,10 @@ function CustomerLedger({
   onToggleBlock: (customer: Customer) => void;
   blockPending: boolean;
   categories: Category[];
+  onDelete: (customer: Customer) => void;
+  deletePending: boolean;
 }) {
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const rows = useMemo(
     () => (orders ? [...orders].sort((a, b) => b.created_at.localeCompare(a.created_at)) : []),
     [orders],
@@ -118,8 +124,34 @@ function CustomerLedger({
             {blockPending ? <Loader2 className="size-4 animate-spin" /> : customer.is_blocked ? <ShieldOff className="size-4" /> : <ShieldBan className="size-4" />}
             {customer.is_blocked ? "Engeli kaldır" : "Engelle"}
           </Button>
+          <Button
+            variant="ghost"
+            disabled={deletePending}
+            onClick={() => setConfirmDelete((v) => !v)}
+            className="text-rose-600"
+            title="Müşteri kaydını sil"
+          >
+            <Trash2 className="size-4" />
+            Sil
+          </Button>
         </div>
       </div>
+
+      {confirmDelete ? (
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
+          <span>
+            <strong>{customer.full_name}</strong> silinsin mi? Sipariş geçmişi silinmez (Siparişler'de kalır) ama bu cari kaydı,
+            kuponları ve bildirim abonelikleri kaldırılır. Aynı numarayla yeni sipariş gelirse kayıt yeniden oluşur.
+          </span>
+          <span className="flex gap-2">
+            <Button variant="danger" disabled={deletePending} onClick={() => onDelete(customer)}>
+              {deletePending ? <Loader2 className="size-4 animate-spin" /> : <Trash2 className="size-4" />}
+              Evet, sil
+            </Button>
+            <Button variant="ghost" disabled={deletePending} onClick={() => setConfirmDelete(false)}>Vazgeç</Button>
+          </span>
+        </div>
+      ) : null}
 
       <div className="space-y-5 p-5">
         {/* Kimlik */}
@@ -228,6 +260,7 @@ export function CustomersManager({
   const [sort, setSort] = useState<SortKey>("last");
   const [error, setError] = useState<string | null>(null);
   const [blockPending, setBlockPending] = useState(false);
+  const [deletePending, setDeletePending] = useState(false);
 
   const kpis = useMemo(() => {
     const active = customers.filter((c) => daysSince(c.last_order_at) <= 30).length;
@@ -300,6 +333,20 @@ export function CustomersManager({
     setBlockPending(false);
   }
 
+  async function deleteCustomer(customer: Customer) {
+    setDeletePending(true);
+    setError(null);
+    const response = await fetch(`/api/tenant/customers/${customer.id}`, { method: "DELETE" });
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      setError(result.error ?? "Müşteri silinemedi.");
+    } else {
+      setCustomers((curr) => curr.filter((c) => c.id !== customer.id));
+      setSelected(null);
+    }
+    setDeletePending(false);
+  }
+
   async function exportCsv() {
     const XLSX = await import("xlsx");
     const rows = [
@@ -330,6 +377,8 @@ export function CustomersManager({
           onToggleBlock={toggleBlock}
           blockPending={blockPending}
           categories={categories}
+          onDelete={(c) => void deleteCustomer(c)}
+          deletePending={deletePending}
         />
       </div>
     );
