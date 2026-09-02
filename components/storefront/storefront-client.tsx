@@ -3278,9 +3278,10 @@ export function StorefrontClient({
         }
       />
 
-      {customerCoupon ? (
+      {customerCoupon || campaigns.length ? (
         <StorefrontCouponBanner
           coupon={customerCoupon}
+          campaigns={campaigns}
           onOpenCampaigns={() => {
             setIsSearchSheetOpen(false);
             setIsCampaignsSheetOpen(true);
