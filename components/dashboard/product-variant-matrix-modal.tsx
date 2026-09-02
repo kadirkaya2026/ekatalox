@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Modal } from "@/components/ui/modal";
 import { getPriceListDisplayName } from "@/lib/price-lists/constants";
 import { buildVariantListPriceFormState } from "@/lib/products/price-form";
+import { sanitizePrice } from "@/lib/products/parse-price-input";
 import type { PriceList, Product, ProductVariant } from "@/lib/types";
 
 interface VariantMatrixRow {
@@ -58,7 +59,9 @@ function normalizeVariantRows(rows: VariantMatrixRow[]) {
       .filter(([, value]) => value.trim() !== "")
       .map(([price_list_id, price]) => ({
         price_list_id,
-        price: Number(price),
+        // "19,90" gibi Türkçe ondalık da kabul edilir; Number("19,90") NaN
+        // veriyordu ve fiyat sessizce kayboluyordu (2 Eyl 2026).
+        price: sanitizePrice(price),
       })),
   }));
 }

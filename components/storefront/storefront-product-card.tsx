@@ -63,14 +63,14 @@ export function ProductPrice({
     typeof product.original_price === "number" && product.original_price > product.price;
   const hasPriceRange =
     typeof product.price_max === "number" && product.price_max > product.price;
+  // Modelli üründe kartta yalnız en düşük fiyat, EK METİNSİZ gösterilir
+  // ("…'den başlayan fiyatlarla" istenmedi — kullanıcı kararı, 2 Eyl 2026).
   const currentPriceLabel =
-    size === "compact"
+    size === "compact" || product.price_from
       ? formatCurrency(product.price, product.currency)
-      : product.price_from
-        ? `${formatCurrency(product.price, product.currency)}${t("product.priceFromSuffix")}`
-        : hasPriceRange
-          ? `${formatCurrency(product.price, product.currency)}${t("product.priceFromRangeSuffix")}`
-          : formatCurrency(product.price, product.currency);
+      : hasPriceRange
+        ? `${formatCurrency(product.price, product.currency)}${t("product.priceFromRangeSuffix")}`
+        : formatCurrency(product.price, product.currency);
 
   if (!hasDiscount) {
     return (
