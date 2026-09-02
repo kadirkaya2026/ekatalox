@@ -952,6 +952,7 @@ export function StorefrontClient({
   const [complementProducts, setComplementProducts] = useState<StorefrontProduct[]>([]);
   const [pairPreviewProducts, setPairPreviewProducts] = useState<StorefrontProduct[]>([]);
   const [nudgeOpen, setNudgeOpen] = useState(false);
+  const [nudgeProducts, setNudgeProducts] = useState<StorefrontProduct[]>([]);
   const nudgeBypassRef = useRef(false);
   const pairFetchCacheRef = useRef(new Map<string, StorefrontProduct[]>());
   const relatedPreviewCacheRef = useRef(new Map<string, StorefrontProduct[]>());
@@ -1900,6 +1901,9 @@ export function StorefrontClient({
     // "Yanında iyi gider" hatırlatması: sepette eksik tamamlayıcı varsa ve
     // müşteri henüz görüp geçmediyse, sipariş oluşmadan ÖNCE bir kez sor.
     if (isMarketTenant && !nudgeBypassRef.current && complementProducts.length) {
+      // Liste açılış anında dondurulur: ürün eklenince kart KAYBOLMAZ,
+      // + animasyonu ve adet rozeti diğer kartlardaki gibi görünür.
+      setNudgeProducts(complementProducts);
       setNudgeOpen(true);
       return;
     }
@@ -3981,7 +3985,7 @@ export function StorefrontClient({
             {/* Ürünler: 3 sütun, dikey kaydırma */}
             <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4">
               <div className="grid grid-cols-3 gap-2.5 [&_article]:!min-w-0 [&_article]:!max-w-none">
-                {complementProducts.map((product) => renderCrossSellCard(product, true))}
+                {nudgeProducts.map((product) => renderCrossSellCard(product, true))}
               </div>
             </div>
 
