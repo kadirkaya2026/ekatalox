@@ -6,6 +6,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import {
   BarChart3,
   Building2,
+  ClipboardList,
   Clock,
   Contact,
   CreditCard,
@@ -14,18 +15,20 @@ import {
   ImageIcon,
   KeyRound,
   LayoutDashboard,
-  Lightbulb,
   LayoutTemplate,
+  Lightbulb,
+  Magnet,
   Megaphone,
   PackagePlus,
-  PanelBottom,
   Palette,
-  QrCode,
+  PanelBottom,
   PlusCircle,
+  QrCode,
   ScanBarcode,
   ScrollText,
   Settings,
   ShieldCheck,
+  Sparkles,
   Star,
   Store,
   Ticket,
@@ -33,8 +36,6 @@ import {
   UploadCloud,
   UserCircle,
   Wallet,
-  Magnet,
-  ClipboardList,
 } from "lucide-react";
 import { EkataloxLogo } from "@/components/brand/ekatalox-logo";
 import { SidebarLogoutButton } from "@/components/dashboard/sidebar-logout-button";
@@ -90,6 +91,12 @@ const tenantLinks: SidebarLink[] = [
         href: "/products/market-catalog",
         label: "Master Katalog",
         icon: Store,
+        requiredBusinessType: "market",
+      },
+      {
+        href: "/products/pairings",
+        label: "Yanında İyi Gider",
+        icon: Sparkles,
         requiredBusinessType: "market",
       },
       {
