@@ -1165,28 +1165,52 @@ export function StorefrontClient({
     return [...scored.entries()].sort((a, b) => a[1] - b[1]).map(([id]) => id);
   }, [cart, pairings, categories, getPairingTargets]);
 
+  // Her HEDEF kategoriden ayrı çekilir ve öncelik sırasıyla 2'şer ürün
+  // serpiştirilir — tek sorguda karıştırınca ilk kategoriler (içecekler)
+  // tüm listeyi kaplıyor, çerez/çikolata/bardak hiç görünmüyordu (2 Eyl 2026).
   const fetchPairProducts = useCallback(async (categoryIds: string[], excludeIds: Set<string>) => {
-    if (!subdomain) return [] as StorefrontProduct[];
-    const expanded = [...new Set(categoryIds.flatMap((id) => [id, ...getDescendantCategoryIds(categories, id)]))];
-    if (!expanded.length) return [] as StorefrontProduct[];
-    const cacheKey = expanded.slice().sort().join(",");
-    let list = pairFetchCacheRef.current.get(cacheKey);
-    if (!list) {
-      try {
-        const params = new URLSearchParams({ subdomain, categoryIds: expanded.join(","), page: "1" });
-        const response = await fetch(`/api/storefront/products?${params.toString()}`);
-        if (!response.ok) return [];
-        const result = await response.json();
-        list = Array.isArray(result.products) ? (result.products as StorefrontProduct[]) : [];
-        pairFetchCacheRef.current.set(cacheKey, list);
-      } catch {
-        return [];
-      }
-    }
-    return shuffleProductsBySeed(
-      list.filter((productItem) => productItem.is_in_stock && !excludeIds.has(productItem.id)),
-      recommendationSeed,
+    if (!subdomain || !categoryIds.length) return [] as StorefrontProduct[];
+    const perCategory = await Promise.all(
+      categoryIds.slice(0, 8).map(async (catId) => {
+        const expanded = [catId, ...getDescendantCategoryIds(categories, catId)];
+        const cacheKey = expanded.slice().sort().join(",");
+        let list = pairFetchCacheRef.current.get(cacheKey);
+        if (!list) {
+          try {
+            const params = new URLSearchParams({ subdomain, categoryIds: expanded.join(","), page: "1" });
+            const response = await fetch(`/api/storefront/products?${params.toString()}`);
+            if (!response.ok) return [] as StorefrontProduct[];
+            const result = await response.json();
+            list = Array.isArray(result.products) ? (result.products as StorefrontProduct[]) : [];
+            pairFetchCacheRef.current.set(cacheKey, list);
+          } catch {
+            return [] as StorefrontProduct[];
+          }
+        }
+        return shuffleProductsBySeed(
+          list.filter((productItem) => productItem.is_in_stock && !excludeIds.has(productItem.id)),
+          recommendationSeed,
+        );
+      }),
     );
+    // Öncelik sırasıyla her kategoriden 2 ürün; kalan boşluğu sırayla doldur
+    const seen = new Set<string>();
+    const pick: StorefrontProduct[] = [];
+    for (const pass of [2, 10] as const) {
+      for (const list of perCategory) {
+        let taken = 0;
+        for (const productItem of list) {
+          if (seen.has(productItem.id)) continue;
+          if (pass === 2 && taken >= 2) break;
+          if (pick.length >= 12) break;
+          seen.add(productItem.id);
+          pick.push(productItem);
+          taken += 1;
+        }
+      }
+      if (pick.length >= 12) break;
+    }
+    return pick;
   }, [categories, subdomain, recommendationSeed]);
 
   // Sepetin eksik tamamlayıcıları (ilk 3 kategori, 10 ürün)
@@ -1194,8 +1218,8 @@ export function StorefrontClient({
     if (!missingComplementCategoryIds.length) { setComplementProducts([]); return; }
     let cancelled = false;
     const cartIds = new Set(cart.map((item) => item.product_id).filter(Boolean) as string[]);
-    void fetchPairProducts(missingComplementCategoryIds.slice(0, 3), cartIds).then((list) => {
-      if (!cancelled) setComplementProducts(list.slice(0, 10));
+    void fetchPairProducts(missingComplementCategoryIds, cartIds).then((list) => {
+      if (!cancelled) setComplementProducts(list.slice(0, 12));
     });
     return () => { cancelled = true; };
   }, [missingComplementCategoryIds, fetchPairProducts, cart]);
@@ -1206,8 +1230,8 @@ export function StorefrontClient({
     const targets = getPairingTargets(previewProduct.category_id).sort((a, b) => a.priority - b.priority);
     if (!targets.length) { setPairPreviewProducts([]); return; }
     let cancelled = false;
-    void fetchPairProducts(targets.slice(0, 3).map((x) => x.id), new Set([previewProduct.id])).then((list) => {
-      if (!cancelled) setPairPreviewProducts(list.slice(0, 10));
+    void fetchPairProducts(targets.map((x) => x.id), new Set([previewProduct.id])).then((list) => {
+      if (!cancelled) setPairPreviewProducts(list.slice(0, 12));
     });
     return () => { cancelled = true; };
   }, [previewProduct, getPairingTargets, fetchPairProducts]);
