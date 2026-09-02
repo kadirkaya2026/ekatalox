@@ -579,13 +579,26 @@ function hashStringToUnitInterval(input: string): number {
 
 // Çapraz satış kartında "Getir tarzı" ekleme geri bildirimi: ana karttaki
 // BorderTrace çizgisinin küçük hali. Hook per-kart çalışsın diye ayrı bileşen.
-function CrossSellAddRing({ quantity, sparkleClassName, radius = 16 }: { quantity: number; sparkleClassName?: string; radius?: number }) {
+function CrossSellCardFx({
+  quantity,
+  sparkleClassName,
+  radius = 16,
+  children,
+}: {
+  quantity: number;
+  sparkleClassName?: string;
+  radius?: number;
+  children: React.ReactNode;
+}) {
   const { imagePulse, traceRef, initiallyInCart } = useCartAddFeedback(quantity);
-  // Çizgi kartın tamamını dolanır; 2. eklemede halka "pulse" yapar.
+  // Çizgi kartın tamamını dolanır (sabit); eklemede ÜRÜN GÖRSELİ pulse yapar.
   return (
-    <motion.div animate={imagePulse} className="pointer-events-none absolute inset-0 z-20">
-      <BorderTrace ref={traceRef} defaultVisible={initiallyInCart} className={sparkleClassName} radius={radius} />
-    </motion.div>
+    <>
+      <span className="pointer-events-none absolute inset-0 z-20">
+        <BorderTrace ref={traceRef} defaultVisible={initiallyInCart} className={sparkleClassName} radius={radius} />
+      </span>
+      <motion.div animate={imagePulse}>{children}</motion.div>
+    </>
   );
 }
 
@@ -1568,11 +1581,22 @@ export function StorefrontClient({
     for (const product of bestSellerProducts) {
       map.set(product.id, product);
     }
+    // "Yanında iyi gider" ürünleri de ayrı sorgudan gelir; haritada yoksa
+    // + butonu ve detay modalı sessizce çalışmıyordu (buz küpleri vakası).
+    for (const product of complementProducts) {
+      map.set(product.id, product);
+    }
+    for (const product of pairPreviewProducts) {
+      map.set(product.id, product);
+    }
+    for (const product of nudgeProducts) {
+      map.set(product.id, product);
+    }
     for (const product of recommendationPool) {
       map.set(product.id, product);
     }
     return map;
-  }, [products, sections, promoProducts, bestSellerProducts, recommendationPool]);
+  }, [products, sections, promoProducts, bestSellerProducts, recommendationPool complementProducts, pairPreviewProducts, nudgeProducts,]);
   const cartVariantCountByProductId = useMemo(
     () =>
       new Map(
@@ -3111,11 +3135,6 @@ export function StorefrontClient({
           theme.surfaceRing,
         )}
       >
-        <CrossSellAddRing
-          quantity={cartQuantity}
-          sparkleClassName={theme.productImageSparkle}
-          radius={compact ? 15 : 22}
-        />
         <StorefrontFloatingCartAction
           product={product}
           cartQuantity={cartQuantity}
@@ -3125,6 +3144,11 @@ export function StorefrontClient({
           onOpenAddToCart={handleQuickAddOrOpenModal}
         />
 
+        <CrossSellCardFx
+          quantity={cartQuantity}
+          sparkleClassName={theme.productImageSparkle}
+          radius={compact ? 15 : 22}
+        >
         <div
           className={cn(
             "relative overflow-hidden rounded-[1.15rem]",
@@ -3148,8 +3172,10 @@ export function StorefrontClient({
                 textClassName={cn(compact ? "text-[9px]" : "text-[10px]", theme.textMuted)}
               />
             </div>
+        </CrossSellCardFx>
           )}
         </div>
+        </CrossSellCardFx>
 
         <div className={compact ? "mt-1.5 space-y-1" : "mt-3 space-y-1.5"}>
           <p
