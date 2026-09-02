@@ -957,6 +957,15 @@ export function StorefrontClient({
   const descriptionCacheRef = useRef(new Map<string, string | null>());
   const descriptionAbortRef = useRef<AbortController | null>(null);
   const [relatedPreviewProducts, setRelatedPreviewProducts] = useState<StorefrontProduct[]>([]);
+  // "Yanında iyi gider" (kategori eşlemeleri, bkz. category_pairings):
+  // sepetteki ürünlerin tamamlayıcıları (buz, kola, çerez…) ve ürün
+  // penceresindeki ikinci şerit buradan beslenir.
+  const [pairings, setPairings] = useState<Array<{ source_category_id: string; target_category_id: string; priority: number }>>([]);
+  const [complementProducts, setComplementProducts] = useState<StorefrontProduct[]>([]);
+  const [pairPreviewProducts, setPairPreviewProducts] = useState<StorefrontProduct[]>([]);
+  const [nudgeOpen, setNudgeOpen] = useState(false);
+  const nudgeBypassRef = useRef(false);
+  const pairFetchCacheRef = useRef(new Map<string, StorefrontProduct[]>());
   const relatedPreviewCacheRef = useRef(new Map<string, StorefrontProduct[]>());
   const relatedPreviewAbortRef = useRef<AbortController | null>(null);
   const [recommendationSeed] = useState(() => Math.random().toString(36));
@@ -1111,6 +1120,97 @@ export function StorefrontClient({
     return () => controller.abort();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isMarketTenant, analyticsSubdomain]);
+
+  useEffect(() => {
+    if (!isMarketOrTekelTenant(tenant)) return;
+    const controller = new AbortController();
+    fetch(`/api/storefront/pairings?subdomain=${encodeURIComponent(analyticsSubdomain)}`, { signal: controller.signal })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => { if (Array.isArray(d?.pairings)) setPairings(d.pairings); })
+      .catch(() => undefined);
+    return () => controller.abort();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [analyticsSubdomain]);
+
+  // Sepet değişince "tamamla" uyarısı yeniden gösterilebilir olur
+  useEffect(() => { nudgeBypassRef.current = false; }, [cart]);
+
+  // Bir kategorinin (soyu dahil) eşlenmiş hedef kategorileri, öncelik sırasıyla
+  const getPairingTargets = useCallback((categoryId: string | null | undefined) => {
+    if (!categoryId || !pairings.length) return [] as Array<{ id: string; priority: number }>;
+    const lineageIds = new Set(getCategoryLineage(categories, categoryId).map((c) => c.id));
+    lineageIds.add(categoryId);
+    return pairings
+      .filter((pr) => lineageIds.has(pr.source_category_id))
+      .map((pr) => ({ id: pr.target_category_id, priority: pr.priority }));
+  }, [pairings, categories]);
+
+  // Sepete göre EKSİK tamamlayıcı kategoriler (sepette o kategoriden ürün varsa önerilmez)
+  const missingComplementCategoryIds = useMemo(() => {
+    if (!pairings.length || !cart.length) return [] as string[];
+    const cartCategorySet = new Set<string>();
+    for (const item of cart) {
+      if (!item.category_id) continue;
+      cartCategorySet.add(item.category_id);
+      for (const c of getCategoryLineage(categories, item.category_id)) cartCategorySet.add(c.id);
+    }
+    const scored = new Map<string, number>();
+    for (const item of cart) {
+      for (const target of getPairingTargets(item.category_id)) {
+        const expanded = [target.id, ...getDescendantCategoryIds(categories, target.id)];
+        if (expanded.some((id) => cartCategorySet.has(id))) continue; // zaten sepette
+        scored.set(target.id, Math.min(scored.get(target.id) ?? 999, target.priority));
+      }
+    }
+    return [...scored.entries()].sort((a, b) => a[1] - b[1]).map(([id]) => id);
+  }, [cart, pairings, categories, getPairingTargets]);
+
+  const fetchPairProducts = useCallback(async (categoryIds: string[], excludeIds: Set<string>) => {
+    if (!subdomain) return [] as StorefrontProduct[];
+    const expanded = [...new Set(categoryIds.flatMap((id) => [id, ...getDescendantCategoryIds(categories, id)]))];
+    if (!expanded.length) return [] as StorefrontProduct[];
+    const cacheKey = expanded.slice().sort().join(",");
+    let list = pairFetchCacheRef.current.get(cacheKey);
+    if (!list) {
+      try {
+        const params = new URLSearchParams({ subdomain, categoryIds: expanded.join(","), page: "1" });
+        const response = await fetch(`/api/storefront/products?${params.toString()}`);
+        if (!response.ok) return [];
+        const result = await response.json();
+        list = Array.isArray(result.products) ? (result.products as StorefrontProduct[]) : [];
+        pairFetchCacheRef.current.set(cacheKey, list);
+      } catch {
+        return [];
+      }
+    }
+    return shuffleProductsBySeed(
+      list.filter((productItem) => productItem.is_in_stock && !excludeIds.has(productItem.id)),
+      recommendationSeed,
+    );
+  }, [categories, subdomain, recommendationSeed]);
+
+  // Sepetin eksik tamamlayıcıları (ilk 3 kategori, 10 ürün)
+  useEffect(() => {
+    if (!missingComplementCategoryIds.length) { setComplementProducts([]); return; }
+    let cancelled = false;
+    const cartIds = new Set(cart.map((item) => item.product_id).filter(Boolean) as string[]);
+    void fetchPairProducts(missingComplementCategoryIds.slice(0, 3), cartIds).then((list) => {
+      if (!cancelled) setComplementProducts(list.slice(0, 10));
+    });
+    return () => { cancelled = true; };
+  }, [missingComplementCategoryIds, fetchPairProducts, cart]);
+
+  // Ürün penceresi: "Yanında iyi gider" şeridi (sepetten bağımsız)
+  useEffect(() => {
+    if (!previewProduct) { setPairPreviewProducts([]); return; }
+    const targets = getPairingTargets(previewProduct.category_id).sort((a, b) => a.priority - b.priority);
+    if (!targets.length) { setPairPreviewProducts([]); return; }
+    let cancelled = false;
+    void fetchPairProducts(targets.slice(0, 3).map((x) => x.id), new Set([previewProduct.id])).then((list) => {
+      if (!cancelled) setPairPreviewProducts(list.slice(0, 10));
+    });
+    return () => { cancelled = true; };
+  }, [previewProduct, getPairingTargets, fetchPairProducts]);
 
   const theme = useResolvedStorefrontTheme(
     storefrontSettings.theme_key,
@@ -1783,6 +1883,13 @@ export function StorefrontClient({
       return;
     }
 
+    // "Yanında iyi gider" hatırlatması: sepette eksik tamamlayıcı varsa ve
+    // müşteri henüz görüp geçmediyse, sipariş oluşmadan ÖNCE bir kez sor.
+    if (isMarketTenant && !nudgeBypassRef.current && complementProducts.length) {
+      setNudgeOpen(true);
+      return;
+    }
+
     if (isMarketTenant) {
       let hasValidationError = false;
 
@@ -1893,6 +2000,7 @@ export function StorefrontClient({
   }, [
     analyticsSubdomain,
     buildWhatsAppOrderMessage,
+    complementProducts.length,
     cart,
     customerReferenceName,
     customerAddress,
@@ -3165,6 +3273,25 @@ export function StorefrontClient({
             </div>
           ) : null}
 
+          {!activePreviewTab && pairPreviewProducts.length ? (
+            <div className="mt-4">
+              <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.22em] text-emerald-600">
+                {t("pair.goesWellWith")}
+              </p>
+              <div
+                onWheel={(event) => {
+                  if (Math.abs(event.deltaY) <= Math.abs(event.deltaX)) return;
+                  event.currentTarget.scrollBy({ left: event.deltaY });
+                  event.preventDefault();
+                }}
+                className="scrollbar-hide -mx-1 -mt-2 flex gap-2.5 overflow-x-auto px-1 pb-1 pt-2"
+              >
+                {pairPreviewProducts.map((product) =>
+                  renderCrossSellCard(product, true, handleOpenProductDetail),
+                )}
+              </div>
+            </div>
+          ) : null}
           {!activePreviewTab && relatedPreviewProducts.length ? (
             <div className="shrink-0">
               <h3 className={cn("mb-2 text-sm font-bold tracking-tight", theme.text)}>
@@ -3816,6 +3943,45 @@ export function StorefrontClient({
         />
       ) : null}
 
+      {nudgeOpen ? (
+        <div className={cn(theme.modalOverlay, "z-[70] flex items-center justify-center p-4")}>
+          <div className={cn(theme.modalPanel, "w-full max-w-lg overflow-hidden rounded-2xl")}>
+            <div className={cn("flex items-start justify-between gap-3 px-5 pb-3 pt-5", theme.modalHeaderBorder)}>
+              <div>
+                <h2 className={cn("text-lg font-bold", theme.text)}>{t("nudge.title")}</h2>
+                <p className={cn("mt-1 text-sm", theme.textMuted)}>{t("nudge.subtitle")}</p>
+              </div>
+              <button type="button" onClick={() => setNudgeOpen(false)} className={theme.modalCloseButton} aria-label={t("common.close")}>
+                <X className="size-5" />
+              </button>
+            </div>
+            <div className="scrollbar-hide flex gap-2.5 overflow-x-auto px-5 py-4">
+              {complementProducts.slice(0, 8).map((product) => renderCrossSellCard(product, true))}
+            </div>
+            <div className={cn("flex flex-col gap-2 px-5 pb-5", theme.modalFooterBorder)}>
+              <Button
+                type="button"
+                onClick={() => {
+                  nudgeBypassRef.current = true;
+                  setNudgeOpen(false);
+                  void handleWhatsAppOrder();
+                }}
+                className="h-11 w-full justify-center rounded-full text-base font-bold"
+              >
+                {t("nudge.continue")}
+              </Button>
+              <button
+                type="button"
+                onClick={() => setNudgeOpen(false)}
+                className={cn("text-center text-xs font-semibold underline underline-offset-2", theme.textMuted)}
+              >
+                {t("nudge.back")}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
       <StorefrontCampaignsSheet
         isOpen={isMounted && isCampaignsSheetOpen}
         onClose={() => setIsCampaignsSheetOpen(false)}
@@ -3901,6 +4067,8 @@ export function StorefrontClient({
         renderCashDiscountBar={renderCashDiscountBar}
         renderCardCampaignBar={renderCardCampaignBar}
         renderCrossSellCard={renderCrossSellCard}
+        recommendedOverride={complementProducts.length ? complementProducts : null}
+        recommendedOverrideTitle={t("pair.forgotTitle")}
         isCatalogOnly={isCatalogOnly}
       />
       {renderProductPreviewModal()}

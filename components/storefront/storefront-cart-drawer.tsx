@@ -93,6 +93,9 @@ export type StorefrontCartDrawerProps = {
   renderCashDiscountBar: (compact: boolean, onDismiss?: () => void) => ReactNode;
   renderCardCampaignBar: (compact: boolean, onDismiss?: () => void) => ReactNode;
   renderCrossSellCard: (product: StorefrontProduct) => ReactNode;
+  /** "Yanında iyi gider" tamamlayıcıları: doluysa öneri şeridinin yerine geçer */
+  recommendedOverride?: StorefrontProduct[] | null;
+  recommendedOverrideTitle?: string;
   isCatalogOnly?: boolean;
 };
 
@@ -148,8 +151,11 @@ export function StorefrontCartDrawer({
   renderCashDiscountBar,
   renderCardCampaignBar,
   renderCrossSellCard,
+  recommendedOverride = null,
+  recommendedOverrideTitle,
   isCatalogOnly = false,
 }: StorefrontCartDrawerProps) {
+  const suggestedList = recommendedOverride?.length ? recommendedOverride : recommendedProducts;
   const theme = useStorefrontTheme();
   const { t } = useStorefrontLocale();
   const [copyFeedback, setCopyFeedback] = useState<string | null>(null);
@@ -599,14 +605,14 @@ export function StorefrontCartDrawer({
                   />
                 </div>
 
-                {recommendedProducts.length ? (
+                {suggestedList.length ? (
                   <section className={cn(theme.panelSurface, theme.surfaceMuted)}>
                     <div className="mb-3">
                       <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-emerald-700">
                         {t("cart.suggestedProducts")}
                       </p>
                       <h3 className={cn("mt-1 text-lg font-bold tracking-tight", theme.text)}>
-                        {t("cart.youMayAlsoLike")}
+                        {recommendedOverride?.length && recommendedOverrideTitle ? recommendedOverrideTitle : t("cart.youMayAlsoLike")}
                       </h3>
                     </div>
 
@@ -620,9 +626,9 @@ export function StorefrontCartDrawer({
                         }}
                         className="scrollbar-hide -mx-1 -mt-2 flex gap-3 overflow-x-auto px-1 pb-1 pt-2"
                       >
-                        {recommendedProducts.map((product) => renderCrossSellCard(product))}
+                        {suggestedList.map((product) => renderCrossSellCard(product))}
                       </div>
-                      {recommendedProducts.length > 2 ? (
+                      {suggestedList.length > 2 ? (
                         <>
                           <button
                             type="button"
