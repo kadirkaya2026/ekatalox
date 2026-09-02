@@ -159,7 +159,7 @@ export const storefrontDictionary: Record<StorefrontLocale, StorefrontDictionary
     "productModal.relatedProductsTitle": "Bunlar da ilgini çekebilir",
 
     "addToCart.selectedModels": "Seçilen Modeller",
-    "addToCart.searchPlaceholder": "Model ara (14 Pro, 12/12 PF)",
+    "addToCart.searchPlaceholder": "Model/Renk Ara",
     "addToCart.noModelFoundQuery": "“{query}” için model bulunamadı.",
     "addToCart.noModelFound": "Gösterilecek model bulunamadı.",
     "addToCart.quantityLabel": "ADET",
@@ -475,7 +475,7 @@ export const storefrontDictionary: Record<StorefrontLocale, StorefrontDictionary
     "productModal.relatedProductsTitle": "Das könnte dich auch interessieren",
 
     "addToCart.selectedModels": "Ausgewählte Modelle",
-    "addToCart.searchPlaceholder": "Modell suchen (14 Pro, 12/12 PF)",
+    "addToCart.searchPlaceholder": "Modell/Farbe suchen",
     "addToCart.noModelFoundQuery": "Kein Modell für „{query}“ gefunden.",
     "addToCart.noModelFound": "Kein Modell zum Anzeigen gefunden.",
     "addToCart.quantityLabel": "STÜCK",
@@ -789,7 +789,7 @@ export const storefrontDictionary: Record<StorefrontLocale, StorefrontDictionary
     "productModal.relatedProductsTitle": "You might also like these",
 
     "addToCart.selectedModels": "Selected Models",
-    "addToCart.searchPlaceholder": "Search model (14 Pro, 12/12 PF)",
+    "addToCart.searchPlaceholder": "Search model/color",
     "addToCart.noModelFoundQuery": "No model found for “{query}”.",
     "addToCart.noModelFound": "No model to display.",
     "addToCart.quantityLabel": "QTY",
@@ -1102,7 +1102,7 @@ export const storefrontDictionary: Record<StorefrontLocale, StorefrontDictionary
     "productModal.relatedProductsTitle": "Это тоже может вас заинтересовать",
 
     "addToCart.selectedModels": "Выбранные модели",
-    "addToCart.searchPlaceholder": "Поиск модели (14 Pro, 12/12 PF)",
+    "addToCart.searchPlaceholder": "Поиск модели/цвета",
     "addToCart.noModelFoundQuery": "Модель по запросу «{query}» не найдена.",
     "addToCart.noModelFound": "Нет моделей для отображения.",
     "addToCart.quantityLabel": "КОЛ-ВО",
