@@ -10,19 +10,7 @@ import {
   useSyncExternalStore,
 } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import {
-  ChevronDown,
-  ChevronLeft,
-  ChevronRight,
-  CreditCard,
-  Megaphone,
-  Minus,
-  Plus,
-  Search,
-  ShoppingCart,
-  Sparkles,
-  X,
-} from "lucide-react";
+import { ChevronDown, ChevronLeft, ChevronRight, CreditCard, Megaphone, Minus, Plus, Search, ShoppingBasket, ShoppingCart, Sparkles, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -3970,21 +3958,35 @@ export function StorefrontClient({
       ) : null}
 
       {nudgeOpen ? (
-        <div className={cn(theme.modalOverlay, "z-[70] flex items-center justify-center p-4")}>
-          <div className={cn(theme.modalPanel, "w-full max-w-lg overflow-hidden rounded-2xl")}>
-            <div className={cn("flex items-start justify-between gap-3 px-5 pb-3 pt-5", theme.modalHeaderBorder)}>
-              <div>
-                <h2 className={cn("text-lg font-bold", theme.text)}>{t("nudge.title")}</h2>
-                <p className={cn("mt-1 text-sm", theme.textMuted)}>{t("nudge.subtitle")}</p>
-              </div>
-              <button type="button" onClick={() => setNudgeOpen(false)} className={theme.modalCloseButton} aria-label={t("common.close")}>
-                <X className="size-5" />
+        <div className={cn(theme.modalOverlay, "z-[70] flex items-end justify-center p-0 sm:items-center sm:p-4")}>
+          <div className={cn(theme.modalPanel, "flex max-h-[92dvh] w-full max-w-xl flex-col overflow-hidden rounded-t-3xl sm:rounded-3xl")}>
+            {/* Başlık */}
+            <div className="relative shrink-0 overflow-hidden bg-gradient-to-br from-emerald-600 to-emerald-700 px-5 pb-5 pt-6 text-white">
+              <ShoppingBasket className="pointer-events-none absolute -right-4 -top-4 size-28 rotate-12 opacity-15" />
+              <button
+                type="button"
+                onClick={() => setNudgeOpen(false)}
+                className="absolute right-3 top-3 flex size-8 items-center justify-center rounded-full bg-white/15 text-white transition hover:bg-white/25"
+                aria-label={t("common.close")}
+              >
+                <X className="size-4" />
               </button>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-emerald-100">{t("pair.goesWellWith")}</p>
+              <h2 className="mt-1 text-xl font-bold leading-snug" style={{ textWrap: "balance" } as React.CSSProperties}>
+                {t("nudge.title")}
+              </h2>
+              <p className="mt-1 text-sm text-emerald-50/90">{t("nudge.subtitle")}</p>
             </div>
-            <div className="scrollbar-hide flex gap-2.5 overflow-x-auto px-5 py-4">
-              {complementProducts.slice(0, 8).map((product) => renderCrossSellCard(product, true))}
+
+            {/* Ürünler: 3 sütun, dikey kaydırma */}
+            <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4">
+              <div className="grid grid-cols-3 gap-2.5 [&_article]:!min-w-0 [&_article]:!max-w-none">
+                {complementProducts.map((product) => renderCrossSellCard(product, true))}
+              </div>
             </div>
-            <div className={cn("flex flex-col gap-2 px-5 pb-5", theme.modalFooterBorder)}>
+
+            {/* Alt */}
+            <div className={cn("shrink-0 space-y-2 border-t px-5 py-4", theme.modalFooterBorder, theme.border)}>
               <Button
                 type="button"
                 onClick={() => {
@@ -3992,14 +3994,14 @@ export function StorefrontClient({
                   setNudgeOpen(false);
                   void handleWhatsAppOrder();
                 }}
-                className="h-11 w-full justify-center rounded-full text-base font-bold"
+                className="h-12 w-full justify-center rounded-full text-base font-bold"
               >
                 {t("nudge.continue")}
               </Button>
               <button
                 type="button"
                 onClick={() => setNudgeOpen(false)}
-                className={cn("text-center text-xs font-semibold underline underline-offset-2", theme.textMuted)}
+                className={cn("w-full text-center text-xs font-semibold underline-offset-2 hover:underline", theme.textMuted)}
               >
                 {t("nudge.back")}
               </button>
