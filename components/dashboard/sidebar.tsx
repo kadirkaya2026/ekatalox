@@ -335,6 +335,12 @@ export function Sidebar({
             <div key={link.href}>
               <Link
                 href={link.href}
+                onClick={() => {
+                  // Zaten bu sayfadayken menüye tekrar tıklanırsa URL değişmez,
+                  // sayfa yeniden kurulmaz; içerideki detay görünümleri (seçili
+                  // müşteri/sipariş) bu olayla listeye döner.
+                  if (isActive(link.href)) window.dispatchEvent(new Event("ekx-nav-reset"));
+                }}
                 className={cn(
                   "flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition",
                   exactActive
@@ -375,6 +381,7 @@ export function Sidebar({
                           const childActive = isActive(child.href);
                           return (
                             <Link
+                              onClick={() => { if (isActive(child.href)) window.dispatchEvent(new Event("ekx-nav-reset")); }}
                               key={child.href}
                               href={child.href}
                               className={cn(

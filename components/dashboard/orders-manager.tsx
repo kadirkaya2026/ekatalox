@@ -121,6 +121,17 @@ export function OrdersManager({
     })();
   }, [searchParams, router]);
 
+  // Menüden "Siparişler"e tekrar tıklanınca açık sipariş detayından listeye dön
+  useEffect(() => {
+    const reset = () => {
+      setSelected(null);
+      setCancelOpen(false);
+      setCancelReason("");
+    };
+    window.addEventListener("ekx-nav-reset", reset);
+    return () => window.removeEventListener("ekx-nav-reset", reset);
+  }, []);
+
   // Yeni sipariş yoklaması panel genelinde (new-order-watcher.tsx); burada
   // yalnız olayı dinleyip listeyi tazeliyoruz.
   useEffect(() => {

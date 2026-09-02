@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   ArrowLeft,
   BellRing,
@@ -261,6 +261,13 @@ export function CustomersManager({
   const [error, setError] = useState<string | null>(null);
   const [blockPending, setBlockPending] = useState(false);
   const [deletePending, setDeletePending] = useState(false);
+
+  // Menüden "Müşteriler"e tekrar tıklanınca açık müşteri kartından listeye dön
+  useEffect(() => {
+    const reset = () => setSelected(null);
+    window.addEventListener("ekx-nav-reset", reset);
+    return () => window.removeEventListener("ekx-nav-reset", reset);
+  }, []);
 
   const kpis = useMemo(() => {
     const active = customers.filter((c) => daysSince(c.last_order_at) <= 30).length;
