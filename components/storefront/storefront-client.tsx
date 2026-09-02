@@ -980,6 +980,9 @@ export function StorefrontClient({
   const [nudgeOpen, setNudgeOpen] = useState(false);
   const [nudgeProducts, setNudgeProducts] = useState<StorefrontProduct[]>([]);
   const nudgeBypassRef = useRef(false);
+  // X / "Sepete dön" ile kapatıldıysa sayfa yenilenene kadar bir daha çıkmaz
+  // (sinir bozucu olmasın — kullanıcı kararı, 3 Eyl 2026).
+  const nudgeDismissedRef = useRef(false);
   const pairFetchCacheRef = useRef(new Map<string, StorefrontProduct[]>());
   const relatedPreviewCacheRef = useRef(new Map<string, StorefrontProduct[]>());
   const relatedPreviewAbortRef = useRef<AbortController | null>(null);
@@ -1962,7 +1965,7 @@ export function StorefrontClient({
 
     // "Yanında iyi gider" hatırlatması: sepette eksik tamamlayıcı varsa ve
     // müşteri henüz görüp geçmediyse, sipariş oluşmadan ÖNCE bir kez sor.
-    if (isMarketTenant && !nudgeBypassRef.current && complementProducts.length) {
+    if (isMarketTenant && !nudgeBypassRef.current && !nudgeDismissedRef.current && complementProducts.length) {
       // Liste açılış anında dondurulur: ürün eklenince kart KAYBOLMAZ,
       // + animasyonu ve adet rozeti diğer kartlardaki gibi görünür.
       setNudgeProducts(complementProducts);
@@ -4038,7 +4041,10 @@ export function StorefrontClient({
               <ShoppingBasket className="pointer-events-none absolute -right-4 -top-4 size-28 rotate-12 opacity-15" />
               <button
                 type="button"
-                onClick={() => setNudgeOpen(false)}
+                onClick={() => {
+                  nudgeDismissedRef.current = true;
+                  setNudgeOpen(false);
+                }}
                 className="absolute right-3 top-3 flex size-8 items-center justify-center rounded-full bg-white/15 text-white transition hover:bg-white/25"
                 aria-label={t("common.close")}
               >
@@ -4073,7 +4079,10 @@ export function StorefrontClient({
               </Button>
               <button
                 type="button"
-                onClick={() => setNudgeOpen(false)}
+                onClick={() => {
+                  nudgeDismissedRef.current = true;
+                  setNudgeOpen(false);
+                }}
                 className={cn("w-full text-center text-xs font-semibold underline-offset-2 hover:underline", theme.textMuted)}
               >
                 {t("nudge.back")}
