@@ -1171,7 +1171,7 @@ export function StorefrontClient({
   const fetchPairProducts = useCallback(async (categoryIds: string[], excludeIds: Set<string>) => {
     if (!subdomain || !categoryIds.length) return [] as StorefrontProduct[];
     const perCategory = await Promise.all(
-      categoryIds.slice(0, 8).map(async (catId) => {
+      categoryIds.map(async (catId) => {
         const expanded = [catId, ...getDescendantCategoryIds(categories, catId)];
         const cacheKey = expanded.slice().sort().join(",");
         let list = pairFetchCacheRef.current.get(cacheKey);
@@ -1193,22 +1193,24 @@ export function StorefrontClient({
         );
       }),
     );
-    // Öncelik sırasıyla her kategoriden 2 ürün; kalan boşluğu sırayla doldur
+    // 1. tur: ürünü olan HER kategoriden mutlaka 1 ürün (kategori atlanmaz);
+    // 2. tur: yer kaldıkça her kategoriden 2.; 3. tur: kalan boşluk sırayla.
     const seen = new Set<string>();
     const pick: StorefrontProduct[] = [];
-    for (const pass of [2, 10] as const) {
+    const LIMIT = Math.max(16, perCategory.length);
+    for (const perPass of [1, 2, 10] as const) {
       for (const list of perCategory) {
-        let taken = 0;
+        let taken = list.filter((x) => seen.has(x.id)).length;
         for (const productItem of list) {
           if (seen.has(productItem.id)) continue;
-          if (pass === 2 && taken >= 2) break;
-          if (pick.length >= 12) break;
+          if (taken >= perPass) break;
+          if (perPass > 1 && pick.length >= LIMIT) break;
           seen.add(productItem.id);
           pick.push(productItem);
           taken += 1;
         }
       }
-      if (pick.length >= 12) break;
+      if (pick.length >= LIMIT) break;
     }
     return pick;
   }, [categories, subdomain, recommendationSeed]);
@@ -1219,7 +1221,7 @@ export function StorefrontClient({
     let cancelled = false;
     const cartIds = new Set(cart.map((item) => item.product_id).filter(Boolean) as string[]);
     void fetchPairProducts(missingComplementCategoryIds, cartIds).then((list) => {
-      if (!cancelled) setComplementProducts(list.slice(0, 12));
+      if (!cancelled) setComplementProducts(list.slice(0, 16));
     });
     return () => { cancelled = true; };
   }, [missingComplementCategoryIds, fetchPairProducts, cart]);
@@ -1231,7 +1233,7 @@ export function StorefrontClient({
     if (!targets.length) { setPairPreviewProducts([]); return; }
     let cancelled = false;
     void fetchPairProducts(targets.map((x) => x.id), new Set([previewProduct.id])).then((list) => {
-      if (!cancelled) setPairPreviewProducts(list.slice(0, 12));
+      if (!cancelled) setPairPreviewProducts(list.slice(0, 16));
     });
     return () => { cancelled = true; };
   }, [previewProduct, getPairingTargets, fetchPairProducts]);
