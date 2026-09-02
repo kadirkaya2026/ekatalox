@@ -1092,6 +1092,21 @@ export function StorefrontClient({
     return () => controller.abort();
   }, [debouncedCustomerPhoneForLookup, isMarketTenant, analyticsSubdomain]);
 
+  // Telefon cihazda hatırlanır: sayfa yenilenince sepet formu boş kalmasın.
+  // Ad/adres zaten numaradan otomatik dolduğu için tek başına yeterli.
+  useEffect(() => {
+    if (!isMarketTenant) return;
+    const saved = readTrackingPhone();
+    if (saved) setCustomerPhone((current) => (current.trim() ? current : saved));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isMarketTenant]);
+
+  useEffect(() => {
+    if (!isMarketTenant) return;
+    const digits = customerPhone.replace(/\D/g, "");
+    if (digits.length >= 10) saveTrackingPhone(customerPhone);
+  }, [customerPhone, isMarketTenant]);
+
   useEffect(() => {
     if (!isMarketTenant) return;
     const saved = readTrackingPhone();
