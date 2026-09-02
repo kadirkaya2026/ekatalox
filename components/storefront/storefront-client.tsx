@@ -3178,11 +3178,6 @@ export function StorefrontClient({
 
         <div className={cn("flex items-end justify-between gap-2", compact ? "mt-1 [&_p]:!text-[11.5px] [&_p]:!leading-4" : "mt-3")}>
           <ProductPrice product={product} size="crossSell" />
-          {cartQuantity > 0 ? (
-            <span className={cn(theme.stockBadgeIn, "px-2.5 py-1 text-[10px]")}>
-              {t("crossSell.unitCount", { count: cartQuantity })}
-            </span>
-          ) : null}
         </div>
       </article>
     );
