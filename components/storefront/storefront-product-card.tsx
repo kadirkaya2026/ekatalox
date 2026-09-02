@@ -300,6 +300,14 @@ export const StorefrontProductCard = memo(function StorefrontProductCard({
         !product.is_in_stock && "opacity-60 saturate-50",
       )}
     >
+      {/* Sepetteki ürünün çizgisi görselin değil KARTIN çevresini dolanır
+          (kullanıcı kararı, 3 Eyl 2026). */}
+      <BorderTrace
+        ref={borderTraceRef}
+        defaultVisible={initiallyInCart}
+        className={theme.productImageSparkle}
+        radius={19}
+      />
       <StorefrontFloatingCartAction
         product={product}
         cartQuantity={cartQuantity}
@@ -315,16 +323,6 @@ export const StorefrontProductCard = memo(function StorefrontProductCard({
           "overflow-hidden rounded-[1.2rem] p-2.5 sm:p-4",
         )}
       >
-        {/* Sepetteki ürünün çerçevesi = çevreyi dolanan çizginin kendisi.
-            İlk eklemede çizilir ve kalır, sıfırlanınca geri sarılıp kaybolur.
-            Rengi + butonuyla aynı (marka rengi ayarlıysa --brand-primary,
-            yoksa tema accent'i). */}
-        <BorderTrace
-          ref={borderTraceRef}
-          defaultVisible={initiallyInCart}
-          className={theme.productImageSparkle}
-          radius={19}
-        />
         <DiscountSticker product={product} />
         {product.image_url ? (
           <StorefrontImage

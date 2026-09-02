@@ -579,9 +579,14 @@ function hashStringToUnitInterval(input: string): number {
 
 // Çapraz satış kartında "Getir tarzı" ekleme geri bildirimi: ana karttaki
 // BorderTrace çizgisinin küçük hali. Hook per-kart çalışsın diye ayrı bileşen.
-function CrossSellAddRing({ quantity, sparkleClassName }: { quantity: number; sparkleClassName?: string }) {
-  const { traceRef, initiallyInCart } = useCartAddFeedback(quantity);
-  return <BorderTrace ref={traceRef} defaultVisible={initiallyInCart} className={sparkleClassName} radius={12} />;
+function CrossSellAddRing({ quantity, sparkleClassName, radius = 16 }: { quantity: number; sparkleClassName?: string; radius?: number }) {
+  const { imagePulse, traceRef, initiallyInCart } = useCartAddFeedback(quantity);
+  // Çizgi kartın tamamını dolanır; 2. eklemede halka "pulse" yapar.
+  return (
+    <motion.div animate={imagePulse} className="pointer-events-none absolute inset-0 z-20">
+      <BorderTrace ref={traceRef} defaultVisible={initiallyInCart} className={sparkleClassName} radius={radius} />
+    </motion.div>
+  );
 }
 
 function shuffleProductsBySeed(items: StorefrontProduct[], seed: string) {
@@ -3074,8 +3079,10 @@ export function StorefrontClient({
     compact = false,
     onOpenDetail?: (productId: string) => void,
   ) {
+    // Sayı doğrudan sepetten: popup/şerit ürünleri ana katalog haritasında
+    // olmayabiliyor, harita 0 döndürüp sayaç ve çizgiyi gizliyordu.
     const cartQuantity = product.has_variants
-      ? cartVariantCountByProductId.get(product.id) ?? 0
+      ? getCartVariantCount(cart, product.id)
       : cartUnitTotalsByProductId.get(product.id) ?? 0;
 
     return (
@@ -3104,6 +3111,11 @@ export function StorefrontClient({
           theme.surfaceRing,
         )}
       >
+        <CrossSellAddRing
+          quantity={cartQuantity}
+          sparkleClassName={theme.productImageSparkle}
+          radius={compact ? 15 : 22}
+        />
         <StorefrontFloatingCartAction
           product={product}
           cartQuantity={cartQuantity}
@@ -3120,7 +3132,6 @@ export function StorefrontClient({
             theme.productImageWrap,
           )}
         >
-          <CrossSellAddRing quantity={cartQuantity} sparkleClassName={theme.productImageSparkle} />
           <DiscountSticker product={product} />
           {product.image_url ? (
             <StorefrontImage

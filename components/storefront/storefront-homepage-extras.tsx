@@ -253,6 +253,12 @@ function PromoTileCard({
       <span className="absolute left-2 top-2 z-10 inline-flex items-center gap-1 rounded-full bg-rose-600 px-2 py-0.5 text-[10px] font-bold text-white">
         <Tag className="size-2.5" />%{Math.round(product.discount_percentage ?? 0)}
       </span>
+      <BorderTrace
+        ref={traceRef}
+        defaultVisible={initiallyInCart}
+        className={theme.productImageSparkle}
+        radius={15}
+      />
       {onOpenAddToCart && onIncrease && onDecrease ? (
         <StorefrontFloatingCartAction
           product={product}
@@ -269,12 +275,6 @@ function PromoTileCard({
         animate={imagePulse}
         className={cn("relative aspect-square overflow-hidden rounded-xl", theme.productImageWrap)}
       >
-        <BorderTrace
-          ref={traceRef}
-          defaultVisible={initiallyInCart}
-          className={theme.productImageSparkle}
-          radius={11}
-        />
         {product.image_url ? (
           <StorefrontImage
             src={product.image_url}
