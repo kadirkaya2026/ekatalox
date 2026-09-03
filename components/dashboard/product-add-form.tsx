@@ -205,24 +205,28 @@ export function ProductAddForm({
             </div>
           </PlanFeatureGate>
 
-          <div className="grid gap-3 md:grid-cols-2">
-            <Input
-              type="number"
-              min="1"
-              step="1"
-              placeholder="Paket adedi"
-              value={form.package_quantity}
-              onChange={(event) => updateField("package_quantity", event.target.value)}
-            />
-            <Input
-              type="number"
-              min="1"
-              step="1"
-              placeholder="Koli adedi"
-              value={form.carton_quantity}
-              onChange={(event) => updateField("carton_quantity", event.target.value)}
-            />
-          </div>
+          {/* Paket / koli adedi market tipi hesaplarda girilmiyor (kullanıcı
+              isteği, 4 Eyl 2026) — toptancı/genel tipte gösterilir. */}
+          {tenant.business_type !== "market" ? (
+            <div className="grid gap-3 md:grid-cols-2">
+              <Input
+                type="number"
+                min="1"
+                step="1"
+                placeholder="Paket adedi"
+                value={form.package_quantity}
+                onChange={(event) => updateField("package_quantity", event.target.value)}
+              />
+              <Input
+                type="number"
+                min="1"
+                step="1"
+                placeholder="Koli adedi"
+                value={form.carton_quantity}
+                onChange={(event) => updateField("carton_quantity", event.target.value)}
+              />
+            </div>
+          ) : null}
 
           <ProductImageFields
             images={[form.image, form.image2, form.image3]}

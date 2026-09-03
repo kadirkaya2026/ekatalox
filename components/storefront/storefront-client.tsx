@@ -978,6 +978,12 @@ export function StorefrontClient({
   const [pairings, setPairings] = useState<Array<{ source_category_id: string; target_category_id: string; priority: number }>>([]);
   const [complementProducts, setComplementProducts] = useState<StorefrontProduct[]>([]);
   const [pairPreviewProducts, setPairPreviewProducts] = useState<StorefrontProduct[]>([]);
+  // Sepet çekmecesinin 2. adımı ("bunları unutmuş olabilirsiniz") listesi o
+  // adıma geçilirken burada DONDURULUR. Hem listenin sepet değiştikçe yeniden
+  // hesaplanıp kartların kaybolmasını önler, hem de bu ürünler productsById'ye
+  // eklenir — yoksa "+" tıklaması sessizce hiçbir şey yapmıyordu (ürün ana
+  // katalogda yüklü değilse handleQuickAddOrOpenModal erken return ediyor).
+  const [cartSuggestionsSnapshot, setCartSuggestionsSnapshot] = useState<StorefrontProduct[]>([]);
   const pairFetchCacheRef = useRef(new Map<string, StorefrontProduct[]>());
   const relatedPreviewCacheRef = useRef(new Map<string, StorefrontProduct[]>());
   const relatedPreviewAbortRef = useRef<AbortController | null>(null);
@@ -1618,8 +1624,12 @@ export function StorefrontClient({
     for (const product of recommendationPool) {
       map.set(product.id, product);
     }
+    // Sepet 2. adımının donmuş öneri listesi: kartların "+" butonu çalışsın diye.
+    for (const product of cartSuggestionsSnapshot) {
+      map.set(product.id, product);
+    }
     return map;
-  }, [products, sections, promoProducts, bestSellerProducts, recommendationPool, complementProducts, pairPreviewProducts]);
+  }, [products, sections, promoProducts, bestSellerProducts, recommendationPool, complementProducts, pairPreviewProducts, cartSuggestionsSnapshot]);
   const cartVariantCountByProductId = useMemo(
     () =>
       new Map(
@@ -1760,8 +1770,12 @@ export function StorefrontClient({
         return;
       }
 
+      // Market tipi mağazalarda paket/koli kavramı yok; olası eski/içe aktarılmış
+      // değerler "+" akışını modala sokmasın (kullanıcı isteği, 4 Eyl 2026).
       const needsSelection =
-        product.has_variants || Boolean(product.package_quantity) || Boolean(product.carton_quantity);
+        product.has_variants ||
+        (!isMarketTenant &&
+          (Boolean(product.package_quantity) || Boolean(product.carton_quantity)));
 
       if (needsSelection) {
         handleOpenAddToCartModal(productId);
@@ -1775,7 +1789,7 @@ export function StorefrontClient({
         trackStorefrontCartAdd(analyticsSubdomain, product.id);
       }
     },
-    [productsById, handleOpenAddToCartModal, analyticsSubdomain, runCartFlight],
+    [productsById, handleOpenAddToCartModal, analyticsSubdomain, runCartFlight, isMarketTenant],
   );
 
   const visibleProducts = products;
@@ -3238,12 +3252,15 @@ export function StorefrontClient({
     const activePreviewImage =
       previewImages[activePreviewImageIndex] ?? previewImages[0] ?? null;
 
+    // Paket/koli sekmeleri market tipi mağazalarda hiç gösterilmez (bayi bu
+    // alanları girmiyor — kullanıcı isteği, 4 Eyl 2026).
+    const showPackagingTabs = !isMarketTenant;
     const tabItems: Array<{ key: ProductDetailTab; label: string }> = [
       { key: "details", label: t("productModal.tabDetails") },
-      ...(previewProduct.package_quantity
+      ...(showPackagingTabs && previewProduct.package_quantity
         ? [{ key: "package" as const, label: t("productModal.tabPackage") }]
         : []),
-      ...(previewProduct.carton_quantity
+      ...(showPackagingTabs && previewProduct.carton_quantity
         ? [{ key: "carton" as const, label: t("productModal.tabCarton") }]
         : []),
     ];
@@ -4085,7 +4102,10 @@ export function StorefrontClient({
 
       <StorefrontCartDrawer
         isOpen={isCartOpen}
-        onClose={() => setIsCartOpen(false)}
+        onClose={() => {
+          setIsCartOpen(false);
+          setCartSuggestionsSnapshot([]);
+        }}
         cart={cart}
         setCart={setCart}
         cartDistinctCount={cartDistinctCount}
@@ -4139,6 +4159,12 @@ export function StorefrontClient({
         renderCrossSellCard={renderCrossSellCard}
         recommendedOverride={complementProducts.length ? complementProducts : null}
         recommendedOverrideTitle={t("pair.forgotTitle")}
+        frozenSuggestions={cartSuggestionsSnapshot}
+        onSnapshotSuggestions={() =>
+          setCartSuggestionsSnapshot(
+            complementProducts.length ? complementProducts : recommendedProducts,
+          )
+        }
         isCatalogOnly={isCatalogOnly}
       />
       {renderProductPreviewModal()}

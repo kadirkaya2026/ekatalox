@@ -101,6 +101,13 @@ export type StorefrontCartDrawerProps = {
   /** "Yanında iyi gider" tamamlayıcıları: doluysa öneri şeridinin yerine geçer */
   recommendedOverride?: StorefrontProduct[] | null;
   recommendedOverrideTitle?: string;
+  /**
+   * Adım 2 ("bunları unutmuş olabilirsiniz") için DONMUŞ öneri listesi. Parent
+   * tutuyor ki bu ürünler productsById'ye de girsin (yoksa "+" sessizce çalışmaz).
+   */
+  frozenSuggestions?: StorefrontProduct[];
+  /** Adım 2'ye geçilirken çağrılır: parent o anki öneri listesini dondurur. */
+  onSnapshotSuggestions?: () => void;
   isCatalogOnly?: boolean;
 };
 
@@ -160,6 +167,8 @@ export function StorefrontCartDrawer({
   renderCrossSellCard,
   recommendedOverride = null,
   recommendedOverrideTitle,
+  frozenSuggestions = [],
+  onSnapshotSuggestions,
   isCatalogOnly = false,
 }: StorefrontCartDrawerProps) {
   const suggestedList = recommendedOverride?.length ? recommendedOverride : recommendedProducts;
@@ -189,7 +198,11 @@ export function StorefrontCartDrawer({
   const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
   if (isOpen !== prevIsOpen) {
     setPrevIsOpen(isOpen);
-    if (isOpen) setStep(whatsappHandoff ? 3 : 1);
+    if (isOpen && !whatsappHandoff) {
+      setStep(1);
+    } else if (isOpen) {
+      setStep(3);
+    }
   }
 
   // Adım değişince gövdeyi başa sar.
@@ -266,11 +279,22 @@ export function StorefrontCartDrawer({
   const canAdvanceFromCart =
     cart.length > 0 && isMinCartAmountMet && isSingleCurrencyCart;
 
+  // Adım 2'de gösterilecek liste: donmuş kopya (bkz. frozenSuggestions).
+  // Henüz dondurulmadıysa (ör. tek sayfalı akış hiç 2. adıma girmeden) canlı
+  // listeye düşülür.
+  const stepSuggestions = frozenSuggestions.length ? frozenSuggestions : suggestedList;
+
   function goForwardFromCart() {
-    setStep(suggestedList.length ? 2 : 3);
+    if (suggestedList.length) {
+      onSnapshotSuggestions?.();
+      setStep(2);
+    } else {
+      setStep(3);
+    }
   }
   function goBack() {
-    if (step === 3) setStep(suggestedList.length ? 2 : 1);
+    // 3 -> 2'ye dönerken donmuş liste korunur (yeniden snapshot alınmaz).
+    if (step === 3) setStep(frozenSuggestions.length ? 2 : 1);
     else setStep(1);
   }
 
@@ -759,7 +783,7 @@ export function StorefrontCartDrawer({
         <p className={cn("mt-1 text-sm leading-6", theme.textMuted)}>{t("nudge.subtitle")}</p>
       </div>
       <div className="grid grid-cols-3 gap-2.5 [&_article]:!min-w-0 [&_article]:!max-w-none">
-        {suggestedList.map((product) => renderCrossSellCard(product, true))}
+        {stepSuggestions.map((product) => renderCrossSellCard(product, true))}
       </div>
     </div>
   );
@@ -1136,7 +1160,7 @@ export function StorefrontCartDrawer({
             transition={{ duration: 0.24, ease: [0.16, 1, 0.3, 1] }}
             className={theme.cartDrawerPanel}
           >
-            <div className="flex h-full max-h-[94dvh] flex-col lg:max-h-none">
+            <div className="flex h-full flex-col pt-[env(safe-area-inset-top)] lg:pt-0">
               <div className="flex justify-center pt-3 lg:hidden">
                 <span className={theme.cartDrawerHandle} />
               </div>
@@ -1191,7 +1215,12 @@ export function StorefrontCartDrawer({
 
               <div
                 ref={bodyScrollRef}
-                className="safe-bottom-padding flex-1 overflow-y-auto px-4 py-4 sm:px-5 lg:px-6"
+                className={cn(
+                  "safe-bottom-padding flex-1 overflow-y-auto px-4 py-4 sm:px-5 lg:px-6",
+                  // Kaydırma alanı, sabit özet/aksiyon barından farklı (daha açık)
+                  // bir yüzey — ayrı kaydırılabilir bölge olduğu belli olsun.
+                  theme.surfaceMuted,
+                )}
               >
                 {cart.length ? (
                   useStepFlow ? (
@@ -1277,8 +1306,11 @@ export function StorefrontCartDrawer({
 
               <div
                 className={cn(
-                  "shrink-0 px-4 py-3.5 sm:px-5 lg:px-6 lg:py-4",
-                  theme.surfaceMuted,
+                  "shrink-0 border-t px-4 py-3.5 shadow-[0_-12px_28px_-16px_rgba(0,0,0,0.4)] sm:px-5 lg:px-6 lg:py-4",
+                  theme.border,
+                  // Sabit özet + aksiyon barı: kaydırma alanından (surfaceMuted)
+                  // ayrı, "yükseltilmiş" yüzey.
+                  theme.surface,
                 )}
               >
                 <div

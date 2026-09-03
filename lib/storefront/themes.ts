@@ -710,7 +710,8 @@ function buildTheme(
     ),
     cartDrawerOverlay: "fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-md",
     cartDrawerPanel: cn(
-      "absolute inset-x-0 bottom-0 z-10 max-h-[94dvh] rounded-t-[2rem] lg:inset-y-0 lg:left-auto lg:right-0 lg:h-full lg:max-h-none lg:w-[460px] lg:rounded-l-[2rem] lg:rounded-tr-none",
+      // Mobilde tam ekran (ekranın tepesine kadar); masaüstünde sağda 460px panel.
+      "absolute inset-0 z-10 lg:inset-y-0 lg:left-auto lg:right-0 lg:h-full lg:w-[460px] lg:rounded-l-[2rem]",
       elevation2,
       surfaceRing,
       neutrals.surface,
@@ -721,12 +722,13 @@ function buildTheme(
     cartDrawerMuted: neutrals.textMuted,
     cartDrawerCloseButton: cartDrawerClose,
     cartDrawerItem: cn(
-      "min-w-0 rounded-[1.55rem] p-3.5",
-      isDark ? "border-0" : "border",
+      // Kart, kaydırma alanının (surfaceMuted) üstünde "yükseltilmiş" görünür:
+      // arka plandan farklı olması için surface + kenarlık/gölge.
+      "min-w-0 rounded-[1.55rem] p-3.5 border",
       elevation1,
       surfaceRing,
       structuralBorder,
-      neutrals.surfaceMuted,
+      neutrals.surface,
     ),
     cartDrawerSummary: cn("rounded-xl p-3", neutrals.cartSummary, neutrals.cartSummaryText),
     modalOverlay: "fixed inset-0 z-[60] flex items-end justify-center bg-black/40 backdrop-blur-sm sm:items-center",
