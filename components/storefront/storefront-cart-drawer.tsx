@@ -788,10 +788,33 @@ export function StorefrontCartDrawer({
     </div>
   );
 
+  // Market/tekel (adımlı akış) özet kutusu daha derli toplu: yazılar bir tık
+  // küçük, satır araları dar (kullanıcı isteği, 4 Eyl 2026). Toptancı/genel
+  // tipte eski ölçüler korunur.
+  const sc = useStepFlow;
+  const sumGapCls = sc ? "space-y-1.5" : "space-y-2.5";
+  const sumLabelCls = sc ? "text-[12.5px] font-medium" : "text-sm font-medium";
+  const sumSideValueCls = sc
+    ? "text-sm font-bold tracking-tight"
+    : "text-base font-bold tracking-tight";
+  const sumTotalRowCls = sc
+    ? "flex items-center justify-between gap-3 pt-1.5"
+    : "flex items-center justify-between gap-3 pt-2";
+  const sumTotalValueCls = sc
+    ? "text-sm font-bold tracking-tight text-white"
+    : "text-base font-bold tracking-tight text-white sm:text-lg";
+
   const renderSummaryBox = () => (
-    <div className={cn("rounded-[1.4rem] px-4 py-3", theme.elevation2, theme.cartDrawerSummary)}>
+    <div
+      className={cn(
+        "rounded-[1.4rem]",
+        sc ? "px-3.5 py-2.5" : "px-4 py-3",
+        theme.elevation2,
+        theme.cartDrawerSummary,
+      )}
+    >
       {!isCatalogOnly && cartPaymentSummary ? (
-        <div className="space-y-2.5">
+        <div className={sumGapCls}>
           {(cartPaymentSummary.isQualified && cartPaymentSummary.discountAmount > 0) ||
           cartPaymentSummary.campaignDiscountAmount > 0 ||
           cartPaymentSummary.couponDiscountAmount > 0 ||
@@ -799,7 +822,7 @@ export function StorefrontCartDrawer({
           cartPaymentSummary.deliveryFeeAmount > 0 ? (
             <>
               <div className="flex items-center justify-between gap-3">
-                <p className={cn("text-sm font-medium", theme.cartSummaryMuted)}>
+                <p className={cn(sumLabelCls, theme.cartSummaryMuted)}>
                   {t("cart.subtotalLine")}
                 </p>
                 <p
@@ -817,12 +840,12 @@ export function StorefrontCartDrawer({
               </div>
               {cartPaymentSummary.isQualified && cartPaymentSummary.discountAmount > 0 ? (
                 <div className="flex items-center justify-between gap-3">
-                  <p className={cn("text-sm font-medium", theme.cartSummaryMuted)}>
+                  <p className={cn(sumLabelCls, theme.cartSummaryMuted)}>
                     {t("cart.discount", {
                       percentage: formatDiscountPercentage(cartPaymentSummary.discountPercentage),
                     })}
                   </p>
-                  <p className="text-base font-bold tracking-tight text-emerald-300">
+                  <p className={cn("text-emerald-300", sumSideValueCls)}>
                     -{formatCurrency(cartPaymentSummary.discountAmount, cartPaymentSummary.currency)}
                   </p>
                 </div>
@@ -830,14 +853,14 @@ export function StorefrontCartDrawer({
               {cartPaymentSummary.appliedCampaign && cartPaymentSummary.campaignDiscountAmount > 0 ? (
                 <div className="flex items-center justify-between gap-3">
                   <div className="min-w-0">
-                    <p className={cn("text-sm font-medium", theme.cartSummaryMuted)}>
+                    <p className={cn(sumLabelCls, theme.cartSummaryMuted)}>
                       {t("cart.campaignDiscount")}
                     </p>
                     <p className={cn("truncate text-[11px]", theme.cartSummaryMuted)}>
                       {cartPaymentSummary.appliedCampaign.title}
                     </p>
                   </div>
-                  <p className="shrink-0 text-base font-bold tracking-tight text-emerald-300">
+                  <p className={cn("shrink-0 text-emerald-300", sumSideValueCls)}>
                     -{formatCurrency(cartPaymentSummary.campaignDiscountAmount, cartPaymentSummary.currency)}
                   </p>
                 </div>
@@ -845,60 +868,60 @@ export function StorefrontCartDrawer({
               {cartPaymentSummary.appliedCoupon && cartPaymentSummary.couponDiscountAmount > 0 ? (
                 <div className="flex items-center justify-between gap-3">
                   <div className="min-w-0">
-                    <p className={cn("text-sm font-medium", theme.cartSummaryMuted)}>
+                    <p className={cn(sumLabelCls, theme.cartSummaryMuted)}>
                       🎁 {t("coupon.cartLine")}
                     </p>
                     <p className={cn("truncate text-[11px]", theme.cartSummaryMuted)}>
                       {cartPaymentSummary.appliedCoupon.title}
                     </p>
                   </div>
-                  <p className="shrink-0 text-base font-bold tracking-tight text-emerald-300">
+                  <p className={cn("shrink-0 text-emerald-300", sumSideValueCls)}>
                     -{formatCurrency(cartPaymentSummary.couponDiscountAmount, cartPaymentSummary.currency)}
                   </p>
                 </div>
               ) : null}
               {cartPaymentSummary.surchargeAmount > 0 ? (
                 <div className="flex items-center justify-between gap-3">
-                  <p className={cn("text-sm font-medium", theme.cartSummaryMuted)}>
+                  <p className={cn(sumLabelCls, theme.cartSummaryMuted)}>
                     {t("cart.surcharge", {
                       percentage: formatDiscountPercentage(cartPaymentSummary.surchargePercentage),
                     })}
                   </p>
-                  <p className="text-base font-bold tracking-tight text-amber-300">
+                  <p className={cn("text-amber-300", sumSideValueCls)}>
                     +{formatCurrency(cartPaymentSummary.surchargeAmount, cartPaymentSummary.currency)}
                   </p>
                 </div>
               ) : null}
               {cartPaymentSummary.deliveryFeeAmount > 0 ? (
                 <div className="flex items-center justify-between gap-3">
-                  <p className={cn("text-sm font-medium", theme.cartSummaryMuted)}>
+                  <p className={cn(sumLabelCls, theme.cartSummaryMuted)}>
                     {t("cart.deliveryFee")}
                   </p>
-                  <p className="text-base font-bold tracking-tight text-amber-300">
+                  <p className={cn("text-amber-300", sumSideValueCls)}>
                     +{formatCurrency(cartPaymentSummary.deliveryFeeAmount, cartPaymentSummary.currency)}
                   </p>
                 </div>
               ) : null}
-              <div className="flex items-center justify-between gap-3 pt-2">
-                <p className={cn("text-sm font-medium text-neutral-200")}>{t("cart.grandTotal")}</p>
-                <p className="text-base font-bold tracking-tight text-white sm:text-lg">
+              <div className={sumTotalRowCls}>
+                <p className={cn(sumLabelCls, "text-neutral-200")}>{t("cart.grandTotal")}</p>
+                <p className={sumTotalValueCls}>
                   {formatCurrency(cartPaymentSummary.finalTotal, cartPaymentSummary.currency)}
                 </p>
               </div>
             </>
           ) : (
             <div className="flex items-center justify-between gap-3">
-              <p className={cn("text-sm font-medium", theme.cartSummaryMuted)}>{t("cart.grandTotal")}</p>
-              <p className="text-base font-bold tracking-tight text-white sm:text-lg">
+              <p className={cn(sumLabelCls, theme.cartSummaryMuted)}>{t("cart.grandTotal")}</p>
+              <p className={sumTotalValueCls}>
                 {formatCurrency(cartPaymentSummary.finalTotal, cartPaymentSummary.currency)}
               </p>
             </div>
           )}
         </div>
       ) : cartDiscountSummary?.isQualified ? (
-        <div className="space-y-2.5">
+        <div className={sumGapCls}>
           <div className="flex items-center justify-between gap-3">
-            <p className={cn("text-sm font-medium", theme.cartSummaryMuted)}>{t("cart.subtotalLine")}</p>
+            <p className={cn(sumLabelCls, theme.cartSummaryMuted)}>{t("cart.subtotalLine")}</p>
             <p
               className={cn(
                 "text-sm font-semibold tracking-tight line-through",
@@ -909,53 +932,53 @@ export function StorefrontCartDrawer({
             </p>
           </div>
           <div className="flex items-center justify-between gap-3">
-            <p className={cn("text-sm font-medium", theme.cartSummaryMuted)}>
+            <p className={cn(sumLabelCls, theme.cartSummaryMuted)}>
               {t("cart.discount", {
                 percentage: formatDiscountPercentage(cartDiscountSummary.percentage),
               })}
             </p>
-            <p className="text-base font-bold tracking-tight text-emerald-300">
+            <p className={cn("text-emerald-300", sumSideValueCls)}>
               -{formatCurrency(cartDiscountSummary.discountAmount, cartDiscountSummary.currency)}
             </p>
           </div>
-          <div className="flex items-center justify-between gap-3 pt-2">
-            <p className="text-sm font-medium text-neutral-200">{t("cart.grandTotal")}</p>
-            <p className="text-base font-bold tracking-tight text-white sm:text-lg">
+          <div className={sumTotalRowCls}>
+            <p className={cn(sumLabelCls, "text-neutral-200")}>{t("cart.grandTotal")}</p>
+            <p className={sumTotalValueCls}>
               {formatCurrency(cartDiscountSummary.totalAfterDiscount, cartDiscountSummary.currency)}
             </p>
           </div>
         </div>
       ) : isCatalogOnly && cart.length ? (
         <div className="flex items-center justify-between gap-3">
-          <p className={cn("text-sm font-medium", theme.cartSummaryMuted)}>{t("cart.orderSummary")}</p>
-          <p className="text-base font-bold tracking-tight text-white sm:text-lg">
+          <p className={cn(sumLabelCls, theme.cartSummaryMuted)}>{t("cart.orderSummary")}</p>
+          <p className={sumTotalValueCls}>
             {t("cart.itemsCountShort", { count: cartItemCount })}
           </p>
         </div>
       ) : cart.length === 0 ? (
         <div className="hidden items-center justify-between gap-3 sm:flex">
-          <p className={cn("text-sm font-medium", theme.cartSummaryMuted)}>{t("cart.total")}</p>
+          <p className={cn(sumLabelCls, theme.cartSummaryMuted)}>{t("cart.total")}</p>
           <p className={cn("text-base font-bold tracking-tight sm:text-lg", theme.cartSummaryMuted)}>
             {t(isTekel ? "header.cartEmptyPickup" : "header.cartEmpty")}
           </p>
         </div>
       ) : deliveryFeeAmount > 0 && cartTotalEntries.length <= 1 ? (
-        <div className="space-y-2.5">
+        <div className={sumGapCls}>
           <div className="flex items-center justify-between gap-3">
-            <p className={cn("text-sm font-medium", theme.cartSummaryMuted)}>{t("cart.subtotalLine")}</p>
+            <p className={cn(sumLabelCls, theme.cartSummaryMuted)}>{t("cart.subtotalLine")}</p>
             <p className={cn("text-sm font-semibold tracking-tight", theme.cartSummaryMuted)}>
               {formatCurrency(cartTotal, cartCurrency)}
             </p>
           </div>
           <div className="flex items-center justify-between gap-3">
-            <p className={cn("text-sm font-medium", theme.cartSummaryMuted)}>{t("cart.deliveryFee")}</p>
-            <p className="text-base font-bold tracking-tight text-amber-300">
+            <p className={cn(sumLabelCls, theme.cartSummaryMuted)}>{t("cart.deliveryFee")}</p>
+            <p className={cn("text-amber-300", sumSideValueCls)}>
               +{formatCurrency(deliveryFeeAmount, cartCurrency)}
             </p>
           </div>
-          <div className="flex items-center justify-between gap-3 pt-2">
-            <p className="text-sm font-medium text-neutral-200">{t("cart.grandTotal")}</p>
-            <p className="text-base font-bold tracking-tight text-white sm:text-lg">
+          <div className={sumTotalRowCls}>
+            <p className={cn(sumLabelCls, "text-neutral-200")}>{t("cart.grandTotal")}</p>
+            <p className={sumTotalValueCls}>
               {formatCurrency(cartTotal + deliveryFeeAmount, cartCurrency)}
             </p>
           </div>
@@ -964,8 +987,8 @@ export function StorefrontCartDrawer({
         <div className="space-y-2">
           {cartTotalEntries.map(({ currency, total }) => (
             <div key={currency} className="flex items-center justify-between gap-3">
-              <p className={cn("text-sm font-medium", theme.cartSummaryMuted)}>{t("cart.total")}</p>
-              <p className="text-base font-bold tracking-tight text-white sm:text-lg">
+              <p className={cn(sumLabelCls, theme.cartSummaryMuted)}>{t("cart.total")}</p>
+              <p className={sumTotalValueCls}>
                 {currency}: {formatCurrency(total, currency)}
               </p>
             </div>
@@ -973,8 +996,8 @@ export function StorefrontCartDrawer({
         </div>
       ) : (
         <div className="flex items-center justify-between gap-3">
-          <p className={cn("text-sm font-medium", theme.cartSummaryMuted)}>{t("cart.total")}</p>
-          <p className="text-base font-bold tracking-tight text-white sm:text-lg">
+          <p className={cn(sumLabelCls, theme.cartSummaryMuted)}>{t("cart.total")}</p>
+          <p className={sumTotalValueCls}>
             {formatCurrency(cartTotal, cartCurrency)}
           </p>
         </div>
@@ -1046,19 +1069,9 @@ export function StorefrontCartDrawer({
           {t("cart.sendViaWhatsApp")}
         </a>
         {isMarketTenant ? (
-          <button
-            type="button"
-            onClick={() => {
-              setCopyFeedback(null);
-              clearCart();
-            }}
-            className={cn(
-              "w-full text-center text-[11px] font-medium transition hover:text-rose-500",
-              theme.textMuted,
-            )}
-          >
-            {t("cart.clearCart")}
-          </button>
+          // Market'te "Sepeti Boşalt" gösterilmiyor (kullanıcı isteği,
+          // 4 Eyl 2026) — müşteri gerekirse ürünleri tek tek siler.
+          null
         ) : (
           <>
             {whatsappHandoff.trackingUrl ? (
@@ -1217,9 +1230,9 @@ export function StorefrontCartDrawer({
                 ref={bodyScrollRef}
                 className={cn(
                   "safe-bottom-padding flex-1 overflow-y-auto px-4 py-4 sm:px-5 lg:px-6",
-                  // Kaydırma alanı, sabit özet/aksiyon barından farklı (daha açık)
-                  // bir yüzey — ayrı kaydırılabilir bölge olduğu belli olsun.
-                  theme.surfaceMuted,
+                  // Kaydırma alanı, sabit özet/aksiyon barından AÇIKÇA farklı
+                  // (daha açık) bir yüzey — ayrı kaydırılabilir bölge belli olsun.
+                  theme.cartDrawerScroll,
                 )}
               >
                 {cart.length ? (
@@ -1306,11 +1319,9 @@ export function StorefrontCartDrawer({
 
               <div
                 className={cn(
-                  "shrink-0 border-t px-4 py-3.5 shadow-[0_-12px_28px_-16px_rgba(0,0,0,0.4)] sm:px-5 lg:px-6 lg:py-4",
-                  theme.border,
-                  // Sabit özet + aksiyon barı: kaydırma alanından (surfaceMuted)
-                  // ayrı, "yükseltilmiş" yüzey.
-                  theme.surface,
+                  "shrink-0 px-4 py-3.5 sm:px-5 lg:px-6 lg:py-4",
+                  // Ayraç çizgisi + yukarı gölge + opak zemin (tema bazlı).
+                  theme.cartDrawerFooter,
                 )}
               >
                 <div
@@ -1373,7 +1384,9 @@ export function StorefrontCartDrawer({
                         })
                       )}
 
-                      {cart.length > 0 && (
+                      {/* "Sepeti Boşalt" market'te gösterilmiyor (kullanıcı
+                          isteği, 4 Eyl 2026); toptancı/genel tipte kalıyor. */}
+                      {!useStepFlow && cart.length > 0 && (
                         <button
                           type="button"
                           onClick={clearCart}

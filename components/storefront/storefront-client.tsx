@@ -4060,7 +4060,13 @@ export function StorefrontClient({
           value={searchInput}
           resultCount={productTotal}
           onChange={handleSearchChange}
-          onClose={() => setIsSearchSheetOpen(false)}
+          onClose={() => {
+            // X'e basınca aramayı da iptal et — yoksa yazılan kelime state'te
+            // kalıp kategori tıklamalarında süzmeye devam ediyordu (kullanıcı
+            // isteği, 4 Eyl 2026). Bu yüzey yalnız market/tekelde var.
+            setIsSearchSheetOpen(false);
+            setSearchInput("");
+          }}
         />
       ) : null}
 

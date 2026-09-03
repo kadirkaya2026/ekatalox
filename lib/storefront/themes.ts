@@ -67,6 +67,8 @@ export interface StorefrontTheme {
   cartDrawerCloseButton: string;
   cartDrawerItem: string;
   cartDrawerSummary: string;
+  cartDrawerScroll: string;
+  cartDrawerFooter: string;
   modalOverlay: string;
   modalPanel: string;
   modalHeaderBorder: string;
@@ -722,15 +724,28 @@ function buildTheme(
     cartDrawerMuted: neutrals.textMuted,
     cartDrawerCloseButton: cartDrawerClose,
     cartDrawerItem: cn(
-      // Kart, kaydırma alanının (surfaceMuted) üstünde "yükseltilmiş" görünür:
-      // arka plandan farklı olması için surface + kenarlık/gölge.
-      "min-w-0 rounded-[1.55rem] p-3.5 border",
+      "min-w-0 rounded-[1.55rem] p-3.5",
+      isDark ? "border-0" : "border",
       elevation1,
       surfaceRing,
       structuralBorder,
-      neutrals.surface,
+      neutrals.surfaceMuted,
     ),
     cartDrawerSummary: cn("rounded-xl p-3", neutrals.cartSummary, neutrals.cartSummaryText),
+    // Sepet çekmecesinde kaydırılabilir gövde: sabit alt bardan AÇIKÇA farklı,
+    // daha açık bir yüzey olsun ki ayrı bir kaydırma bölgesi olduğu belli olsun
+    // (kullanıcı isteği, 4 Eyl 2026). Yarı saydam beyaz/siyah katman: hangi
+    // koyu/açık palet olursa olsun görünür bir tonlama farkı verir.
+    cartDrawerScroll: isDark ? "bg-white/[0.06]" : "bg-black/[0.04]",
+    // Sabit alt bar (özet + aksiyon): opak zemin + görünür ayraç çizgisi +
+    // yukarı vuran belirgin gölge. Koyu temada çizgi AÇIK renk (koyu üstüne
+    // koyu görünmüyordu), gölge daha güçlü.
+    cartDrawerFooter: cn(
+      neutrals.surface,
+      isDark
+        ? "border-t border-white/15 shadow-[0_-16px_36px_-6px_rgba(0,0,0,0.75)]"
+        : "border-t border-slate-200 shadow-[0_-12px_28px_-8px_rgba(15,23,42,0.14)]",
+    ),
     modalOverlay: "fixed inset-0 z-[60] flex items-end justify-center bg-black/40 backdrop-blur-sm sm:items-center",
     modalPanel: cn(
       "relative z-10 mx-auto flex w-full min-w-0 max-w-2xl flex-col overflow-hidden",
