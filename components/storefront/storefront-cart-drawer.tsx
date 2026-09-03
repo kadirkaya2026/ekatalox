@@ -108,6 +108,11 @@ export type StorefrontCartDrawerProps = {
   frozenSuggestions?: StorefrontProduct[];
   /** Adım 2'ye geçilirken çağrılır: parent o anki öneri listesini dondurur. */
   onSnapshotSuggestions?: () => void;
+  /** "Ücretsiz teslimat için ... ekleyin" ipucuna tıklanınca: çekmeceyi
+   *  kapat, ana katalog görünümüne dön (market/tekel). */
+  onGoHome?: () => void;
+  /** "Siparişi Ver"e eksik alanla her basışta artar — drawer ilk eksik alana kayar. */
+  checkoutValidationNonce?: number;
   isCatalogOnly?: boolean;
 };
 
@@ -169,6 +174,8 @@ export function StorefrontCartDrawer({
   recommendedOverrideTitle,
   frozenSuggestions = [],
   onSnapshotSuggestions,
+  onGoHome,
+  checkoutValidationNonce = 0,
   isCatalogOnly = false,
 }: StorefrontCartDrawerProps) {
   const suggestedList = recommendedOverride?.length ? recommendedOverride : recommendedProducts;
@@ -181,6 +188,12 @@ export function StorefrontCartDrawer({
   const [sentOrder, setSentOrder] = useState<{ trackingUrl: string | null } | null>(null);
   const crossSellScrollRef = useRef<HTMLDivElement>(null);
   const bodyScrollRef = useRef<HTMLDivElement>(null);
+  // Son adımda zorunlu alanların kapsayıcıları — "Siparişi Ver"e eksik alanla
+  // basıldığında ilk eksik alana kaydırmak için.
+  const paymentFieldRef = useRef<HTMLDivElement>(null);
+  const nameFieldRef = useRef<HTMLDivElement>(null);
+  const addressFieldRef = useRef<HTMLDivElement>(null);
+  const phoneFieldRef = useRef<HTMLDivElement>(null);
 
   // Adımlı sepet akışı yalnız market/tekelde (kullanıcı kararı, 3 Eyl 2026):
   //   1) ürünler + fiyat + adet
@@ -209,6 +222,28 @@ export function StorefrontCartDrawer({
   useEffect(() => {
     bodyScrollRef.current?.scrollTo({ top: 0 });
   }, [step]);
+
+  // "Siparişi Ver"e eksik zorunlu alanla basıldı: müşteri neden sipariş
+  // veremediğini anlasın diye ilk eksik alana kaydır (öncelik: ödeme yöntemi ->
+  // isim -> adres -> telefon; handleWhatsAppOrder'daki doğrulama sırasıyla aynı).
+  useEffect(() => {
+    const target = paymentMethodError
+      ? paymentFieldRef.current
+      : customerReferenceNameError
+        ? nameFieldRef.current
+        : customerAddressError
+          ? addressFieldRef.current
+          : customerPhoneError
+            ? phoneFieldRef.current
+            : null;
+    target?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, [
+    checkoutValidationNonce,
+    paymentMethodError,
+    customerReferenceNameError,
+    customerAddressError,
+    customerPhoneError,
+  ]);
 
   function scrollCrossSell(direction: "left" | "right") {
     const container = crossSellScrollRef.current;
@@ -490,7 +525,7 @@ export function StorefrontCartDrawer({
       {/* Ödeme yöntemi fiyatsız katalogda da seçilebilir (kullanıcı kararı, 29 Ağu 2026):
           tutar hesabı yok ama "nakit / kart" bilgisi fişe ve siparişe işlenir. */}
       <>
-        <div className="mb-3 flex items-center justify-between gap-3">
+        <div ref={paymentFieldRef} className="mb-3 flex items-center justify-between gap-3">
           <p className={cn("text-sm font-semibold", theme.text)}>{t("cart.paymentMethod")}</p>
           <span
             className={cn(
@@ -542,7 +577,7 @@ export function StorefrontCartDrawer({
         ) : null}
       </>
       {isMarketTenant ? (
-        <div className="mt-3">
+        <div ref={phoneFieldRef} className="mt-3">
           <div className="mb-2 flex items-center justify-between gap-3">
             <span className={cn("text-sm font-semibold", theme.text)}>{t("cart.customerPhone")}</span>
             <span
@@ -572,7 +607,7 @@ export function StorefrontCartDrawer({
         </div>
       ) : null}
 
-      <div className="mt-3">
+      <div ref={nameFieldRef} className="mt-3">
         <div className="mb-2 flex items-center justify-between gap-3">
           <span className={cn("text-sm font-semibold", theme.text)}>
             {t("cart.customerReferenceName")}
@@ -604,7 +639,7 @@ export function StorefrontCartDrawer({
       </div>
 
       {isMarketTenant ? (
-        <div className="mt-3">
+        <div ref={addressFieldRef} className="mt-3">
           <div className="mb-2 flex items-center justify-between gap-3">
             <span className={cn("text-sm font-semibold", theme.text)}>
               {t(isTekel ? "cart.customerAddressPickup" : "cart.customerAddress")}
@@ -804,15 +839,31 @@ export function StorefrontCartDrawer({
     ? "text-sm font-bold tracking-tight text-white"
     : "text-base font-bold tracking-tight text-white sm:text-lg";
 
-  const renderSummaryBox = () => (
-    <div
-      className={cn(
-        "rounded-[1.4rem]",
-        sc ? "px-3.5 py-2.5" : "px-4 py-3",
-        theme.elevation2,
-        theme.cartDrawerSummary,
-      )}
-    >
+  const summaryBoxCls = cn(
+    sc ? "rounded-[1.1rem] px-3 py-2" : "rounded-[1.4rem] px-4 py-3",
+    theme.elevation2,
+    theme.cartDrawerSummary,
+  );
+
+  const renderSummaryBox = () => {
+    // Adım 1'de (market/tekel) yalnız "Genel Toplam" görünür; kırılım
+    // (ara toplam / kampanya / teslimat ücreti) son adıma bırakılır
+    // (kullanıcı isteği, 4 Eyl 2026).
+    if (sc && step === 1) {
+      return (
+        <div className={summaryBoxCls}>
+          <div className="flex items-center justify-between gap-3">
+            <p className={cn(sumLabelCls, "text-neutral-200")}>{t("cart.grandTotal")}</p>
+            <p className={sumTotalValueCls}>
+              {formatCurrency(cartTotal + deliveryFeeAmount, cartCurrency)}
+            </p>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+    <div className={summaryBoxCls}>
       {!isCatalogOnly && cartPaymentSummary ? (
         <div className={sumGapCls}>
           {(cartPaymentSummary.isQualified && cartPaymentSummary.discountAmount > 0) ||
@@ -1003,7 +1054,8 @@ export function StorefrontCartDrawer({
         </div>
       )}
     </div>
-  );
+    );
+  };
 
   const renderFooterNotices = () => (
     <>
@@ -1021,7 +1073,10 @@ export function StorefrontCartDrawer({
           })}
         </p>
       ) : null}
-      {!isCatalogOnly && cart.length > 0 && deliveryFeeRemaining > 0 ? (
+      {/* Ücretsiz teslimat ipucu: market/tekelde özet kutusunun ÜSTÜNde
+          tıklanabilir buton olarak gösteriliyor (bkz. renderFreeDeliveryHint);
+          burada yalnız toptancı/genel tipte düz metin olarak kalıyor. */}
+      {!useStepFlow && !isCatalogOnly && cart.length > 0 && deliveryFeeRemaining > 0 ? (
         <p className="mt-3 rounded-lg bg-emerald-50 px-3 py-2 text-center text-xs font-medium leading-5 text-emerald-700">
           {t("cart.deliveryFeeFreeHint", {
             remaining: formatCurrency(deliveryFeeRemaining, cartCurrency),
@@ -1037,6 +1092,26 @@ export function StorefrontCartDrawer({
       ) : null}
     </>
   );
+
+  // Market/tekel: "ücretsiz teslimat için ... ekleyin" tıklanabilir buton.
+  // Özet kutusunun ÜSTÜNde durur ki "Siparişi Ver"e basarken yanlışlıkla
+  // tıklanmasın (kullanıcı isteği, 4 Eyl 2026). Tıklayınca çekmece kapanır
+  // ve müşteri ana katalog görünümüne döner.
+  const renderFreeDeliveryHint = () =>
+    !isCatalogOnly && cart.length > 0 && deliveryFeeRemaining > 0 && onGoHome ? (
+      <button
+        type="button"
+        onClick={onGoHome}
+        className="mb-2 flex w-full items-center justify-between gap-2 rounded-lg bg-emerald-50 px-3 py-2 text-left text-xs font-medium leading-5 text-emerald-700 transition active:scale-[0.99]"
+      >
+        <span>
+          {t("cart.deliveryFeeFreeHint", {
+            remaining: formatCurrency(deliveryFeeRemaining, cartCurrency),
+          })}
+        </span>
+        <ChevronRight className="size-4 shrink-0" />
+      </button>
+    ) : null;
 
   // Handoff kutusu VEYA birincil sipariş butonu. `label`/`onCta` adıma göre değişir.
   const renderHandoffOrCta = (opts: { label: string; onCta: () => void }) =>
@@ -1319,14 +1394,18 @@ export function StorefrontCartDrawer({
 
               <div
                 className={cn(
-                  "shrink-0 px-4 py-3.5 sm:px-5 lg:px-6 lg:py-4",
+                  "shrink-0 sm:px-5 lg:px-6",
+                  // Market/tekelde özet alanı olabildiğince derli toplu.
+                  useStepFlow ? "px-3 py-2" : "px-4 py-3.5 lg:py-4",
                   // Ayraç çizgisi + yukarı gölge + opak zemin (tema bazlı).
                   theme.cartDrawerFooter,
                 )}
               >
                 <div
                   className={cn(
-                    "rounded-[1.5rem] p-2.5 sm:p-3 lg:p-4 sm:rounded-[1.75rem]",
+                    useStepFlow
+                      ? "rounded-[1.25rem] p-1.5"
+                      : "rounded-[1.5rem] p-2.5 sm:p-3 lg:p-4 sm:rounded-[1.75rem]",
                     theme.border,
                     theme.surface,
                     theme.elevation1,
@@ -1357,6 +1436,7 @@ export function StorefrontCartDrawer({
                     </div>
                   ) : (
                     <>
+                      {renderFreeDeliveryHint()}
                       {renderSummaryBox()}
                       {renderFooterNotices()}
 

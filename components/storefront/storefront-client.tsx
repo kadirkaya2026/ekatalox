@@ -1064,6 +1064,10 @@ export function StorefrontClient({
   const [paymentMethodError, setPaymentMethodError] = useState<string | null>(null);
   const [isGeneratingOrderPdf, setIsGeneratingOrderPdf] = useState(false);
   const [orderPdfError, setOrderPdfError] = useState<string | null>(null);
+  // "Siparişi Ver"e eksik alanla her basışta artar — sepet çekmecesi ilk eksik
+  // zorunlu alana yeniden kaysın diye (aynı hata tekrar set edilince re-render
+  // olmayabiliyor).
+  const [checkoutValidationNonce, setCheckoutValidationNonce] = useState(0);
   const [whatsappHandoff, setWhatsappHandoff] = useState<WhatsAppOrderHandoff | null>(null);
   const [campaignDismissState, setCampaignDismissState] = useState<CampaignDismissBySurface>(
     () => readInitialCampaignDismissState(tenant.id),
@@ -2033,6 +2037,9 @@ export function StorefrontClient({
       }
 
       if (hasValidationError) {
+        // Her denemede artır: aynı alan aynı hatayla tekrar boşsa da sepet
+        // çekmecesi o alana yeniden kaysın (bkz. storefront-cart-drawer.tsx).
+        setCheckoutValidationNonce((n) => n + 1);
         return;
       }
     }
@@ -4171,6 +4178,18 @@ export function StorefrontClient({
             complementProducts.length ? complementProducts : recommendedProducts,
           )
         }
+        checkoutValidationNonce={checkoutValidationNonce}
+        onGoHome={() => {
+          // "Ücretsiz teslimat için ... ekleyin" ipucundan: çekmeceyi kapat,
+          // ana katalog görünümüne dön ki müşteri ürün eklesin.
+          setIsCartOpen(false);
+          setCartSuggestionsSnapshot([]);
+          setSearchInput("");
+          handleCategoryChange("all");
+          if (typeof window !== "undefined") {
+            window.scrollTo({ top: 0, behavior: "smooth" });
+          }
+        }}
         isCatalogOnly={isCatalogOnly}
       />
       {renderProductPreviewModal()}
