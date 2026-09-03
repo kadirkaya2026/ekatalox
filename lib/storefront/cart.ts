@@ -88,6 +88,39 @@ export interface CartPaymentSummary {
   couponDiscountAmount: number;
   /** Kupon var ama minimum sepet tutmuyor: eksik tutar */
   couponMissingAmount: number;
+  /**
+   * Getirme (teslimat) ücreti — yalnız market tenantlar (0108). İndirim/vade
+   * farkından SONRA genel toplama düz eklenir (bkz. finalTotal).
+   */
+  deliveryFeeAmount: number;
+  /** Ücretsiz teslimat barajı (0 = baraj yok, her siparişe ücret) */
+  deliveryFeeFreeThreshold: number;
+  /** Baraj altındaysa ücretsiz teslimata kalan tutar (baraj yoksa/ücret 0 ise 0) */
+  deliveryFeeRemaining: number;
+}
+
+/** Getirme ücreti config — market tenant ayarlarından türetilir (0108). */
+export interface DeliveryFeeConfig {
+  isActive: boolean;
+  /** Baraj altındaki siparişe eklenen ücret. 0 = fiilen her sipariş ücretsiz. */
+  amount: number;
+  /** Bu ara toplam ve üzeri siparişlerde ücret 0. 0 = baraj yok. */
+  freeThreshold: number;
+}
+
+/**
+ * Sepete eklenecek getirme ücreti. Ücret pasifse, amount 0 ise ya da baraj
+ * tutuyorsa 0 döner. Para birimi alanı yok — sepet zaten tek para birimine
+ * kilitli (getCartPaymentSummary, currencies.length !== 1).
+ */
+export function getDeliveryFeeAmount(
+  config: DeliveryFeeConfig | null | undefined,
+  subtotal: number,
+): number {
+  if (!config?.isActive) return 0;
+  if (config.amount <= 0) return 0;
+  if (config.freeThreshold > 0 && subtotal >= config.freeThreshold) return 0;
+  return roundCurrencyAmount(config.amount);
 }
 
 // ─── Tier seçim helpers ────────────────────────────────────────────────────────
@@ -326,6 +359,7 @@ export function getCartPaymentSummary(
   campaigns: TenantCampaign[] = [],
   excludedByCampaign?: Map<string, Set<string>>,
   coupon: StorefrontCoupon | null = null,
+  deliveryFeeConfig: DeliveryFeeConfig | null = null,
 ): CartPaymentSummary | null {
   if (!items.length) return null;
 
@@ -393,11 +427,25 @@ export function getCartPaymentSummary(
       ? (selectedInstallment?.surchargePercentage ?? 0)
       : 0;
 
-  const finalTotal =
+  const totalWithSurcharge =
     surchargePercentage > 0
       ? roundCurrencyAmount(afterDiscount / (1 - surchargePercentage / 100))
       : afterDiscount;
-  const surchargeAmount = roundCurrencyAmount(finalTotal - afterDiscount);
+  const surchargeAmount = roundCurrencyAmount(totalWithSurcharge - afterDiscount);
+
+  // Getirme ücreti — indirim ve vade farkından SONRA düz eklenir (vade farkı
+  // yalnız ürünlere işler). Baraj, ürün ara toplamına (roundedSubtotal) göre
+  // değerlendirilir; kupon/indirim düşülmez.
+  const deliveryFeeAmount = getDeliveryFeeAmount(deliveryFeeConfig, roundedSubtotal);
+  const deliveryFeeFreeThreshold = deliveryFeeConfig?.isActive
+    ? deliveryFeeConfig.freeThreshold
+    : 0;
+  const deliveryFeeRemaining =
+    deliveryFeeAmount > 0 && deliveryFeeFreeThreshold > 0
+      ? roundCurrencyAmount(Math.max(deliveryFeeFreeThreshold - roundedSubtotal, 0))
+      : 0;
+
+  const finalTotal = roundCurrencyAmount(totalWithSurcharge + deliveryFeeAmount);
 
   const remainingForNextCashTier =
     paymentMethod === "cash" && cashConfig?.isActive
@@ -433,6 +481,9 @@ export function getCartPaymentSummary(
     appliedCoupon: couponDiscountAmount > 0 ? coupon : null,
     couponDiscountAmount,
     couponMissingAmount: coupon && !couponResult.eligible ? couponResult.missing : 0,
+    deliveryFeeAmount,
+    deliveryFeeFreeThreshold,
+    deliveryFeeRemaining,
   };
 }
 

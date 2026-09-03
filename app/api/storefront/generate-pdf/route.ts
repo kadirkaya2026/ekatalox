@@ -296,6 +296,18 @@ export async function POST(request: Request) {
   const couponPhone = normalizeCustomerPhone(parsed.data.customer_phone ?? "");
   const coupon = couponPhone.length >= 10 ? await findActiveCouponForPhone(supabase, tenant.id, couponPhone) : null;
 
+  // Getirme ücreti ayarını sunucudan oku (istemciye güvenilmez, kupon gibi).
+  // Yalnız market tenantlarda uygulanır.
+  const deliveryFeeSettings = await getTenantStorefrontSettings(tenant.id);
+  const deliveryFeeConfig =
+    tenant.business_type === "market" && deliveryFeeSettings.is_delivery_fee_active
+      ? {
+          isActive: true,
+          amount: deliveryFeeSettings.delivery_fee_amount ?? 0,
+          freeThreshold: deliveryFeeSettings.delivery_fee_free_threshold ?? 0,
+        }
+      : null;
+
   const paymentSummary = getCartPaymentSummary(
     items,
     paymentMethod ?? "cash",
@@ -305,6 +317,7 @@ export async function POST(request: Request) {
     [],
     undefined,
     coupon,
+    deliveryFeeConfig,
   );
 
   if (!paymentSummary) {

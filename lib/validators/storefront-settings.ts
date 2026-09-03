@@ -342,6 +342,15 @@ export const storefrontSettingsSchema = z
     min_cart_amount: z.coerce
       .number()
       .min(0, "Minimum sepet tutarı negatif olamaz."),
+    // Getirme (teslimat) ücreti — yalnız market tenantlar. amount 0 olabilir
+    // (her sipariş ücretsiz); free_threshold 0 = baraj yok.
+    is_delivery_fee_active: z.boolean().default(false),
+    delivery_fee_amount: z.coerce
+      .number()
+      .min(0, "Getirme ücreti negatif olamaz."),
+    delivery_fee_free_threshold: z.coerce
+      .number()
+      .min(0, "Ücretsiz teslimat barajı negatif olamaz."),
     is_best_sellers_visible: z.boolean().default(false),
     best_sellers_title: z
       .string()
@@ -372,6 +381,10 @@ export const storefrontSettingsSchema = z
         message: "Minimum sepet tutarını aktif etmek için 0'dan büyük bir tutar girin.",
       });
     }
+
+    // Getirme ücretinde amount = 0 geçerli (bayi "hep ücretsiz" diyebilir),
+    // sadece negatif değer engellenir; onu da .min(0) yakalıyor. Baraj,
+    // ücretten büyük/küçük olabilir — bir kısıt yok.
 
     if (value.is_active) {
       if (!value.announcement_title) {

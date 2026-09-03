@@ -10,7 +10,7 @@ import {
   useSyncExternalStore,
 } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { ChevronDown, ChevronLeft, ChevronRight, CreditCard, Megaphone, Minus, Plus, Search, ShoppingBasket, ShoppingCart, Sparkles, X } from "lucide-react";
+import { ChevronDown, ChevronLeft, ChevronRight, CreditCard, Megaphone, Minus, Plus, Search, ShoppingCart, Sparkles, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -42,6 +42,7 @@ import {
   getCartCurrency,
   getCartDiscountSummary,
   getCartPaymentSummary,
+  getDeliveryFeeAmount,
   getCartTotal,
   getCartTotalsByCurrency,
   getCartVariantCount,
@@ -977,12 +978,6 @@ export function StorefrontClient({
   const [pairings, setPairings] = useState<Array<{ source_category_id: string; target_category_id: string; priority: number }>>([]);
   const [complementProducts, setComplementProducts] = useState<StorefrontProduct[]>([]);
   const [pairPreviewProducts, setPairPreviewProducts] = useState<StorefrontProduct[]>([]);
-  const [nudgeOpen, setNudgeOpen] = useState(false);
-  const [nudgeProducts, setNudgeProducts] = useState<StorefrontProduct[]>([]);
-  const nudgeBypassRef = useRef(false);
-  // X / "Sepete dön" ile kapatıldıysa sayfa yenilenene kadar bir daha çıkmaz
-  // (sinir bozucu olmasın — kullanıcı kararı, 3 Eyl 2026).
-  const nudgeDismissedRef = useRef(false);
   const pairFetchCacheRef = useRef(new Map<string, StorefrontProduct[]>());
   const relatedPreviewCacheRef = useRef(new Map<string, StorefrontProduct[]>());
   const relatedPreviewAbortRef = useRef<AbortController | null>(null);
@@ -1164,9 +1159,6 @@ export function StorefrontClient({
     return () => controller.abort();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [analyticsSubdomain]);
-
-  // Sepet değişince "tamamla" uyarısı yeniden gösterilebilir olur
-  useEffect(() => { nudgeBypassRef.current = false; }, [cart]);
 
   // Bir kategorinin (soyu dahil) eşlenmiş hedef kategorileri, öncelik sırasıyla
   const getPairingTargets = useCallback((categoryId: string | null | undefined) => {
@@ -1435,6 +1427,35 @@ export function StorefrontClient({
     0,
     (storefrontSettings.min_cart_amount ?? 0) - cartTotal,
   );
+
+  // Getirme (teslimat) ücreti — yalnız market tenantlar. Ödeme yöntemi
+  // seçilmeden de sepet özetinde gösterilir; çoklu para birimli sepette
+  // uygulanmaz (getCartPaymentSummary ile aynı varsayım).
+  const deliveryFeeConfig = useMemo(
+    () =>
+      isMarketTenant && storefrontSettings.is_delivery_fee_active
+        ? {
+            isActive: true,
+            amount: storefrontSettings.delivery_fee_amount ?? 0,
+            freeThreshold: storefrontSettings.delivery_fee_free_threshold ?? 0,
+          }
+        : null,
+    [
+      isMarketTenant,
+      storefrontSettings.is_delivery_fee_active,
+      storefrontSettings.delivery_fee_amount,
+      storefrontSettings.delivery_fee_free_threshold,
+    ],
+  );
+  const isSingleCurrencyCart = Object.keys(cartTotalsByCurrency).length <= 1;
+  const deliveryFeeAmount = isSingleCurrencyCart
+    ? getDeliveryFeeAmount(deliveryFeeConfig, cartTotal)
+    : 0;
+  const deliveryFeeFreeThreshold = deliveryFeeConfig?.freeThreshold ?? 0;
+  const deliveryFeeRemaining =
+    deliveryFeeAmount > 0 && deliveryFeeFreeThreshold > 0
+      ? Math.max(0, deliveryFeeFreeThreshold - cartTotal)
+      : 0;
   const cartDiscountSummary = useMemo(
     () =>
       getCartDiscountSummary(cart, {
@@ -1529,8 +1550,10 @@ export function StorefrontClient({
       campaigns,
       excludedCategoriesByCampaign,
       customerCoupon,
+      deliveryFeeConfig,
     );
   }, [
+    deliveryFeeConfig,
     excludedCategoriesByCampaign,
     campaigns,
     customerCoupon,
@@ -1592,14 +1615,11 @@ export function StorefrontClient({
     for (const product of pairPreviewProducts) {
       map.set(product.id, product);
     }
-    for (const product of nudgeProducts) {
-      map.set(product.id, product);
-    }
     for (const product of recommendationPool) {
       map.set(product.id, product);
     }
     return map;
-  }, [products, sections, promoProducts, bestSellerProducts, recommendationPool, complementProducts, pairPreviewProducts, nudgeProducts]);
+  }, [products, sections, promoProducts, bestSellerProducts, recommendationPool, complementProducts, pairPreviewProducts]);
   const cartVariantCountByProductId = useMemo(
     () =>
       new Map(
@@ -1963,15 +1983,10 @@ export function StorefrontClient({
       return;
     }
 
-    // "Yanında iyi gider" hatırlatması: sepette eksik tamamlayıcı varsa ve
-    // müşteri henüz görüp geçmediyse, sipariş oluşmadan ÖNCE bir kez sor.
-    if (isMarketTenant && !nudgeBypassRef.current && !nudgeDismissedRef.current && complementProducts.length) {
-      // Liste açılış anında dondurulur: ürün eklenince kart KAYBOLMAZ,
-      // + animasyonu ve adet rozeti diğer kartlardaki gibi görünür.
-      setNudgeProducts(complementProducts);
-      setNudgeOpen(true);
-      return;
-    }
+    // "Yanında iyi gider" hatırlatması artık sepet çekmecesinin 2. adımında
+    // (market/tekel adımlı akış, bkz. storefront-cart-drawer.tsx); burada
+    // ayrı bir popup gösterilmiyor — "Siparişi Ver"e basıldığında doğrudan
+    // validasyon + sipariş akışı çalışır.
 
     if (isMarketTenant) {
       let hasValidationError = false;
@@ -2083,7 +2098,6 @@ export function StorefrontClient({
   }, [
     analyticsSubdomain,
     buildWhatsAppOrderMessage,
-    complementProducts.length,
     cart,
     customerReferenceName,
     customerAddress,
@@ -4033,64 +4047,8 @@ export function StorefrontClient({
         />
       ) : null}
 
-      {nudgeOpen ? (
-        <div className={cn(theme.modalOverlay, "!z-[55] flex items-end justify-center p-0 sm:items-center sm:p-4")}>
-          <div className={cn(theme.modalPanel, "flex max-h-[92dvh] w-full max-w-xl flex-col overflow-hidden rounded-t-3xl sm:rounded-3xl")}>
-            {/* Başlık */}
-            <div className="relative shrink-0 overflow-hidden bg-gradient-to-br from-emerald-600 to-emerald-700 px-5 pb-5 pt-6 text-white">
-              <ShoppingBasket className="pointer-events-none absolute -right-4 -top-4 size-28 rotate-12 opacity-15" />
-              <button
-                type="button"
-                onClick={() => {
-                  nudgeDismissedRef.current = true;
-                  setNudgeOpen(false);
-                }}
-                className="absolute right-3 top-3 flex size-8 items-center justify-center rounded-full bg-white/15 text-white transition hover:bg-white/25"
-                aria-label={t("common.close")}
-              >
-                <X className="size-4" />
-              </button>
-              <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-emerald-100">{t("pair.goesWellWith")}</p>
-              <h2 className="mt-1 text-xl font-bold leading-snug" style={{ textWrap: "balance" } as React.CSSProperties}>
-                {t("nudge.title")}
-              </h2>
-              <p className="mt-1 text-sm text-emerald-50/90">{t("nudge.subtitle")}</p>
-            </div>
-
-            {/* Ürünler: 3 sütun, dikey kaydırma */}
-            <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4">
-              <div className="grid grid-cols-3 gap-2.5 [&_article]:!min-w-0 [&_article]:!max-w-none">
-                {nudgeProducts.map((product) => renderCrossSellCard(product, true))}
-              </div>
-            </div>
-
-            {/* Alt */}
-            <div className={cn("shrink-0 space-y-2 border-t px-5 py-4", theme.modalFooterBorder, theme.border)}>
-              <Button
-                type="button"
-                onClick={() => {
-                  nudgeBypassRef.current = true;
-                  setNudgeOpen(false);
-                  void handleWhatsAppOrder();
-                }}
-                className="h-12 w-full justify-center rounded-full text-base font-bold"
-              >
-                {t("nudge.continue")}
-              </Button>
-              <button
-                type="button"
-                onClick={() => {
-                  nudgeDismissedRef.current = true;
-                  setNudgeOpen(false);
-                }}
-                className={cn("w-full text-center text-xs font-semibold underline-offset-2 hover:underline", theme.textMuted)}
-              >
-                {t("nudge.back")}
-              </button>
-            </div>
-          </div>
-        </div>
-      ) : null}
+      {/* "Bunları unutmuş olabilirsiniz" hatırlatması artık sepet çekmecesinin
+          2. adımında (market/tekel adımlı akış); ayrı popup kaldırıldı. */}
 
       <StorefrontCampaignsSheet
         isOpen={isMounted && isCampaignsSheetOpen}
@@ -4163,6 +4121,8 @@ export function StorefrontClient({
         cartCurrency={cartCurrency}
         isMinCartAmountMet={isMinCartAmountMet}
         minCartAmountRemaining={minCartAmountRemaining}
+        deliveryFeeAmount={deliveryFeeAmount}
+        deliveryFeeRemaining={deliveryFeeRemaining}
         onWhatsAppOrder={handleWhatsAppOrder}
         isGeneratingOrderPdf={isGeneratingOrderPdf}
         orderPdfError={orderPdfError}

@@ -270,6 +270,13 @@ export async function generateOrderReceiptPdf(
       });
     }
 
+    if (summary.deliveryFeeAmount > 0) {
+      summaryLines.push({
+        label: "Teslimat Ücreti",
+        value: `+${formatReceiptMoney(summary.deliveryFeeAmount, currency)}`,
+      });
+    }
+
     summaryLines.push({
       label: "Genel Toplam",
       value: formatReceiptMoney(summary.finalTotal, currency),

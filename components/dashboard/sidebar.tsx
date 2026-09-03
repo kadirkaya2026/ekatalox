@@ -33,6 +33,7 @@ import {
   Store,
   Ticket,
   TrendingUp,
+  Truck,
   UploadCloud,
   UserCircle,
   Wallet,
@@ -200,6 +201,13 @@ const tenantLinks: SidebarLink[] = [
         label: "Minimum Sepet Tutarı",
         icon: Wallet,
         group: "İçerik & İletişim",
+      },
+      {
+        href: "/settings/delivery-fee",
+        label: "Getirme Ücreti",
+        icon: Truck,
+        group: "İçerik & İletişim",
+        requiredBusinessType: "market",
       },
       {
         href: "/settings/campaigns",

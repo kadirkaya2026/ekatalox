@@ -523,6 +523,13 @@ export interface TenantStorefrontSettings {
   business_hours: BusinessHours;
   is_min_cart_amount_active: boolean;
   min_cart_amount: number;
+  // Getirme (teslimat) ücreti — yalnız business_type = "market" tenantlarda
+  // uygulanır (bkz. 0108, lib/storefront/cart.ts). free_threshold > 0 ise o
+  // tutar ve üzeri siparişlerde ücret 0; 0 = baraj yok, her siparişe ücret.
+  // amount 0 verilebilir (fiilen her sipariş ücretsiz).
+  is_delivery_fee_active: boolean;
+  delivery_fee_amount: number;
+  delivery_fee_free_threshold: number;
   is_best_sellers_visible: boolean;
   best_sellers_title: string;
   best_sellers_product_count: number;
