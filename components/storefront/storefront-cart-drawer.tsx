@@ -904,8 +904,10 @@ export function StorefrontCartDrawer({
                   <a
                     href={whatsappHandoff.href}
                     onClick={() => {
-                      // Gezinme (wa.me) engellenmez; sepet aynı anda sıfırlanır ki
-                      // müşteri geri döndüğünde ürünler tekrar sepette durmasın.
+                      // Gezinme (wa.me) engellenmez. Sepet yalnız market/tekelde
+                      // sıfırlanır; toptancıda müşteri (bayi) aynı sepetle
+                      // çalışmaya devam eder (kullanıcı kararı, 3 Eyl 2026).
+                      if (!isMarketTenant) return;
                       setSentOrder({ trackingUrl: whatsappHandoff.trackingUrl ?? null });
                       setCopyFeedback(null);
                       clearCart();
