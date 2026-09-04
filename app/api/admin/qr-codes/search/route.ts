@@ -24,7 +24,7 @@ export async function GET(request: Request) {
   const { data, error } = await supabase
     .from("magnet_codes")
     .select(
-      "id, code, tenant_id, label, assigned_at, created_at, city, district, neighborhood, placed_at, is_disabled, disabled_at, disabled_by_role, scan_count, last_scan_at, customer_id, claimed_at, tenants(subdomain, company_name), customers(full_name, phone, address)",
+      "id, code, tenant_id, label, package_code, package_position, assigned_at, created_at, city, district, neighborhood, placed_at, is_disabled, disabled_at, disabled_by_role, scan_count, last_scan_at, customer_id, claimed_at, tenants(subdomain, company_name), customers(full_name, phone, address)",
     )
     .ilike("code", parsed.code)
     .maybeSingle();

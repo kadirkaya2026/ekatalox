@@ -17,7 +17,9 @@ import { formatMagnetCodeForPrint } from "@/lib/magnet/codes";
 // magnet başka bayiye devredilir (bkz. app/t/[slug]/route.ts, 302 + no-store).
 
 interface MagnetSearchResult {
+  id: string;
   code: string;
+  tenant_id: string | null;
   is_disabled: boolean;
   disabled_by_role: string | null;
   scan_count: number;
@@ -27,6 +29,8 @@ interface MagnetSearchResult {
   district: string | null;
   neighborhood: string | null;
   label: string | null;
+  package_code: string | null;
+  package_position: number | null;
   tenants: { subdomain: string; company_name: string | null } | null;
   customers: { full_name: string; phone: string; address: string } | null;
 }
@@ -111,11 +115,17 @@ export function QrCodeManager({
   const [rangeLabel, setRangeLabel] = useState("");
   const [rangePending, setRangePending] = useState(false);
   const [rangeResult, setRangeResult] = useState<string | null>(null);
-  // Baskı paketi ataması: A01 gibi 100'lük kutunun tamamı tek tıkla bayiye.
-  const [selectedPack, setSelectedPack] = useState<string | null>(null);
+  // Baskı paketi ataması: bir veya birden çok paketi (A01, A02, ...) seçip
+  // tek bayiye ata. Atamadan önce /package-preview ile "başka bayiye atanmış
+  // kod var" uyarısı gösterilir.
+  const [selectedPacks, setSelectedPacks] = useState<string[]>([]);
   const [packTenant, setPackTenant] = useState("");
   const [packPending, setPackPending] = useState(false);
   const [packResult, setPackResult] = useState<string | null>(null);
+
+  // Kod sorgula sonucundaki tekil kodu bayiye atama.
+  const [searchAssignTenant, setSearchAssignTenant] = useState("");
+  const [searchAssignPending, setSearchAssignPending] = useState(false);
 
   // Kod arama: elde magnet, "kimin bu?" sorusu.
   const [searchInput, setSearchInput] = useState("");
@@ -290,33 +300,121 @@ export function QrCodeManager({
     await refresh();
   }
 
-  async function assignPackage(packageCode: string) {
-    if (!packTenant) return;
+  function togglePack(code: string) {
+    setPackResult(null);
+    setSelectedPacks((cur) =>
+      cur.includes(code) ? cur.filter((c) => c !== code) : [...cur, code].sort(),
+    );
+  }
+
+  async function assignSelectedPacks() {
+    if (!packTenant || selectedPacks.length === 0) return;
     setPackPending(true);
     setPackResult(null);
 
+    const bayi = tenants.find((t) => t.id === packTenant);
+    const bayiAd = bayi ? bayi.company_name || bayi.subdomain : "bu bayi";
+
+    // 1) Ön izleme: pakette başka bayiye atanmış kod var mı?
+    let preview: {
+      packages: {
+        package_code: string;
+        free: number;
+        toOthers: number;
+        toThisTenant: number;
+        otherTenants: { name: string; count: number }[];
+      }[];
+      totals: { free: number; toOthers: number; toThisTenant: number };
+    } | null = null;
+    try {
+      const pr = await fetch(
+        `/api/admin/qr-codes/package-preview?tenant=${encodeURIComponent(
+          packTenant,
+        )}&packs=${encodeURIComponent(selectedPacks.join(","))}`,
+      );
+      const pj = await pr.json().catch(() => ({}));
+      if (!pr.ok) {
+        setPackResult(pj.error ?? "Ön izleme alınamadı.");
+        setPackPending(false);
+        return;
+      }
+      preview = pj;
+    } catch {
+      setPackResult("Ön izleme alınamadı.");
+      setPackPending(false);
+      return;
+    }
+
+    // 2) Onay metni — başka bayiye atanmış kod varsa açıkça uyar.
+    const satirlar = preview!.packages.map((p) => {
+      const parcalar = [`${p.free} boş kod → ${bayiAd}`];
+      if (p.toOthers > 0) {
+        const kime = p.otherTenants
+          .map((o) => `${o.count} tanesi "${o.name}"`)
+          .join(", ");
+        parcalar.unshift(`${kime} bayisine atanmış (dokunulmayacak)`);
+      }
+      if (p.toThisTenant > 0) parcalar.push(`${p.toThisTenant} tanesi zaten ${bayiAd}'de`);
+      return `${p.package_code}: ${parcalar.join("; ")}`;
+    });
+    const onayMetni =
+      satirlar.join("\n") +
+      `\n\nToplam ${preview!.totals.free} boş kod ${bayiAd} bayisine atanacak.` +
+      (preview!.totals.toOthers > 0
+        ? `\n${preview!.totals.toOthers} kod başka bayilerde kalacak.`
+        : "") +
+      `\n\nDevam edilsin mi?`;
+
+    if (!window.confirm(onayMetni)) {
+      setPackPending(false);
+      return;
+    }
+
+    // 3) Atama.
     const response = await fetch("/api/admin/qr-codes/assign-package", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ tenant_id: packTenant, package_code: packageCode }),
+      body: JSON.stringify({ tenant_id: packTenant, package_codes: selectedPacks }),
     });
     const result = await response.json().catch(() => ({}));
 
     if (!response.ok) {
       setPackResult(result.error ?? "Atama yapılamadı.");
     } else {
-      const bayi = tenants.find((t) => t.id === packTenant);
-      const bayiAd = bayi ? bayi.company_name || bayi.subdomain : "bayi";
-      // Paketten daha önce tek tek atanmış kod varsa 100'den az döner.
       setPackResult(
-        `${packageCode} paketinden ${result.assigned} kod ${bayiAd} bayisine atandı.` +
-          (result.assigned < 100 ? " (Kalanı daha önce başka bayiye atanmıştı.)" : ""),
+        `${selectedPacks.join(", ")} → ${result.assigned} kod ${bayiAd} bayisine atandı.` +
+          (result.assigned < preview!.totals.free
+            ? " (Bir kısmı bu sırada başka işlemde kilitliydi.)"
+            : ""),
       );
+      setSelectedPacks([]);
       await refresh();
-      // Sunucudan gelen paket özetleri (boşta sayıları) tazelensin.
       router.refresh();
     }
     setPackPending(false);
+  }
+
+  // Kod sorgula sonucundaki tekil kodu bir bayiye ata / atamayı kaldır.
+  async function assignSearchResult(tenantId: string) {
+    if (!searchResult) return;
+    setSearchAssignPending(true);
+    setSearchError(null);
+
+    const response = await fetch(`/api/admin/qr-codes/${searchResult.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ tenant_id: tenantId || null }),
+    });
+    const result = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      setSearchError(result.error ?? "Atama yapılamadı.");
+    } else {
+      await searchCode();
+      await refresh();
+      router.refresh();
+    }
+    setSearchAssignPending(false);
   }
 
   async function assignRange() {
@@ -628,14 +726,14 @@ export function QrCodeManager({
             Baskı paketleri <span className="font-normal text-muted-foreground">(100&apos;lük kutular)</span>
           </p>
           <p className="mt-1 text-sm text-muted-foreground">
-            Matbaa magnetleri 100&apos;erli paketliyor (4 tabaka × 25). Pakete tıklayın: içindeki
-            magnetleri görün, kutunun tamamını tek tıkla bir markete tanımlayın. Harf tabaka
-            PDF&apos;ini, sayı dosyadaki 4 sayfalık grubu söyler (A01 = tabaka-01.pdf, sayfa 1-4).
+            Matbaa magnetleri 100&apos;erli paketliyor (4 tabaka × 25). Bir veya birden çok
+            paketi seçin, aşağıdan bir markete tanımlayın. Bir pakette başka bayiye atanmış
+            kod varsa atamadan önce uyarı çıkar; o kodlara dokunulmaz.
           </p>
 
           <div className="mt-4 grid grid-cols-5 gap-1.5 sm:grid-cols-10">
             {packages.map((pack) => {
-              const secili = selectedPack === pack.package_code;
+              const secili = selectedPacks.includes(pack.package_code);
               const renk =
                 pack.free === 0
                   ? "border-slate-200 bg-slate-100 text-slate-400"
@@ -646,10 +744,7 @@ export function QrCodeManager({
                 <button
                   key={pack.package_code}
                   type="button"
-                  onClick={() => {
-                    setSelectedPack(secili ? null : pack.package_code);
-                    setPackResult(null);
-                  }}
+                  onClick={() => togglePack(pack.package_code)}
                   className={`rounded-lg border px-1 py-1.5 text-center font-mono text-xs font-bold ${renk} ${
                     secili ? "ring-2 ring-foreground" : ""
                   }`}
@@ -664,28 +759,31 @@ export function QrCodeManager({
             })}
           </div>
 
-          {selectedPack ? (
+          {selectedPacks.length > 0 ? (
             (() => {
-              const pack = packages.find((x) => x.package_code === selectedPack);
-              if (!pack) return null;
+              const secilenler = packages.filter((p) => selectedPacks.includes(p.package_code));
+              const bosToplam = secilenler.reduce((t, p) => t + p.free, 0);
+              const baskaBayide = secilenler.some((p) => p.free < p.total - p.disabled);
               return (
                 <div className="mt-4 space-y-3 rounded-xl border bg-slate-50/70 p-4">
                   <p className="text-sm">
-                    <span className="font-mono font-bold">{pack.package_code}</span> — {pack.total}{" "}
-                    magnet: {pack.free} boşta, {pack.assigned} atanmış
-                    {pack.disabled ? `, ${pack.disabled} pasif` : ""}.{" "}
-                    <button
-                      type="button"
-                      onClick={() => router.push(`?paket=${pack.package_code}`)}
-                      className="font-semibold underline"
-                    >
-                      Magnetleri listede göster
-                    </button>
+                    <span className="font-mono font-bold">{selectedPacks.join(", ")}</span> —{" "}
+                    {secilenler.length} paket, toplam {bosToplam} boş kod.
+                    {baskaBayide ? " Bazı paketlerde başka bayiye atanmış kodlar var." : ""}{" "}
+                    {selectedPacks.length === 1 ? (
+                      <button
+                        type="button"
+                        onClick={() => router.push(`?paket=${selectedPacks[0]}`)}
+                        className="font-semibold underline"
+                      >
+                        Magnetleri listede göster
+                      </button>
+                    ) : null}
                   </p>
                   <div className="flex flex-wrap items-end gap-3">
                     <div className="min-w-52 flex-1">
                       <label className="mb-1.5 block text-sm font-medium text-foreground">
-                        Bu paketi markete tanımla
+                        Seçili paketleri markete tanımla
                       </label>
                       <Select value={packTenant} onChange={(event) => setPackTenant(event.target.value)}>
                         <option value="">— market seçin —</option>
@@ -697,15 +795,26 @@ export function QrCodeManager({
                       </Select>
                     </div>
                     <Button
-                      onClick={() => void assignPackage(pack.package_code)}
-                      disabled={packPending || !packTenant || pack.free === 0}
+                      onClick={() => void assignSelectedPacks()}
+                      disabled={packPending || !packTenant || bosToplam === 0}
                     >
                       {packPending ? <Loader2 className="size-4 animate-spin" /> : <Check className="size-4" />}
-                      {pack.free === 0 ? "Paket dolu" : `${pack.free} kodu ata`}
+                      {bosToplam === 0
+                        ? "Boş kod yok"
+                        : `${bosToplam} boş kodu ata`}
                     </Button>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedPacks([])}
+                      className="text-xs font-semibold text-muted-foreground underline"
+                    >
+                      seçimi temizle
+                    </button>
                   </div>
                   {packResult ? (
-                    <p className="text-sm font-medium text-emerald-700">{packResult}</p>
+                    <p className="whitespace-pre-line text-sm font-medium text-emerald-700">
+                      {packResult}
+                    </p>
                   ) : null}
                 </div>
               );
@@ -759,6 +868,14 @@ export function QrCodeManager({
                 : "atanmamış"}
             </div>
             <div>
+              Baskı paketi:{" "}
+              {searchResult.package_code
+                ? `${searchResult.package_code}${
+                    searchResult.package_position ? ` · #${searchResult.package_position}` : ""
+                  }`
+                : "—"}
+            </div>
+            <div>
               Okutma: {searchResult.scan_count}
               {searchResult.last_scan_at
                 ? ` — son: ${new Date(searchResult.last_scan_at).toLocaleString("tr-TR")}`
@@ -784,6 +901,47 @@ export function QrCodeManager({
                       : ""
                   }`
                 : "henüz yok"}
+            </div>
+
+            {/* Bu kodu bir bayiye ata / atamayı kaldır — tekil kod ataması. */}
+            <div className="mt-1 flex flex-wrap items-end gap-2 border-t pt-3 sm:col-span-2">
+              <div className="min-w-52 flex-1">
+                <label className="mb-1.5 block text-xs font-medium text-muted-foreground">
+                  Bu kodu bayiye ata
+                </label>
+                <Select
+                  value={searchAssignTenant}
+                  onChange={(event) => setSearchAssignTenant(event.target.value)}
+                >
+                  <option value="">— bayi seçin —</option>
+                  {tenants.map((tenant) => (
+                    <option key={tenant.id} value={tenant.id}>
+                      {tenant.company_name || tenant.subdomain} ({tenant.subdomain})
+                    </option>
+                  ))}
+                </Select>
+              </div>
+              <Button
+                onClick={() => void assignSearchResult(searchAssignTenant)}
+                disabled={searchAssignPending || !searchAssignTenant}
+              >
+                {searchAssignPending ? (
+                  <Loader2 className="size-4 animate-spin" />
+                ) : (
+                  <Check className="size-4" />
+                )}
+                Ata
+              </Button>
+              {searchResult.tenant_id ? (
+                <button
+                  type="button"
+                  onClick={() => void assignSearchResult("")}
+                  disabled={searchAssignPending}
+                  className="text-xs font-semibold text-muted-foreground underline"
+                >
+                  atamayı kaldır
+                </button>
+              ) : null}
             </div>
           </div>
         ) : null}
