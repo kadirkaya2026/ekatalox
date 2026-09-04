@@ -2,7 +2,11 @@ import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 import type { CartItem } from "@/lib/types";
 import type { CartPaymentSummary } from "@/lib/storefront/cart";
-import { formatDiscountPercentage, buildAppliedCampaignBenefitNotes } from "@/lib/storefront/cart";
+import {
+  formatDiscountPercentage,
+  buildAppliedCampaignBenefitNotes,
+  buildGiftCampaignNotes,
+} from "@/lib/storefront/cart";
 import {
   formatReceiptMoney,
   getOrderReceiptTableHead,
@@ -319,6 +323,16 @@ export async function generateOrderReceiptPdf(
     }
     doc.text("Fiyatsız katalog siparişi", margin, cursorY);
     cursorY += 7;
+  }
+
+  // "N al Y hediye" kampanyası notu — fiyatlı/fiyatsız her iki modda da
+  // (hediye satırları price=0 ile sepette, catalogMode'da bile).
+  setPdfFont(doc, "normal");
+  doc.setFontSize(PDF_FONT_SIZE.body);
+  for (const giftNote of buildGiftCampaignNotes(params.items)) {
+    const giftNoteLines = doc.splitTextToSize(giftNote, pageWidth - margin * 2);
+    doc.text(giftNoteLines, margin, cursorY, { lineHeightFactor: 1.35 });
+    cursorY += giftNoteLines.length * PDF_SPACING.wrappedLine + 2;
   }
 
   const trimmedNote = params.note?.trim();

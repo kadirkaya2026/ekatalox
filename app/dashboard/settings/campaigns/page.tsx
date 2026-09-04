@@ -40,7 +40,11 @@ export default async function TenantCampaignsSettingsPage() {
         description="Müşterilerinizin mağazanızdaki Kampanyalar bölümünde göreceği kartları buradan yönetin. İsterseniz sadece duyuru yapın, isterseniz sepet tutarına bağlı otomatik indirim tanımlayın."
       />
 
-      <TenantCampaignsForm initialCampaigns={campaigns} categories={categories} />
+      <TenantCampaignsForm
+        initialCampaigns={campaigns}
+        categories={categories}
+        businessType={session.tenant!.business_type}
+      />
     </div>
   );
 }

@@ -48,7 +48,9 @@ export function getOrderReceiptLineDisplay(
   item: CartItem,
   catalogMode = false,
 ): OrderReceiptLineDisplay {
-  const productLabel = buildReceiptProductLabel(item);
+  // Emoji fiş fontunda (Roboto) boş kutu olarak basılabiliyor — düz metin.
+  const baseLabel = buildReceiptProductLabel(item);
+  const productLabel = item.is_gift ? `${baseLabel} (Hediye)` : baseLabel;
 
   if (catalogMode || item.price === null) {
     return {
@@ -57,6 +59,16 @@ export function getOrderReceiptLineDisplay(
       quantityLabel: String(item.quantity),
       unitPriceLabel: null,
       lineTotalLabel: null,
+    };
+  }
+
+  if (item.is_gift) {
+    return {
+      productLabel,
+      unitLabel: "Adet",
+      quantityLabel: String(item.quantity),
+      unitPriceLabel: "Hediye",
+      lineTotalLabel: "Hediye",
     };
   }
 

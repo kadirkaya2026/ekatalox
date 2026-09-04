@@ -46,6 +46,8 @@ import {
   getCartTotal,
   getCartTotalsByCurrency,
   getCartVariantCount,
+  computeGiftCampaignPlans,
+  reconcileGiftCartLines,
   updateCartLineQuantity,
 } from "@/lib/storefront/cart";
 import { useResolvedStorefrontTheme } from "@/lib/storefront/use-resolved-storefront-theme";
@@ -984,6 +986,10 @@ export function StorefrontClient({
   // eklenir — yoksa "+" tıklaması sessizce hiçbir şey yapmıyordu (ürün ana
   // katalogda yüklü değilse handleQuickAddOrOpenModal erken return ediyor).
   const [cartSuggestionsSnapshot, setCartSuggestionsSnapshot] = useState<StorefrontProduct[]>([]);
+  // "N al Y hediye" kampanyalarının tetikleyici/hediye ürünleri (market/tekel
+  // sadece) — sayfada hiç yüklü olmayabilirler, id ile ayrıca çözülür (bkz.
+  // productsById ve reconcileGiftCartLines effect'i).
+  const [giftCampaignProducts, setGiftCampaignProducts] = useState<StorefrontProduct[]>([]);
   const pairFetchCacheRef = useRef(new Map<string, StorefrontProduct[]>());
   const relatedPreviewCacheRef = useRef(new Map<string, StorefrontProduct[]>());
   const relatedPreviewAbortRef = useRef<AbortController | null>(null);
@@ -1632,8 +1638,21 @@ export function StorefrontClient({
     for (const product of cartSuggestionsSnapshot) {
       map.set(product.id, product);
     }
+    for (const product of giftCampaignProducts) {
+      map.set(product.id, product);
+    }
     return map;
-  }, [products, sections, promoProducts, bestSellerProducts, recommendationPool, complementProducts, pairPreviewProducts, cartSuggestionsSnapshot]);
+  }, [
+    products,
+    sections,
+    promoProducts,
+    bestSellerProducts,
+    recommendationPool,
+    complementProducts,
+    pairPreviewProducts,
+    cartSuggestionsSnapshot,
+    giftCampaignProducts,
+  ]);
   const cartVariantCountByProductId = useMemo(
     () =>
       new Map(
@@ -1641,6 +1660,62 @@ export function StorefrontClient({
       ),
     [cart, productsById],
   );
+  // "N al Y hediye" kampanyalarının tetikleyici/hediye ürün id'leri (market/
+  // tekel sadece — bkz. tenant-campaigns-form.tsx).
+  const giftCampaignProductIds = useMemo(() => {
+    if (!isMarketTenant) return [] as string[];
+    const ids = new Set<string>();
+    for (const campaign of campaigns) {
+      if (campaign.rule_type !== "buy_x_get_y") continue;
+      if (campaign.gift_trigger_product_id) ids.add(campaign.gift_trigger_product_id);
+      for (const id of campaign.gift_product_ids ?? []) ids.add(id);
+    }
+    return [...ids];
+  }, [isMarketTenant, campaigns]);
+
+  // Bu ürünler productsById'de yoksa çöz — yoksa otomatik hediye ekleme
+  // sessizce çalışmaz (aynı "buz küpleri" hatası).
+  useEffect(() => {
+    if (!subdomain || !giftCampaignProductIds.length) return;
+    const missing = giftCampaignProductIds.filter((id) => !productsById.has(id));
+    if (!missing.length) return;
+
+    const abortController = new AbortController();
+    void (async () => {
+      try {
+        const params = new URLSearchParams({ subdomain, ids: missing.join(",") });
+        const response = await fetch(`/api/storefront/products-by-ids?${params.toString()}`, {
+          signal: abortController.signal,
+        });
+        if (!response.ok) return;
+        const result = await response.json();
+        const fetched = Array.isArray(result.products)
+          ? (result.products as StorefrontProduct[])
+          : [];
+        if (!fetched.length) return;
+        setGiftCampaignProducts((current) => {
+          const map = new Map(current.map((product) => [product.id, product]));
+          for (const product of fetched) map.set(product.id, product);
+          return [...map.values()];
+        });
+      } catch (error) {
+        if (error instanceof DOMException && error.name === "AbortError") return;
+      }
+    })();
+
+    return () => abortController.abort();
+  }, [subdomain, giftCampaignProductIds, productsById]);
+
+  // Sepetteki hediye satırlarını aktif "N al Y hediye" kampanyalarıyla
+  // eşitle: tetikleyici eşiği tutan yeni satır ekler, tutmayanı kaldırır,
+  // katlanan eşiklerde adedi günceller. reconcileGiftCartLines değişiklik
+  // yoksa AYNI referansı döndürür — sonsuz döngü olmaz.
+  useEffect(() => {
+    if (!isMarketTenant) return;
+    const plans = computeGiftCampaignPlans(cart, campaigns);
+    setCart((current) => reconcileGiftCartLines(current, plans, productsById));
+  }, [isMarketTenant, cart, campaigns, productsById]);
+
   const cartTotalEntries = useMemo(
     () =>
       supportedCurrencyCodes

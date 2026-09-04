@@ -1,15 +1,15 @@
 "use client";
 
-import { useRef, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import Image from "next/image";
-import { ChevronDown, Loader2, Plus, Trash2 } from "lucide-react";
+import { ChevronDown, Loader2, Plus, Search, Trash2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { InlineAlert } from "@/components/ui/inline-alert";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import type { Category, TenantCampaign } from "@/lib/types";
+import type { Category, TenantBusinessType, TenantCampaign } from "@/lib/types";
 import { buildCampaignRuleSentence } from "@/lib/validators/campaign";
 import { cn } from "@/lib/utils";
 
@@ -20,9 +20,15 @@ import { cn } from "@/lib/utils";
 // tenant-banner-form.tsx aynı düzeni JSON dizisi üstünde kuruyor; burada
 // her kart ayrı tablo satırı olduğu için kaydetme de kart bazında.
 
-type CampaignDraft = Omit<TenantCampaign, "tenant_id" | "created_at" | "updated_at"> & {
+type CampaignDraft = Omit<
+  TenantCampaign,
+  "tenant_id" | "created_at" | "updated_at" | "gift_product_ids"
+> & {
   /** Henüz sunucuya yazılmamış kartlar için işaret */
   isNew?: boolean;
+  // Formda hep dizi (TenantCampaign'de null/undefined olabiliyor, DB'den
+  // gelirken normalize edilir — bkz. campaigns/page.tsx).
+  gift_product_ids: string[];
 };
 
 const CURRENCY_FORMATTER = new Intl.NumberFormat("tr-TR", {
@@ -56,6 +62,11 @@ function createEmptyCampaign(displayOrder: number): CampaignDraft {
     discount_value: null,
     payment_method: "any",
     excluded_category_ids: [],
+    gift_trigger_product_id: null,
+    gift_trigger_quantity: null,
+    gift_product_ids: [],
+    gift_quantity_per_product: 1,
+    gift_scales_with_multiples: false,
     isNew: true,
   };
 }
@@ -79,17 +90,104 @@ function fromDateTimeLocal(value: string) {
 export function TenantCampaignsForm({
   initialCampaigns,
   categories,
+  businessType,
 }: {
   initialCampaigns: TenantCampaign[];
   categories: Category[];
+  /** "buy_x_get_y" seçeneği yalnız market'te sunulur (kullanıcı isteği, 4 Eyl 2026). */
+  businessType?: TenantBusinessType;
 }) {
-  const [campaigns, setCampaigns] = useState<CampaignDraft[]>(initialCampaigns);
+  const [campaigns, setCampaigns] = useState<CampaignDraft[]>(
+    initialCampaigns.map((campaign) => ({
+      ...campaign,
+      gift_product_ids: campaign.gift_product_ids ?? [],
+    })),
+  );
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [rowState, setRowState] = useState<
     Record<string, { pending?: boolean; error?: string | null; success?: string | null }>
   >({});
   const [, startTransition] = useTransition();
   const fileInputs = useRef<Record<string, HTMLInputElement | null>>({});
+  const isMarket = businessType === "market";
+
+  // "N al Y hediye" ürün seçicileri: id -> ad. Aranan/seçilen ürünlerden
+  // dolar; kaydedilmiş bir kampanya ilk açıldığında eksik adlar id ile
+  // ayrıca çözülür (bkz. aşağıdaki useEffect).
+  const [productNames, setProductNames] = useState<Record<string, string>>({});
+  const [triggerSearchOpenId, setTriggerSearchOpenId] = useState<string | null>(null);
+  const [triggerSearchTerm, setTriggerSearchTerm] = useState("");
+  const [triggerSearchResults, setTriggerSearchResults] = useState<
+    { id: string; product_name: string }[]
+  >([]);
+  const [giftSearchOpenId, setGiftSearchOpenId] = useState<string | null>(null);
+  const [giftSearchTerm, setGiftSearchTerm] = useState("");
+  const [giftSearchResults, setGiftSearchResults] = useState<
+    { id: string; product_name: string }[]
+  >([]);
+
+  // Kaydedilmiş kampanyaların hediye ürün id'lerini ada çevir.
+  useEffect(() => {
+    const missing = new Set<string>();
+    for (const campaign of campaigns) {
+      if (campaign.rule_type !== "buy_x_get_y") continue;
+      if (campaign.gift_trigger_product_id && !productNames[campaign.gift_trigger_product_id]) {
+        missing.add(campaign.gift_trigger_product_id);
+      }
+      for (const id of campaign.gift_product_ids) {
+        if (!productNames[id]) missing.add(id);
+      }
+    }
+    if (!missing.size) return;
+
+    fetch(`/api/tenant/products?ids=${[...missing].join(",")}`)
+      .then((res) => res.json())
+      .then((json) => {
+        const found = (json.products as { id: string; product_name: string }[] | undefined) ?? [];
+        if (!found.length) return;
+        setProductNames((current) => {
+          const next = { ...current };
+          for (const p of found) next[p.id] = p.product_name;
+          return next;
+        });
+      })
+      .catch(() => undefined);
+    // productNames kasıtlı dışarıda: sonucu yazdıkça bu effect'i tekrar
+    // tetiklemesin (yalnız yeni kampanya/kaydedilmiş id geldiğinde çalışsın).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [campaigns]);
+
+  useEffect(() => {
+    if (!triggerSearchOpenId) {
+      setTriggerSearchResults([]);
+      return;
+    }
+    const timeout = setTimeout(() => {
+      const params = new URLSearchParams({ page: "1" });
+      if (triggerSearchTerm.trim()) params.set("q", triggerSearchTerm.trim());
+      fetch(`/api/tenant/products?${params.toString()}`)
+        .then((res) => res.json())
+        .then((json) => setTriggerSearchResults(json.products ?? []))
+        .catch(() => undefined);
+    }, 300);
+    return () => clearTimeout(timeout);
+  }, [triggerSearchOpenId, triggerSearchTerm]);
+
+  useEffect(() => {
+    if (!giftSearchOpenId) {
+      setGiftSearchResults([]);
+      return;
+    }
+    const timeout = setTimeout(() => {
+      const params = new URLSearchParams({ page: "1" });
+      if (giftSearchTerm.trim()) params.set("q", giftSearchTerm.trim());
+      fetch(`/api/tenant/products?${params.toString()}`)
+        .then((res) => res.json())
+        .then((json) => setGiftSearchResults(json.products ?? []))
+        .catch(() => undefined);
+    }, 300);
+    return () => clearTimeout(timeout);
+  }, [giftSearchOpenId, giftSearchTerm]);
 
   function setRow(
     id: string,
@@ -116,6 +214,7 @@ export function TenantCampaignsForm({
 
   function buildPayload(campaign: CampaignDraft) {
     const hasRule = campaign.rule_type === "cart_threshold";
+    const hasGiftRule = campaign.rule_type === "buy_x_get_y";
 
     return {
       title: campaign.title,
@@ -135,6 +234,11 @@ export function TenantCampaignsForm({
       payment_method: campaign.payment_method,
       // Kural kapalıyken hariç kategori tutmanın anlamı yok.
       excluded_category_ids: hasRule ? campaign.excluded_category_ids : [],
+      gift_trigger_product_id: hasGiftRule ? campaign.gift_trigger_product_id : null,
+      gift_trigger_quantity: hasGiftRule ? campaign.gift_trigger_quantity : null,
+      gift_product_ids: hasGiftRule ? campaign.gift_product_ids : [],
+      gift_quantity_per_product: hasGiftRule ? campaign.gift_quantity_per_product : 1,
+      gift_scales_with_multiples: hasGiftRule ? campaign.gift_scales_with_multiples : false,
     };
   }
 
@@ -160,7 +264,11 @@ export function TenantCampaignsForm({
 
     const saved = result.campaign as TenantCampaign;
     setCampaigns((current) =>
-      current.map((entry) => (entry.id === campaign.id ? { ...saved, isNew: false } : entry)),
+      current.map((entry) =>
+        entry.id === campaign.id
+          ? { ...saved, gift_product_ids: saved.gift_product_ids ?? [], isNew: false }
+          : entry,
+      ),
     );
     setRowState((current) => {
       const next = { ...current };
@@ -253,7 +361,9 @@ export function TenantCampaignsForm({
                 <p className="mt-0.5 truncate text-xs text-muted-foreground">
                   {campaign.rule_type === "cart_threshold" && ruleSentence
                     ? ruleSentence
-                    : "Duyuru kartı — sepete indirim uygulamaz"}
+                    : campaign.rule_type === "buy_x_get_y"
+                      ? `${campaign.gift_trigger_quantity ?? "?"} adet al, ${campaign.gift_product_ids.length || "?"} ürün hediye`
+                      : "Duyuru kartı — sepete indirim uygulamaz"}
                 </p>
               </div>
               {!campaign.is_active ? (
@@ -364,26 +474,66 @@ export function TenantCampaignsForm({
                 </div>
 
                 <div className="rounded-2xl border bg-slate-50/60 p-4">
-                  <label className="flex items-center gap-2.5">
-                    <input
-                      type="checkbox"
-                      className="size-4"
-                      checked={campaign.rule_type === "cart_threshold"}
-                      onChange={(event) =>
-                        updateField(
-                          campaign.id,
-                          "rule_type",
-                          event.target.checked ? "cart_threshold" : "none",
-                        )
-                      }
-                    />
-                    <span className="text-sm font-semibold text-foreground">
-                      Sepet indirimi tanımla
-                    </span>
-                  </label>
-                  <p className="mt-1 pl-6 text-xs text-muted-foreground">
-                    Açarsanız müşterinin sepeti belirlediğiniz tutara ulaştığında indirim
-                    otomatik uygulanır. Kapalıysa kart sadece bilgi verir.
+                  <p className="mb-2 text-sm font-semibold text-foreground">Kampanya türü</p>
+                  <div className="flex flex-wrap gap-2">
+                    <label
+                      className={cn(
+                        "flex cursor-pointer items-center gap-2 rounded-xl border px-3 py-2 text-sm",
+                        campaign.rule_type === "none"
+                          ? "border-foreground bg-white font-semibold"
+                          : "border-slate-200 bg-white text-muted-foreground",
+                      )}
+                    >
+                      <input
+                        type="radio"
+                        className="size-4"
+                        checked={campaign.rule_type === "none"}
+                        onChange={() => updateField(campaign.id, "rule_type", "none")}
+                      />
+                      Sadece duyuru
+                    </label>
+                    <label
+                      className={cn(
+                        "flex cursor-pointer items-center gap-2 rounded-xl border px-3 py-2 text-sm",
+                        campaign.rule_type === "cart_threshold"
+                          ? "border-foreground bg-white font-semibold"
+                          : "border-slate-200 bg-white text-muted-foreground",
+                      )}
+                    >
+                      <input
+                        type="radio"
+                        className="size-4"
+                        checked={campaign.rule_type === "cart_threshold"}
+                        onChange={() => updateField(campaign.id, "rule_type", "cart_threshold")}
+                      />
+                      Sepet indirimi
+                    </label>
+                    {isMarket ? (
+                      <label
+                        className={cn(
+                          "flex cursor-pointer items-center gap-2 rounded-xl border px-3 py-2 text-sm",
+                          campaign.rule_type === "buy_x_get_y"
+                            ? "border-foreground bg-white font-semibold"
+                            : "border-slate-200 bg-white text-muted-foreground",
+                        )}
+                      >
+                        <input
+                          type="radio"
+                          className="size-4"
+                          checked={campaign.rule_type === "buy_x_get_y"}
+                          onChange={() => updateField(campaign.id, "rule_type", "buy_x_get_y")}
+                        />
+                        N al, Y hediye
+                      </label>
+                    ) : null}
+                  </div>
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    &quot;Sepet indirimi&quot;: sepet belirlediğiniz tutara ulaşınca otomatik
+                    indirim uygulanır.
+                    {isMarket
+                      ? ' "N al, Y hediye": müşteri belirlediğiniz üründen eşik adedi alınca, seçtiğiniz hediye ürün(ler) otomatik ve bedelsiz sepete eklenir.'
+                      : ""}{" "}
+                    &quot;Sadece duyuru&quot;da kart yalnız bilgi verir, sepete dokunmaz.
                   </p>
 
                   {campaign.rule_type === "cart_threshold" ? (
@@ -534,6 +684,205 @@ export function TenantCampaignsForm({
                         Aynı anda birden fazla kampanya kuralı tutarsa müşteriye{" "}
                         <strong>sadece en avantajlısı</strong> uygulanır, indirimler
                         toplanmaz.
+                      </p>
+                    </div>
+                  ) : null}
+
+                  {campaign.rule_type === "buy_x_get_y" ? (
+                    <div className="mt-4 space-y-4">
+                      <div className="grid gap-4 sm:grid-cols-2">
+                        <div className="relative">
+                          <label className="mb-1.5 block text-sm font-medium text-foreground">
+                            Hangi üründen alınca
+                          </label>
+                          {campaign.gift_trigger_product_id ? (
+                            <div className="flex items-center justify-between gap-2 rounded-xl border bg-white px-3 py-2 text-sm">
+                              <span className="truncate">
+                                {productNames[campaign.gift_trigger_product_id] ?? "Ürün seçildi"}
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  updateField(campaign.id, "gift_trigger_product_id", null)
+                                }
+                                className="shrink-0 text-muted-foreground hover:text-foreground"
+                              >
+                                <X className="size-4" />
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="relative">
+                              <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                              <input
+                                type="text"
+                                placeholder="Ürün ara..."
+                                value={triggerSearchOpenId === campaign.id ? triggerSearchTerm : ""}
+                                onFocus={() => {
+                                  setTriggerSearchOpenId(campaign.id);
+                                  setTriggerSearchTerm("");
+                                }}
+                                onChange={(event) => setTriggerSearchTerm(event.target.value)}
+                                className="w-full rounded-xl border bg-white py-2 pl-9 pr-3 text-sm outline-none focus:ring-2 focus:ring-slate-300"
+                              />
+                              {triggerSearchOpenId === campaign.id && triggerSearchResults.length ? (
+                                <div className="absolute z-10 mt-1 max-h-48 w-full overflow-y-auto rounded-xl border bg-white shadow-lg">
+                                  {triggerSearchResults.map((product) => (
+                                    <button
+                                      key={product.id}
+                                      type="button"
+                                      onClick={() => {
+                                        updateField(campaign.id, "gift_trigger_product_id", product.id);
+                                        setProductNames((current) => ({
+                                          ...current,
+                                          [product.id]: product.product_name,
+                                        }));
+                                        setTriggerSearchOpenId(null);
+                                      }}
+                                      className="block w-full truncate px-3 py-2 text-left text-sm hover:bg-slate-50"
+                                    >
+                                      {product.product_name}
+                                    </button>
+                                  ))}
+                                </div>
+                              ) : null}
+                            </div>
+                          )}
+                        </div>
+                        <div>
+                          <label className="mb-1.5 block text-sm font-medium text-foreground">
+                            Eşik adedi
+                          </label>
+                          <Input
+                            type="number"
+                            min={1}
+                            step="1"
+                            value={campaign.gift_trigger_quantity ?? ""}
+                            placeholder="10"
+                            onChange={(event) =>
+                              updateField(
+                                campaign.id,
+                                "gift_trigger_quantity",
+                                event.target.value === "" ? null : Number(event.target.value),
+                              )
+                            }
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="mb-1.5 block text-sm font-medium text-foreground">
+                          Hediye ürün(ler)i
+                        </label>
+                        {campaign.gift_product_ids.length ? (
+                          <div className="mb-2 flex flex-wrap gap-1.5">
+                            {campaign.gift_product_ids.map((id) => (
+                              <span
+                                key={id}
+                                className="flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-800"
+                              >
+                                {productNames[id] ?? "Ürün"}
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    updateField(
+                                      campaign.id,
+                                      "gift_product_ids",
+                                      campaign.gift_product_ids.filter((x) => x !== id),
+                                    )
+                                  }
+                                >
+                                  <X className="size-3.5" />
+                                </button>
+                              </span>
+                            ))}
+                          </div>
+                        ) : null}
+                        <div className="relative">
+                          <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                          <input
+                            type="text"
+                            placeholder="Hediye ürün ara ve ekle..."
+                            value={giftSearchOpenId === campaign.id ? giftSearchTerm : ""}
+                            onFocus={() => {
+                              setGiftSearchOpenId(campaign.id);
+                              setGiftSearchTerm("");
+                            }}
+                            onChange={(event) => setGiftSearchTerm(event.target.value)}
+                            className="w-full rounded-xl border bg-white py-2 pl-9 pr-3 text-sm outline-none focus:ring-2 focus:ring-slate-300"
+                          />
+                          {giftSearchOpenId === campaign.id && giftSearchResults.length ? (
+                            <div className="absolute z-10 mt-1 max-h-48 w-full overflow-y-auto rounded-xl border bg-white shadow-lg">
+                              {giftSearchResults
+                                .filter((product) => !campaign.gift_product_ids.includes(product.id))
+                                .map((product) => (
+                                  <button
+                                    key={product.id}
+                                    type="button"
+                                    onClick={() => {
+                                      updateField(campaign.id, "gift_product_ids", [
+                                        ...campaign.gift_product_ids,
+                                        product.id,
+                                      ]);
+                                      setProductNames((current) => ({
+                                        ...current,
+                                        [product.id]: product.product_name,
+                                      }));
+                                    }}
+                                    className="block w-full truncate px-3 py-2 text-left text-sm hover:bg-slate-50"
+                                  >
+                                    {product.product_name}
+                                  </button>
+                                ))}
+                            </div>
+                          ) : null}
+                        </div>
+                      </div>
+
+                      <div className="grid gap-4 sm:grid-cols-2">
+                        <div>
+                          <label className="mb-1.5 block text-sm font-medium text-foreground">
+                            Hediye ürün başına adet
+                          </label>
+                          <Input
+                            type="number"
+                            min={1}
+                            step="1"
+                            value={campaign.gift_quantity_per_product}
+                            onChange={(event) =>
+                              updateField(
+                                campaign.id,
+                                "gift_quantity_per_product",
+                                event.target.value === "" ? 1 : Number(event.target.value),
+                              )
+                            }
+                          />
+                        </div>
+                        <div className="flex items-end">
+                          <label className="flex items-center gap-2.5 pb-2.5">
+                            <input
+                              type="checkbox"
+                              className="size-4"
+                              checked={campaign.gift_scales_with_multiples}
+                              onChange={(event) =>
+                                updateField(
+                                  campaign.id,
+                                  "gift_scales_with_multiples",
+                                  event.target.checked,
+                                )
+                              }
+                            />
+                            <span className="text-sm text-foreground">
+                              Eşiğin katında hediyeyi de katla
+                            </span>
+                          </label>
+                        </div>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        {campaign.gift_scales_with_multiples
+                          ? "Örn: eşik 10, müşteri 20 alırsa hediye sayısı da 2 katına çıkar."
+                          : "Eşik bir kez geçilince hediye(ler) eklenir; müşteri üründen ne kadar çok alırsa alsın hediye sayısı artmaz."}{" "}
+                        Müşteri tetikleyici üründen eşiğin altına inerse hediye otomatik kalkar;
+                        hediye satırını müşteri kendisi silemez.
                       </p>
                     </div>
                   ) : null}

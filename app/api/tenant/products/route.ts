@@ -44,6 +44,23 @@ export async function GET(request: Request) {
     return NextResponse.json({ ids });
   }
 
+  // Belirli id'lerin tam ürün nesnelerini döner — kampanya formu (N al Y
+  // hediye) kaydedilmiş ürün id'lerinin adını göstermek için kullanır.
+  const idsParam = url.searchParams.get("ids");
+  if (idsParam) {
+    const ids = idsParam.split(",").map((id) => id.trim()).filter(Boolean).slice(0, 50);
+    const supabase = createSupabaseAdminClient();
+    if (!supabase || !ids.length) {
+      return NextResponse.json({ products: [] });
+    }
+    const { data } = await supabase
+      .from("products")
+      .select(productWithVariantsAndPricesSelect)
+      .eq("tenant_id", tenant.id)
+      .in("id", ids);
+    return NextResponse.json({ products: (data ?? []).map(normalizeProductRecord) });
+  }
+
   const { products, total } = await getTenantProductsPage({
     tenantId: tenant.id,
     page,

@@ -23,6 +23,10 @@ export const storefrontOrderPdfCartItemSchema = z.object({
   quantity: z.number().int().positive(),
   sales_unit: salesUnitSchema.nullable().optional(),
   unit_quantity: z.number().int().positive().nullable().optional(),
+  // "N al Y hediye" kampanyasından otomatik eklenen bedelsiz satır (price 0).
+  is_gift: z.boolean().optional(),
+  gift_campaign_id: z.string().nullable().optional(),
+  gift_campaign_title: z.string().nullable().optional(),
 });
 
 const cashDiscountTierSchema = z.object({
@@ -65,7 +69,9 @@ export const storefrontOrderPdfSchema = z
     }
 
     for (const [index, item] of value.items.entries()) {
-      if (item.price === null || item.price <= 0) {
+      // Kampanya hediyesi bilerek 0 fiyatlı — kuralın dışında tutuluyor,
+      // aksi halde hediyeli her sipariş reddedilirdi.
+      if (!item.is_gift && (item.price === null || item.price <= 0)) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           message: "Fiyatlı modda sepet kalemlerinde geçerli fiyat olmalıdır.",

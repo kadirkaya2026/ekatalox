@@ -213,29 +213,43 @@ export default async function StorefrontPage(props: PageProps<"/store/[subdomain
   // "İndirimli Ürünler" kategorisi (bkz. Category.is_discount_category,
   // storefront-client.tsx) hiçbir tenant'ta admin panelinden
   // oluşturulamıyor — sadece marketgo'da elle eklenmiş bir satır olarak
-  // vardı. Artık DB'ye satır eklemeden, promoProducts (zaten yukarıda
-  // is_discount_active=true ürünler için çekiliyor) doluysa bu kategori
-  // sanal olarak listeye ekleniyor; ürün kalmayınca otomatik kayboluyor
-  // (kullanıcı isteği, 19 Ağu 2026).
-  const hasManualDiscountCategory = categories.some((category) => category.is_discount_category);
-  const categoriesForStorefront: Category[] =
-    !hasManualDiscountCategory && promoProducts.length > 0
-      ? [
-          {
+  // vardı (o satır da aşağıdaki kurala tabi). DB'ye satır eklemeden,
+  // promoProducts (zaten yukarıda is_discount_active=true ürünler için
+  // çekiliyor) doluysa bu kategori sanal olarak listeye ekleniyor; ürün
+  // kalmayınca otomatik kayboluyor (kullanıcı isteği, 19 Ağu 2026).
+  //
+  // Her zaman EN BAŞTA: display_order=1 vermek yetmiyordu, çünkü bayinin
+  // kendi kategorilerinden biri display_order=0 (ya da negatif) olabilir
+  // ve önüne geçebiliyordu — diğer tüm kategorilerin en küçük değerinden
+  // bir eksiği veriliyor ki hep ilk sırada kalsın. Manuel (gerçek DB
+  // satırı) durumda da aynı kural + boşken gizleme uygulanır (kullanıcı
+  // isteği, 4 Eyl 2026).
+  const manualDiscountCategory = categories.find((category) => category.is_discount_category);
+  const otherCategories = categories.filter((category) => !category.is_discount_category);
+  const hasDiscountedProducts = promoProducts.length > 0;
+  const minOtherDisplayOrder = otherCategories.length
+    ? Math.min(...otherCategories.map((category) => category.display_order))
+    : 0;
+
+  const categoriesForStorefront: Category[] = !hasDiscountedProducts
+    ? otherCategories
+    : [
+        {
+          ...(manualDiscountCategory ?? {
             id: "virtual-discount-category",
             tenant_id: tenant.id,
             name: "İndirimli Ürünler",
             parent_id: null,
-            display_order: 1,
             banner_item: null,
             tile_image_url: null,
             is_discount_category: true,
             is_hidden_from_storefront: false,
             created_at: new Date(0).toISOString(),
-          },
-          ...categories,
-        ]
-      : categories;
+          }),
+          display_order: minOtherDisplayOrder - 1,
+        },
+        ...otherCategories,
+      ];
 
   // Süresi geçmiş/pasif kampanyalar getStorefrontCampaigns içinde süzülüyor.
   const campaigns = await getStorefrontCampaigns(tenant.id);

@@ -9,6 +9,7 @@ import {
   RESERVED_SUBDOMAIN_MESSAGE,
 } from "@/lib/tenancy/reserved-subdomains";
 import { ensureSuperAdminResponse } from "@/lib/tenancy/guards";
+import { seedMarketStorefrontTemplate } from "@/lib/storefront/market-template";
 import type { Profile, Tenant } from "@/lib/types";
 import { tenantSchema } from "@/lib/validators/tenant";
 
@@ -146,6 +147,15 @@ export async function POST(request: Request) {
       { error: "Tenant oluşturulamadı. Alt alan adı veya veri çakışması olabilir." },
       { status: 400 },
     );
+  }
+
+  // Market tipi yeni tenant: tekelsiparis'in GÜNCEL tasarım/davranış
+  // şablonunu kopyala ki her yeni market aynı görünümle açılsın, elle
+  // tek tek düzeltmek gerekmesin (kullanıcı isteği, 4 Eyl 2026). Yalnızca
+  // tasarım alanları — mağaza adı/logo/hero/footer içeriği vb. kopyalanmaz.
+  // Şablon bulunamazsa/başarısız olsa da tenant oluşturma akışı bozulmaz.
+  if (parsed.data.business_type === "market") {
+    await seedMarketStorefrontTemplate(supabase, tenant.id);
   }
 
   const { data: authUser, error: authError } = await supabase.auth.admin.createUser({

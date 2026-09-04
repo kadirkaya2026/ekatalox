@@ -148,6 +148,8 @@ export interface StorefrontOrderItemSnapshot {
   discount_percentage?: number | null;
   unit_cost?: number | null;
   cost_source?: "product" | "backfill" | null;
+  is_gift?: boolean | null;
+  gift_campaign_title?: string | null;
 }
 
 export interface StorefrontOrder {
@@ -395,7 +397,7 @@ export interface CardCampaignTier {
 // Bayinin kendi tanımladığı kampanyalar (bkz. 0081_tenant_campaigns.sql).
 // Ayarlardaki CashDiscountTier/CardCampaignTier'dan bağımsız: onlar ödeme
 // yöntemine bağlı basamaklar, bunlar bayinin vitrinde gösterdiği kartlar.
-export type CampaignRuleType = "none" | "cart_threshold";
+export type CampaignRuleType = "none" | "cart_threshold" | "buy_x_get_y";
 export type CampaignDiscountKind = "amount" | "percentage";
 export type CampaignPaymentMethod = "any" | "cash" | "card";
 
@@ -425,6 +427,13 @@ export interface TenantCampaign {
    * genişletilir (bkz. getCampaignEligibleSubtotal).
    */
   excluded_category_ids: string[];
+  /** "buy_x_get_y" kuralı — yalnız market/tekel'de sunulur (0110). */
+  gift_trigger_product_id?: string | null;
+  gift_trigger_quantity?: number | null;
+  gift_product_ids?: string[] | null;
+  gift_quantity_per_product?: number;
+  /** true ise müşteri eşiğin katını alınca hediye sayısı da katlanır. */
+  gift_scales_with_multiples?: boolean;
   created_at?: string;
   updated_at?: string;
 }
@@ -600,6 +609,10 @@ export interface CartItem
   quantity: number;
   sales_unit?: SalesUnit | null;
   unit_quantity?: number | null;
+  /** "N al Y hediye" kampanyasından otomatik eklenen bedelsiz satır (price 0). */
+  is_gift?: boolean;
+  gift_campaign_id?: string | null;
+  gift_campaign_title?: string | null;
 }
 
 export interface StorefrontSection {

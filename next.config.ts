@@ -36,6 +36,12 @@ const nextConfig: NextConfig = {
     ];
   },
   images: {
+    // Varsayılan 60 saniye: aynı ürün görseli her ~1 dakikada bir yeniden
+    // indirilip yeniden boyutlandırılıyordu — yoğun trafikte "resimler geç
+    // geliyor" hissinin büyük kısmı buydu (kullanıcı isteği, 4 Eyl 2026).
+    // 7 gün: ürün görseli değişince zaten farklı bir dosya adına/yola
+    // yükleniyor (bkz. storage yükleme kodları), o yüzden bayatlama riski yok.
+    minimumCacheTTL: 60 * 60 * 24 * 7,
     remotePatterns: [
       {
         protocol: "https",

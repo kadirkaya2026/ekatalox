@@ -1495,6 +1495,37 @@ export async function getStorefrontRecommendationPool(params: {
   return rows.map((product) => toStorefrontProduct(product, params.priceListId, params.isCatalogOnly));
 }
 
+// "N al Y hediye" kampanyalarının tetikleyici/hediye ürünleri sayfada hiç
+// yüklü olmayabilir (öneri şeridinde, sepette değil vb.) — productsById
+// haritasında yoksa "+" ve otomatik hediye ekleme sessizce çalışmaz (aynı
+// "buz küpleri" hatası, bkz. storefront-client.tsx productsById). Bu yüzden
+// kampanyalar yüklenince ilgili id'ler ayrıca burada çözülüyor.
+export async function getStorefrontProductsByIds(params: {
+  tenantId: string;
+  priceListId: string;
+  isCatalogOnly: boolean;
+  ids: string[];
+}): Promise<StorefrontProduct[]> {
+  if (!params.ids.length) return [];
+
+  const supabaseAdmin = createSupabaseAdminClient();
+  if (!supabaseAdmin) {
+    if (!shouldAllowDemoFallback()) return [];
+    return demoProducts
+      .filter((product) => product.tenant_id === params.tenantId && params.ids.includes(product.id))
+      .map((product) => toStorefrontProduct(product, params.priceListId, params.isCatalogOnly));
+  }
+
+  const { data } = await supabaseAdmin
+    .from("products")
+    .select(productWithVariantsSelect)
+    .eq("tenant_id", params.tenantId)
+    .in("id", params.ids);
+
+  const rows = normalizeProductRows(data);
+  return rows.map((product) => toStorefrontProduct(product, params.priceListId, params.isCatalogOnly));
+}
+
 // Anasayfadaki kategori kutucukları (StorefrontCategoryTiles) manuel bir
 // tile_image_url/banner yoksa "kategorideki bir ürünün fotoğrafı"na
 // düşüyor — ama eskiden bu, sadece anasayfanın YÜKLEDİĞİ ilk sayfa (60

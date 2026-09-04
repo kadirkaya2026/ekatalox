@@ -392,6 +392,12 @@ export function StorefrontCartDrawer({
                   <p className={cn("line-clamp-2 text-sm font-semibold leading-5", theme.text)}>
                     {item.product_name}
                   </p>
+                  {item.is_gift ? (
+                    <p className="mt-0.5 text-xs font-semibold text-emerald-600">
+                      🎁 {t("cart.giftBadge")}
+                      {item.gift_campaign_title ? ` — ${item.gift_campaign_title}` : ""}
+                    </p>
+                  ) : null}
                   {item.variant_name ? (
                     <p className="mt-0.5 text-xs font-medium text-emerald-700">
                       {t("cart.modelPrefix")} {item.variant_name}
@@ -403,76 +409,98 @@ export function StorefrontCartDrawer({
                     </p>
                   ) : null}
                 </div>
-                <button
-                  type="button"
-                  onClick={() =>
-                    setCart((current) => updateCartLineQuantity(current, item.id, 0))
-                  }
-                  className={cn(
-                    "h-fit rounded-full p-2 transition hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950/50",
-                    theme.textMuted,
-                  )}
-                  aria-label={t("cart.removeItemAria")}
-                >
-                  <Trash2 className="size-4" />
-                </button>
+                {/* Hediye satırı kilitli: müşteri silemez, tetikleyici ürün
+                    eşiğin altına inince otomatik kalkar (kullanıcı isteği,
+                    4 Eyl 2026). */}
+                {!item.is_gift ? (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setCart((current) => updateCartLineQuantity(current, item.id, 0))
+                    }
+                    className={cn(
+                      "h-fit rounded-full p-2 transition hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950/50",
+                      theme.textMuted,
+                    )}
+                    aria-label={t("cart.removeItemAria")}
+                  >
+                    <Trash2 className="size-4" />
+                  </button>
+                ) : null}
               </div>
             </div>
           </div>
 
           <div className="mt-3 flex min-w-0 items-end justify-between gap-2 pt-3 sm:gap-3">
-            <div
-              className={cn(
-                "flex shrink-0 items-center rounded-full p-0.5 shadow-sm sm:p-1",
-                theme.quantityStepper,
-              )}
-            >
-              <button
-                type="button"
-                onClick={() =>
-                  setCart((current) =>
-                    updateCartLineQuantity(current, item.id, item.quantity - 1),
-                  )
-                }
+            {item.is_gift ? (
+              // Hediye adedi otomatik hesaplanır, elle değiştirilemez.
+              <div
                 className={cn(
-                  "flex size-8 items-center justify-center rounded-full transition sm:size-9",
-                  theme.quantityStepperButton,
-                )}
-                aria-label={t("cart.decreaseAria")}
-              >
-                <Minus className="size-4" />
-              </button>
-              <input
-                type="text"
-                inputMode="numeric"
-                pattern="[0-9]*"
-                value={item.quantity}
-                onChange={(event) => updateCartItemQuantity(item.id, event.target.value)}
-                className={cn(
-                  "h-8 w-11 rounded-md bg-transparent py-0 text-center text-[16px] font-bold leading-none outline-none focus-visible:ring-2 focus-visible:ring-current/40 sm:h-9 sm:w-14",
+                  "flex shrink-0 items-center rounded-full px-3.5 py-2 text-sm font-bold shadow-sm",
+                  theme.quantityStepper,
                   theme.text,
                 )}
-                style={{ fontSize: "16px" }}
-                aria-label={t("cart.quantityAria")}
-              />
-              <button
-                type="button"
-                onClick={() =>
-                  setCart((current) =>
-                    updateCartLineQuantity(current, item.id, item.quantity + 1),
-                  )
-                }
-                className={cn(
-                  "flex size-8 items-center justify-center rounded-full transition sm:size-9",
-                  theme.quantityStepperButton,
-                )}
-                aria-label={t("cart.increaseAria")}
               >
-                <Plus className="size-4" />
-              </button>
-            </div>
+                {item.quantity} {t("cart.giftQuantityUnit")}
+              </div>
+            ) : (
+              <div
+                className={cn(
+                  "flex shrink-0 items-center rounded-full p-0.5 shadow-sm sm:p-1",
+                  theme.quantityStepper,
+                )}
+              >
+                <button
+                  type="button"
+                  onClick={() =>
+                    setCart((current) =>
+                      updateCartLineQuantity(current, item.id, item.quantity - 1),
+                    )
+                  }
+                  className={cn(
+                    "flex size-8 items-center justify-center rounded-full transition sm:size-9",
+                    theme.quantityStepperButton,
+                  )}
+                  aria-label={t("cart.decreaseAria")}
+                >
+                  <Minus className="size-4" />
+                </button>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  value={item.quantity}
+                  onChange={(event) => updateCartItemQuantity(item.id, event.target.value)}
+                  className={cn(
+                    "h-8 w-11 rounded-md bg-transparent py-0 text-center text-[16px] font-bold leading-none outline-none focus-visible:ring-2 focus-visible:ring-current/40 sm:h-9 sm:w-14",
+                    theme.text,
+                  )}
+                  style={{ fontSize: "16px" }}
+                  aria-label={t("cart.quantityAria")}
+                />
+                <button
+                  type="button"
+                  onClick={() =>
+                    setCart((current) =>
+                      updateCartLineQuantity(current, item.id, item.quantity + 1),
+                    )
+                  }
+                  className={cn(
+                    "flex size-8 items-center justify-center rounded-full transition sm:size-9",
+                    theme.quantityStepperButton,
+                  )}
+                  aria-label={t("cart.increaseAria")}
+                >
+                  <Plus className="size-4" />
+                </button>
+              </div>
+            )}
 
-            {!isCatalogOnly ? (
+            {!isCatalogOnly && item.is_gift ? (
+              <p className="ml-auto shrink-0 text-sm font-bold text-emerald-600">
+                {t("cart.giftFree")}
+              </p>
+            ) : !isCatalogOnly ? (
               <div className="ml-auto flex min-w-0 max-w-[58%] flex-1 items-end justify-end gap-2 text-right sm:max-w-none sm:gap-4">
                 <div className="min-w-0 max-w-[48%] sm:max-w-none">
                   <p

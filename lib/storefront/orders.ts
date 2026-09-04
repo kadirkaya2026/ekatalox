@@ -73,6 +73,8 @@ export async function recordStorefrontOrder(params: {
       discount_percentage: item.discount_percentage ?? null,
       unit_cost: unitCost,
       cost_source: unitCost === null ? null : "product",
+      is_gift: item.is_gift ?? null,
+      gift_campaign_title: item.gift_campaign_title ?? null,
     };
   });
 

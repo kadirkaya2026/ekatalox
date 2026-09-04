@@ -55,8 +55,27 @@ export const campaignSchema = z
     link_category_id: nullableUuid,
     display_order: z.coerce.number().int().min(0).default(0),
 
-    rule_type: z.enum(["none", "cart_threshold"]).default("none"),
+    rule_type: z.enum(["none", "cart_threshold", "buy_x_get_y"]).default("none"),
     min_cart_amount: nullableNumber("Minimum sepet tutarı sıfırdan küçük olamaz."),
+    // "buy_x_get_y" — yalnız market/tekel'de sunulur (form tarafında kısıtlı).
+    gift_trigger_product_id: nullableUuid,
+    gift_trigger_quantity: z.preprocess(
+      (value) =>
+        value === undefined || value === null || (typeof value === "string" && value.trim() === "")
+          ? null
+          : value,
+      z.union([z.null(), z.coerce.number().int().min(1, "Eşik adedi en az 1 olmalıdır.")]),
+    ),
+    gift_product_ids: z
+      .array(z.string().uuid("Hediye ürün seçimi geçersiz."))
+      .max(20, "En fazla 20 hediye ürünü seçebilirsiniz.")
+      .default([]),
+    gift_quantity_per_product: z.coerce
+      .number()
+      .int()
+      .min(1, "Hediye adedi en az 1 olmalıdır.")
+      .default(1),
+    gift_scales_with_multiples: z.boolean().default(false),
     discount_kind: z.preprocess(
       (value) =>
         value === undefined || value === null || (typeof value === "string" && value.trim() === "")
@@ -111,6 +130,30 @@ export const campaignSchema = z
           code: "custom",
           path: ["discount_value"],
           message: "İndirim tutarı minimum sepet tutarından küçük olmalıdır.",
+        });
+      }
+    }
+
+    if (value.rule_type === "buy_x_get_y") {
+      if (!value.gift_trigger_product_id) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["gift_trigger_product_id"],
+          message: "Hangi üründen alınca hediye verileceğini seçin.",
+        });
+      }
+      if (value.gift_trigger_quantity === null || value.gift_trigger_quantity < 1) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["gift_trigger_quantity"],
+          message: "Eşik adedini girin.",
+        });
+      }
+      if (value.gift_product_ids.length === 0) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["gift_product_ids"],
+          message: "En az bir hediye ürünü seçin.",
         });
       }
     }

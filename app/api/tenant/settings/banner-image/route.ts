@@ -191,13 +191,24 @@ export async function POST(request: Request) {
     );
   }
 
+  // Tam piksel eşleşmesi yerine oran toleransı: 1200x400'ün katları
+  // (2400x800 vb.) ve ufak sapmalar (1200x380, 1150x380 gibi) da kabul
+  // edilsin diye (kullanıcı isteği, 4 Eyl 2026). %12 oran toleransı +
+  // referansın yarısı kadar minimum genişlik (bulanık/çok küçük görseli
+  // eler); belirgin şekilde farklı bir en-boy oranı (ör. kare görsel)
+  // hâlâ reddedilir.
+  const requiredRatio = requiredBannerWidth / requiredBannerHeight;
+  const ratio = dimensions.width / dimensions.height;
+  const ratioTolerance = 0.12;
+  const minWidth = requiredBannerWidth / 2;
+
   if (
-    dimensions.width !== requiredBannerWidth ||
-    dimensions.height !== requiredBannerHeight
+    Math.abs(ratio - requiredRatio) / requiredRatio > ratioTolerance ||
+    dimensions.width < minWidth
   ) {
     return NextResponse.json(
       {
-        error: `Banner görseli tam olarak ${requiredBannerWidth}x${requiredBannerHeight}px olmalıdır.`,
+        error: `Banner görseli ${requiredBannerWidth}x${requiredBannerHeight}px oranına (yaklaşık 3:1) yakın olmalıdır.`,
       },
       { status: 400 },
     );

@@ -4,7 +4,7 @@ import {
   supportedCurrencyCodes,
   type CurrencyCode,
 } from "@/lib/products/constants";
-import type { CartItem, CashDiscountTier, CardCampaignTier, InstallmentOption, TenantCampaign, StorefrontCoupon } from "@/lib/types";
+import type { CartItem, CashDiscountTier, CardCampaignTier, InstallmentOption, TenantCampaign, StorefrontCoupon, StorefrontProduct } from "@/lib/types";
 
 export function getCartTotal(items: CartItem[]) {
   return items.reduce((total, item) => total + (item.price ?? 0) * item.quantity, 0);
@@ -346,6 +346,145 @@ export function getCampaignDiscountStatus(
     null;
 
   return { currency, subtotal: rounded, applied, potential, nextTarget };
+}
+
+// ─── "N al Y hediye" kampanyaları ─────────────────────────────────────────
+// Yalnız market/tekel tenantlarda sunulur (bkz. tenant-campaigns-form.tsx).
+// Hediye satırları GERÇEK sepet kalemi: price=0, is_gift=true. Böylece
+// getCartTotal/getCartPaymentSummary'de özel bir durum gerekmez — 0 fiyatlı
+// satır zaten toplamı etkilemez.
+
+export interface GiftCampaignPlan {
+  campaignId: string;
+  campaignTitle: string;
+  giftProductId: string;
+  /** Bu hediye üründen sepette olması gereken TOPLAM adet (0 = kaldırılmalı). */
+  requiredQuantity: number;
+}
+
+/**
+ * Aktif "buy_x_get_y" kampanyalarına göre sepette olması gereken hediye
+ * satırlarını hesaplar. Tetikleyici ürünün adedi, sepetteki NORMAL (hediye
+ * olmayan) satırından okunur — hediye satırları eşiğe saymaz.
+ */
+export function computeGiftCampaignPlans(
+  cart: CartItem[],
+  campaigns: TenantCampaign[],
+): GiftCampaignPlan[] {
+  const plans: GiftCampaignPlan[] = [];
+
+  for (const campaign of campaigns) {
+    if (campaign.rule_type !== "buy_x_get_y") continue;
+    if (
+      !campaign.gift_trigger_product_id ||
+      !campaign.gift_trigger_quantity ||
+      !campaign.gift_product_ids?.length
+    ) {
+      continue;
+    }
+
+    const ownedQuantity = cart
+      .filter((item) => item.product_id === campaign.gift_trigger_product_id && !item.is_gift)
+      .reduce((total, item) => total + item.quantity, 0);
+
+    if (ownedQuantity < campaign.gift_trigger_quantity) continue;
+
+    const multiples = campaign.gift_scales_with_multiples
+      ? Math.floor(ownedQuantity / campaign.gift_trigger_quantity)
+      : 1;
+    const perProduct = (campaign.gift_quantity_per_product ?? 1) * multiples;
+
+    for (const giftProductId of campaign.gift_product_ids) {
+      plans.push({
+        campaignId: campaign.id,
+        campaignTitle: campaign.title,
+        giftProductId,
+        requiredQuantity: perProduct,
+      });
+    }
+  }
+
+  return plans;
+}
+
+/**
+ * Sepetteki hediye satırlarını plana göre eşitler: eksik olanı ekler,
+ * eşiği artık tutmayanı kaldırır, adedi günceller. Değişiklik yoksa AYNI
+ * referansı döner — çağıran taraf (storefront-client) bunu bir effect
+ * içinde setCart'a verirse React re-render'ı sessizce atlar, sonsuz
+ * döngü olmaz.
+ */
+export function reconcileGiftCartLines(
+  cart: CartItem[],
+  plans: GiftCampaignPlan[],
+  productsById: Map<string, StorefrontProduct>,
+): CartItem[] {
+  const nonGiftLines = cart.filter((item) => !item.is_gift);
+  const currentGiftLines = cart.filter((item) => item.is_gift);
+
+  const desiredGiftLines: CartItem[] = [];
+  for (const plan of plans) {
+    if (plan.requiredQuantity <= 0) continue;
+    const product = productsById.get(plan.giftProductId);
+    if (!product || !product.is_in_stock) continue;
+
+    desiredGiftLines.push({
+      id: `gift:${plan.campaignId}:${plan.giftProductId}`,
+      product_id: product.id,
+      variant_id: null,
+      variant_name: null,
+      category_id: product.category_id,
+      sku_code: product.sku_code,
+      product_name: product.product_name,
+      image_url: product.image_url,
+      image_url_2: product.image_url_2,
+      image_url_3: product.image_url_3,
+      is_in_stock: product.is_in_stock,
+      currency: product.currency,
+      price: 0,
+      package_quantity: product.package_quantity,
+      carton_quantity: product.carton_quantity,
+      stock_quantity: product.stock_quantity,
+      quantity: plan.requiredQuantity,
+      sales_unit: "adet",
+      unit_quantity: plan.requiredQuantity,
+      is_gift: true,
+      gift_campaign_id: plan.campaignId,
+      gift_campaign_title: plan.campaignTitle,
+    });
+  }
+
+  const unchanged =
+    currentGiftLines.length === desiredGiftLines.length &&
+    currentGiftLines.every((current) => {
+      const desired = desiredGiftLines.find(
+        (d) => d.gift_campaign_id === current.gift_campaign_id && d.product_id === current.product_id,
+      );
+      return desired !== undefined && desired.quantity === current.quantity;
+    });
+
+  if (unchanged) return cart;
+
+  return [...nonGiftLines, ...desiredGiftLines];
+}
+
+/** Fişte/PDF'te göstermek için: "X kampanyasından faydalanılmıştır" notları. */
+export function buildGiftCampaignNotes(items: CartItem[]): string[] {
+  const byCampaign = new Map<string, { title: string; giftNames: string[] }>();
+
+  for (const item of items) {
+    if (!item.is_gift || !item.gift_campaign_id) continue;
+    const entry = byCampaign.get(item.gift_campaign_id) ?? {
+      title: item.gift_campaign_title ?? "Kampanya",
+      giftNames: [],
+    };
+    entry.giftNames.push(`${item.product_name} x${item.quantity}`);
+    byCampaign.set(item.gift_campaign_id, entry);
+  }
+
+  return [...byCampaign.values()].map(
+    (entry) => `"${entry.title}" kampanyasından faydalanılmıştır (hediye: ${entry.giftNames.join(", ")}).`,
+  );
 }
 
 // ─── Core calculation ─────────────────────────────────────────────────────────
