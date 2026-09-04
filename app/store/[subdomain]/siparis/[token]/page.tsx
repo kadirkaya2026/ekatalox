@@ -83,6 +83,7 @@ export default async function OrderTrackingPage(props: TrackingPageProps) {
         logoUrl={settings.logo_url ?? null}
         whatsappNumber={tenant.whatsapp_number}
         isTekel={Boolean(tenant.is_tekel)}
+        isMarketTenant={tenant.business_type === "market"}
         appearance={getAppearanceFromSettings(settings)}
         initial={{
           orderNumber: order.order_number,

@@ -18,11 +18,15 @@ export function StorefrontSubpageShell({
   title,
   children,
   maxWidthClassName = "max-w-5xl",
+  hideThemeToggle = false,
 }: {
   logoUrl: string | null;
   title: string;
   children: ReactNode;
   maxWidthClassName?: string;
+  /** Market/tekel sipariş takip sayfasında gece/gündüz düğmesi hiç çıkmasın
+   *  diye (kullanıcı isteği, 4 Eyl 2026). */
+  hideThemeToggle?: boolean;
 }) {
   const theme = useStorefrontTheme();
   const { t } = useStorefrontLocale();
@@ -50,7 +54,7 @@ export function StorefrontSubpageShell({
               {t("orders.backToStore")}
             </a>
             <StorefrontLanguageSwitcher />
-            <StorefrontThemeToggle />
+            {hideThemeToggle ? null : <StorefrontThemeToggle />}
           </div>
         </div>
       </header>

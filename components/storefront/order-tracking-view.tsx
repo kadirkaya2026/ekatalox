@@ -51,6 +51,7 @@ function TrackingCard({
   logoUrl,
   whatsappNumber,
   isTekel,
+  isMarketTenant,
   initial,
 }: {
   token: string;
@@ -58,6 +59,7 @@ function TrackingCard({
   logoUrl: string | null;
   whatsappNumber: string;
   isTekel: boolean;
+  isMarketTenant: boolean;
   initial: TrackingSnapshot;
 }) {
   const theme = useStorefrontTheme();
@@ -140,22 +142,49 @@ function TrackingCard({
   const text = theme.text;
   const muted = theme.textMuted;
 
+  const itemsTotal = snap.items.reduce(
+    (sum, item) => sum + (item.price !== null ? item.price * item.quantity : 0),
+    0,
+  );
+  const sectionLabelCls = cn("text-xs font-semibold uppercase tracking-wide", muted);
+
   return (
-    <StorefrontSubpageShell logoUrl={logoUrl} title={tenantName} maxWidthClassName="max-w-2xl">
-      <div className="flex items-start justify-center">
-      <div className={cn(theme.gateCard, "w-full")}>
-        <a href="/siparislerim" className={cn("text-xs font-semibold uppercase tracking-wide underline-offset-2 hover:underline", muted)}>← Sipariş Takip</a>
-        <h1 className={cn("mt-2 text-2xl font-semibold sm:text-3xl", text)}>Sipariş {displayNo(snap)}</h1>
-        <p className={cn("mt-1 text-sm", muted)}>
-          {fmtTime(snap.createdAt)} · {snap.currency === "CATALOG" ? "Fiyatsız katalog siparişi" : formatCurrency(snap.totalAmount, snap.currency as CurrencyCode)}
-        </p>
+    <StorefrontSubpageShell
+      logoUrl={logoUrl}
+      title={tenantName}
+      maxWidthClassName="max-w-2xl"
+      hideThemeToggle={isMarketTenant}
+    >
+      <div className="space-y-4">
+        {/* Üst bilgi: geri linki + sipariş no + tarih/tutar — tek bakışta özet. */}
+        <div className={theme.panelSurface}>
+          <a
+            href="/siparislerim"
+            className={cn(
+              "text-xs font-semibold uppercase tracking-wide underline-offset-2 hover:underline",
+              muted,
+            )}
+          >
+            ← Sipariş Takip
+          </a>
+          <h1 className={cn("mt-2 text-2xl font-semibold sm:text-3xl", text)}>
+            Sipariş {displayNo(snap)}
+          </h1>
+          <p className={cn("mt-1 text-sm", muted)}>
+            {fmtTime(snap.createdAt)} ·{" "}
+            {snap.currency === "CATALOG"
+              ? "Fiyatsız katalog siparişi"
+              : formatCurrency(snap.totalAmount, snap.currency as CurrencyCode)}
+          </p>
+        </div>
 
         {!cancelled && snap.status !== "delivered" ? (
           <PushOptInBanner token={token} vapidPublicKey={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? ""} />
         ) : null}
 
+        {/* Durum: iptal edildiyse tek satır bilgi kartı, aksi halde adım adım takip. */}
         {cancelled ? (
-          <div className="mt-5 flex items-start gap-3 rounded-xl border border-rose-300/60 bg-rose-500/10 p-4">
+          <div className="flex items-start gap-3 rounded-xl border border-rose-300/60 bg-rose-500/10 p-4">
             <XCircle className="mt-0.5 size-5 shrink-0 text-rose-500" />
             <div>
               <p className={cn("font-semibold", text)}>Siparişiniz iptal edildi</p>
@@ -164,118 +193,134 @@ function TrackingCard({
             </div>
           </div>
         ) : (
-          <ol className="mt-6 space-y-4">
-            {STEPS.map((step, i) => {
-              const done = i < activeIndex;
-              const current = i === activeIndex;
-              const at = snap.events.filter((e) => e.status === step).at(-1)?.at;
-              return (
-                <li key={step} className="flex items-start gap-3">
-                  <span
-                    className={cn(
-                      "mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-full border-2 text-xs font-bold",
-                      done && "border-emerald-500 bg-emerald-500 text-white",
-                      current && cn("border-emerald-500", text),
-                      !done && !current && cn("border-current opacity-30", muted),
-                    )}
-                  >
-                    {done ? <Check className="size-4" /> : i + 1}
-                  </span>
-                  <div className={done || current ? "" : "opacity-40"}>
-                    <p className={cn("text-sm font-semibold", text)}>{getStatusLabel(step, { isTekel })}</p>
-                    {current ? <p className={cn("text-sm", muted)}>{getStatusDescription(step, { isTekel })}</p> : null}
-                    {at && (done || current) ? <p className={cn("text-xs", muted)}>{fmtTime(at)}</p> : null}
-                  </div>
-                </li>
-              );
-            })}
-          </ol>
+          <div className={theme.panelSurface}>
+            <p className={sectionLabelCls}>Sipariş Durumu</p>
+            <ol className="mt-3 space-y-4">
+              {STEPS.map((step, i) => {
+                const done = i < activeIndex;
+                const current = i === activeIndex;
+                const at = snap.events.filter((e) => e.status === step).at(-1)?.at;
+                return (
+                  <li key={step} className="flex items-start gap-3">
+                    <span
+                      className={cn(
+                        "mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-full border-2 text-xs font-bold",
+                        done && "border-emerald-500 bg-emerald-500 text-white",
+                        current && cn("border-emerald-500", text),
+                        !done && !current && cn("border-current opacity-30", muted),
+                      )}
+                    >
+                      {done ? <Check className="size-4" /> : i + 1}
+                    </span>
+                    <div className={done || current ? "" : "opacity-40"}>
+                      <p className={cn("text-sm font-semibold", text)}>{getStatusLabel(step, { isTekel })}</p>
+                      {current ? <p className={cn("text-sm", muted)}>{getStatusDescription(step, { isTekel })}</p> : null}
+                      {at && (done || current) ? <p className={cn("text-xs", muted)}>{fmtTime(at)}</p> : null}
+                    </div>
+                  </li>
+                );
+              })}
+            </ol>
+          </div>
         )}
 
-        <div className={cn("mt-6 space-y-2 border-t pt-4", theme.border)}>
-          {snap.items.map((item, i) => (
-            <div key={i} className="flex items-center justify-between gap-3 text-sm">
-              <span className={text}>
-                {item.name}
-                {item.variant ? <span className={muted}> · {item.variant}</span> : null}
-                <span className={muted}> × {item.quantity} {item.unit ?? "adet"}</span>
-              </span>
-              {item.price !== null && snap.currency !== "CATALOG" ? (
-                <span className={cn("font-medium", text)}>{formatCurrency(item.price * item.quantity, snap.currency as CurrencyCode)}</span>
-              ) : null}
+        {/* Sipariş içeriği: ürün listesi + (fiyatlıysa) toplam satırı. */}
+        <div className={theme.panelSurface}>
+          <p className={sectionLabelCls}>Sipariş İçeriği</p>
+          <div className="mt-3 space-y-2">
+            {snap.items.map((item, i) => (
+              <div key={i} className="flex items-center justify-between gap-3 text-sm">
+                <span className={text}>
+                  {item.name}
+                  {item.variant ? <span className={muted}> · {item.variant}</span> : null}
+                  <span className={muted}> × {item.quantity} {item.unit ?? "adet"}</span>
+                </span>
+                {item.price !== null && snap.currency !== "CATALOG" ? (
+                  <span className={cn("font-medium", text)}>{formatCurrency(item.price * item.quantity, snap.currency as CurrencyCode)}</span>
+                ) : null}
+              </div>
+            ))}
+          </div>
+          {snap.currency !== "CATALOG" ? (
+            <div className={cn("mt-3 flex items-center justify-between border-t pt-3 text-sm font-semibold", theme.border)}>
+              <span className={text}>Toplam</span>
+              <span className={text}>{formatCurrency(itemsTotal, snap.currency as CurrencyCode)}</span>
             </div>
-          ))}
+          ) : null}
         </div>
 
-        {canSelfCancel ? (
-          <div className={cn("mt-5 rounded-xl border p-3", theme.border)}>
-            {!cancelOpen ? (
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <p className={cn("text-xs", muted)}>Mağaza onaylayana kadar siparişinizi iptal edebilirsiniz.</p>
-                <button
-                  type="button"
-                  onClick={() => setCancelOpen(true)}
-                  className="text-xs font-semibold text-rose-500 underline-offset-2 hover:underline"
-                >
-                  Siparişi iptal et
-                </button>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                <p className={cn("text-sm font-semibold", text)}>Siparişi iptal etmek istediğinize emin misiniz?</p>
-                <input
-                  type="text"
-                  value={cancelReason}
-                  onChange={(e) => setCancelReason(e.target.value)}
-                  maxLength={300}
-                  placeholder="Sebep (isteğe bağlı)"
-                  className={cn("w-full rounded-lg border bg-transparent px-3 py-2 text-sm outline-none placeholder:opacity-50", theme.border, text)}
-                />
-                {cancelError ? <p className="text-xs font-medium text-rose-500">{cancelError}</p> : null}
-                <div className="flex gap-2">
+        {/* İptal / mağazaya ulaşma — tek kart altında toplandı. */}
+        {canSelfCancel || needsStoreForCancel ? (
+          <div className={theme.panelSurface}>
+            {canSelfCancel ? (
+              !cancelOpen ? (
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <p className={cn("text-xs", muted)}>Mağaza onaylayana kadar siparişinizi iptal edebilirsiniz.</p>
                   <button
                     type="button"
-                    disabled={cancelBusy}
-                    onClick={() => void cancelByCustomer()}
-                    className="inline-flex h-10 items-center justify-center rounded-full bg-rose-600 px-4 text-sm font-semibold text-white disabled:opacity-60"
+                    onClick={() => setCancelOpen(true)}
+                    className="text-xs font-semibold text-rose-500 underline-offset-2 hover:underline"
                   >
-                    {cancelBusy ? "İptal ediliyor…" : "Evet, iptal et"}
-                  </button>
-                  <button
-                    type="button"
-                    disabled={cancelBusy}
-                    onClick={() => { setCancelOpen(false); setCancelError(null); }}
-                    className={cn("inline-flex h-10 items-center justify-center rounded-full border px-4 text-sm font-semibold", theme.border, text)}
-                  >
-                    Vazgeç
+                    Siparişi iptal et
                   </button>
                 </div>
-              </div>
+              ) : (
+                <div className="space-y-2">
+                  <p className={cn("text-sm font-semibold", text)}>Siparişi iptal etmek istediğinize emin misiniz?</p>
+                  <input
+                    type="text"
+                    value={cancelReason}
+                    onChange={(e) => setCancelReason(e.target.value)}
+                    maxLength={300}
+                    placeholder="Sebep (isteğe bağlı)"
+                    className={cn("w-full rounded-lg border bg-transparent px-3 py-2 text-sm outline-none placeholder:opacity-50", theme.border, text)}
+                  />
+                  {cancelError ? <p className="text-xs font-medium text-rose-500">{cancelError}</p> : null}
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      disabled={cancelBusy}
+                      onClick={() => void cancelByCustomer()}
+                      className="inline-flex h-10 items-center justify-center rounded-full bg-rose-600 px-4 text-sm font-semibold text-white disabled:opacity-60"
+                    >
+                      {cancelBusy ? "İptal ediliyor…" : "Evet, iptal et"}
+                    </button>
+                    <button
+                      type="button"
+                      disabled={cancelBusy}
+                      onClick={() => { setCancelOpen(false); setCancelError(null); }}
+                      className={cn("inline-flex h-10 items-center justify-center rounded-full border px-4 text-sm font-semibold", theme.border, text)}
+                    >
+                      Vazgeç
+                    </button>
+                  </div>
+                </div>
+              )
+            ) : (
+              <p className={cn("text-xs", muted)}>
+                Mağaza siparişinizi onayladı. İptal için{" "}
+                <a href={waCancelHref} target="_blank" rel="noreferrer" className={cn("font-semibold underline underline-offset-2", text)}>
+                  WhatsApp&apos;tan mağazaya yazın
+                </a>
+                .
+              </p>
             )}
           </div>
-        ) : needsStoreForCancel ? (
-          <p className={cn("mt-5 text-xs", muted)}>
-            Mağaza siparişinizi onayladı. İptal için{" "}
-            <a href={waCancelHref} target="_blank" rel="noreferrer" className={cn("font-semibold underline underline-offset-2", text)}>
-              WhatsApp&apos;tan mağazaya yazın
-            </a>
-            .
-          </p>
         ) : null}
 
-        <div className="mt-6 flex flex-col gap-2">
+        {/* Mağazaya WhatsApp'tan yaz — sayfanın en altında, tek CTA. */}
+        <div className="flex flex-col items-center gap-2 pt-2">
           <a
             href={waHref}
             target="_blank"
             rel="noreferrer"
-            className={cn("inline-flex h-11 items-center justify-center gap-2 rounded-full border px-5 text-sm font-semibold", theme.border, text)}
+            className={cn("inline-flex h-11 w-full items-center justify-center gap-2 rounded-full border px-5 text-sm font-semibold sm:w-auto", theme.border, text)}
           >
             <MessageCircle className="size-4" />
             Mağazaya WhatsApp&apos;tan yaz
           </a>
           <p className={cn("text-center text-[11px]", muted)}>Bu sayfa durum değiştikçe kendiliğinden güncellenir.</p>
         </div>
-      </div>
       </div>
     </StorefrontSubpageShell>
   );
@@ -287,6 +332,7 @@ export function OrderTrackingView(props: {
   logoUrl: string | null;
   whatsappNumber: string;
   isTekel: boolean;
+  isMarketTenant: boolean;
   appearance?: StorefrontAppearanceSettings;
   initial: TrackingSnapshot;
 }) {
