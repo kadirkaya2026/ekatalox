@@ -77,6 +77,12 @@ async function buildShortOrderLinks(params: {
   const longLocationUrl = params.location
     ? `https://maps.google.com/?q=${params.location.lat},${params.location.lng}`
     : null;
+  // Kısa link hedefi olarak koordinatı geo: biçiminde saklıyoruz; hangi
+  // harita uygulamasında açılacağına /f/[code] rotası cihaza bakarak karar
+  // veriyor (iPhone'da Apple Haritalar, diğerlerinde Google Haritalar).
+  const locationTarget = params.location
+    ? `geo:${params.location.lat},${params.location.lng}`
+    : null;
 
   try {
     const [shortPdf, shortLocation] = await Promise.all([
@@ -86,10 +92,10 @@ async function buildShortOrderLinks(params: {
         origin: params.origin,
         kind: "order_pdf",
       }),
-      longLocationUrl
+      locationTarget
         ? createShortLink({
             tenantId: params.tenantId,
-            targetUrl: longLocationUrl,
+            targetUrl: locationTarget,
             origin: params.origin,
             kind: "order_location",
           })

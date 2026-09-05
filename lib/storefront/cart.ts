@@ -790,15 +790,19 @@ export function buildWhatsAppMessage(params: {
     `👤 Müşteri/cari : ${params.customerReferenceName.trim()}`,
   ];
 
+  // Sıra bilerek böyle (kullanıcı isteği, 6 Eyl 2026): adres, telefon,
+  // konum, sipariş fişi. Bayi mesajı yukarıdan aşağı okurken önce kime
+  // götüreceğini, sonra kime ulaşacağını görüyor.
   if (!params.isTekel && params.customerAddress?.trim()) {
     lines.push(`📍 Adres : ${params.customerAddress.trim()}`);
-    if (params.customerLocationUrl?.trim()) {
-      lines.push(`🗺️ Konum : ${params.customerLocationUrl.trim()}`);
-    }
   }
 
   if (params.customerPhone?.trim()) {
     lines.push(`📞 Telefon : ${params.customerPhone.trim()}`);
+  }
+
+  if (!params.isTekel && params.customerLocationUrl?.trim()) {
+    lines.push(`🗺️ Konum : ${params.customerLocationUrl.trim()}`);
   }
 
   if (params.pdfUrl?.trim()) {
