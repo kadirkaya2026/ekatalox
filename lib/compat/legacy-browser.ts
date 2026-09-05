@@ -12,18 +12,24 @@
 // Kendi telefonlarımız güncel olduğu için bunu göremiyorduk; bir tekel
 // müşterisinin telefonunda ortaya çıktı (5 Eyl 2026).
 //
-// Eşik neden 16.4 değil de 16.0:
-//   - JS tarafı package.json'daki browserslist ile Safari 16'ya derleniyor,
-//     yani static blok sorunu 16.0'da yok.
-//   - CSS tarafı da 16.x'te ayakta: Tailwind @property için @supports yedeği
-//     üretiyor ve color-mix() kullanımlarının hepsinin düz renk fallback'i
-//     var. Kritik olan @layer ise Safari 15.4'ten beri destekli.
-//   - 16.0 altında @layer'ın da düştüğü noktaya yaklaşılıyor ve sayfa
-//     tamamen stilsiz kalıyor (iPhone 11/iOS 13 ve iPhone 12/iOS 14'te
-//     BrowserStack'te birebir görüldü).
-// Yani 16.x'teki müşteri uyarı görmek yerine gerçekten alışveriş yapabiliyor.
-export const MIN_SUPPORTED_IOS_MAJOR = 16;
-export const MIN_SUPPORTED_IOS_MINOR = 0;
+// Eşik neden tam 15.4:
+// Hem CSS hem JS tarafındaki gerçek taban aynı sürümde buluşuyor.
+//   - CSS: Tailwind çıktısı @layer kullanıyor (Safari 15.4) ve dvh/svh
+//     birimleri geçiyor (Safari 15.4). Daha yenisini isteyen bir şey yok:
+//     @container ve :has() hiç kullanılmıyor. @property için Tailwind zaten
+//     @supports yedeği üretiyor, color-mix() kullanımlarının da düz renk
+//     fallback'i var — ikisi de eski Safari'de sorunsuz düşüyor.
+//   - JS: browserslist Safari 15.4'e derliyor, static blok kalmıyor.
+//     Kalan modern API'ler (Object.hasOwn, Array#at, Array#findLast) yine
+//     15.4'te geliyor.
+//   - 15.4 ALTINDA @layer düşüyor ve Tailwind'in tamamı çöpe gidiyor; sayfa
+//     komple stilsiz kalıyor. iPhone 11/iOS 13 ve iPhone 12/iOS 14'te
+//     BrowserStack'te birebir bu görüldü.
+// iPhone 6s/7/SE(1) gibi en fazla iOS 15.8'e çıkabilen telefonlar bu sayede
+// uyarı görmek yerine gerçekten sipariş verebiliyor (iPhone 13/iOS 15'te
+// elle doğrulandı, 5 Eyl 2026).
+export const MIN_SUPPORTED_IOS_MAJOR = 15;
+export const MIN_SUPPORTED_IOS_MINOR = 4;
 
 export const LEGACY_BROWSER_COOKIE = "ekatalox-eski-tarayici";
 export const LEGACY_BROWSER_BYPASS_PARAM = "eskiTarayici";
