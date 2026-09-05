@@ -941,6 +941,71 @@ export function StorefrontClient({
   // veriyor olabilir (ör. dışarıdayken eve sipariş). Bu yüzden varsayılan
   // kapalı ve adres alanı zorunlu kalmaya devam ediyor.
   const [customerLocation, setCustomerLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [shareLocation, setShareLocation] = useState(false);
+  const [locationStatus, setLocationStatus] = useState<"idle" | "loading" | "denied" | "error">("idle");
+  // Devam eden konum isteği: müşteri kutuyu işaretleyip HEMEN siparişi
+  // gönderirse koordinat henüz gelmemiş oluyordu ve konum satırı sessizce
+  // düşüyordu. Gönderim anında bu sözü bekliyoruz.
+  const locationPromiseRef = useRef<Promise<{ lat: number; lng: number } | null> | null>(null);
+
+  const fetchCustomerLocation = useCallback(() => {
+    const pending = (async () => {
+      const attempt = (highAccuracy: boolean) =>
+        new Promise<GeolocationPosition>((resolve, reject) => {
+          navigator.geolocation.getCurrentPosition(resolve, reject, {
+            enableHighAccuracy: highAccuracy,
+            timeout: highAccuracy ? 20_000 : 8_000,
+            maximumAge: highAccuracy ? 0 : 300_000,
+          });
+        });
+
+      try {
+        let position: GeolocationPosition;
+        try {
+          // Önce hızlı yöntem (Wi-Fi/baz istasyonu, şehir içinde 20-50 m).
+          position = await attempt(false);
+        } catch (error) {
+          // İzin reddedildiyse ikinci deneme de reddedilir.
+          if ((error as GeolocationPositionError)?.code === 1) throw error;
+          position = await attempt(true);
+        }
+        const coords = {
+          lat: Number(position.coords.latitude.toFixed(6)),
+          lng: Number(position.coords.longitude.toFixed(6)),
+        };
+        setCustomerLocation(coords);
+        setLocationStatus("idle");
+        return coords;
+      } catch (error) {
+        setCustomerLocation(null);
+        setLocationStatus((error as GeolocationPositionError)?.code === 1 ? "denied" : "error");
+        return null;
+      }
+    })();
+
+    locationPromiseRef.current = pending;
+    return pending;
+  }, []);
+
+  const toggleShareLocation = useCallback(() => {
+    const next = !shareLocation;
+    setShareLocation(next);
+
+    if (!next) {
+      setCustomerLocation(null);
+      setLocationStatus("idle");
+      locationPromiseRef.current = null;
+      return;
+    }
+
+    if (typeof navigator === "undefined" || !navigator.geolocation) {
+      setLocationStatus("error");
+      return;
+    }
+
+    setLocationStatus("loading");
+    void fetchCustomerLocation();
+  }, [fetchCustomerLocation, shareLocation]);
   const [customerPhone, setCustomerPhone] = useState("");
   const [customerPhoneError, setCustomerPhoneError] = useState<string | null>(null);
   // "Market" tipi tenant'larda sipariş verebilmek için ödeme yöntemi, müşteri
@@ -2071,6 +2136,8 @@ export function StorefrontClient({
     customerReferenceName,
     customerAddress,
     customerLocation,
+    shareLocation,
+    fetchCustomerLocation,
     customerPhone,
     note,
     selectedInstallmentCount,
@@ -2194,8 +2261,16 @@ export function StorefrontClient({
     // harita olduğunu anlıyor ve telefonundaki Google Haritalar uygulaması
     // doğrudan açılıyor. Ayrıca sunucuya hiç uğramadığı için PDF/veritabanı
     // tarafında bir sorun olsa bile konum satırı kaybolmuyor.
-    if (customerLocation) {
-      locationUrl = `https://maps.google.com/?q=${customerLocation.lat},${customerLocation.lng}`;
+    // Müşteri kutuyu işaretleyip hemen gönderdiyse koordinat henüz gelmemiş
+    // olabilir; devam eden isteği burada bekliyoruz. Gelmezse sipariş yine
+    // gider, sadece konum satırı olmaz.
+    let coords = customerLocation;
+    if (shareLocation && !coords) {
+      coords = (await (locationPromiseRef.current ?? fetchCustomerLocation())) ?? null;
+    }
+
+    if (coords) {
+      locationUrl = `https://maps.google.com/?q=${coords.lat},${coords.lng}`;
     }
 
     const message = buildWhatsAppOrderMessage(pdfUrl, trackingUrl, locationUrl);
@@ -4230,7 +4305,9 @@ export function StorefrontClient({
         setCustomerReferenceNameError={setCustomerReferenceNameError}
         customerAddress={customerAddress}
         customerLocation={customerLocation}
-        onCustomerLocationChange={setCustomerLocation}
+        shareLocation={shareLocation}
+        locationStatus={locationStatus}
+        onToggleLocation={toggleShareLocation}
         setCustomerAddress={setCustomerAddress}
         customerAddressError={customerAddressError}
         setCustomerAddressError={setCustomerAddressError}

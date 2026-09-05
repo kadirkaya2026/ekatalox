@@ -61,7 +61,9 @@ export type StorefrontCartDrawerProps = {
   setCustomerReferenceNameError: Dispatch<SetStateAction<string | null>>;
   customerAddress: string;
   customerLocation: { lat: number; lng: number } | null;
-  onCustomerLocationChange: (value: { lat: number; lng: number } | null) => void;
+  shareLocation: boolean;
+  locationStatus: "idle" | "loading" | "denied" | "error";
+  onToggleLocation: () => void;
   setCustomerAddress: Dispatch<SetStateAction<string>>;
   customerAddressError: string | null;
   setCustomerAddressError: Dispatch<SetStateAction<string | null>>;
@@ -141,7 +143,9 @@ export function StorefrontCartDrawer({
   setCustomerReferenceNameError,
   customerAddress,
   customerLocation,
-  onCustomerLocationChange,
+  shareLocation,
+  locationStatus,
+  onToggleLocation,
   setCustomerAddress,
   customerAddressError,
   setCustomerAddressError,
@@ -199,61 +203,6 @@ export function StorefrontCartDrawer({
   const nameFieldRef = useRef<HTMLDivElement>(null);
   const addressFieldRef = useRef<HTMLDivElement>(null);
 
-  // Konum paylaşımı: yalnızca teslimat yapan (tekel olmayan) market
-  // vitrinlerinde anlamlı. İzin istemi kullanıcı hareketiyle tetiklenmeli,
-  // o yüzden doğrudan tıklama içinde çağrılıyor.
-  const [locationStatus, setLocationStatus] = useState<
-    "idle" | "loading" | "denied" | "error"
-  >("idle");
-
-  function toggleLocation() {
-    if (customerLocation) {
-      onCustomerLocationChange(null);
-      setLocationStatus("idle");
-      return;
-    }
-    if (typeof navigator === "undefined" || !navigator.geolocation) {
-      setLocationStatus("error");
-      return;
-    }
-    setLocationStatus("loading");
-    void requestPosition();
-  }
-
-  // İki aşamalı deneme. Tek aşamada enableHighAccuracy ile GPS'i uyandırmaya
-  // çalışmak bina içinde çok sık zaman aşımına düşüyordu: müşteri kutuyu
-  // işaretliyor, hiçbir şey olmuyor sanıyor ve konum sessizce kayboluyordu.
-  // Önce hızlı yöntem (baz istasyonu/Wi-Fi, şehir içinde ~20-50 m ve
-  // genelde 1-2 saniye), o da olmazsa uzun süreli GPS denemesi. Adres alanı
-  // zaten zorunlu olduğu için 20-50 metre fazlasıyla yeterli.
-  function requestPosition() {
-    const attempt = (highAccuracy: boolean) =>
-      new Promise<GeolocationPosition>((resolve, reject) => {
-        navigator.geolocation.getCurrentPosition(resolve, reject, {
-          enableHighAccuracy: highAccuracy,
-          timeout: highAccuracy ? 25_000 : 10_000,
-          maximumAge: highAccuracy ? 0 : 300_000,
-        });
-      });
-
-    return attempt(false)
-      .catch((error: GeolocationPositionError) => {
-        // İzin reddedildiyse ikinci deneme de reddedilir, boşuna bekletme.
-        if (error.code === error.PERMISSION_DENIED) throw error;
-        return attempt(true);
-      })
-      .then((position) => {
-        onCustomerLocationChange({
-          lat: Number(position.coords.latitude.toFixed(6)),
-          lng: Number(position.coords.longitude.toFixed(6)),
-        });
-        setLocationStatus("idle");
-      })
-      .catch((error: GeolocationPositionError) => {
-        onCustomerLocationChange(null);
-        setLocationStatus(error?.code === 1 ? "denied" : "error");
-      });
-  }
   const phoneFieldRef = useRef<HTMLDivElement>(null);
 
   // Adımlı sepet akışı yalnız market/tekelde (kullanıcı kararı, 3 Eyl 2026):
@@ -764,8 +713,8 @@ export function StorefrontCartDrawer({
           {!isTekel ? (
             <button
               type="button"
-              onClick={toggleLocation}
-              aria-pressed={Boolean(customerLocation)}
+              onClick={onToggleLocation}
+              aria-pressed={shareLocation}
               className={cn(
                 "mt-2.5 flex w-full items-start gap-2.5 rounded-[1.1rem] px-3 py-2.5 text-left",
                 theme.surfaceMuted,
@@ -774,12 +723,12 @@ export function StorefrontCartDrawer({
               <span
                 className={cn(
                   "mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-md border-2",
-                  customerLocation
+                  shareLocation
                     ? "border-emerald-500 bg-emerald-500 text-white"
                     : cn(theme.formField, theme.textMuted),
                 )}
               >
-                {customerLocation ? <Check className="size-3.5" /> : null}
+                {shareLocation ? <Check className="size-3.5" /> : null}
               </span>
               <span className="min-w-0">
                 <span className={cn("flex items-center gap-1.5 text-sm font-semibold", theme.text)}>
