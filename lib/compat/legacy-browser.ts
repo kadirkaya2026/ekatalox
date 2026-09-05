@@ -1,16 +1,20 @@
 // Eski iOS Safari kapısı.
 //
 // Next.js 16 kendi dokümanında (node_modules/next/dist/docs/03-architecture/
-// supported-browsers.md) asgari Safari 16.4 diyor; derlenen JS'te
-// `class X { static { ... } }` blokları var ve eski Safari bunu ayrıştıramayıp
-// SyntaxError atıyor — chunk komple ölüyor, React hiç hidrasyona geçmiyor.
-// Tailwind CSS 4'ün çıktısı da @property (71 kullanım) ve color-mix()
-// (330 kullanım) üzerine kurulu, o da 16.2-16.4 tabanlı.
+// supported-browsers.md) asgari Safari 16.4 diyor. Derlenen JS'te
+// `class X { static { ... } }` blokları vardı; eski Safari bunu ayrıştıramayıp
+// SyntaxError atıyor, chunk komple ölüyor ve React hiç hidrasyona geçmiyordu.
+// BU TARAF ÇÖZÜLDÜ: package.json'daki browserslist Safari 15.4'e derliyor,
+// static blok kalmadı ve JS artık iOS 13'te bile çalışıyor (elle doğrulandı —
+// iPhone 11 / iOS 13.3'te şifre girilip vitrin gezilebildi).
 //
-// Sonuç: eski iOS'ta vitrin sessizce çöküyor. Sayfa açılıyor ama alt
-// navigasyon çıkmıyor, hiçbir butona basılamıyor, müşteri sipariş veremiyor.
-// Kendi telefonlarımız güncel olduğu için bunu göremiyorduk; bir tekel
-// müşterisinin telefonunda ortaya çıktı (5 Eyl 2026).
+// Kırılan ASIL taraf CSS: Tailwind'in ürettiği 183 KB'lık stilin tamamı
+// @layer blokları içinde (theme/base/components/utilities/properties) ve
+// @layer Safari 15.4'te geldi. Eski Safari bilmediği bir at-kuralını bloğuyla
+// birlikte tamamen attığı için stil sıfırlanıyor. Sonuç: sayfa ÇALIŞIYOR ama
+// ürün kartları, yazılar ve düğmeler iç içe geçmiş halde görünüyor — müşteri
+// pratikte alışveriş yapamıyor. Kendi telefonlarımız güncel olduğu için bunu
+// göremiyorduk; bir tekel müşterisinin telefonunda ortaya çıktı (5 Eyl 2026).
 //
 // Eşik neden tam 15.4:
 // Hem CSS hem JS tarafındaki gerçek taban aynı sürümde buluşuyor.
@@ -132,9 +136,10 @@ export function renderLegacyBrowserNotice({
       </h1>
 
       <p style="margin:0 0 18px;font-size:16px;line-height:1.55;color:#334155;">
-        <strong>${name}</strong> sayfası telefonunuzda düzgün açılmıyor. Sayfa görünse bile
-        ürün ekleme, arama ve sepet düğmeleri çalışmaz. Bunun sebebi internet
-        bağlantınız veya mağaza değil, telefonunuzdaki <strong>iOS sürümünün eski olması</strong>.
+        <strong>${name}</strong> sayfası telefonunuzda düzgün görüntülenmiyor. Ürünler,
+        yazılar ve düğmeler iç içe geçtiği için alışveriş yapmanız çok zor olur.
+        Bunun sebebi internet bağlantınız veya mağaza değil, telefonunuzdaki
+        <strong>iOS sürümünün eski olması</strong>.
       </p>
 
       <div style="margin:0 0 20px;padding:16px 18px;background:#f8fafc;border-radius:12px;border-left:4px solid #f59e0b;">
