@@ -35,7 +35,7 @@ function StorefrontPageShellInner({
       data-storefront
       data-branded={style ? "true" : undefined}
       style={style}
-      className={cn("flex min-h-screen flex-col", theme.page, fontClassName, className)}
+      className={cn("flex min-h-svh flex-col", theme.page, fontClassName, className)}
     >
       <StorefrontThemeReset isToggleVisible={isThemeToggleVisible} />
       {children}

@@ -541,7 +541,7 @@ function buildTheme(
 
   return {
     page: cn(
-      "min-h-screen w-full max-w-full overflow-x-hidden pb-28 xl:pb-6",
+      "min-h-svh w-full max-w-full overflow-x-clip pb-28 xl:pb-6",
       neutrals.page,
       neutrals.pageText,
       pageGradient,

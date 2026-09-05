@@ -32,7 +32,7 @@ export function StorefrontSubpageShell({
   const { t } = useStorefrontLocale();
 
   return (
-    <div data-storefront className={cn(theme.page, "flex min-h-screen flex-col")}>
+    <div data-storefront className={cn(theme.page, "flex min-h-svh flex-col")}>
       <header className={cn(theme.header, theme.headerBorder)}>
         <div className="container-shell flex items-center justify-between gap-3 py-3">
           <a href="/" className="flex min-w-0 items-center gap-3">

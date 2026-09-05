@@ -52,7 +52,13 @@
 }
 
 html {
-  @apply overflow-x-hidden;
+  /* `overflow-x: hidden` yatay taşmayı kırpar ama aynı zamanda html'i bir
+     kaydırma kabına çevirir; iOS Safari'de bu, position:fixed alt
+     navigasyon barının sayfa kaydırılırken titremesine/kaymasına yol
+     açıyordu. `clip` aynı kırpmayı kaydırma kabı yaratmadan yapar.
+     `hidden` desteklemeyen eski tarayıcılar için önce yazılı. */
+  overflow-x: hidden;
+  overflow-x: clip;
   scroll-behavior: smooth;
   background: var(--color-background);
   -webkit-text-size-adjust: 100%;
@@ -60,7 +66,9 @@ html {
 }
 
 body {
-  @apply min-h-screen overflow-x-hidden antialiased;
+  @apply min-h-screen antialiased;
+  overflow-x: hidden;
+  overflow-x: clip;
   font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, "SF Pro Display", system-ui, sans-serif;
   text-rendering: optimizeLegibility;
   background: var(--color-background);
@@ -126,6 +134,20 @@ button:focus-visible {
    kalmasın diye ~4.6rem'lik bar yüksekliğinin üstüne pay bırakılıyor. */
 .bottom-nav-safe-bottom {
   padding-bottom: calc(env(safe-area-inset-bottom) + 7rem);
+}
+
+/* Sabit alt navigasyon barının dış kabı. iOS Safari'de alt araç çubuğu
+   büzülüp açılırken fixed öğeler ana iş parçacığında yeniden
+   konumlanıyor ve bar sayfa kaydırılırken aşağı yukarı kayıyordu
+   (müşteri telefonunda görüldü, 5 Eyl 2026). Barı kendi birleştirme
+   katmanına almak konumlandırmayı GPU'ya taşıyıp kaymayı büyük ölçüde
+   yok ediyor. */
+.bottom-nav-shell {
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  will-change: transform;
 }
 
 /* Alt navigasyon barının kendi iç boşluğu. safe-bottom-padding (1rem)

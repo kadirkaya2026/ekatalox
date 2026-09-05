@@ -36,7 +36,7 @@ export function StorefrontBottomNav({
   const { t } = useStorefrontLocale();
 
   return (
-    <div className="fixed inset-x-0 bottom-0 z-40 sm:hidden">
+    <div className="bottom-nav-shell fixed inset-x-0 bottom-0 z-40 sm:hidden">
       <nav
         aria-label={t("bottomNav.ariaLabel")}
         // Bar bilerek temadan bağımsız: koyu temalarda (noir) tema yüzeyi

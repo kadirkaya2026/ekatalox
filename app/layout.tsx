@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import {
   DM_Sans,
   Inter,
@@ -41,6 +41,15 @@ const fontVariables = [
   sourceSans.variable,
   playfair.variable,
 ].join(" ");
+
+// viewport-fit=cover olmadan iPhone'da env(safe-area-inset-*) hep 0
+// dönüyor; alt navigasyon barının güvenli alan payı (bottom-nav-inset)
+// işlemiyor ve bar ana ekran çizgisinin altına biniyordu.
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+};
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://www.ekatalox.com"),
