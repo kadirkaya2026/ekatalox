@@ -959,15 +959,23 @@ export function StorefrontClient({
           });
         });
 
+      // Sert duvar saati sınırı: iOS Safari izin istemi açıkken (ya da
+      // kullanıcı istemi kapattıysa) getCurrentPosition'ın kendi timeout'u
+      // işlemiyor ve söz sonsuza kadar asılı kalabiliyor. Sipariş gönderimi
+      // buna bağlı beklediği için kendi sınırımızı koyuyoruz.
+      const hardLimit = new Promise<never>((_, reject) =>
+        setTimeout(() => reject({ code: 3, message: "hard-timeout" }), 30_000),
+      );
+
       try {
         let position: GeolocationPosition;
         try {
           // Önce hızlı yöntem (Wi-Fi/baz istasyonu, şehir içinde 20-50 m).
-          position = await attempt(false);
+          position = await Promise.race([attempt(false), hardLimit]);
         } catch (error) {
           // İzin reddedildiyse ikinci deneme de reddedilir.
           if ((error as GeolocationPositionError)?.code === 1) throw error;
-          position = await attempt(true);
+          position = await Promise.race([attempt(true), hardLimit]);
         }
         const coords = {
           lat: Number(position.coords.latitude.toFixed(6)),
