@@ -947,6 +947,12 @@ export function StorefrontClient({
   // gönderirse koordinat henüz gelmemiş oluyordu ve konum satırı sessizce
   // düşüyordu. Gönderim anında bu sözü bekliyoruz.
   const locationPromiseRef = useRef<Promise<{ lat: number; lng: number } | null> | null>(null);
+  // Sipariş gönderen useCallback'in bağımlılıklarında konum yoktu; fonksiyon
+  // yeniden oluşmadığı için state güncellense bile ESKİ (boş) değeri
+  // okuyordu ve mesaja konum satırı düşmüyordu. Bağımlılık eklemek yerine
+  // referanstan okuyoruz: bu, aynı hatanın tekrar oluşmasını imkânsız kılar.
+  const customerLocationRef = useRef<{ lat: number; lng: number } | null>(null);
+  const shareLocationRef = useRef(false);
 
   const fetchCustomerLocation = useCallback(() => {
     // TEK çağrı, tek zaman aşımı. Daha önce "sağlamlaştırma" adına iki
@@ -962,11 +968,13 @@ export function StorefrontClient({
             lat: Number(position.coords.latitude.toFixed(6)),
             lng: Number(position.coords.longitude.toFixed(6)),
           };
+          customerLocationRef.current = coords;
           setCustomerLocation(coords);
           setLocationStatus("idle");
           resolve(coords);
         },
         (error) => {
+          customerLocationRef.current = null;
           setCustomerLocation(null);
           setLocationStatus(error.code === error.PERMISSION_DENIED ? "denied" : "error");
           resolve(null);
@@ -988,9 +996,11 @@ export function StorefrontClient({
 
   const toggleShareLocation = useCallback(() => {
     const next = !shareLocation;
+    shareLocationRef.current = next;
     setShareLocation(next);
 
     if (!next) {
+      customerLocationRef.current = null;
       setCustomerLocation(null);
       setLocationStatus("idle");
       locationPromiseRef.current = null;
@@ -2263,8 +2273,8 @@ export function StorefrontClient({
     // Müşteri kutuyu işaretleyip hemen gönderdiyse koordinat henüz gelmemiş
     // olabilir; devam eden isteği burada bekliyoruz. Gelmezse sipariş yine
     // gider, sadece konum satırı olmaz.
-    let coords = customerLocation;
-    if (shareLocation && !coords) {
+    let coords = customerLocationRef.current;
+    if (shareLocationRef.current && !coords) {
       // Devam eden isteği bekle ama siparişi sonsuza kadar tutma. Yeni bir
       // konum isteği BAŞLATMIYORUZ — izin penceresi açıkken ikinci istek
       // reddedilmeye yol açıyor.
