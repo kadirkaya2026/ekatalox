@@ -949,47 +949,31 @@ export function StorefrontClient({
   const locationPromiseRef = useRef<Promise<{ lat: number; lng: number } | null> | null>(null);
 
   const fetchCustomerLocation = useCallback(() => {
-    const pending = (async () => {
-      const attempt = (highAccuracy: boolean) =>
-        new Promise<GeolocationPosition>((resolve, reject) => {
-          navigator.geolocation.getCurrentPosition(resolve, reject, {
-            enableHighAccuracy: highAccuracy,
-            timeout: highAccuracy ? 20_000 : 8_000,
-            maximumAge: highAccuracy ? 0 : 300_000,
-          });
-        });
-
-      // Sert duvar saati sınırı: iOS Safari izin istemi açıkken (ya da
-      // kullanıcı istemi kapattıysa) getCurrentPosition'ın kendi timeout'u
-      // işlemiyor ve söz sonsuza kadar asılı kalabiliyor. Sipariş gönderimi
-      // buna bağlı beklediği için kendi sınırımızı koyuyoruz.
-      const hardLimit = new Promise<never>((_, reject) =>
-        setTimeout(() => reject({ code: 3, message: "hard-timeout" }), 30_000),
+    // TEK çağrı, tek zaman aşımı. Daha önce "sağlamlaştırma" adına iki
+    // aşamalı yapılmıştı (önce hızlı yöntem, olmazsa GPS); 8 saniyelik ilk
+    // sınır kullanıcı izin penceresini okurken doluyor, kod ikinci bir
+    // konum isteği yapıyor ve iOS ilk pencere hâlâ açıkken gelen bu isteği
+    // anında reddediyordu — sonuç "izin verilmedi" oluyordu. İzin istemi
+    // beklerken ASLA ikinci istek yapma.
+    const pending = new Promise<{ lat: number; lng: number } | null>((resolve) => {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const coords = {
+            lat: Number(position.coords.latitude.toFixed(6)),
+            lng: Number(position.coords.longitude.toFixed(6)),
+          };
+          setCustomerLocation(coords);
+          setLocationStatus("idle");
+          resolve(coords);
+        },
+        (error) => {
+          setCustomerLocation(null);
+          setLocationStatus(error.code === error.PERMISSION_DENIED ? "denied" : "error");
+          resolve(null);
+        },
+        { enableHighAccuracy: true, timeout: 12_000, maximumAge: 60_000 },
       );
-
-      try {
-        let position: GeolocationPosition;
-        try {
-          // Önce hızlı yöntem (Wi-Fi/baz istasyonu, şehir içinde 20-50 m).
-          position = await Promise.race([attempt(false), hardLimit]);
-        } catch (error) {
-          // İzin reddedildiyse ikinci deneme de reddedilir.
-          if ((error as GeolocationPositionError)?.code === 1) throw error;
-          position = await Promise.race([attempt(true), hardLimit]);
-        }
-        const coords = {
-          lat: Number(position.coords.latitude.toFixed(6)),
-          lng: Number(position.coords.longitude.toFixed(6)),
-        };
-        setCustomerLocation(coords);
-        setLocationStatus("idle");
-        return coords;
-      } catch (error) {
-        setCustomerLocation(null);
-        setLocationStatus((error as GeolocationPositionError)?.code === 1 ? "denied" : "error");
-        return null;
-      }
-    })();
+    });
 
     locationPromiseRef.current = pending;
     return pending;
@@ -2274,7 +2258,16 @@ export function StorefrontClient({
     // gider, sadece konum satırı olmaz.
     let coords = customerLocation;
     if (shareLocation && !coords) {
-      coords = (await (locationPromiseRef.current ?? fetchCustomerLocation())) ?? null;
+      // Devam eden isteği bekle ama siparişi sonsuza kadar tutma. Yeni bir
+      // konum isteği BAŞLATMIYORUZ — izin penceresi açıkken ikinci istek
+      // reddedilmeye yol açıyor.
+      const pending = locationPromiseRef.current;
+      coords = pending
+        ? await Promise.race([
+            pending,
+            new Promise<null>((resolve) => setTimeout(() => resolve(null), 20_000)),
+          ])
+        : null;
     }
 
     if (coords) {

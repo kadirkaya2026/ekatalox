@@ -72,7 +72,7 @@ export const storefrontDictionary: Record<StorefrontLocale, StorefrontDictionary
     "cart.shareLocationHint": "Bulunduğunuz yere teslimat isterseniz işaretleyin. Zorunlu değildir.",
     "cart.shareLocationLoading": "Konum alınıyor…",
     "cart.shareLocationAdded": "Konum eklendi. Sipariş mesajına harita bağlantısı eklenecek.",
-    "cart.shareLocationDenied": "Konum izni verilmedi. Sayfayı WhatsApp/Instagram içinden açtıysanız Safari veya Chrome'da deneyin. Adresi yazmanız da yeterli.",
+    "cart.shareLocationDenied": "Konum izni verilmedi. Adresi yazmanız yeterli.",
     "cart.shareLocationFailed": "Konum alınamadı. Adresi yazmanız yeterli.",
     "cart.customerPhone": "Müşteri Telefonu",
     "cart.customerPhonePlaceholder": "Örn: 0555 555 55 55",
