@@ -9,6 +9,7 @@ import {
   ChevronRight,
   CreditCard,
   Minus,
+  Loader2,
   MapPin,
   Plus,
   ShoppingCart,
@@ -714,28 +715,45 @@ export function StorefrontCartDrawer({
             <button
               type="button"
               onClick={onToggleLocation}
-              aria-pressed={shareLocation}
+              // Kutu, konum GERÇEKTEN geldiğinde yeşile dönüyor. Daha önce
+              // tıklar tıklamaz yeşil oluyordu; müşteri hazır sanıp siparişi
+              // gönderiyordu (kullanıcı isteği, 6 Eyl 2026).
+              aria-pressed={Boolean(customerLocation)}
+              aria-busy={locationStatus === "loading"}
+              disabled={locationStatus === "loading"}
               className={cn(
                 "mt-2.5 flex w-full items-start gap-2.5 rounded-[1.1rem] px-3 py-2.5 text-left",
                 theme.surfaceMuted,
+                locationStatus === "loading" && "opacity-90",
               )}
             >
               <span
                 className={cn(
                   "mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-md border-2",
-                  shareLocation
+                  customerLocation
                     ? "border-emerald-500 bg-emerald-500 text-white"
-                    : cn(theme.formField, theme.textMuted),
+                    : locationStatus === "loading"
+                      ? "border-transparent"
+                      : cn(theme.formField, theme.textMuted),
                 )}
               >
-                {shareLocation ? <Check className="size-3.5" /> : null}
+                {locationStatus === "loading" ? (
+                  <Loader2 className="size-4 animate-spin text-emerald-500" />
+                ) : customerLocation ? (
+                  <Check className="size-3.5" />
+                ) : null}
               </span>
               <span className="min-w-0">
                 <span className={cn("flex items-center gap-1.5 text-sm font-semibold", theme.text)}>
                   <MapPin className="size-3.5 shrink-0" />
                   {t("cart.shareLocation")}
                 </span>
-                <span className={cn("mt-0.5 block text-xs leading-snug", theme.textMuted)}>
+                <span
+                  className={cn(
+                    "mt-0.5 block text-xs leading-snug",
+                    customerLocation ? "font-semibold text-emerald-500" : theme.textMuted,
+                  )}
+                >
                   {locationStatus === "loading"
                     ? t("cart.shareLocationLoading")
                     : locationStatus === "denied"
