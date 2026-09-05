@@ -770,10 +770,10 @@ export function buildWhatsAppMessage(params: {
   tenantName: string;
   customerReferenceName: string;
   customerAddress?: string;
-  // Müşterinin isteğe bağlı olarak paylaştığı anlık konum. Adresin YERİNE
-  // geçmez, onu tamamlar: bina içinde GPS şaşabildiği için kapı/kat bilgisi
-  // yine adres alanından gelir.
-  customerLocation?: { lat: number; lng: number } | null;
+  // Müşterinin isteğe bağlı paylaştığı konumun HAZIR linki (sunucu kısaltır,
+  // bkz. lib/storage/short-links.ts). Adresin YERİNE geçmez, onu tamamlar:
+  // bina içinde GPS şaşabildiği için kapı/kat bilgisi yine adresten gelir.
+  customerLocationUrl?: string | null;
   customerPhone?: string;
   pdfUrl?: string | null;
   trackingUrl?: string | null;
@@ -792,9 +792,8 @@ export function buildWhatsAppMessage(params: {
 
   if (!params.isTekel && params.customerAddress?.trim()) {
     lines.push(`📍 Adres : ${params.customerAddress.trim()}`);
-    if (params.customerLocation) {
-      const { lat, lng } = params.customerLocation;
-      lines.push(`🗺️ Konum : https://maps.google.com/?q=${lat},${lng}`);
+    if (params.customerLocationUrl?.trim()) {
+      lines.push(`🗺️ Konum : ${params.customerLocationUrl.trim()}`);
     }
   }
 

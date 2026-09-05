@@ -55,7 +55,7 @@ export async function requestOrderReceiptPdf(params: {
   requestId: string;
   body: Record<string, unknown>;
   timeoutMs?: number;
-}): Promise<{ pdfUrl: string; orderNumber?: string; trackingUrl?: string | null }> {
+}): Promise<{ pdfUrl: string; orderNumber?: string; trackingUrl?: string | null; locationUrl?: string | null }> {
   const timeoutMs = params.timeoutMs ?? ORDER_PDF_REQUEST_TIMEOUT_MS;
   const controller = new AbortController();
   const timeoutId = window.setTimeout(() => controller.abort(), timeoutMs);
@@ -102,6 +102,7 @@ export async function requestOrderReceiptPdf(params: {
       pdfUrl?: string;
       orderNumber?: string;
       trackingUrl?: string | null;
+      locationUrl?: string | null;
     };
     const pdfUrl = data.pdfUrl?.trim();
 
@@ -124,7 +125,12 @@ export async function requestOrderReceiptPdf(params: {
       orderNumber: data.orderNumber ?? null,
     });
 
-    return { pdfUrl, orderNumber: data.orderNumber, trackingUrl: data.trackingUrl ?? null };
+    return {
+      pdfUrl,
+      orderNumber: data.orderNumber,
+      trackingUrl: data.trackingUrl ?? null,
+      locationUrl: data.locationUrl ?? null,
+    };
   } catch (error) {
     if (error instanceof OrderPdfRequestError) {
       throw error;

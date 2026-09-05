@@ -2043,19 +2043,19 @@ export function StorefrontClient({
     };
   }, [previewProduct, subdomain, categories, recommendationSeed]);
   const buildWhatsAppOrderMessage = useCallback(
-    (pdfUrl?: string | null, trackingUrl?: string | null) => {
+    (pdfUrl?: string | null, trackingUrl?: string | null, locationUrl?: string | null) => {
       return buildWhatsAppMessage({
         tenantName: tenant.company_name,
         customerReferenceName,
         customerAddress: isMarketTenant ? customerAddress : undefined,
-        customerLocation: isMarketTenant ? customerLocation : null,
+        customerLocationUrl: isMarketTenant ? locationUrl ?? null : null,
         customerPhone: isMarketTenant ? customerPhone : undefined,
         pdfUrl,
         trackingUrl,
         isTekel,
       });
     },
-    [customerReferenceName, customerAddress, customerLocation, customerPhone, isMarketTenant, isTekel, tenant.company_name],
+    [customerReferenceName, customerAddress, customerPhone, isMarketTenant, isTekel, tenant.company_name],
   );
 
   const clearWhatsappHandoff = useCallback(() => {
@@ -2070,6 +2070,7 @@ export function StorefrontClient({
     cart,
     customerReferenceName,
     customerAddress,
+    customerLocation,
     customerPhone,
     note,
     selectedInstallmentCount,
@@ -2131,6 +2132,7 @@ export function StorefrontClient({
     let pdfUrl: string | null = null;
     let pdfIncluded = false;
     let trackingUrl: string | null = null;
+    let locationUrl: string | null = null;
 
     try {
       const result = await requestOrderReceiptPdf({
@@ -2143,6 +2145,7 @@ export function StorefrontClient({
           customer_reference_name: customerReferenceName.trim(),
           customer_phone: isMarketTenant ? customerPhone.trim() : "",
           customer_address: isMarketTenant ? customerAddress.trim() : "",
+          customer_location: isMarketTenant ? customerLocation : null,
           paymentMethod: selectedPaymentMethod,
           selectedInstallmentCount: isCatalogOnly ? null : selectedInstallmentCount,
           cashDiscountTiers: storefrontSettings.cash_discount_tiers ?? [],
@@ -2153,6 +2156,7 @@ export function StorefrontClient({
         },
       });
       pdfUrl = result.pdfUrl;
+      locationUrl = result.locationUrl ?? null;
       pdfIncluded = true;
       trackingUrl = result.trackingUrl ?? null;
       // Sipariş kaydedildi: bu numara takip sayfasına "giriş yapmış" olur.
@@ -2186,7 +2190,13 @@ export function StorefrontClient({
       setIsGeneratingOrderPdf(false);
     }
 
-    const message = buildWhatsAppOrderMessage(pdfUrl, trackingUrl);
+    // Sunucu kısa link üretemediyse (PDF hatası, kod çakışması, DB erişimi)
+    // uzun harita adresine düş — konum yüzünden sipariş kaybolmasın.
+    if (!locationUrl && customerLocation) {
+      locationUrl = `https://maps.google.com/?q=${customerLocation.lat},${customerLocation.lng}`;
+    }
+
+    const message = buildWhatsAppOrderMessage(pdfUrl, trackingUrl, locationUrl);
     setWhatsappHandoff(
       buildWhatsAppOrderHandoff({
         phone: tenant.whatsapp_number,

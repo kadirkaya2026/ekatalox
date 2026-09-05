@@ -54,6 +54,12 @@ export const storefrontOrderPdfSchema = z
     customer_reference_name: z.string().trim().max(200).optional().default(""),
     customer_phone: z.string().trim().max(40).optional().default(""),
     customer_address: z.string().trim().max(500).optional().default(""),
+    // Müşterinin isteğe bağlı paylaştığı anlık konum (yalnız teslimatlı
+    // market vitrinleri). Sunucu bundan kısa bir harita linki üretir.
+    customer_location: z
+      .object({ lat: z.number().min(-90).max(90), lng: z.number().min(-180).max(180) })
+      .nullable()
+      .optional(),
     note: z.string().max(500).nullable().optional(),
     paymentMethod: z.enum(["cash", "card"]).nullable().optional(),
     selectedInstallmentCount: z.number().int().positive().nullable().optional(),

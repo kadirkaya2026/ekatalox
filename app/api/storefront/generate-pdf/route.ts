@@ -24,6 +24,7 @@ import { getClientIp } from "@/lib/storefront/client-ip";
 import { checkOrderIpGuard, ipBlockedMessage } from "@/lib/storefront/ip-guard";
 import { normalizeCustomerPhone } from "@/lib/storefront/customer-phone";
 import { getPublicOrigin } from "@/lib/tenancy/request-host";
+import { createShortLink } from "@/lib/storage/short-links";
 import { storefrontOrderPdfSchema } from "@/lib/validators/storefront-order-pdf";
 import type { CartItem } from "@/lib/types";
 
@@ -63,6 +64,45 @@ function errorResponse(
   });
 
   return NextResponse.json({ error: message, requestId }, { status });
+}
+
+// Kısa link üretimi sipariş akışını ASLA kırmamalı: kod üretilemezse uzun
+// adrese düşülür, müşteri yine siparişini gönderebilir.
+async function buildShortOrderLinks(params: {
+  tenantId: string;
+  origin: string;
+  longPdfUrl: string;
+  location: { lat: number; lng: number } | null;
+}): Promise<{ pdfUrl: string; locationUrl: string | null }> {
+  const longLocationUrl = params.location
+    ? `https://maps.google.com/?q=${params.location.lat},${params.location.lng}`
+    : null;
+
+  try {
+    const [shortPdf, shortLocation] = await Promise.all([
+      createShortLink({
+        tenantId: params.tenantId,
+        targetUrl: params.longPdfUrl,
+        origin: params.origin,
+        kind: "order_pdf",
+      }),
+      longLocationUrl
+        ? createShortLink({
+            tenantId: params.tenantId,
+            targetUrl: longLocationUrl,
+            origin: params.origin,
+            kind: "order_location",
+          })
+        : Promise.resolve(null),
+    ]);
+
+    return {
+      pdfUrl: shortPdf ?? params.longPdfUrl,
+      locationUrl: shortLocation ?? longLocationUrl,
+    };
+  } catch {
+    return { pdfUrl: params.longPdfUrl, locationUrl: longLocationUrl };
+  }
 }
 
 export async function POST(request: Request) {
@@ -246,8 +286,15 @@ export async function POST(request: Request) {
         pdfPublicUrl,
       });
 
-      const pdfUrl = buildSecureOrderReceiptUrl(securePdfId, getPublicOrigin(request));
-      return NextResponse.json({ pdfUrl, orderNumber, orderNo: recorded?.orderNo ?? null, securePdfId, requestId, trackingUrl: buildTrackingUrl(request, recorded) });
+      const origin = getPublicOrigin(request);
+      const longPdfUrl = buildSecureOrderReceiptUrl(securePdfId, origin);
+      const { pdfUrl, locationUrl } = await buildShortOrderLinks({
+        tenantId: tenant.id,
+        origin,
+        longPdfUrl,
+        location: parsed.data.customer_location ?? null,
+      });
+      return NextResponse.json({ pdfUrl, locationUrl, orderNumber, orderNo: recorded?.orderNo ?? null, securePdfId, requestId, trackingUrl: buildTrackingUrl(request, recorded) });
     } catch (error) {
       logOrderPdfServerEvent("error", "request_failed", {
         requestId,
@@ -439,7 +486,14 @@ export async function POST(request: Request) {
       pdfPublicUrl,
     });
 
-    const pdfUrl = buildSecureOrderReceiptUrl(securePdfId, getPublicOrigin(request));
+    const origin = getPublicOrigin(request);
+    const longPdfUrl = buildSecureOrderReceiptUrl(securePdfId, origin);
+    const { pdfUrl, locationUrl } = await buildShortOrderLinks({
+      tenantId: tenant.id,
+      origin,
+      longPdfUrl,
+      location: parsed.data.customer_location ?? null,
+    });
     const durationMs = Date.now() - startedAt;
 
     logOrderPdfServerEvent("info", "request_succeeded", {
@@ -450,7 +504,7 @@ export async function POST(request: Request) {
       durationMs,
     });
 
-    return NextResponse.json({ pdfUrl, orderNumber, orderNo: recorded?.orderNo ?? null, securePdfId, requestId, trackingUrl: buildTrackingUrl(request, recorded) });
+    return NextResponse.json({ pdfUrl, locationUrl, orderNumber, orderNo: recorded?.orderNo ?? null, securePdfId, requestId, trackingUrl: buildTrackingUrl(request, recorded) });
   } catch (error) {
     logOrderPdfServerEvent("error", "request_failed", {
       requestId,
