@@ -74,40 +74,20 @@ async function buildShortOrderLinks(params: {
   longPdfUrl: string;
   location: { lat: number; lng: number } | null;
 }): Promise<{ pdfUrl: string; locationUrl: string | null }> {
-  const longLocationUrl = params.location
-    ? `https://maps.google.com/?q=${params.location.lat},${params.location.lng}`
-    : null;
-  // Kısa link hedefi olarak koordinatı geo: biçiminde saklıyoruz; hangi
-  // harita uygulamasında açılacağına /f/[code] rotası cihaza bakarak karar
-  // veriyor (iPhone'da Apple Haritalar, diğerlerinde Google Haritalar).
-  const locationTarget = params.location
-    ? `geo:${params.location.lat},${params.location.lng}`
-    : null;
-
+  // Konum linki bilerek kısaltılmıyor: bayi mesajda doğrudan Google
+  // adresini görsün ve telefonundaki harita uygulaması açılsın istiyoruz
+  // (kullanıcı isteği, 6 Eyl 2026). Konum satırını istemci kendi üretiyor;
+  // burada yalnızca sipariş fişi linki kısaltılıyor.
   try {
-    const [shortPdf, shortLocation] = await Promise.all([
-      createShortLink({
-        tenantId: params.tenantId,
-        targetUrl: params.longPdfUrl,
-        origin: params.origin,
-        kind: "order_pdf",
-      }),
-      locationTarget
-        ? createShortLink({
-            tenantId: params.tenantId,
-            targetUrl: locationTarget,
-            origin: params.origin,
-            kind: "order_location",
-          })
-        : Promise.resolve(null),
-    ]);
-
-    return {
-      pdfUrl: shortPdf ?? params.longPdfUrl,
-      locationUrl: shortLocation ?? longLocationUrl,
-    };
+    const shortPdf = await createShortLink({
+      tenantId: params.tenantId,
+      targetUrl: params.longPdfUrl,
+      origin: params.origin,
+      kind: "order_pdf",
+    });
+    return { pdfUrl: shortPdf ?? params.longPdfUrl, locationUrl: null };
   } catch {
-    return { pdfUrl: params.longPdfUrl, locationUrl: longLocationUrl };
+    return { pdfUrl: params.longPdfUrl, locationUrl: null };
   }
 }
 

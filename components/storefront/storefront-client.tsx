@@ -2156,7 +2156,6 @@ export function StorefrontClient({
         },
       });
       pdfUrl = result.pdfUrl;
-      locationUrl = result.locationUrl ?? null;
       pdfIncluded = true;
       trackingUrl = result.trackingUrl ?? null;
       // Sipariş kaydedildi: bu numara takip sayfasına "giriş yapmış" olur.
@@ -2190,9 +2189,12 @@ export function StorefrontClient({
       setIsGeneratingOrderPdf(false);
     }
 
-    // Sunucu kısa link üretemediyse (PDF hatası, kod çakışması, DB erişimi)
-    // uzun harita adresine düş — konum yüzünden sipariş kaybolmasın.
-    if (!locationUrl && customerLocation) {
+    // Konum linki bilerek KISALTILMIYOR ve doğrudan Google adresiyle
+    // yazılıyor (kullanıcı isteği, 6 Eyl 2026): bayi linke bakınca bunun bir
+    // harita olduğunu anlıyor ve telefonundaki Google Haritalar uygulaması
+    // doğrudan açılıyor. Ayrıca sunucuya hiç uğramadığı için PDF/veritabanı
+    // tarafında bir sorun olsa bile konum satırı kaybolmuyor.
+    if (customerLocation) {
       locationUrl = `https://maps.google.com/?q=${customerLocation.lat},${customerLocation.lng}`;
     }
 
