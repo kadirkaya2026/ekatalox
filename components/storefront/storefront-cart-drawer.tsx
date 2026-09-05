@@ -217,20 +217,42 @@ export function StorefrontCartDrawer({
       return;
     }
     setLocationStatus("loading");
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
+    void requestPosition();
+  }
+
+  // İki aşamalı deneme. Tek aşamada enableHighAccuracy ile GPS'i uyandırmaya
+  // çalışmak bina içinde çok sık zaman aşımına düşüyordu: müşteri kutuyu
+  // işaretliyor, hiçbir şey olmuyor sanıyor ve konum sessizce kayboluyordu.
+  // Önce hızlı yöntem (baz istasyonu/Wi-Fi, şehir içinde ~20-50 m ve
+  // genelde 1-2 saniye), o da olmazsa uzun süreli GPS denemesi. Adres alanı
+  // zaten zorunlu olduğu için 20-50 metre fazlasıyla yeterli.
+  function requestPosition() {
+    const attempt = (highAccuracy: boolean) =>
+      new Promise<GeolocationPosition>((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(resolve, reject, {
+          enableHighAccuracy: highAccuracy,
+          timeout: highAccuracy ? 25_000 : 10_000,
+          maximumAge: highAccuracy ? 0 : 300_000,
+        });
+      });
+
+    return attempt(false)
+      .catch((error: GeolocationPositionError) => {
+        // İzin reddedildiyse ikinci deneme de reddedilir, boşuna bekletme.
+        if (error.code === error.PERMISSION_DENIED) throw error;
+        return attempt(true);
+      })
+      .then((position) => {
         onCustomerLocationChange({
           lat: Number(position.coords.latitude.toFixed(6)),
           lng: Number(position.coords.longitude.toFixed(6)),
         });
         setLocationStatus("idle");
-      },
-      (error) => {
+      })
+      .catch((error: GeolocationPositionError) => {
         onCustomerLocationChange(null);
-        setLocationStatus(error.code === error.PERMISSION_DENIED ? "denied" : "error");
-      },
-      { enableHighAccuracy: true, timeout: 12_000, maximumAge: 60_000 },
-    );
+        setLocationStatus(error?.code === 1 ? "denied" : "error");
+      });
   }
   const phoneFieldRef = useRef<HTMLDivElement>(null);
 
