@@ -2137,6 +2137,11 @@ export function StorefrontClient({
     setOrderPdfError(null);
   }, []);
 
+  // Form verisi değişince hazır mesajı geçersiz kıl. KONUM BURADA OLMAMALI:
+  // konum, gönderim anında mesajın içine yazılıyor; sonradan koordinatın
+  // güncellenmesi (izin verildikten 1-5 sn sonra gelmesi) hazır mesajı
+  // silmemeli. Bağımlılıklara yanlışlıkla eklenmişti ve WhatsApp ekranı
+  // konum gelir gelmez kayboluyordu (6 Eyl 2026).
   useEffect(() => {
     setWhatsappHandoff(null);
     setOrderPdfError(null);
@@ -2144,9 +2149,6 @@ export function StorefrontClient({
     cart,
     customerReferenceName,
     customerAddress,
-    customerLocation,
-    shareLocation,
-    fetchCustomerLocation,
     customerPhone,
     note,
     selectedInstallmentCount,
