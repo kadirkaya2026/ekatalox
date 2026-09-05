@@ -971,7 +971,14 @@ export function StorefrontClient({
           setLocationStatus(error.code === error.PERMISSION_DENIED ? "denied" : "error");
           resolve(null);
         },
-        { enableHighAccuracy: true, timeout: 12_000, maximumAge: 60_000 },
+        // enableHighAccuracy KAPALI: true, telefonu GPS'i uyandırmaya zorluyor
+        // ve bina içinde 12 saniyeyi rahat aşıyordu — iki telefondan birinde
+        // konumun gelmemesinin sebebi buydu. Wi-Fi/baz istasyonu konumu
+        // genelde 1-2 saniyede dönüyor ve 20-50 m isabetli; adres alanı
+        // zaten zorunlu olduğu için bu fazlasıyla yeterli.
+        // Zaman aşımı uzun tutuldu ki kullanıcı izin penceresini okurken
+        // dolmasın. Tek çağrı: izin istemi açıkken ASLA ikinci istek yok.
+        { enableHighAccuracy: false, timeout: 25_000, maximumAge: 60_000 },
       );
     });
 
@@ -2265,7 +2272,7 @@ export function StorefrontClient({
       coords = pending
         ? await Promise.race([
             pending,
-            new Promise<null>((resolve) => setTimeout(() => resolve(null), 20_000)),
+            new Promise<null>((resolve) => setTimeout(() => resolve(null), 15_000)),
           ])
         : null;
     }
