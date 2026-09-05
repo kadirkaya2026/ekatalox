@@ -275,6 +275,11 @@ export async function proxy(request: NextRequest) {
   if (
     pathname.startsWith("/api") ||
     pathname.startsWith("/_next") ||
+    // Kısa link çözücü (bkz. app/f/[code]/route.ts). Şifre/yaş/kota
+    // kapılarından muaf: linke basan kişi bayinin WhatsApp'ına düşen
+    // sipariş fişini veya konumu açmak isteyen kişidir, vitrine girmek
+    // istemiyor. Muaf tutulmazsa istek kapıya yönlenip 307 ile geri döner.
+    pathname.startsWith("/f/") ||
     pathname === "/favicon.ico" ||
     /\.[a-zA-Z0-9]+$/.test(pathname)
   ) {
