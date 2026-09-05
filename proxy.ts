@@ -2,6 +2,14 @@ import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { getStorefrontTenant, getTenantByCustomDomain } from "@/lib/data";
 import { appEnv } from "@/lib/env";
+import {
+  isUnsupportedIosBrowser,
+  renderLegacyBrowserNotice,
+  LEGACY_BROWSER_BYPASS_PARAM,
+  LEGACY_BROWSER_BYPASS_VALUE,
+  LEGACY_BROWSER_COOKIE,
+  LEGACY_BROWSER_COOKIE_MAX_AGE,
+} from "@/lib/compat/legacy-browser";
 import { toPublicStorefrontPath } from "@/lib/storefront/paths";
 import {
   getStorefrontAgeCookieName,
@@ -186,6 +194,81 @@ async function maybeRedirectStorefrontRequest(params: {
   );
 }
 
+// iOS 16.4 altındaki telefonlarda site sessizce çöküyor (bkz.
+// lib/compat/legacy-browser.ts). Kapı proxy'de duruyor çünkü vitrin
+// sayfaları ISR ile CDN'de tutuluyor — tarayıcıya göre değişen bir yanıt
+// sayfanın içinde üretilseydi önbelleğe düşüp herkese servis edilirdi.
+async function maybeServeLegacyBrowserNotice({
+  request,
+  hostResolution,
+}: {
+  request: NextRequest;
+  hostResolution: HostResolution;
+}): Promise<NextResponse | null> {
+  // "Yine de dene" bağlantısı: çerezi kurup temiz adrese döner, böylece
+  // müşteri ısrar ederse sonraki sayfalarda kapı tekrar çıkmaz.
+  if (
+    request.nextUrl.searchParams.get(LEGACY_BROWSER_BYPASS_PARAM) ===
+    LEGACY_BROWSER_BYPASS_VALUE
+  ) {
+    const cleanUrl = request.nextUrl.clone();
+    cleanUrl.searchParams.delete(LEGACY_BROWSER_BYPASS_PARAM);
+    const bypassResponse = NextResponse.redirect(cleanUrl, 302);
+    bypassResponse.cookies.set({
+      name: LEGACY_BROWSER_COOKIE,
+      value: "1",
+      maxAge: LEGACY_BROWSER_COOKIE_MAX_AGE,
+      path: "/",
+      httpOnly: true,
+      sameSite: "lax",
+      secure: request.nextUrl.protocol === "https:",
+    });
+    bypassResponse.headers.set("Cache-Control", "no-store, max-age=0");
+    return bypassResponse;
+  }
+
+  if (request.cookies.get(LEGACY_BROWSER_COOKIE)?.value === "1") {
+    return null;
+  }
+
+  if (!isUnsupportedIosBrowser(request.headers.get("user-agent"))) {
+    return null;
+  }
+
+  // Mağaza adı ve WhatsApp numarası zaten 60sn önbellekli tenant satırından
+  // geliyor; ekstra sorgu eklemiyor.
+  let companyName: string | null = null;
+  let whatsappNumber: string | null = null;
+
+  if (hostResolution.kind === "storefront" && hostResolution.subdomain) {
+    const subdomain = hostResolution.subdomain;
+    const tenant = await cachedTenantLookup(`subdomain:${subdomain}`, () =>
+      getStorefrontTenant(subdomain),
+    );
+    companyName = tenant?.company_name ?? null;
+    whatsappNumber = tenant?.whatsapp_number ?? null;
+  }
+
+  const continueUrl = request.nextUrl.clone();
+  continueUrl.searchParams.set(LEGACY_BROWSER_BYPASS_PARAM, LEGACY_BROWSER_BYPASS_VALUE);
+
+  return new NextResponse(
+    renderLegacyBrowserNotice({
+      companyName,
+      whatsappNumber,
+      continueHref: `${continueUrl.pathname}${continueUrl.search}`,
+    }),
+    {
+      status: 200,
+      headers: {
+        "content-type": "text/html; charset=utf-8",
+        "cache-control": "no-store, max-age=0",
+        "x-robots-tag": "noindex, nofollow",
+      },
+    },
+  );
+}
+
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
@@ -210,6 +293,15 @@ export async function proxy(request: NextRequest) {
 
   if (hostResolution.kind === "unknown") {
     return new NextResponse("Not Found", { status: 404 });
+  }
+
+  const legacyBrowserResponse = await maybeServeLegacyBrowserNotice({
+    request,
+    hostResolution,
+  });
+
+  if (legacyBrowserResponse) {
+    return legacyBrowserResponse;
   }
 
   if (hostResolution.kind === "marketing") {
