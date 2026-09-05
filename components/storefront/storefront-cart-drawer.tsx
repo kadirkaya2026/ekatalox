@@ -9,6 +9,7 @@ import {
   ChevronRight,
   CreditCard,
   Minus,
+  MapPin,
   Plus,
   ShoppingCart,
   Trash2,
@@ -59,6 +60,8 @@ export type StorefrontCartDrawerProps = {
   customerReferenceNameError: string | null;
   setCustomerReferenceNameError: Dispatch<SetStateAction<string | null>>;
   customerAddress: string;
+  customerLocation: { lat: number; lng: number } | null;
+  onCustomerLocationChange: (value: { lat: number; lng: number } | null) => void;
   setCustomerAddress: Dispatch<SetStateAction<string>>;
   customerAddressError: string | null;
   setCustomerAddressError: Dispatch<SetStateAction<string | null>>;
@@ -137,6 +140,8 @@ export function StorefrontCartDrawer({
   customerReferenceNameError,
   setCustomerReferenceNameError,
   customerAddress,
+  customerLocation,
+  onCustomerLocationChange,
   setCustomerAddress,
   customerAddressError,
   setCustomerAddressError,
@@ -193,6 +198,40 @@ export function StorefrontCartDrawer({
   const paymentFieldRef = useRef<HTMLDivElement>(null);
   const nameFieldRef = useRef<HTMLDivElement>(null);
   const addressFieldRef = useRef<HTMLDivElement>(null);
+
+  // Konum paylaşımı: yalnızca teslimat yapan (tekel olmayan) market
+  // vitrinlerinde anlamlı. İzin istemi kullanıcı hareketiyle tetiklenmeli,
+  // o yüzden doğrudan tıklama içinde çağrılıyor.
+  const [locationStatus, setLocationStatus] = useState<
+    "idle" | "loading" | "denied" | "error"
+  >("idle");
+
+  function toggleLocation() {
+    if (customerLocation) {
+      onCustomerLocationChange(null);
+      setLocationStatus("idle");
+      return;
+    }
+    if (typeof navigator === "undefined" || !navigator.geolocation) {
+      setLocationStatus("error");
+      return;
+    }
+    setLocationStatus("loading");
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        onCustomerLocationChange({
+          lat: Number(position.coords.latitude.toFixed(6)),
+          lng: Number(position.coords.longitude.toFixed(6)),
+        });
+        setLocationStatus("idle");
+      },
+      (error) => {
+        onCustomerLocationChange(null);
+        setLocationStatus(error.code === error.PERMISSION_DENIED ? "denied" : "error");
+      },
+      { enableHighAccuracy: true, timeout: 12_000, maximumAge: 60_000 },
+    );
+  }
   const phoneFieldRef = useRef<HTMLDivElement>(null);
 
   // Adımlı sepet akışı yalnız market/tekelde (kullanıcı kararı, 3 Eyl 2026):
@@ -695,6 +734,49 @@ export function StorefrontCartDrawer({
           />
           {customerAddressError ? (
             <p className={cn("mt-2 text-xs font-medium", theme.dangerText)}>{customerAddressError}</p>
+          ) : null}
+
+          {/* Tekel teslimat yapmadığı için konum yalnızca teslimatlı
+              marketlerde gösteriliyor. İşaretlemek zorunlu değil: müşteri
+              başka bir yerdeyken eve sipariş veriyor olabilir. */}
+          {!isTekel ? (
+            <button
+              type="button"
+              onClick={toggleLocation}
+              aria-pressed={Boolean(customerLocation)}
+              className={cn(
+                "mt-2.5 flex w-full items-start gap-2.5 rounded-[1.1rem] px-3 py-2.5 text-left",
+                theme.surfaceMuted,
+              )}
+            >
+              <span
+                className={cn(
+                  "mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-md border-2",
+                  customerLocation
+                    ? "border-emerald-500 bg-emerald-500 text-white"
+                    : cn(theme.formField, theme.textMuted),
+                )}
+              >
+                {customerLocation ? <Check className="size-3.5" /> : null}
+              </span>
+              <span className="min-w-0">
+                <span className={cn("flex items-center gap-1.5 text-sm font-semibold", theme.text)}>
+                  <MapPin className="size-3.5 shrink-0" />
+                  {t("cart.shareLocation")}
+                </span>
+                <span className={cn("mt-0.5 block text-xs leading-snug", theme.textMuted)}>
+                  {locationStatus === "loading"
+                    ? t("cart.shareLocationLoading")
+                    : locationStatus === "denied"
+                      ? t("cart.shareLocationDenied")
+                      : locationStatus === "error"
+                        ? t("cart.shareLocationFailed")
+                        : customerLocation
+                          ? t("cart.shareLocationAdded")
+                          : t("cart.shareLocationHint")}
+                </span>
+              </span>
+            </button>
           ) : null}
         </div>
       ) : null}

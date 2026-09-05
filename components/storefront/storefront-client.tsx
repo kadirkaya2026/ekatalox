@@ -937,6 +937,10 @@ export function StorefrontClient({
   );
   const [customerAddress, setCustomerAddress] = useState("");
   const [customerAddressError, setCustomerAddressError] = useState<string | null>(null);
+  // Anlık konum paylaşımı isteğe bağlı: müşteri siparişi başka bir yerden
+  // veriyor olabilir (ör. dışarıdayken eve sipariş). Bu yüzden varsayılan
+  // kapalı ve adres alanı zorunlu kalmaya devam ediyor.
+  const [customerLocation, setCustomerLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [customerPhone, setCustomerPhone] = useState("");
   const [customerPhoneError, setCustomerPhoneError] = useState<string | null>(null);
   // "Market" tipi tenant'larda sipariş verebilmek için ödeme yöntemi, müşteri
@@ -2044,13 +2048,14 @@ export function StorefrontClient({
         tenantName: tenant.company_name,
         customerReferenceName,
         customerAddress: isMarketTenant ? customerAddress : undefined,
+        customerLocation: isMarketTenant ? customerLocation : null,
         customerPhone: isMarketTenant ? customerPhone : undefined,
         pdfUrl,
         trackingUrl,
         isTekel,
       });
     },
-    [customerReferenceName, customerAddress, customerPhone, isMarketTenant, isTekel, tenant.company_name],
+    [customerReferenceName, customerAddress, customerLocation, customerPhone, isMarketTenant, isTekel, tenant.company_name],
   );
 
   const clearWhatsappHandoff = useCallback(() => {
@@ -4212,6 +4217,8 @@ export function StorefrontClient({
         customerReferenceNameError={customerReferenceNameError}
         setCustomerReferenceNameError={setCustomerReferenceNameError}
         customerAddress={customerAddress}
+        customerLocation={customerLocation}
+        onCustomerLocationChange={setCustomerLocation}
         setCustomerAddress={setCustomerAddress}
         customerAddressError={customerAddressError}
         setCustomerAddressError={setCustomerAddressError}
