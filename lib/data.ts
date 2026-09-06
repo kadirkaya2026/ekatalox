@@ -49,6 +49,8 @@ import type {
 
 type AdminClient = NonNullable<ReturnType<typeof createSupabaseAdminClient>>;
 
+import type { StorefrontProductSort } from "@/lib/storefront/product-sort";
+
 const productWithVariantsSelect = productWithVariantsAndPricesSelect;
 const sectionProductsWithVariantsSelect =
   "product_id, display_order, products(*, variants:product_variants(*, prices:product_variant_prices(price_list_id, price)), product_prices(price_list_id, price))";
@@ -1225,6 +1227,11 @@ interface StorefrontProductRowFilter {
   matchCategoryIds?: string[];
   excludeCategoryIds?: string[];
   discountOnly?: boolean;
+  // Yalnız fiyattan bağımsız sıralamalar burada uygulanır ("featured" |
+  // "newest"). Fiyat sıralaması müşterinin fiyat listesine bağlı olduğu
+  // için önbelleklenen satır sorgusunun DIŞINDA yapılır (bkz.
+  // getStorefrontProductsPageSortedByPrice).
+  sort?: StorefrontProductSort;
 }
 
 function applyStorefrontProductFilters<
@@ -1292,9 +1299,11 @@ async function getCachedStorefrontProductRowsPage(
       matchCategoryIds: string[],
       excludeCategoryIds: string[],
       discountOnly: boolean,
+      sort: StorefrontProductSort,
     ) => {
       const admin = createSupabaseAdminClient();
       if (!admin) return { products: [] as Product[], total: 0 };
+      const newestFirst = sort === "newest";
 
       const from = (resolvedPage - 1) * STOREFRONT_PRODUCTS_PAGE_SIZE;
       const to = from + STOREFRONT_PRODUCTS_PAGE_SIZE - 1;
@@ -1314,13 +1323,15 @@ async function getCachedStorefrontProductRowsPage(
         : null;
 
       function buildQuery(select: string, useOrFilter: string | null, head: boolean) {
-        return applyStorefrontProductFilters(
+        const filtered = applyStorefrontProductFilters(
           admin!.from("products").select(select, { count: "exact", head }).eq("tenant_id", resolvedTenantId),
           resolvedFilter,
           useOrFilter,
-        )
-          .order("display_order", { ascending: true })
-          .order("created_at", { ascending: false });
+        );
+        // "Yeni eklenenler": önce eklenme tarihi; eşitlikte bayinin sırası.
+        return newestFirst
+          ? filtered.order("created_at", { ascending: false }).order("display_order", { ascending: true })
+          : filtered.order("display_order", { ascending: true }).order("created_at", { ascending: false });
       }
 
       // "su" gibi kısa/genel terimlerde ürün adı önek eşleşmesi + kategori
@@ -1380,10 +1391,10 @@ async function getCachedStorefrontProductRowsPage(
         resolvedFilter,
         orFilter,
       );
-      fallbackQuery = fallbackQuery
-        .order("display_order", { ascending: true })
-        .order("created_at", { ascending: false })
-        .range(from, to);
+      fallbackQuery = (newestFirst
+        ? fallbackQuery.order("created_at", { ascending: false }).order("display_order", { ascending: true })
+        : fallbackQuery.order("display_order", { ascending: true }).order("created_at", { ascending: false })
+      ).range(from, to);
 
       const fallback = await fallbackQuery;
       return { products: normalizeProductRows(fallback.data), total: fallback.count ?? 0 };
@@ -1400,7 +1411,135 @@ async function getCachedStorefrontProductRowsPage(
     filter.matchCategoryIds ?? [],
     filter.excludeCategoryIds ?? [],
     filter.discountOnly ?? false,
+    filter.sort === "newest" ? "newest" : "featured",
   );
+}
+
+// Fiyat sıralaması için ince satır seti: filtreyle eşleşen TÜM ürünlerin
+// yalnızca fiyat hesabına yetecek alanları (fiyat listesi girdileri +
+// varyant fiyatları). Fiyattan bağımsız olduğu için tenant+filtre başına
+// önbelleklenir; satırlar küçük tutulur (tüm katalogun tam satırlarını
+// önbelleklemek 16MB sorununu geri getirirdi). Fiyat hesabı ve sıralama
+// çağıran tarafta, ziyaretçinin fiyat listesine göre yapılır.
+const storefrontPricingRowSelect =
+  "id, tenant_id, category_id, display_order, product_name, currency, is_in_stock, is_discount_active, discount_price, created_at, variants:product_variants(id, product_id, prices:product_variant_prices(price_list_id, price)), product_prices(price_list_id, price)";
+
+async function getCachedStorefrontPricingRows(
+  filter: StorefrontProductRowFilter,
+): Promise<Product[]> {
+  const admin = createSupabaseAdminClient();
+  if (!admin) {
+    if (!shouldAllowDemoFallback()) return [];
+    const categoryIdSet = filter.categoryIds?.length ? new Set(filter.categoryIds) : null;
+    const excludeSet = filter.excludeCategoryIds?.length ? new Set(filter.excludeCategoryIds) : null;
+    return demoProducts.filter((product) => {
+      if (product.tenant_id !== filter.tenantId) return false;
+      if (excludeSet?.has(product.category_id)) return false;
+      if (filter.discountOnly) return product.is_discount_active;
+      if (categoryIdSet && !categoryIdSet.has(product.category_id)) return false;
+      return true;
+    });
+  }
+
+  const readRows = unstable_cache(
+    async (
+      resolvedTenantId: string,
+      search: string,
+      categoryIds: string[],
+      matchCategoryIds: string[],
+      excludeCategoryIds: string[],
+      discountOnly: boolean,
+    ) => {
+      const client = createSupabaseAdminClient();
+      if (!client) return [] as Product[];
+      const term = search.trim().replace(/[,%]/g, " ").trim();
+      const escapedTerm = term ? term.replace(/[()]/g, "") : "";
+      const categoryMatch = matchCategoryIds.length ? `,category_id.in.(${matchCategoryIds.join(",")})` : "";
+      const orFilter = term
+        ? `${buildProductNameSearchClause(escapedTerm)},sku_code.ilike.%${escapedTerm}%${categoryMatch}`
+        : null;
+      const resolvedFilter: StorefrontProductRowFilter = {
+        tenantId: resolvedTenantId,
+        page: 1,
+        categoryIds,
+        excludeCategoryIds,
+        discountOnly,
+      };
+
+      const rows: Array<Record<string, unknown>> = [];
+      for (let from = 0; ; from += PRODUCT_FETCH_PAGE_SIZE) {
+        const { data, error } = await applyStorefrontProductFilters(
+          client.from("products").select(storefrontPricingRowSelect).eq("tenant_id", resolvedTenantId),
+          resolvedFilter,
+          orFilter,
+        )
+          .order("display_order", { ascending: true })
+          .order("created_at", { ascending: false })
+          .range(from, from + PRODUCT_FETCH_PAGE_SIZE - 1);
+        if (error || !data) break;
+        rows.push(...(data as unknown as Array<Record<string, unknown>>));
+        if (data.length < PRODUCT_FETCH_PAGE_SIZE) break;
+      }
+      return normalizeProductRows(rows);
+    },
+    [filter.tenantId, "pricing-rows"],
+    { tags: [`storefront_${filter.tenantId}`], revalidate: 60 },
+  );
+
+  return readRows(
+    filter.tenantId,
+    filter.search ?? "",
+    filter.categoryIds ?? [],
+    filter.matchCategoryIds ?? [],
+    filter.excludeCategoryIds ?? [],
+    filter.discountOnly ?? false,
+  );
+}
+
+async function getStorefrontProductsPageSortedByPrice(params: {
+  tenantId: string;
+  priceListId: string;
+  isCatalogOnly: boolean;
+  page: number;
+  search?: string;
+  categoryIds?: string[];
+  matchCategoryIds?: string[];
+  excludeCategoryIds?: string[];
+  discountOnly?: boolean;
+  sort: "price_asc" | "price_desc";
+}): Promise<{ products: StorefrontProduct[]; total: number }> {
+  const rows = await getCachedStorefrontPricingRows(params);
+  const direction = params.sort === "price_asc" ? 1 : -1;
+
+  // Fiyat, vitrin kartıyla birebir aynı yoldan hesaplanır (indirim, varyant
+  // minimumu, liste fiyatı). Fiyatı olmayanlar her iki yönde de en sona.
+  const ranked = rows
+    .map((product) => ({
+      product,
+      price: toStorefrontProduct(product, params.priceListId, params.isCatalogOnly).price,
+    }))
+    .sort((a, b) => {
+      if (a.price === null && b.price === null) return 0;
+      if (a.price === null) return 1;
+      if (b.price === null) return -1;
+      if (a.price !== b.price) return (a.price - b.price) * direction;
+      return a.product.display_order - b.product.display_order;
+    });
+
+  const page = Math.max(1, params.page);
+  const from = (page - 1) * STOREFRONT_PRODUCTS_PAGE_SIZE;
+  const pageIds = ranked.slice(from, from + STOREFRONT_PRODUCTS_PAGE_SIZE).map((entry) => entry.product.id);
+  const fullRows = await getStorefrontProductsByIds({
+    tenantId: params.tenantId,
+    priceListId: params.priceListId,
+    isCatalogOnly: params.isCatalogOnly,
+    ids: pageIds,
+  });
+  // .in() sırayı korumaz; sıralanmış id listesine göre yeniden diz.
+  const byId = new Map(fullRows.map((product) => [product.id, product]));
+  const products = pageIds.map((id) => byId.get(id)).filter((p): p is StorefrontProduct => Boolean(p));
+
+  return { products, total: ranked.length };
 }
 
 export async function getStorefrontProductsPage(params: {
@@ -1413,7 +1552,12 @@ export async function getStorefrontProductsPage(params: {
   matchCategoryIds?: string[];
   excludeCategoryIds?: string[];
   discountOnly?: boolean;
+  sort?: StorefrontProductSort;
 }): Promise<{ products: StorefrontProduct[]; total: number }> {
+  if (params.sort === "price_asc" || params.sort === "price_desc") {
+    return getStorefrontProductsPageSortedByPrice({ ...params, sort: params.sort });
+  }
+
   const { products, total } = await getCachedStorefrontProductRowsPage(params);
 
   return {

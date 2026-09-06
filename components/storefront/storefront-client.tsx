@@ -111,6 +111,7 @@ import {
   isHomepageBlockVisible,
 } from "@/lib/storefront/homepage-blocks";
 import { StorefrontBottomNav } from "@/components/storefront/storefront-bottom-nav";
+import { STOREFRONT_PRODUCT_SORTS, type StorefrontProductSort } from "@/lib/storefront/product-sort";
 import { StorefrontCampaignsSheet } from "@/components/storefront/storefront-campaigns-sheet";
 import { StorefrontSearchSheet } from "@/components/storefront/storefront-search-sheet";
 import { isMarketOrTekelTenant } from "@/lib/storefront/white-label";
@@ -941,6 +942,10 @@ export function StorefrontClient({
   // veriyor olabilir (ör. dışarıdayken eve sipariş). Bu yüzden varsayılan
   // kapalı ve adres alanı zorunlu kalmaya devam ediyor.
   const [customerLocation, setCustomerLocation] = useState<{ lat: number; lng: number } | null>(null);
+  // Katalog sıralaması — yalnız toptancı (market olmayan) vitrinlerinde
+  // gösterilir; SSR ilk sayfa "featured" gelir, değişince 1. sayfa yeniden
+  // çekilir (kullanıcı isteği, 6 Eyl 2026).
+  const [productSort, setProductSort] = useState<StorefrontProductSort>("featured");
   const [shareLocation, setShareLocation] = useState(false);
   const [locationStatus, setLocationStatus] = useState<"idle" | "loading" | "denied" | "error">("idle");
   // Devam eden konum isteği: müşteri kutuyu işaretleyip HEMEN siparişi
@@ -2687,6 +2692,10 @@ export function StorefrontClient({
           params.set("matchCategoryIds", matchCategoryIds.join(","));
         }
 
+        if (productSort !== "featured") {
+          params.set("sort", productSort);
+        }
+
         const response = await fetch(`/api/storefront/products?${params.toString()}`);
 
         if (!response.ok) {
@@ -2703,7 +2712,7 @@ export function StorefrontClient({
         setIsLoadingProducts(false);
       }
     },
-    [analyticsSubdomain, debouncedSearchTerm, isDiscountCategorySelected, selectedCategoryIds, matchCategoryIds],
+    [analyticsSubdomain, debouncedSearchTerm, isDiscountCategorySelected, selectedCategoryIds, matchCategoryIds, productSort],
   );
 
   useEffect(() => {
@@ -2740,7 +2749,7 @@ export function StorefrontClient({
 
     void fetchProductsPage(1, "replace");
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [debouncedSearchTerm, selectedCategoryId]);
+  }, [debouncedSearchTerm, selectedCategoryId, productSort]);
 
   const handleLoadMoreProducts = useCallback(() => {
     if (sectionMode) {
@@ -4088,6 +4097,35 @@ export function StorefrontClient({
                       </h2>
                     </div>
                     <div className="flex flex-wrap items-center gap-2.5 sm:gap-3">
+                      {!isMarketTenant && !sectionMode ? (
+                        <div
+                          role="group"
+                          aria-label={t("catalog.sortLabel")}
+                          className={cn(
+                            "scrollbar-hide flex max-w-full items-center gap-1 overflow-x-auto rounded-full p-1 shadow-sm",
+                            theme.border,
+                            theme.surface,
+                          )}
+                        >
+                          {STOREFRONT_PRODUCT_SORTS.map((sortKey) => {
+                            const isActive = productSort === sortKey;
+                            return (
+                              <button
+                                key={sortKey}
+                                type="button"
+                                onClick={() => setProductSort(sortKey)}
+                                aria-pressed={isActive}
+                                className={cn(
+                                  "whitespace-nowrap rounded-full px-3.5 py-1.5 text-sm font-semibold transition",
+                                  isActive ? theme.primaryButton : cn("bg-transparent", theme.textMuted),
+                                )}
+                              >
+                                {t(`catalog.sort.${sortKey}`)}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      ) : null}
                       <div className={cn("rounded-full px-4 py-2.5 text-sm shadow-sm", theme.border, theme.surface, theme.textMuted)}>
                         <span className={cn("font-semibold", theme.text)}>{productTotal}</span>{" "}
                         {t("catalog.foundSuffix")}
