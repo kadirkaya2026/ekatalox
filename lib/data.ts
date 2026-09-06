@@ -1421,8 +1421,13 @@ async function getCachedStorefrontProductRowsPage(
 // önbelleklenir; satırlar küçük tutulur (tüm katalogun tam satırlarını
 // önbelleklemek 16MB sorununu geri getirirdi). Fiyat hesabı ve sıralama
 // çağıran tarafta, ziyaretçinin fiyat listesine göre yapılır.
+// product_prices.discount_price ŞART: liste başına indirim oradan okunuyor;
+// alınmazsa sıralama indirimsiz fiyata göre yapılır ve indirimli ürün
+// vitrinde gösterilen fiyatına göre yanlış sıraya düşer (canlıda görüldü:
+// 2095→2000 indirimli ürün 2200 ile 2095 arasına gelmişti). Varyantlar tam
+// satır: fiyat çözümlemesi vitrin kartıyla birebir aynı veriyi görsün.
 const storefrontPricingRowSelect =
-  "id, tenant_id, category_id, display_order, product_name, currency, is_in_stock, is_discount_active, discount_price, created_at, variants:product_variants(id, product_id, prices:product_variant_prices(price_list_id, price)), product_prices(price_list_id, price)";
+  "id, tenant_id, category_id, display_order, product_name, currency, is_in_stock, is_discount_active, discount_price, created_at, variants:product_variants(*, prices:product_variant_prices(price_list_id, price)), product_prices(price_list_id, price, discount_price)";
 
 async function getCachedStorefrontPricingRows(
   filter: StorefrontProductRowFilter,
@@ -1512,14 +1517,16 @@ async function getStorefrontProductsPageSortedByPrice(params: {
   const direction = params.sort === "price_asc" ? 1 : -1;
 
   // Fiyat, vitrin kartıyla birebir aynı yoldan hesaplanır (indirim, varyant
-  // minimumu, liste fiyatı). Fiyatı olmayanlar her iki yönde de en sona.
+  // minimumu, liste fiyatı). Fiyatı olmayanlar (null = katalog modu, 0 =
+  // bu listeye fiyat girilmemiş) her iki yönde de en sona: "en ucuz"
+  // sıralamasında 0 TL'lik fiyatsız ürünlerin başa dolması müşteriyi yanıltır.
   const ranked = rows
-    .map((product) => ({
-      product,
-      price: toStorefrontProduct(product, params.priceListId, params.isCatalogOnly).price,
-    }))
+    .map((product) => {
+      const price = toStorefrontProduct(product, params.priceListId, params.isCatalogOnly).price;
+      return { product, price: price !== null && price > 0 ? price : null };
+    })
     .sort((a, b) => {
-      if (a.price === null && b.price === null) return 0;
+      if (a.price === null && b.price === null) return a.product.display_order - b.product.display_order;
       if (a.price === null) return 1;
       if (b.price === null) return -1;
       if (a.price !== b.price) return (a.price - b.price) * direction;
