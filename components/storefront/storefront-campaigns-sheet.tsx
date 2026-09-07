@@ -15,6 +15,7 @@ import { buildCampaignRuleSentence } from "@/lib/validators/campaign";
 import type { CartItem, TenantCampaign } from "@/lib/types";
 import type { CurrencyCode } from "@/lib/products/constants";
 import { cn, formatCurrency } from "@/lib/utils";
+import { useBodyScrollLock } from "@/lib/hooks/use-body-scroll-lock";
 
 // Alt navigasyondaki (mobil) ve üst başlıktaki (masaüstü) "Kampanyalar"
 // butonunun hedefi. StorefrontCategoryDrawer ile aynı tema token'larını
@@ -56,6 +57,10 @@ export function StorefrontCampaignsSheet({
 }) {
   const theme = useStorefrontTheme();
   const { t } = useStorefrontLocale();
+  // Panel açıkken sayfa kilitli: iOS Safari'de iç kaydırma sayfaya sızıp
+  // araç çubuğunu açıp kapatıyor, panel zıplıyordu (sepet çekmecesiyle
+  // aynı sorun, 7 Eyl 2026).
+  useBodyScrollLock(isOpen);
 
   useEffect(() => {
     if (!isOpen) {

@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, type Dispatch, ReactNode, SetStateAction } from "react";
 import { LOCATION_ERROR_STATUSES, type StorefrontLocationStatus } from "@/components/storefront/storefront-client";
+import { useBodyScrollLock } from "@/lib/hooks/use-body-scroll-lock";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   Banknote,
@@ -208,6 +209,12 @@ export function StorefrontCartDrawer({
   const [sentOrder, setSentOrder] = useState<{ trackingUrl: string | null } | null>(null);
   const crossSellScrollRef = useRef<HTMLDivElement>(null);
   const bodyScrollRef = useRef<HTMLDivElement>(null);
+  // Çekmece açıkken arkadaki sayfa kilitli: iOS Safari'de form içinde
+  // kaydırınca hareket sayfaya sızıyor, Safari araç çubuğunu açıp kapatıyor
+  // ve fixed çekmece ile "Siparişi Ver" altlığı 40pt zıplıyordu (kullanıcı
+  // videosu, 7 Eyl 2026). Gövde position:fixed olunca sayfa kaymaz, çubuk
+  // sabit kalır. İç alan overscroll-contain ile zincirlemeyi de keser.
+  useBodyScrollLock(isOpen);
   // Son adımda zorunlu alanların kapsayıcıları — "Siparişi Ver"e eksik alanla
   // basıldığında ilk eksik alana kaydırmak için.
   const paymentFieldRef = useRef<HTMLDivElement>(null);
@@ -1451,7 +1458,7 @@ export function StorefrontCartDrawer({
               <div
                 ref={bodyScrollRef}
                 className={cn(
-                  "safe-bottom-padding flex-1 overflow-y-auto px-4 py-4 sm:px-5 lg:px-6",
+                  "safe-bottom-padding flex-1 overflow-y-auto overscroll-contain px-4 py-4 sm:px-5 lg:px-6",
                   // Kaydırma alanı, sabit özet/aksiyon barından AÇIKÇA farklı
                   // (daha açık) bir yüzey — ayrı kaydırılabilir bölge belli olsun.
                   theme.cartDrawerScroll,

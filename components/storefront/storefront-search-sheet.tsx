@@ -6,6 +6,7 @@ import { Search, X } from "lucide-react";
 import { useStorefrontLocale } from "@/lib/storefront/locale-context";
 import { useStorefrontTheme } from "@/lib/storefront/theme-context";
 import { cn } from "@/lib/utils";
+import { useBodyScrollLock } from "@/lib/hooks/use-body-scroll-lock";
 
 // Arama kutusu market/tekel vitrinlerinde üst başlıktan alt navigasyona
 // taşındı; "Ara" butonunun açtığı yüzey burası.
@@ -34,6 +35,10 @@ export function StorefrontSearchSheet({
 }) {
   const theme = useStorefrontTheme();
   const { t } = useStorefrontLocale();
+  // Panel açıkken sayfa kilitli: iOS Safari'de iç kaydırma sayfaya sızıp
+  // araç çubuğunu açıp kapatıyor, panel zıplıyordu (sepet çekmecesiyle
+  // aynı sorun, 7 Eyl 2026).
+  useBodyScrollLock(isOpen);
   const inputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
