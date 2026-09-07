@@ -66,6 +66,7 @@ export type StorefrontCartDrawerProps = {
   shareLocation: boolean;
   locationStatus: StorefrontLocationStatus;
   locationInApp?: boolean;
+  locationDebug?: string | null;
   onToggleLocation: () => void;
   setCustomerAddress: Dispatch<SetStateAction<string>>;
   customerAddressError: string | null;
@@ -149,6 +150,7 @@ export function StorefrontCartDrawer({
   shareLocation,
   locationStatus,
   locationInApp = false,
+  locationDebug = null,
   onToggleLocation,
   setCustomerAddress,
   customerAddressError,
@@ -788,6 +790,9 @@ export function StorefrontCartDrawer({
                 ) : null}
                 {LOCATION_ERROR_STATUSES.has(locationStatus) && locationStatus !== "unsupported" ? (
                   <span className={cn("mt-1 block text-xs font-semibold leading-snug", theme.text)}>{t("cart.shareLocationRetry")}</span>
+                ) : null}
+                {locationDebug ? (
+                  <span className="mt-1 block break-all font-mono text-[10px] leading-snug text-slate-400">{locationDebug}</span>
                 ) : null}
               </span>
             </button>

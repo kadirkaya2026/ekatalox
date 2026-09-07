@@ -874,6 +874,17 @@ export type StorefrontLocationStatus =
   | "timeout"
   | "unsupported";
 
+async function readGeolocationPermissionState(): Promise<PermissionState | null> {
+  try {
+    if (typeof navigator !== "undefined" && navigator.permissions?.query) {
+      return (await navigator.permissions.query({ name: "geolocation" })).state;
+    }
+  } catch {
+    // Permissions API yok / geolocation adını tanımıyor
+  }
+  return null;
+}
+
 export const LOCATION_ERROR_STATUSES = new Set<StorefrontLocationStatus>([
   "denied",
   "services_off",
@@ -907,14 +918,7 @@ async function classifyGeolocationError(
   // Ayrım: site izni açıkça "denied" ise tarayıcı engeli; değilse ve hata
   // bir insanın pencereyi okuyup reddedemeyeceği kadar hızlı (< 400 ms)
   // geldiyse pencere hiç açılmamıştır → Konum Servisleri kapalı.
-  let permissionState: PermissionState | null = null;
-  try {
-    if (typeof navigator !== "undefined" && navigator.permissions?.query) {
-      permissionState = (await navigator.permissions.query({ name: "geolocation" })).state;
-    }
-  } catch {
-    permissionState = null;
-  }
+  const permissionState = await readGeolocationPermissionState();
   if (permissionState === "granted") return "services_off";
   if (permissionState === "denied") return "denied";
   return elapsedMs < 400 ? "services_off" : "denied";
@@ -1009,6 +1013,9 @@ export function StorefrontClient({
   // içi tarayıcı ipucu (ayrı satır olarak eklenir).
   const [locationStatus, setLocationStatus] = useState<StorefrontLocationStatus>("idle");
   const [locationInApp, setLocationInApp] = useState(false);
+  // Tanı satırı: adres ?konumdebug=1 ile açılınca hata kodu / süre / izin
+  // durumu müşteri mesajının altında görünür (destek için, 7 Eyl 2026).
+  const [locationDebug, setLocationDebug] = useState<string | null>(null);
   // Devam eden konum isteği: müşteri kutuyu işaretleyip HEMEN siparişi
   // gönderirse koordinat henüz gelmemiş oluyordu ve konum satırı sessizce
   // düşüyordu. Gönderim anında bu sözü bekliyoruz.
@@ -1044,7 +1051,15 @@ export function StorefrontClient({
           customerLocationRef.current = null;
           setCustomerLocation(null);
           setLocationInApp(isInAppBrowser());
-          void classifyGeolocationError(error, Date.now() - startedAt).then(setLocationStatus);
+          const elapsed = Date.now() - startedAt;
+          void classifyGeolocationError(error, elapsed).then((status) => {
+            setLocationStatus(status);
+            if (typeof window !== "undefined" && /[?&]konumdebug=1/.test(window.location.search)) {
+              void readGeolocationPermissionState().then((perm) => {
+                setLocationDebug(`kod ${error.code} · ${elapsed} ms · izin: ${perm ?? "api yok"} · ${status} · ${error.message}`);
+              });
+            }
+          });
           resolve(null);
         },
         // enableHighAccuracy KAPALI: true, telefonu GPS'i uyandırmaya zorluyor
@@ -4433,6 +4448,7 @@ export function StorefrontClient({
         shareLocation={shareLocation}
         locationStatus={locationStatus}
         locationInApp={locationInApp}
+        locationDebug={locationDebug}
         onToggleLocation={toggleShareLocation}
         setCustomerAddress={setCustomerAddress}
         customerAddressError={customerAddressError}
