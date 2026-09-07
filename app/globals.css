@@ -136,18 +136,14 @@ button:focus-visible {
   padding-bottom: calc(env(safe-area-inset-bottom) + 7rem);
 }
 
-/* Sabit alt navigasyon barının dış kabı. iOS Safari'de alt araç çubuğu
-   büzülüp açılırken fixed öğeler ana iş parçacığında yeniden
-   konumlanıyor ve bar sayfa kaydırılırken aşağı yukarı kayıyordu
-   (müşteri telefonunda görüldü, 5 Eyl 2026). Barı kendi birleştirme
-   katmanına almak konumlandırmayı GPU'ya taşıyıp kaymayı büyük ölçüde
-   yok ediyor. */
+/* Sabit alt navigasyon barının dış kabı. 5 Eyl 2026'da buraya eklenen
+   translateZ(0) + backface-visibility:hidden + will-change üçlüsü 7 Eyl'de
+   KALDIRILDI: iOS Safari'de bu üçlü, fixed öğelerin uygulama değiştirip
+   dönünce sayfaya yapışıp kaydırmayla dolaşmasına yol açan bilinen bir
+   WebKit hatasını tetikleyebiliyor. Konum artık JS ile görsel viewport'a
+   göre ölçülüp düzeltiliyor (storefront-bottom-nav.tsx). */
 .bottom-nav-shell {
-  -webkit-transform: translateZ(0);
-  transform: translateZ(0);
-  -webkit-backface-visibility: hidden;
-  backface-visibility: hidden;
-  will-change: transform;
+  /* transform/filter/will-change BİLEREK yok. */
 }
 
 /* Alt navigasyon barının kendi iç boşluğu. safe-bottom-padding (1rem)

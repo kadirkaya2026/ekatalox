@@ -16,64 +16,94 @@ import { cn } from "@/lib/utils";
 //
 // Sepet tutarını gösteren "Sipariş Özeti" satırı da bilerek yok
 // (kullanıcı isteği): tutar için sepet açılıyor, alt bar sade kalıyor.
-// iOS Safari'de sayfa büyütülmüşse (iki parmakla ya da uygulama değiştirip
-// dönünce Safari'nin viewport'u kaymış bırakması) `position: fixed` öğeler
-// GÖRSEL viewport'a değil yerleşim viewport'una yapışır: bar ekranın
-// ortasında belirip kaydırdıkça aşağı yukarı dolaşır (müşteride ve
-// kullanıcının kendi telefonunda görüldü, 5 ve 7 Eyl 2026; sayfa yenileme
-// düzeltmiyor, adres çubuğuna yeniden yazınca düzeliyordu = Safari zoom/
-// offset durumunu yenilemede koruyor). Çözüm: görsel viewport yerleşimden
-// ayrıştığında (ölçek ≠ 1 veya kayma var) barı visualViewport ölçülerine
-// göre elle görsel viewport'un altına yerleştirmek; normale dönünce inline
-// stilleri temizleyip CSS'in bottom:0'ına bırakmak.
+// iOS Safari'de bar ara ara ekranın ortasında belirip kaydırmayla dolaşıyor
+// (müşteride 5 Eyl, kullanıcının kendi telefonunda 7 Eyl 2026 — uygulama
+// değiştirip Safari'ye dönünce; yenileme düzeltmiyor, adres çubuğuna yeniden
+// yazmak düzeltiyordu). Üst öğe zinciri temiz (transform/filter yok), giriş
+// alanları 16px (otomatik zoom yok); kalan adaylar Safari'nin arka plandan
+// dönüşte görsel viewport'u bayat bırakması ve fixed öğeleri sayfaya yapıştıran
+// WebKit birleştirme hataları. Kesin tekrar üretilemediği için çözüm sebepten
+// bağımsız: bar her karede GERÇEK konumunu ölçer (getBoundingClientRect),
+// görsel viewport'un alt kenarıyla karşılaştırır, sapma varsa inline top/left/
+// width ile kendini oraya taşır (geri beslemeli; hangi kapsayıcıya göre
+// konumlandığı önemsiz). Klavye açıkken dokunmaz. Ek olarak 700 ms'lik
+// bekçi: olay gelmese bile bayat durumu yakalar.
 function useVisualViewportAnchor(ref: React.RefObject<HTMLDivElement | null>) {
   useEffect(() => {
-    const vv = typeof window !== "undefined" ? window.visualViewport : null;
-    const el = ref.current;
-    if (!vv || !el) return;
+    if (typeof window === "undefined" || !ref.current) return;
+    // Yalnız dokunmatik cihazlar: masaüstünde bar zaten gizli, gereksiz iş yok.
+    if (!(navigator.maxTouchPoints > 0)) return;
 
+    const vv = window.visualViewport;
     let frame = 0;
+    let passes = 0;
+
+    const isEditing = () => {
+      const el = document.activeElement;
+      return !!el && /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName);
+    };
+
     const apply = () => {
       frame = 0;
       const node = ref.current;
-      if (!node) return;
-      const detached =
-        Math.abs(vv.scale - 1) > 0.01 ||
-        Math.abs(vv.offsetTop) > 0.5 ||
-        Math.abs(vv.offsetLeft) > 0.5 ||
-        Math.abs(vv.width - window.innerWidth) > 1;
-      if (!detached) {
-        if (node.style.top) {
-          node.style.top = "";
-          node.style.left = "";
-          node.style.width = "";
-          node.style.bottom = "";
-        }
+      if (!node || isEditing()) return;
+
+      const targetBottom = vv ? vv.offsetTop + vv.height : window.innerHeight;
+      const targetLeft = vv ? vv.offsetLeft : 0;
+      const targetWidth = vv ? vv.width : window.innerWidth;
+      const rect = node.getBoundingClientRect();
+      const delta = targetBottom - rect.bottom;
+      const aligned =
+        Math.abs(delta) <= 1 && Math.abs(rect.left - targetLeft) <= 1 && Math.abs(rect.width - targetWidth) <= 1;
+      if (aligned) {
+        passes = 0;
         return;
       }
+
+      const currentTop = parseFloat(node.style.top);
       node.style.bottom = "auto";
-      node.style.left = `${vv.offsetLeft}px`;
-      node.style.width = `${vv.width}px`;
-      node.style.top = `${vv.offsetTop + vv.height - node.offsetHeight}px`;
+      node.style.left = `${targetLeft}px`;
+      node.style.width = `${targetWidth}px`;
+      node.style.top = `${(Number.isFinite(currentTop) ? currentTop : rect.top) + delta}px`;
+
+      // Kapsayıcı beklenmedikse ilk adım tam oturmaz; birkaç kez yakınsa.
+      if (passes < 3) {
+        passes += 1;
+        schedule();
+      } else {
+        passes = 0;
+      }
     };
+
     const schedule = () => {
       if (frame) return;
       frame = window.requestAnimationFrame(apply);
     };
 
     apply();
-    vv.addEventListener("resize", schedule);
-    vv.addEventListener("scroll", schedule);
+    vv?.addEventListener("resize", schedule);
+    vv?.addEventListener("scroll", schedule);
     window.addEventListener("scroll", schedule, { passive: true });
+    window.addEventListener("resize", schedule);
+    window.addEventListener("orientationchange", schedule);
     window.addEventListener("pageshow", schedule);
+    window.addEventListener("focus", schedule);
     document.addEventListener("visibilitychange", schedule);
+    document.addEventListener("focusout", schedule);
+    const watchdog = window.setInterval(schedule, 700);
+
     return () => {
       if (frame) window.cancelAnimationFrame(frame);
-      vv.removeEventListener("resize", schedule);
-      vv.removeEventListener("scroll", schedule);
+      window.clearInterval(watchdog);
+      vv?.removeEventListener("resize", schedule);
+      vv?.removeEventListener("scroll", schedule);
       window.removeEventListener("scroll", schedule);
+      window.removeEventListener("resize", schedule);
+      window.removeEventListener("orientationchange", schedule);
       window.removeEventListener("pageshow", schedule);
+      window.removeEventListener("focus", schedule);
       document.removeEventListener("visibilitychange", schedule);
+      document.removeEventListener("focusout", schedule);
     };
   }, [ref]);
 }
