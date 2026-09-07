@@ -874,6 +874,14 @@ export type StorefrontLocationStatus =
   | "timeout"
   | "unsupported";
 
+export const LOCATION_ERROR_STATUSES = new Set<StorefrontLocationStatus>([
+  "denied",
+  "services_off",
+  "unavailable",
+  "timeout",
+  "unsupported",
+]);
+
 /** WhatsApp/Instagram/Facebook içi tarayıcı: konum izni uygulamanın sistem iznine bağlıdır. */
 function isInAppBrowser() {
   if (typeof navigator === "undefined") return false;
@@ -885,19 +893,31 @@ function isInAppBrowser() {
  * PERMISSION_DENIED gelip site izni "granted" ise (Permissions API) sorun
  * sitede değil telefondadır: iOS Konum Servisleri kapalıyken tam bu olur.
  */
-async function classifyGeolocationError(error: GeolocationPositionError): Promise<StorefrontLocationStatus> {
+async function classifyGeolocationError(
+  error: GeolocationPositionError,
+  elapsedMs: number,
+): Promise<StorefrontLocationStatus> {
   if (error.code === error.TIMEOUT) return "timeout";
   if (error.code === error.POSITION_UNAVAILABLE) return "unavailable";
-  // PERMISSION_DENIED
+  // PERMISSION_DENIED — iki farklı gerçek durum aynı kodla gelir:
+  //  a) müşteri (ya da tarayıcı ayarı) bu siteye izin vermedi,
+  //  b) telefonun Konum Servisleri kapalı (iOS bu durumda hiç sormadan,
+  //     anında kod 1 döner; Permissions API "granted" DEMEZ, "prompt" kalır —
+  //     kullanıcının 7 Eyl 2026 testinde görüldü).
+  // Ayrım: site izni açıkça "denied" ise tarayıcı engeli; değilse ve hata
+  // bir insanın pencereyi okuyup reddedemeyeceği kadar hızlı (< 400 ms)
+  // geldiyse pencere hiç açılmamıştır → Konum Servisleri kapalı.
+  let permissionState: PermissionState | null = null;
   try {
     if (typeof navigator !== "undefined" && navigator.permissions?.query) {
-      const status = await navigator.permissions.query({ name: "geolocation" });
-      if (status.state === "granted") return "services_off";
+      permissionState = (await navigator.permissions.query({ name: "geolocation" })).state;
     }
   } catch {
-    // Permissions API yoksa/desteklemiyorsa: izin reddi say.
+    permissionState = null;
   }
-  return "denied";
+  if (permissionState === "granted") return "services_off";
+  if (permissionState === "denied") return "denied";
+  return elapsedMs < 400 ? "services_off" : "denied";
 }
 
 export function StorefrontClient({
@@ -1007,6 +1027,7 @@ export function StorefrontClient({
     // konum isteği yapıyor ve iOS ilk pencere hâlâ açıkken gelen bu isteği
     // anında reddediyordu — sonuç "izin verilmedi" oluyordu. İzin istemi
     // beklerken ASLA ikinci istek yapma.
+    const startedAt = Date.now();
     const pending = new Promise<{ lat: number; lng: number } | null>((resolve) => {
       navigator.geolocation.getCurrentPosition(
         (position) => {
@@ -1023,7 +1044,7 @@ export function StorefrontClient({
           customerLocationRef.current = null;
           setCustomerLocation(null);
           setLocationInApp(isInAppBrowser());
-          void classifyGeolocationError(error).then(setLocationStatus);
+          void classifyGeolocationError(error, Date.now() - startedAt).then(setLocationStatus);
           resolve(null);
         },
         // enableHighAccuracy KAPALI: true, telefonu GPS'i uyandırmaya zorluyor
@@ -1042,7 +1063,10 @@ export function StorefrontClient({
   }, []);
 
   const toggleShareLocation = useCallback(() => {
-    const next = !shareLocation;
+    // Hata durumunda ikinci dokunuş kutuyu KAPATMAZ, yeniden dener; aksi
+    // hâlde müşteri "hiç tıklamamışım gibi" görüyordu (kullanıcı, 7 Eyl 2026).
+    const retrying = shareLocation && LOCATION_ERROR_STATUSES.has(locationStatus);
+    const next = retrying ? true : !shareLocation;
     shareLocationRef.current = next;
     setShareLocation(next);
 
@@ -1062,7 +1086,7 @@ export function StorefrontClient({
 
     setLocationStatus("loading");
     void fetchCustomerLocation();
-  }, [fetchCustomerLocation, shareLocation]);
+  }, [fetchCustomerLocation, locationStatus, shareLocation]);
   const [customerPhone, setCustomerPhone] = useState("");
   const [customerPhoneError, setCustomerPhoneError] = useState<string | null>(null);
   // "Market" tipi tenant'larda sipariş verebilmek için ödeme yöntemi, müşteri

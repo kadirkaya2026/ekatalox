@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type Dispatch, ReactNode, SetStateAction } from "react";
-import type { StorefrontLocationStatus } from "@/components/storefront/storefront-client";
+import { LOCATION_ERROR_STATUSES, type StorefrontLocationStatus } from "@/components/storefront/storefront-client";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   Banknote,
@@ -722,12 +722,14 @@ export function StorefrontCartDrawer({
               // tıklar tıklamaz yeşil oluyordu; müşteri hazır sanıp siparişi
               // gönderiyordu (kullanıcı isteği, 6 Eyl 2026).
               aria-pressed={Boolean(customerLocation)}
+              aria-invalid={LOCATION_ERROR_STATUSES.has(locationStatus) || undefined}
               aria-busy={locationStatus === "loading"}
               disabled={locationStatus === "loading"}
               className={cn(
                 "mt-2.5 flex w-full items-start gap-2.5 rounded-[1.1rem] px-3 py-2.5 text-left",
                 theme.surfaceMuted,
                 locationStatus === "loading" && "opacity-90",
+                LOCATION_ERROR_STATUSES.has(locationStatus) && "ring-2 ring-rose-500/70",
               )}
             >
               <span
@@ -737,13 +739,17 @@ export function StorefrontCartDrawer({
                     ? "border-emerald-500 bg-emerald-500 text-white"
                     : locationStatus === "loading"
                       ? "border-transparent"
-                      : cn(theme.formField, theme.textMuted),
+                      : LOCATION_ERROR_STATUSES.has(locationStatus)
+                        ? "border-rose-500 bg-rose-500 text-white"
+                        : cn(theme.formField, theme.textMuted),
                 )}
               >
                 {locationStatus === "loading" ? (
                   <Loader2 className="size-4 animate-spin text-emerald-500" />
                 ) : customerLocation ? (
                   <Check className="size-3.5" />
+                ) : LOCATION_ERROR_STATUSES.has(locationStatus) ? (
+                  <span className="text-xs font-black leading-none">!</span>
                 ) : null}
               </span>
               <span className="min-w-0">
@@ -754,7 +760,11 @@ export function StorefrontCartDrawer({
                 <span
                   className={cn(
                     "mt-0.5 block text-xs leading-snug",
-                    customerLocation ? "font-semibold text-emerald-500" : theme.textMuted,
+                    customerLocation
+                      ? "font-semibold text-emerald-500"
+                      : LOCATION_ERROR_STATUSES.has(locationStatus)
+                        ? "font-semibold text-rose-500"
+                        : theme.textMuted,
                   )}
                 >
                   {locationStatus === "loading"
@@ -774,7 +784,10 @@ export function StorefrontCartDrawer({
                                 : t("cart.shareLocationHint")}
                 </span>
                 {locationInApp && (locationStatus === "denied" || locationStatus === "unavailable" || locationStatus === "unsupported") ? (
-                  <span className={cn("mt-1 block text-xs leading-snug", theme.textMuted)}>{t("cart.shareLocationInApp")}</span>
+                  <span className="mt-1 block text-xs leading-snug text-rose-500">{t("cart.shareLocationInApp")}</span>
+                ) : null}
+                {LOCATION_ERROR_STATUSES.has(locationStatus) && locationStatus !== "unsupported" ? (
+                  <span className={cn("mt-1 block text-xs font-semibold leading-snug", theme.text)}>{t("cart.shareLocationRetry")}</span>
                 ) : null}
               </span>
             </button>
