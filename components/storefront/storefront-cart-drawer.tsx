@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type Dispatch, ReactNode, SetStateAction } from "react";
+import type { StorefrontLocationStatus } from "@/components/storefront/storefront-client";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   Banknote,
@@ -63,7 +64,8 @@ export type StorefrontCartDrawerProps = {
   customerAddress: string;
   customerLocation: { lat: number; lng: number } | null;
   shareLocation: boolean;
-  locationStatus: "idle" | "loading" | "denied" | "error";
+  locationStatus: StorefrontLocationStatus;
+  locationInApp?: boolean;
   onToggleLocation: () => void;
   setCustomerAddress: Dispatch<SetStateAction<string>>;
   customerAddressError: string | null;
@@ -146,6 +148,7 @@ export function StorefrontCartDrawer({
   customerLocation,
   shareLocation,
   locationStatus,
+  locationInApp = false,
   onToggleLocation,
   setCustomerAddress,
   customerAddressError,
@@ -758,12 +761,21 @@ export function StorefrontCartDrawer({
                     ? t("cart.shareLocationLoading")
                     : locationStatus === "denied"
                       ? t("cart.shareLocationDenied")
-                      : locationStatus === "error"
-                        ? t("cart.shareLocationFailed")
-                        : customerLocation
-                          ? t("cart.shareLocationAdded")
-                          : t("cart.shareLocationHint")}
+                      : locationStatus === "services_off"
+                        ? t("cart.shareLocationServicesOff")
+                        : locationStatus === "unavailable"
+                          ? t("cart.shareLocationUnavailable")
+                          : locationStatus === "timeout"
+                            ? t("cart.shareLocationTimeout")
+                            : locationStatus === "unsupported"
+                              ? t("cart.shareLocationUnsupported")
+                              : customerLocation
+                                ? t("cart.shareLocationAdded")
+                                : t("cart.shareLocationHint")}
                 </span>
+                {locationInApp && (locationStatus === "denied" || locationStatus === "unavailable" || locationStatus === "unsupported") ? (
+                  <span className={cn("mt-1 block text-xs leading-snug", theme.textMuted)}>{t("cart.shareLocationInApp")}</span>
+                ) : null}
               </span>
             </button>
           ) : null}

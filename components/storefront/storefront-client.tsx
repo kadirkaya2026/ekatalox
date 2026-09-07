@@ -865,6 +865,41 @@ const salesUnits: Array<{ value: SalesUnit }> = [
   { value: "koli" },
 ];
 
+export type StorefrontLocationStatus =
+  | "idle"
+  | "loading"
+  | "denied"
+  | "services_off"
+  | "unavailable"
+  | "timeout"
+  | "unsupported";
+
+/** WhatsApp/Instagram/Facebook içi tarayıcı: konum izni uygulamanın sistem iznine bağlıdır. */
+function isInAppBrowser() {
+  if (typeof navigator === "undefined") return false;
+  return /whatsapp|instagram|fban|fbav|fb_iab|line\/|tiktok|micromessenger/i.test(navigator.userAgent);
+}
+
+/**
+ * Geolocation hatasını müşteriye söylenebilir bir nedene çevirir.
+ * PERMISSION_DENIED gelip site izni "granted" ise (Permissions API) sorun
+ * sitede değil telefondadır: iOS Konum Servisleri kapalıyken tam bu olur.
+ */
+async function classifyGeolocationError(error: GeolocationPositionError): Promise<StorefrontLocationStatus> {
+  if (error.code === error.TIMEOUT) return "timeout";
+  if (error.code === error.POSITION_UNAVAILABLE) return "unavailable";
+  // PERMISSION_DENIED
+  try {
+    if (typeof navigator !== "undefined" && navigator.permissions?.query) {
+      const status = await navigator.permissions.query({ name: "geolocation" });
+      if (status.state === "granted") return "services_off";
+    }
+  } catch {
+    // Permissions API yoksa/desteklemiyorsa: izin reddi say.
+  }
+  return "denied";
+}
+
 export function StorefrontClient({
   tenant,
   categories,
@@ -947,7 +982,13 @@ export function StorefrontClient({
   // çekilir (kullanıcı isteği, 6 Eyl 2026).
   const [productSort, setProductSort] = useState<StorefrontProductSort>("featured");
   const [shareLocation, setShareLocation] = useState(false);
-  const [locationStatus, setLocationStatus] = useState<"idle" | "loading" | "denied" | "error">("idle");
+  // Konum alınamayınca müşteriye NEDENİNİ söylüyoruz (kullanıcı isteği, 7 Eyl 2026):
+  // denied = site izni yok, services_off = izin var ama telefonun Konum
+  // Servisleri kapalı, unavailable = telefon konum üretemedi, timeout = 25 sn'de
+  // gelmedi, unsupported = tarayıcı desteklemiyor. inApp = WhatsApp/Instagram
+  // içi tarayıcı ipucu (ayrı satır olarak eklenir).
+  const [locationStatus, setLocationStatus] = useState<StorefrontLocationStatus>("idle");
+  const [locationInApp, setLocationInApp] = useState(false);
   // Devam eden konum isteği: müşteri kutuyu işaretleyip HEMEN siparişi
   // gönderirse koordinat henüz gelmemiş oluyordu ve konum satırı sessizce
   // düşüyordu. Gönderim anında bu sözü bekliyoruz.
@@ -981,7 +1022,8 @@ export function StorefrontClient({
         (error) => {
           customerLocationRef.current = null;
           setCustomerLocation(null);
-          setLocationStatus(error.code === error.PERMISSION_DENIED ? "denied" : "error");
+          setLocationInApp(isInAppBrowser());
+          void classifyGeolocationError(error).then(setLocationStatus);
           resolve(null);
         },
         // enableHighAccuracy KAPALI: true, telefonu GPS'i uyandırmaya zorluyor
@@ -1013,7 +1055,8 @@ export function StorefrontClient({
     }
 
     if (typeof navigator === "undefined" || !navigator.geolocation) {
-      setLocationStatus("error");
+      setLocationStatus("unsupported");
+      setLocationInApp(isInAppBrowser());
       return;
     }
 
@@ -4365,6 +4408,7 @@ export function StorefrontClient({
         customerLocation={customerLocation}
         shareLocation={shareLocation}
         locationStatus={locationStatus}
+        locationInApp={locationInApp}
         onToggleLocation={toggleShareLocation}
         setCustomerAddress={setCustomerAddress}
         customerAddressError={customerAddressError}
