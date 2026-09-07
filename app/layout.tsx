@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import {
   DM_Sans,
+  IBM_Plex_Mono,
+  IBM_Plex_Sans,
   Inter,
   Playfair_Display,
   Plus_Jakarta_Sans,
@@ -35,8 +37,24 @@ const playfair = Playfair_Display({
   subsets: ["latin"],
 });
 
+// Pazarlama sitesi yazı tipleri (8 Eyl 2026): kurumsal, Türkçe karakterleri
+// eksiksiz. Panel ve vitrin Inter ve tema yazı tiplerini kullanmaya devam eder.
+const plexSans = IBM_Plex_Sans({
+  variable: "--font-plex-sans",
+  subsets: ["latin", "latin-ext"],
+  weight: ["400", "500", "600", "700"],
+});
+
+const plexMono = IBM_Plex_Mono({
+  variable: "--font-plex-mono",
+  subsets: ["latin", "latin-ext"],
+  weight: ["500"],
+});
+
 const fontVariables = [
   inter.variable,
+  plexSans.variable,
+  plexMono.variable,
   dmSans.variable,
   plusJakarta.variable,
   sourceSans.variable,

@@ -18,6 +18,21 @@
   --color-accent-foreground: #ffffff;
   --color-success: #059669;
   --font-sans: var(--font-inter);
+  /* Pazarlama sitesi marka paleti (8 Eyl 2026 yeniden konumlandırma):
+     kurumsal lacivert + koyu yeşil, kırık beyaz zemin. Panel/vitrin
+     token'larına dokunmaz; yalnız app/(marketing) altında kullanılır. */
+  --color-brand-navy: #12284A;
+  --color-brand-navy-soft: #E6ECF4;
+  --color-brand-green: #157A5B;
+  --color-brand-green-soft: #E3F1EB;
+  --color-brand-ink: #1B2432;
+  --color-brand-muted: #5C6B7A;
+  --color-brand-line: #D9E0E8;
+  --color-brand-paper: #F5F7FA;
+  --color-brand-amber: #B7791F;
+  --color-brand-amber-soft: #FBF1DE;
+  --font-plex: var(--font-plex-sans);
+  --font-plex-mono: var(--font-plex-mono);
 }
 
 .dark {
@@ -37,9 +52,9 @@
   --color-border: transparent;
 }
 
-/* Pazarlama sitesi (marka koyu tema) marka renk token'ları — vitrin
-   temaları (lib/storefront/themes.ts) ve admin panel (@theme inline
-   yukarıda) ile karıştırılmasın diye ayrı, sabit tutuluyor. */
+/* ESKİ neon pazarlama token'ları: eski sayfalar yeniden yazılana kadar
+   kalıyor (text-gradient-neon, glass, shimmer vb. ile birlikte). Faz 1
+   bitince silinecek. */
 :root {
   --marketing-primary: #10b981;
   --marketing-primary-rgb: 16, 185, 129;
