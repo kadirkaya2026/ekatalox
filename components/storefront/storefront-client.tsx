@@ -885,6 +885,12 @@ async function readGeolocationPermissionState(): Promise<PermissionState | null>
   return null;
 }
 
+// Safari aynı sayfada bir kez "izin yok" dediyse Konum Servisleri sonradan
+// açılsa bile YENİLEMEDEN bir daha sormaz (kullanıcı testi, 7 Eyl 2026).
+// Bu bayrakla yenileme sonrası sepet bilgi adımında açılıp konum otomatik
+// yeniden istenir.
+const LOCATION_RELOAD_FLAG = "ekatalox_location_reload";
+
 export const LOCATION_ERROR_STATUSES = new Set<StorefrontLocationStatus>([
   "denied",
   "services_off",
@@ -1016,6 +1022,7 @@ export function StorefrontClient({
   // Tanı satırı: adres ?konumdebug=1 ile açılınca hata kodu / süre / izin
   // durumu müşteri mesajının altında görünür (destek için, 7 Eyl 2026).
   const [locationDebug, setLocationDebug] = useState<string | null>(null);
+  const [cartOpensAtInfoStep, setCartOpensAtInfoStep] = useState(false);
   // Devam eden konum isteği: müşteri kutuyu işaretleyip HEMEN siparişi
   // gönderirse koordinat henüz gelmemiş oluyordu ve konum satırı sessizce
   // düşüyordu. Gönderim anında bu sözü bekliyoruz.
@@ -1102,6 +1109,41 @@ export function StorefrontClient({
     setLocationStatus("loading");
     void fetchCustomerLocation();
   }, [fetchCustomerLocation, locationStatus, shareLocation]);
+
+  const reloadForLocation = useCallback(() => {
+    try {
+      window.sessionStorage.setItem(LOCATION_RELOAD_FLAG, "1");
+    } catch {
+      // sessionStorage kapalıysa yine de yenile; kullanıcı kutuya elle dokunur
+    }
+    window.location.reload();
+  }, []);
+
+  // Yenileme sonrası devam: bayrak varsa sepeti bilgi adımında aç ve konumu
+  // yeniden iste. setState effect gövdesinde değil, bir sonraki döngüde.
+  useEffect(() => {
+    let flagged = false;
+    try {
+      flagged = window.sessionStorage.getItem(LOCATION_RELOAD_FLAG) === "1";
+      if (flagged) window.sessionStorage.removeItem(LOCATION_RELOAD_FLAG);
+    } catch {
+      flagged = false;
+    }
+    if (!flagged) return;
+    const timer = window.setTimeout(() => {
+      setCartOpensAtInfoStep(true);
+      setIsCartOpen(true);
+      shareLocationRef.current = true;
+      setShareLocation(true);
+      if (typeof navigator === "undefined" || !navigator.geolocation) {
+        setLocationStatus("unsupported");
+        return;
+      }
+      setLocationStatus("loading");
+      void fetchCustomerLocation();
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [fetchCustomerLocation]);
   const [customerPhone, setCustomerPhone] = useState("");
   const [customerPhoneError, setCustomerPhoneError] = useState<string | null>(null);
   // "Market" tipi tenant'larda sipariş verebilmek için ödeme yöntemi, müşteri
@@ -4422,8 +4464,11 @@ export function StorefrontClient({
 
       <StorefrontCartDrawer
         isOpen={isCartOpen}
+        openAtInfoStep={cartOpensAtInfoStep}
+        onReloadForLocation={reloadForLocation}
         onClose={() => {
           setIsCartOpen(false);
+          setCartOpensAtInfoStep(false);
           setCartSuggestionsSnapshot([]);
         }}
         cart={cart}

@@ -67,6 +67,9 @@ export type StorefrontCartDrawerProps = {
   locationStatus: StorefrontLocationStatus;
   locationInApp?: boolean;
   locationDebug?: string | null;
+  /** Yenileme sonrası konum devam akışı: çekmece doğrudan bilgi adımında açılır. */
+  openAtInfoStep?: boolean;
+  onReloadForLocation?: () => void;
   onToggleLocation: () => void;
   setCustomerAddress: Dispatch<SetStateAction<string>>;
   customerAddressError: string | null;
@@ -151,6 +154,8 @@ export function StorefrontCartDrawer({
   locationStatus,
   locationInApp = false,
   locationDebug = null,
+  openAtInfoStep = false,
+  onReloadForLocation,
   onToggleLocation,
   setCustomerAddress,
   customerAddressError,
@@ -227,7 +232,7 @@ export function StorefrontCartDrawer({
   const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
   if (isOpen !== prevIsOpen) {
     setPrevIsOpen(isOpen);
-    if (isOpen && !whatsappHandoff) {
+    if (isOpen && !whatsappHandoff && !openAtInfoStep) {
       setStep(1);
     } else if (isOpen) {
       setStep(3);
@@ -788,14 +793,27 @@ export function StorefrontCartDrawer({
                 {locationInApp && (locationStatus === "denied" || locationStatus === "unavailable" || locationStatus === "unsupported") ? (
                   <span className="mt-1 block text-xs leading-snug text-rose-500">{t("cart.shareLocationInApp")}</span>
                 ) : null}
-                {LOCATION_ERROR_STATUSES.has(locationStatus) && locationStatus !== "unsupported" ? (
+                {locationStatus === "unavailable" || locationStatus === "timeout" ? (
                   <span className={cn("mt-1 block text-xs font-semibold leading-snug", theme.text)}>{t("cart.shareLocationRetry")}</span>
+                ) : null}
+                {locationStatus === "denied" || locationStatus === "services_off" ? (
+                  <span className={cn("mt-1 block text-xs font-semibold leading-snug", theme.text)}>{t("cart.shareLocationReloadHint")}</span>
                 ) : null}
                 {locationDebug ? (
                   <span className="mt-1 block break-all font-mono text-[10px] leading-snug text-slate-400">{locationDebug}</span>
                 ) : null}
               </span>
             </button>
+          ) : null}
+          {!isTekel && onReloadForLocation && (locationStatus === "denied" || locationStatus === "services_off") ? (
+            <Button
+              type="button"
+              variant="danger"
+              onClick={onReloadForLocation}
+              className="mt-2 w-full rounded-[1.1rem] py-2.5 text-sm"
+            >
+              {t("cart.shareLocationReload")}
+            </Button>
           ) : null}
         </div>
       ) : null}
