@@ -722,7 +722,7 @@ export function StorefrontCartDrawer({
               // tıklar tıklamaz yeşil oluyordu; müşteri hazır sanıp siparişi
               // gönderiyordu (kullanıcı isteği, 6 Eyl 2026).
               aria-pressed={Boolean(customerLocation)}
-              aria-invalid={LOCATION_ERROR_STATUSES.has(locationStatus) || undefined}
+              data-error={LOCATION_ERROR_STATUSES.has(locationStatus) ? "" : undefined}
               aria-busy={locationStatus === "loading"}
               disabled={locationStatus === "loading"}
               className={cn(
