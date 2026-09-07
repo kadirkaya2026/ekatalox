@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 import { Search, ShoppingCart, Ticket } from "lucide-react";
 import { useStorefrontLocale } from "@/lib/storefront/locale-context";
 import { cn } from "@/lib/utils";
@@ -16,6 +16,68 @@ import { cn } from "@/lib/utils";
 //
 // Sepet tutarını gösteren "Sipariş Özeti" satırı da bilerek yok
 // (kullanıcı isteği): tutar için sepet açılıyor, alt bar sade kalıyor.
+// iOS Safari'de sayfa büyütülmüşse (iki parmakla ya da uygulama değiştirip
+// dönünce Safari'nin viewport'u kaymış bırakması) `position: fixed` öğeler
+// GÖRSEL viewport'a değil yerleşim viewport'una yapışır: bar ekranın
+// ortasında belirip kaydırdıkça aşağı yukarı dolaşır (müşteride ve
+// kullanıcının kendi telefonunda görüldü, 5 ve 7 Eyl 2026; sayfa yenileme
+// düzeltmiyor, adres çubuğuna yeniden yazınca düzeliyordu = Safari zoom/
+// offset durumunu yenilemede koruyor). Çözüm: görsel viewport yerleşimden
+// ayrıştığında (ölçek ≠ 1 veya kayma var) barı visualViewport ölçülerine
+// göre elle görsel viewport'un altına yerleştirmek; normale dönünce inline
+// stilleri temizleyip CSS'in bottom:0'ına bırakmak.
+function useVisualViewportAnchor(ref: React.RefObject<HTMLDivElement | null>) {
+  useEffect(() => {
+    const vv = typeof window !== "undefined" ? window.visualViewport : null;
+    const el = ref.current;
+    if (!vv || !el) return;
+
+    let frame = 0;
+    const apply = () => {
+      frame = 0;
+      const node = ref.current;
+      if (!node) return;
+      const detached =
+        Math.abs(vv.scale - 1) > 0.01 ||
+        Math.abs(vv.offsetTop) > 0.5 ||
+        Math.abs(vv.offsetLeft) > 0.5 ||
+        Math.abs(vv.width - window.innerWidth) > 1;
+      if (!detached) {
+        if (node.style.top) {
+          node.style.top = "";
+          node.style.left = "";
+          node.style.width = "";
+          node.style.bottom = "";
+        }
+        return;
+      }
+      node.style.bottom = "auto";
+      node.style.left = `${vv.offsetLeft}px`;
+      node.style.width = `${vv.width}px`;
+      node.style.top = `${vv.offsetTop + vv.height - node.offsetHeight}px`;
+    };
+    const schedule = () => {
+      if (frame) return;
+      frame = window.requestAnimationFrame(apply);
+    };
+
+    apply();
+    vv.addEventListener("resize", schedule);
+    vv.addEventListener("scroll", schedule);
+    window.addEventListener("scroll", schedule, { passive: true });
+    window.addEventListener("pageshow", schedule);
+    document.addEventListener("visibilitychange", schedule);
+    return () => {
+      if (frame) window.cancelAnimationFrame(frame);
+      vv.removeEventListener("resize", schedule);
+      vv.removeEventListener("scroll", schedule);
+      window.removeEventListener("scroll", schedule);
+      window.removeEventListener("pageshow", schedule);
+      document.removeEventListener("visibilitychange", schedule);
+    };
+  }, [ref]);
+}
+
 export function StorefrontBottomNav({
   cartItemCount,
   isTekel,
@@ -34,9 +96,11 @@ export function StorefrontBottomNav({
   onOpenCampaigns: () => void;
 }) {
   const { t } = useStorefrontLocale();
+  const shellRef = useRef<HTMLDivElement | null>(null);
+  useVisualViewportAnchor(shellRef);
 
   return (
-    <div className="bottom-nav-shell fixed inset-x-0 bottom-0 z-40 sm:hidden">
+    <div ref={shellRef} className="bottom-nav-shell fixed inset-x-0 bottom-0 z-40 sm:hidden">
       <nav
         aria-label={t("bottomNav.ariaLabel")}
         // Bar bilerek temadan bağımsız: koyu temalarda (noir) tema yüzeyi
