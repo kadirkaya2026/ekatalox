@@ -4,6 +4,10 @@
     {
       "path": "/api/cron/cleanup-order-receipts",
       "schedule": "0 * * * *"
+    },
+    {
+      "path": "/api/cron/site-analytics-prune",
+      "schedule": "30 3 * * *"
     }
   ]
 }

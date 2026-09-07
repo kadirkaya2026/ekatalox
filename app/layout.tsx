@@ -6,6 +6,7 @@ import {
   Plus_Jakarta_Sans,
   Source_Sans_3,
 } from "next/font/google";
+import { SiteAnalyticsTracker } from "@/components/site-analytics/site-analytics-tracker";
 import { ThemeProvider } from "@/components/theme/theme-provider";
 import "./globals.css";
 
@@ -113,6 +114,8 @@ export default function RootLayout({
     <html lang="tr" className={`${fontVariables} h-full`} suppressHydrationWarning>
       <body className="min-h-full bg-background text-foreground">
         <ThemeProvider>{children}</ThemeProvider>
+        {/* Yalnız pazarlama alan adında çalışır; panel/vitrin yolları izlenmez. */}
+        <SiteAnalyticsTracker />
       </body>
     </html>
   );
