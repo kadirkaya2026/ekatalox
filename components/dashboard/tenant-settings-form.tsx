@@ -227,7 +227,7 @@ export function TenantSettingsForm({
   }
 
   const now = new Date();
-  // Deneme hesabında 14 günlük pencere, paket onaylıysa kayıtlı dönem,
+  // Deneme hesabında TRIAL_DURATION_DAYS günlük pencere, paket onaylıysa kayıtlı dönem,
   // eski kayıtlarda created_at + 1 yıl gösterilir.
   const membership = resolveMembershipPeriod(tenant);
   const startDate = membership.start;

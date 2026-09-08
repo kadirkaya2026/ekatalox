@@ -125,6 +125,20 @@ function renderStockBadge(product: Product) {
   );
 }
 
+// Tekel mağazalarda alkollü ürün vitrinde gizlidir (bkz. 0114) — bayi
+// listede bunu bir bakışta görsün.
+function renderAlcoholBadge(product: Product, isTekel: boolean) {
+  if (!isTekel || !product.is_alcohol) {
+    return null;
+  }
+
+  return (
+    <span title="Alkollü ürün: tekel mağazalarda vitrinde ve online siparişte gösterilmez">
+      <Badge variant="warning">Alkol · vitrinde gizli</Badge>
+    </span>
+  );
+}
+
 function renderVariantCountBadge(product: Product) {
   const variantCount = product.variants?.length ?? 0;
 
@@ -137,6 +151,7 @@ function renderVariantCountBadge(product: Product) {
 
 export function ProductsTable({
   highlightedProductId = null,
+  isTekel = false,
   grandTotal,
   filteredProducts,
   pageStartIndex = 0,
@@ -167,6 +182,8 @@ export function ProductsTable({
 }: {
   // Bildirim zilinden gelen ürün: satır vurgulanır ve ekrana kaydırılır.
   highlightedProductId?: string | null;
+  // tenants.is_tekel — alkollü ürünlere "vitrinde gizli" rozeti basılır.
+  isTekel?: boolean;
   grandTotal: number;
   filteredProducts: Product[];
   pageStartIndex?: number;
@@ -371,7 +388,12 @@ export function ProductsTable({
                     </button>
                   )}
                 </td>
-                <td className="px-4 py-3">{renderStockBadge(product)}</td>
+                <td className="px-4 py-3">
+                  <div className="flex flex-wrap gap-1">
+                    {renderStockBadge(product)}
+                    {renderAlcoholBadge(product, isTekel)}
+                  </div>
+                </td>
                 <td className="px-4 py-3">{renderVariantCountBadge(product)}</td>
                 {pricedLists.map((list) => (
                   <td key={list.id} className="px-4 py-3 text-base">
@@ -546,7 +568,10 @@ export function ProductsTable({
                     </button>
                   )}
                 </div>
-                <div className="mt-2">{renderStockBadge(product)}</div>
+                <div className="mt-2 flex flex-wrap gap-1">
+                  {renderStockBadge(product)}
+                  {renderAlcoholBadge(product, isTekel)}
+                </div>
                 <div className="mt-2">{renderVariantCountBadge(product)}</div>
               </div>
             </div>

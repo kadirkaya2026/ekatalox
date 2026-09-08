@@ -78,21 +78,22 @@ export const metadata: Metadata = {
   // metadata olarak tanımlı, dolayısıyla alt rotalar tamamen ezebiliyor.
   icons: { icon: "/favicon.ico" },
   title: {
-    default: "eKatalox — Toptan Ticaretin Dijital İşletim Sistemi",
+    default: "eKatalox — Mahalle esnafı için komisyonsuz WhatsApp sipariş sistemi",
     template: "%s | eKatalox",
   },
   description:
-    "Toptancılar ve distribütörler için B2B sipariş ve dijital katalog platformu. Kendi alan adınızda şifre korumalı katalog, bayiye özel fiyat listeleri, Excel'den saniyeler içinde ürün yükleme ve online sipariş toplama.",
+    "Market, tekel, manav, kasap, çiçekçi ve petshoplar için WhatsApp sipariş sistemi. Müşteriniz dükkânınızı telefonundan gezsin, sipariş adresiyle WhatsApp'ınıza yazılı gelsin. Komisyon yok, kurulumu biz yapıyoruz, 1 ay ücretsiz.",
   applicationName: "eKatalox",
   keywords: [
-    "b2b katalog",
-    "dijital katalog",
-    "toptan satış programı",
-    "bayi sipariş sistemi",
-    "toptancı sipariş uygulaması",
-    "fiyat listesi yönetimi",
-    "b2b sipariş platformu",
-    "online katalog oluşturma",
+    "market sipariş sistemi",
+    "whatsapp sipariş sistemi",
+    "bakkal online sipariş",
+    "tekel sipariş",
+    "manav online sipariş",
+    "kasap sipariş uygulaması",
+    "komisyonsuz sipariş",
+    "mahalle esnafı sipariş",
+    "qr magnet sipariş",
   ],
   alternates: {
     canonical: "./",
@@ -102,9 +103,9 @@ export const metadata: Metadata = {
     siteName: "eKatalox",
     locale: "tr_TR",
     url: "https://www.ekatalox.com",
-    title: "eKatalox — Toptan Ticaretin Dijital İşletim Sistemi",
+    title: "eKatalox — Mahallenizin siparişi WhatsApp'ınıza gelsin",
     description:
-      "Toptancılar ve distribütörler için B2B sipariş ve dijital katalog platformu. Şifre korumalı katalog, bayiye özel fiyat listeleri, Excel'den ürün yükleme.",
+      "Komisyon yok, aracı yok, müşteri sizin. Market, tekel, manav, kasap, çiçekçi ve petshoplar için sipariş sistemi; kurulumu 2 saatte biz yapıyoruz.",
     images: [
       {
         url: "/og-image.png",
@@ -116,9 +117,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "eKatalox — Toptan Ticaretin Dijital İşletim Sistemi",
+    title: "eKatalox — Mahallenizin siparişi WhatsApp'ınıza gelsin",
     description:
-      "Toptancılar ve distribütörler için B2B sipariş ve dijital katalog platformu.",
+      "Mahalle esnafı için komisyonsuz WhatsApp sipariş sistemi. Kurulum 2 saat, 1 ay ücretsiz.",
     images: ["/og-image.png"],
   },
 };

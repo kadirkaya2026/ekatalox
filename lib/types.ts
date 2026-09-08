@@ -107,9 +107,81 @@ export interface Tenant {
   public_price_list_id: string | null;
   age_verification_required: boolean;
   created_at: string;
+  // Self-servis kayıt alanları (0113_self_service_signup): esnaf kayıt
+  // formundan gelen tenant'larda dolu, eski/elle açılan tenant'larda null.
+  sector?: string | null;
+  billing_period?: TenantBillingPeriod | null;
+  coupon_code?: string | null;
+  contact_email?: string | null;
+  contact_full_name?: string | null;
+  billing_address?: TenantBillingAddress | null;
+  signup_source?: TenantSignupSource | null;
+  first_order_email_sent_at?: string | null;
+  trial_reminder_sent_at?: string | null;
 }
 
 export type TenantBusinessType = "general" | "market";
+export type TenantBillingPeriod = "monthly" | "yearly";
+export type TenantSignupSource = "self_service" | "admin" | (string & {});
+
+export interface TenantBillingAddress {
+  city?: string | null;
+  district?: string | null;
+  neighborhood?: string | null;
+  address?: string | null;
+  tax_office?: string | null;
+  tax_number?: string | null;
+}
+
+export type SignupCouponDiscountType = "percent" | "amount";
+
+export interface SignupCoupon {
+  id: string;
+  code: string;
+  description: string | null;
+  discount_type: SignupCouponDiscountType;
+  discount_value: number;
+  /** null = tüm paketler; plan id'leri ("pro" | "business"). */
+  applies_to_plans: string[] | null;
+  /** null = her iki dönem; "monthly" | "yearly". */
+  applies_to_periods: TenantBillingPeriod[] | null;
+  valid_from: string;
+  valid_until: string | null;
+  max_uses: number | null;
+  used_count: number;
+  is_active: boolean;
+  created_by: string | null;
+  created_at: string;
+}
+
+export type SignupRequestStatus = "created" | "failed" | "cancelled";
+
+export interface SignupRequest {
+  id: string;
+  tenant_id: string | null;
+  business_name: string;
+  sector: string | null;
+  full_name: string;
+  phone: string;
+  email: string;
+  city: string | null;
+  district: string | null;
+  neighborhood: string | null;
+  address: string | null;
+  tax_office: string | null;
+  tax_number: string | null;
+  subdomain: string;
+  plan: string;
+  billing_period: TenantBillingPeriod;
+  coupon_code: string | null;
+  list_price: number | null;
+  final_price: number | null;
+  status: SignupRequestStatus;
+  error: string | null;
+  ip_address: string | null;
+  user_agent: string | null;
+  created_at: string;
+}
 
 export interface StorefrontCustomer {
   id: string;
@@ -302,6 +374,10 @@ export interface Product {
   // Alış fiyatı (maliyet), ürün para birimiyle. Müşteriye gösterilmez;
   // yalnız kârlılık raporu için.
   purchase_price?: number | null;
+  // Alkollü ürün (bkz. 0114). Tekel (tenants.is_tekel) mağazalarda vitrinde
+  // gösterilmez ve online sipariş edilemez; demo verisi/eski kayıtlar için
+  // opsiyonel — normalizeProductRecord her zaman boolean üretir.
+  is_alcohol?: boolean;
   package_quantity: number | null;
   carton_quantity: number | null;
   created_at: string;
@@ -542,9 +618,14 @@ export interface TenantStorefrontSettings {
   is_best_sellers_visible: boolean;
   best_sellers_title: string;
   best_sellers_product_count: number;
+  // Esnaf (market tipi) tema seçimi — vitrin/taze/dukkan (bkz. 0114,
+  // lib/storefront/esnaf-themes.ts). NULL/undefined = bu ekrandan seçilmedi.
+  esnaf_theme_key?: EsnafThemeKeyValue | null;
   created_at: string;
   updated_at: string;
 }
+
+export type EsnafThemeKeyValue = "vitrin" | "taze" | "dukkan";
 
 export interface TenantWithRelations extends Tenant {
   access_codes?: AccessCode[];

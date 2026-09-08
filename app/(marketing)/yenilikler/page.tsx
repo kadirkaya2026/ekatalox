@@ -1,9 +1,5 @@
-'use client'
-
 import Link from 'next/link'
-import { motion } from 'framer-motion'
-import { Sparkles, Zap, Bug, Plus, ArrowRight } from 'lucide-react'
-import { SiteNavbar, SiteFooter, PageHero } from '@/components/site-chrome'
+import { Container, Section, SectionHeading } from '@/components/marketing/ui'
 
 const releases = [
   {
@@ -71,83 +67,48 @@ const releases = [
   },
 ]
 
-const badgeStyles = {
-  major: 'bg-gradient-to-r from-[var(--marketing-primary)] to-[var(--marketing-accent)] text-white',
-  feature: 'bg-[var(--marketing-primary)]/15 text-[var(--marketing-primary)] border border-[var(--marketing-primary)]/30',
-  improvement: 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30',
-  fix: 'bg-amber-500/15 text-amber-400 border border-amber-500/30',
-}
-const badgeLabel = { major: 'Major Sürüm', feature: 'Yeni Özellik', improvement: 'İyileştirme', fix: 'Hata Düzeltme' }
-const itemIcon = {
-  feature: { icon: Plus, color: 'text-[var(--marketing-primary)]' },
-  improvement: { icon: Zap, color: 'text-emerald-400' },
-  fix: { icon: Bug, color: 'text-amber-400' },
-}
+const badgeLabel: Record<string, string> = { major: 'Büyük sürüm', feature: 'Yeni özellik', improvement: 'İyileştirme', fix: 'Düzeltme' }
+const itemLabel: Record<string, string> = { feature: 'Yeni', improvement: 'İyileştirme', fix: 'Düzeltme' }
+
+export const metadata = { title: 'Yenilikler', description: 'eKatalox sürüm notları: yeni özellikler, iyileştirmeler ve düzeltmeler.' }
 
 const Page = () => {
   return (
-    <main className="relative min-h-screen bg-[#090d16] text-white overflow-hidden">
-      <SiteNavbar />
-      <PageHero
-        tag="Yenilikler"
-        title={<>Sürekli daha <span className="bg-clip-text text-transparent bg-gradient-to-r from-[var(--marketing-primary)] to-[var(--marketing-accent)]">hızlı, daha iyi.</span></>}
-        subtitle="Her ay yeni özellikler, iyileştirmeler ve düzeltmeler. Geri bildiriminizle şekilleniyoruz."
-      />
-
-      <section className="relative px-6 pb-32">
-        <div className="max-w-4xl mx-auto">
-          <div className="relative">
-            <div className="absolute left-4 md:left-6 top-2 bottom-2 w-px bg-gradient-to-b from-[var(--marketing-primary)]/40 via-[var(--marketing-accent)]/40 to-transparent" />
-            <div className="space-y-8 md:space-y-10">
-              {releases.map((r, i) => (
-                <motion.article key={r.version} initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.15 }} transition={{ duration: 0.7, delay: i * 0.05, ease: [0.16, 1, 0.3, 1] }} className="relative pl-12 md:pl-16">
-                  <div className="absolute left-1.5 md:left-3.5 top-7 w-6 h-6 rounded-full bg-[#090d16] border border-white/10 flex items-center justify-center">
-                    <div className="w-2.5 h-2.5 rounded-full bg-gradient-to-br from-[var(--marketing-primary)] to-[var(--marketing-accent)]" />
-                  </div>
-                  <div className="rounded-3xl border border-white/10 bg-gradient-to-b from-white/[0.04] to-transparent p-6 md:p-8 hover:border-white/20 transition-colors">
-                    <div className="flex flex-wrap items-center gap-3 mb-4">
-                      <span className="text-[var(--marketing-primary)] font-mono text-sm tracking-wider">{r.version}</span>
-                      <span className="text-xs text-slate-500">{r.date}</span>
-                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium uppercase tracking-wider ${badgeStyles[r.badge]}`}>
-                        {r.badge === 'major' && <Sparkles className="w-2.5 h-2.5" />}
-                        {badgeLabel[r.badge]}
-                      </span>
-                    </div>
-                    <h2 className="text-xl md:text-2xl font-semibold text-white">{r.title}</h2>
-                    <p className="mt-2 text-sm md:text-base text-slate-400 leading-relaxed">{r.summary}</p>
-                    <ul className="mt-5 space-y-2">
-                      {r.items.map(([type, text], j) => {
-                        const Ic = itemIcon[type].icon
-                        return (
-                          <li key={j} className="flex items-start gap-2.5 text-sm text-slate-300">
-                            <Ic className={`w-3.5 h-3.5 mt-1 flex-shrink-0 ${itemIcon[type].color}`} />
-                            <span>{text}</span>
-                          </li>
-                        )
-                      })}
-                    </ul>
-                  </div>
-                </motion.article>
-              ))}
-            </div>
+    <>
+      <Section tone="white" className="pb-8 sm:pb-10">
+        <Container>
+          <SectionHeading eyebrow="Yenilikler" title="Sürüm notları" lead="Yeni özellikler, iyileştirmeler ve düzeltmeler. Geri bildiriminizle şekilleniyor." />
+        </Container>
+      </Section>
+      <Section className="pt-0">
+        <Container className="max-w-3xl">
+          <div className="space-y-8">
+            {releases.map((r) => (
+              <article key={r.version} className="rounded-lg border border-brand-line bg-white p-6">
+                <div className="flex flex-wrap items-center gap-3 text-sm">
+                  <span className="font-plex-mono font-medium text-brand-navy">{r.version}</span>
+                  <span className="text-brand-muted">{r.date}</span>
+                  <span className="rounded-full bg-brand-navy-soft px-2.5 py-0.5 text-xs font-semibold text-brand-navy">{badgeLabel[r.badge] ?? r.badge}</span>
+                </div>
+                <h2 className="mt-3 text-xl font-semibold">{r.title}</h2>
+                <p className="mt-2 text-brand-muted">{r.summary}</p>
+                <ul className="mt-4 space-y-2 text-sm">
+                  {r.items.map(([type, text], j) => (
+                    <li key={j} className="flex gap-3">
+                      <span className="w-20 shrink-0 text-xs font-semibold uppercase tracking-wide text-brand-green">{itemLabel[type] ?? type}</span>
+                      <span>{text}</span>
+                    </li>
+                  ))}
+                </ul>
+              </article>
+            ))}
           </div>
-
-          <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.3 }} className="mt-20 rounded-3xl border border-white/10 bg-gradient-to-b from-white/[0.04] to-transparent p-8 md:p-10 text-center">
-            <Sparkles className="w-7 h-7 text-[var(--marketing-primary)] mx-auto" />
-            <h3 className="mt-4 text-2xl md:text-3xl font-bold tracking-tight" style={{ letterSpacing: '-0.04em' }}>Bir yenilik kaçırmayın.</h3>
-            <p className="mt-3 text-slate-400 max-w-md mx-auto">Yeni sürüm notlarını ayda bir kez doğrudan gelen kutunuza alın.</p>
-            <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-3">
-              <Link href="/iletisim" className="px-6 py-3 rounded-full bg-white text-black text-sm font-medium hover:scale-105 transition-transform inline-flex items-center gap-2">
-                Bize Ulaşın <ArrowRight className="w-4 h-4" />
-              </Link>
-              <Link href="/yardim" className="text-sm text-slate-400 hover:text-white">Tüm geçmişi görün →</Link>
-            </div>
-          </motion.div>
-        </div>
-      </section>
-
-      <SiteFooter />
-    </main>
+          <p className="mt-10 text-sm text-brand-muted">
+            Bir özellik önermek ister misiniz? <Link href="/iletisim" className="font-semibold text-brand-green">Bize yazın.</Link>
+          </p>
+        </Container>
+      </Section>
+    </>
   )
 }
 

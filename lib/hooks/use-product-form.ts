@@ -31,6 +31,8 @@ export interface ProductFormState {
   discount_price: string;
   // Alış fiyatı (maliyet) — kârlılık raporu için; müşteriye gösterilmez.
   purchase_price: string;
+  // Alkollü ürün — tekel mağazalarda vitrinde gösterilmez (bkz. 0114).
+  is_alcohol: boolean;
   package_quantity: string;
   carton_quantity: string;
   description: string;
@@ -55,6 +57,7 @@ export function buildEmptyProductForm(priceLists: PriceList[]): ProductFormState
     is_discount_active: false,
     discount_price: "",
     purchase_price: "",
+    is_alcohol: false,
     package_quantity: "",
     carton_quantity: "",
     description: "",
@@ -89,6 +92,7 @@ export function buildProductFormFromProduct(
       product.purchase_price !== null && product.purchase_price !== undefined
         ? String(product.purchase_price)
         : "",
+    is_alcohol: Boolean(product.is_alcohol),
     package_quantity: product.package_quantity ? String(product.package_quantity) : "",
     carton_quantity: product.carton_quantity ? String(product.carton_quantity) : "",
     description: product.description ?? "",
@@ -118,6 +122,7 @@ export function toProductFormData(form: ProductFormState) {
   formData.set("is_discount_active", String(form.is_discount_active));
   formData.set("discount_price", form.is_discount_active ? form.discount_price.trim() : "");
   formData.set("purchase_price", form.purchase_price.trim());
+  formData.set("is_alcohol", String(form.is_alcohol));
   formData.set("package_quantity", form.package_quantity.trim());
   formData.set("carton_quantity", form.carton_quantity.trim());
   formData.set("description", form.description.trim());

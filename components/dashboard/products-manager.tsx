@@ -683,6 +683,7 @@ export function ProductsManager({
 
         <ProductsTable
           highlightedProductId={highlightedProductId}
+          isTekel={tenant.is_tekel}
           grandTotal={grandTotal}
           filteredProducts={products}
           pageStartIndex={pageStartIndex}

@@ -38,7 +38,7 @@ export interface MembershipPeriod {
 
 /**
  * Ayarlar sayfasında gösterilen üyelik başlangıç/bitişini belirler:
- * deneme hesabında 14 günlük pencere, paket onaylıysa kayıtlı dönem,
+ * deneme hesabında TRIAL_DURATION_DAYS günlük pencere, paket onaylıysa kayıtlı dönem,
  * eski kayıtlarda created_at + 1 yıl.
  */
 export function resolveMembershipPeriod(

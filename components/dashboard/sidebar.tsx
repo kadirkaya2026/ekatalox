@@ -250,6 +250,8 @@ const adminLinks: SidebarLink[] = [
   { href: "/market-catalog", label: "Master Katalog", icon: Store },
   { href: "/qr-kodlari", label: "Magnet QR Kodları", icon: QrCode },
   { href: "/product-suggestions", label: "Ürün Önerileri", icon: PackagePlus },
+  { href: "/basvurular", label: "Başvurular", icon: ClipboardList },
+  { href: "/kuponlar", label: "Kuponlar", icon: Ticket },
   { href: "/ziyaretciler", label: "Ziyaretçi Analitiği", icon: BarChart3 },
   { href: "/logs", label: "Giriş Logları", icon: ScrollText },
 ];

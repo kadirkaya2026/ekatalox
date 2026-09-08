@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { ChevronDown, Menu, X } from "lucide-react";
 import { NAV_LINKS } from "@/lib/marketing/site";
 import { SECTORS } from "@/lib/marketing/sectors";
@@ -14,11 +14,13 @@ export function SiteHeader() {
   const [open, setOpen] = useState(false);
   const [sectorsOpen, setSectorsOpen] = useState(false);
 
-  // Rota değişince mobil menüyü kapat.
-  useEffect(() => {
+  // Rota değişince mobil menüyü kapat (render sırasında, effect değil).
+  const [prevPathname, setPrevPathname] = useState(pathname);
+  if (pathname !== prevPathname) {
+    setPrevPathname(pathname);
     setOpen(false);
     setSectorsOpen(false);
-  }, [pathname]);
+  }
 
   const isActive = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
   const sectorActive = SECTORS.some((s) => pathname === `/${s.slug}`);
@@ -27,7 +29,7 @@ export function SiteHeader() {
     <header className="sticky top-0 z-40 border-b border-brand-line bg-white/95 backdrop-blur-sm">
       <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between px-5 sm:px-8">
         <Link href="/" className="flex items-center gap-2" aria-label="eKatalox ana sayfa">
-          <Image src="/ekatalox-logo-rgb-v2.png" alt="eKatalox" width={132} height={34} priority className="h-8 w-auto" />
+          <Image src="/ekatalox-logo-kurumsal.png" alt="eKatalox" width={132} height={34} loading="eager" fetchPriority="high" className="h-8 w-auto" />
         </Link>
 
         <nav className="hidden items-center gap-1 lg:flex" aria-label="Ana menü">

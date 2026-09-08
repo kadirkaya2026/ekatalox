@@ -73,3 +73,43 @@ export async function seedMarketStorefrontTemplate(
     // Şablon kopyalanamasa da tenant oluşturma akışı bozulmasın.
   }
 }
+
+/**
+ * Var olan bir market tenant'ına tekelsiparis'in GÜNCEL tasarım kolonlarını
+ * yeniden uygular (esnaf tema seçici "Vitrin" seçimi). Satır yoksa insert,
+ * varsa yalnız tasarım kolonları güncellenir; içerik kolonlarına dokunulmaz.
+ * Başarısızlıkta false döner, asla fırlatmaz.
+ */
+export async function applyMarketTemplateDesign(
+  supabase: NonNullable<ReturnType<typeof createSupabaseAdminClient>>,
+  tenantId: string,
+): Promise<boolean> {
+  try {
+    const { data: templateTenant } = await supabase
+      .from("tenants")
+      .select("id")
+      .eq("subdomain", MARKET_DESIGN_TEMPLATE_SUBDOMAIN)
+      .maybeSingle();
+    if (!templateTenant) return false;
+
+    const { data: templateSettings } = await supabase
+      .from("tenant_storefront_settings")
+      .select(MARKET_DESIGN_FIELDS.join(", "))
+      .eq("tenant_id", templateTenant.id)
+      .maybeSingle();
+    if (!templateSettings) return false;
+
+    const design = { ...(templateSettings as unknown as Record<string, unknown>), esnaf_theme_key: "vitrin" };
+    const { data: existing } = await supabase
+      .from("tenant_storefront_settings")
+      .select("tenant_id")
+      .eq("tenant_id", tenantId)
+      .maybeSingle();
+    const { error } = existing
+      ? await supabase.from("tenant_storefront_settings").update(design).eq("tenant_id", tenantId)
+      : await supabase.from("tenant_storefront_settings").insert({ tenant_id: tenantId, ...design });
+    return !error;
+  } catch {
+    return false;
+  }
+}

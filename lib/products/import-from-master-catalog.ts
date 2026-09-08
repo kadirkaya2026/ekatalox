@@ -5,6 +5,7 @@ import { getEffectiveProductLimit } from "@/lib/billing/plans";
 import { chunkArray } from "@/lib/utils";
 import { resolveCategoryPath } from "@/lib/market-catalog/category-taxonomy";
 import { buildCategoryCache, ensureCategoryPath, normalizeCategoryName } from "@/lib/categories/ensure-hierarchy";
+import { isLikelyAlcohol } from "@/lib/products/alcohol";
 
 // import-from-catalog/route.ts (manuel "Master Katalog'dan seç" akışı) ve
 // stock-import/apply/route.ts (barkod eşleşmesi Master Katalog'da bulunan
@@ -82,7 +83,7 @@ export type ImportProductsFromMasterCatalogResult =
 
 export async function importProductsFromMasterCatalog(
   supabase: SupabaseClient,
-  tenant: Pick<Tenant, "id" | "plan" | "product_limit_addon">,
+  tenant: Pick<Tenant, "id" | "plan" | "product_limit_addon"> & Partial<Pick<Tenant, "is_tekel">>,
   skuCodes: string[],
 ): Promise<ImportProductsFromMasterCatalogResult> {
   if (!skuCodes.length) {
@@ -187,6 +188,11 @@ export async function importProductsFromMasterCatalog(
     description: row.description,
     is_in_stock: false,
     display_order: nextProductDisplayOrder++,
+    // Tekel bayisinde alkollü görünen ürün baştan işaretlenir (vitrinde
+    // gizli); diğer tenantlarda anahtar hiç gönderilmez (DB default false).
+    ...(tenant.is_tekel && isLikelyAlcohol(row.product_name, row.category_name)
+      ? { is_alcohol: true }
+      : {}),
   }));
 
   const insertedProducts: Array<{ id: string; sku_code: string }> = alreadyExistingSkuCodes

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { isLikelyAlcohol } from "@/lib/products/alcohol";
 import { revalidateStorefrontCache } from "@/lib/storefront/cache";
 import { shouldAllowDemoFallback } from "@/lib/env";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
@@ -272,6 +273,11 @@ export async function POST(request: Request) {
       is_in_stock: row.is_in_stock,
       ...(hasPackageQuantityColumn ? { package_quantity: row.package_quantity } : {}),
       ...(hasCartonQuantityColumn ? { carton_quantity: row.carton_quantity } : {}),
+      // Tekel bayisinde alkollü görünen satır işaretlenir; yalnız true
+      // gönderilir ki yeniden içe aktarma elle konmuş bayrağı sıfırlamasın.
+      ...(tenant.is_tekel && isLikelyAlcohol(row.product_name, row.category_name)
+        ? { is_alcohol: true }
+        : {}),
       display_order,
     };
   });

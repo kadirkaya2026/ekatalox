@@ -36,13 +36,111 @@ export const PLAN_OPTIONS: PlanOption[] = [
   { id: "baslangic", name: "Başlangıç (Eski)", maxProductLimit: 500 },
   { id: "profesyonel", name: "Profesyonel (Eski)", maxProductLimit: 1000 },
   { id: "kurumsal", name: "Kurumsal (Eski)", maxProductLimit: 2500 },
-  // Yeni planlar — yeni kayıtlar için geçerli.
+  // Yeni planlar. Esnaf paketleri (Eyl 2026): pro = "Esnaf", business =
+  // "Esnaf Plus" — lib/billing/esnaf-plans.ts ile senkron. start/enterprise/
+  // vip mevcut tenant'lar için korunur, pazarlamada gizlidir (bkz.
+  // PLAN_MARKETING_META.hidden); süper admin formlarında seçilebilir kalır.
   { id: "start", name: "Start", maxProductLimit: 200 },
-  { id: "pro", name: "Pro", maxProductLimit: 500 },
-  { id: "business", name: "Business", maxProductLimit: 1000 },
+  { id: "pro", name: "Esnaf", maxProductLimit: 1000 },
+  { id: "business", name: "Esnaf Plus", maxProductLimit: 2500 },
   { id: "enterprise", name: "Enterprise", maxProductLimit: 2000 },
   { id: "vip", name: "VIP Custom", maxProductLimit: 5000 },
 ];
+
+export interface PlanMarketingMeta {
+  /** Pazarlama/kayıt/plan seçim ekranlarında görünen ad. */
+  name: string;
+  tagline: string;
+  /** Paket kartlarındaki madde listesi. */
+  bullets: string[];
+  /** Öne çıkan (önerilen) paket. */
+  featured: boolean;
+  /**
+   * true = pazarlama sitesi, kayıt formu, deneme-bitti ekranı ve tenant
+   * paneli yükseltme listesinde gösterilmez; yalnızca süper admin seçebilir.
+   */
+  hidden: boolean;
+}
+
+// Pazarlama metinleri. pro/business içerikleri ESNAF_PLANS ile aynıdır.
+export const PLAN_MARKETING_META: Record<TenantPlan, PlanMarketingMeta> = {
+  baslangic: {
+    name: "Başlangıç (Eski)",
+    tagline: "Vitrin fikrinizi test edin",
+    bullets: ["500 ürüne kadar", "3 seviyeli müşteri fiyat listesi", "WhatsApp sipariş formu"],
+    featured: false,
+    hidden: true,
+  },
+  profesyonel: {
+    name: "Profesyonel (Eski)",
+    tagline: "En çok tercih edilen",
+    bullets: ["1.000 ürüne kadar", "10 seviyeli müşteri fiyat listesi", "Raporlar ve özel alan adı"],
+    featured: false,
+    hidden: true,
+  },
+  kurumsal: {
+    name: "Kurumsal (Eski)",
+    tagline: "White-label kurumsal çözüm",
+    bullets: ["2.500 ürüne kadar", "Sınırsız fiyat listesi", "Online ödeme (sanal POS)"],
+    featured: false,
+    hidden: true,
+  },
+  start: {
+    name: "Start",
+    tagline: "Vitrin fikrinizi test edin",
+    bullets: ["200 ürüne kadar", "3 seviyeli müşteri fiyat listesi", "WhatsApp sipariş formu"],
+    featured: false,
+    hidden: true,
+  },
+  pro: {
+    name: "Esnaf",
+    tagline: "Telefonu susturmak için gereken her şey.",
+    bullets: [
+      "Kendi adresinde sipariş sayfası (dukkan.ekatalox.com)",
+      "Ürünlerin fotoğraf ve fiyatıyla bizim tarafımızdan yüklenmesi",
+      "WhatsApp'a PDF sipariş, hazırlanıyor ve yola çıktı bildirimleri",
+      "Kampanya ve indirimli ürün sayfası",
+      "Yoğunum modu, çalışma saatleri, minimum sepet, yaş doğrulama",
+      "100 adet QR magnet hediye",
+      "1.000 ürüne kadar",
+    ],
+    featured: false,
+    hidden: false,
+  },
+  business: {
+    name: "Esnaf Plus",
+    tagline: "Sadık müşteri ve kâr takibi isteyen dükkânlar için.",
+    bullets: [
+      "Esnaf paketinin tamamı",
+      "Kendi alan adı (dukkanim.com)",
+      "Veresiye takibi ve tahsilat bildirimi",
+      "Satış ve kârlılık raporu",
+      "Müşteri kuponu ve \"sizi özledik\" bildirimleri",
+      "300 adet QR magnet hediye ve magnet sipariş takibi",
+      "Öncelikli destek hattı, 2.500 ürüne kadar",
+    ],
+    featured: true,
+    hidden: false,
+  },
+  enterprise: {
+    name: "Enterprise",
+    tagline: "Kurumsal ölçek için tam donanım",
+    bullets: ["2.000 ürüne kadar", "20 seviyeli müşteri fiyat listesi", "Online ödeme (sanal POS)"],
+    featured: false,
+    hidden: true,
+  },
+  vip: {
+    name: "VIP Custom",
+    tagline: "White-label kurumsal çözüm",
+    bullets: ["5.000 ürüne kadar", "Sınırsız fiyat listesi", "Özel onboarding ve hesap yöneticisi"],
+    featured: false,
+    hidden: true,
+  },
+};
+
+export function isHiddenPlan(planId: TenantPlan): boolean {
+  return PLAN_MARKETING_META[planId].hidden;
+}
 
 const LEGACY_PLAN_IDS: readonly TenantPlan[] = ["baslangic", "profesyonel", "kurumsal"];
 
@@ -53,9 +151,15 @@ export function isLegacyPlan(planId: TenantPlan): boolean {
 // Eski ve yeni planlar ayrı "track" olarak ele alınır: bir tenant kendi
 // track'i içinde üst pakete geçer, karışık (eski+yeni) liste gösterilmez.
 export const LEGACY_PLAN_OPTIONS = PLAN_OPTIONS.filter((plan) => isLegacyPlan(plan.id));
-export const NEW_PLAN_OPTIONS = PLAN_OPTIONS.filter((plan) => !isLegacyPlan(plan.id));
+// Tüm yeni-track planlar (gizliler dahil) — süper admin ve özellik eşiği
+// hesabı için.
+export const ALL_NEW_PLAN_OPTIONS = PLAN_OPTIONS.filter((plan) => !isLegacyPlan(plan.id));
+// Pazarlama, kayıt ve tenant panelinde sunulan planlar: yalnız Esnaf ve
+// Esnaf Plus (pro/business).
+export const NEW_PLAN_OPTIONS = ALL_NEW_PLAN_OPTIONS.filter((plan) => !isHiddenPlan(plan.id));
 
-// Pazarlama sitesindeki (app/page.tsx Pricing) fiyatlarla senkron tutulmalı.
+// Pazarlama sitesindeki fiyatlarla ve lib/billing/esnaf-plans.ts
+// (ESNAF_PLANS yearlyPrice/monthlyPrice) ile senkron tutulmalı.
 export const PLAN_PRICING: Record<
   TenantPlan,
   { price: string; unit: string; highlight: string; monthlyPrice?: string; monthlyUnit?: string }
@@ -85,16 +189,16 @@ export const PLAN_PRICING: Record<
   pro: {
     price: "₺25.000",
     unit: "/ Yıl",
-    monthlyPrice: "₺2.840",
+    monthlyPrice: "₺3.490",
     monthlyUnit: "/ Ay",
-    highlight: "Büyüyen vitrinler için",
+    highlight: "Telefonu susturmak için gereken her şey",
   },
   business: {
-    price: "₺35.000",
+    price: "₺40.000",
     unit: "/ Yıl",
-    monthlyPrice: "₺3.980",
+    monthlyPrice: "₺5.590",
     monthlyUnit: "/ Ay",
-    highlight: "En çok tercih edilen",
+    highlight: "Sadık müşteri ve kâr takibi isteyen dükkânlar için",
   },
   enterprise: {
     price: "₺50.000",
@@ -176,15 +280,21 @@ const STARTER_FEATURES: Record<PlanFeature, boolean> = {
   sales_accounting: false,
 };
 
-// pro, business ile aynı özellik setini kullanır (showcase_products,
-// advanced_appearance, homepage_blocks_editor dahil); paketler arası
-// fark artık yalnızca ürün/ziyaretçi kapasitesi ve fiyattır.
-// online_payment yalnızca enterprise/vip'te açılır. custom_domain
-// business ve üstü planlara özeldir (Ağu 2026): istenen alan adı admin
-// tarafından tedarik edilip yönlendirilir, bu yüzden start/pro'da kapalı.
-const PRO_FEATURES: Record<PlanFeature, boolean> = {
-  ...PROFESSIONAL_FEATURES,
+// Esnaf (pro): banner, ürün indirimi, vitrin ürünleri, ödeme/kampanya
+// ayarları ve ana sayfa blokları açık. Raporlar, satış & kârlılık, özel
+// alan adı ve gelişmiş görünüm yalnızca Esnaf Plus'ta (business =
+// PROFESSIONAL_FEATURES). online_payment yalnızca enterprise/vip/kurumsal.
+const ESNAF_FEATURES: Record<PlanFeature, boolean> = {
+  reports: false,
+  payment_settings: true,
+  banner_settings: true,
+  product_discount: true,
+  showcase_products: true,
+  online_payment: false,
   custom_domain: false,
+  advanced_appearance: false,
+  homepage_blocks_editor: true,
+  sales_accounting: false,
 };
 
 export const PLAN_FEATURES: Record<TenantPlan, Record<PlanFeature, boolean>> = {
@@ -195,7 +305,7 @@ export const PLAN_FEATURES: Record<TenantPlan, Record<PlanFeature, boolean>> = {
     online_payment: true,
   },
   start: STARTER_FEATURES,
-  pro: PRO_FEATURES,
+  pro: ESNAF_FEATURES,
   business: PROFESSIONAL_FEATURES,
   enterprise: {
     ...PROFESSIONAL_FEATURES,
@@ -247,7 +357,11 @@ export const CUSTOM_DOMAIN_BODY_KEYS = ["custom_domain"] as const;
 const PACKAGE_UPGRADE_PHONE = "905354172510";
 
 const planById = new Map(PLAN_OPTIONS.map((plan) => [plan.id, plan]));
-const planByLimit = new Map(PLAN_OPTIONS.map((plan) => [plan.maxProductLimit, plan]));
+// Aynı limit birden çok planda olabilir (profesyonel/pro = 1000,
+// kurumsal/business = 2500); yeni-track plan kazanır.
+const planByLimit = new Map(
+  [...LEGACY_PLAN_OPTIONS, ...ALL_NEW_PLAN_OPTIONS].map((plan) => [plan.maxProductLimit, plan]),
+);
 
 export const TENANT_PLAN_IDS = PLAN_OPTIONS.map((plan) => plan.id) as [
   TenantPlan,
@@ -290,8 +404,12 @@ export function getMinimumPlanForFeature(
   feature: PlanFeature,
   currentPlan?: TenantPlan,
 ): TenantPlan {
-  const track = currentPlan && isLegacyPlan(currentPlan) ? LEGACY_PLAN_OPTIONS : NEW_PLAN_OPTIONS;
-  const match = track.find((plan) => PLAN_FEATURES[plan.id][feature]);
+  const legacy = Boolean(currentPlan && isLegacyPlan(currentPlan));
+  const track = legacy ? LEGACY_PLAN_OPTIONS : NEW_PLAN_OPTIONS;
+  const match =
+    track.find((plan) => PLAN_FEATURES[plan.id][feature]) ??
+    // Görünür paketlerde yoksa (ör. online_payment) gizli üst paketlere bak.
+    (legacy ? undefined : ALL_NEW_PLAN_OPTIONS.find((plan) => PLAN_FEATURES[plan.id][feature]));
   return (match ?? track[track.length - 1]).id;
 }
 

@@ -33,6 +33,9 @@ const nextConfig: NextConfig = {
         destination: "/gizlilik-ve-kvkk",
         permanent: true,
       },
+      // 8 Eyl 2026 yeniden konumlandırma: eski kayıt ve tema sayfaları
+      { source: "/kayit", destination: "/basvuru", permanent: true },
+      { source: "/temalar", destination: "/ozellikler", permanent: true },
     ];
   },
   images: {

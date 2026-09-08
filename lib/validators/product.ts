@@ -136,6 +136,11 @@ export const productBaseSchema = z.object({
   discount_price: optionalDiscountPriceSchema,
   // Alış fiyatı (maliyet): boş → null; indirimli fiyatla aynı biçim kuralları.
   purchase_price: optionalDiscountPriceSchema,
+  // Alkollü ürün: tekel mağazalarda vitrinde gizlenir (bkz. 0114).
+  is_alcohol: z.preprocess(
+    (value) => (value === null || value === undefined ? "false" : value),
+    booleanSchema,
+  ),
 });
 
 // NOT: Eskiden burada tüm listelerin en düşük fiyatı üzerinden tek bir

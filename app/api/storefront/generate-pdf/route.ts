@@ -1,4 +1,5 @@
 import { NextResponse, after } from "next/server";
+import { sendFirstOrderEmailIfNeeded } from "@/lib/signup/first-order-email";
 import { sendDealerOrderPush } from "@/lib/push/send-dealer-push";
 import { findActiveCouponForPhone } from "@/lib/coupons/data";
 import { cookies } from "next/headers";
@@ -26,6 +27,7 @@ import { normalizeCustomerPhone } from "@/lib/storefront/customer-phone";
 import { getPublicOrigin } from "@/lib/tenancy/request-host";
 import { createShortLink } from "@/lib/storage/short-links";
 import { storefrontOrderPdfSchema } from "@/lib/validators/storefront-order-pdf";
+import { ALCOHOL_ONLINE_ORDER_ERROR } from "@/lib/products/alcohol";
 import type { CartItem } from "@/lib/types";
 
 function buildPaymentMethodLabel(params: {
@@ -190,6 +192,28 @@ export async function POST(request: Request) {
 
   const items = parsed.data.items as CartItem[];
   const catalogMode = parsed.data.catalog_mode;
+
+  // Tekel bayisi: alkollü ürün online sipariş edilemez (yasal). Vitrin zaten
+  // gizler; burası istemciye güvenmeyen sunucu tarafı son savunma (bkz. 0114).
+  if (tenant.is_tekel) {
+    const productIds = [...new Set(items.map((item) => item.product_id).filter(Boolean))];
+    if (productIds.length) {
+      const { data: alcoholRows } = await supabase
+        .from("products")
+        .select("id")
+        .eq("tenant_id", tenant.id)
+        .eq("is_alcohol", true)
+        .in("id", productIds);
+
+      if (alcoholRows?.length) {
+        return errorResponse(requestId, ALCOHOL_ONLINE_ORDER_ERROR, 400, {
+          reason: "alcohol_not_allowed",
+          tenantId: tenant.id,
+          productIds: alcoholRows.map((row) => row.id),
+        });
+      }
+    }
+  }
 
   if (catalogMode) {
     // Fiyatsız katalogda da ödeme yöntemi seçilebilir (tutar hesabı yok, sadece bilgi).
@@ -417,6 +441,20 @@ export async function POST(request: Request) {
           paymentMethod,
         },
       }).catch((err) => console.error("[dealer-push] hata:", err)),
+    );
+  }
+  if (recorded) {
+    const rec = recorded;
+    // İlk sipariş e-postası (kayıtta verilen iletişim adresine, bir kez)
+    after(() =>
+      sendFirstOrderEmailIfNeeded(supabase, tenant.id, {
+        orderNumber,
+        orderNo: rec.orderNo,
+        customerName: parsed.data.customer_reference_name,
+        itemCount: items.length,
+        totalAmount: paymentSummary.finalTotal,
+        currency: paymentSummary.currency,
+      }).catch((err) => console.error("[first-order-email] hata:", err)),
     );
   }
 

@@ -16,7 +16,9 @@ import {
   getPlanLabel,
   PLAN_OPTIONS,
 } from "@/lib/billing/plans";
+import { TRIAL_DURATION_DAYS } from "@/lib/billing/trial";
 import { getPriceListDisplayName, normalizePriceListName } from "@/lib/price-lists/constants";
+import { SECTOR_THEME_MAP } from "@/lib/storefront/esnaf-themes";
 import type { AccessCode, TenantPlan, TenantWithRelations } from "@/lib/types";
 import { cn, formatDate } from "@/lib/utils";
 
@@ -37,6 +39,29 @@ function getTrialBadge(trialEndsAt: string | null | undefined) {
     className: "bg-amber-50 text-amber-700",
   };
 }
+
+function SignupInfoField({
+  label,
+  value,
+  mono = false,
+  className,
+}: {
+  label: string;
+  value: string | null | undefined;
+  mono?: boolean;
+  className?: string;
+}) {
+  return (
+    <div className={className}>
+      <dt className="text-xs font-medium text-slate-500">{label}</dt>
+      <dd className={cn("mt-0.5 text-slate-900", mono && "font-mono text-xs", !value && "text-slate-400")}>
+        {value?.trim() ? value : "—"}
+      </dd>
+    </div>
+  );
+}
+
+const BILLING_PERIOD_LABELS: Record<string, string> = { monthly: "Aylık", yearly: "Yıllık" };
 
 export function AdminTenantDetailPanel({ tenant: initialTenant }: { tenant: TenantWithRelations }) {
   const router = useRouter();
@@ -63,6 +88,15 @@ export function AdminTenantDetailPanel({ tenant: initialTenant }: { tenant: Tena
     kind: "reset" | "create";
   } | null>(null);
   const [pending, startTransition] = useTransition();
+
+  const sectorLabel = tenant.sector
+    ? (SECTOR_THEME_MAP[tenant.sector]?.label ?? tenant.sector)
+    : null;
+  const billingPeriodLabel = tenant.billing_period
+    ? (BILLING_PERIOD_LABELS[tenant.billing_period] ?? tenant.billing_period)
+    : null;
+  const billingAddress = tenant.billing_address ?? null;
+  const cityDistrict = [billingAddress?.city, billingAddress?.district].filter(Boolean).join(" / ") || null;
 
   const hasPendingChanges = useMemo(
     () =>
@@ -209,7 +243,7 @@ export function AdminTenantDetailPanel({ tenant: initialTenant }: { tenant: Tena
       setTenant((current) => ({ ...current, ...result.tenant }));
       setMessage(
         action === "start"
-          ? "Hesap 14 günlük deneme süresine alındı."
+          ? `Hesap ${TRIAL_DURATION_DAYS} günlük deneme süresine alındı.`
           : "Deneme süresi sonlandırıldı.",
       );
     });
@@ -691,6 +725,39 @@ export function AdminTenantDetailPanel({ tenant: initialTenant }: { tenant: Tena
         </Card>
       )}
 
+      {tenant.signup_source === "self_service" ? (
+        <Card className="p-5">
+          <p className="text-sm font-semibold text-slate-900">Kayıt bilgileri</p>
+          <p className="mt-1 text-sm text-slate-500">
+            Esnaf kayıt formundan gelen bilgiler; salt okunur. Başvuru kaydı için{" "}
+            <Link href="/admin/basvurular" className="font-medium text-emerald-700 hover:underline">
+              Başvurular
+            </Link>{" "}
+            sayfasına bakın.
+          </p>
+          <dl className="mt-4 grid gap-x-6 gap-y-3 text-sm sm:grid-cols-2 lg:grid-cols-3">
+            <SignupInfoField label="Sektör" value={sectorLabel} />
+            <SignupInfoField label="Ödeme dönemi" value={billingPeriodLabel} />
+            <SignupInfoField label="Kupon" value={tenant.coupon_code} mono />
+            <SignupInfoField label="Yetkili" value={tenant.contact_full_name} />
+            <SignupInfoField label="E-posta" value={tenant.contact_email} />
+            <SignupInfoField label="İl / İlçe" value={cityDistrict} />
+            <SignupInfoField label="Mahalle" value={billingAddress?.neighborhood} />
+            <SignupInfoField label="Adres" value={billingAddress?.address} className="sm:col-span-2" />
+            <SignupInfoField label="Vergi dairesi" value={billingAddress?.tax_office} />
+            <SignupInfoField label="Vergi no" value={billingAddress?.tax_number} mono />
+            <SignupInfoField
+              label="İlk sipariş e-postası"
+              value={tenant.first_order_email_sent_at ? formatDate(tenant.first_order_email_sent_at) : null}
+            />
+            <SignupInfoField
+              label="Deneme hatırlatması"
+              value={tenant.trial_reminder_sent_at ? formatDate(tenant.trial_reminder_sent_at) : null}
+            />
+          </dl>
+        </Card>
+      ) : null}
+
       <Card className="p-5">
         <p className="text-sm font-semibold text-slate-900">Özel alan adı</p>
         <p className="mt-1 text-sm text-slate-500">
@@ -753,7 +820,7 @@ export function AdminTenantDetailPanel({ tenant: initialTenant }: { tenant: Tena
             >
               {PLAN_OPTIONS.map((plan) => (
                 <option key={plan.id} value={plan.id}>
-                  {plan.name} — {formatProductLimit(plan.maxProductLimit)} ürün
+                  {plan.name} ({plan.id}) — {formatProductLimit(plan.maxProductLimit)} ürün
                 </option>
               ))}
             </Select>

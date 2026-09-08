@@ -1,6 +1,5 @@
-'use client'
 
-import { SiteNavbar, SiteFooter, PageHero } from '@/components/site-chrome'
+import { Container, Section, SectionHeading } from '@/components/marketing/ui'
 // Sayfadaki "Son güncelleme" tarihi ile kabul kaydına yazılan sürüm tek
 // kaynaktan gelsin diye (bkz. terms_acceptances.terms_version).
 import { TERMS_VERSION_LABEL } from '@/lib/legal/terms'
@@ -140,43 +139,36 @@ const sections = [
 
 const Page = () => {
   return (
-    <main className="relative min-h-screen bg-[#090d16] text-white overflow-hidden">
-      <SiteNavbar />
-      <PageHero
-        tag="Yasal"
-        title={<>Kullanım <span className="bg-clip-text text-transparent bg-gradient-to-r from-[#10b981] to-[#00ff87]">Şartları</span></>}
-        subtitle={`eKatalox'u kullanmadan önce lütfen bu şartları dikkatlice okuyun. Son güncelleme: ${TERMS_VERSION_LABEL}.`}
-      />
-
-      <section className="px-6 pb-28">
-        <div className="max-w-3xl mx-auto space-y-12">
-          {sections.map((s) => (
-            <div key={s.title} className="border-t border-white/10 pt-8 first:border-t-0 first:pt-0">
-              <h2 className="text-xl md:text-2xl font-semibold text-white">{s.title}</h2>
-              <div className="mt-4 space-y-3">
-                {s.body.map((p, i) => (
-                  <p key={i} className="text-sm md:text-base text-slate-400 leading-relaxed">
-                    {p}
-                  </p>
-                ))}
-                {s.list && (
-                  <ul className="space-y-2 pt-1">
-                    {s.list.map((item) => (
-                      <li key={item} className="flex items-start gap-2.5 text-sm md:text-base text-slate-400 leading-relaxed">
-                        <span className="mt-2 w-1.5 h-1.5 rounded-full bg-[#10b981] flex-shrink-0" />
-                        {item}
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <SiteFooter />
-    </main>
+    <>
+      <Section tone="white" className="pb-8 sm:pb-10">
+        <Container>
+          <SectionHeading eyebrow="Yasal" title="Kullanım Şartları" lead={`eKatalox'u kullanmadan önce lütfen bu şartları dikkatlice okuyun. Son güncelleme: ${TERMS_VERSION_LABEL}.`} />
+        </Container>
+      </Section>
+      <Section className="pt-0">
+        <Container className="max-w-3xl">
+          <div className="space-y-10">
+            {sections.map((s) => (
+              <article key={s.title} className="border-t border-brand-line pt-8 first:border-t-0 first:pt-0">
+                <h2 className="text-xl font-semibold text-brand-navy">{s.title}</h2>
+                <div className="mt-3 space-y-3">
+                  {s.body.map((p, i) => (
+                    <p key={i} className="text-base leading-relaxed text-brand-muted">{p}</p>
+                  ))}
+                  {s.list ? (
+                    <ul className="list-disc space-y-2 pl-5 text-base leading-relaxed text-brand-muted">
+                      {s.list.map((item) => (
+                        <li key={item}>{item}</li>
+                      ))}
+                    </ul>
+                  ) : null}
+                </div>
+              </article>
+            ))}
+          </div>
+        </Container>
+      </Section>
+    </>
   )
 }
 

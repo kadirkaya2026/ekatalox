@@ -30,7 +30,7 @@ export function SiteFooter() {
     <footer className="border-t border-brand-line bg-white">
       <div className="mx-auto grid w-full max-w-6xl gap-10 px-5 py-14 sm:px-8 md:grid-cols-[1.4fr_1fr_1fr_1fr_1fr]">
         <div>
-          <Image src="/ekatalox-logo-rgb-v2.png" alt="eKatalox" width={132} height={34} className="h-8 w-auto" />
+          <Image src="/ekatalox-logo-kurumsal.png" alt="eKatalox" width={132} height={34} className="h-8 w-auto" />
           <p className="mt-4 max-w-xs text-sm leading-relaxed text-brand-muted">
             Mahalle esnafı için komisyonsuz WhatsApp sipariş sistemi. Kurulumu biz yapıyoruz, siparişi siz hazırlıyorsunuz.
           </p>

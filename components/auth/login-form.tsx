@@ -208,6 +208,9 @@ export function LoginForm({ target }: { target?: string }) {
           >
             {pending ? "Giriş yapılıyor..." : "Giriş yap"}
           </button>
+          <p className="pt-1 text-center text-xs text-slate-400">
+            <Link href="/sifremi-unuttum" className="font-medium text-white underline-offset-4 hover:underline">Şifremi unuttum</Link>
+          </p>
         </form>
 
         {!supabase && canUseDemoFallback ? (

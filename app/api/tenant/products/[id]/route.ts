@@ -71,6 +71,7 @@ export async function PATCH(
     is_discount_active: formData.get("is_discount_active"),
     discount_price: formData.get("discount_price"),
     purchase_price: formData.get("purchase_price"),
+    is_alcohol: formData.get("is_alcohol"),
   });
 
   if (!parsed.success) {
@@ -183,6 +184,7 @@ export async function PATCH(
     is_discount_active: parsed.data.is_discount_active,
     discount_price: parsed.data.discount_price,
     purchase_price: parsed.data.purchase_price,
+    is_alcohol: parsed.data.is_alcohol,
     ...(imageUrl !== undefined ? { image_url: imageUrl } : {}),
     ...(imageUrl2 !== undefined ? { image_url_2: imageUrl2 } : {}),
     ...(imageUrl3 !== undefined ? { image_url_3: imageUrl3 } : {}),

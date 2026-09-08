@@ -27,7 +27,7 @@ export function PhoneFrame({
         style={{ boxShadow: "inset 0 0 0 1.5px #5b6069, inset 0 0 0 4px #1a1c20, 0 24px 48px -24px rgba(18,40,74,.45)" }}
       >
         <div className="relative h-full w-full overflow-hidden rounded-[12%/5.8%] bg-black">
-          <Image src={src} alt={alt} fill sizes="320px" priority={priority} className="object-cover object-top" />
+          <Image src={src} alt={alt} fill sizes="320px" loading={priority ? "eager" : undefined} fetchPriority={priority ? "high" : undefined} className="object-cover object-top" />
           <span aria-hidden className="absolute left-1/2 top-[1.3%] h-[2.2%] w-[29%] -translate-x-1/2 rounded-full bg-black" />
         </div>
       </div>

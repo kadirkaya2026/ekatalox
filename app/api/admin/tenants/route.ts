@@ -90,6 +90,8 @@ export async function POST(request: Request) {
       max_product_limit: parsed.data.max_product_limit,
       whatsapp_number: parsed.data.whatsapp_number,
       is_whatsapp_order_direct: true,
+      magnet_login_enabled: false,
+      magnet_price_list_id: null,
       custom_domain: null,
       trial_ends_at: parsed.data.is_trial ? getTrialEndDate() : null,
       plan_started_at: null,

@@ -7,6 +7,7 @@ import { normalizeProductRecord } from "@/lib/products/records";
 import { productWithVariantsAndPricesSelect } from "@/lib/products/queries";
 import { normalizeCode } from "@/lib/products/stock-import-matching";
 import { importProductsFromMasterCatalog } from "@/lib/products/import-from-master-catalog";
+import { isLikelyAlcohol } from "@/lib/products/alcohol";
 import { buildCategoryCache, ensureCategoryPath, normalizeCategoryName } from "@/lib/categories/ensure-hierarchy";
 import { resolveCategoryPath } from "@/lib/market-catalog/category-taxonomy";
 import { compactProductDisplayOrder } from "@/lib/products/reorder";
@@ -337,6 +338,14 @@ export async function POST(request: Request) {
             is_in_stock: true,
             purchase_price: row.purchasePrice ?? null,
             display_order: nextDisplayOrder++,
+            // Tekel bayisinde alkollü görünen yeni ürün vitrinde gizli başlar.
+            ...(tenant.is_tekel &&
+            isLikelyAlcohol(
+              row.newProduct.productName,
+              categoryNameById.get(row.newProduct.categoryId!) ?? row.newProduct.newCategoryName ?? null,
+            )
+              ? { is_alcohol: true }
+              : {}),
           },
         }));
 

@@ -4,39 +4,10 @@ import {
   buildPlanChangeHref,
   formatPlanCapacityFeature,
   NEW_PLAN_OPTIONS,
+  PLAN_MARKETING_META,
   PLAN_PRICING,
 } from "@/lib/billing/plans";
-
-const PLAN_FEATURE_SUMMARY: Record<string, string[]> = {
-  start: [
-    "3 seviyeli müşteri fiyat listesi",
-    "WhatsApp sipariş formu",
-    "ekatalox.com subdomain adresi",
-  ],
-  pro: [
-    "5 seviyeli müşteri fiyat listesi",
-    "Raporlar ve ürün indirimi",
-    "WhatsApp sipariş formu",
-  ],
-  business: [
-    "10 seviyeli müşteri fiyat listesi",
-    "Özel domain desteği",
-    "Akıllı stok yönetimi",
-    "Öncelikli teknik destek",
-  ],
-  enterprise: [
-    "20 seviyeli müşteri fiyat listesi",
-    "Özel domain desteği",
-    "Online ödeme (sanal POS)",
-    "Öncelikli teknik destek",
-  ],
-  vip: [
-    "Sınırsız fiyat listesi",
-    "Saha satış temsilcisi modülü",
-    "White-label desteği",
-    "Özel onboarding ve hesap yöneticisi",
-  ],
-};
+import { TRIAL_DURATION_DAYS } from "@/lib/billing/trial";
 
 /**
  * Deneme süresi dolan tenant admin'i panele giriş yaptığında karşılayan,
@@ -65,7 +36,7 @@ export function TrialExpiredModal({
             Deneme üyeliğinizin sonuna geldiniz
           </h2>
           <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-muted-foreground">
-            {companyName} için 14 günlük deneme süreniz sona erdi. eKatalox'u
+            {companyName} için {TRIAL_DURATION_DAYS} günlük deneme süreniz sona erdi. eKatalox'u
             kullanmaya devam edebilmek için bir paket satın almanız gerekmekte.
             Size uygun paketi seçin, dakikalar içinde kaldığınız yerden devam
             edin.
@@ -75,7 +46,7 @@ export function TrialExpiredModal({
         <div className="mt-8 grid gap-4 md:grid-cols-3">
           {NEW_PLAN_OPTIONS.map((plan) => {
             const pricing = PLAN_PRICING[plan.id];
-            const featured = plan.id === "business";
+            const featured = PLAN_MARKETING_META[plan.id].featured;
 
             return (
               <div
@@ -106,7 +77,7 @@ export function TrialExpiredModal({
                     <Check className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
                     {formatPlanCapacityFeature(plan.id)}
                   </li>
-                  {PLAN_FEATURE_SUMMARY[plan.id].map((feature) => (
+                  {PLAN_MARKETING_META[plan.id].bullets.map((feature) => (
                     <li key={feature} className="flex items-start gap-2">
                       <Check className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
                       {feature}

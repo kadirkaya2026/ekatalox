@@ -210,6 +210,19 @@ export function ProductEditModal({
           Sepet önerilerinde göster (manuel modda)
         </label>
 
+        {/* Alkollü ürün bayrağı yalnız market tipi hesaplarda; tekel
+            (is_tekel) mağazalarda bu ürünler vitrinde gizlenir (bkz. 0114). */}
+        {tenant.business_type === "market" ? (
+          <label className="flex items-center gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-900/50 dark:bg-amber-900/20 dark:text-amber-200">
+            <input
+              type="checkbox"
+              checked={form.is_alcohol}
+              onChange={(event) => updateField("is_alcohol", event.target.checked)}
+            />
+            Alkollü ürün (tekel mağazalarda vitrinde gösterilmez)
+          </label>
+        ) : null}
+
         <div className="flex justify-end gap-2">
           <Button type="button" variant="secondary" onClick={onClose}>
             İptal

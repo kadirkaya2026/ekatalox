@@ -1,181 +1,90 @@
-'use client'
+import type { Metadata } from "next";
+import { SITE } from "@/lib/marketing/site";
+import { ContactForm } from "@/components/marketing/contact-form";
+import { ButtonLink, Container, Eyebrow, Section } from "@/components/marketing/ui";
 
-import { useState } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import { Mail, Phone, MapPin, MessageCircle, CheckCircle2, ArrowRight, Building2, Briefcase, HelpCircle } from 'lucide-react'
-import { SiteNavbar, SiteFooter, PageHero } from '@/components/site-chrome'
+export const metadata: Metadata = {
+  title: "İletişim ve demo talebi",
+  description:
+    "Demo, fiyat teklifi ya da destek için eKatalox ekibine ulaşın. Telefon, WhatsApp ve e-posta; iletişim formuna bir iş günü içinde dönüş.",
+  alternates: { canonical: "/iletisim" },
+  openGraph: {
+    title: "İletişim | eKatalox",
+    description: "Demo, teklif ve destek için bize ulaşın.",
+    url: `${SITE.url}/iletisim`,
+  },
+};
 
-const departments = [
-  { icon: Briefcase, name: 'Satış', email: 'satis@ekatalox.com', desc: 'Demo talebi, kurumsal teklif' },
-  { icon: HelpCircle, name: 'Destek', email: 'destek@ekatalox.com', desc: 'Teknik destek, sorun bildirimi' },
-  { icon: Building2, name: 'Kurumsal', email: 'kurumsal@ekatalox.com', desc: 'Anlaşma, ortaklık, basın' },
-]
+const DEPARTMENTS = [
+  { name: "Satış", email: SITE.salesEmail, desc: "Demo, paket seçimi, toptancı teklifi" },
+  { name: "Destek", email: SITE.supportEmail, desc: "Panel, sipariş akışı, teknik sorun" },
+  { name: "Kurumsal", email: "kurumsal@ekatalox.com", desc: "Anlaşma, ortaklık, basın" },
+];
 
-const Page = () => {
-  const [form, setForm] = useState({ name: '', company: '', email: '', phone: '', subject: 'demo', sector: '', message: '' })
-  const [sent, setSent] = useState(false)
-  const [sending, setSending] = useState(false)
-  const [errors, setErrors] = useState<Record<string, string>>({})
-  const [apiError, setApiError] = useState('')
+type Params = { konu?: string | string[] };
 
-  const set = (k: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
-    setForm({ ...form, [k]: e.target.value })
-
-  const submit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    const errs: Record<string, string> = {}
-    if (!form.name.trim()) errs.name = 'Adınızı girin'
-    if (!form.sector) errs.sector = 'Hizmet alanınızı seçin'
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) errs.email = 'Geçerli e-posta girin'
-    if (form.message.trim().length < 10) errs.message = 'En az 10 karakter yazın'
-    setErrors(errs)
-    if (Object.keys(errs).length > 0) return
-
-    setSending(true)
-    setApiError('')
-    try {
-      const res = await fetch('/api/contact', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
-      })
-      if (!res.ok) throw new Error('Gönderim başarısız')
-      setSent(true)
-    } catch {
-      setApiError('Mesaj gönderilemedi. Lütfen tekrar deneyin veya info@ekatalox.com adresine yazın.')
-    } finally {
-      setSending(false)
-    }
-  }
-
+export default async function Page({ searchParams }: { searchParams: Promise<Params> }) {
+  const { konu } = await searchParams;
+  const subject = Array.isArray(konu) ? konu[0] : konu;
   return (
-    <main className="relative min-h-screen bg-[#090d16] text-white overflow-hidden">
-      <SiteNavbar />
-      <PageHero
-        tag="İletişim"
-        title={<>Bizimle <span className="bg-clip-text text-transparent bg-gradient-to-r from-[var(--marketing-primary)] to-[var(--marketing-accent)]">konuşalım.</span></>}
-        subtitle="Demo, fiyat teklifi veya genel bir soru — her türlü konuda 24 saat içinde geri dönüş sağlıyoruz."
-      />
+    <>
+      <Section tone="white" className="border-b border-brand-line">
+        <Container>
+          <div className="max-w-3xl">
+            <Eyebrow>İletişim</Eyebrow>
+            <h1 className="mt-3 text-balance text-4xl font-bold leading-[1.05] tracking-[-0.02em] text-brand-navy sm:text-5xl">
+              Konuşalım.
+            </h1>
+            <p className="mt-4 text-lg leading-relaxed text-brand-muted">
+              Demo, fiyat teklifi ya da destek. Telefonla hemen, formla bir iş günü içinde.
+            </p>
+          </div>
+        </Container>
+      </Section>
 
-      <section className="relative pb-32 px-6">
-        <div className="max-w-6xl mx-auto grid lg:grid-cols-[1fr_1.2fr] gap-10">
-          <div className="space-y-6">
-            {departments.map((d, i) => (
-              <motion.div key={d.name} initial={{ opacity: 0, x: -20 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true, amount: 0.3 }} transition={{ duration: 0.6, delay: i * 0.1 }}
-                className="flex items-start gap-4 p-5 rounded-2xl border border-white/10 bg-white/[0.02] hover:border-white/20 transition-colors">
-                <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-[var(--marketing-primary)]/20 to-[var(--marketing-accent)]/20 border border-white/10 flex items-center justify-center flex-shrink-0">
-                  <d.icon className="w-5 h-5 text-[var(--marketing-primary)]" />
-                </div>
-                <div>
-                  <div className="text-base text-white font-semibold">{d.name}</div>
-                  <div className="text-xs text-slate-500 mt-0.5">{d.desc}</div>
-                  <a href={`mailto:${d.email}`} className="text-sm text-[var(--marketing-primary)] hover:text-white transition-colors mt-2 inline-flex items-center gap-1">
-                    {d.email} <ArrowRight className="w-3 h-3" />
-                  </a>
-                </div>
-              </motion.div>
-            ))}
-
-            <div className="pt-6 grid grid-cols-2 gap-4">
-              <InfoTile icon={Phone} label="Telefon" value="+90 535 417 25 10" />
-              <InfoTile icon={Mail} label="Genel" value="info@ekatalox.com" />
-              <InfoTile icon={MessageCircle} label="Canlı Destek" value="Hafta içi 09:00 - 18:00" />
-              <InfoTile icon={MapPin} label="Merkez" value="Levent, İstanbul" />
+      <Section>
+        <Container className="grid gap-10 lg:grid-cols-[1fr_1.4fr] lg:gap-16">
+          <div className="space-y-8">
+            <div className="rounded-lg border border-brand-line bg-white p-6">
+              <p className="text-xs font-semibold uppercase tracking-[0.12em] text-brand-muted">Telefon ve WhatsApp</p>
+              <a href={SITE.phoneHref} className="mt-2 block font-plex-mono text-2xl font-medium text-brand-navy">
+                {SITE.phone}
+              </a>
+              <p className="mt-1 text-sm text-brand-muted">Hafta içi 09:00 - 18:00 telefonla; WhatsApp her zaman.</p>
+              <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+                <ButtonLink href={SITE.whatsappHref} external>
+                  WhatsApp’tan yazın
+                </ButtonLink>
+                <ButtonLink href={SITE.demoUrl} tone="outline" external>
+                  Örnek mağazayı açın
+                </ButtonLink>
+              </div>
             </div>
+
+            <ul className="divide-y divide-brand-line rounded-lg border border-brand-line bg-white">
+              {DEPARTMENTS.map((d) => (
+                <li key={d.name} className="px-6 py-4">
+                  <p className="font-semibold text-brand-navy">{d.name}</p>
+                  <p className="text-sm text-brand-muted">{d.desc}</p>
+                  <a href={`mailto:${d.email}`} className="mt-1 inline-block text-sm font-medium text-brand-ink underline underline-offset-4">
+                    {d.email}
+                  </a>
+                </li>
+              ))}
+            </ul>
+
+            <p className="text-sm leading-relaxed text-brand-muted">
+              Başvurmaya hazırsanız formu atlayın:{" "}
+              <a href="/basvuru" className="font-semibold text-brand-navy underline underline-offset-4">
+                ücretsiz başvuru sayfası
+              </a>
+              .
+            </p>
           </div>
 
-          <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.2 }} transition={{ duration: 0.8 }}
-            className="relative rounded-3xl border border-white/10 bg-gradient-to-b from-white/[0.04] to-white/[0.01] p-7 md:p-9 overflow-hidden">
-            <div className="absolute -top-20 -right-20 w-60 h-60 rounded-full bg-[var(--marketing-primary)]/15 blur-3xl pointer-events-none" />
-            <AnimatePresence mode="wait">
-              {!sent ? (
-                <motion.form key="form" onSubmit={submit} noValidate initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="relative space-y-4">
-                  <h2 className="text-2xl md:text-3xl font-semibold">Mesaj gönderin</h2>
-                  <p className="text-sm text-slate-400">Formu doldurun, ekibimiz 24 saat içinde dönüş sağlasın.</p>
-                  <div className="grid sm:grid-cols-2 gap-4 pt-2">
-                    <FormField id="contact-name" label="Ad Soyad" placeholder="Ahmet Yılmaz" value={form.name} onChange={set('name')} error={errors.name} />
-                    <FormField id="contact-company" label="Şirket" placeholder="Toptan A.Ş." value={form.company} onChange={set('company')} />
-                  </div>
-                  <div className="grid sm:grid-cols-2 gap-4">
-                    <FormField id="contact-email" label="E-posta" type="email" placeholder="isim@firmaniz.com" value={form.email} onChange={set('email')} error={errors.email} />
-                    <FormField id="contact-phone" label="Telefon" placeholder="+90 …" value={form.phone} onChange={set('phone')} />
-                  </div>
-                  <div>
-                    <label htmlFor="contact-sector" className="text-xs text-slate-400 mb-1.5 block uppercase tracking-wider">Hizmet Alanınız</label>
-                    <select id="contact-sector" value={form.sector} onChange={set('sector')}
-                      className={`w-full px-4 py-3 rounded-xl bg-black/30 border text-sm outline-none transition-colors ${
-                        form.sector ? 'text-white' : 'text-slate-500'
-                      } ${errors.sector ? 'border-red-500/60' : 'border-white/10 focus:border-[var(--marketing-primary)]/60'}`}>
-                      <option value="">— Seçin: hangi alanda hizmet veriyorsunuz? —</option>
-                      <option value="market">Market / Tekel</option>
-                      <option value="hirdavat">Hırdavat / Yapı Market</option>
-                      <option value="toptanci">Toptancı / Distribütör</option>
-                      <option value="gida">Gıda / Şarküteri</option>
-                      <option value="diger">Diğer</option>
-                    </select>
-                    {errors.sector && <div className="mt-1 text-[11px] text-red-400">{errors.sector}</div>}
-                  </div>
-                  <div>
-                    <label htmlFor="contact-subject" className="text-xs text-slate-400 mb-1.5 block uppercase tracking-wider">Konu</label>
-                    <select id="contact-subject" value={form.subject} onChange={set('subject')} className="w-full px-4 py-3 rounded-xl bg-black/30 border border-white/10 text-sm text-white outline-none focus:border-[var(--marketing-primary)]/60">
-                      <option value="demo">Demo Talep Etmek İstiyorum</option>
-                      <option value="satis">Satış / Fiyat Teklifi</option>
-                      <option value="destek">Teknik Destek</option>
-                      <option value="ortaklik">Ortaklık / Anlaşma</option>
-                      <option value="diger">Diğer</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label htmlFor="contact-message" className="text-xs text-slate-400 mb-1.5 block uppercase tracking-wider">Mesajınız</label>
-                    <textarea id="contact-message" rows={5} placeholder="Bize biraz daha bahsedin…" value={form.message} onChange={set('message')}
-                      className={`w-full px-4 py-3 rounded-xl bg-black/30 border text-sm text-white placeholder:text-slate-600 outline-none transition-colors resize-none ${
-                        errors.message ? 'border-red-500/60' : 'border-white/10 focus:border-[var(--marketing-primary)]/60'
-                      }`} />
-                    {errors.message && <div className="mt-1 text-[11px] text-red-400">{errors.message}</div>}
-                  </div>
-                  {apiError && <div className="text-sm text-red-400 text-center">{apiError}</div>}
-                  <button type="submit" disabled={sending} className="w-full mt-2 inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-full bg-white text-black font-medium text-sm hover:scale-[1.01] active:scale-[0.99] transition-transform disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:scale-100">
-                    {sending ? 'Gönderiliyor…' : <><span>Mesajı Gönder</span><ArrowRight className="w-4 h-4" /></>}
-                  </button>
-                </motion.form>
-              ) : (
-                <motion.div key="sent" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="relative text-center py-10">
-                  <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring', stiffness: 200, damping: 14, delay: 0.1 }}
-                    className="mx-auto w-20 h-20 rounded-full bg-gradient-to-br from-emerald-500 to-emerald-400 flex items-center justify-center shadow-[0_0_60px_rgba(var(--marketing-primary-rgb),0.5)]">
-                    <CheckCircle2 className="w-10 h-10 text-white" strokeWidth={2.5} />
-                  </motion.div>
-                  <h3 className="mt-6 text-2xl font-semibold">Mesajınız alındı!</h3>
-                  <p className="mt-2 text-slate-400 max-w-sm mx-auto">{form.name.split(' ')[0]}, 24 saat içinde <span className="text-white">{form.email}</span> adresine dönüş sağlayacağız.</p>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </motion.div>
-        </div>
-      </section>
-
-      <SiteFooter />
-    </main>
-  )
+          <ContactForm initialSubject={subject} />
+        </Container>
+      </Section>
+    </>
+  );
 }
-
-const InfoTile = ({ icon: Icon, label, value }) => (
-  <div className="p-4 rounded-xl border border-white/10 bg-white/[0.02]">
-    <Icon className="w-4 h-4 text-[var(--marketing-primary)]" />
-    <div className="mt-2 text-[11px] uppercase tracking-widest text-slate-500">{label}</div>
-    <div className="text-sm text-white mt-0.5">{value}</div>
-  </div>
-)
-
-const FormField = ({ id, label, type = 'text', placeholder, value, onChange, error }: {
-  id: string; label: string; type?: string; placeholder: string; value: string;
-  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void; error?: string
-}) => (
-  <div>
-    <label htmlFor={id} className="text-xs text-slate-400 mb-1.5 block uppercase tracking-wider">{label}</label>
-    <input id={id} type={type} placeholder={placeholder} value={value} onChange={onChange}
-      className={`w-full px-4 py-3 rounded-xl bg-black/30 border text-sm text-white placeholder:text-slate-600 outline-none transition-colors ${error ? 'border-red-500/60' : 'border-white/10 focus:border-[var(--marketing-primary)]/60'}`} />
-    {error && <div className="mt-1 text-[11px] text-red-400">{error}</div>}
-  </div>
-)
-
-export default Page

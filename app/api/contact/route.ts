@@ -4,9 +4,15 @@ import nodemailer from 'nodemailer'
 // Hizmet alanı: satış ekibi maili açar açmaz hangi senaryoyu anlatacağını
 // bilsin (Market/Tekel → Kapına Gelsin; Toptancı → fiyat listeleri/bayi).
 const sectorLabels: Record<string, string> = {
-  market: 'Market / Tekel',
+  market: 'Market / Bakkal',
+  tekel: 'Tekel Bayii',
+  manav: 'Manav',
+  kasap: 'Kasap / Şarküteri',
+  cicekci: 'Çiçekçi',
+  petshop: 'Petshop',
+  kirtasiye: 'Kırtasiye',
+  toptanci: 'Toptancı',
   hirdavat: 'Hırdavat / Yapı Market',
-  toptanci: 'Toptancı / Distribütör',
   gida: 'Gıda / Şarküteri',
   diger: 'Diğer',
 }

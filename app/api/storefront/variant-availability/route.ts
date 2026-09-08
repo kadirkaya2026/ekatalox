@@ -49,7 +49,7 @@ export async function POST(request: Request) {
 
   const { data: product, error: productError } = await supabase
     .from("products")
-    .select("id, is_in_stock")
+    .select("id, is_in_stock, is_alcohol")
     .eq("tenant_id", tenant.id)
     .eq("id", parsed.data.productId)
     .maybeSingle();
@@ -58,7 +58,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: productError.message }, { status: 400 });
   }
 
-  if (!product) {
+  // Tekel mağazada alkollü ürün vitrinde yok sayılır (bkz. 0114).
+  if (!product || (tenant.is_tekel && Boolean(product.is_alcohol))) {
     return NextResponse.json({ error: "Ürün bulunamadı." }, { status: 404 });
   }
 

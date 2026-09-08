@@ -1,6 +1,9 @@
+import { ESNAF_TRIAL_DAYS } from "@/lib/billing/esnaf-plans";
 import type { Tenant } from "@/lib/types";
 
-export const TRIAL_DURATION_DAYS = 14;
+// Deneme süresi 30 gün (Esnaf paketleri, Eyl 2026) — tek kaynak
+// lib/billing/esnaf-plans.ts ESNAF_TRIAL_DAYS.
+export const TRIAL_DURATION_DAYS = ESNAF_TRIAL_DAYS;
 
 export function getTrialEndDate(from: Date = new Date()): string {
   const end = new Date(from);

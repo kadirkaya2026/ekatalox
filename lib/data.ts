@@ -1227,6 +1227,8 @@ interface StorefrontProductRowFilter {
   matchCategoryIds?: string[];
   excludeCategoryIds?: string[];
   discountOnly?: boolean;
+  // Tekel bayisi: alkollü ürünler vitrinde hiç görünmez (bkz. 0114).
+  hideAlcohol?: boolean;
   // Yalnız fiyattan bağımsız sıralamalar burada uygulanır ("featured" |
   // "newest"). Fiyat sıralaması müşterinin fiyat listesine bağlı olduğu
   // için önbelleklenen satır sorgusunun DIŞINDA yapılır (bkz.
@@ -1234,10 +1236,46 @@ interface StorefrontProductRowFilter {
   sort?: StorefrontProductSort;
 }
 
+// Tekel bayilerinde (tenants.is_tekel) alkollü ürünler vitrinde ASLA
+// gösterilmez — yasal gereklilik, müşteri mağazadan alır (bkz. 0114,
+// lib/products/alcohol.ts). Vitrin ürün sorguları yalnız tenantId alıyor;
+// bayrak burada tenant id ile önbelleklenir ve her sorguya (önbellek
+// anahtarına da girecek şekilde) argüman olarak taşınır. Böylece storefront
+// sayfaları/API'leri tek tek değişmeden filtre merkezi olarak uygulanır.
+async function shouldHideAlcoholProducts(tenantId: string): Promise<boolean> {
+  if (!createSupabaseAdminClient()) {
+    return Boolean(demoTenants.find((tenant) => tenant.id === tenantId)?.is_tekel);
+  }
+
+  const readFlag = unstable_cache(
+    async (resolvedTenantId: string) => {
+      const admin = createSupabaseAdminClient();
+      if (!admin) return false;
+      const { data } = await admin
+        .from("tenants")
+        .select("is_tekel")
+        .eq("id", resolvedTenantId)
+        .maybeSingle();
+      return Boolean((data as { is_tekel?: boolean } | null)?.is_tekel);
+    },
+    [tenantId, "hide-alcohol"],
+    { tags: [`storefront_${tenantId}`], revalidate: 300 },
+  );
+
+  return readFlag(tenantId);
+}
+
+function applyAlcoholExclusion<Q extends { eq: Function }>(query: Q, hideAlcohol: boolean): Q {
+  return hideAlcohol ? (query.eq("is_alcohol", false) as Q) : query;
+}
+
 function applyStorefrontProductFilters<
   Q extends { in: Function; not: Function; or: Function; eq: Function },
 >(query: Q, filter: StorefrontProductRowFilter, orFilter: string | null): Q {
   let q = query;
+  if (filter.hideAlcohol) {
+    q = q.eq("is_alcohol", false);
+  }
   if (filter.discountOnly) {
     q = q.eq("is_discount_active", true);
   } else if (filter.categoryIds?.length) {
@@ -1262,6 +1300,7 @@ async function getCachedStorefrontProductRowsPage(
   filter: StorefrontProductRowFilter,
 ): Promise<{ products: Product[]; total: number }> {
   const page = Math.max(1, filter.page);
+  const hideAlcohol = await shouldHideAlcoholProducts(filter.tenantId);
 
   if (!createSupabaseAdminClient()) {
     if (!shouldAllowDemoFallback()) {
@@ -1276,6 +1315,7 @@ async function getCachedStorefrontProductRowsPage(
       : [];
     const filtered = demoProducts.filter((product) => {
       if (product.tenant_id !== filter.tenantId) return false;
+      if (hideAlcohol && product.is_alcohol) return false;
       if (excludeSet?.has(product.category_id)) return false;
       if (filter.discountOnly) return product.is_discount_active;
       if (categoryIdSet && !categoryIdSet.has(product.category_id)) return false;
@@ -1300,6 +1340,7 @@ async function getCachedStorefrontProductRowsPage(
       excludeCategoryIds: string[],
       discountOnly: boolean,
       sort: StorefrontProductSort,
+      resolvedHideAlcohol: boolean,
     ) => {
       const admin = createSupabaseAdminClient();
       if (!admin) return { products: [] as Product[], total: 0 };
@@ -1314,6 +1355,7 @@ async function getCachedStorefrontProductRowsPage(
         categoryIds,
         excludeCategoryIds,
         discountOnly,
+        hideAlcohol: resolvedHideAlcohol,
       };
 
       const escapedTerm = term ? term.replace(/[()]/g, "") : "";
@@ -1412,6 +1454,7 @@ async function getCachedStorefrontProductRowsPage(
     filter.excludeCategoryIds ?? [],
     filter.discountOnly ?? false,
     filter.sort === "newest" ? "newest" : "featured",
+    hideAlcohol,
   );
 }
 
@@ -1433,12 +1476,14 @@ async function getCachedStorefrontPricingRows(
   filter: StorefrontProductRowFilter,
 ): Promise<Product[]> {
   const admin = createSupabaseAdminClient();
+  const hideAlcohol = await shouldHideAlcoholProducts(filter.tenantId);
   if (!admin) {
     if (!shouldAllowDemoFallback()) return [];
     const categoryIdSet = filter.categoryIds?.length ? new Set(filter.categoryIds) : null;
     const excludeSet = filter.excludeCategoryIds?.length ? new Set(filter.excludeCategoryIds) : null;
     return demoProducts.filter((product) => {
       if (product.tenant_id !== filter.tenantId) return false;
+      if (hideAlcohol && product.is_alcohol) return false;
       if (excludeSet?.has(product.category_id)) return false;
       if (filter.discountOnly) return product.is_discount_active;
       if (categoryIdSet && !categoryIdSet.has(product.category_id)) return false;
@@ -1454,6 +1499,7 @@ async function getCachedStorefrontPricingRows(
       matchCategoryIds: string[],
       excludeCategoryIds: string[],
       discountOnly: boolean,
+      resolvedHideAlcohol: boolean,
     ) => {
       const client = createSupabaseAdminClient();
       if (!client) return [] as Product[];
@@ -1469,6 +1515,7 @@ async function getCachedStorefrontPricingRows(
         categoryIds,
         excludeCategoryIds,
         discountOnly,
+        hideAlcohol: resolvedHideAlcohol,
       };
 
       const rows: Array<Record<string, unknown>> = [];
@@ -1498,6 +1545,7 @@ async function getCachedStorefrontPricingRows(
     filter.matchCategoryIds ?? [],
     filter.excludeCategoryIds ?? [],
     filter.discountOnly ?? false,
+    hideAlcohol,
   );
 }
 
@@ -1588,27 +1636,30 @@ export async function getStorefrontRecommendationPool(params: {
   excludeCategoryIds?: string[];
 }): Promise<StorefrontProduct[]> {
   const supabaseAdmin = createSupabaseAdminClient();
+  const hideAlcohol = await shouldHideAlcoholProducts(params.tenantId);
 
   if (!supabaseAdmin) {
     if (!shouldAllowDemoFallback()) return [];
     return demoProducts
-      .filter((product) => product.tenant_id === params.tenantId)
+      .filter((product) => product.tenant_id === params.tenantId && !(hideAlcohol && product.is_alcohol))
       .slice(0, 300)
       .map((product) => toStorefrontProduct(product, params.priceListId, params.isCatalogOnly));
   }
 
   const readPool = unstable_cache(
-    async (tenantId: string, excludeCategoryIds: string[]) => {
+    async (tenantId: string, excludeCategoryIds: string[], resolvedHideAlcohol: boolean) => {
       const admin = createSupabaseAdminClient();
       if (!admin) return [] as Product[];
 
-      let recommendedQuery = admin
-        .from("products")
-        .select(productWithVariantsSelect)
-        .eq("tenant_id", tenantId)
-        .eq("is_recommended", true)
-        .eq("is_in_stock", true)
-        .limit(200);
+      let recommendedQuery = applyAlcoholExclusion(
+        admin
+          .from("products")
+          .select(productWithVariantsSelect)
+          .eq("tenant_id", tenantId)
+          .eq("is_recommended", true)
+          .eq("is_in_stock", true),
+        resolvedHideAlcohol,
+      ).limit(200);
       if (excludeCategoryIds.length) {
         recommendedQuery = recommendedQuery.not("category_id", "in", `(${excludeCategoryIds.join(",")})`);
       }
@@ -1622,11 +1673,14 @@ export async function getStorefrontRecommendationPool(params: {
         return recommended;
       }
 
-      let sampleQuery = admin
-        .from("products")
-        .select(productWithVariantsSelect)
-        .eq("tenant_id", tenantId)
-        .eq("is_in_stock", true)
+      let sampleQuery = applyAlcoholExclusion(
+        admin
+          .from("products")
+          .select(productWithVariantsSelect)
+          .eq("tenant_id", tenantId)
+          .eq("is_in_stock", true),
+        resolvedHideAlcohol,
+      )
         .order("display_order", { ascending: true })
         .limit(300);
       if (excludeCategoryIds.length) {
@@ -1642,7 +1696,7 @@ export async function getStorefrontRecommendationPool(params: {
     { tags: [`storefront_${params.tenantId}`], revalidate: 60 },
   );
 
-  const rows = await readPool(params.tenantId, params.excludeCategoryIds ?? []);
+  const rows = await readPool(params.tenantId, params.excludeCategoryIds ?? [], hideAlcohol);
   return rows.map((product) => toStorefrontProduct(product, params.priceListId, params.isCatalogOnly));
 }
 
@@ -1660,18 +1714,26 @@ export async function getStorefrontProductsByIds(params: {
   if (!params.ids.length) return [];
 
   const supabaseAdmin = createSupabaseAdminClient();
+  const hideAlcohol = await shouldHideAlcoholProducts(params.tenantId);
   if (!supabaseAdmin) {
     if (!shouldAllowDemoFallback()) return [];
     return demoProducts
-      .filter((product) => product.tenant_id === params.tenantId && params.ids.includes(product.id))
+      .filter(
+        (product) =>
+          product.tenant_id === params.tenantId &&
+          params.ids.includes(product.id) &&
+          !(hideAlcohol && product.is_alcohol),
+      )
       .map((product) => toStorefrontProduct(product, params.priceListId, params.isCatalogOnly));
   }
 
-  const { data } = await supabaseAdmin
-    .from("products")
-    .select(productWithVariantsSelect)
-    .eq("tenant_id", params.tenantId)
-    .in("id", params.ids);
+  const { data } = await applyAlcoholExclusion(
+    supabaseAdmin
+      .from("products")
+      .select(productWithVariantsSelect)
+      .eq("tenant_id", params.tenantId),
+    hideAlcohol,
+  ).in("id", params.ids);
 
   const rows = normalizeProductRows(data);
   return rows.map((product) => toStorefrontProduct(product, params.priceListId, params.isCatalogOnly));
@@ -1725,6 +1787,7 @@ export async function getStorefrontCategoryRepresentativeImages(
 ): Promise<Record<string, string>> {
   const supabase = createSupabaseAdminClient();
   if (!supabase) return {};
+  const hideAlcohol = await shouldHideAlcoholProducts(tenantId);
 
   const topCategories = categories.filter((category) => !category.parent_id);
   const result: Record<string, string> = {};
@@ -1737,10 +1800,13 @@ export async function getStorefrontCategoryRepresentativeImages(
       if (category.tile_image_url || category.banner_item?.image_url) return;
 
       const subtreeIds = getDescendantCategoryIds(categories, category.id);
-      const { data } = await supabase
-        .from("products")
-        .select("image_url")
-        .eq("tenant_id", tenantId)
+      const { data } = await applyAlcoholExclusion(
+        supabase
+          .from("products")
+          .select("image_url")
+          .eq("tenant_id", tenantId),
+        hideAlcohol,
+      )
         .in("category_id", subtreeIds)
         .eq("is_in_stock", true)
         .not("image_url", "is", null)
@@ -1770,26 +1836,40 @@ export async function getStorefrontPromoProducts(params: {
 }): Promise<StorefrontProduct[]> {
   const supabaseAdmin = createSupabaseAdminClient();
   const limit = params.limit ?? 12;
+  const hideAlcohol = await shouldHideAlcoholProducts(params.tenantId);
 
   if (!supabaseAdmin) {
     if (!shouldAllowDemoFallback()) return [];
     return demoProducts
-      .filter((product) => product.tenant_id === params.tenantId && product.is_discount_active)
+      .filter(
+        (product) =>
+          product.tenant_id === params.tenantId &&
+          product.is_discount_active &&
+          !(hideAlcohol && product.is_alcohol),
+      )
       .slice(0, limit)
       .map((product) => toStorefrontProduct(product, params.priceListId, params.isCatalogOnly));
   }
 
   const readPromo = unstable_cache(
-    async (tenantId: string, excludeCategoryIds: string[], resolvedLimit: number) => {
+    async (
+      tenantId: string,
+      excludeCategoryIds: string[],
+      resolvedLimit: number,
+      resolvedHideAlcohol: boolean,
+    ) => {
       const admin = createSupabaseAdminClient();
       if (!admin) return [] as Product[];
 
-      let query = admin
-        .from("products")
-        .select(productWithVariantsSelect)
-        .eq("tenant_id", tenantId)
-        .eq("is_discount_active", true)
-        .eq("is_in_stock", true)
+      let query = applyAlcoholExclusion(
+        admin
+          .from("products")
+          .select(productWithVariantsSelect)
+          .eq("tenant_id", tenantId)
+          .eq("is_discount_active", true)
+          .eq("is_in_stock", true),
+        resolvedHideAlcohol,
+      )
         .order("display_order", { ascending: true })
         .limit(resolvedLimit);
       if (excludeCategoryIds.length) {
@@ -1803,7 +1883,7 @@ export async function getStorefrontPromoProducts(params: {
     { tags: [`storefront_${params.tenantId}`], revalidate: 60 },
   );
 
-  const rows = await readPromo(params.tenantId, params.excludeCategoryIds ?? [], limit);
+  const rows = await readPromo(params.tenantId, params.excludeCategoryIds ?? [], limit, hideAlcohol);
   return rows.map((product) => toStorefrontProduct(product, params.priceListId, params.isCatalogOnly));
 }
 
@@ -1820,16 +1900,25 @@ export async function getStorefrontPromoProductCount(params: {
   excludeCategoryIds?: string[];
 }): Promise<number> {
   const supabaseAdmin = createSupabaseAdminClient();
+  const hideAlcohol = await shouldHideAlcoholProducts(params.tenantId);
 
   if (!supabaseAdmin) {
     if (!shouldAllowDemoFallback()) return 0;
     return demoProducts.filter(
-      (product) => product.tenant_id === params.tenantId && product.is_discount_active,
+      (product) =>
+        product.tenant_id === params.tenantId &&
+        product.is_discount_active &&
+        !(hideAlcohol && product.is_alcohol),
     ).length;
   }
 
   const readCount = unstable_cache(
-    async (tenantId: string, priceListId: string, excludeCategoryIds: string[]) => {
+    async (
+      tenantId: string,
+      priceListId: string,
+      excludeCategoryIds: string[],
+      resolvedHideAlcohol: boolean,
+    ) => {
       const admin = createSupabaseAdminClient();
       if (!admin) return 0;
 
@@ -1852,6 +1941,9 @@ export async function getStorefrontPromoProductCount(params: {
       if (excludeCategoryIds.length) {
         query = query.not("category_id", "in", `(${excludeCategoryIds.join(",")})`);
       }
+      if (resolvedHideAlcohol) {
+        query = query.eq("is_alcohol", false);
+      }
 
       const { count } = await query;
       return count ?? 0;
@@ -1860,7 +1952,7 @@ export async function getStorefrontPromoProductCount(params: {
     { tags: [`storefront_${params.tenantId}`], revalidate: 60 },
   );
 
-  return readCount(params.tenantId, params.priceListId, params.excludeCategoryIds ?? []);
+  return readCount(params.tenantId, params.priceListId, params.excludeCategoryIds ?? [], hideAlcohol);
 }
 
 // "Öne Çıkan Bölümler"in aksine burada ürün listesi admin tarafından
@@ -1883,8 +1975,15 @@ export async function getStorefrontBestSellerProducts(params: {
     return [];
   }
 
+  const hideAlcohol = await shouldHideAlcoholProducts(params.tenantId);
+
   const readBestSellers = unstable_cache(
-    async (tenantId: string, excludeCategoryIds: string[], resolvedLimit: number) => {
+    async (
+      tenantId: string,
+      excludeCategoryIds: string[],
+      resolvedLimit: number,
+      resolvedHideAlcohol: boolean,
+    ) => {
       const admin = createSupabaseAdminClient();
       if (!admin) return [] as Product[];
 
@@ -1913,12 +2012,14 @@ export async function getStorefrontBestSellerProducts(params: {
 
       if (!rankedProductIds.length) return [] as Product[];
 
-      let query = admin
-        .from("products")
-        .select(productWithVariantsSelect)
-        .eq("tenant_id", tenantId)
-        .eq("is_in_stock", true)
-        .in("id", rankedProductIds);
+      let query = applyAlcoholExclusion(
+        admin
+          .from("products")
+          .select(productWithVariantsSelect)
+          .eq("tenant_id", tenantId)
+          .eq("is_in_stock", true),
+        resolvedHideAlcohol,
+      ).in("id", rankedProductIds);
       if (excludeCategoryIds.length) {
         query = query.not("category_id", "in", `(${excludeCategoryIds.join(",")})`);
       }
@@ -1937,7 +2038,7 @@ export async function getStorefrontBestSellerProducts(params: {
     { tags: [`storefront_${params.tenantId}`], revalidate: 300 },
   );
 
-  const rows = await readBestSellers(params.tenantId, params.excludeCategoryIds ?? [], limit);
+  const rows = await readBestSellers(params.tenantId, params.excludeCategoryIds ?? [], limit, hideAlcohol);
   return rows.map((product) => toStorefrontProduct(product, params.priceListId, params.isCatalogOnly));
 }
 
@@ -1972,12 +2073,17 @@ export async function getStorefrontProductDescription(
 
   const { data, error } = await supabase
     .from("products")
-    .select("description")
+    .select("description, is_alcohol")
     .eq("tenant_id", tenantId)
     .eq("id", productId)
     .maybeSingle();
 
   if (error || !data) {
+    return { found: false };
+  }
+
+  // Tekel: alkollü ürün detayı da vitrinde yok sayılır → 404 (bkz. 0114).
+  if (Boolean((data as { is_alcohol?: boolean }).is_alcohol) && (await shouldHideAlcoholProducts(tenantId))) {
     return { found: false };
   }
 
@@ -2116,10 +2222,10 @@ export async function getStorefrontSections(
 
   const sectionIds = (sections as StorefrontSection[]).map((s) => s.id);
 
-  const sectionProductRows = await fetchStorefrontSectionRowsWithOptionalVariants(
-    supabase,
-    sectionIds,
-  );
+  const [sectionProductRows, hideAlcohol] = await Promise.all([
+    fetchStorefrontSectionRowsWithOptionalVariants(supabase, sectionIds),
+    shouldHideAlcoholProducts(tenantId),
+  ]);
 
   const productsBySectionId = new Map<string, StorefrontProduct[]>();
 
@@ -2132,6 +2238,10 @@ export async function getStorefrontSections(
       continue;
     }
     const product = normalizeProductRecord(row.products as Record<string, unknown>);
+    // Tekel: öne çıkan bölümlere elle eklenmiş alkollü ürün de gizlenir.
+    if (hideAlcohol && product.is_alcohol) {
+      continue;
+    }
     const storefrontProduct = toStorefrontProduct(
       product,
       priceListId,
