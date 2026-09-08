@@ -6,7 +6,7 @@ export const SITE = {
   name: "eKatalox",
   domain: "ekatalox.com",
   url: "https://www.ekatalox.com",
-  demoUrl: "https://tekelsiparis.ekatalox.com",
+  demoUrl: "https://marketgo.ekatalox.com",
   phone: "+90 535 417 25 10",
   phoneHref: "tel:+905354172510",
   whatsappHref: "https://wa.me/905354172510",
