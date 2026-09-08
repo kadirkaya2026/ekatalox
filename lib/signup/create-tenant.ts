@@ -21,6 +21,7 @@ import {
   SECTOR_THEME_MAP,
 } from "@/lib/storefront/esnaf-themes";
 import { seedMarketStorefrontTemplate } from "@/lib/storefront/market-template";
+import { registerTenantSubdomain } from "@/lib/vercel/domains";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { signupSchema, type SignupInput } from "@/lib/validators/signup";
 
@@ -152,7 +153,7 @@ async function applyStorefrontTheme(
     await seedMarketStorefrontTemplate(supabase, tenantId);
     const { error } = await supabase
       .from("tenant_storefront_settings")
-      .upsert({ tenant_id: tenantId, ...content }, { onConflict: "tenant_id" });
+      .upsert({ tenant_id: tenantId, esnaf_theme_key: "vitrin", ...content }, { onConflict: "tenant_id" });
     if (error) {
       throw new Error(`tenant_storefront_settings: ${error.message}`);
     }
@@ -163,6 +164,7 @@ async function applyStorefrontTheme(
     {
       tenant_id: tenantId,
       ...preset.settings,
+      esnaf_theme_key: preset.key,
       brand_primary_color: sectorMeta.brandPrimaryColor,
       ...content,
     },
@@ -464,6 +466,13 @@ export async function createSelfServiceTenant(
       ...notification,
     }),
   ]);
+
+  // Alt alan adını Vercel'e ekle (yoksa Cloudflare 525). Başarısızlık kaydı
+  // bozmaz; süper admin panelden elle ekleyebilir.
+  const domainResult = await registerTenantSubdomain(input.subdomain);
+  if (!domainResult.ok) {
+    console.error("[signup] Vercel alan adı eklenemedi:", input.subdomain, domainResult.reason);
+  }
 
   return {
     ok: true,

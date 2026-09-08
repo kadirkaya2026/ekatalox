@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { registerTenantSubdomain } from "@/lib/vercel/domains";
 import { demoTenants } from "@/lib/demo-data";
 import { shouldAllowDemoFallback } from "@/lib/env";
 import { generateTemporaryPassword } from "@/lib/auth/password";
@@ -156,6 +157,11 @@ export async function POST(request: Request) {
   // tek tek düzeltmek gerekmesin (kullanıcı isteği, 4 Eyl 2026). Yalnızca
   // tasarım alanları — mağaza adı/logo/hero/footer içeriği vb. kopyalanmaz.
   // Şablon bulunamazsa/başarısız olsa da tenant oluşturma akışı bozulmaz.
+  // Alt alan adını Vercel projesine ekle (joker alan adı yok; yoksa 525).
+  void registerTenantSubdomain(tenant.subdomain).then((r) => {
+    if (!r.ok) console.error("[admin/tenants] Vercel alan adı eklenemedi:", tenant.subdomain, r.reason);
+  });
+
   if (parsed.data.business_type === "market") {
     await seedMarketStorefrontTemplate(supabase, tenant.id);
   }

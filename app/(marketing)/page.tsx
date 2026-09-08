@@ -14,7 +14,7 @@ import { SITE } from "@/lib/marketing/site";
 // komisyon hesaplayıcı. Görseller public/site altındaki gerçek ekran görüntüleri.
 
 export const metadata: Metadata = {
-  title: "eKatalox — Mahallenizin siparişi WhatsApp'ınıza gelsin",
+  title: { absolute: "eKatalox — Mahallenizin siparişi WhatsApp'ınıza gelsin" },
   description:
     "Market, tekel, manav, kasap ve petshoplar için komisyonsuz WhatsApp sipariş sistemi. Kurulumu 2 saatte biz yapıyoruz, 1 ay ücretsiz, QR magnetler hediye.",
   alternates: { canonical: "/" },
