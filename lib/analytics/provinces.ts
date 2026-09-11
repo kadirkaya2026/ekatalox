@@ -1,10 +1,9 @@
 // Türkiye il listesi (plaka kodu → ad) ve istek başlıklarından il çözümleme.
 //
-// Vercel her isteğe MaxMind tabanlı coğrafi başlıklar ekler:
-//   x-vercel-ip-country        → "TR"
-//   x-vercel-ip-country-region → ISO 3166-2 alt bölüm kodu; Türkiye'de plaka
-//                                 koduyla aynıdır ("34" = İstanbul)
-//   x-vercel-ip-city           → URL-encoded şehir adı ("Istanbul", "Kad%C4%B1k%C3%B6y")
+// Coğrafi başlıklar (ISO 3166-2 alt bölüm kodu Türkiye'de plaka koduyla
+// aynıdır: "34" = İstanbul):
+//   Cloudflare: cf-ipcountry, cf-region-code, cf-ipcity  (tercih edilen)
+//   Vercel:     x-vercel-ip-country, x-vercel-ip-country-region, x-vercel-ip-city
 // Saklanan değer: TR için iki haneli plaka kodu, yurt dışı için "XX:<ülke>".
 
 export const TR_PROVINCES: Record<string, string> = {
@@ -87,30 +86,56 @@ export function provinceCodeFromCityName(city: string | null | undefined) {
   return PROVINCE_BY_NORMALIZED_NAME[key] ?? CITY_ALIASES[key] ?? null;
 }
 
-/**
- * İstek başlıklarından saklanacak il kodunu üretir.
- * TR → "34" gibi plaka kodu; yurt dışı → "XX:DE"; tespit yoksa null.
- */
-export function resolveProvinceCodeFromHeaders(headers: Headers): string | null {
-  const country = (
-    decodeHeader(headers.get("x-vercel-ip-country")) ??
-    decodeHeader(headers.get("cf-ipcountry"))
-  )?.toUpperCase();
+function provinceCodeFromRegion(region: string | null) {
+  if (!region) return null;
+  const digits = region.replace(/^TR-?/i, "").trim();
+  const padded = /^\d{1,2}$/.test(digits) ? digits.padStart(2, "0") : null;
+  return padded && TR_PROVINCES[padded] ? padded : null;
+}
 
-  if (!country) return null;
-
+function codeForCountry(
+  country: string,
+  region: string | null,
+  city: string | null,
+): string | null {
   if (country !== "TR") {
     return /^[A-Z]{2}$/.test(country) ? `${FOREIGN_PREFIX}${country}` : null;
   }
+  return provinceCodeFromRegion(region) ?? provinceCodeFromCityName(city);
+}
 
-  const region = decodeHeader(headers.get("x-vercel-ip-country-region"));
-  if (region) {
-    const digits = region.replace(/^TR-?/i, "").trim();
-    const padded = /^\d{1,2}$/.test(digits) ? digits.padStart(2, "0") : null;
-    if (padded && TR_PROVINCES[padded]) return padded;
+/**
+ * İstek başlıklarından saklanacak il kodunu üretir.
+ * TR → "34" gibi plaka kodu; yurt dışı → "XX:DE"; tespit yoksa null.
+ *
+ * SIRA ÖNEMLİ: ekatalox.com Cloudflare arkasında. Vercel'in x-vercel-ip-*
+ * başlıkları bağlanan IP'ye (Cloudflare kenar sunucusu, ör. Amsterdam) göre
+ * hesaplanır; gerçek müşteri konumu değildir. Cloudflare proxy'lediği
+ * isteklerde cf-connecting-ip taşır; o varsa YALNIZ Cloudflare başlıkları
+ * kullanılır: cf-ipcountry (her zaman), cf-region-code / cf-ipcity (panelde
+ * "Add visitor location headers" managed transform açıksa). Cloudflare yoksa
+ * Vercel başlıklarına düşülür.
+ */
+export function resolveProvinceCodeFromHeaders(headers: Headers): string | null {
+  const behindCloudflare = Boolean(headers.get("cf-connecting-ip"));
+
+  const cfCountry = decodeHeader(headers.get("cf-ipcountry"))?.toUpperCase() ?? null;
+  if (behindCloudflare || cfCountry) {
+    if (!cfCountry || cfCountry === "XX" || cfCountry === "T1") return null;
+    return codeForCountry(
+      cfCountry,
+      decodeHeader(headers.get("cf-region-code")),
+      decodeHeader(headers.get("cf-ipcity")),
+    );
   }
 
-  return provinceCodeFromCityName(decodeHeader(headers.get("x-vercel-ip-city")));
+  const country = decodeHeader(headers.get("x-vercel-ip-country"))?.toUpperCase() ?? null;
+  if (!country) return null;
+  return codeForCountry(
+    country,
+    decodeHeader(headers.get("x-vercel-ip-country-region")),
+    decodeHeader(headers.get("x-vercel-ip-city")),
+  );
 }
 
 const countryNames =
