@@ -122,7 +122,7 @@ async function fetchAccessDetails(
       p_tenant_id: tenantId,
       p_start_date: startDate,
       p_end_date: endDate,
-      p_limit: 100,
+      p_limit: 300,
     }),
   ]);
 

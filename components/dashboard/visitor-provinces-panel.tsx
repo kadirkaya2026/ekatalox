@@ -222,12 +222,89 @@ function formatEntryTime(iso: string) {
   });
 }
 
-function EntriesTable({ rows }: { rows: VisitorEntryRow[] }) {
+const ENTRIES_PER_PAGE = 30;
+
+function EntriesPagination({
+  page,
+  pageCount,
+  onChange,
+}: {
+  page: number;
+  pageCount: number;
+  onChange: (next: number) => void;
+}) {
+  if (pageCount <= 1) return null;
+
+  const pages = Array.from({ length: pageCount }, (_, i) => i + 1).filter(
+    (n) => n === 1 || n === pageCount || Math.abs(n - page) <= 2,
+  );
+
+  return (
+    <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+      <p className="text-xs text-slate-500">
+        Sayfa {page} / {pageCount}
+      </p>
+      <div className="flex flex-wrap items-center gap-1">
+        <button
+          type="button"
+          onClick={() => onChange(page - 1)}
+          disabled={page <= 1}
+          className="rounded-md border border-slate-200 px-3 py-1 text-sm text-slate-600 disabled:opacity-40"
+        >
+          Önceki
+        </button>
+        {pages.map((n, idx) => {
+          const gap = idx > 0 && n - pages[idx - 1] > 1;
+          return (
+            <span key={n} className="flex items-center gap-1">
+              {gap ? <span className="px-1 text-xs text-slate-400">…</span> : null}
+              <button
+                type="button"
+                onClick={() => onChange(n)}
+                className={cn(
+                  "min-w-9 rounded-md border px-2 py-1 text-sm",
+                  n === page
+                    ? "border-slate-900 bg-slate-900 text-white"
+                    : "border-slate-200 text-slate-600 hover:border-slate-300",
+                )}
+              >
+                {n}
+              </button>
+            </span>
+          );
+        })}
+        <button
+          type="button"
+          onClick={() => onChange(page + 1)}
+          disabled={page >= pageCount}
+          className="rounded-md border border-slate-200 px-3 py-1 text-sm text-slate-600 disabled:opacity-40"
+        >
+          Sonraki
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function EntriesTable({
+  rows: allRows,
+  periodLabel,
+}: {
+  rows: VisitorEntryRow[];
+  periodLabel: string;
+}) {
+  const [page, setPage] = useState(1);
+  const pageCount = Math.max(1, Math.ceil(allRows.length / ENTRIES_PER_PAGE));
+  const safePage = Math.min(page, pageCount);
+  const rows = allRows.slice((safePage - 1) * ENTRIES_PER_PAGE, safePage * ENTRIES_PER_PAGE);
+
   return (
     <Card className="p-5">
-      <h2 className="text-lg font-semibold text-foreground">Son girişler</h2>
+      <h2 className="text-lg font-semibold text-foreground">Son girişler · {periodLabel}</h2>
       <p className="mt-1 text-sm text-slate-500">
-        En yeni üstte, son 100 giriş. Saat, ziyaretçinin o gün ilk görüldüğü andır.
+        En yeni üstte, sayfada {ENTRIES_PER_PAGE} giriş
+        {allRows.length > 0 ? ` (toplam ${allRows.length.toLocaleString("tr-TR")})` : ""}. Saat,
+        ziyaretçinin o gün ilk görüldüğü andır.
       </p>
 
       {rows.length === 0 ? (
@@ -278,6 +355,8 @@ function EntriesTable({ rows }: { rows: VisitorEntryRow[] }) {
               </div>
             ))}
           </div>
+
+          <EntriesPagination page={safePage} pageCount={pageCount} onChange={setPage} />
         </>
       )}
     </Card>
@@ -458,7 +537,11 @@ export function VisitorProvincesPanel({
 
       <AccessBreakdownTable rows={report.accessBreakdown} />
 
-      <EntriesTable rows={report.entries} />
+      <EntriesTable
+        key={report.period}
+        rows={report.entries}
+        periodLabel={periodOptions.find((o) => o.value === report.period)?.label ?? dateLabel}
+      />
     </div>
   );
 }
