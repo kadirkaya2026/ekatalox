@@ -49,6 +49,7 @@ export async function POST(request: Request) {
     subdomain,
     priceListId: matched.priceListId,
     isCatalogOnly: matched.isCatalogOnly,
+    accessCodeId: matched.accessCodeId,
     secure,
   });
 

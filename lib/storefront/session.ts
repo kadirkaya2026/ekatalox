@@ -13,6 +13,8 @@ export interface StorefrontPriceListCookieValue {
   tenantId: string;
   priceListId: string;
   isCatalogOnly: boolean;
+  /** Şifreyle girildiyse access_codes.id; şifresiz giriş (auto/magnet) → yok. */
+  accessCodeId?: string;
 }
 
 function getStorefrontTierCookieOptions(secure: boolean) {
@@ -64,6 +66,9 @@ export async function readStorefrontPriceList(
         tenantId: parsed.tenantId,
         priceListId: parsed.priceListId,
         isCatalogOnly: parsed.isCatalogOnly,
+        ...(typeof parsed.accessCodeId === "string" && parsed.accessCodeId
+          ? { accessCodeId: parsed.accessCodeId }
+          : {}),
       };
     }
   } catch {
@@ -94,6 +99,7 @@ export function setStorefrontPriceListCookie(params: {
   subdomain: string;
   priceListId: string;
   isCatalogOnly: boolean;
+  accessCodeId?: string;
   secure: boolean;
 }) {
   params.response.cookies.set(
@@ -102,6 +108,7 @@ export function setStorefrontPriceListCookie(params: {
       tenantId: params.tenantId,
       priceListId: params.priceListId,
       isCatalogOnly: params.isCatalogOnly,
+      ...(params.accessCodeId ? { accessCodeId: params.accessCodeId } : {}),
     } satisfies StorefrontPriceListCookieValue),
     getStorefrontTierCookieOptions(params.secure),
   );

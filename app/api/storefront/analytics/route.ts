@@ -3,6 +3,7 @@ import { normalizeSearchQuery } from "@/lib/analytics/normalize-search-query";
 import { resolveProvinceCodeFromHeaders } from "@/lib/analytics/provinces";
 import { recordStorefrontSearchStat } from "@/lib/analytics/record-stats";
 import { getStorefrontTenant } from "@/lib/data";
+import { readStorefrontPriceList } from "@/lib/storefront/session";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { storefrontAnalyticsEventSchema } from "@/lib/validators/analytics";
 
@@ -76,16 +77,32 @@ export async function POST(request: Request) {
 
   // İl kodu (0116): yalnız ziyaret olayında anlamlı. Migration henüz
   // uygulanmamışsa RPC beş parametreyi tanımaz; eski imzayla tekrar dene.
-  const provinceCode =
-    parsed.data.event === "visit" ? resolveProvinceCodeFromHeaders(request.headers) : null;
+  const isVisit = parsed.data.event === "visit";
+  const provinceCode = isVisit ? resolveProvinceCodeFromHeaders(request.headers) : null;
+
+  // Hangi şifreyle hangi listeye girdi (0117): kapı çerezinden. Beacon aynı
+  // origin'e gittiği için çerez gelir; tenant uyuşmazsa (eski/başka mağaza) yok say.
+  const entry = isVisit ? await readStorefrontPriceList(parsed.data.subdomain) : null;
+  const entryValid = entry?.tenantId === tenant.id;
+  const priceListId = entryValid && entry?.priceListId ? entry.priceListId : null;
+  const accessCodeId = entryValid && entry?.accessCodeId ? entry.accessCodeId : null;
 
   const { error } = await supabase.rpc("record_storefront_analytics", {
     ...baseArgs,
     p_province_code: provinceCode,
+    p_price_list_id: priceListId,
+    p_access_code_id: accessCodeId,
   });
 
   if (error) {
-    await supabase.rpc("record_storefront_analytics", baseArgs);
+    // Eski imza (0116) hâlâ yayındaysa liste/şifre olmadan kaydet.
+    const { error: fallbackError } = await supabase.rpc("record_storefront_analytics", {
+      ...baseArgs,
+      p_province_code: provinceCode,
+    });
+    if (fallbackError) {
+      await supabase.rpc("record_storefront_analytics", baseArgs);
+    }
   }
 
   return new NextResponse(null, { status: 204 });

@@ -4,7 +4,12 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Table, TableWrapper } from "@/components/ui/table";
 import { formatReportDateRange } from "@/lib/analytics/queries";
-import type { VisitorProvinceReport, VisitorProvinceRow } from "@/lib/analytics/province-queries";
+import type {
+  VisitorAccessRow,
+  VisitorEntryRow,
+  VisitorProvinceReport,
+  VisitorProvinceRow,
+} from "@/lib/analytics/province-queries";
 import type { AnalyticsPeriod } from "@/lib/validators/analytics";
 import { cn } from "@/lib/utils";
 
@@ -114,6 +119,164 @@ function ProvinceTable({
                 </div>
               );
             })}
+          </div>
+        </>
+      )}
+    </Card>
+  );
+}
+
+function AccessBreakdownTable({ rows }: { rows: VisitorAccessRow[] }) {
+  const maxVisitors = Math.max(...rows.map((row) => row.visitors), 0);
+
+  return (
+    <Card className="p-5">
+      <h2 className="text-lg font-semibold text-foreground">Şifre ve listeye göre ziyaretçi</h2>
+      <p className="mt-1 text-sm text-slate-500">
+        Girenler hangi şifreyle hangi fiyat listesine girdi. Şifresiz giriş, şifre kapısı kapalı
+        veya magnetle giren ziyaretçilerdir.
+      </p>
+
+      {rows.length === 0 ? (
+        <p className="mt-4 text-sm text-slate-500">
+          Bu dönemde şifre/liste bilgisi olan ziyaretçi yok. Yeni girişlerle dolar.
+        </p>
+      ) : (
+        <>
+          <TableWrapper className="mt-4 hidden md:block">
+            <Table>
+              <thead>
+                <tr className="border-b border-slate-100 text-left text-slate-500">
+                  <th className="px-4 py-3 font-medium">#</th>
+                  <th className="px-4 py-3 font-medium">Şifre</th>
+                  <th className="px-4 py-3 font-medium">Liste</th>
+                  <th className="px-4 py-3 font-medium">Dağılım</th>
+                  <th className="px-4 py-3 font-medium text-right">Kişi</th>
+                  <th className="px-4 py-3 font-medium text-right">Pay</th>
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map((row, index) => {
+                  const widthPercent =
+                    maxVisitors > 0 ? Math.max(2, Math.round((row.visitors / maxVisitors) * 100)) : 0;
+                  return (
+                    <tr key={row.key} className="border-b border-slate-50 last:border-0">
+                      <td className="px-4 py-3 text-slate-500">{index + 1}</td>
+                      <td className="px-4 py-3 font-mono text-sm font-medium text-foreground">
+                        {row.passwordCode}
+                      </td>
+                      <td className="px-4 py-3 text-slate-700">{row.priceListName}</td>
+                      <td className="w-1/3 px-4 py-3">
+                        <div className="h-2 rounded-full bg-slate-100">
+                          <div
+                            className="h-2 rounded-full bg-sky-600 transition-all"
+                            style={{ width: `${widthPercent}%` }}
+                          />
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-right font-semibold text-slate-700">
+                        {row.visitors.toLocaleString("tr-TR")}
+                      </td>
+                      <td className="px-4 py-3 text-right text-slate-500">%{row.sharePct}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </Table>
+          </TableWrapper>
+
+          <div className="mt-4 space-y-3 md:hidden">
+            {rows.map((row) => (
+              <div
+                key={row.key}
+                className="flex items-center justify-between rounded-lg border border-slate-100 px-4 py-3"
+              >
+                <div>
+                  <p className="font-mono text-sm font-medium text-foreground">{row.passwordCode}</p>
+                  <p className="text-xs text-slate-500">{row.priceListName}</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-sm font-semibold text-slate-700">
+                    {row.visitors.toLocaleString("tr-TR")} kişi
+                  </p>
+                  <p className="text-xs text-slate-500">%{row.sharePct}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+    </Card>
+  );
+}
+
+function formatEntryTime(iso: string) {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return "-";
+  return date.toLocaleString("tr-TR", {
+    timeZone: "Europe/Istanbul",
+    day: "2-digit",
+    month: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+function EntriesTable({ rows }: { rows: VisitorEntryRow[] }) {
+  return (
+    <Card className="p-5">
+      <h2 className="text-lg font-semibold text-foreground">Son girişler</h2>
+      <p className="mt-1 text-sm text-slate-500">
+        En yeni üstte, son 100 giriş. Saat, ziyaretçinin o gün ilk görüldüğü andır.
+      </p>
+
+      {rows.length === 0 ? (
+        <p className="mt-4 text-sm text-slate-500">Bu dönemde giriş yok.</p>
+      ) : (
+        <>
+          <TableWrapper className="mt-4 hidden md:block">
+            <Table>
+              <thead>
+                <tr className="border-b border-slate-100 text-left text-slate-500">
+                  <th className="px-4 py-3 font-medium">Zaman</th>
+                  <th className="px-4 py-3 font-medium">İl</th>
+                  <th className="px-4 py-3 font-medium">Şifre</th>
+                  <th className="px-4 py-3 font-medium">Liste</th>
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map((row) => (
+                  <tr
+                    key={`${row.visitorKey}:${row.seenAt}`}
+                    className="border-b border-slate-50 last:border-0"
+                  >
+                    <td className="px-4 py-3 whitespace-nowrap text-slate-600">
+                      {formatEntryTime(row.seenAt)}
+                    </td>
+                    <td className="px-4 py-3 font-medium text-foreground">{row.provinceLabel}</td>
+                    <td className="px-4 py-3 font-mono text-sm text-slate-700">{row.passwordCode}</td>
+                    <td className="px-4 py-3 text-slate-700">{row.priceListName}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </Table>
+          </TableWrapper>
+
+          <div className="mt-4 space-y-3 md:hidden">
+            {rows.map((row) => (
+              <div
+                key={`${row.visitorKey}:${row.seenAt}`}
+                className="rounded-lg border border-slate-100 px-4 py-3"
+              >
+                <div className="flex items-center justify-between">
+                  <p className="font-medium text-foreground">{row.provinceLabel}</p>
+                  <p className="text-xs text-slate-500">{formatEntryTime(row.seenAt)}</p>
+                </div>
+                <p className="mt-1 text-sm text-slate-700">
+                  <span className="font-mono">{row.passwordCode}</span> · {row.priceListName}
+                </p>
+              </div>
+            ))}
           </div>
         </>
       )}
@@ -292,6 +455,10 @@ export function VisitorProvincesPanel({
           rows={report.foreign}
         />
       ) : null}
+
+      <AccessBreakdownTable rows={report.accessBreakdown} />
+
+      <EntriesTable rows={report.entries} />
     </div>
   );
 }
