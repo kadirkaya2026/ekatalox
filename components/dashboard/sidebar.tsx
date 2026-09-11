@@ -151,7 +151,12 @@ const tenantLinks: SidebarLink[] = [
         requiredFeature: "reports",
         requiredBusinessType: "general",
       },
-      { href: "/magnetler", label: "Magnetlerim", icon: Magnet },
+      {
+        href: "/magnetler",
+        label: "Magnetlerim",
+        icon: Magnet,
+        requiredBusinessType: "market",
+      },
       {
         href: "/reports/satis",
         label: "Satış & Kârlılık",
