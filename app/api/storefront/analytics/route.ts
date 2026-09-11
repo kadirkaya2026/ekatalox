@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { normalizeSearchQuery } from "@/lib/analytics/normalize-search-query";
+import { resolveProvinceCodeFromHeaders } from "@/lib/analytics/provinces";
 import { recordStorefrontSearchStat } from "@/lib/analytics/record-stats";
 import { getStorefrontTenant } from "@/lib/data";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
@@ -66,15 +67,25 @@ export async function POST(request: Request) {
     }
   }
 
-  const { error } = await supabase.rpc("record_storefront_analytics", {
+  const baseArgs = {
     p_tenant_id: tenant.id,
     p_event: parsed.data.event,
     p_product_id: parsed.data.productId ?? null,
     p_visitor_key: parsed.data.visitorKey ?? null,
+  };
+
+  // İl kodu (0116): yalnız ziyaret olayında anlamlı. Migration henüz
+  // uygulanmamışsa RPC beş parametreyi tanımaz; eski imzayla tekrar dene.
+  const provinceCode =
+    parsed.data.event === "visit" ? resolveProvinceCodeFromHeaders(request.headers) : null;
+
+  const { error } = await supabase.rpc("record_storefront_analytics", {
+    ...baseArgs,
+    p_province_code: provinceCode,
   });
 
   if (error) {
-    return new NextResponse(null, { status: 204 });
+    await supabase.rpc("record_storefront_analytics", baseArgs);
   }
 
   return new NextResponse(null, { status: 204 });

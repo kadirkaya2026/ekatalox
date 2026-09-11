@@ -18,6 +18,7 @@ import {
   LayoutTemplate,
   Lightbulb,
   Magnet,
+  MapPin,
   Megaphone,
   PackagePlus,
   Palette,
@@ -143,6 +144,13 @@ const tenantLinks: SidebarLink[] = [
     icon: BarChart3,
     children: [
       { href: "/reports", label: "Mağaza Raporları", icon: BarChart3 },
+      {
+        href: "/reports/iller",
+        label: "Ziyaretçi İlleri",
+        icon: MapPin,
+        requiredFeature: "reports",
+        requiredBusinessType: "general",
+      },
       { href: "/magnetler", label: "Magnetlerim", icon: Magnet },
       {
         href: "/reports/satis",
