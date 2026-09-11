@@ -1,12 +1,16 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Table, TableWrapper } from "@/components/ui/table";
 import { formatReportDateRange } from "@/lib/analytics/queries";
 import type { VisitorProvinceReport, VisitorProvinceRow } from "@/lib/analytics/province-queries";
 import type { AnalyticsPeriod } from "@/lib/validators/analytics";
 import { cn } from "@/lib/utils";
+
+// Canlı yenileme: biri vitrine girdiği anda ziyaret kaydı RPC ile anında
+// yazılır; panel bu aralıkla sessizce yeniden çeker (sekme görünürken).
+const LIVE_REFRESH_MS = 10_000;
 
 const periodOptions: { value: AnalyticsPeriod; label: string }[] = [
   { value: "daily", label: "Bugün" },
@@ -128,32 +132,71 @@ export function VisitorProvincesPanel({
   const [report, setReport] = useState(initialReport);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [lastUpdatedAt, setLastUpdatedAt] = useState<Date | null>(null);
+  const [stale, setStale] = useState(false);
+  const periodRef = useRef(period);
+  const isFetching = useRef(false);
 
   const loadReport = useCallback(
-    async (nextPeriod: AnalyticsPeriod) => {
-      setLoading(true);
-      setError(null);
+    async (nextPeriod: AnalyticsPeriod, options?: { silent?: boolean }) => {
+      if (isFetching.current) return;
+      isFetching.current = true;
+
+      if (!options?.silent) {
+        setLoading(true);
+        setError(null);
+      }
 
       try {
-        const response = await fetch(`${endpoint}?period=${nextPeriod}`);
+        const response = await fetch(`${endpoint}?period=${nextPeriod}`, { cache: "no-store" });
         const result = await response.json().catch(() => null);
 
         if (response.ok && result?.report) {
-          setReport(result.report as VisitorProvinceReport);
+          // Kullanıcı bu arada dönemi değiştirdiyse eski cevabı uygulama.
+          if (periodRef.current === nextPeriod) {
+            setReport(result.report as VisitorProvinceReport);
+            setLastUpdatedAt(new Date());
+            setStale(false);
+          }
+        } else if (options?.silent) {
+          setStale(true);
         } else {
           setError("Rapor yüklenemedi. Lütfen tekrar deneyin.");
         }
       } catch {
-        setError("Rapor yüklenemedi. Lütfen tekrar deneyin.");
+        if (options?.silent) {
+          setStale(true);
+        } else {
+          setError("Rapor yüklenemedi. Lütfen tekrar deneyin.");
+        }
       } finally {
-        setLoading(false);
+        isFetching.current = false;
+        if (!options?.silent) {
+          setLoading(false);
+        }
       }
     },
     [endpoint],
   );
 
+  useEffect(() => {
+    const tick = () => {
+      if (typeof document !== "undefined" && document.visibilityState !== "visible") return;
+      void loadReport(periodRef.current, { silent: true });
+    };
+
+    const intervalId = window.setInterval(tick, LIVE_REFRESH_MS);
+    document.addEventListener("visibilitychange", tick);
+
+    return () => {
+      window.clearInterval(intervalId);
+      document.removeEventListener("visibilitychange", tick);
+    };
+  }, [loadReport]);
+
   const handlePeriodChange = (nextPeriod: AnalyticsPeriod) => {
     if (nextPeriod === period) return;
+    periodRef.current = nextPeriod;
     setPeriod(nextPeriod);
     void loadReport(nextPeriod);
   };
@@ -165,8 +208,31 @@ export function VisitorProvincesPanel({
       <Card className="p-4">
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div>
-            <p className="text-sm font-medium text-foreground">Dönem</p>
-            <p className="text-xs text-slate-500">{dateLabel}</p>
+            <div className="flex items-center gap-2">
+              <span className="relative flex size-2.5">
+                <span
+                  className={cn(
+                    "absolute inline-flex h-full w-full rounded-full opacity-75",
+                    stale ? "bg-amber-400" : "animate-ping bg-emerald-400",
+                  )}
+                />
+                <span
+                  className={cn(
+                    "relative inline-flex size-2.5 rounded-full",
+                    stale ? "bg-amber-500" : "bg-emerald-500",
+                  )}
+                />
+              </span>
+              <p className="text-sm font-medium text-foreground">
+                Canlı · {stale ? "bağlantı bekleniyor" : "her 10 saniyede yenilenir"}
+              </p>
+            </div>
+            <p className="mt-1 text-xs text-slate-500">
+              {dateLabel}
+              {lastUpdatedAt
+                ? ` · son güncelleme ${lastUpdatedAt.toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}`
+                : ""}
+            </p>
           </div>
           <div className="flex flex-wrap gap-2">
             {periodOptions.map((option) => (
