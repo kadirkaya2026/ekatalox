@@ -27,13 +27,24 @@ export interface VisitorAccessRow {
 export interface VisitorEntryRow {
   visitorKey: string;
   seenAt: string;
+  statDate: string;
+  /** false → saat geri doldurmadan geliyor, yalnız tarih göster. */
+  timeKnown: boolean;
   provinceLabel: string;
   passwordCode: string;
   priceListName: string;
 }
 
 const NO_PASSWORD_LABEL = "Şifresiz giriş";
+// Şifre kapısı açık ve magnet girişi kapalıysa kodsuz satır ancak eski
+// (0117 öncesi) oturum çerezinden gelebilir; "şifresiz" demek yanıltır.
+const PASSWORD_NOT_RECORDED_LABEL = "Şifre kaydedilmedi";
 const UNKNOWN_LIST_LABEL = "Bilinmiyor";
+
+export interface VisitorReportTenantFlags {
+  isPasswordProtected: boolean;
+  magnetLoginEnabled: boolean;
+}
 
 export interface VisitorProvinceReport {
   period: AnalyticsPeriod;
@@ -79,7 +90,12 @@ async function resolveAccessNames(
   tenantId: string,
   priceListIds: string[],
   accessCodeIds: string[],
+  flags: VisitorReportTenantFlags,
 ) {
+  const missingCodeLabel =
+    flags.isPasswordProtected && !flags.magnetLoginEnabled
+      ? PASSWORD_NOT_RECORDED_LABEL
+      : NO_PASSWORD_LABEL;
   const [{ data: priceLists }, { data: accessCodes }] = await Promise.all([
     priceListIds.length
       ? supabase.from("price_lists").select("id, name").eq("tenant_id", tenantId).in("id", priceListIds)
@@ -99,8 +115,13 @@ async function resolveAccessNames(
   return {
     listName: (id: string | null) =>
       id ? (listNames.get(id) ?? "Silinmiş liste") : UNKNOWN_LIST_LABEL,
-    codeName: (id: string | null) =>
-      id ? (codeNames.get(id) ?? "Silinmiş şifre") : NO_PASSWORD_LABEL,
+    // Liste de yoksa giriş bilgisi hiç kaydedilmemiştir (0117 öncesi satır).
+    codeName: (id: string | null, priceListId: string | null) =>
+      id
+        ? (codeNames.get(id) ?? "Silinmiş şifre")
+        : priceListId
+          ? missingCodeLabel
+          : UNKNOWN_LIST_LABEL,
   };
 }
 
@@ -111,6 +132,7 @@ async function fetchAccessDetails(
   startDate: string,
   endDate: string,
   totalVisitors: number,
+  flags: VisitorReportTenantFlags,
 ): Promise<Pick<VisitorProvinceReport, "accessBreakdown" | "entries">> {
   const [breakdownRes, entriesRes] = await Promise.all([
     supabase.rpc("storefront_visitor_access_breakdown", {
@@ -153,13 +175,27 @@ async function fetchAccessDetails(
     if (row.access_code_id) accessCodeIds.add(row.access_code_id);
   }
 
-  const names = await resolveAccessNames(supabase, tenantId, [...priceListIds], [...accessCodeIds]);
+  const names = await resolveAccessNames(
+    supabase,
+    tenantId,
+    [...priceListIds],
+    [...accessCodeIds],
+    flags,
+  );
+
+  // 0117 geri doldurması: eski satırların first_seen_at değeri migration anı,
+  // hepsi aynı mikrosaniye. Gerçek ziyaretler pratikte çakışmaz; 3+ satırın
+  // paylaştığı zaman damgası sahte sayılır ve saat gösterilmez.
+  const seenAtCounts = new Map<string, number>();
+  for (const row of entryRows) {
+    seenAtCounts.set(row.first_seen_at, (seenAtCounts.get(row.first_seen_at) ?? 0) + 1);
+  }
   const pct = (n: number) => (totalVisitors > 0 ? Math.round((n / totalVisitors) * 1000) / 10 : 0);
 
   const accessBreakdown: VisitorAccessRow[] = breakdownRows
     .map((row) => ({
       key: `${row.price_list_id ?? "-"}:${row.access_code_id ?? "-"}`,
-      passwordCode: names.codeName(row.access_code_id),
+      passwordCode: names.codeName(row.access_code_id, row.price_list_id),
       priceListName: names.listName(row.price_list_id),
       visitors: row.visitor_count ?? 0,
       sharePct: pct(row.visitor_count ?? 0),
@@ -169,8 +205,10 @@ async function fetchAccessDetails(
   const entries: VisitorEntryRow[] = entryRows.map((row) => ({
     visitorKey: row.visitor_key,
     seenAt: row.first_seen_at,
+    statDate: row.stat_date,
+    timeKnown: (seenAtCounts.get(row.first_seen_at) ?? 0) < 3,
     provinceLabel: provinceLabel(row.province_code),
-    passwordCode: names.codeName(row.access_code_id),
+    passwordCode: names.codeName(row.access_code_id, row.price_list_id),
     priceListName: names.listName(row.price_list_id),
   }));
 
@@ -180,6 +218,7 @@ async function fetchAccessDetails(
 export async function getTenantVisitorProvinceReport(
   tenantId: string,
   period: AnalyticsPeriod,
+  flags: VisitorReportTenantFlags = { isPasswordProtected: true, magnetLoginEnabled: false },
 ): Promise<VisitorProvinceReport> {
   const supabase = createSupabaseAdminClient();
   if (!supabase) {
@@ -233,6 +272,7 @@ export async function getTenantVisitorProvinceReport(
     startDate,
     endDate,
     totalVisitors,
+    flags,
   );
 
   return {

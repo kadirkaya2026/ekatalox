@@ -210,8 +210,12 @@ function AccessBreakdownTable({ rows }: { rows: VisitorAccessRow[] }) {
   );
 }
 
-function formatEntryTime(iso: string) {
-  const date = new Date(iso);
+function formatEntryTime(row: VisitorEntryRow) {
+  if (!row.timeKnown) {
+    const [y, m, d] = row.statDate.split("-");
+    return y && m && d ? `${d}.${m} · saat yok` : "saat yok";
+  }
+  const date = new Date(row.seenAt);
   if (Number.isNaN(date.getTime())) return "-";
   return date.toLocaleString("tr-TR", {
     timeZone: "Europe/Istanbul",
@@ -220,6 +224,10 @@ function formatEntryTime(iso: string) {
     hour: "2-digit",
     minute: "2-digit",
   });
+}
+
+function normalizeSearch(value: string) {
+  return value.trim().toLocaleLowerCase("tr-TR");
 }
 
 const ENTRIES_PER_PAGE = 30;
@@ -294,21 +302,47 @@ function EntriesTable({
   periodLabel: string;
 }) {
   const [page, setPage] = useState(1);
-  const pageCount = Math.max(1, Math.ceil(allRows.length / ENTRIES_PER_PAGE));
+  const [query, setQuery] = useState("");
+  const q = normalizeSearch(query);
+  const filtered = q
+    ? allRows.filter((row) =>
+        [row.provinceLabel, row.passwordCode, row.priceListName].some((v) =>
+          normalizeSearch(v).includes(q),
+        ),
+      )
+    : allRows;
+  const pageCount = Math.max(1, Math.ceil(filtered.length / ENTRIES_PER_PAGE));
   const safePage = Math.min(page, pageCount);
-  const rows = allRows.slice((safePage - 1) * ENTRIES_PER_PAGE, safePage * ENTRIES_PER_PAGE);
+  const rows = filtered.slice((safePage - 1) * ENTRIES_PER_PAGE, safePage * ENTRIES_PER_PAGE);
 
   return (
     <Card className="p-5">
-      <h2 className="text-lg font-semibold text-foreground">Son girişler · {periodLabel}</h2>
-      <p className="mt-1 text-sm text-slate-500">
-        En yeni üstte, sayfada {ENTRIES_PER_PAGE} giriş
-        {allRows.length > 0 ? ` (toplam ${allRows.length.toLocaleString("tr-TR")})` : ""}. Saat,
-        ziyaretçinin o gün ilk görüldüğü andır.
-      </p>
+      <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+        <div>
+          <h2 className="text-lg font-semibold text-foreground">Son girişler · {periodLabel}</h2>
+          <p className="mt-1 text-sm text-slate-500">
+            En yeni üstte, sayfada {ENTRIES_PER_PAGE} giriş
+            {allRows.length > 0 ? ` (toplam ${allRows.length.toLocaleString("tr-TR")})` : ""}.
+            Saat, ziyaretçinin o gün ilk görüldüğü andır.
+          </p>
+        </div>
+        <input
+          type="search"
+          value={query}
+          onChange={(event) => {
+            setQuery(event.target.value);
+            setPage(1);
+          }}
+          placeholder="İl, şifre veya liste ara"
+          aria-label="Son girişlerde ara"
+          className="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:border-slate-400 focus:outline-none md:w-64"
+        />
+      </div>
 
       {rows.length === 0 ? (
-        <p className="mt-4 text-sm text-slate-500">Bu dönemde giriş yok.</p>
+        <p className="mt-4 text-sm text-slate-500">
+          {q ? "Aramaya uyan giriş yok." : "Bu dönemde giriş yok."}
+        </p>
       ) : (
         <>
           <TableWrapper className="mt-4 hidden md:block">
@@ -328,7 +362,7 @@ function EntriesTable({
                     className="border-b border-slate-50 last:border-0"
                   >
                     <td className="px-4 py-3 whitespace-nowrap text-slate-600">
-                      {formatEntryTime(row.seenAt)}
+                      {formatEntryTime(row)}
                     </td>
                     <td className="px-4 py-3 font-medium text-foreground">{row.provinceLabel}</td>
                     <td className="px-4 py-3 font-mono text-sm text-slate-700">{row.passwordCode}</td>
@@ -347,7 +381,7 @@ function EntriesTable({
               >
                 <div className="flex items-center justify-between">
                   <p className="font-medium text-foreground">{row.provinceLabel}</p>
-                  <p className="text-xs text-slate-500">{formatEntryTime(row.seenAt)}</p>
+                  <p className="text-xs text-slate-500">{formatEntryTime(row)}</p>
                 </div>
                 <p className="mt-1 text-sm text-slate-700">
                   <span className="font-mono">{row.passwordCode}</span> · {row.priceListName}

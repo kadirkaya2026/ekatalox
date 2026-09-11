@@ -21,7 +21,10 @@ export async function GET(request: Request) {
   const parsedPeriod = analyticsPeriodSchema.safeParse(searchParams.get("period") ?? "daily");
   const period = parsedPeriod.success ? parsedPeriod.data : "daily";
 
-  const report = await getTenantVisitorProvinceReport(tenant.id, period);
+  const report = await getTenantVisitorProvinceReport(tenant.id, period, {
+    isPasswordProtected: tenant.is_password_protected,
+    magnetLoginEnabled: tenant.magnet_login_enabled,
+  });
 
   return NextResponse.json({ report });
 }

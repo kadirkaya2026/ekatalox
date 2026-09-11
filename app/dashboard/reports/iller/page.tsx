@@ -26,7 +26,10 @@ export default async function VisitorProvincesPage() {
   }
 
   const canUseReports = hasPlanFeature(tenant.plan, "reports");
-  const report = canUseReports ? await getTenantVisitorProvinceReport(tenant.id, "daily") : null;
+  const report = canUseReports ? await getTenantVisitorProvinceReport(tenant.id, "daily", {
+        isPasswordProtected: tenant.is_password_protected,
+        magnetLoginEnabled: tenant.magnet_login_enabled,
+      }) : null;
 
   return (
     <div className="space-y-6">
