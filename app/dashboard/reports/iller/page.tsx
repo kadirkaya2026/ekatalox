@@ -26,7 +26,7 @@ export default async function VisitorProvincesPage() {
   }
 
   const canUseReports = hasPlanFeature(tenant.plan, "reports");
-  const report = canUseReports ? await getTenantVisitorProvinceReport(tenant.id, "monthly") : null;
+  const report = canUseReports ? await getTenantVisitorProvinceReport(tenant.id, "daily") : null;
 
   return (
     <div className="space-y-6">

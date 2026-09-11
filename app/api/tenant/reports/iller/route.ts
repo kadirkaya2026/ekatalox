@@ -18,8 +18,8 @@ export async function GET(request: Request) {
   }
 
   const { searchParams } = new URL(request.url);
-  const parsedPeriod = analyticsPeriodSchema.safeParse(searchParams.get("period") ?? "monthly");
-  const period = parsedPeriod.success ? parsedPeriod.data : "monthly";
+  const parsedPeriod = analyticsPeriodSchema.safeParse(searchParams.get("period") ?? "daily");
+  const period = parsedPeriod.success ? parsedPeriod.data : "daily";
 
   const report = await getTenantVisitorProvinceReport(tenant.id, period);
 
