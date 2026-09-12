@@ -8,6 +8,7 @@ import {
   buildGiftCampaignNotes,
 } from "@/lib/storefront/cart";
 import {
+  buildReceiptItemCountSummary,
   formatReceiptMoney,
   getOrderReceiptTableHead,
   getOrderReceiptTableRows,
@@ -112,7 +113,9 @@ export async function generateOrderReceiptPdf(
   });
   if (typeof params.orderNo === "number") {
     setPdfFont(doc, "bold");
-    doc.text(`Sipariş No: #${params.orderNo}`, headerRightX, cursorY + 18, { align: "right" });
+    // "#" glifi alt kümelenmiş Roboto fontunda yok; jsPDF "#" ile başlayan
+    // parçayı komple düşürüyordu ve numara fişte boş çıkıyordu. "#" kullanma.
+    doc.text(`Sipariş No: ${params.orderNo}`, headerRightX, cursorY + 18, { align: "right" });
     setPdfFont(doc, "normal");
   }
   doc.text(
@@ -227,7 +230,14 @@ export async function generateOrderReceiptPdf(
   const tableEndY =
     (doc as jsPDF & { lastAutoTable?: { finalY: number } }).lastAutoTable?.finalY ??
     cursorY + 20;
-  cursorY = tableEndY + 12;
+  cursorY = tableEndY + 8;
+
+  // Tablonun hemen altında kalem/adet özeti: "2 kalem, 20 adet ürün".
+  // Bayi siparişi hazırlarken kaç satır ve kaç parça olduğunu tek bakışta görsün.
+  setPdfFont(doc, "bold");
+  doc.setFontSize(PDF_FONT_SIZE.summary);
+  doc.text(`Toplam: ${buildReceiptItemCountSummary(params.items)}`, margin, cursorY);
+  cursorY += 10;
 
   if (!catalogMode && params.paymentSummary) {
     const summary = params.paymentSummary;

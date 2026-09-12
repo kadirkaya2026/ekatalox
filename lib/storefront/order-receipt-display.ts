@@ -101,6 +101,20 @@ export function getOrderReceiptTableRows(items: CartItem[], catalogMode = false)
   });
 }
 
+/**
+ * Fişin altındaki "2 kalem, 20 adet ürün" özeti. Kalem = tablodaki satır
+ * sayısı (hediye satırları dahil), adet = satırların toplam miktarı.
+ */
+export function buildReceiptItemCountSummary(items: CartItem[]) {
+  const lineCount = items.length;
+  const totalQuantity = items.reduce((sum, item) => {
+    const quantity = Number(item.quantity);
+    return sum + (Number.isFinite(quantity) ? quantity : 0);
+  }, 0);
+
+  return `${lineCount} kalem, ${totalQuantity} adet ürün`;
+}
+
 export function getOrderReceiptTableHead(catalogMode = false) {
   if (catalogMode) {
     return ["Ürün", "Birim", "Adet"];
