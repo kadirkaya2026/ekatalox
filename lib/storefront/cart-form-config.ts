@@ -24,7 +24,22 @@ export interface CartFormFieldConfig {
   is_required: boolean;
   /** Bayinin verdiği etiket; null = vitrin dilindeki varsayılan metin. */
   label: string | null;
+  /**
+   * Formdaki sıra (küçük önce). Yalnız iletişim alanları
+   * (ORDERABLE_CART_FORM_FIELD_KEYS) için anlamlı; sipariş notu kendi
+   * panelinde hep en altta durur.
+   */
+  sort_order: number;
 }
+
+/** Bayinin sırasını değiştirebildiği alanlar — vitrinde tek blokta art arda çizilir. */
+export const ORDERABLE_CART_FORM_FIELD_KEYS = [
+  "customer_phone",
+  "customer_name",
+  "customer_address",
+] as const satisfies readonly CartFormFieldKey[];
+
+export type OrderableCartFormFieldKey = (typeof ORDERABLE_CART_FORM_FIELD_KEYS)[number];
 
 export type CartFormConfig = Record<CartFormFieldKey, CartFormFieldConfig>;
 
@@ -45,11 +60,12 @@ export function getDefaultCartFormConfig(
   businessType: TenantBusinessType | null | undefined,
 ): CartFormConfig {
   const isMarket = businessType === "market";
+  // sort_order varsayılanı = 0118 öncesi vitrin sırası (telefon, ad, adres).
   return {
-    customer_name: { is_visible: true, is_required: isMarket, label: null },
-    customer_phone: { is_visible: isMarket, is_required: isMarket, label: null },
-    customer_address: { is_visible: isMarket, is_required: isMarket, label: null },
-    order_note: { is_visible: true, is_required: false, label: null },
+    customer_name: { is_visible: true, is_required: isMarket, label: null, sort_order: 2 },
+    customer_phone: { is_visible: isMarket, is_required: isMarket, label: null, sort_order: 1 },
+    customer_address: { is_visible: isMarket, is_required: isMarket, label: null, sort_order: 3 },
+    order_note: { is_visible: true, is_required: false, label: null, sort_order: 4 },
   };
 }
 
@@ -71,6 +87,10 @@ export function resolveCartFormConfig(
         ? entry.label.trim().slice(0, CART_FORM_LABEL_MAX_LENGTH)
         : null;
     resolved[key] = {
+      sort_order:
+        typeof entry.sort_order === "number" && Number.isFinite(entry.sort_order)
+          ? entry.sort_order
+          : defaults[key].sort_order,
       is_visible: isVisible,
       // Gizli alan zorunlu olamaz — aksi halde müşteri hiç dolduramayacağı
       // bir alanda takılır.
@@ -92,5 +112,17 @@ export function findMissingRequiredCartFields(
 ): CartFormFieldKey[] {
   return CART_FORM_FIELD_KEYS.filter(
     (key) => config[key].is_visible && config[key].is_required && !(values[key] ?? "").trim(),
+  );
+}
+
+/**
+ * İletişim alanlarının vitrindeki sırası. Eşit sort_order'da varsayılan sıra
+ * (telefon, ad, adres) korunur ki eski kayıtlar hiç değişmesin.
+ */
+export function getOrderedCartFormFieldKeys(config: CartFormConfig): OrderableCartFormFieldKey[] {
+  return [...ORDERABLE_CART_FORM_FIELD_KEYS].sort(
+    (left, right) =>
+      config[left].sort_order - config[right].sort_order ||
+      ORDERABLE_CART_FORM_FIELD_KEYS.indexOf(left) - ORDERABLE_CART_FORM_FIELD_KEYS.indexOf(right),
   );
 }

@@ -143,6 +143,7 @@ const cartFormFieldSchema = z
   .object({
     is_visible: z.boolean().optional(),
     is_required: z.boolean().optional(),
+    sort_order: z.number().int().min(0).max(99).optional(),
     label: z
       .union([
         z.string().trim().max(CART_FORM_LABEL_MAX_LENGTH, "Alan etiketi en fazla 40 karakter olabilir."),

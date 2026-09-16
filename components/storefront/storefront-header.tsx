@@ -524,10 +524,12 @@ function StorefrontHeaderTopBar({ props }: { props: StorefrontHeaderProps }) {
         <div className="col-span-2 flex min-w-0 items-start gap-2 sm:gap-3 lg:col-span-1 lg:items-center lg:gap-4">
           <HeaderBrand props={props} />
           {props.subdomain && props.storefrontSettings.is_logout_button_visible !== false ? (
+            // Mobilde satırın sağ ucuna yaslanır; logonun hemen yanında
+            // durunca mağaza adının parçası gibi görünüyordu.
             <StorefrontLogoutButton
               subdomain={props.subdomain}
               tenantId={props.tenantId}
-              className="lg:hidden"
+              className="ml-auto self-center lg:hidden"
             />
           ) : null}
         </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type Dispatch, ReactNode, SetStateAction } from "react";
+import { Fragment, useEffect, useRef, useState, type Dispatch, ReactNode, SetStateAction } from "react";
 import { LOCATION_ERROR_STATUSES, type StorefrontLocationStatus } from "@/components/storefront/storefront-client";
 import { useBodyScrollLock } from "@/lib/hooks/use-body-scroll-lock";
 import { AnimatePresence, motion } from "framer-motion";
@@ -39,7 +39,11 @@ import { useStorefrontTheme } from "@/lib/storefront/theme-context";
 import { useStorefrontLocale } from "@/lib/storefront/locale-context";
 import type { WhatsAppOrderHandoff } from "@/lib/storefront/whatsapp-order";
 import { STOREFRONT_CART_THUMB_SIZES } from "@/lib/storefront/image-sizes";
-import type { CartFormConfig } from "@/lib/storefront/cart-form-config";
+import {
+  getOrderedCartFormFieldKeys,
+  type CartFormConfig,
+  type OrderableCartFormFieldKey,
+} from "@/lib/storefront/cart-form-config";
 import { StorefrontImage } from "@/components/storefront/storefront-image";
 import { ProductImagePlaceholder } from "@/components/product-image-placeholder";
 
@@ -583,63 +587,11 @@ export function StorefrontCartDrawer({
     </>
   );
 
-  const renderPaymentPanel = () => (
-    <div className={theme.panelSurface}>
-      {/* Ödeme yöntemi fiyatsız katalogda da seçilebilir (kullanıcı kararı, 29 Ağu 2026):
-          tutar hesabı yok ama "nakit / kart" bilgisi fişe ve siparişe işlenir. */}
-      <>
-        <div ref={paymentFieldRef} className="mb-3 flex items-center justify-between gap-3">
-          <p className={cn("text-sm font-semibold", theme.text)}>{t("cart.paymentMethod")}</p>
-          <span
-            className={cn(
-              "rounded-full px-3 py-1 text-[11px] font-semibold",
-              theme.surfaceMuted,
-              theme.textMuted,
-            )}
-          >
-            {isMarketTenant ? t("cart.required") : t("cart.optional")}
-          </span>
-        </div>
-        <div className="grid grid-cols-2 gap-2">
-          <button
-            type="button"
-            onClick={() => {
-              setSelectedPaymentMethod("cash");
-              setSelectedInstallmentCount(null);
-              setPaymentMethodError(null);
-            }}
-            className={cn(
-              "flex items-center justify-center gap-2 rounded-2xl py-3 text-sm font-semibold transition",
-              selectedPaymentMethod === "cash"
-                ? theme.cartPaymentCashActive
-                : theme.cartPaymentInactive,
-            )}
-          >
-            <Banknote className="size-4" />
-            {t("cart.cash")}
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              setSelectedPaymentMethod("card");
-              setPaymentMethodError(null);
-            }}
-            className={cn(
-              "flex items-center justify-center gap-2 rounded-2xl py-3 text-sm font-semibold transition",
-              selectedPaymentMethod === "card"
-                ? theme.cartPaymentCardActive
-                : theme.cartPaymentInactive,
-            )}
-          >
-            <CreditCard className="size-4" />
-            {t("cart.card")}
-          </button>
-        </div>
-        {paymentMethodError ? (
-          <p className={cn("mt-2 text-xs font-medium", theme.dangerText)}>{paymentMethodError}</p>
-        ) : null}
-      </>
-      {cartFormConfig.customer_phone.is_visible ? (
+  // İletişim alanları bayinin belirlediği sırada çizilir
+  // (cart_form_config.sort_order, bkz. lib/storefront/cart-form-config.ts).
+  const contactFieldRenderers: Record<OrderableCartFormFieldKey, () => ReactNode> = {
+    customer_phone: () =>
+cartFormConfig.customer_phone.is_visible ? (
         <div ref={phoneFieldRef} className="mt-3">
           <div className="mb-2 flex items-center justify-between gap-3">
             <span className={cn("text-sm font-semibold", theme.text)}>
@@ -670,9 +622,9 @@ export function StorefrontCartDrawer({
           ) : null}
           <p className={cn("mt-2 text-xs", theme.textMuted)}>{t("cart.customerPhoneAutofillHint")}</p>
         </div>
-      ) : null}
-
-      {cartFormConfig.customer_name.is_visible ? (
+      ) : null,
+    customer_name: () =>
+cartFormConfig.customer_name.is_visible ? (
       <div ref={nameFieldRef} className="mt-3">
         <div className="mb-2 flex items-center justify-between gap-3">
           <span className={cn("text-sm font-semibold", theme.text)}>
@@ -703,9 +655,9 @@ export function StorefrontCartDrawer({
           </p>
         ) : null}
       </div>
-      ) : null}
-
-      {cartFormConfig.customer_address.is_visible ? (
+      ) : null,
+    customer_address: () =>
+cartFormConfig.customer_address.is_visible ? (
         <div ref={addressFieldRef} className="mt-3">
           <div className="mb-2 flex items-center justify-between gap-3">
             <span className={cn("text-sm font-semibold", theme.text)}>
@@ -835,7 +787,68 @@ export function StorefrontCartDrawer({
             </Button>
           ) : null}
         </div>
-      ) : null}
+      ) : null,
+  };
+
+  const renderPaymentPanel = () => (
+    <div className={theme.panelSurface}>
+      {/* Ödeme yöntemi fiyatsız katalogda da seçilebilir (kullanıcı kararı, 29 Ağu 2026):
+          tutar hesabı yok ama "nakit / kart" bilgisi fişe ve siparişe işlenir. */}
+      <>
+        <div ref={paymentFieldRef} className="mb-3 flex items-center justify-between gap-3">
+          <p className={cn("text-sm font-semibold", theme.text)}>{t("cart.paymentMethod")}</p>
+          <span
+            className={cn(
+              "rounded-full px-3 py-1 text-[11px] font-semibold",
+              theme.surfaceMuted,
+              theme.textMuted,
+            )}
+          >
+            {isMarketTenant ? t("cart.required") : t("cart.optional")}
+          </span>
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            type="button"
+            onClick={() => {
+              setSelectedPaymentMethod("cash");
+              setSelectedInstallmentCount(null);
+              setPaymentMethodError(null);
+            }}
+            className={cn(
+              "flex items-center justify-center gap-2 rounded-2xl py-3 text-sm font-semibold transition",
+              selectedPaymentMethod === "cash"
+                ? theme.cartPaymentCashActive
+                : theme.cartPaymentInactive,
+            )}
+          >
+            <Banknote className="size-4" />
+            {t("cart.cash")}
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setSelectedPaymentMethod("card");
+              setPaymentMethodError(null);
+            }}
+            className={cn(
+              "flex items-center justify-center gap-2 rounded-2xl py-3 text-sm font-semibold transition",
+              selectedPaymentMethod === "card"
+                ? theme.cartPaymentCardActive
+                : theme.cartPaymentInactive,
+            )}
+          >
+            <CreditCard className="size-4" />
+            {t("cart.card")}
+          </button>
+        </div>
+        {paymentMethodError ? (
+          <p className={cn("mt-2 text-xs font-medium", theme.dangerText)}>{paymentMethodError}</p>
+        ) : null}
+      </>
+      {getOrderedCartFormFieldKeys(cartFormConfig).map((key) => (
+        <Fragment key={key}>{contactFieldRenderers[key]()}</Fragment>
+      ))}
       {isMarketTenant && isTekel ? (
         <p
           className={cn(

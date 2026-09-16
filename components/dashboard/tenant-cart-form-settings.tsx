@@ -2,18 +2,19 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { ClipboardList } from "lucide-react";
+import { ArrowDown, ArrowUp, ClipboardList } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { InlineAlert } from "@/components/ui/inline-alert";
 import { SettingsSectionHeader } from "@/components/dashboard/settings-section-header";
 import {
-  CART_FORM_FIELD_KEYS,
   CART_FORM_LABEL_MAX_LENGTH,
+  getOrderedCartFormFieldKeys,
   resolveCartFormConfig,
   type CartFormConfig,
   type CartFormFieldKey,
+  type OrderableCartFormFieldKey,
 } from "@/lib/storefront/cart-form-config";
 import type { TenantBusinessType, TenantStorefrontSettings } from "@/lib/types";
 
@@ -60,6 +61,7 @@ export function TenantCartFormSettings({
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
+  const orderedContactKeys = getOrderedCartFormFieldKeys(config);
 
   function updateField(key: CartFormFieldKey, patch: Partial<CartFormConfig[CartFormFieldKey]>) {
     setConfig((current) => {
@@ -67,6 +69,25 @@ export function TenantCartFormSettings({
       // Gizlenen alan zorunlu kalamaz.
       if (!next.is_visible) next.is_required = false;
       return { ...current, [key]: next };
+    });
+    setMessage(null);
+    setError(null);
+  }
+
+  // Sıra değişikliği: iletişim alanları 1..N yeniden numaralanır, böylece
+  // eski kayıtlardaki eşit/boşluklu sort_order değerleri tutarlı kalır.
+  function moveField(key: OrderableCartFormFieldKey, direction: "up" | "down") {
+    setConfig((current) => {
+      const ordered = getOrderedCartFormFieldKeys(current);
+      const index = ordered.indexOf(key);
+      const target = direction === "up" ? index - 1 : index + 1;
+      if (target < 0 || target >= ordered.length) return current;
+      [ordered[index], ordered[target]] = [ordered[target], ordered[index]];
+      const next = { ...current };
+      ordered.forEach((item, position) => {
+        next[item] = { ...next[item], sort_order: position + 1 };
+      });
+      return next;
     });
     setMessage(null);
     setError(null);
@@ -107,19 +128,51 @@ export function TenantCartFormSettings({
         <SettingsSectionHeader icon={ClipboardList} title="Sipariş formu alanları" />
         <p className="-mt-2 text-sm text-muted-foreground">
           Müşteri sepeti onaylarken hangi bilgiler istensin? Her alan için görünürlük, zorunluluk
-          ve vitrinde görünecek etiketi belirleyin.
+          ve vitrinde görünecek etiketi belirleyin; oklarla alanların sırasını değiştirin. Sipariş
+          notu her zaman formun sonunda, kendi kutusunda gösterilir.
         </p>
 
         <div className="divide-y divide-border rounded-2xl border border-border">
-          {CART_FORM_FIELD_KEYS.map((key) => {
+          {[...orderedContactKeys, "order_note" as const].map((key) => {
             const field = config[key];
             const meta = FIELD_META[key];
+            const orderIndex = orderedContactKeys.indexOf(key as OrderableCartFormFieldKey);
+            const isOrderable = orderIndex !== -1;
             return (
               <div key={key} className="grid gap-4 p-4 md:grid-cols-[1fr_auto]">
                 <div className="space-y-3">
-                  <div>
-                    <p className="text-sm font-semibold text-foreground">{meta.title}</p>
-                    <p className="text-xs text-muted-foreground">{meta.hint}</p>
+                  <div className="flex items-start gap-3">
+                    {isOrderable ? (
+                      <div className="flex shrink-0 flex-col gap-1">
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          className="size-8 p-0"
+                          aria-label={`${meta.title} alanını yukarı taşı`}
+                          disabled={orderIndex === 0}
+                          onClick={() => moveField(key as OrderableCartFormFieldKey, "up")}
+                        >
+                          <ArrowUp className="size-4" />
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          className="size-8 p-0"
+                          aria-label={`${meta.title} alanını aşağı taşı`}
+                          disabled={orderIndex === orderedContactKeys.length - 1}
+                          onClick={() => moveField(key as OrderableCartFormFieldKey, "down")}
+                        >
+                          <ArrowDown className="size-4" />
+                        </Button>
+                      </div>
+                    ) : null}
+                    <div>
+                      <p className="text-sm font-semibold text-foreground">
+                        {isOrderable ? `${orderIndex + 1}. ` : ""}
+                        {meta.title}
+                      </p>
+                      <p className="text-xs text-muted-foreground">{meta.hint}</p>
+                    </div>
                   </div>
                   <label className="block">
                     <span className="mb-1 block text-xs font-medium text-muted-foreground">
