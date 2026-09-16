@@ -70,10 +70,19 @@ const brandAccentSoftText = "text-[var(--brand-accent-soft-text)]";
 export function applyBrandColorOverrides(
   theme: StorefrontTheme,
   settings: BrandColorSettings,
+  colorScheme: "light" | "dark" = "light",
 ): StorefrontTheme {
   if (!hasBrandColors(settings)) {
     return theme;
   }
+
+  // Koyu temada yarı saydam "soft" chip, temanın kendi koyu yeşil zemininin
+  // üstüne biniyor ve mavi yazıyla okunmuyordu (kullanıcı isteği, 17 Eyl
+  // 2026): koyu temada aktif kategori chip'i dolu marka rengi + ön renk.
+  const activeChip =
+    colorScheme === "dark"
+      ? cn(brandPrimaryBg, brandPrimaryFg, "border border-transparent")
+      : cn(brandSoftBg, brandSoftText, brandSoftBorder, "border");
 
   return {
     ...theme,
@@ -118,25 +127,20 @@ export function applyBrandColorOverrides(
     gateEyebrow: cn("text-xs font-bold uppercase tracking-[0.24em]", brandPrimaryText),
     indicatorActive: cn("bg-[var(--brand-primary)]"),
     categoryNavChip: (active) =>
-      cn(
-        theme.categoryNavChip(active),
-        active ? cn(brandSoftBg, brandSoftText, brandSoftBorder, "border") : undefined,
-      ),
+      cn(theme.categoryNavChip(active), active ? activeChip : undefined),
     categoryNavMobile: (active) =>
       cn(
         theme.categoryNavMobile(active),
-        active ? cn("border-[var(--brand-primary)]", brandPrimaryText) : undefined,
+        active
+          ? colorScheme === "dark"
+            ? cn(brandPrimaryBg, brandPrimaryFg)
+            : cn("border-[var(--brand-primary)]", brandPrimaryText)
+          : undefined,
       ),
     categorySubChip: (active) =>
-      cn(
-        theme.categorySubChip(active),
-        active ? cn(brandSoftBg, brandSoftText, brandSoftBorder, "border") : undefined,
-      ),
+      cn(theme.categorySubChip(active), active ? activeChip : undefined),
     categoryChip: (active) =>
-      cn(
-        theme.categoryChip(active),
-        active ? cn(brandSoftBg, brandSoftText, brandSoftBorder, "border") : undefined,
-      ),
+      cn(theme.categoryChip(active), active ? activeChip : undefined),
     categorySidebarItem: (active) =>
       cn(
         theme.categorySidebarItem(active),

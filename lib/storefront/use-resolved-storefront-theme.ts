@@ -34,7 +34,7 @@ export function useResolvedStorefrontTheme(
 
   return useMemo(() => {
     const baseTheme = getStorefrontTheme(themeKey, colorScheme);
-    const withBrandColors = applyBrandColorOverrides(baseTheme, brandColors);
+    const withBrandColors = applyBrandColorOverrides(baseTheme, brandColors, colorScheme);
     return applyProductImageBackgroundOverride(withBrandColors, productImageBackground);
   }, [
     themeKey,
