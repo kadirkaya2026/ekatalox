@@ -4657,7 +4657,10 @@ export function StorefrontClient({
               <Button
                 type="submit"
                 form="add-to-cart-form"
-                className="flex h-11 w-full rounded-full text-sm font-bold sm:h-auto sm:w-auto sm:rounded-lg sm:px-4 sm:py-2.5"
+                className={cn(
+                  "flex h-11 w-full rounded-full text-sm font-bold sm:h-auto sm:w-auto sm:rounded-lg sm:px-4 sm:py-2.5",
+                  theme.primaryButton,
+                )}
               >
                 {t(isTekel ? "product.addToCartPickup" : "product.addToCart")}
               </Button>
@@ -4666,7 +4669,12 @@ export function StorefrontClient({
             <Button
               type="submit"
               form="add-to-cart-form"
-              className="flex h-11 w-full rounded-full text-sm font-bold sm:h-auto sm:w-auto sm:rounded-lg sm:px-4 sm:py-2.5"
+              // Button'ın varsayılan yeşili değil, tema/marka rengi (kart üstündeki
+              // sepete ekle ile aynı).
+              className={cn(
+                "flex h-11 w-full rounded-full text-sm font-bold sm:h-auto sm:w-auto sm:rounded-lg sm:px-4 sm:py-2.5",
+                theme.primaryButton,
+              )}
             >
               {t(isTekel ? "product.addToCartPickup" : "product.addToCart")}
             </Button>
