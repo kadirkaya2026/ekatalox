@@ -77,7 +77,8 @@ export function applyBrandColorOverrides(
 
   return {
     ...theme,
-    cartBadge: cn(brandPrimaryBg, brandPrimaryFg),
+    cartBadge: brandPrimaryFg,
+    cartButtonActive: cn("border-transparent px-3", brandPrimaryBg, brandPrimaryFg),
     variantBadge: cn(brandAccentSoftBg, brandAccentSoftText),
     addedVariantBadge: cn(brandAccentSoftBg, brandAccentSoftText),
     primaryButton: cn(

@@ -27,17 +27,18 @@ const FIELD_META: Record<
 > = {
   customer_name: {
     title: "Müşteri / Cari Adı",
-    defaultLabel: "Müşteri Adı / Cari Adı",
+    defaultLabel: "Müşteri / Cari Adı",
     hint: "Siparişi kimin verdiğini gösterir; fişe ve WhatsApp mesajına yazılır.",
   },
   customer_phone: {
     title: "Telefon",
-    defaultLabel: "Telefon Numarası",
+    // Vitrin TR sözlüğüyle (cart.customerPhone) birebir aynı olmalı.
+    defaultLabel: "Müşteri Telefonu",
     hint: "Görünürse müşteri kaydı ve sipariş takibi telefonla eşleşir. Girilen numara biçim kontrolünden geçer.",
   },
   customer_address: {
     title: "Adres",
-    defaultLabel: "Teslimat Adresi",
+    defaultLabel: "Müşteri Adresi",
     hint: "Teslimat yapmayan işletmelerde isteğe bağlı bırakılabilir veya tamamen gizlenebilir.",
   },
   order_note: {

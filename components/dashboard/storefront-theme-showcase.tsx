@@ -159,23 +159,19 @@ function ShowcaseCartButton({
 }) {
   return (
     <div className="relative shrink-0">
+      {/* Vitrindeki dolu sepet görünümünün küçültülmüş hali: buton vurgu
+          renginde, ikon + adet yan yana (bkz. themes.ts cartButtonActive). */}
       <div
         className={cn(
-          "flex items-center justify-center rounded-full",
-          size === "desktop" ? "size-9" : "size-7",
+          "flex items-center justify-center gap-1 rounded-full",
+          size === "desktop" ? "h-9 min-w-9 px-2" : "h-7 min-w-7 px-1.5",
           theme.cartButton,
+          theme.cartButtonActive,
         )}
       >
         <ShoppingCart className={size === "desktop" ? "size-4" : "size-3.5"} />
+        <span className={cn("text-[9px] font-bold leading-none", theme.cartBadge)}>2</span>
       </div>
-      <span
-        className={cn(
-          "absolute -right-1 -top-1 flex size-4 items-center justify-center rounded-full text-[8px] font-bold",
-          theme.cartBadge,
-        )}
-      >
-        2
-      </span>
     </div>
   );
 }

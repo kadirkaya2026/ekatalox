@@ -3670,7 +3670,16 @@ export function StorefrontClient({
           </Button>
         }
       >
-        <div className="flex min-h-0 flex-1 flex-col gap-4">
+        {/* Sekme kapalıyken Modal gövdesi (contentScroll=false) hiç kaydırmıyor;
+            görsel + fiyat + sekmeler + "ilgini çekebilir" şeridi küçük ekranda
+            sığmayınca şerit altta kırpılıyordu. Sekme açıkken iç alan kendi
+            kaydırıyor (aşağıda flex-1 overflow-y-auto), dış kaydırma kapalı kalır. */}
+        <div
+          className={cn(
+            "flex min-h-0 flex-1 flex-col gap-4",
+            !activePreviewTab && "overflow-y-auto overscroll-y-contain",
+          )}
+        >
           <div className={cn("relative h-52 shrink-0 overflow-hidden rounded-[1.75rem] sm:h-64", theme.productImageWrap)}>
             <DiscountSticker product={previewProduct} />
             {activePreviewImage ? (

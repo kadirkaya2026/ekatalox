@@ -141,10 +141,10 @@ function HeaderActions({
         type="button"
         data-cart-target=""
         onClick={props.onOpenCart}
-        className={theme.cartButton}
+        className={cn(theme.cartButton, props.cartLength ? theme.cartButtonActive : undefined)}
         aria-label={t(props.isTekel ? "header.openCartAriaPickup" : "header.openCartAria")}
       >
-        <ShoppingCart className="size-5" />
+        <ShoppingCart className="size-5 shrink-0" />
         <AnimatePresence>
           {props.cartLength ? (
             <motion.span

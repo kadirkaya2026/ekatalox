@@ -12,6 +12,8 @@ export interface StorefrontTheme {
   logoPlaceholder: string;
   cartBadge: string;
   cartButton: string;
+  /** Sepette ürün varken cartButton'a eklenir (dolu vurgu rengi). */
+  cartButtonActive: string;
   cartTotalLabel: string;
   cartTotalValue: string;
   cartTotalEmpty: string;
@@ -564,16 +566,16 @@ function buildTheme(
       isDark ? "border-0 bg-neutral-700" : cn("border", neutrals.border, neutrals.surface),
     ),
     logoPlaceholder: neutrals.textMuted,
-    cartBadge: cn(
-      "absolute -right-2 -top-2 inline-flex min-w-5 items-center justify-center rounded-full px-1.5 py-0.5 text-[10px] font-bold",
-      accent.primary,
-      accent.primaryForeground,
-    ),
+    // Sepette ürün varken rozet ayrı bir kutu değil: butonun kendisi vurgu
+    // rengine boyanır, ikon ve adet aynı ön renkle yan yana durur
+    // (kullanıcı isteği, 17 Eyl 2026 — mavi kutucuk içindeki sayı yanlış duruyordu).
+    cartBadge: cn("min-w-4 text-center text-xs font-bold leading-none", accent.primaryForeground),
     cartButton: cn(
-      "relative flex size-11 items-center justify-center rounded-2xl shadow-sm transition lg:size-12",
+      "relative flex h-11 min-w-11 items-center justify-center gap-1.5 rounded-2xl shadow-sm transition lg:h-12 lg:min-w-12",
       isDark ? "border-0 bg-neutral-700" : cn("border", neutrals.border, neutrals.surface),
       iconButtonInteractive,
     ),
+    cartButtonActive: cn("border-transparent px-3", accent.primary, accent.primaryForeground),
     cartTotalLabel: neutrals.textMuted,
     cartTotalValue: cn("text-sm font-bold", neutrals.text),
     cartTotalEmpty: cn("text-sm font-bold", neutrals.textMuted),
