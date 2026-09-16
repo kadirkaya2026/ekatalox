@@ -96,6 +96,14 @@ export function applyBrandColorOverrides(
       brandPrimaryFg,
       "border-transparent hover:opacity-90 active:opacity-95",
     ),
+    // Sepetteki ürünün kart üstündeki +/− adım kutusu da marka rengini
+    // alsın; tema accent'inde (yeşil gradyan) kalınca mavi marka rengiyle
+    // iki farklı "sepet" rengi görünüyordu (kullanıcı isteği, 16 Eyl 2026).
+    floatingCartStepper: cn(
+      brandPrimaryBg,
+      brandPrimaryFg,
+      "border border-white/20 shadow-lg backdrop-blur",
+    ),
     quantityStepper: cn(
       theme.quantityStepper,
       "border-slate-200 bg-white shadow-sm dark:border-0 dark:bg-neutral-800",
