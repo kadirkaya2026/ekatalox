@@ -29,6 +29,10 @@ import { createShortLink } from "@/lib/storage/short-links";
 import { storefrontOrderPdfSchema } from "@/lib/validators/storefront-order-pdf";
 import { ALCOHOL_ONLINE_ORDER_ERROR } from "@/lib/products/alcohol";
 import type { CartItem } from "@/lib/types";
+import {
+  findMissingRequiredCartFields,
+  resolveCartFormConfig,
+} from "@/lib/storefront/cart-form-config";
 
 function buildPaymentMethodLabel(params: {
   paymentMethod: "cash" | "card";
@@ -151,6 +155,33 @@ export async function POST(request: Request) {
       reason: "missing_service_role",
       tenantId: tenant.id,
     });
+  }
+
+  // Bayinin sepet ayarında zorunlu işaretlediği alanlar boş gelemez —
+  // istemci doğrulaması atlanmış/kurcalanmış olsa bile sipariş kaydedilmez.
+  const cartFormConfig = resolveCartFormConfig(
+    (await getTenantStorefrontSettings(tenant.id)).cart_form_config,
+    tenant.business_type,
+  );
+  const missingCartFields = findMissingRequiredCartFields(cartFormConfig, {
+    customer_name: parsed.data.customer_reference_name,
+    customer_phone: parsed.data.customer_phone,
+    customer_address: parsed.data.customer_address,
+    order_note: parsed.data.note,
+  });
+  if (missingCartFields.length) {
+    const labels: Record<(typeof missingCartFields)[number], string> = {
+      customer_name: "müşteri adı",
+      customer_phone: "telefon",
+      customer_address: "adres",
+      order_note: "sipariş notu",
+    };
+    return errorResponse(
+      requestId,
+      `Zorunlu alan boş: ${missingCartFields.map((key) => cartFormConfig[key].label ?? labels[key]).join(", ")}.`,
+      400,
+      { reason: "missing_required_cart_fields", tenantId: tenant.id, fields: missingCartFields },
+    );
   }
 
   // IP taşkın freni: aynı IP 10 dakikada 5'ten fazla deneme yaparsa 1 saat

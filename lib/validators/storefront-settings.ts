@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { CART_FORM_LABEL_MAX_LENGTH } from "@/lib/storefront/cart-form-config";
 import { DEFAULT_INSTALLMENT_OPTIONS } from "@/lib/storefront/cart";
 import { DEFAULT_HOMEPAGE_BLOCKS, HOMEPAGE_BLOCK_IDS } from "@/lib/storefront/homepage-blocks";
 import { DEFAULT_BUSINESS_HOURS, WEEKDAY_ORDER } from "@/lib/storefront/business-hours";
@@ -134,6 +135,39 @@ const optionalWhatsappFooterSchema = z
     z.undefined(),
   ])
   .transform((value) => (typeof value === "string" ? value.trim() || null : null));
+
+// Sepet formu alan ayarı (bkz. lib/storefront/cart-form-config.ts). null =
+// tür bazlı varsayılan davranış; kısmi nesne kabul edilir, eksik anahtarlar
+// vitrinde varsayılandan dolar.
+const cartFormFieldSchema = z
+  .object({
+    is_visible: z.boolean().optional(),
+    is_required: z.boolean().optional(),
+    label: z
+      .union([
+        z.string().trim().max(CART_FORM_LABEL_MAX_LENGTH, "Alan etiketi en fazla 40 karakter olabilir."),
+        z.literal(""),
+        z.null(),
+        z.undefined(),
+      ])
+      .transform((value) => (typeof value === "string" ? value.trim() || null : null)),
+  })
+  .strict();
+
+export const cartFormConfigSchema = z
+  .union([
+    z.null(),
+    z.undefined(),
+    z
+      .object({
+        customer_name: cartFormFieldSchema.optional(),
+        customer_phone: cartFormFieldSchema.optional(),
+        customer_address: cartFormFieldSchema.optional(),
+        order_note: cartFormFieldSchema.optional(),
+      })
+      .strict(),
+  ])
+  .transform((value) => value ?? null);
 
 export const bannerItemSchema = z
   .object({
@@ -364,6 +398,7 @@ export const storefrontSettingsSchema = z
       .min(4, "En az 4 ürün gösterilmeli.")
       .max(24, "En fazla 24 ürün gösterilebilir.")
       .default(8),
+    cart_form_config: cartFormConfigSchema,
   })
   .superRefine((value, ctx) => {
     if (!value.is_always_open && !WEEKDAY_ORDER.some((day) => value.business_hours[day].is_open)) {

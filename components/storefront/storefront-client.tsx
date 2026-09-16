@@ -50,6 +50,7 @@ import {
   reconcileGiftCartLines,
   updateCartLineQuantity,
 } from "@/lib/storefront/cart";
+import { resolveCartFormConfig } from "@/lib/storefront/cart-form-config";
 import { useResolvedStorefrontTheme } from "@/lib/storefront/use-resolved-storefront-theme";
 import { StorefrontThemeProvider, useStorefrontTheme } from "@/lib/storefront/theme-context";
 import { containsWholeWord, expandCategorySearchTerm } from "@/lib/search/turkish-search-aliases";
@@ -1003,6 +1004,7 @@ export function StorefrontClient({
   );
   const [customerAddress, setCustomerAddress] = useState("");
   const [customerAddressError, setCustomerAddressError] = useState<string | null>(null);
+  const [orderNoteError, setOrderNoteError] = useState<string | null>(null);
   // Anlık konum paylaşımı isteğe bağlı: müşteri siparişi başka bir yerden
   // veriyor olabilir (ör. dışarıdayken eve sipariş). Bu yüzden varsayılan
   // kapalı ve adres alanı zorunlu kalmaya devam ediyor.
@@ -1150,6 +1152,12 @@ export function StorefrontClient({
   // adı, adresi ve telefonu zorunlu tutulur — teslimat yapan tekel/marketlerin
   // WhatsApp mesajında bu bilgiler olmadan sipariş alması istenmiyor.
   const isMarketTenant = tenant.business_type === "market";
+  // Sepet formu alan ayarları (0118): hangi alan görünür/zorunlu, etiketi ne.
+  // Ayar yoksa tür bazlı eski davranış (market: telefon+adres zorunlu).
+  const cartFormConfig = useMemo(
+    () => resolveCartFormConfig(storefrontSettings.cart_form_config, tenant.business_type),
+    [storefrontSettings.cart_form_config, tenant.business_type],
+  );
   // Alkol/sigara bayii (tekel) — yasal olarak dağıtım/teslimat yapamaz.
   // true iken adres toplanmaz, sepet/checkout metinleri "sipariş listesi
   // hazırlama" diline döner (kullanıcı isteği, 20 Ağu 2026).
@@ -2250,15 +2258,15 @@ export function StorefrontClient({
       return buildWhatsAppMessage({
         tenantName: tenant.company_name,
         customerReferenceName,
-        customerAddress: isMarketTenant ? customerAddress : undefined,
+        customerAddress: cartFormConfig.customer_address.is_visible ? customerAddress : undefined,
         customerLocationUrl: isMarketTenant ? locationUrl ?? null : null,
-        customerPhone: isMarketTenant ? customerPhone : undefined,
+        customerPhone: cartFormConfig.customer_phone.is_visible ? customerPhone : undefined,
         pdfUrl,
         trackingUrl,
         isTekel,
       });
     },
-    [customerReferenceName, customerAddress, customerPhone, isMarketTenant, isTekel, tenant.company_name],
+    [customerReferenceName, customerAddress, customerPhone, isMarketTenant, isTekel, tenant.company_name, cartFormConfig],
   );
 
   const clearWhatsappHandoff = useCallback(() => {
@@ -2294,33 +2302,45 @@ export function StorefrontClient({
     // ayrı bir popup gösterilmiyor — "Siparişi Ver"e basıldığında doğrudan
     // validasyon + sipariş akışı çalışır.
 
-    if (isMarketTenant) {
+    {
       let hasValidationError = false;
 
-      if (!selectedPaymentMethod) {
+      // Ödeme yöntemi yalnız market'te zorunlu (eski davranış korunuyor).
+      if (isMarketTenant && !selectedPaymentMethod) {
         setPaymentMethodError(t("cart.paymentMethodRequiredError"));
         hasValidationError = true;
       }
 
-      if (!customerReferenceName.trim()) {
+      // Alan zorunlulukları bayinin sepet ayarından gelir (cartFormConfig);
+      // market'te ayar yoksa eskisi gibi ad+adres+telefon zorunlu.
+      if (cartFormConfig.customer_name.is_required && !customerReferenceName.trim()) {
         setCustomerReferenceNameError(t("cart.customerNameRequiredError"));
         hasValidationError = true;
       }
 
-      // Tekelde de adres isteniyor (kullanici karari, 25 Agu 2026): gel-al
+      // Tekelde de adres istenebilir (kullanici karari, 25 Agu 2026): gel-al
       // olsa bile musteri defteri ve magnet sahiplenmesi icin adres lazim.
       // Gel-al WhatsApp mesajina adres EKLENMIYOR — bkz. lib/storefront/cart.ts.
-      if (!customerAddress.trim()) {
+      if (cartFormConfig.customer_address.is_required && !customerAddress.trim()) {
         setCustomerAddressError(t("cart.customerAddressRequiredError"));
         hasValidationError = true;
       }
 
-      if (!customerPhone.trim()) {
-        setCustomerPhoneError(t("cart.customerPhoneRequiredError"));
-        hasValidationError = true;
-      } else if (!validateCustomerPhoneInput(customerPhone)) {
-        // TR numarası 05xx biçimine oturmalı; yabancı numara + ülke koduyla.
-        setCustomerPhoneError(t("cart.customerPhoneFormatError"));
+      if (cartFormConfig.customer_phone.is_visible) {
+        if (!customerPhone.trim()) {
+          if (cartFormConfig.customer_phone.is_required) {
+            setCustomerPhoneError(t("cart.customerPhoneRequiredError"));
+            hasValidationError = true;
+          }
+        } else if (!validateCustomerPhoneInput(customerPhone)) {
+          // TR numarası 05xx biçimine oturmalı; yabancı numara + ülke koduyla.
+          setCustomerPhoneError(t("cart.customerPhoneFormatError"));
+          hasValidationError = true;
+        }
+      }
+
+      if (cartFormConfig.order_note.is_required && !note.trim()) {
+        setOrderNoteError(t("cart.orderNoteRequiredError"));
         hasValidationError = true;
       }
 
@@ -2349,9 +2369,13 @@ export function StorefrontClient({
           catalog_mode: isCatalogOnly,
           items: cart,
           note,
-          customer_reference_name: customerReferenceName.trim(),
-          customer_phone: isMarketTenant ? customerPhone.trim() : "",
-          customer_address: isMarketTenant ? customerAddress.trim() : "",
+          customer_reference_name: cartFormConfig.customer_name.is_visible
+            ? customerReferenceName.trim()
+            : "",
+          customer_phone: cartFormConfig.customer_phone.is_visible ? customerPhone.trim() : "",
+          customer_address: cartFormConfig.customer_address.is_visible
+            ? customerAddress.trim()
+            : "",
           customer_location: isMarketTenant ? customerLocation : null,
           paymentMethod: selectedPaymentMethod,
           selectedInstallmentCount: isCatalogOnly ? null : selectedInstallmentCount,
@@ -4503,6 +4527,9 @@ export function StorefrontClient({
         customerPhoneError={customerPhoneError}
         setCustomerPhoneError={setCustomerPhoneError}
         isMarketTenant={isMarketTenant}
+        cartFormConfig={cartFormConfig}
+        orderNoteError={orderNoteError}
+        setOrderNoteError={setOrderNoteError}
         isTekel={isTekel}
         recommendedProducts={recommendedProducts}
         cartPaymentSummary={cartPaymentSummary}

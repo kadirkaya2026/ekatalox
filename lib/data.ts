@@ -185,6 +185,7 @@ export function getDefaultTenantStorefrontSettings(
     is_best_sellers_visible: false,
     best_sellers_title: "En Çok Satanlar",
     best_sellers_product_count: 8,
+    cart_form_config: null,
     updated_at: now,
   };
 }

@@ -621,6 +621,9 @@ export interface TenantStorefrontSettings {
   // Esnaf (market tipi) tema seçimi — vitrin/taze/dukkan (bkz. 0114,
   // lib/storefront/esnaf-themes.ts). NULL/undefined = bu ekrandan seçilmedi.
   esnaf_theme_key?: EsnafThemeKeyValue | null;
+  // Sepet formu alan ayarları (0118); NULL = tür bazlı eski varsayılan.
+  // Şekil: lib/storefront/cart-form-config.ts (StoredCartFormConfig).
+  cart_form_config?: Record<string, { is_visible?: boolean; is_required?: boolean; label?: string | null }> | null;
   created_at: string;
   updated_at: string;
 }

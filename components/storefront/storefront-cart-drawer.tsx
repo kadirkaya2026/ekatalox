@@ -39,6 +39,7 @@ import { useStorefrontTheme } from "@/lib/storefront/theme-context";
 import { useStorefrontLocale } from "@/lib/storefront/locale-context";
 import type { WhatsAppOrderHandoff } from "@/lib/storefront/whatsapp-order";
 import { STOREFRONT_CART_THUMB_SIZES } from "@/lib/storefront/image-sizes";
+import type { CartFormConfig } from "@/lib/storefront/cart-form-config";
 import { StorefrontImage } from "@/components/storefront/storefront-image";
 import { ProductImagePlaceholder } from "@/components/product-image-placeholder";
 
@@ -80,6 +81,9 @@ export type StorefrontCartDrawerProps = {
   customerPhoneError: string | null;
   setCustomerPhoneError: Dispatch<SetStateAction<string | null>>;
   isMarketTenant: boolean;
+  cartFormConfig: CartFormConfig;
+  orderNoteError: string | null;
+  setOrderNoteError: (value: string | null) => void;
   // Alkol/sigara bayii (tekel) — yasal olarak dağıtım/teslimat yapamaz.
   // true iken adres alanı hiç gösterilmez/toplanmaz (kullanıcı isteği,
   // 20 Ağu 2026).
@@ -166,6 +170,9 @@ export function StorefrontCartDrawer({
   customerPhoneError,
   setCustomerPhoneError,
   isMarketTenant,
+  cartFormConfig,
+  orderNoteError,
+  setOrderNoteError,
   isTekel,
   recommendedProducts,
   cartPaymentSummary,
@@ -632,10 +639,12 @@ export function StorefrontCartDrawer({
           <p className={cn("mt-2 text-xs font-medium", theme.dangerText)}>{paymentMethodError}</p>
         ) : null}
       </>
-      {isMarketTenant ? (
+      {cartFormConfig.customer_phone.is_visible ? (
         <div ref={phoneFieldRef} className="mt-3">
           <div className="mb-2 flex items-center justify-between gap-3">
-            <span className={cn("text-sm font-semibold", theme.text)}>{t("cart.customerPhone")}</span>
+            <span className={cn("text-sm font-semibold", theme.text)}>
+              {cartFormConfig.customer_phone.label ?? t("cart.customerPhone")}
+            </span>
             <span
               className={cn(
                 "rounded-full px-3 py-1 text-[11px] font-semibold",
@@ -643,7 +652,7 @@ export function StorefrontCartDrawer({
                 theme.textMuted,
               )}
             >
-              {t("cart.required")}
+              {cartFormConfig.customer_phone.is_required ? t("cart.required") : t("cart.optional")}
             </span>
           </div>
           <Input
@@ -663,10 +672,11 @@ export function StorefrontCartDrawer({
         </div>
       ) : null}
 
+      {cartFormConfig.customer_name.is_visible ? (
       <div ref={nameFieldRef} className="mt-3">
         <div className="mb-2 flex items-center justify-between gap-3">
           <span className={cn("text-sm font-semibold", theme.text)}>
-            {t("cart.customerReferenceName")}
+            {cartFormConfig.customer_name.label ?? t("cart.customerReferenceName")}
           </span>
           <span
             className={cn(
@@ -675,7 +685,7 @@ export function StorefrontCartDrawer({
               theme.textMuted,
             )}
           >
-            {isMarketTenant ? t("cart.required") : t("cart.optional")}
+            {cartFormConfig.customer_name.is_required ? t("cart.required") : t("cart.optional")}
           </span>
         </div>
         <Input
@@ -693,12 +703,14 @@ export function StorefrontCartDrawer({
           </p>
         ) : null}
       </div>
+      ) : null}
 
-      {isMarketTenant ? (
+      {cartFormConfig.customer_address.is_visible ? (
         <div ref={addressFieldRef} className="mt-3">
           <div className="mb-2 flex items-center justify-between gap-3">
             <span className={cn("text-sm font-semibold", theme.text)}>
-              {t(isTekel ? "cart.customerAddressPickup" : "cart.customerAddress")}
+              {cartFormConfig.customer_address.label ??
+                t(isTekel ? "cart.customerAddressPickup" : "cart.customerAddress")}
             </span>
             <span
               className={cn(
@@ -707,7 +719,7 @@ export function StorefrontCartDrawer({
                 theme.textMuted,
               )}
             >
-              {t("cart.required")}
+              {cartFormConfig.customer_address.is_required ? t("cart.required") : t("cart.optional")}
             </span>
           </div>
           <Textarea
@@ -728,7 +740,7 @@ export function StorefrontCartDrawer({
           {/* Tekel teslimat yapmadığı için konum yalnızca teslimatlı
               marketlerde gösteriliyor. İşaretlemek zorunlu değil: müşteri
               başka bir yerdeyken eve sipariş veriyor olabilir. */}
-          {!isTekel ? (
+          {isMarketTenant && !isTekel ? (
             <button
               type="button"
               onClick={onToggleLocation}
@@ -879,11 +891,12 @@ export function StorefrontCartDrawer({
     </div>
   );
 
-  const renderOrderNotePanel = () => (
+  const renderOrderNotePanel = () =>
+    cartFormConfig.order_note.is_visible ? (
     <div className={theme.panelSurface}>
       <div className="mb-2 flex items-center justify-between gap-3">
         <p className={cn("text-sm font-semibold", theme.text)}>
-          {t(isTekel ? "cart.orderNotePickup" : "cart.orderNote")}
+          {cartFormConfig.order_note.label ?? t(isTekel ? "cart.orderNotePickup" : "cart.orderNote")}
         </p>
         <span
           className={cn(
@@ -892,17 +905,23 @@ export function StorefrontCartDrawer({
             theme.textMuted,
           )}
         >
-          {t("cart.optional")}
+          {cartFormConfig.order_note.is_required ? t("cart.required") : t("cart.optional")}
         </span>
       </div>
       <Textarea
         placeholder={t(isTekel ? "cart.orderNotePlaceholderPickup" : "cart.orderNotePlaceholder")}
         value={note}
-        onChange={(event) => setNote(event.target.value)}
+        onChange={(event) => {
+          setNote(event.target.value);
+          setOrderNoteError(null);
+        }}
         className={cn("min-h-[84px] rounded-[1.1rem] text-[16px]", theme.formField, theme.text)}
       />
+      {orderNoteError ? (
+        <p className={cn("mt-2 text-xs font-medium", theme.dangerText)}>{orderNoteError}</p>
+      ) : null}
     </div>
-  );
+    ) : null;
 
   // Öneri şeridi — eski tek sayfalı düzende sepetin altında yatay kayan şerit.
   const renderInlineSuggestions = () =>

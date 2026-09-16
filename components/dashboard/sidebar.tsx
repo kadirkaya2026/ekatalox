@@ -216,6 +216,12 @@ const tenantLinks: SidebarLink[] = [
         group: "İçerik & İletişim",
       },
       {
+        href: "/settings/cart",
+        label: "Sepet Ayarları",
+        icon: ClipboardList,
+        group: "İçerik & İletişim",
+      },
+      {
         href: "/settings/delivery-fee",
         label: "Getirme Ücreti",
         icon: Truck,
