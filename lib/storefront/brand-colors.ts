@@ -152,11 +152,7 @@ export function applyBrandColorOverrides(
         theme.modalTabChip(active),
         active ? cn(brandSoftBg, brandSoftText) : undefined,
       ),
-    cartPaymentCashActive: cn(
-      brandSoftBg,
-      brandSoftText,
-      brandSoftBorder,
-      "border",
-    ),
+    cartPaymentCashActive: cn("border-transparent", brandPrimaryBg, brandPrimaryFg),
+    cartPaymentCardActive: cn("border-transparent", brandPrimaryBg, brandPrimaryFg),
   };
 }

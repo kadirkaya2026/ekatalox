@@ -1173,6 +1173,7 @@ export function StorefrontClient({
   // geçer, ekstra kaydırma çubuğu gerekmez (kullanıcı isteği, 19 Ağu 2026).
   const [activePreviewTab, setActivePreviewTab] = useState<ProductDetailTab | null>(null);
   const [activePreviewImageIndex, setActivePreviewImageIndex] = useState(0);
+  const previewSwipeRef = useRef<{ x: number; y: number } | null>(null);
   const relatedPreviewScrollRef = useRef<HTMLDivElement>(null);
 
   function scrollRelatedPreview(direction: "left" | "right") {
@@ -3670,17 +3671,34 @@ export function StorefrontClient({
           </Button>
         }
       >
-        {/* Sekme kapalıyken Modal gövdesi (contentScroll=false) hiç kaydırmıyor;
-            görsel + fiyat + sekmeler + "ilgini çekebilir" şeridi küçük ekranda
-            sığmayınca şerit altta kırpılıyordu. Sekme açıkken iç alan kendi
-            kaydırıyor (aşağıda flex-1 overflow-y-auto), dış kaydırma kapalı kalır. */}
-        <div
-          className={cn(
-            "flex min-h-0 flex-1 flex-col gap-4",
-            !activePreviewTab && "overflow-y-auto overscroll-y-contain",
-          )}
-        >
-          <div className={cn("relative h-52 shrink-0 overflow-hidden rounded-[1.75rem] sm:h-64", theme.productImageWrap)}>
+        {/* Modal gövdesi (contentScroll=false) kendisi kaydırmıyor; tek kaydırma
+            kabı burası. Önceden sekme içeriği ayrı kaydırılıyordu ama küçük
+            ekranda görsel + fiyat + sekmeler yer bırakmayınca hem sekme
+            içeriği hem "ilgini çekebilir" şeridi görünmez oluyordu. */}
+        <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto overscroll-y-contain">
+          <div
+            className={cn("relative h-52 shrink-0 overflow-hidden rounded-[1.75rem] sm:h-64", theme.productImageWrap)}
+            // Birden fazla görselde parmakla sağa/sola kaydırma (yalnız dokunmatik;
+            // dikey kaydırmayı bozmamak için yatay hareket baskınsa tetiklenir).
+            onTouchStart={(event) => {
+              const touch = event.touches[0];
+              previewSwipeRef.current = touch ? { x: touch.clientX, y: touch.clientY } : null;
+            }}
+            onTouchEnd={(event) => {
+              const start = previewSwipeRef.current;
+              previewSwipeRef.current = null;
+              const touch = event.changedTouches[0];
+              if (!start || !touch || previewImages.length < 2) return;
+              const dx = touch.clientX - start.x;
+              const dy = touch.clientY - start.y;
+              if (Math.abs(dx) < 40 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
+              setActivePreviewImageIndex((current) =>
+                dx < 0
+                  ? (current + 1) % previewImages.length
+                  : (current - 1 + previewImages.length) % previewImages.length,
+              );
+            }}
+          >
             <DiscountSticker product={previewProduct} />
             {activePreviewImage ? (
               <StorefrontImage
@@ -3749,9 +3767,7 @@ export function StorefrontClient({
           </div>
 
           {tabContent ? (
-            <div className={cn("min-h-0 flex-1 overflow-y-auto overscroll-y-contain", theme.modalSurface)}>
-              {tabContent}
-            </div>
+            <div className={cn("shrink-0", theme.modalSurface)}>{tabContent}</div>
           ) : null}
 
           {!activePreviewTab && pairPreviewProducts.length ? (

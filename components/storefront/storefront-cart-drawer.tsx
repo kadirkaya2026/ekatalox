@@ -810,13 +810,15 @@ cartFormConfig.customer_address.is_visible ? (
         <div className="grid grid-cols-2 gap-2">
           <button
             type="button"
+            // İkinci tıklama seçimi kaldırır (kullanıcı isteği, 17 Eyl 2026).
             onClick={() => {
-              setSelectedPaymentMethod("cash");
+              setSelectedPaymentMethod((current) => (current === "cash" ? null : "cash"));
               setSelectedInstallmentCount(null);
               setPaymentMethodError(null);
             }}
+            aria-pressed={selectedPaymentMethod === "cash"}
             className={cn(
-              "flex items-center justify-center gap-2 rounded-2xl py-3 text-sm font-semibold transition",
+              "flex items-center justify-center gap-2 rounded-2xl border py-3 text-sm font-semibold transition",
               selectedPaymentMethod === "cash"
                 ? theme.cartPaymentCashActive
                 : theme.cartPaymentInactive,
@@ -828,11 +830,13 @@ cartFormConfig.customer_address.is_visible ? (
           <button
             type="button"
             onClick={() => {
-              setSelectedPaymentMethod("card");
+              setSelectedPaymentMethod((current) => (current === "card" ? null : "card"));
+              setSelectedInstallmentCount(null);
               setPaymentMethodError(null);
             }}
+            aria-pressed={selectedPaymentMethod === "card"}
             className={cn(
-              "flex items-center justify-center gap-2 rounded-2xl py-3 text-sm font-semibold transition",
+              "flex items-center justify-center gap-2 rounded-2xl border py-3 text-sm font-semibold transition",
               selectedPaymentMethod === "card"
                 ? theme.cartPaymentCardActive
                 : theme.cartPaymentInactive,

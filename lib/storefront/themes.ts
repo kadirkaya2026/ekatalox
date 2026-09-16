@@ -527,15 +527,14 @@ function buildTheme(
     : "";
   const bannerOverlay = isDark ? "hidden" : "absolute inset-0 hidden md:block";
   const sectionDivider = isDark ? "" : cn("border-t", neutrals.headerRailBorder);
-  const cartPaymentCashActive = isDark
-    ? "border-0 bg-emerald-900/70 text-emerald-300"
-    : "border-emerald-500 bg-emerald-50 text-emerald-700";
-  const cartPaymentCardActive = isDark
-    ? "border-0 bg-blue-900/70 text-blue-300"
-    : "border-blue-500 bg-blue-50 text-blue-700";
+  // Ödeme yöntemi butonları (kullanıcı isteği, 17 Eyl 2026): seçili olan
+  // "Sepete Ekle" gibi dolu vurgu renginde (ikon + yazı ön renk), seçili
+  // olmayanın belirgin bir çerçevesi var. Nakit/kart ayrı renk değil.
+  const cartPaymentCashActive = cn("border-transparent", accent.primary, accent.primaryForeground);
+  const cartPaymentCardActive = cartPaymentCashActive;
   const cartPaymentInactive = isDark
-    ? cn("border-0", neutrals.surfaceMuted, neutrals.textMuted, "hover:opacity-90")
-    : cn(structuralBorder, neutrals.surface, neutrals.textMuted, "hover:opacity-90");
+    ? cn("border-neutral-600", neutrals.surfaceMuted, neutrals.textMuted, "hover:opacity-90")
+    : cn(neutrals.border, neutrals.surface, neutrals.textMuted, "hover:opacity-90");
   const cartInstallmentActive = isDark
     ? "border-0 bg-blue-900/70 text-blue-300"
     : "border-blue-500 bg-blue-50 text-blue-700";
