@@ -26,6 +26,24 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: currentDirectory,
   },
+  async rewrites() {
+    return [
+      // Tekel saha uygulaması: gizli statik sayfa (public/saha/<token>/index.html)
+      { source: "/saha/:token", destination: "/saha/:token/index.html" },
+    ];
+  },
+  async headers() {
+    return [
+      {
+        // Saha uygulaması ve API'si arama motorlarına kapalı (adres gizli)
+        source: "/saha/:path*",
+        headers: [
+          { key: "X-Robots-Tag", value: "noindex, nofollow, noarchive" },
+          { key: "Cache-Control", value: "no-store" },
+        ],
+      },
+    ];
+  },
   async redirects() {
     return [
       {
