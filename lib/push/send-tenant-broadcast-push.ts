@@ -28,11 +28,33 @@ export function personalize(text: string, name: string | null | undefined) {
   return text.replace(/\{ad\}[,;:!\s]*/g, "").replace(/^\s+/, "").replace(/^([a-zçğıöşü])/, (m) => m.toLocaleUpperCase("tr-TR"));
 }
 
+// Bildirim hedefi → vitrin yolu. Kampanyalar hedefinde duyuru metni de
+// linke biner (?bildirim=b64url {t,b}) ki panel açılınca mesaj görünsün;
+// ürün/kategori hedefinde müşteri doğrudan oraya iner, metin taşınmaz.
+export type PushTarget =
+  | { type: "campaigns" }
+  | { type: "category"; id: string }
+  | { type: "product"; id: string };
+
+function b64url(text: string) {
+  return Buffer.from(text, "utf8").toString("base64").replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+
+export function buildPushTargetPath(target: PushTarget, announcement?: { title: string; body: string } | null) {
+  if (target.type === "category") return `/?kategori=${encodeURIComponent(target.id)}`;
+  if (target.type === "product") return `/?urun=${encodeURIComponent(target.id)}`;
+  const extra = announcement ? `&bildirim=${b64url(JSON.stringify({ t: announcement.title, b: announcement.body }))}` : "";
+  return `/?kampanya=1${extra}`;
+}
+
 export async function sendTenantBroadcastPush(params: {
   tenantId: string;
   title: string;
   body: string;
-  url: string;
+  /** Tam url; verilmezse origin + target'tan kişi başına üretilir */
+  url?: string;
+  origin?: string;
+  target?: PushTarget;
   iconUrl?: string | null;
   tag?: string;
   priceListId?: string | null;
@@ -57,13 +79,11 @@ export async function sendTenantBroadcastPush(params: {
   let sent = 0;
   await Promise.allSettled(
     subs.map(async (sub) => {
-      const payload = JSON.stringify({
-        title: personalize(params.title, sub.subscriber_name),
-        body: personalize(params.body, sub.subscriber_name),
-        icon: params.iconUrl ?? undefined,
-        url: params.url,
-        tag,
-      });
+      const title = personalize(params.title, sub.subscriber_name);
+      const body = personalize(params.body, sub.subscriber_name);
+      const url =
+        params.url ?? `${params.origin ?? ""}${buildPushTargetPath(params.target ?? { type: "campaigns" }, { title, body })}`;
+      const payload = JSON.stringify({ title, body, icon: params.iconUrl ?? undefined, url, tag });
       try {
         await webpush.sendNotification(
           { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },

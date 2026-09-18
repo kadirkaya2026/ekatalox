@@ -1121,14 +1121,6 @@ export function StorefrontClient({
     window.location.reload();
   }, []);
 
-  // Bildirime tıklanınca (?kampanya=1) Kampanyalar paneli doğrudan açılır;
-  // kupon ve duyuru bildirimlerinin url'i bu parametreyle geliyor.
-  useEffect(() => {
-    if (!/[?&]kampanya=1/.test(window.location.search)) return;
-    const timer = window.setTimeout(() => setIsCampaignsSheetOpen(true), 0);
-    return () => window.clearTimeout(timer);
-  }, []);
-
   // Yenileme sonrası devam: bayrak varsa sepeti bilgi adımında aç ve konumu
   // yeniden iste. setState effect gövdesinde değil, bir sonraki döngüde.
   useEffect(() => {
@@ -1175,6 +1167,10 @@ export function StorefrontClient({
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>("all");
   const [selectedProduct, setSelectedProduct] = useState<StorefrontProduct | null>(null);
   const [previewProduct, setPreviewProduct] = useState<StorefrontProduct | null>(null);
+  const [deepLinkProducts, setDeepLinkProducts] = useState<StorefrontProduct[]>([]);
+  // Bildirimle gelen duyuru metni (?bildirim=base64url json) Kampanyalar
+  // panelinin üstünde kart olarak gösterilir; yoksa panel boş görünüyordu.
+  const [announcement, setAnnouncement] = useState<{ title: string; body: string } | null>(null);
   // null = hiçbir sekme açık değil (varsayılan) — Detaylar/Paket/Koli metni
   // sadece kullanıcı ilgili butona tıklayınca görünür, aksi halde ürün
   // önizleme modalı sekme butonlarının hemen altına ilgili ürünler bölümüne
@@ -1865,8 +1861,14 @@ export function StorefrontClient({
     for (const product of giftCampaignProducts) {
       map.set(product.id, product);
     }
+    // Bildirim linkiyle (?urun=id) açılan ürün katalog sayfasında yüklü
+    // olmayabilir; detay modalı ve + butonu çalışsın diye haritaya girer.
+    for (const product of deepLinkProducts) {
+      map.set(product.id, product);
+    }
     return map;
   }, [
+    deepLinkProducts,
     products,
     sections,
     promoProducts,
@@ -1961,6 +1963,55 @@ export function StorefrontClient({
   const selectedQuantityValue = parseUnitCount(selectedQuantity);
   const selectedPackageCountValue = parseUnitCount(selectedPackageCount);
   const selectedCartonCountValue = parseUnitCount(selectedCartonCount);
+
+  // Bildirim derin bağlantıları (lib/push/send-tenant-broadcast-push.ts üretir):
+  //   ?kampanya=1            Kampanyalar panelini aç
+  //   ?bildirim=<b64url>     panelin üstünde duyuru kartı ({t,b})
+  //   ?kategori=<id>         o kategoriyi seç
+  //   ?urun=<id>             ürün detayını aç (katalogda yüklü değilse çek)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const raw = params.get("bildirim");
+    const kategori = params.get("kategori");
+    const urun = params.get("urun");
+    const timer = window.setTimeout(() => {
+      if (raw) {
+        try {
+          const json = JSON.parse(atob(raw.replace(/-/g, "+").replace(/_/g, "/")));
+          if (json && typeof json.t === "string") setAnnouncement({ title: json.t, body: typeof json.b === "string" ? json.b : "" });
+        } catch { /* bozuk parametre: yok say */ }
+      }
+      if (params.get("kampanya") === "1") setIsCampaignsSheetOpen(true);
+      if (kategori) handleCategoryChange(kategori);
+    }, 0);
+    return () => window.clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    const urun = new URLSearchParams(window.location.search).get("urun");
+    if (!urun || !analyticsSubdomain) return;
+    let cancelled = false;
+    const known = productsById.get(urun);
+    const open = (product: StorefrontProduct) => {
+      if (cancelled) return;
+      setPreviewProduct(product);
+      setActivePreviewTab(null);
+      setActivePreviewImageIndex(0);
+    };
+    if (known) { open(known); return; }
+    void fetch(`/api/storefront/products-by-ids?${new URLSearchParams({ subdomain: analyticsSubdomain, ids: urun })}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((json) => {
+        const found = Array.isArray(json?.products) ? (json.products as StorefrontProduct[]) : [];
+        if (!found.length) return;
+        setDeepLinkProducts(found);
+        open(found[0]);
+      })
+      .catch(() => undefined);
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [analyticsSubdomain]);
 
   const handleOpenProductDetail = useCallback(
     (productId: string) => {
@@ -4504,6 +4555,7 @@ export function StorefrontClient({
         }
         pushSubdomain={analyticsSubdomain}
         pushVapidPublicKey={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? ""}
+        announcement={announcement}
       />
 
       {usesSidebarNav ? (

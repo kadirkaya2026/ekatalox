@@ -3,7 +3,7 @@
 import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowRight, Check, ChevronDown, Gift, X } from "lucide-react";
+import { ArrowRight, Check, ChevronDown, Gift, Megaphone, X } from "lucide-react";
 import type { StorefrontCoupon } from "@/lib/types";
 import { describeCoupon, formatCouponBenefit } from "@/lib/coupons/shared";
 import { StorefrontImage } from "@/components/storefront/storefront-image";
@@ -41,6 +41,7 @@ export function StorefrontCampaignsSheet({
   personalCouponStatus = null,
   pushSubdomain,
   pushVapidPublicKey,
+  announcement = null,
 }: {
   isOpen: boolean;
   onClose: () => void;
@@ -60,6 +61,8 @@ export function StorefrontCampaignsSheet({
   /** Bildirim kartı: mağaza subdomain'i ve VAPID anahtarı; anahtar yoksa kart çıkmaz */
   pushSubdomain?: string;
   pushVapidPublicKey?: string;
+  /** Bildirim linkiyle gelen duyuru metni — en üstte kart */
+  announcement?: { title: string; body: string } | null;
 }) {
   const theme = useStorefrontTheme();
   const { t } = useStorefrontLocale();
@@ -91,7 +94,7 @@ export function StorefrontCampaignsSheet({
   useEffect(() => {
     if (!isOpen) setCouponOpen(false);
   }, [isOpen]);
-  const hasContent = campaigns.length > 0 || Boolean(paymentCampaignBars) || Boolean(personalCoupon);
+  const hasContent = campaigns.length > 0 || Boolean(paymentCampaignBars) || Boolean(personalCoupon) || Boolean(announcement);
 
   return (
     <AnimatePresence>
@@ -149,6 +152,18 @@ export function StorefrontCampaignsSheet({
               </div>
 
               <div className="safe-bottom-padding max-h-[min(72dvh,560px)] space-y-3 overflow-y-auto px-4 py-4 sm:px-5 lg:max-h-none lg:flex-1">
+                {announcement ? (
+                  <div className={cn("flex gap-3 rounded-2xl border p-4", theme.border, theme.surface)}>
+                    <span className={cn("flex size-10 shrink-0 items-center justify-center rounded-full", theme.activeTileBg, theme.activeTileText)}>
+                      <Megaphone className="size-5" />
+                    </span>
+                    <div className="min-w-0">
+                      <p className={cn("text-base font-bold leading-6", theme.text)}>{announcement.title}</p>
+                      {announcement.body ? <p className={cn("mt-1 text-sm leading-5", theme.textMuted)}>{announcement.body}</p> : null}
+                    </div>
+                  </div>
+                ) : null}
+
                 {pushSubdomain && pushVapidPublicKey ? (
                   <CampaignPushCard subdomain={pushSubdomain} vapidPublicKey={pushVapidPublicKey} />
                 ) : null}

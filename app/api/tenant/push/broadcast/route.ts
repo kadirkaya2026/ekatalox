@@ -6,7 +6,24 @@ import {
   countTenantBroadcastSubscribers,
   getTenantStorefrontOrigin,
   sendTenantBroadcastPush,
+  type PushTarget,
 } from "@/lib/push/send-tenant-broadcast-push";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+// Hedef ürün/kategori bu bayiye ait mi? (Başka bayinin id'si linke girmesin.)
+async function resolveTarget(tenantId: string, raw: unknown): Promise<PushTarget | null> {
+  const type = typeof (raw as { type?: unknown })?.type === "string" ? (raw as { type: string }).type : "campaigns";
+  const id = typeof (raw as { id?: unknown })?.id === "string" ? (raw as { id: string }).id : "";
+  if (type === "campaigns") return { type: "campaigns" };
+  if ((type !== "category" && type !== "product") || !UUID.test(id)) return null;
+  const supabase = createSupabaseAdminClient();
+  if (!supabase) return null;
+  const table = type === "category" ? "categories" : "products";
+  const { data } = await supabase.from(table).select("id").eq("tenant_id", tenantId).eq("id", id).maybeSingle();
+  return data ? { type, id } : null;
+}
 
 // Serbest duyuru: "Yeni ürün geldi", "Stok azalıyor" gibi. Başlık + metin,
 // isteğe bağlı fiyat listesi filtresi (yalnız o şifreyle girenler alır).
@@ -19,7 +36,8 @@ export async function POST(request: Request) {
   const title = typeof body?.title === "string" ? body.title.trim().slice(0, 80) : "";
   const text = typeof body?.body === "string" ? body.body.trim().slice(0, 200) : "";
   const priceListId = typeof body?.price_list_id === "string" && body.price_list_id ? body.price_list_id : null;
-  const path = typeof body?.path === "string" && body.path.startsWith("/") ? body.path.slice(0, 200) : "/?kampanya=1";
+  const target = await resolveTarget(tenant.id, body?.target);
+  if (!target) return NextResponse.json({ error: "Hedef ürün/kategori bulunamadı." }, { status: 400 });
   const subscriptionIds = Array.isArray(body?.subscription_ids)
     ? (body.subscription_ids as unknown[]).filter((v): v is string => typeof v === "string").slice(0, 500)
     : null;
@@ -30,7 +48,8 @@ export async function POST(request: Request) {
     tenantId: tenant.id,
     title,
     body: text,
-    url: `${getTenantStorefrontOrigin(tenant)}${path}`,
+    origin: getTenantStorefrontOrigin(tenant),
+    target,
     iconUrl: settings?.logo_url || settings?.site_favicon_url || null,
     priceListId,
     subscriptionIds,

@@ -1,13 +1,14 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Bell, Loader2, RefreshCw, Send } from "lucide-react";
+import { Bell, Loader2, RefreshCw, Search, Send, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { InlineAlert } from "@/components/ui/inline-alert";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import type { PriceList } from "@/lib/types";
+import { Select } from "@/components/ui/select";
+import type { Category, PriceList } from "@/lib/types";
 import type { PushSubscriberRow } from "@/app/api/tenant/push/subscribers/route";
 import { cn } from "@/lib/utils";
 
@@ -15,12 +16,21 @@ import { cn } from "@/lib/utils";
 // hangi şifreyle girdiği ve o şifrenin fiyat listesi görünür; bayi ister
 // tek kişiyi, ister bir listenin tamamını, ister herkesi seçer. Başlık ve
 // metinde {ad} yazılırsa herkese kendi adıyla gider.
-export function TenantPushBroadcastCard({ priceLists }: { priceLists: PriceList[] }) {
+type TargetType = "campaigns" | "category" | "product";
+
+export function TenantPushBroadcastCard({ priceLists, categories }: { priceLists: PriceList[]; categories: Category[] }) {
   const [rows, setRows] = useState<PushSubscriberRow[] | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [filterList, setFilterList] = useState<string>("");
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
+  // Bildirime tıklanınca nereye gitsin: Kampanyalar paneli (duyuru metni
+  // orada kart olarak görünür), bir kategori ya da tek ürün (detay açılır).
+  const [targetType, setTargetType] = useState<TargetType>("campaigns");
+  const [targetCategoryId, setTargetCategoryId] = useState("");
+  const [targetProduct, setTargetProduct] = useState<{ id: string; product_name: string } | null>(null);
+  const [productQuery, setProductQuery] = useState("");
+  const [productResults, setProductResults] = useState<{ id: string; product_name: string; sku_code?: string | null }[]>([]);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -38,6 +48,19 @@ export function TenantPushBroadcastCard({ priceLists }: { priceLists: PriceList[
       });
     return () => { cancelled = true; };
   }, [reloadKey]);
+
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      if (targetType !== "product" || targetProduct) { setProductResults([]); return; }
+      const params = new URLSearchParams({ page: "1" });
+      if (productQuery.trim()) params.set("q", productQuery.trim());
+      fetch(`/api/tenant/products?${params.toString()}`)
+        .then((res) => res.json())
+        .then((json) => setProductResults((json.products ?? []).slice(0, 8)))
+        .catch(() => undefined);
+    }, 300);
+    return () => clearTimeout(timeout);
+  }, [targetType, targetProduct, productQuery]);
 
   const visible = useMemo(
     () => (rows ?? []).filter((row) => !filterList || row.price_list_id === filterList),
@@ -71,18 +94,24 @@ export function TenantPushBroadcastCard({ priceLists }: { priceLists: PriceList[
   async function send() {
     if (!title.trim()) { setError("Başlık yazın."); return; }
     if (!targetIds.length) { setError("Gönderilecek kimse yok."); return; }
+    if (targetType === "category" && !targetCategoryId) { setError("Kategori seçin."); return; }
+    if (targetType === "product" && !targetProduct) { setError("Ürün seçin."); return; }
     setPending(true); setError(null); setSuccess(null);
+    const target =
+      targetType === "category" ? { type: "category", id: targetCategoryId }
+      : targetType === "product" ? { type: "product", id: targetProduct!.id }
+      : { type: "campaigns" };
     const response = await fetch("/api/tenant/push/broadcast", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title: title.trim(), body: body.trim(), subscription_ids: targetIds }),
+      body: JSON.stringify({ title: title.trim(), body: body.trim(), subscription_ids: targetIds, target }),
     });
     const result = await response.json().catch(() => ({}));
     setPending(false);
     if (!response.ok) { setError(result.error ?? "Bildirim gönderilemedi."); return; }
     const sent = Number(result.sent ?? 0);
     setSuccess(sent ? `${sent} cihaza gönderildi.` : "Gönderilemedi (cihazlar bildirimi kapatmış olabilir).");
-    if (sent) { setTitle(""); setBody(""); setSelected(new Set()); load(); }
+    if (sent) { setTitle(""); setBody(""); setSelected(new Set()); setTargetType("campaigns"); setTargetCategoryId(""); setTargetProduct(null); load(); }
   }
 
   const listName = (id: string | null) => priceLists.find((l) => l.id === id)?.name ?? null;
@@ -113,6 +142,63 @@ export function TenantPushBroadcastCard({ priceLists }: { priceLists: PriceList[
           placeholder="Metin (isteğe bağlı) — ör. Bu hafta geçerli, Kampanyalar'dan bakın."
           onChange={(event) => setBody(event.target.value)}
         />
+
+        <div className="rounded-xl border p-3">
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Bildirime dokununca nereye gitsin?</p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {([
+              ["campaigns", "Kampanyalar bölümü"],
+              ["category", "Bir kategori"],
+              ["product", "Bir ürün"],
+            ] as [TargetType, string][]).map(([value, label]) => (
+              <button
+                key={value}
+                type="button"
+                onClick={() => setTargetType(value)}
+                className={cn("rounded-full border px-3 py-1 text-xs font-semibold", targetType === value ? "bg-foreground text-background" : "text-foreground")}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+          {targetType === "category" ? (
+            <Select className="mt-3" value={targetCategoryId} onChange={(event) => setTargetCategoryId(event.target.value)}>
+              <option value="">Kategori seçin</option>
+              {categories.map((category) => (
+                <option key={category.id} value={category.id}>{category.parent_id ? "— " : ""}{category.name}</option>
+              ))}
+            </Select>
+          ) : null}
+          {targetType === "product" ? (
+            targetProduct ? (
+              <div className="mt-3 flex items-center justify-between gap-3 rounded-lg bg-muted px-3 py-2 text-sm">
+                <span className="font-medium text-foreground">{targetProduct.product_name}</span>
+                <button type="button" onClick={() => { setTargetProduct(null); setProductQuery(""); }} className="text-muted-foreground" aria-label="Ürünü kaldır">
+                  <X className="size-4" />
+                </button>
+              </div>
+            ) : (
+              <div className="mt-3">
+                <div className="relative">
+                  <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input className="pl-9" value={productQuery} placeholder="Ürün adı veya kodu ara" onChange={(event) => setProductQuery(event.target.value)} />
+                </div>
+                {productResults.length ? (
+                  <ul className="mt-2 max-h-56 divide-y overflow-y-auto rounded-lg border text-sm">
+                    {productResults.map((product) => (
+                      <li key={product.id}>
+                        <button type="button" onClick={() => setTargetProduct(product)} className="flex w-full items-center justify-between px-3 py-2 text-left hover:bg-muted">
+                          <span className="text-foreground">{product.product_name}</span>
+                          {product.sku_code ? <span className="font-mono text-xs text-muted-foreground">{product.sku_code}</span> : null}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                ) : null}
+              </div>
+            )
+          ) : null}
+        </div>
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
@@ -184,7 +270,7 @@ export function TenantPushBroadcastCard({ priceLists }: { priceLists: PriceList[
 
       <div className="flex items-center justify-between gap-3">
         <p className="text-xs text-muted-foreground">
-          {selectedCount ? `${selectedCount} kişi seçili` : "Kimse seçili değil — listedeki herkese gider."} Bildirime dokunan müşteri Kampanyalar bölümüne düşer.
+          {selectedCount ? `${selectedCount} kişi seçili.` : "Kimse seçili değil — listedeki herkese gider."}
         </p>
         <Button variant="primary" disabled={pending || !targetIds.length} onClick={() => void send()}>
           {pending ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}

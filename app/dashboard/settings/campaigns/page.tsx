@@ -41,7 +41,7 @@ export default async function TenantCampaignsSettingsPage() {
         description="Müşterilerinizin mağazanızdaki Kampanyalar bölümünde göreceği kartları buradan yönetin. İsterseniz sadece duyuru yapın, isterseniz sepet tutarına bağlı otomatik indirim tanımlayın."
       />
 
-      <TenantPushBroadcastCard priceLists={priceLists} />
+      <TenantPushBroadcastCard priceLists={priceLists} categories={categories} />
 
       <TenantCampaignsForm
         initialCampaigns={campaigns}
