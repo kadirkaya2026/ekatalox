@@ -22,7 +22,7 @@ export async function POST(request: Request, ctx: { params: Promise<{ id: string
   if (!supabase) return NextResponse.json({ error: "Sunucu yapılandırması eksik." }, { status: 500 });
   const { data: campaign } = await supabase
     .from("tenant_campaigns")
-    .select("id, title, description, is_active, rule_type, min_cart_amount, discount_kind, discount_value, payment_method")
+    .select("id, title, description, image_url, is_active, rule_type, min_cart_amount, discount_kind, discount_value, payment_method")
     .eq("tenant_id", tenant.id)
     .eq("id", id)
     .maybeSingle();
@@ -52,6 +52,7 @@ export async function POST(request: Request, ctx: { params: Promise<{ id: string
     body: message || campaign.description || rule || "Kampanyalar bölümünden inceleyin.",
     origin: getTenantStorefrontOrigin(tenant),
     target: { type: "campaigns" },
+    imageUrl: campaign.image_url ?? null,
     iconUrl: settings?.logo_url || settings?.site_favicon_url || null,
     tag: `campaign-${campaign.id}`,
     priceListId,

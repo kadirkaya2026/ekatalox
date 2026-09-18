@@ -13,16 +13,24 @@ import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 // Hedef ürün/kategori bu bayiye ait mi? (Başka bayinin id'si linke girmesin.)
-async function resolveTarget(tenantId: string, raw: unknown): Promise<PushTarget | null> {
+// Görseli de döner: ürün fotoğrafı / kategori kutucuk görseli bildirimde
+// büyük görsel olarak çıkar (Android).
+async function resolveTarget(
+  tenantId: string,
+  raw: unknown,
+): Promise<{ target: PushTarget; imageUrl: string | null } | null> {
   const type = typeof (raw as { type?: unknown })?.type === "string" ? (raw as { type: string }).type : "campaigns";
   const id = typeof (raw as { id?: unknown })?.id === "string" ? (raw as { id: string }).id : "";
-  if (type === "campaigns") return { type: "campaigns" };
+  if (type === "campaigns") return { target: { type: "campaigns" }, imageUrl: null };
   if ((type !== "category" && type !== "product") || !UUID.test(id)) return null;
   const supabase = createSupabaseAdminClient();
   if (!supabase) return null;
-  const table = type === "category" ? "categories" : "products";
-  const { data } = await supabase.from(table).select("id").eq("tenant_id", tenantId).eq("id", id).maybeSingle();
-  return data ? { type, id } : null;
+  if (type === "product") {
+    const { data } = await supabase.from("products").select("id, image_url").eq("tenant_id", tenantId).eq("id", id).maybeSingle();
+    return data ? { target: { type, id }, imageUrl: data.image_url ?? null } : null;
+  }
+  const { data } = await supabase.from("categories").select("id, tile_image_url").eq("tenant_id", tenantId).eq("id", id).maybeSingle();
+  return data ? { target: { type, id }, imageUrl: data.tile_image_url ?? null } : null;
 }
 
 // Serbest duyuru: "Yeni ürün geldi", "Stok azalıyor" gibi. Başlık + metin,
@@ -36,8 +44,9 @@ export async function POST(request: Request) {
   const title = typeof body?.title === "string" ? body.title.trim().slice(0, 80) : "";
   const text = typeof body?.body === "string" ? body.body.trim().slice(0, 200) : "";
   const priceListId = typeof body?.price_list_id === "string" && body.price_list_id ? body.price_list_id : null;
-  const target = await resolveTarget(tenant.id, body?.target);
-  if (!target) return NextResponse.json({ error: "Hedef ürün/kategori bulunamadı." }, { status: 400 });
+  const resolved = await resolveTarget(tenant.id, body?.target);
+  if (!resolved) return NextResponse.json({ error: "Hedef ürün/kategori bulunamadı." }, { status: 400 });
+  const { target, imageUrl } = resolved;
   const subscriptionIds = Array.isArray(body?.subscription_ids)
     ? (body.subscription_ids as unknown[]).filter((v): v is string => typeof v === "string").slice(0, 500)
     : null;
@@ -50,6 +59,7 @@ export async function POST(request: Request) {
     body: text,
     origin: getTenantStorefrontOrigin(tenant),
     target,
+    imageUrl,
     iconUrl: settings?.logo_url || settings?.site_favicon_url || null,
     priceListId,
     subscriptionIds,

@@ -13,6 +13,10 @@ self.addEventListener("push", (event) => {
     badge: data.icon || "/favicon.ico",
     tag: data.tag || "order",
     renotify: true,
+    // image: Android Chrome'da bildirimde büyük görsel (ürün fotoğrafı);
+    // iOS ve masaüstü çoğunlukla yok sayar. vibrate yalnız Android.
+    image: data.image || undefined,
+    vibrate: [200, 100, 200],
     data: { url: data.url || "/" },
   };
   event.waitUntil(self.registration.showNotification(title, options));

@@ -56,6 +56,8 @@ export async function sendTenantBroadcastPush(params: {
   origin?: string;
   target?: PushTarget;
   iconUrl?: string | null;
+  /** Büyük görsel (Android): hedef ürünün/kategorinin fotoğrafı */
+  imageUrl?: string | null;
   tag?: string;
   priceListId?: string | null;
   /** Verilirse yalnız bu abonelik satırlarına gider (panelde kişi seçimi). */
@@ -83,7 +85,14 @@ export async function sendTenantBroadcastPush(params: {
       const body = personalize(params.body, sub.subscriber_name);
       const url =
         params.url ?? `${params.origin ?? ""}${buildPushTargetPath(params.target ?? { type: "campaigns" }, { title, body })}`;
-      const payload = JSON.stringify({ title, body, icon: params.iconUrl ?? undefined, url, tag });
+      const payload = JSON.stringify({
+        title,
+        body,
+        icon: params.iconUrl ?? undefined,
+        image: params.imageUrl ?? undefined,
+        url,
+        tag,
+      });
       try {
         await webpush.sendNotification(
           { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
