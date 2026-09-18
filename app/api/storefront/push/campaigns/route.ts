@@ -22,28 +22,6 @@ async function resolveContext(subdomainRaw: unknown) {
   };
 }
 
-// Telefonu sipariş vermiş bir müşteriyle eşleştir (customers.phone serbest
-// biçimli: 0535..., +90535..., 535...). Eşleşme yoksa null — sahte müşteri
-// kaydı açılmaz.
-async function findCustomerIdByPhone(
-  supabase: NonNullable<ReturnType<typeof createSupabaseAdminClient>>,
-  tenantId: string,
-  phone: string,
-) {
-  const digits = phone.replace(/\D/g, "");
-  if (digits.length < 10) return null;
-  const local = digits.slice(-10);
-  const variants = [phone, digits, local, `0${local}`, `90${local}`, `+90${local}`, `+90 ${local}`];
-  const { data } = await supabase
-    .from("customers")
-    .select("id")
-    .eq("tenant_id", tenantId)
-    .in("phone", variants)
-    .limit(1)
-    .maybeSingle();
-  return data?.id ?? null;
-}
-
 export async function POST(request: Request) {
   const body = await request.json().catch(() => null);
   const sub = body?.subscription;
@@ -56,13 +34,14 @@ export async function POST(request: Request) {
   const supabase = createSupabaseAdminClient();
   if (!supabase) return NextResponse.json({ error: "Sunucu yapılandırması eksik." }, { status: 500 });
 
+  // Ad/telefon doğrulanmamış BEYANDIR: mevcut bir müşteri kaydına
+  // (customers) bilerek bağlanmaz. Bağlansaydı başkasının numarasını yazan
+  // cihaz o müşterinin kişiye özel kupon bildirimlerini de alırdı.
   const name = typeof body.name === "string" ? body.name.trim().slice(0, 80) : "";
   const phone = typeof body.phone === "string" ? body.phone.trim().slice(0, 30) : "";
-  const customerId = phone ? await findCustomerIdByPhone(supabase, ctx.tenant.id, phone) : null;
 
-  // order_id bilerek gönderilmiyor: aynı cihaz takip sayfasından da abone
-  // olduysa o bağ korunur, yalnız duyuru alanları yazılır. customer_id ise
-  // yalnız telefon eşleştiyse yazılır (eşleşmediyse mevcut değer kalsın).
+  // order_id / customer_id bilerek gönderilmiyor: aynı cihaz takip
+  // sayfasından da abone olduysa o bağ korunur, yalnız duyuru alanları yazılır.
   const { error } = await supabase.from("push_subscriptions").upsert(
     {
       tenant_id: ctx.tenant.id,
@@ -71,7 +50,6 @@ export async function POST(request: Request) {
       price_list_id: ctx.priceListId,
       subscriber_name: name || null,
       subscriber_phone: phone || null,
-      ...(customerId ? { customer_id: customerId } : {}),
       endpoint: String(sub.endpoint),
       p256dh: String(sub.keys.p256dh),
       auth: String(sub.keys.auth),
