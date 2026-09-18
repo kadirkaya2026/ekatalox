@@ -123,6 +123,35 @@ details.obj summary::after{content:"+";color:var(--ink3);font-family:var(--mono)
 details.obj[open] summary::after{content:"–"}
 details.obj .body{padding:0 14px 12px;font-size:14.5px;line-height:1.45;color:var(--ink)}
 .warn{background:var(--neg-bg);color:var(--neg);border-radius:10px;padding:10px 12px;font-size:13.5px;margin-bottom:10px}
+.who{font-size:12px;color:var(--ink3);padding:6px 0 0;display:flex;gap:8px;align-items:center;justify-content:space-between}
+.who button{color:var(--accent);font-weight:600;font-size:12.5px}
+.modal{position:fixed;inset:0;background:rgba(10,14,20,.55);display:grid;place-items:center;z-index:20;padding:16px}
+.modal .card{background:var(--surface);border-radius:14px;padding:18px;width:100%;max-width:380px}
+.modal h2{margin:0 0 6px;font-size:17px}.modal p{margin:0 0 12px;color:var(--ink2);font-size:14px}
+.modal input{width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:9px;background:var(--surface);color:var(--ink);font:inherit;font-size:16px}
+.modal .ok{margin-top:10px;width:100%;padding:11px;border-radius:9px;background:var(--accent);color:var(--accent-ink);font-weight:600}
+.media{margin-top:10px;display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.media button,.media label{display:flex;align-items:center;justify-content:center;gap:6px;padding:10px 8px;border-radius:9px;border:1px solid var(--line);background:var(--surface);font-weight:500;font-size:13.5px;cursor:pointer;text-align:center}
+.media label input{display:none}
+.media .rec{border-color:var(--neg);color:var(--neg)}
+.media .rec.on{background:var(--neg);color:#fff;animation:pulse 1.2s infinite}
+@keyframes pulse{50%{opacity:.75}}
+@media (prefers-reduced-motion:reduce){.media .rec.on{animation:none}}
+.consent{margin-top:8px;background:var(--surface2);border-radius:10px;padding:10px;font-size:13.5px}
+.consent label{display:flex;gap:8px;align-items:flex-start}
+.consent input{margin-top:3px;width:18px;height:18px}
+.consent .go{margin-top:8px;padding:9px 12px;border-radius:8px;background:var(--neg);color:#fff;font-weight:600}
+.consent .go[disabled]{opacity:.45}
+.thumbs{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.thumbs img{width:72px;height:72px;object-fit:cover;border-radius:8px;border:1px solid var(--line)}
+.audios{margin-top:8px;display:flex;flex-direction:column;gap:6px}
+.audios div{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--ink2)}
+.audios audio{height:34px;flex:1;min-width:0}
+.flag{font-size:11px;font-weight:600;padding:2px 7px;border-radius:999px;background:var(--neg-bg);color:var(--neg)}
+.flag.ok{background:var(--pos-bg);color:var(--pos)}
+.sebep{margin-top:8px}
+.sebep select{width:100%;padding:10px;border:1px solid var(--line);border-radius:9px;background:var(--surface);color:var(--ink);font:inherit;font-size:14px}
+.up{font-size:12px;color:var(--ink3);margin-top:6px}
 .more{margin:12px auto 0;display:block;padding:10px 18px;border-radius:9px;border:1px solid var(--line);background:var(--surface);font-weight:500}
 :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 </style>
@@ -139,6 +168,7 @@ details.obj .body{padding:0 14px 12px;font-size:14.5px;line-height:1.45;color:va
 </div>
 <main>
   <div class="sync" id="sync">kayıtlar yükleniyor…</div>
+  <div class="who" id="who" hidden><span>Temsilci: <b id="whoName"></b></span><button id="whoChange" type="button">Değiştir</button></div>
   <div id="view"></div>
 </main>
 
@@ -188,7 +218,8 @@ details.obj .body{padding:0 14px 12px;font-size:14.5px;line-height:1.45;color:va
     clearTimeout(writeTimers[ilce]);
     writeTimers[ilce] = setTimeout(async ()=>{
       try{
-        const r=await fetch(API,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({ilce,kayitlar:visits[ilce]||{}})});
+        const clean={}; for(const id in (visits[ilce]||{})){ const {_consent,...rest}=visits[ilce][id]; clean[id]=rest; }
+        const r=await fetch(API,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({ilce,kayitlar:clean})});
         if(!r.ok) throw new Error('HTTP '+r.status);
         online=true; setSync('kayıtlar bulutta · '+countAll()+' işaretli bayi');
       }catch(e){ online=false; setSync('kayıt buluta yazılamadı · cihazda duruyor, bağlanınca gönderilir', true); }
@@ -202,10 +233,24 @@ details.obj .body{padding:0 14px 12px;font-size:14.5px;line-height:1.45;color:va
     if(!ilce) return;
     visits[ilce] = visits[ilce]||{};
     const cur = visits[ilce][id];
-    if(k==='geri'){ delete visits[ilce][id]; }
-    else if(k==='gidildi'){ if(!cur) visits[ilce][id] = { d:'gidildi', n:'', t:new Date().toISOString() }; }
-    else if(cur && cur.d===k){ visits[ilce][id] = { ...cur, d:'gidildi' }; }
-    else { visits[ilce][id] = { d:k, n:(cur&&cur.n)||'', t:(cur&&cur.t)||new Date().toISOString(), tk:new Date().toISOString() }; }
+    if(k==='geri'){ if(cur&&((cur.foto&&cur.foto.length)||(cur.ses&&cur.ses.length))&&!confirm('Bu ziyaretin fotoğraf/ses kayıtları var. Yine de geri alınsın mı?')) return; delete visits[ilce][id]; }
+    else if(k==='gidildi'){
+      if(!cur){
+        if(!rep){ askWho(); return; }
+        const r={ d:'gidildi', n:'', t:new Date().toISOString(), kim:rep, foto:[], ses:[] };
+        visits[ilce][id]=r; persist(ilce); render();
+        // konum: bayiye mesafe (150 m üstü bayrak)
+        if(navigator.geolocation) navigator.geolocation.getCurrentPosition(p=>{
+          const k2=dealerIndex[id]; if(!k2) return; const me={la:p.coords.latitude,ln:p.coords.longitude};
+          const rr=(visits[ilce]||{})[id]; if(!rr) return;
+          rr.konum={la:+me.la.toFixed(6),ln:+me.ln.toFixed(6),acc:Math.round(p.coords.accuracy||0),m:Math.round(dist(me,k2))};
+          persist(ilce); render();
+        }, ()=>{ const rr=(visits[ilce]||{})[id]; if(rr){ rr.konum={hata:'izin yok'}; persist(ilce); render(); } }, {enableHighAccuracy:true,timeout:12000,maximumAge:10000});
+        return;
+      }
+    }
+    else if(cur && cur.d===k){ visits[ilce][id] = { ...cur, d:'gidildi', sebep:undefined }; }
+    else { visits[ilce][id] = { ...(cur||{}), d:k, n:(cur&&cur.n)||'', t:(cur&&cur.t)||new Date().toISOString(), tk:new Date().toISOString(), kim:(cur&&cur.kim)||rep }; }
     persist(ilce); render();
   }
   function setNote(ilce,id,n){
@@ -214,6 +259,66 @@ details.obj .body{padding:0 14px 12px;font-size:14.5px;line-height:1.45;color:va
     const cur = visits[ilce][id]; if(!cur) return;
     cur.n = n; visits[ilce][id]=cur; persist(ilce);
   }
+
+  // ---- temsilci kimliği (cihazda; her kayda yazılır)
+  const WHO='saha-temsilci'; let rep='';
+  try{ rep=localStorage.getItem(WHO)||''; }catch(e){}
+  function showWho(){ const w=$('#who'); w.hidden=!rep; $('#whoName').textContent=rep; }
+  function askWho(){
+    const m=document.createElement('div'); m.className='modal';
+    m.innerHTML='<div class="card"><h2>Sen kimsin?</h2><p>Adın her ziyaret kaydına işlenir; Kadir kimin nereye gittiğini böyle görür.</p><input id="whoInput" placeholder="Ad Soyad" autocomplete="name" value="'+esc(rep)+'"><button class="ok" id="whoOk">Devam</button></div>';
+    document.body.appendChild(m);
+    const inp=m.querySelector('#whoInput'); inp.focus();
+    const done=()=>{ const v=inp.value.trim(); if(v.length<2){ inp.focus(); return; } rep=v; try{ localStorage.setItem(WHO,rep); }catch(e){} m.remove(); showWho(); };
+    m.querySelector('#whoOk').addEventListener('click',done); inp.addEventListener('keydown',e=>{ if(e.key==='Enter') done(); });
+  }
+  $('#whoChange').addEventListener('click',askWho);
+  showWho(); if(!rep) setTimeout(askWho,300);
+
+  // ---- medya: yükleme + oynatma (özel bucket, token'lı API)
+  const MEDIA=API+'/medya';
+  const mediaUrl=path=>MEDIA+'?path='+encodeURIComponent(path);
+  async function uploadMedia(blob,ilce,bayi,tur,ext){
+    const fd=new FormData(); fd.append('dosya',blob,tur+'.'+ext); fd.append('ilce',ilce); fd.append('bayi',bayi); fd.append('tur',tur);
+    const r=await fetch(MEDIA,{method:'POST',body:fd}); const j=await r.json().catch(()=>({}));
+    if(!r.ok) throw new Error(j.error||('HTTP '+r.status)); return j.path;
+  }
+  function shrinkImage(file){ // 1280px JPEG; kamera fotoğrafı 3-8 MB olur, saha internetinde şişmesin
+    return new Promise(res=>{ const img=new Image(); const u=URL.createObjectURL(file);
+      img.onload=()=>{ const sc=Math.min(1,1280/Math.max(img.width,img.height)); const c=document.createElement('canvas'); c.width=Math.round(img.width*sc); c.height=Math.round(img.height*sc);
+        c.getContext('2d').drawImage(img,0,0,c.width,c.height); URL.revokeObjectURL(u); c.toBlob(b=>res(b||file),'image/jpeg',.82); };
+      img.onerror=()=>{ URL.revokeObjectURL(u); res(file); }; img.src=u; });
+  }
+  // kayıt
+  let recState=null; // {mr, chunks, start, timer, ilce, id, tur}
+  function pickMime(){ for(const m of ['audio/mp4','audio/webm;codecs=opus','audio/webm','audio/ogg']) if(window.MediaRecorder&&MediaRecorder.isTypeSupported(m)) return m; return ''; }
+  async function startRec(ilce,id,tur,btn){
+    if(recState){ setSync('Zaten bir kayıt sürüyor', true); return; }
+    if(!navigator.mediaDevices||!window.MediaRecorder){ setSync('Bu tarayıcı ses kaydını desteklemiyor', true); return; }
+    let stream; try{ stream=await navigator.mediaDevices.getUserMedia({audio:true}); }catch(e){ setSync('Mikrofon izni verilmedi', true); return; }
+    const mime=pickMime(); const mr=new MediaRecorder(stream, mime?{mimeType:mime}:undefined); const chunks=[];
+    mr.ondataavailable=e=>{ if(e.data&&e.data.size) chunks.push(e.data); };
+    mr.onstop=async ()=>{
+      stream.getTracks().forEach(t=>t.stop());
+      const st=recState; recState=null; clearInterval(st.timer);
+      const type=(mr.mimeType||mime||'audio/webm').split(';')[0]; const ext=type.includes('mp4')?'m4a':type.includes('ogg')?'ogg':'webm';
+      const blob=new Blob(chunks,{type}); const sure=Math.round((Date.now()-st.start)/1000);
+      if(sure<2){ setSync('Kayıt çok kısa, kaydedilmedi', true); render(); return; }
+      setSync('ses yükleniyor… ('+Math.round(blob.size/1024)+' KB)');
+      try{ const path=await uploadMedia(blob,st.ilce,st.id,st.tur,ext);
+        const rec=(visits[st.ilce]||{})[st.id]; if(rec){ rec.ses=(rec.ses||[]).concat([{p:path,s:sure,tur:st.tur,t:new Date().toISOString(),riza:st.tur==='gorusme'}]); persist(st.ilce); }
+        setSync('ses kaydı buluta yüklendi'); }
+      catch(e){ setSync('ses yüklenemedi: '+e.message, true); }
+      render();
+    };
+    mr.start(1000); recState={mr,chunks,start:Date.now(),ilce,id,tur,timer:null};
+    recState.timer=setInterval(()=>{ const b=document.querySelector('[data-stop="'+id+'"]'); if(b){ const sn=Math.round((Date.now()-recState.start)/1000); b.textContent='⏹ Durdur · '+String(Math.floor(sn/60)).padStart(2,'0')+':'+String(sn%60).padStart(2,'0'); } },500);
+    render();
+  }
+  function stopRec(){ if(recState&&recState.mr.state!=='inactive') recState.mr.stop(); }
+  window.addEventListener('beforeunload',e=>{ if(recState){ e.preventDefault(); e.returnValue=''; } });
+
+  const SEBEP=['Pahalı buldu','İlgilenmedi','Zaten benzer sistem var','Patron/sahibi yoktu','Alkol/yasal kaygı','Bilgisayar-telefon korkusu','Sonra gel dedi','Telefon siparişi almıyor','Diğer'];
 
   // ---- helpers
   const esc = s=>String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -310,19 +415,56 @@ details.obj .body{padding:0 14px 12px;font-size:14.5px;line-height:1.45;color:va
       '<div class="top"><div style="flex:1;min-width:0"><div class="nm">'+esc(k.n)+'</div>'+
       '<div class="meta">'+(ilceAd?'<span>'+esc(ilceAd)+' ·</span>':'')+'<span>'+esc(k.m)+'</span>'+(k.t?'<span>· '+esc(k.t)+'</span>':'')+(dm!=null?'<span class="dist">· '+fmtDist(dm)+'</span>':'')+'</div></div>'+
       (rec?'<span class="badge '+rec.d+'">'+LABEL[rec.d]+'</span>':'')+'</div>'+
+      (rec?'<div class="meta" style="margin-top:6px">'+(rec.kim?'<span>👤 '+esc(rec.kim)+'</span>':'')+locFlag(rec)+'</div>':'')+
       '<div class="acts"><a class="go" href="'+mapsUrl(k)+'" target="_blank" rel="noopener">Konuma git</a>'+
       (tel?'<a class="tel" href="'+tel+'">'+esc(k.p)+'</a>':'<span class="tel none">telefon yok</span>')+'</div>'+
       (!rec
         ? '<div class="st one"><button data-k="gidildi" aria-pressed="false">✓ Gidildi</button></div>'
         : '<div class="st">'+['olumlu','olumsuz'].map(s=>'<button data-k="'+s+'" aria-pressed="'+(rec.d===s)+'">'+LABEL[s]+'</button>').join('')+'</div>'+
           '<button type="button" class="undo" data-k="geri">Gidilmedi olarak geri al</button>')+
+      (rec?mediaBlock(k,rec):'')+
+      (rec&&rec.d==='olumsuz'?'<div class="sebep"><select data-sebep="'+k.i+'"><option value="">Red sebebi seç…</option>'+SEBEP.map(x=>'<option'+(rec.sebep===x?' selected':'')+'>'+x+'</option>').join('')+'</select></div>':'')+
       (rec&&rec.d!=='gidildi'?'<div class="note"><label for="not-'+k.i+'">Not</label><textarea id="not-'+k.i+'" placeholder="Kimle konuştun, ne dedi, ne zaman tekrar uğranacak…" maxlength="600">'+esc(rec.n||'')+'</textarea><div class="nrow"><button type="button" class="save" data-save="'+k.i+'">Notu kaydet</button><span class="saved" data-saved="'+k.i+'" hidden>kaydedildi ✓</span><span class="when">'+fmtWhen(rec.t)+'</span></div></div>':'')+
       '</div>';
+  }
+  function locFlag(rec){
+    const k=rec.konum; if(!k) return '<span class="flag">konum alınıyor…</span>';
+    if(k.hata) return '<span class="flag">konum yok</span>';
+    return k.m<=150 ? '<span class="flag ok">✓ yerinde · '+k.m+' m</span>' : '<span class="flag">⚠ bayiden '+(k.m>=1000?(k.m/1000).toFixed(1)+' km':k.m+' m')+' uzakta</span>';
+  }
+  function mediaBlock(k,rec){
+    const recording = recState && recState.id===k.i;
+    let h='<div class="media">'+
+      '<label>📷 Dükkân fotoğrafı<input type="file" accept="image/*" capture="environment" data-foto="'+k.i+'"></label>'+
+      (recording ? '<button type="button" class="rec on" data-stop="'+k.i+'">⏹ Durdur</button>'
+                 : '<button type="button" data-consent="'+k.i+'">🎙️ Görüşme kaydı</button>')+
+      (recording ? '' : '<button type="button" data-notrec="'+k.i+'">🎤 Sesli not (kendim)</button>')+
+      '</div>';
+    if(!recording && rec._consent) h+='<div class="consent"><label><input type="checkbox" data-riza="'+k.i+'"> Bayiye <b>"eğitim amaçlı görüşmeyi kaydedebilir miyim?"</b> diye sordum, <b>evet</b> dedi.</label><button type="button" class="go" data-startrec="'+k.i+'" disabled>● Kaydı başlat</button></div>';
+    if(!(rec.foto||[]).length) h+='<div class="up">Fotoğraf yok — dükkân önünden bir kare çek.</div>';
+    if((rec.foto||[]).length) h+='<div class="thumbs">'+rec.foto.map(f=>'<a href="'+mediaUrl(f.p)+'" target="_blank" rel="noopener"><img loading="lazy" src="'+mediaUrl(f.p)+'" alt="dükkân fotoğrafı"></a>').join('')+'</div>';
+    if((rec.ses||[]).length) h+='<div class="audios">'+rec.ses.map(a=>'<div><span>'+(a.tur==='gorusme'?'🎙️ görüşme'+(a.riza?' (izinli)':''):'🎤 not')+' · '+Math.floor(a.s/60)+':'+String(a.s%60).padStart(2,'0')+'</span><audio controls preload="none" src="'+mediaUrl(a.p)+'"></audio></div>').join('')+'</div>';
+    return h;
   }
   function bindDealerRows(slug){
     view.querySelectorAll('.dealer').forEach(row=>{
       const id=row.dataset.id; const il = slug || (dealerIndex[id]&&dealerIndex[id].ilce);
       row.querySelectorAll('[data-k]').forEach(b=>b.addEventListener('click',()=>setStatus(il,id,b.dataset.k)));
+      const rec=(visits[il]||{})[id];
+      const foto=row.querySelector('[data-foto]');
+      if(foto) foto.addEventListener('change',async ()=>{
+        const f=foto.files&&foto.files[0]; if(!f||!rec) return;
+        setSync('fotoğraf yükleniyor…');
+        try{ const small=await shrinkImage(f); const path=await uploadMedia(small,il,id,'foto','jpg');
+          rec.foto=(rec.foto||[]).concat([{p:path,t:new Date().toISOString()}]); persist(il); setSync('fotoğraf buluta yüklendi'); render(); }
+        catch(e){ setSync('fotoğraf yüklenemedi: '+e.message, true); }
+      });
+      const c=row.querySelector('[data-consent]'); if(c) c.addEventListener('click',()=>{ rec._consent=true; render(); });
+      const riza=row.querySelector('[data-riza]'), go=row.querySelector('[data-startrec]');
+      if(riza&&go){ riza.addEventListener('change',()=>{ go.disabled=!riza.checked; }); go.addEventListener('click',()=>{ if(!riza.checked) return; delete rec._consent; rec.riza={t:new Date().toISOString(),kim:rep}; persist(il); startRec(il,id,'gorusme'); }); }
+      const nr=row.querySelector('[data-notrec]'); if(nr) nr.addEventListener('click',()=>startRec(il,id,'not'));
+      const sp=row.querySelector('[data-stop]'); if(sp) sp.addEventListener('click',stopRec);
+      const sb=row.querySelector('[data-sebep]'); if(sb) sb.addEventListener('change',()=>{ rec.sebep=sb.value||undefined; persist(il); });
       const ta=row.querySelector('.note textarea'), sv=row.querySelector('.note .save'), ok=row.querySelector('.note .saved');
       if(ta && sv){
         const doSave=()=>{ setNote(il,id,ta.value.trim()); ok.hidden=false; sv.disabled=true; setTimeout(()=>{ ok.hidden=true; },2000); };
@@ -463,19 +605,29 @@ details.obj .body{padding:0 14px 12px;font-size:14.5px;line-height:1.45;color:va
     title.firstChild.nodeValue='Ziyaretler';
     const rows=[]; for(const il in visits){ for(const id in visits[il]){ const k=dealerIndex[id]; if(k) rows.push({k,rec:visits[il][id]}); } }
     subtitle.textContent=rows.length+' işaretli bayi';
-    let h='<div class="tools">'+['hepsi','olumlu','olumsuz','gidildi'].map(f=>'<button class="chip" data-vf="'+f+'" aria-pressed="'+(route.vf===f)+'">'+(f==='hepsi'?'Hepsi':LABEL[f])+'</button>').join('')+'</div>';
-    const list=rows.filter(r=>route.vf==='hepsi'||r.rec.d===route.vf).sort((a,b)=>(b.rec.t||'').localeCompare(a.rec.t||''));
+    const reps=[...new Set(rows.map(r=>r.rec.kim).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'tr'));
+    let h='<div class="tools">'+['hepsi','olumlu','olumsuz','gidildi'].map(f=>'<button class="chip" data-vf="'+f+'" aria-pressed="'+(route.vf===f)+'">'+(f==='hepsi'?'Hepsi':LABEL[f])+'</button>').join('')+
+      '<button class="chip" data-vflag="1" aria-pressed="'+(!!route.vflag)+'">⚠ Konum uyuşmayan</button></div>';
+    if(reps.length>1||route.vrep) h+='<div class="tools"><button class="chip" data-vrep="" aria-pressed="'+(!route.vrep)+'">Herkes</button>'+reps.map(n=>'<button class="chip" data-vrep="'+esc(n)+'" aria-pressed="'+(route.vrep===n)+'">👤 '+esc(n)+'</button>').join('')+'</div>';
+    // red sebepleri özeti
+    const neg=rows.filter(r=>r.rec.d==='olumsuz'); if(neg.length){ const cnt={}; neg.forEach(r=>{ const sb=r.rec.sebep||'Sebep girilmemiş'; cnt[sb]=(cnt[sb]||0)+1; });
+      h+='<div class="step" style="padding:12px 14px"><h3 style="font-size:14px;margin-bottom:6px">Red sebepleri · '+neg.length+' olumsuz</h3><div class="meta" style="gap:6px 14px">'+Object.entries(cnt).sort((a,b)=>b[1]-a[1]).map(([k,v])=>'<span><b>'+v+'</b> '+esc(k)+'</span>').join('')+'</div></div>'; }
+    const list=rows.filter(r=>(route.vf==='hepsi'||r.rec.d===route.vf)&&(!route.vrep||r.rec.kim===route.vrep)&&(!route.vflag||(r.rec.konum&&(r.rec.konum.hata||r.rec.konum.m>150)))).sort((a,b)=>(b.rec.t||'').localeCompare(a.rec.t||''));
     if(!list.length){ h+='<div class="empty">Henüz işaretli bayi yok. İlçeler sekmesinden bir bayiyi Gidildi / Olumlu / Olumsuz olarak işaretle.</div>'; view.innerHTML=h; bindVf(); return; }
     let lastDay='', open=false;
     list.forEach(r=>{
       const day=(r.rec.t||'').slice(0,10);
       if(day!==lastDay){ lastDay=day; let lbl=day; try{ lbl=new Date(day+'T12:00:00').toLocaleDateString('tr-TR',{weekday:'long',day:'numeric',month:'long'}); }catch(e){} if(open) h+='</div>'; h+='<div class="grp">'+esc(lbl)+'</div><div class="list">'; open=true; }
-      h+=dealerRow(r.k,r.rec,null,r.k.ilceAd).replace('<div class="acts">', (r.rec.n?'<div class="quote">'+esc(r.rec.n)+'</div>':'')+'<div class="acts">');
+      h+=dealerRow(r.k,r.rec,null,r.k.ilceAd).replace('<div class="acts">', ((r.rec.sebep?'<div class="quote"><b>Red sebebi:</b> '+esc(r.rec.sebep)+'</div>':'')+(r.rec.n?'<div class="quote">'+esc(r.rec.n)+'</div>':''))+'<div class="acts">');
     });
     if(open) h+='</div>';
     view.innerHTML=h; bindDealerRows(null); bindVf();
   }
-  function bindVf(){ view.querySelectorAll('[data-vf]').forEach(b=>b.addEventListener('click',()=>{ route.vf=b.dataset.vf; renderZiyaretler(); })); }
+  function bindVf(){
+    view.querySelectorAll('[data-vf]').forEach(b=>b.addEventListener('click',()=>{ route.vf=b.dataset.vf; renderZiyaretler(); }));
+    view.querySelectorAll('[data-vrep]').forEach(b=>b.addEventListener('click',()=>{ route.vrep=b.dataset.vrep||''; renderZiyaretler(); }));
+    view.querySelectorAll('[data-vflag]').forEach(b=>b.addEventListener('click',()=>{ route.vflag=!route.vflag; renderZiyaretler(); }));
+  }
 
   back.addEventListener('click',()=>{ route.tab='ilceler'; route.ilce=null; route.q=''; route.filter='hepsi'; route.sort='ad'; shown=80; window.scrollTo(0,0); render(); });
   $('#tab-ilceler').addEventListener('click',()=>{ route.tab='ilceler'; route.ilce=null; route.q=''; route.filter='hepsi'; route.sort='ad'; shown=80; window.scrollTo(0,0); render(); });
