@@ -71,7 +71,11 @@ main{padding:12px 16px;padding-bottom:calc(24px + env(safe-area-inset-bottom,0px
 .acts .go{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
 .acts .tel{font-family:var(--mono);font-variant-numeric:tabular-nums}
 .acts .tel.none{color:var(--ink3)}
-.st{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:8px}
+.st{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:8px}
+.st.one{grid-template-columns:1fr}
+.row.visited{background:color-mix(in srgb,var(--surface) 88%,var(--vis) 12%);border-left:4px solid var(--vis)}
+.row.visited.olumlu{border-left-color:var(--pos)} .row.visited.olumsuz{border-left-color:var(--neg)}
+.undo{margin-top:8px;font-size:12.5px;color:var(--ink3);text-decoration:underline;text-underline-offset:2px;justify-self:start}
 .st button{padding:9px 6px;border-radius:9px;border:1px solid var(--line);background:var(--surface);font-weight:600;font-size:13.5px}
 .st button[data-k="gidildi"][aria-pressed="true"]{background:var(--vis-bg);border-color:var(--vis);color:var(--vis)}
 .st button[data-k="olumlu"][aria-pressed="true"]{background:var(--pos-bg);border-color:var(--pos);color:var(--pos)}
@@ -177,14 +181,16 @@ main{padding:12px 16px;padding-bottom:calc(24px + env(safe-area-inset-bottom,0px
     if(!ilce) return;
     visits[ilce] = visits[ilce]||{};
     const cur = visits[ilce][id];
-    if(cur && cur.d===k){ delete visits[ilce][id]; }
-    else { visits[ilce][id] = { d:k, n:(cur&&cur.n)||'', t:new Date().toISOString() }; }
+    if(k==='geri'){ delete visits[ilce][id]; }
+    else if(k==='gidildi'){ if(!cur) visits[ilce][id] = { d:'gidildi', n:'', t:new Date().toISOString() }; }
+    else if(cur && cur.d===k){ visits[ilce][id] = { ...cur, d:'gidildi' }; }
+    else { visits[ilce][id] = { d:k, n:(cur&&cur.n)||'', t:(cur&&cur.t)||new Date().toISOString(), tk:new Date().toISOString() }; }
     persist(ilce); render();
   }
   function setNote(ilce,id,n){
     if(!ilce) return;
     visits[ilce] = visits[ilce]||{};
-    const cur = visits[ilce][id] || { d:'gidildi', t:new Date().toISOString() };
+    const cur = visits[ilce][id]; if(!cur) return;
     cur.n = n; visits[ilce][id]=cur; persist(ilce);
   }
 
@@ -277,20 +283,23 @@ main{padding:12px 16px;padding-bottom:calc(24px + env(safe-area-inset-bottom,0px
 
   function dealerRow(k,rec,dm,ilceAd){
     const tel=telHref(k.p);
-    return '<div class="row dealer" data-id="'+k.i+'">'+
+    return '<div class="row dealer'+(rec?' visited '+rec.d:'')+'" data-id="'+k.i+'">'+
       '<div class="top"><div style="flex:1;min-width:0"><div class="nm">'+esc(k.n)+'</div>'+
       '<div class="meta">'+(ilceAd?'<span>'+esc(ilceAd)+' ·</span>':'')+'<span>'+esc(k.m)+'</span>'+(k.t?'<span>· '+esc(k.t)+'</span>':'')+(dm!=null?'<span class="dist">· '+fmtDist(dm)+'</span>':'')+'</div></div>'+
       (rec?'<span class="badge '+rec.d+'">'+LABEL[rec.d]+'</span>':'')+'</div>'+
       '<div class="acts"><a class="go" href="'+mapsUrl(k)+'" target="_blank" rel="noopener">Konuma git</a>'+
       (tel?'<a class="tel" href="'+tel+'">'+esc(k.p)+'</a>':'<span class="tel none">telefon yok</span>')+'</div>'+
-      '<div class="st">'+['gidildi','olumlu','olumsuz'].map(s=>'<button data-k="'+s+'" aria-pressed="'+(!!rec&&rec.d===s)+'">'+LABEL[s]+'</button>').join('')+'</div>'+
-      (rec?'<div class="note"><label for="not-'+k.i+'">Not</label><textarea id="not-'+k.i+'" placeholder="Kimle konuştun, ne dedi, ne zaman tekrar uğranacak…" maxlength="600">'+esc(rec.n||'')+'</textarea><div class="nrow"><button type="button" class="save" data-save="'+k.i+'">Notu kaydet</button><span class="saved" data-saved="'+k.i+'" hidden>kaydedildi ✓</span><span class="when">'+fmtWhen(rec.t)+'</span></div></div>':'')+
+      (!rec
+        ? '<div class="st one"><button data-k="gidildi" aria-pressed="false">✓ Gidildi</button></div>'
+        : '<div class="st">'+['olumlu','olumsuz'].map(s=>'<button data-k="'+s+'" aria-pressed="'+(rec.d===s)+'">'+LABEL[s]+'</button>').join('')+'</div>'+
+          '<button type="button" class="undo" data-k="geri">Gidilmedi olarak geri al</button>')+
+      (rec&&rec.d!=='gidildi'?'<div class="note"><label for="not-'+k.i+'">Not</label><textarea id="not-'+k.i+'" placeholder="Kimle konuştun, ne dedi, ne zaman tekrar uğranacak…" maxlength="600">'+esc(rec.n||'')+'</textarea><div class="nrow"><button type="button" class="save" data-save="'+k.i+'">Notu kaydet</button><span class="saved" data-saved="'+k.i+'" hidden>kaydedildi ✓</span><span class="when">'+fmtWhen(rec.t)+'</span></div></div>':'')+
       '</div>';
   }
   function bindDealerRows(slug){
     view.querySelectorAll('.dealer').forEach(row=>{
       const id=row.dataset.id; const il = slug || (dealerIndex[id]&&dealerIndex[id].ilce);
-      row.querySelectorAll('.st button').forEach(b=>b.addEventListener('click',()=>setStatus(il,id,b.dataset.k)));
+      row.querySelectorAll('[data-k]').forEach(b=>b.addEventListener('click',()=>setStatus(il,id,b.dataset.k)));
       const ta=row.querySelector('.note textarea'), sv=row.querySelector('.note .save'), ok=row.querySelector('.note .saved');
       if(ta && sv){
         const doSave=()=>{ setNote(il,id,ta.value.trim()); ok.hidden=false; sv.disabled=true; setTimeout(()=>{ ok.hidden=true; },2000); };
