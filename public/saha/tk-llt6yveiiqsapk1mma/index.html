@@ -76,10 +76,16 @@ main{padding:12px 16px;padding-bottom:calc(24px + env(safe-area-inset-bottom,0px
 .st button[data-k="gidildi"][aria-pressed="true"]{background:var(--vis-bg);border-color:var(--vis);color:var(--vis)}
 .st button[data-k="olumlu"][aria-pressed="true"]{background:var(--pos-bg);border-color:var(--pos);color:var(--pos)}
 .st button[data-k="olumsuz"][aria-pressed="true"]{background:var(--neg-bg);border-color:var(--neg);color:var(--neg)}
-.note{margin-top:8px;display:flex;gap:8px}
-.note input{flex:1;min-width:0;padding:9px 10px;border:1px solid var(--line);border-radius:9px;background:var(--surface);color:var(--ink);font:inherit;font-size:14px}
-.note input:focus{outline:2px solid var(--accent);outline-offset:1px}
-.note .when{font-size:11.5px;color:var(--ink3);align-self:center;white-space:nowrap;font-family:var(--mono)}
+.note{margin-top:10px;background:var(--surface2);border-radius:10px;padding:10px}
+.note label{display:block;font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--ink3);margin-bottom:6px}
+.note textarea{width:100%;min-height:64px;resize:vertical;padding:9px 10px;border:1px solid var(--line);border-radius:9px;background:var(--surface);color:var(--ink);font:inherit;font-size:14px;line-height:1.4}
+.note textarea:focus{outline:2px solid var(--accent);outline-offset:1px}
+.note .nrow{display:flex;gap:8px;align-items:center;margin-top:8px}
+.note .save{padding:8px 14px;border-radius:8px;background:var(--accent);color:var(--accent-ink);font-weight:600;font-size:13.5px}
+.note .save[disabled]{opacity:.55}
+.note .when{font-size:11.5px;color:var(--ink3);white-space:nowrap;font-family:var(--mono);margin-left:auto}
+.note .saved{font-size:12.5px;color:var(--pos);font-weight:600}
+.quote{margin-top:8px;padding:8px 10px;border-left:3px solid var(--line);color:var(--ink2);font-size:14px;white-space:pre-wrap;overflow-wrap:anywhere}
 .tools{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
 .chip{padding:7px 12px;border-radius:999px;border:1px solid var(--line);background:var(--surface);font-size:13.5px;font-weight:500;color:var(--ink2)}
 .chip[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
@@ -277,15 +283,20 @@ main{padding:12px 16px;padding-bottom:calc(24px + env(safe-area-inset-bottom,0px
       '<div class="acts"><a class="go" href="'+mapsUrl(k)+'" target="_blank" rel="noopener">Konuma git</a>'+
       (tel?'<a class="tel" href="'+tel+'">'+esc(k.p)+'</a>':'<span class="tel none">telefon yok</span>')+'</div>'+
       '<div class="st">'+['gidildi','olumlu','olumsuz'].map(s=>'<button data-k="'+s+'" aria-pressed="'+(!!rec&&rec.d===s)+'">'+LABEL[s]+'</button>').join('')+'</div>'+
-      (rec?'<div class="note"><input type="text" id="not-'+k.i+'" placeholder="Not (kim konuştu, ne dedi…)" value="'+esc(rec.n||'')+'" maxlength="200"><span class="when">'+fmtWhen(rec.t)+'</span></div>':'')+
+      (rec?'<div class="note"><label for="not-'+k.i+'">Not</label><textarea id="not-'+k.i+'" placeholder="Kimle konuştun, ne dedi, ne zaman tekrar uğranacak…" maxlength="600">'+esc(rec.n||'')+'</textarea><div class="nrow"><button type="button" class="save" data-save="'+k.i+'">Notu kaydet</button><span class="saved" data-saved="'+k.i+'" hidden>kaydedildi ✓</span><span class="when">'+fmtWhen(rec.t)+'</span></div></div>':'')+
       '</div>';
   }
   function bindDealerRows(slug){
     view.querySelectorAll('.dealer').forEach(row=>{
       const id=row.dataset.id; const il = slug || (dealerIndex[id]&&dealerIndex[id].ilce);
       row.querySelectorAll('.st button').forEach(b=>b.addEventListener('click',()=>setStatus(il,id,b.dataset.k)));
-      const inp=row.querySelector('.note input');
-      if(inp){ let t; inp.addEventListener('input',()=>{ clearTimeout(t); t=setTimeout(()=>setNote(il,id,inp.value.trim()),500); }); }
+      const ta=row.querySelector('.note textarea'), sv=row.querySelector('.note .save'), ok=row.querySelector('.note .saved');
+      if(ta && sv){
+        const doSave=()=>{ setNote(il,id,ta.value.trim()); ok.hidden=false; sv.disabled=true; setTimeout(()=>{ ok.hidden=true; },2000); };
+        sv.addEventListener('click',doSave);
+        ta.addEventListener('input',()=>{ sv.disabled=false; ok.hidden=true; });
+        ta.addEventListener('keydown',e=>{ if((e.metaKey||e.ctrlKey)&&e.key==='Enter'){ e.preventDefault(); doSave(); } });
+      }
     });
   }
 
@@ -300,7 +311,7 @@ main{padding:12px 16px;padding-bottom:calc(24px + env(safe-area-inset-bottom,0px
     list.forEach(r=>{
       const day=(r.rec.t||'').slice(0,10);
       if(day!==lastDay){ lastDay=day; let lbl=day; try{ lbl=new Date(day+'T12:00:00').toLocaleDateString('tr-TR',{weekday:'long',day:'numeric',month:'long'}); }catch(e){} if(open) h+='</div>'; h+='<div class="grp">'+esc(lbl)+'</div><div class="list">'; open=true; }
-      h+=dealerRow(r.k,r.rec,null,r.k.ilceAd);
+      h+=dealerRow(r.k,r.rec,null,r.k.ilceAd).replace('<div class="acts">', (r.rec.n?'<div class="quote">'+esc(r.rec.n)+'</div>':'')+'<div class="acts">');
     });
     if(open) h+='</div>';
     view.innerHTML=h; bindDealerRows(null); bindVf();
