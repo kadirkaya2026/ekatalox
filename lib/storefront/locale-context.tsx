@@ -28,10 +28,19 @@ function applyParams(template: string, params?: TranslateParams) {
   );
 }
 
-function createTranslator(locale: StorefrontLocale): TranslateFn {
+// Tekel (tenants.is_tekel) vitrinlerinde dağıtım yapılmadığından "sepet"
+// dili yerine "sipariş listesi" dili kullanılır. pickupWording açıkken
+// çevirmen önce `${key}Pickup` anahtarına bakar; yoksa normal anahtara düşer.
+// Böylece bileşenlerde tek tek isTekel ternary'si yazmak gerekmez, sözlüğe
+// "...Pickup" varyantı eklemek yeter.
+function createTranslator(locale: StorefrontLocale, pickupWording = false): TranslateFn {
+  const lookup = (key: string) =>
+    storefrontDictionary[locale][key] ?? storefrontDictionary[STOREFRONT_DEFAULT_LOCALE][key];
+
   return (key, params) => {
-    const template =
-      storefrontDictionary[locale][key] ?? storefrontDictionary[STOREFRONT_DEFAULT_LOCALE][key] ?? key;
+    const pickupTemplate =
+      pickupWording && !key.endsWith("Pickup") ? lookup(`${key}Pickup`) : undefined;
+    const template = pickupTemplate ?? lookup(key) ?? key;
     return applyParams(template, params);
   };
 }
@@ -73,10 +82,13 @@ function writeStoredLocale(subdomain: string, locale: StorefrontLocale) {
 export function StorefrontLocaleProvider({
   subdomain,
   initialLocale,
+  pickupWording = false,
   children,
 }: {
   subdomain: string;
   initialLocale?: StorefrontLocale;
+  /** Tekel vitrini: "sepet" yerine "sipariş listesi" dili (bkz. createTranslator). */
+  pickupWording?: boolean;
   children: React.ReactNode;
 }) {
   const [locale, setLocaleState] = useState<StorefrontLocale>(
@@ -99,9 +111,9 @@ export function StorefrontLocaleProvider({
         setLocaleState(nextLocale);
         writeStoredLocale(subdomain, nextLocale);
       },
-      t: createTranslator(locale),
+      t: createTranslator(locale, pickupWording),
     };
-  }, [locale, subdomain]);
+  }, [locale, subdomain, pickupWording]);
 
   return (
     <StorefrontLocaleContext.Provider value={value}>{children}</StorefrontLocaleContext.Provider>

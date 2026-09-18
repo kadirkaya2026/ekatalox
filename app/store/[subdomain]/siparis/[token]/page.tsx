@@ -76,7 +76,11 @@ export default async function OrderTrackingPage(props: TrackingPageProps) {
   const { order, events } = result;
 
   return (
-    <StorefrontLocaleProvider subdomain={subdomain} initialLocale={settings.default_locale}>
+    <StorefrontLocaleProvider
+      subdomain={subdomain}
+      initialLocale={settings.default_locale}
+      pickupWording={Boolean(tenant.is_tekel)}
+    >
       <OrderTrackingView
         token={token}
         tenantName={settings.storefront_title?.trim() || tenant.company_name}

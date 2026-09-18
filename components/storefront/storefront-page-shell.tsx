@@ -50,6 +50,7 @@ export function StorefrontPageShell({
   subdomain,
   className,
   hidePoweredBy,
+  pickupWording,
   children,
 }: {
   storefrontSettings?: Pick<
@@ -68,6 +69,8 @@ export function StorefrontPageShell({
   // Market/tekel vitrinlerinde eKatalox rozeti gösterilmez
   // (bkz. lib/storefront/white-label.ts).
   hidePoweredBy?: boolean;
+  // Tekel vitrini: "sepet" yerine "sipariş listesi" dili (tenants.is_tekel).
+  pickupWording?: boolean;
   children: React.ReactNode;
 }) {
   const resolvedThemeKey = storefrontSettings?.theme_key ?? themeKey ?? "minimal";
@@ -85,7 +88,11 @@ export function StorefrontPageShell({
     : undefined;
 
   return (
-    <StorefrontLocaleProvider subdomain={subdomain} initialLocale={storefrontSettings?.default_locale}>
+    <StorefrontLocaleProvider
+      subdomain={subdomain}
+      initialLocale={storefrontSettings?.default_locale}
+      pickupWording={pickupWording}
+    >
       <StorefrontThemeProvider
         themeKey={resolvedThemeKey}
         brandPrimaryColor={brandPrimaryColor}

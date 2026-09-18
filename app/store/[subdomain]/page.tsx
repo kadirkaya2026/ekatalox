@@ -271,6 +271,7 @@ export default async function StorefrontPage(props: PageProps<"/store/[subdomain
       storefrontSettings={storefrontSettings}
       subdomain={subdomain}
       hidePoweredBy={isWhiteLabelStorefront(tenant)}
+      pickupWording={Boolean(tenant.is_tekel)}
       className={footerVisible ? "pb-0" : undefined}
     >
       <StorefrontClient

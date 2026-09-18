@@ -31,7 +31,11 @@ export default async function MyOrdersPage(props: MyOrdersPageProps) {
   const settings = await getTenantStorefrontSettings(tenant.id);
 
   return (
-    <StorefrontLocaleProvider subdomain={subdomain} initialLocale={settings.default_locale}>
+    <StorefrontLocaleProvider
+      subdomain={subdomain}
+      initialLocale={settings.default_locale}
+      pickupWording={Boolean(tenant.is_tekel)}
+    >
       <MyOrdersView
         subdomain={subdomain}
         tenantName={settings.storefront_title?.trim() || tenant.company_name}
