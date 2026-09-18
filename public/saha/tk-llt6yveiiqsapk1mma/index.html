@@ -15,7 +15,7 @@
   --bg:#F1F3F6; --surface:#FFFFFF; --surface2:#E8ECF1; --line:#D5DBE3;
   --ink:#141C2B; --ink2:#4B5567; --ink3:#7C8595;
   --accent:#1F4E9A; --accent-ink:#FFFFFF;
-  --pos:#1C7F52; --pos-bg:#DFF3E8; --neg:#B83A2A; --neg-bg:#F9E3DF; --vis:#5B6475; --vis-bg:#E6E9EE;
+  --pos:#1C7F52; --pos-bg:#DFF3E8; --neg:#B83A2A; --neg-bg:#F9E3DF; --vis:#B7791F; --vis-bg:#FBEFD2;
   --shadow:0 1px 2px rgba(20,28,43,.06);
   --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
   --sans:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
@@ -24,14 +24,14 @@
   --bg:#0E131B; --surface:#171E29; --surface2:#1F2835; --line:#2B3543;
   --ink:#E7EBF1; --ink2:#AAB3C1; --ink3:#7A8494;
   --accent:#6FA0EE; --accent-ink:#0B1220;
-  --pos:#5CCB93; --pos-bg:#153826; --neg:#F08A7B; --neg-bg:#42201B; --vis:#A3ACBA; --vis-bg:#252E3B;
+  --pos:#5CCB93; --pos-bg:#153826; --neg:#F08A7B; --neg-bg:#42201B; --vis:#F2B94B; --vis-bg:#3D2E10;
   --shadow:none;
 }}
 :root[data-theme="dark"]{
   --bg:#0E131B; --surface:#171E29; --surface2:#1F2835; --line:#2B3543;
   --ink:#E7EBF1; --ink2:#AAB3C1; --ink3:#7A8494;
   --accent:#6FA0EE; --accent-ink:#0B1220;
-  --pos:#5CCB93; --pos-bg:#153826; --neg:#F08A7B; --neg-bg:#42201B; --vis:#A3ACBA; --vis-bg:#252E3B;
+  --pos:#5CCB93; --pos-bg:#153826; --neg:#F08A7B; --neg-bg:#42201B; --vis:#F2B94B; --vis-bg:#3D2E10;
   --shadow:none;
 }
 html,body{height:100%}
@@ -73,8 +73,10 @@ main{padding:12px 16px;padding-bottom:calc(24px + env(safe-area-inset-bottom,0px
 .acts .tel.none{color:var(--ink3)}
 .st{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:8px}
 .st.one{grid-template-columns:1fr}
-.row.visited{background:color-mix(in srgb,var(--surface) 88%,var(--vis) 12%);border-left:4px solid var(--vis)}
-.row.visited.olumlu{border-left-color:var(--pos)} .row.visited.olumsuz{border-left-color:var(--neg)}
+.row.visited{background:var(--vis-bg);border-color:var(--vis);border-left:5px solid var(--vis)}
+.row.visited.olumlu{background:var(--pos-bg);border-color:var(--pos);border-left-color:var(--pos)}
+.row.visited.olumsuz{background:var(--neg-bg);border-color:var(--neg);border-left-color:var(--neg)}
+.row.visited .st button,.row.visited .acts .tel,.row.visited .note textarea{background:var(--surface)}
 .undo{margin-top:8px;font-size:12.5px;color:var(--ink3);text-decoration:underline;text-underline-offset:2px;justify-self:start}
 .st button{padding:9px 6px;border-radius:9px;border:1px solid var(--line);background:var(--surface);font-weight:600;font-size:13.5px}
 .st button[data-k="gidildi"][aria-pressed="true"]{background:var(--vis-bg);border-color:var(--vis);color:var(--vis)}
