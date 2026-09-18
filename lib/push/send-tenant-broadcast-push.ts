@@ -19,18 +19,21 @@ export async function countTenantBroadcastSubscribers(tenantId: string, priceLis
   return count ?? 0;
 }
 
-// Metindeki {ad} yerine abonenin adı gelir; ad yoksa belirteç ve peşindeki
-// virgül/boşluk silinir ("{ad}, sadece size" → "sadece size").
+// Metindeki (ad) — ya da {ad}, [ad] — yerine abonenin adı gelir; ad yoksa
+// belirteç ve peşindeki virgül/boşluk silinir ("(ad), sadece size" →
+// "Sadece size"). Parantez seçildi: telefon klavyesinde süslü parantez zor.
+const AD_TOKEN = /[({\[]\s*ad\s*[)}\]]/gi;
 export function personalize(text: string, name: string | null | undefined) {
-  if (!text.includes("{ad}")) return text;
+  if (!AD_TOKEN.test(text)) return text;
+  AD_TOKEN.lastIndex = 0;
   const clean = name?.trim();
-  if (clean) return text.replaceAll("{ad}", clean);
-  return text.replace(/\{ad\}[,;:!\s]*/g, "").replace(/^\s+/, "").replace(/^([a-zçğıöşü])/, (m) => m.toLocaleUpperCase("tr-TR"));
+  if (clean) return text.replace(AD_TOKEN, clean);
+  return text
+    .replace(/[({\[]\s*ad\s*[)}\]][,;:!\s]*/gi, "")
+    .replace(/^\s+/, "")
+    .replace(/^([a-zçğıöşü])/, (m) => m.toLocaleUpperCase("tr-TR"));
 }
 
-// Bildirim hedefi → vitrin yolu. Kampanyalar hedefinde duyuru metni de
-// linke biner (?bildirim=b64url {t,b}) ki panel açılınca mesaj görünsün;
-// ürün/kategori hedefinde müşteri doğrudan oraya iner, metin taşınmaz.
 export type PushTarget =
   | { type: "campaigns" }
   | { type: "category"; id: string }

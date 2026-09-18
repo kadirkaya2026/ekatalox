@@ -124,7 +124,7 @@ export function TenantPushBroadcastCard({ priceLists, categories }: { priceLists
         </h2>
         <p className="mt-1 text-sm text-muted-foreground">
           Müşteriniz mağazadaki <strong>Kampanyalar</strong> bölümünden adını ve telefonunu yazıp bildirimi açınca burada listelenir.
-          Kişi seçin ya da hiç seçmeden herkese gönderin. Metinde <code className="rounded bg-muted px-1">{"{ad}"}</code> yazarsanız herkese kendi adıyla gider.
+          Kişi seçin ya da hiç seçmeden herkese gönderin. Metinde <code className="rounded bg-muted px-1">(ad)</code> yazarsanız herkese kendi adıyla gider.
         </p>
       </div>
 
@@ -132,7 +132,7 @@ export function TenantPushBroadcastCard({ priceLists, categories }: { priceLists
         <Input
           value={title}
           maxLength={80}
-          placeholder="Başlık — ör. {ad}, size özel: kılıflarda %10"
+          placeholder="Başlık — ör. (ad), size özel: kılıflarda %10"
           onChange={(event) => setTitle(event.target.value)}
         />
         <Textarea
