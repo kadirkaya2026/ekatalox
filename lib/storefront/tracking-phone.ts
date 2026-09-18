@@ -74,3 +74,30 @@ export function countUnseen(
     return seen[String(o.order_no)] !== o.status_updated_at;
   }).length;
 }
+
+// Bildirim kartında girilen ad + telefon: sepet formu (Cari Adı / Telefon)
+// aynı cihazda kendiliğinden dolsun diye. Ana ekrana eklenmiş (standalone)
+// sitede depolama ayrıdır; abonelik de orada yapıldığı için bilgi oradadır.
+const PUSH_IDENTITY_KEY = "ekx-push-identity";
+
+export function savePushIdentity(identity: { name: string; phone: string }) {
+  try {
+    window.localStorage.setItem(PUSH_IDENTITY_KEY, JSON.stringify(identity));
+  } catch {
+    /* özel pencere / depolama kapalı */
+  }
+}
+
+export function readPushIdentity(): { name: string; phone: string } | null {
+  try {
+    const raw = window.localStorage.getItem(PUSH_IDENTITY_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as { name?: unknown; phone?: unknown };
+    return {
+      name: typeof parsed.name === "string" ? parsed.name : "",
+      phone: typeof parsed.phone === "string" ? parsed.phone : "",
+    };
+  } catch {
+    return null;
+  }
+}

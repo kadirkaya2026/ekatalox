@@ -116,7 +116,8 @@ import { STOREFRONT_PRODUCT_SORTS, type StorefrontProductSort } from "@/lib/stor
 import { StorefrontCampaignsSheet } from "@/components/storefront/storefront-campaigns-sheet";
 import { StorefrontSearchSheet } from "@/components/storefront/storefront-search-sheet";
 import { isMarketOrTekelTenant } from "@/lib/storefront/white-label";
-import { readTrackingPhone, saveTrackingPhone } from "@/lib/storefront/tracking-phone";
+import { readPushIdentity, readTrackingPhone, saveTrackingPhone } from "@/lib/storefront/tracking-phone";
+import { getCampaignPushStatus } from "@/lib/push/client";
 import { validateCustomerPhoneInput } from "@/lib/storefront/customer-phone";
 import { StorefrontCouponBanner } from "@/components/storefront/storefront-coupon-banner";
 import { BorderTrace, useCartAddFeedback } from "@/components/storefront/border-trace";
@@ -1351,6 +1352,34 @@ export function StorefrontClient({
 
     return () => controller.abort();
   }, [debouncedCustomerPhoneForLookup, isMarketTenant, analyticsSubdomain]);
+
+  // Bildirim kartında ad + telefon giren müşteri (her bayi türü): sepet
+  // formundaki Cari Adı / Telefon boşsa oradan dolar. Önce cihaz depolaması;
+  // yoksa ve bildirim izni varsa sunucudaki abonelik kaydı (depolama
+  // temizlenmiş olabilir). Kart yeniden kaydedince olay ile tazelenir.
+  useEffect(() => {
+    let cancelled = false;
+    const apply = (identity: { name: string; phone: string } | null) => {
+      if (cancelled || !identity) return;
+      if (identity.name) setCustomerReferenceName((current) => (current.trim() ? current : identity.name));
+      if (identity.phone) setCustomerPhone((current) => (current.trim() ? current : identity.phone));
+    };
+    const run = () => {
+      const local = readPushIdentity();
+      if (local && (local.name || local.phone)) { apply(local); return; }
+      if (typeof Notification === "undefined" || Notification.permission !== "granted") return;
+      void getCampaignPushStatus({ subdomain: analyticsSubdomain }).then((status) => {
+        if (status.subscribed) apply({ name: status.name ?? "", phone: status.phone ?? "" });
+      });
+    };
+    const timer = window.setTimeout(run, 0);
+    window.addEventListener("ekx-push-identity-changed", run);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+      window.removeEventListener("ekx-push-identity-changed", run);
+    };
+  }, [analyticsSubdomain]);
 
   // Telefon cihazda hatırlanır: sayfa yenilenince sepet formu boş kalmasın.
   // Ad/adres zaten numaradan otomatik dolduğu için tek başına yeterli.

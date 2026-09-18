@@ -5,7 +5,7 @@ import { Bell, BellOff, BellRing, Loader2, Share } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useStorefrontLocale } from "@/lib/storefront/locale-context";
 import { useStorefrontTheme } from "@/lib/storefront/theme-context";
-import { readTrackingPhone } from "@/lib/storefront/tracking-phone";
+import { readPushIdentity, readTrackingPhone, savePushIdentity, saveTrackingPhone } from "@/lib/storefront/tracking-phone";
 import {
   getCampaignPushStatus,
   getPushSupport,
@@ -42,8 +42,10 @@ export function CampaignPushCard({ subdomain, vapidPublicKey }: { subdomain: str
       const s = getPushSupport();
       if (cancelled) return;
       setSupport(s);
-      // Sepette girilen numara cihazda hatırlanıyor; formu onunla doldur.
-      const savedPhone = readTrackingPhone();
+      // Daha önce girilen ad/telefon cihazda hatırlanıyor; formu onunla doldur.
+      const savedIdentity = readPushIdentity();
+      const savedPhone = savedIdentity?.phone || readTrackingPhone();
+      if (savedIdentity?.name) setName((current) => current || savedIdentity.name);
       if (savedPhone) setPhone((current) => current || savedPhone);
       if (s !== "ok") return;
       if (Notification.permission === "denied") { setState("denied"); return; }
@@ -70,7 +72,14 @@ export function CampaignPushCard({ subdomain, vapidPublicKey }: { subdomain: str
     const r = await subscribeToCampaignPush({ subdomain, vapidPublicKey, name: name.trim(), phone: phone.trim() }).catch(
       () => ({ ok: false as const, reason: "server" as const }),
     );
-    if (r.ok) { setState("subscribed"); setEditing(false); return; }
+    if (r.ok) {
+      savePushIdentity({ name: name.trim(), phone: phone.trim() });
+      saveTrackingPhone(phone.trim());
+      window.dispatchEvent(new Event("ekx-push-identity-changed"));
+      setState("subscribed");
+      setEditing(false);
+      return;
+    }
     setState(Notification.permission === "denied" ? "denied" : r.reason === "denied" ? "idle" : "error");
   }
 
