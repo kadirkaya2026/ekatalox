@@ -45,7 +45,7 @@ a{color:var(--accent)}
 .back{width:36px;height:36px;border-radius:8px;display:grid;place-items:center;color:var(--accent);font-size:22px;line-height:1}
 .back:hover,.back:focus-visible{background:var(--surface2)}
 .tabs{display:flex;gap:6px;padding:10px 16px 0;max-width:720px;margin:0 auto}
-.tab{flex:1;padding:9px 10px;border-radius:8px;background:var(--surface);border:1px solid var(--line);font-weight:500;color:var(--ink2);text-align:center}
+.tab{flex:1;padding:9px 6px;font-size:13.5px;border-radius:8px;background:var(--surface);border:1px solid var(--line);font-weight:500;color:var(--ink2);text-align:center}
 .tab[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
 main{padding:12px 16px;padding-bottom:calc(24px + env(safe-area-inset-bottom,0px));max-width:720px;margin:0 auto}
 .search{width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ink);font:inherit;margin-bottom:12px}
@@ -105,6 +105,24 @@ main{padding:12px 16px;padding-bottom:calc(24px + env(safe-area-inset-bottom,0px
 .sum .p b{color:var(--pos)} .sum .n b{color:var(--neg)}
 .sync{font-size:11.5px;color:var(--ink3);padding:0 2px 8px;font-family:var(--mono)}
 .sync.err{color:var(--neg)}
+.seg{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:12px}
+.seg button{padding:10px;border-radius:9px;border:1px solid var(--line);background:var(--surface);font-weight:600;color:var(--ink2)}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.step{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:10px}
+.step h3{margin:0 0 4px;font-size:15.5px;display:flex;gap:10px;align-items:baseline}
+.step h3 .n{font-family:var(--mono);font-size:12px;color:var(--ink3);font-weight:500}
+.step .aim{font-size:12.5px;color:var(--ink3);margin-bottom:10px}
+.say{border-left:3px solid var(--accent);padding:8px 10px;margin:8px 0;background:var(--surface2);border-radius:0 8px 8px 0;font-size:14.5px;line-height:1.45}
+.say b{color:var(--accent);font-size:11px;letter-spacing:.06em;text-transform:uppercase;display:block;margin-bottom:2px}
+.tip{font-size:13px;color:var(--ink2);margin:6px 0 0;padding-left:16px}
+.tip li{margin:3px 0}
+details.obj{border:1px solid var(--line);border-radius:10px;background:var(--surface);margin-bottom:8px}
+details.obj summary{padding:11px 14px;cursor:pointer;font-weight:600;font-size:14.5px;list-style:none;display:flex;justify-content:space-between;gap:8px}
+details.obj summary::-webkit-details-marker{display:none}
+details.obj summary::after{content:"+";color:var(--ink3);font-family:var(--mono)}
+details.obj[open] summary::after{content:"–"}
+details.obj .body{padding:0 14px 12px;font-size:14.5px;line-height:1.45;color:var(--ink)}
+.warn{background:var(--neg-bg);color:var(--neg);border-radius:10px;padding:10px 12px;font-size:13.5px;margin-bottom:10px}
 .more{margin:12px auto 0;display:block;padding:10px 18px;border-radius:9px;border:1px solid var(--line);background:var(--surface);font-weight:500}
 :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 </style>
@@ -117,6 +135,7 @@ main{padding:12px 16px;padding-bottom:calc(24px + env(safe-area-inset-bottom,0px
 <div class="tabs" id="tabs" role="tablist">
   <button class="tab" role="tab" id="tab-ilceler" aria-selected="true">İlçeler</button>
   <button class="tab" role="tab" id="tab-ziyaretler" aria-selected="false">Ziyaretler</button>
+  <button class="tab" role="tab" id="tab-taktik" aria-selected="false">Satış Taktikleri</button>
 </div>
 <main>
   <div class="sync" id="sync">kayıtlar yükleniyor…</div>
@@ -210,11 +229,13 @@ main{padding:12px 16px;padding-bottom:calc(24px + env(safe-area-inset-bottom,0px
   function render(){
     back.hidden = !((route.tab==='ilceler' && route.ilce) || route.tab==='yakin');
     if(route.tab==='yakin') renderYakin();
+    else if(route.tab==='taktik') renderTaktik();
     else if(route.tab==='ilceler' && !route.ilce) renderIlceler();
     else if(route.tab==='ilceler') renderIlce(route.ilce);
     else renderZiyaretler();
     $('#tab-ilceler').setAttribute('aria-selected', route.tab==='ilceler');
     $('#tab-ziyaretler').setAttribute('aria-selected', route.tab==='ziyaretler');
+    $('#tab-taktik').setAttribute('aria-selected', route.tab==='taktik');
   }
 
   function focusEnd(id){ const i=$('#'+id); if(!i) return; i.focus(); const n=i.value.length; try{ i.setSelectionRange(n,n); }catch(e){} }
@@ -343,6 +364,101 @@ main{padding:12px 16px;padding-bottom:calc(24px + env(safe-area-inset-bottom,0px
     const more=$('#more'); if(more) more.addEventListener('click',()=>{ nearShown+=50; renderYakin(); });
   }
 
+  const TAKTIK = {
+    tekel: {
+      demo: 'https://tekelsiparis.ekatalox.com',
+      giris: 'Merhaba, kolay gelsin. Ben Kadir, eKatalox’tan. Mahalledeki tekel bayileriyle tek tek görüşüyorum, 3 dakikanı alacağım — akşam telefonla gelen siparişleri toparlayan bir sistem var, göstereyim mi?',
+      sorular: [
+        'Akşam 8’den sonra telefon ne kadar çalıyor? Aynı anda hem kasa hem telefon oluyor mu?',
+        '"Şu var mı, kaç lira?" diye günde kaç kez soruyorlar?',
+        'Telefonda yanlış anlaşılan, geri dönen sipariş oluyor mu?',
+        'Kafeye/restorana ayrı fiyat veriyor musun? Nasıl takip ediyorsun?',
+        'Instagram’a koyuyor musun? Oradan gelen soruları nasıl cevaplıyorsun?'
+      ],
+      dert: 'Ben sana web sitesi satmıyorum; akşam 8’de telefonun susmasını satıyorum. Müşteri listesini yazılı gönderiyor, "ne dedi, kaç tane dedi" karışıklığı bitiyor.',
+      demoAdim: [
+        'Telefonunda tekelsiparis.ekatalox.com’u aç, ona uzat — kendisi gezsin.',
+        'Bir ürünü sepete attır, "Sipariş ver"e bastır: WhatsApp’ın açıldığını ve siparişin yazılı düştüğünü göstersin.',
+        '"Müşterin uygulama indirmiyor, üye olmuyor; sadece bu linke giriyor" de.',
+        'Fiyat listesi kodunu göster: kafe müşterisine verdiğin kodla farklı fiyat açılıyor, perakende görmüyor.',
+        'Panelden tek tuşla "stokta yok" işaretle — bilgisayar bilmesine gerek yok mesajı.'
+      ],
+      alkol: 'Alkollü ürünler vitrinde hiç görünmüyor — sistem tekel işletmesinde bunları otomatik gizliyor. Vitrin diğer ürünleri ve dükkânı gösteriyor; sipariş WhatsApp’tan yazılı geliyor, satış senin dükkânında yüz yüze oluyor. Online ödeme, kredi kartı yok; bu bir satış sitesi değil, sipariş ve iletişim aracı.',
+      market: false
+    },
+    market: {
+      demo: 'https://www.ekatalox.com/market',
+      giris: 'Merhaba, kolay gelsin. Ben Kadir, eKatalox’tan. Mahalle marketleriyle görüşüyorum — telefonla ve WhatsApp’tan gelen siparişleri fotoğraflı katalogla düzene sokan bir sistem, 3 dakikada göstereyim mi?',
+      sorular: [
+        'Gün içinde telefonla/WhatsApp’tan kaç sipariş geliyor? Nasıl not alıyorsun?',
+        '"Şu var mı, fiyatı ne?" soruları kasadayken işini bölüyor mu?',
+        'Sipariş listesi karışıp yanlış giden oluyor mu?',
+        'Getir/Trendyol gibi platformlarda mısın? Komisyon ne kadar tutuyor?',
+        'Toptan alan müşterin (kafe, büfe) var mı, ona farklı fiyat veriyor musun?'
+      ],
+      dert: 'Müşterin katalogdan seçip listeyi WhatsApp’tan yazılı gönderiyor; sen sadece hazırlıyorsun. Komisyon yok, müşteri senin kalıyor.',
+      demoAdim: [
+        'Telefonunda demo market vitrinini aç, ona uzat — kategorilerde gezsin.',
+        'Birkaç ürünü sepete attır, "Sipariş ver"e bastır: WhatsApp’a yazılı sipariş düşsün.',
+        '"43 bin ürünlük hazır katalog var, barkodlu ve fotoğraflı; sen stok listeni ver, ürünleri tek tek girmiyorsun" de.',
+        'Çalışma saati, minimum sepet, "yoğunluk modu" ayarlarını göster — kontrol onda.',
+        'Rapor ekranını göster: en çok bakılan ürünler, saat dağılımı.'
+      ],
+      alkol: null,
+      market: true
+    }
+  };
+  function renderTaktik(){
+    back.hidden=true;
+    const seg = route.seg||'tekel'; const T=TAKTIK[seg];
+    title.firstChild.nodeValue='Satış Taktikleri'; subtitle.textContent=seg==='tekel'?'Tekel bayisi görüşmesi · adım adım':'Market görüşmesi · adım adım';
+    const say=(lbl,txt)=>'<div class="say"><b>'+lbl+'</b>'+esc(txt)+'</div>';
+    const step=(n,h,aim,body)=>'<section class="step"><h3><span class="n">'+n+'</span>'+h+'</h3><div class="aim">'+aim+'</div>'+body+'</section>';
+    let h='<div class="seg"><button data-seg="tekel" aria-pressed="'+(seg==='tekel')+'">Tekel bayisi</button><button data-seg="market" aria-pressed="'+(seg==='market')+'">Market / bakkal</button></div>';
+    h+='<div class="warn">Sadece üründe gerçekten olanı söyle. Rakam uydurma, "hukukçu onayı" gibi elinde olmayan şeyi söyleme. Bilmediğini "öğrenip döneyim" de.</div>';
+    h+=step('0','Girmeden önce · 30 sn','Dükkânın kapısında, içeri girmeden.',
+      '<ul class="tip"><li>Kalabalıksa girme; müşteri çıkana kadar bekle. Sahibi/işleten kişiyle konuşacaksın, çırakla değil.</li><li>Telefonunda demo açık dursun: <a href="'+T.demo+'" target="_blank" rel="noopener">'+T.demo.replace('https://','')+'</a></li><li>Magnet yanında olsun, eline vereceksin.</li><li>Uygulamada bu bayiyi bul, çıkarken işaretleyeceksin.</li></ul>');
+    h+=step('1','Kapıdan giriş · 1 dk','Kim olduğunu ve neden geldiğini tek cümlede söyle, izin iste.',
+      say('De ki',T.giris)+'<ul class="tip"><li>"Web sitesi", "dijitalleşme", "yazılım" kelimelerini kullanma. "Telefon siparişi", "WhatsApp" de.</li><li>"Hayır, ilgilenmiyorum" derse: "Tamam, 20 saniyede sadece şunu göstereyim, sonra giderim" de ve demoyu uzat.</li></ul>');
+    h+=step('2','Derdini bul · 2 dk','Anlatma, sor. Derdini kendi ağzından söylediğinde satış yarı yarıya bitmiştir.',
+      T.sorular.map(q=>say('Sor',q)).join('')+'<ul class="tip"><li>Cevap verirken sus, bölme. Kaç sipariş, kaç telefon dediyse aklında tut; teklifte o rakamı kullanacaksın.</li></ul>');
+    h+=step('3','Derdi ürüne bağla · 30 sn','Onun cümlesini al, ürüne çevir.',
+      say('De ki',T.dert));
+    h+=step('4','Canlı göster · 3 dk','Slayt yok, broşür yok. Telefonu ona uzat, kendisi dokunsun.',
+      '<ol class="tip">'+T.demoAdim.map(a=>'<li>'+esc(a)+'</li>').join('')+'</ol>');
+    h+=step('5','Kendi dükkânını göster · 10-20 dk','Bu adım kapatır. Kendi ürünlerini kendi adıyla gördükten sonra "düşüneyim" demesi zorlaşır.',
+      say('De ki','Stok listen Excel’de ya da kâğıtta varsa ver, şimdi burada yükleyeyim; çayını bitirmeden kendi dükkânını ekranda gör.')+
+      '<ul class="tip"><li>Liste yoksa: en çok satan 20 ürünü söylesin, katalogdan barkodla bul, anında ekle.</li><li>Logo/isim yoksa dükkân tabelasının fotoğrafını çek, geçici koy.</li></ul>');
+    h+=step('6','Magneti masaya koy · 1 dk','Eline alsın, buzdolabına yapıştırdığını hayal etsin.',
+      say('De ki','Bunlardan senin adına basılıp müşterilerinin buzdolabına gidecek. Okutan direkt senin vitrinine düşer; okutmayanın bile gözünün önünde numaran duruyor.'));
+    h+=step('7','Teklif ve kapanış · 2 dk','Rakamı asla yıllık toplam olarak söyleme; önce günlüğe böl, sonra alternatifle kıyasla, sonra seçenekli sor.',
+      say('De ki','Günlüğe bölünce bir müşterinin bir şişe/paketinden az. Telefona bakan yarı zamanlı eleman ayda bunun kat kat fazlası; platformlar her siparişten yüzde alıyor, burada komisyon yok.')+
+      say('De ki','İlk 30 gün ücretsiz: bugün kuruyorum, ay sonunda raporda kaç kişi girmiş, kaç sepet dolmuş beraber bakıyoruz. Rakamı beğenmezsen konu kapanır.')+
+      say('Kapanış sorusu','Aylık mı yıllık mı rahat? Yıllıkta indirim + magnetler dahil.')+
+      '<ul class="tip"><li>"Evet mi hayır mı" sorma; iki seçenek arasında seçtir.</li><li>Güncel fiyatı ekrandan göster: <a href="https://www.ekatalox.com/fiyatlandirma" target="_blank" rel="noopener">ekatalox.com/fiyatlandirma</a></li></ul>');
+    h+=step('8','Çıkarken · 30 sn','Ne olursa olsun kapıyı açık bırak ve kaydet.',
+      '<ul class="tip"><li>Olumlu: kurulum tarihini ve saatini şimdi belirle, WhatsApp numarasını al.</li><li>Kararsız: "Perşembe 15:00 gibi uğrayıp 10 dakikada kuruyorum, olur mu?" — tarih iste.</li><li>Olumsuz: teşekkür et, magnet/kart bırak. Sebebini nota yaz.</li><li>Uygulamada işaretle: Gidildi → Olumlu/Olumsuz → not (kimle konuştun, ne dedi, ne zaman tekrar).</li></ul>');
+    // itirazlar
+    const OBJ=[
+      ['"Pahalı."','Anlıyorum. Günlüğe bölelim: günde bir müşteri "var mı" diye soramadığı için başka yere gitse o gün bundan fazlasını kaybediyorsun. Haftada kaç müşteri telefona yetişemediğin için kaçıyor?'],
+      ['"Müşterim zaten telefonla arıyor, alışmış."','Arayanlar aramaya devam etsin, onları değiştirmiyorum. Ben aramayanı getiriyorum: aramaya üşeneni, ne var bilmediği için sormayanı, kaçta kapandığını bilmediği için yola çıkmayanı.'],
+      ['"Mahalle esnafıyım, bana göre değil."','Tam da mahalle esnafı olduğun için işe yarıyor: zincirin sahip olduğu fotoğraflı, fiyatlı, 24 saat açık vitrini sana veriyor. Müşterin seni zaten tanıyor; sadece parmağının ucunda olmanı istiyor.'],
+      T.alkol?['"Alkol internetten satılmaz, yasak."',T.alkol]:null,
+      ['"Ürünleri girmek çok iş."','Rakiplerde ürünleri sen giriyorsun; bizde 43 bin ürünlük barkodlu, fotoğraflı hazır katalog var. Stok listeni ver, sistem eşleştirsin — şimdi deneyelim mi?'],
+      ['"Instagram’dan yapıyorum zaten."','Instagram güzel, bırakma. Ama orada fiyat, stok, sepet yok; DM’den "kaç lira" diye soruyorlar, tek tek yazıyorsun. Bu onun yerine geçmiyor, o soruları bitiriyor; linkini Instagram’a koyarsın.'],
+      ['"Getir/Trendyol var, nasıl yarışayım?"','Yarışmayacaksın. Onlar komisyon alıyor ve müşteri onların oluyor. Bu senin kanalın: komisyon yok, müşteri senin, fiyat senin. Onlardan çık demiyorum, yanına kendi kanalını koy diyorum.'],
+      ['"Bilgisayardan anlamam."','Gerek yok. Kurulumu ben yapıyorum; sen telefondan tek tuşla "stokta yok" işaretleyeceksin, o kadar. WhatsApp kullanabilen bunu da kullanır.'],
+      ['"Müşterim yaşlı, QR okutmaz."','Bir kısmı okutmaz, doğru. Gençler okutur ve asıl sipariş verenler onlar. Magnet buzdolabında duruyor; okutmasa bile numaran gözünün önünde. Yaşlı müşterin yine arar, kaybetmiyorsun; diğerlerini kazanıyorsun.'],
+      ['"Önce bir deneyeyim."','Tabii, zaten bugün kuruyorum, 30 gün ücretsiz. Ay sonunda raporda kaç kişi girmiş, kaç sepet dolmuş beraber bakarız; beğenmezsen konu kapanır.'],
+      ['"Komşu bayi de alırsa avantajım kalmaz."','O yüzden ilk olan kazanıyor: mahallende ilk sen olursan müşteri alışkanlığını sana kaptırır; ikinci geldiğinde senin müşterin magnetini çoktan buzdolabına yapıştırmış olur.'],
+      ['"Düşüneyim."','Tabii. Neyi düşüneceğini birlikte netleştirelim: fiyat mı, işe yarar mı sorusu mu, vakit mi? (Cevabına göre ilgili itiraza dön.) Perşembe 15:00 uğrayıp 10 dakikada kurayım, kararı raporla ver.'],
+      ['"Patron yok / ortağımla konuşayım."','Anladım. Ne zaman burada olur? Ben o saatte 10 dakikalığına gelip ikinize birlikte göstereyim; anlatması sana kalmasın.']
+    ].filter(Boolean);
+    h+='<h3 style="margin:18px 2px 8px;font-size:15px">İtirazlar ve cevapları</h3>'+OBJ.map(([q,a])=>'<details class="obj"><summary>'+esc(q)+'</summary><div class="body">'+esc(a)+'</div></details>').join('');
+    view.innerHTML=h;
+    view.querySelectorAll('[data-seg]').forEach(b=>b.addEventListener('click',()=>{ route.seg=b.dataset.seg; window.scrollTo(0,0); renderTaktik(); }));
+  }
+
   function renderZiyaretler(){
     title.firstChild.nodeValue='Ziyaretler';
     const rows=[]; for(const il in visits){ for(const id in visits[il]){ const k=dealerIndex[id]; if(k) rows.push({k,rec:visits[il][id]}); } }
@@ -364,6 +480,7 @@ main{padding:12px 16px;padding-bottom:calc(24px + env(safe-area-inset-bottom,0px
   back.addEventListener('click',()=>{ route.tab='ilceler'; route.ilce=null; route.q=''; route.filter='hepsi'; route.sort='ad'; shown=80; window.scrollTo(0,0); render(); });
   $('#tab-ilceler').addEventListener('click',()=>{ route.tab='ilceler'; route.ilce=null; route.q=''; route.filter='hepsi'; route.sort='ad'; shown=80; window.scrollTo(0,0); render(); });
   $('#tab-ziyaretler').addEventListener('click',()=>{ route.tab='ziyaretler'; render(); });
+  $('#tab-taktik').addEventListener('click',()=>{ route.tab='taktik'; window.scrollTo(0,0); render(); });
   render();
 })();
 </script>
