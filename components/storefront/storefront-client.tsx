@@ -1977,7 +1977,9 @@ export function StorefrontClient({
     const timer = window.setTimeout(() => {
       if (raw) {
         try {
-          const json = JSON.parse(atob(raw.replace(/-/g, "+").replace(/_/g, "/")));
+          // atob ham bayt dizisi döner; Türkçe karakterler için UTF-8 çözümü şart.
+          const bytes = Uint8Array.from(atob(raw.replace(/-/g, "+").replace(/_/g, "/")), (c) => c.charCodeAt(0));
+          const json = JSON.parse(new TextDecoder().decode(bytes));
           if (json && typeof json.t === "string") setAnnouncement({ title: json.t, body: typeof json.b === "string" ? json.b : "" });
         } catch { /* bozuk parametre: yok say */ }
       }
