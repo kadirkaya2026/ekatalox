@@ -59,9 +59,9 @@ export interface StorefrontHeaderProps {
   // gösterilmiyor. Değer zaten mobil kontrolünden geçmiş halde geliyor —
   // masaüstünde her zaman false, yani eski düzen aynen korunuyor.
   hideSearchAndCart?: boolean;
-  // Masaüstünde alt navigasyon barı yok (sm:hidden), o yüzden kampanya
-  // paneline üst başlıktan erişiliyor. Kampanyası olmayan bayide boş
-  // buton durmasın diye çağıran taraf kampanya varsa gönderiyor.
+  // Kampanyalar paneli (kampanya kartları + bildirim kartı). Market/tekel
+  // mobilde alt bardan açılır, orada başlıktaki buton gizli; toptancı
+  // vitrininde alt bar yok, buton mobilde de görünür.
   onOpenCampaigns?: () => void;
   // Market/tekel vitrinlerinde dil seçicinin solunda "Sipariş Takip" ikonu:
   // müşteri telefon numarasıyla siparişlerini görür (/siparislerim).
@@ -92,7 +92,7 @@ function HeaderActions({
         <button
           type="button"
           onClick={props.onOpenCampaigns}
-          className={cn(theme.cartButton, "hidden sm:flex")}
+          className={cn(theme.cartButton, props.hideSearchAndCart ? "hidden sm:flex" : "flex")}
           aria-label={t("campaignsSheet.headerButtonAria")}
           title={t("campaignsSheet.title")}
         >
