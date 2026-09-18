@@ -7,6 +7,7 @@ import { ArrowRight, Check, ChevronDown, Gift, X } from "lucide-react";
 import type { StorefrontCoupon } from "@/lib/types";
 import { describeCoupon, formatCouponBenefit } from "@/lib/coupons/shared";
 import { StorefrontImage } from "@/components/storefront/storefront-image";
+import { CampaignPushCard } from "@/components/storefront/campaign-push-card";
 import { useStorefrontLocale } from "@/lib/storefront/locale-context";
 import { useStorefrontTheme } from "@/lib/storefront/theme-context";
 import type { CampaignDiscountStatus } from "@/lib/storefront/cart";
@@ -38,6 +39,8 @@ export function StorefrontCampaignsSheet({
   paymentCampaignBars,
   personalCoupon = null,
   personalCouponStatus = null,
+  pushSubdomain,
+  pushVapidPublicKey,
 }: {
   isOpen: boolean;
   onClose: () => void;
@@ -54,6 +57,9 @@ export function StorefrontCampaignsSheet({
   /** Müşteriye özel kupon (telefona bağlı) — en üstte, ayrı kart */
   personalCoupon?: StorefrontCoupon | null;
   personalCouponStatus?: { applied: number; missing: number } | null;
+  /** Bildirim kartı: mağaza subdomain'i ve VAPID anahtarı; anahtar yoksa kart çıkmaz */
+  pushSubdomain?: string;
+  pushVapidPublicKey?: string;
 }) {
   const theme = useStorefrontTheme();
   const { t } = useStorefrontLocale();
@@ -143,6 +149,10 @@ export function StorefrontCampaignsSheet({
               </div>
 
               <div className="safe-bottom-padding max-h-[min(72dvh,560px)] space-y-3 overflow-y-auto px-4 py-4 sm:px-5 lg:max-h-none lg:flex-1">
+                {pushSubdomain && pushVapidPublicKey ? (
+                  <CampaignPushCard subdomain={pushSubdomain} vapidPublicKey={pushVapidPublicKey} />
+                ) : null}
+
                 {personalCoupon ? (
                   <div className={cn("overflow-hidden rounded-2xl border", theme.border, theme.surface)}>
                     <button

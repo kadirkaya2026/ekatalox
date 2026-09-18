@@ -65,9 +65,16 @@ export async function generateMetadata(
   const title =
     settings.site_tab_title ?? settings.storefront_title ?? tenant.company_name;
 
+  const base = buildStorefrontIcons(settings.site_favicon_url, tenant);
+  // iPhone "Ana Ekrana Ekle": ikon apple-touch-icon'dan (logo, yoksa favicon),
+  // ad/standalone manifest'ten. Web Push iOS'ta yalnız böyle çalışıyor.
+  const appleIcon = settings.logo_url || settings.site_favicon_url || null;
+
   return {
     title: buildStorefrontTitle(title, tenant),
-    icons: buildStorefrontIcons(settings.site_favicon_url, tenant),
+    icons: appleIcon ? { ...base, apple: appleIcon } : base,
+    appleWebApp: { capable: true, title, statusBarStyle: "default" },
+    manifest: `/api/storefront/manifest?subdomain=${encodeURIComponent(subdomain)}`,
     robots: {
       index: false,
       follow: false,

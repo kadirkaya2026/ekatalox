@@ -1121,6 +1121,14 @@ export function StorefrontClient({
     window.location.reload();
   }, []);
 
+  // Bildirime tıklanınca (?kampanya=1) Kampanyalar paneli doğrudan açılır;
+  // kupon ve duyuru bildirimlerinin url'i bu parametreyle geliyor.
+  useEffect(() => {
+    if (!/[?&]kampanya=1/.test(window.location.search)) return;
+    const timer = window.setTimeout(() => setIsCampaignsSheetOpen(true), 0);
+    return () => window.clearTimeout(timer);
+  }, []);
+
   // Yenileme sonrası devam: bayrak varsa sepeti bilgi adımında aç ve konumu
   // yeniden iste. setState effect gövdesinde değil, bir sonraki döngüde.
   useEffect(() => {
@@ -3892,14 +3900,11 @@ export function StorefrontClient({
         onCategoryChange={handleCategoryChange}
         onOpenCategoryDrawer={() => setIsCategoryDrawerOpen(true)}
         hideSearchAndCart={usesBottomNav}
-        onOpenCampaigns={
-          campaigns.length || customerCoupon
-            ? () => {
-                setIsSearchSheetOpen(false);
-                setIsCampaignsSheetOpen(true);
-              }
-            : undefined
-        }
+        onOpenCampaigns={() => {
+          // Kampanya olmasa da panel açılır: bildirim kartı orada duruyor.
+          setIsSearchSheetOpen(false);
+          setIsCampaignsSheetOpen(true);
+        }}
       />
 
       {customerCoupon || campaigns.length ? (
@@ -4497,6 +4502,8 @@ export function StorefrontClient({
             ? { applied: cartPaymentSummary.couponDiscountAmount, missing: cartPaymentSummary.couponMissingAmount }
             : null
         }
+        pushSubdomain={analyticsSubdomain}
+        pushVapidPublicKey={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? ""}
       />
 
       {usesSidebarNav ? (

@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, useTransition } from "react";
 import Image from "next/image";
-import { ChevronDown, Loader2, Plus, Search, Trash2, X } from "lucide-react";
+import { Bell, ChevronDown, Loader2, Plus, Search, Trash2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { InlineAlert } from "@/components/ui/inline-alert";
@@ -277,6 +277,26 @@ export function TenantCampaignsForm({
       return next;
     });
     setExpandedId((current) => (current === campaign.id ? saved.id : current));
+  }
+
+  // Kayıtlı ve aktif kampanyayı abone müşterilere bildirim olarak gönder
+  // (app/api/tenant/campaigns/[id]/notify). Kaydedilmemiş değişiklik varsa
+  // önce Kaydet; bildirim sunucudaki hâli okur.
+  async function notifyCampaign(campaign: CampaignDraft) {
+    setRow(campaign.id, { pending: true, error: null, success: null });
+    const response = await fetch(`/api/tenant/campaigns/${campaign.id}/notify`, { method: "POST" });
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      setRow(campaign.id, { pending: false, error: result.error ?? "Bildirim gönderilemedi." });
+      return;
+    }
+    const sent = Number(result.sent ?? 0);
+    setRow(campaign.id, {
+      pending: false,
+      success: sent
+        ? `${sent} cihaza bildirim gönderildi.`
+        : "Henüz bildirim açan müşteri yok. Müşterileriniz mağazadaki Kampanyalar bölümünden bildirimi açabilir.",
+    });
   }
 
   async function deleteCampaign(campaign: CampaignDraft) {
@@ -961,14 +981,27 @@ export function TenantCampaignsForm({
                     <Trash2 className="size-4" />
                     Sil
                   </Button>
-                  <Button
-                    variant="primary"
-                    disabled={state.pending}
-                    onClick={() => startTransition(() => void saveCampaign(campaign))}
-                  >
-                    {state.pending ? <Loader2 className="size-4 animate-spin" /> : null}
-                    {state.pending ? "Kaydediliyor…" : "Kaydet"}
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    {!campaign.isNew && campaign.is_active ? (
+                      <Button
+                        variant="secondary"
+                        disabled={state.pending}
+                        title="Bildirim açan müşterilere bu kampanyayı gönder"
+                        onClick={() => void notifyCampaign(campaign)}
+                      >
+                        <Bell className="size-4" />
+                        Müşterilere bildir
+                      </Button>
+                    ) : null}
+                    <Button
+                      variant="primary"
+                      disabled={state.pending}
+                      onClick={() => startTransition(() => void saveCampaign(campaign))}
+                    >
+                      {state.pending ? <Loader2 className="size-4 animate-spin" /> : null}
+                      {state.pending ? "Kaydediliyor…" : "Kaydet"}
+                    </Button>
+                  </div>
                 </div>
 
                 <InlineAlert

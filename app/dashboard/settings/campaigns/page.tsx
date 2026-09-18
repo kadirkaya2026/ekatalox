@@ -1,7 +1,8 @@
 import { Header } from "@/components/dashboard/header";
 import { TenantCampaignsForm } from "@/components/dashboard/tenant-campaigns-form";
+import { TenantPushBroadcastCard } from "@/components/dashboard/tenant-push-broadcast-card";
 import { requireTenantAdminPage } from "@/lib/auth/session";
-import { getTenantCategories } from "@/lib/data";
+import { getTenantCategories, getTenantPriceLists } from "@/lib/data";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import type { TenantCampaign } from "@/lib/types";
 
@@ -30,7 +31,7 @@ export default async function TenantCampaignsSettingsPage() {
     discount_value: campaign.discount_value === null ? null : Number(campaign.discount_value),
   }));
 
-  const categories = await getTenantCategories(tenantId);
+  const [categories, priceLists] = await Promise.all([getTenantCategories(tenantId), getTenantPriceLists(tenantId)]);
 
   return (
     <div className="space-y-6">
@@ -39,6 +40,8 @@ export default async function TenantCampaignsSettingsPage() {
         title="Kampanyalar"
         description="Müşterilerinizin mağazanızdaki Kampanyalar bölümünde göreceği kartları buradan yönetin. İsterseniz sadece duyuru yapın, isterseniz sepet tutarına bağlı otomatik indirim tanımlayın."
       />
+
+      <TenantPushBroadcastCard priceLists={priceLists} />
 
       <TenantCampaignsForm
         initialCampaigns={campaigns}

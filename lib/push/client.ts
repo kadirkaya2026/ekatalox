@@ -88,3 +88,57 @@ export async function unsubscribeDealerPush() {
   }).catch(() => undefined);
   await sub.unsubscribe().catch(() => undefined);
 }
+
+// Vitrin Kampanyalar paneli: kampanya/duyuru bildirimi aboneliği. Sipariş
+// gerekmez; sunucu tarafında şifre kapısı çerezindeki erişim kodu ve fiyat
+// listesine bağlanır (app/api/storefront/push/campaigns/route.ts).
+export async function subscribeToCampaignPush(params: { subdomain: string; vapidPublicKey: string }) {
+  const permission = await Notification.requestPermission();
+  if (permission !== "granted") return { ok: false as const, reason: "denied" as const };
+
+  const registration = await navigator.serviceWorker.register("/sw.js", { scope: "/" });
+  await navigator.serviceWorker.ready;
+  const existing = await registration.pushManager.getSubscription();
+  const subscription =
+    existing ??
+    (await registration.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(params.vapidPublicKey),
+    }));
+
+  const response = await fetch("/api/storefront/push/campaigns", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ subdomain: params.subdomain, subscription: subscription.toJSON(), user_agent: navigator.userAgent }),
+  });
+  if (!response.ok) return { ok: false as const, reason: "server" as const };
+  return { ok: true as const };
+}
+
+// Aynı cihaz sipariş takibi için de abone olmuş olabilir; o yüzden tarayıcı
+// aboneliği iptal edilmez, yalnız duyuru işareti (kind) sunucuda kaldırılır.
+export async function unsubscribeCampaignPush(params: { subdomain: string }) {
+  const registration = await navigator.serviceWorker.getRegistration("/");
+  const sub = await registration?.pushManager.getSubscription();
+  if (!sub) return;
+  await fetch("/api/storefront/push/campaigns", {
+    method: "DELETE",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ subdomain: params.subdomain, endpoint: sub.endpoint }),
+  }).catch(() => undefined);
+}
+
+// Bu cihaz duyuru bildirimine kayıtlı mı? Tarayıcı aboneliği tek başına
+// yetmez (sipariş takibinden gelmiş olabilir); sunucuya sorulur.
+export async function isSubscribedToCampaignPush(params: { subdomain: string }) {
+  if (getPushSupport() !== "ok" || Notification.permission !== "granted") return false;
+  const registration = await navigator.serviceWorker.getRegistration("/");
+  const sub = await registration?.pushManager.getSubscription();
+  if (!sub) return false;
+  const r = await fetch(
+    `/api/storefront/push/campaigns?subdomain=${encodeURIComponent(params.subdomain)}&endpoint=${encodeURIComponent(sub.endpoint)}`,
+  ).catch(() => null);
+  if (!r?.ok) return false;
+  const data = (await r.json().catch(() => null)) as { subscribed?: boolean } | null;
+  return Boolean(data?.subscribed);
+}
