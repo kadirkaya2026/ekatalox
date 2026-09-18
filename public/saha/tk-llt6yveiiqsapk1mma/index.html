@@ -319,7 +319,7 @@ main{padding:12px 16px;padding-bottom:calc(24px + env(safe-area-inset-bottom,0px
   function bindVf(){ view.querySelectorAll('[data-vf]').forEach(b=>b.addEventListener('click',()=>{ route.vf=b.dataset.vf; renderZiyaretler(); })); }
 
   back.addEventListener('click',()=>{ route.ilce=null; route.q=''; route.filter='hepsi'; route.sort='ad'; shown=80; render(); });
-  $('#tab-ilceler').addEventListener('click',()=>{ route.tab='ilceler'; render(); });
+  $('#tab-ilceler').addEventListener('click',()=>{ route.tab='ilceler'; route.ilce=null; route.q=''; route.filter='hepsi'; route.sort='ad'; shown=80; window.scrollTo(0,0); render(); });
   $('#tab-ziyaretler').addEventListener('click',()=>{ route.tab='ziyaretler'; render(); });
   render();
 })();
