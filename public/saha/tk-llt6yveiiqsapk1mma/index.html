@@ -15,7 +15,7 @@
   --bg:#F1F3F6; --surface:#FFFFFF; --surface2:#E8ECF1; --line:#D5DBE3;
   --ink:#141C2B; --ink2:#4B5567; --ink3:#7C8595;
   --accent:#1F4E9A; --accent-ink:#FFFFFF;
-  --pos:#1C7F52; --pos-bg:#DFF3E8; --neg:#B83A2A; --neg-bg:#F9E3DF; --vis:#B7791F; --vis-bg:#FBEFD2;
+  --pos:#1C7F52; --pos-bg:#DFF3E8; --neg:#B83A2A; --neg-bg:#F9E3DF; --vis:#B7791F; --vis-bg:#FBEFD2; --sat:#6D28D9; --sat-bg:#EDE6FB;
   --shadow:0 1px 2px rgba(20,28,43,.06);
   --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
   --sans:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
@@ -24,14 +24,14 @@
   --bg:#0E131B; --surface:#171E29; --surface2:#1F2835; --line:#2B3543;
   --ink:#E7EBF1; --ink2:#AAB3C1; --ink3:#7A8494;
   --accent:#6FA0EE; --accent-ink:#0B1220;
-  --pos:#5CCB93; --pos-bg:#153826; --neg:#F08A7B; --neg-bg:#42201B; --vis:#F2B94B; --vis-bg:#3D2E10;
+  --pos:#5CCB93; --pos-bg:#153826; --neg:#F08A7B; --neg-bg:#42201B; --vis:#F2B94B; --vis-bg:#3D2E10; --sat:#B79CFF; --sat-bg:#2A1E4A;
   --shadow:none;
 }}
 :root[data-theme="dark"]{
   --bg:#0E131B; --surface:#171E29; --surface2:#1F2835; --line:#2B3543;
   --ink:#E7EBF1; --ink2:#AAB3C1; --ink3:#7A8494;
   --accent:#6FA0EE; --accent-ink:#0B1220;
-  --pos:#5CCB93; --pos-bg:#153826; --neg:#F08A7B; --neg-bg:#42201B; --vis:#F2B94B; --vis-bg:#3D2E10;
+  --pos:#5CCB93; --pos-bg:#153826; --neg:#F08A7B; --neg-bg:#42201B; --vis:#F2B94B; --vis-bg:#3D2E10; --sat:#B79CFF; --sat-bg:#2A1E4A;
   --shadow:none;
 }
 html,body{height:100%}
@@ -57,7 +57,7 @@ main{padding:12px 16px;padding-bottom:calc(24px + env(safe-area-inset-bottom,0px
 .ilce .cnt{font-family:var(--mono);font-size:13px;color:var(--ink3);font-variant-numeric:tabular-nums}
 .ilce .bar{grid-column:1/-1;height:4px;border-radius:2px;background:var(--surface2);overflow:hidden;margin-top:6px;display:flex}
 .ilce .bar i{display:block;height:100%}
-.ilce .bar .p{background:var(--pos)} .ilce .bar .n{background:var(--neg)} .ilce .bar .v{background:var(--vis)}
+.ilce .bar .s{background:var(--sat)} .ilce .bar .p{background:var(--pos)} .ilce .bar .n{background:var(--neg)} .ilce .bar .v{background:var(--vis)}
 .ilce .stat{grid-column:1/-1;font-size:12px;color:var(--ink3);display:flex;gap:10px;flex-wrap:wrap}
 .dealer{padding:12px 14px}
 .dealer .top{display:flex;gap:10px;align-items:flex-start}
@@ -65,7 +65,7 @@ main{padding:12px 16px;padding-bottom:calc(24px + env(safe-area-inset-bottom,0px
 .dealer .meta{font-size:12.5px;color:var(--ink3);margin-top:2px;display:flex;gap:8px;flex-wrap:wrap}
 .dealer .dist{font-family:var(--mono);font-variant-numeric:tabular-nums}
 .badge{font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;padding:3px 8px;border-radius:999px;white-space:nowrap}
-.badge.olumlu{background:var(--pos-bg);color:var(--pos)} .badge.olumsuz{background:var(--neg-bg);color:var(--neg)} .badge.gidildi{background:var(--vis-bg);color:var(--vis)}
+.badge.satildi{background:var(--sat-bg);color:var(--sat)} .badge.olumlu{background:var(--pos-bg);color:var(--pos)} .badge.olumsuz{background:var(--neg-bg);color:var(--neg)} .badge.gidildi{background:var(--vis-bg);color:var(--vis)}
 .acts{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
 .acts a,.acts span{display:flex;align-items:center;justify-content:center;gap:6px;padding:10px 8px;border-radius:9px;border:1px solid var(--line);font-weight:500;text-decoration:none;color:var(--ink);background:var(--surface2)}
 .acts .go{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
@@ -76,12 +76,15 @@ main{padding:12px 16px;padding-bottom:calc(24px + env(safe-area-inset-bottom,0px
 .row.visited{background:var(--vis-bg);border-color:var(--vis);border-left:5px solid var(--vis)}
 .row.visited.olumlu{background:var(--pos-bg);border-color:var(--pos);border-left-color:var(--pos)}
 .row.visited.olumsuz{background:var(--neg-bg);border-color:var(--neg);border-left-color:var(--neg)}
+.row.visited.satildi{background:var(--sat-bg);border-color:var(--sat);border-left-color:var(--sat)}
 .row.visited .st button,.row.visited .acts .tel,.row.visited .note textarea{background:var(--surface)}
 .undo{margin-top:8px;font-size:12.5px;color:var(--ink3);text-decoration:underline;text-underline-offset:2px;justify-self:start}
 .st button{padding:9px 6px;border-radius:9px;border:1px solid var(--line);background:var(--surface);font-weight:600;font-size:13.5px}
 .st button[data-k="gidildi"][aria-pressed="true"]{background:var(--vis-bg);border-color:var(--vis);color:var(--vis)}
 .st button[data-k="olumlu"][aria-pressed="true"]{background:var(--pos-bg);border-color:var(--pos);color:var(--pos)}
 .st button[data-k="olumsuz"][aria-pressed="true"]{background:var(--neg-bg);border-color:var(--neg);color:var(--neg)}
+.st button[data-k="satildi"][aria-pressed="true"]{background:var(--sat-bg);border-color:var(--sat);color:var(--sat)}
+.st.three{grid-template-columns:repeat(3,1fr)}
 .note{margin-top:10px;background:var(--surface2);border-radius:10px;padding:10px}
 .note label{display:block;font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--ink3);margin-bottom:6px}
 .note textarea{width:100%;min-height:64px;resize:vertical;padding:9px 10px;border:1px solid var(--line);border-radius:9px;background:var(--surface);color:var(--ink);font:inherit;font-size:14px;line-height:1.4}
@@ -98,11 +101,11 @@ main{padding:12px 16px;padding-bottom:calc(24px + env(safe-area-inset-bottom,0px
 .chip[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
 .empty{color:var(--ink3);text-align:center;padding:40px 16px}
 .grp{font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ink3);margin:14px 2px 6px}
-.sum{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
+.sum{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px}
 .sum div{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
 .sum b{display:block;font-size:22px;font-family:var(--mono);font-variant-numeric:tabular-nums;font-weight:500}
 .sum span{font-size:12px;color:var(--ink3)}
-.sum .p b{color:var(--pos)} .sum .n b{color:var(--neg)}
+.sum .p b{color:var(--pos)} .sum .n b{color:var(--neg)} .sum .s b{color:var(--sat)}
 .sync{font-size:11.5px;color:var(--ink3);padding:0 2px 8px;font-family:var(--mono)}
 .sync.err{color:var(--neg)}
 .seg{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:12px}
@@ -168,6 +171,10 @@ details.obj .body{padding:0 14px 12px;font-size:14.5px;line-height:1.45;color:va
 .adm li button{margin-left:auto;color:var(--neg);font-size:13px;font-weight:600}
 .row.locked .st,.row.locked .media,.row.locked .note,.row.locked .sebep,.row.locked .undo{opacity:.55;pointer-events:none}
 .row.locked .audios,.row.locked .thumbs{opacity:1;pointer-events:auto}
+.sale{margin-top:8px;background:var(--surface);border:1px solid var(--sat);border-radius:10px;padding:10px;display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.sale label{font-size:11.5px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--ink3);display:block;margin-bottom:3px}
+.sale input,.sale select{width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);font:inherit;font-size:14px;font-variant-numeric:tabular-nums}
+.sale .full{grid-column:1/-1}
 .more{margin:12px auto 0;display:block;padding:10px 18px;border-radius:9px;border:1px solid var(--line);background:var(--surface);font-weight:500}
 :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 </style>
@@ -245,7 +252,7 @@ details.obj .body{padding:0 14px 12px;font-size:14.5px;line-height:1.45;color:va
   }
 
   function countAll(){ let c=0; for(const il in visits) c+=Object.keys(visits[il]).length; return c; }
-  function stats(ilce){ const v=visits[ilce]||{}; const s={olumlu:0,olumsuz:0,gidildi:0}; for(const id in v){ if(s[v[id].d]!=null) s[v[id].d]++; } return s; }
+  function stats(ilce){ const v=visits[ilce]||{}; const s={olumlu:0,olumsuz:0,gidildi:0,satildi:0,ciro:0}; for(const id in v){ const r=v[id]; if(s[r.d]!=null) s[r.d]++; if(r.d==='satildi'&&r.satis&&+r.satis.tutar) s.ciro+= +r.satis.tutar; } return s; }
 
   function setStatus(ilce,id,k){
     if(!ilce) return;
@@ -369,7 +376,8 @@ details.obj .body{padding:0 14px 12px;font-size:14.5px;line-height:1.45;color:va
   const fmtDist = m=> m<1000 ? Math.round(m)+' m' : (m/1000).toFixed(1)+' km';
   const fmtWhen = t=>{ try{ const d=new Date(t); return d.toLocaleDateString('tr-TR',{day:'2-digit',month:'2-digit'})+' '+d.toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'}); }catch(e){ return ''; } };
   const norm = s=>String(s||'').toLocaleLowerCase('tr-TR');
-  const LABEL={gidildi:'Gidildi',olumlu:'Olumlu',olumsuz:'Olumsuz'};
+  const LABEL={gidildi:'Gidildi',olumlu:'Olumlu',olumsuz:'Olumsuz',satildi:'Satıldı'};
+  const ODEME={nakit:'Nakit',havale:'Havale / EFT',kart:'Kredi kartı'}; const TAKSIT=['Tek çekim','2','3','6','9','12']; const PLAN={aylik:'Aylık',yillik:'Yıllık'};
 
   // ---- rendering
   function render(){
@@ -390,20 +398,20 @@ details.obj .body{padding:0 14px 12px;font-size:14.5px;line-height:1.45;color:va
 
   function renderIlceler(){
     title.firstChild.nodeValue='Tekel Saha'; subtitle.textContent='İstanbul · '+DATA.length+' ilçe · '+DATA.reduce((a,d)=>a+d.k.length,0)+' bayi';
-    const s={olumlu:0,olumsuz:0,gidildi:0};
-    DATA.forEach(d=>{ const st=stats(d.s); s.olumlu+=st.olumlu; s.olumsuz+=st.olumsuz; s.gidildi+=st.gidildi; });
-    const all=s.olumlu+s.olumsuz+s.gidildi;
-    let h = '<div class="sum"><div><b>'+all+'</b><span>ziyaret</span></div><div class="p"><b>'+s.olumlu+'</b><span>olumlu</span></div><div class="n"><b>'+s.olumsuz+'</b><span>olumsuz</span></div></div>';
+    const s={olumlu:0,olumsuz:0,gidildi:0,satildi:0,ciro:0};
+    DATA.forEach(d=>{ const st=stats(d.s); s.olumlu+=st.olumlu; s.olumsuz+=st.olumsuz; s.gidildi+=st.gidildi; s.satildi+=st.satildi; s.ciro+=st.ciro; });
+    const all=s.olumlu+s.olumsuz+s.gidildi+s.satildi;
+    let h = '<div class="sum"><div><b>'+all+'</b><span>ziyaret</span></div><div class="s"><b>'+s.satildi+'</b><span>satış'+(s.ciro?' · '+Math.round(s.ciro).toLocaleString('tr-TR')+' ₺':'')+'</span></div><div class="p"><b>'+s.olumlu+'</b><span>olumlu</span></div><div class="n"><b>'+s.olumsuz+'</b><span>olumsuz</span></div></div>';
     h += '<div class="tools"><button class="chip near" id="near-all">📍 Yakınımdakiler (tüm İstanbul)</button></div>';
     h += '<input class="search" id="q" type="search" placeholder="İlçe ara" value="'+esc(route.q)+'" autocomplete="off">';
     h += '<div class="list">';
     const q=norm(route.q);
     DATA.filter(d=>!q || norm(d.n).includes(q)).forEach(d=>{
-      const st=stats(d.s), tot=d.k.length, done=st.olumlu+st.olumsuz+st.gidildi;
+      const st=stats(d.s), tot=d.k.length, done=st.olumlu+st.olumsuz+st.gidildi+st.satildi;
       const pct=x=>(100*x/tot).toFixed(1)+'%';
       h += '<div class="row"><button class="ilce" data-ilce="'+d.s+'"><span class="nm">'+esc(d.n)+'</span><span class="cnt">'+done+' / '+tot+'</span>'+
-        '<span class="bar"><i class="p" style="width:'+pct(st.olumlu)+'"></i><i class="n" style="width:'+pct(st.olumsuz)+'"></i><i class="v" style="width:'+pct(st.gidildi)+'"></i></span>'+
-        (done? '<span class="stat"><span>'+st.olumlu+' olumlu</span><span>'+st.olumsuz+' olumsuz</span><span>'+st.gidildi+' sadece gidildi</span></span>':'')+
+        '<span class="bar"><i class="s" style="width:'+pct(st.satildi)+'"></i><i class="p" style="width:'+pct(st.olumlu)+'"></i><i class="n" style="width:'+pct(st.olumsuz)+'"></i><i class="v" style="width:'+pct(st.gidildi)+'"></i></span>'+
+        (done? '<span class="stat">'+(st.satildi?'<span><b>'+st.satildi+' satış</b></span>':'')+'<span>'+st.olumlu+' olumlu</span><span>'+st.olumsuz+' olumsuz</span><span>'+st.gidildi+' sadece gidildi</span></span>':'')+
         '</button></div>';
     });
     h += '</div>';
@@ -417,7 +425,7 @@ details.obj .body{padding:0 14px 12px;font-size:14.5px;line-height:1.45;color:va
   function renderIlce(slug){
     const d=byIlce[slug]; if(!d){ route.ilce=null; return renderIlceler(); }
     const st=stats(slug), v=visits[slug]||{};
-    title.firstChild.nodeValue=d.n; subtitle.textContent=d.k.length+' bayi · '+st.olumlu+' olumlu · '+st.olumsuz+' olumsuz · '+st.gidildi+' gidildi';
+    title.firstChild.nodeValue=d.n; subtitle.textContent=d.k.length+' bayi · '+st.satildi+' satış · '+st.olumlu+' olumlu · '+st.olumsuz+' olumsuz · '+st.gidildi+' gidildi';
     let h = '<input class="search" id="q" type="search" placeholder="Bayi adı, mahalle veya telefon" value="'+esc(route.q)+'" autocomplete="off">';
     h += '<div class="tools">'+
       '<button class="chip" data-sort="yakin" aria-pressed="'+(route.sort==='yakin')+'">📍 Yakınımdakiler</button>'+
@@ -464,11 +472,23 @@ details.obj .body{padding:0 14px 12px;font-size:14.5px;line-height:1.45;color:va
       (tel?'<a class="tel" href="'+tel+'">'+esc(k.p)+'</a>':'<span class="tel none">telefon yok</span>')+'</div>'+
       (!rec
         ? '<div class="st one"><button data-k="gidildi" aria-pressed="false">✓ Gidildi</button></div>'
-        : '<div class="st">'+['olumlu','olumsuz'].map(s=>'<button data-k="'+s+'" aria-pressed="'+(rec.d===s)+'">'+LABEL[s]+'</button>').join('')+'</div>'+
+        : '<div class="st three">'+['olumlu','olumsuz','satildi'].map(s=>'<button data-k="'+s+'" aria-pressed="'+(rec.d===s)+'">'+(s==='satildi'?'💰 ':'')+LABEL[s]+'</button>').join('')+'</div>'+
           (isAdmin()?'<button type="button" class="undo" data-k="geri">Gidilmedi olarak geri al</button>':''))+
       (rec?mediaBlock(k,rec):'')+
+      (rec&&rec.d==='satildi'?saleForm(k,rec):'')+
       (rec&&rec.d==='olumsuz'?'<div class="sebep"><select data-sebep="'+k.i+'"><option value="">Red sebebi seç…</option>'+SEBEP.map(x=>'<option'+(rec.sebep===x?' selected':'')+'>'+x+'</option>').join('')+'</select></div>':'')+
       (rec&&rec.d!=='gidildi'?'<div class="note"><label for="not-'+k.i+'">Not</label><textarea id="not-'+k.i+'" placeholder="Kimle konuştun, ne dedi, ne zaman tekrar uğranacak…" maxlength="600">'+esc(rec.n||'')+'</textarea><div class="nrow"><button type="button" class="save" data-save="'+k.i+'">Notu kaydet</button><span class="saved" data-saved="'+k.i+'" hidden>kaydedildi ✓</span><span class="when">'+fmtWhen(rec.t)+'</span></div></div>':'')+
+      '</div>';
+  }
+  function saleForm(k,rec){
+    const sa=rec.satis||{};
+    const opt=(obj,val)=>Object.entries(obj).map(([v,l])=>'<option value="'+v+'"'+(sa[val]===v?' selected':'')+'>'+l+'</option>').join('');
+    return '<div class="sale" data-sale="'+k.i+'">'+
+      '<div><label>Anlaşılan tutar (₺)</label><input type="number" inputmode="decimal" min="0" step="1" name="tutar" placeholder="0" value="'+(sa.tutar!=null?sa.tutar:'')+'"></div>'+
+      '<div><label>Paket</label><select name="plan"><option value="">Seç…</option>'+opt(PLAN,'plan')+'</select></div>'+
+      '<div><label>Ödeme</label><select name="odeme"><option value="">Seç…</option>'+opt(ODEME,'odeme')+'</select></div>'+
+      '<div'+(sa.odeme==='kart'?'':' hidden')+' data-taksitwrap><label>Taksit</label><select name="taksit">'+TAKSIT.map(t=>'<option value="'+t+'"'+(sa.taksit===t?' selected':'')+'>'+t+'</option>').join('')+'</select></div>'+
+      '<div class="full up">'+(sa.tutar?'✓ '+Math.round(+sa.tutar).toLocaleString('tr-TR')+' ₺ · '+(PLAN[sa.plan]||'paket?')+' · '+(ODEME[sa.odeme]||'ödeme?')+(sa.odeme==='kart'?' · '+(sa.taksit||'Tek çekim')+(sa.taksit&&sa.taksit!=='Tek çekim'?' taksit':''):'')+'':'Tutarı ve ödeme şeklini gir; otomatik kaydedilir.')+'</div>'+
       '</div>';
   }
   function locFlag(rec){
@@ -509,6 +529,10 @@ details.obj .body{padding:0 14px 12px;font-size:14.5px;line-height:1.45;color:va
       const nr=row.querySelector('[data-notrec]'); if(nr) nr.addEventListener('click',()=>startRec(il,id,'not'));
       const sp=row.querySelector('[data-stop]'); if(sp) sp.addEventListener('click',stopRec);
       const sb=row.querySelector('[data-sebep]'); if(sb) sb.addEventListener('change',()=>{ rec.sebep=sb.value||undefined; persist(il); });
+      const sf=row.querySelector('[data-sale]');
+      if(sf){ let t; const read=()=>{ const g=n=>sf.querySelector('[name='+n+']'); rec.satis={ tutar:g('tutar').value?+g('tutar').value:null, plan:g('plan').value||null, odeme:g('odeme').value||null, taksit:g('odeme').value==='kart'?g('taksit').value:null, t:(rec.satis&&rec.satis.t)||new Date().toISOString() }; sf.querySelector('[data-taksitwrap]').hidden=g('odeme').value!=='kart'; };
+        sf.addEventListener('input',()=>{ read(); clearTimeout(t); t=setTimeout(()=>{ persist(il); render(); },700); });
+        sf.addEventListener('change',()=>{ read(); persist(il); render(); }); }
       const ta=row.querySelector('.note textarea'), sv=row.querySelector('.note .save'), ok=row.querySelector('.note .saved');
       if(ta && sv){
         const doSave=()=>{ setNote(il,id,ta.value.trim()); ok.hidden=false; sv.disabled=true; setTimeout(()=>{ ok.hidden=true; },2000); };
@@ -650,9 +674,11 @@ details.obj .body{padding:0 14px 12px;font-size:14.5px;line-height:1.45;color:va
     const rows=[]; for(const il in visits){ for(const id in visits[il]){ const k=dealerIndex[id]; if(k) rows.push({k,rec:visits[il][id]}); } }
     subtitle.textContent=rows.length+' işaretli bayi';
     const reps=[...new Set(rows.map(r=>r.rec.kim).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'tr'));
-    let h='<div class="tools">'+['hepsi','olumlu','olumsuz','gidildi'].map(f=>'<button class="chip" data-vf="'+f+'" aria-pressed="'+(route.vf===f)+'">'+(f==='hepsi'?'Hepsi':LABEL[f])+'</button>').join('')+
+    let h='<div class="tools">'+['hepsi','satildi','olumlu','olumsuz','gidildi'].map(f=>'<button class="chip" data-vf="'+f+'" aria-pressed="'+(route.vf===f)+'">'+(f==='hepsi'?'Hepsi':LABEL[f])+'</button>').join('')+
       '<button class="chip" data-vflag="1" aria-pressed="'+(!!route.vflag)+'">⚠ Konum uyuşmayan</button></div>';
     if(reps.length>1||route.vrep) h+='<div class="tools"><button class="chip" data-vrep="" aria-pressed="'+(!route.vrep)+'">Herkes</button>'+reps.map(n=>'<button class="chip" data-vrep="'+esc(n)+'" aria-pressed="'+(route.vrep===n)+'">👤 '+esc(n)+'</button>').join('')+'</div>';
+    const sat=rows.filter(r=>r.rec.d==='satildi'); if(sat.length){ const ciro=sat.reduce((a,r)=>a+((r.rec.satis&&+r.rec.satis.tutar)||0),0); const od={}; sat.forEach(r=>{ const o=(r.rec.satis&&ODEME[r.rec.satis.odeme])||'ödeme?'; od[o]=(od[o]||0)+1; });
+      h+='<div class="step" style="padding:12px 14px;border-color:var(--sat)"><h3 style="font-size:14px;margin-bottom:6px">💰 '+sat.length+' satış · '+Math.round(ciro).toLocaleString('tr-TR')+' ₺</h3><div class="meta" style="gap:6px 14px">'+Object.entries(od).map(([k,v])=>'<span><b>'+v+'</b> '+esc(k)+'</span>').join('')+'</div></div>'; }
     // red sebepleri özeti
     const neg=rows.filter(r=>r.rec.d==='olumsuz'); if(neg.length){ const cnt={}; neg.forEach(r=>{ const sb=r.rec.sebep||'Sebep girilmemiş'; cnt[sb]=(cnt[sb]||0)+1; });
       h+='<div class="step" style="padding:12px 14px"><h3 style="font-size:14px;margin-bottom:6px">Red sebepleri · '+neg.length+' olumsuz</h3><div class="meta" style="gap:6px 14px">'+Object.entries(cnt).sort((a,b)=>b[1]-a[1]).map(([k,v])=>'<span><b>'+v+'</b> '+esc(k)+'</span>').join('')+'</div></div>'; }
@@ -662,7 +688,8 @@ details.obj .body{padding:0 14px 12px;font-size:14.5px;line-height:1.45;color:va
     list.forEach(r=>{
       const day=(r.rec.t||'').slice(0,10);
       if(day!==lastDay){ lastDay=day; let lbl=day; try{ lbl=new Date(day+'T12:00:00').toLocaleDateString('tr-TR',{weekday:'long',day:'numeric',month:'long'}); }catch(e){} if(open) h+='</div>'; h+='<div class="grp">'+esc(lbl)+'</div><div class="list">'; open=true; }
-      h+=dealerRow(r.k,r.rec,null,r.k.ilceAd).replace('<div class="acts">', ((r.rec.sebep?'<div class="quote"><b>Red sebebi:</b> '+esc(r.rec.sebep)+'</div>':'')+(r.rec.n?'<div class="quote">'+esc(r.rec.n)+'</div>':''))+'<div class="acts">');
+      const sa=r.rec.satis; const saleLine=(r.rec.d==='satildi'&&sa&&sa.tutar)?'<div class="quote" style="border-color:var(--sat)"><b>Satış:</b> '+Math.round(+sa.tutar).toLocaleString('tr-TR')+' ₺ · '+(PLAN[sa.plan]||'')+' · '+(ODEME[sa.odeme]||'')+(sa.odeme==='kart'?' · '+(sa.taksit||'Tek çekim'):'')+'</div>':'';
+      h+=dealerRow(r.k,r.rec,null,r.k.ilceAd).replace('<div class="acts">', (saleLine+(r.rec.sebep?'<div class="quote"><b>Red sebebi:</b> '+esc(r.rec.sebep)+'</div>':'')+(r.rec.n?'<div class="quote">'+esc(r.rec.n)+'</div>':''))+'<div class="acts">');
     });
     if(open) h+='</div>';
     view.innerHTML=h; bindDealerRows(null); bindVf();
