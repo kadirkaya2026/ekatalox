@@ -88,6 +88,7 @@ main{padding:12px 16px;padding-bottom:calc(24px + env(safe-area-inset-bottom,0px
 .quote{margin-top:8px;padding:8px 10px;border-left:3px solid var(--line);color:var(--ink2);font-size:14px;white-space:pre-wrap;overflow-wrap:anywhere}
 .tools{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
 .chip{padding:7px 12px;border-radius:999px;border:1px solid var(--line);background:var(--surface);font-size:13.5px;font-weight:500;color:var(--ink2)}
+.chip.near{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);width:100%;justify-content:center;display:flex;padding:11px}
 .chip[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
 .empty{color:var(--ink3);text-align:center;padding:40px 16px}
 .grp{font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ink3);margin:14px 2px 6px}
@@ -199,8 +200,9 @@ main{padding:12px 16px;padding-bottom:calc(24px + env(safe-area-inset-bottom,0px
 
   // ---- rendering
   function render(){
-    back.hidden = !(route.tab==='ilceler' && route.ilce);
-    if(route.tab==='ilceler' && !route.ilce) renderIlceler();
+    back.hidden = !((route.tab==='ilceler' && route.ilce) || route.tab==='yakin');
+    if(route.tab==='yakin') renderYakin();
+    else if(route.tab==='ilceler' && !route.ilce) renderIlceler();
     else if(route.tab==='ilceler') renderIlce(route.ilce);
     else renderZiyaretler();
     $('#tab-ilceler').setAttribute('aria-selected', route.tab==='ilceler');
@@ -215,6 +217,7 @@ main{padding:12px 16px;padding-bottom:calc(24px + env(safe-area-inset-bottom,0px
     DATA.forEach(d=>{ const st=stats(d.s); s.olumlu+=st.olumlu; s.olumsuz+=st.olumsuz; s.gidildi+=st.gidildi; });
     const all=s.olumlu+s.olumsuz+s.gidildi;
     let h = '<div class="sum"><div><b>'+all+'</b><span>ziyaret</span></div><div class="p"><b>'+s.olumlu+'</b><span>olumlu</span></div><div class="n"><b>'+s.olumsuz+'</b><span>olumsuz</span></div></div>';
+    h += '<div class="tools"><button class="chip near" id="near-all">📍 Yakınımdakiler (tüm İstanbul)</button></div>';
     h += '<input class="search" id="q" type="search" placeholder="İlçe ara" value="'+esc(route.q)+'" autocomplete="off">';
     h += '<div class="list">';
     const q=norm(route.q);
@@ -229,6 +232,7 @@ main{padding:12px 16px;padding-bottom:calc(24px + env(safe-area-inset-bottom,0px
     h += '</div>';
     view.innerHTML=h;
     $('#q').addEventListener('input',e=>{ route.q=e.target.value; renderIlceler(); focusEnd('q'); });
+    $('#near-all').addEventListener('click',()=>locate(()=>{ route.tab='yakin'; nearShown=50; window.scrollTo(0,0); render(); }, $('#near-all')));
     view.querySelectorAll('.ilce').forEach(b=>b.addEventListener('click',()=>{ route.ilce=b.dataset.ilce; route.q=''; shown=80; window.scrollTo(0,0); render(); }));
   }
 
@@ -266,10 +270,7 @@ main{padding:12px 16px;padding-bottom:calc(24px + env(safe-area-inset-bottom,0px
     const yk=$('[data-sort="yakin"]');
     yk.addEventListener('click',()=>{
       if(route.sort==='yakin'){ route.sort='ad'; return renderIlce(slug); }
-      if(!navigator.geolocation){ setSync('Bu cihazda konum servisi yok', true); return; }
-      yk.textContent='📍 Konum alınıyor…';
-      navigator.geolocation.getCurrentPosition(p=>{ myPos={la:p.coords.latitude,ln:p.coords.longitude}; route.sort='yakin'; renderIlce(slug); },
-        ()=>{ setSync('Konum izni verilmedi; alfabetik sıralama kullanılıyor', true); renderIlce(slug); }, {enableHighAccuracy:true,timeout:8000,maximumAge:30000});
+      locate(()=>{ route.sort='yakin'; renderIlce(slug); }, yk);
     });
     const more=$('#more'); if(more) more.addEventListener('click',()=>{ shown+=80; renderIlce(slug); });
   }
@@ -300,6 +301,37 @@ main{padding:12px 16px;padding-bottom:calc(24px + env(safe-area-inset-bottom,0px
     });
   }
 
+  function locate(done, btn){
+    if(!navigator.geolocation){ setSync('Bu cihazda konum servisi yok', true); return; }
+    const label=btn?btn.textContent:''; if(btn) btn.textContent='📍 Konum alınıyor…';
+    navigator.geolocation.getCurrentPosition(p=>{ myPos={la:p.coords.latitude,ln:p.coords.longitude,at:Date.now(),acc:p.coords.accuracy}; done(); },
+      err=>{ if(btn) btn.textContent=label; setSync(err&&err.code===1?'Konum izni verilmedi — tarayıcı ayarlarından izin ver':'Konum alınamadı, tekrar dene', true); },
+      {enableHighAccuracy:true,timeout:10000,maximumAge:15000});
+  }
+  let nearShown=50;
+  function renderYakin(){
+    back.hidden=false;
+    title.firstChild.nodeValue='Yakınımdakiler';
+    if(!myPos){ view.innerHTML='<div class="empty">Konum alınamadı</div>'; subtitle.textContent=''; return; }
+    const all=[]; DATA.forEach(d=>d.k.forEach(k=>all.push({k,d,dm:dist(myPos,k)})));
+    all.sort((a,b)=>a.dm-b.dm);
+    let list=all; if(route.filter==='gidilmedi') list=all.filter(x=>!(visits[x.d.s]||{})[x.k.i]);
+    const acc=myPos.acc?Math.round(myPos.acc):null;
+    subtitle.textContent='tüm İstanbul · en yakın '+Math.min(nearShown,list.length)+' bayi'+(acc?' · konum ±'+acc+' m':'');
+    let h='<div class="tools"><button class="chip" id="relocate">📍 Konumu yenile</button>'+
+      '<button class="chip" data-filter="hepsi" aria-pressed="'+(route.filter!=='gidilmedi')+'">Hepsi</button>'+
+      '<button class="chip" data-filter="gidilmedi" aria-pressed="'+(route.filter==='gidilmedi')+'">Gidilmedi</button></div>';
+    h+='<div class="list">';
+    list.slice(0,nearShown).forEach(({k,d,dm})=>{ h+=dealerRow(k,(visits[d.s]||{})[k.i],dm,d.n); });
+    h+='</div>';
+    if(list.length>nearShown) h+='<button class="more" id="more">50 bayi daha göster</button>';
+    view.innerHTML=h;
+    bindDealerRows(null);
+    $('#relocate').addEventListener('click',()=>locate(()=>renderYakin(), $('#relocate')));
+    view.querySelectorAll('[data-filter]').forEach(b=>b.addEventListener('click',()=>{ route.filter=b.dataset.filter; renderYakin(); }));
+    const more=$('#more'); if(more) more.addEventListener('click',()=>{ nearShown+=50; renderYakin(); });
+  }
+
   function renderZiyaretler(){
     title.firstChild.nodeValue='Ziyaretler';
     const rows=[]; for(const il in visits){ for(const id in visits[il]){ const k=dealerIndex[id]; if(k) rows.push({k,rec:visits[il][id]}); } }
@@ -318,7 +350,7 @@ main{padding:12px 16px;padding-bottom:calc(24px + env(safe-area-inset-bottom,0px
   }
   function bindVf(){ view.querySelectorAll('[data-vf]').forEach(b=>b.addEventListener('click',()=>{ route.vf=b.dataset.vf; renderZiyaretler(); })); }
 
-  back.addEventListener('click',()=>{ route.ilce=null; route.q=''; route.filter='hepsi'; route.sort='ad'; shown=80; render(); });
+  back.addEventListener('click',()=>{ route.tab='ilceler'; route.ilce=null; route.q=''; route.filter='hepsi'; route.sort='ad'; shown=80; window.scrollTo(0,0); render(); });
   $('#tab-ilceler').addEventListener('click',()=>{ route.tab='ilceler'; route.ilce=null; route.q=''; route.filter='hepsi'; route.sort='ad'; shown=80; window.scrollTo(0,0); render(); });
   $('#tab-ziyaretler').addEventListener('click',()=>{ route.tab='ziyaretler'; render(); });
   render();
