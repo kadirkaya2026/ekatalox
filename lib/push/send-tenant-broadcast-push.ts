@@ -19,6 +19,15 @@ export async function countTenantBroadcastSubscribers(tenantId: string, priceLis
   return count ?? 0;
 }
 
+// Metindeki {ad} yerine abonenin adı gelir; ad yoksa belirteç ve peşindeki
+// virgül/boşluk silinir ("{ad}, sadece size" → "sadece size").
+export function personalize(text: string, name: string | null | undefined) {
+  if (!text.includes("{ad}")) return text;
+  const clean = name?.trim();
+  if (clean) return text.replaceAll("{ad}", clean);
+  return text.replace(/\{ad\}[,;:!\s]*/g, "").replace(/^\s+/, "").replace(/^([a-zçğıöşü])/, (m) => m.toLocaleUpperCase("tr-TR"));
+}
+
 export async function sendTenantBroadcastPush(params: {
   tenantId: string;
   title: string;
@@ -27,30 +36,34 @@ export async function sendTenantBroadcastPush(params: {
   iconUrl?: string | null;
   tag?: string;
   priceListId?: string | null;
+  /** Verilirse yalnız bu abonelik satırlarına gider (panelde kişi seçimi). */
+  subscriptionIds?: string[] | null;
 }) {
   if (!hasWebPushEnv()) return 0;
   const supabase = createSupabaseAdminClient();
   if (!supabase) return 0;
   let q = supabase
     .from("push_subscriptions")
-    .select("id, endpoint, p256dh, auth, failure_count")
+    .select("id, endpoint, p256dh, auth, failure_count, subscriber_name")
     .eq("tenant_id", params.tenantId)
     .eq("kind", "campaign");
   if (params.priceListId) q = q.eq("price_list_id", params.priceListId);
+  if (params.subscriptionIds?.length) q = q.in("id", params.subscriptionIds.slice(0, 500));
   const { data: subs } = await q;
   if (!subs?.length) return 0;
 
   webpush.setVapidDetails(appEnv.vapidSubject, appEnv.vapidPublicKey, appEnv.vapidPrivateKey);
-  const payload = JSON.stringify({
-    title: params.title,
-    body: params.body,
-    icon: params.iconUrl ?? undefined,
-    url: params.url,
-    tag: params.tag ?? `broadcast-${Date.now()}`,
-  });
+  const tag = params.tag ?? `broadcast-${Date.now()}`;
   let sent = 0;
   await Promise.allSettled(
     subs.map(async (sub) => {
+      const payload = JSON.stringify({
+        title: personalize(params.title, sub.subscriber_name),
+        body: personalize(params.body, sub.subscriber_name),
+        icon: params.iconUrl ?? undefined,
+        url: params.url,
+        tag,
+      });
       try {
         await webpush.sendNotification(
           { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },

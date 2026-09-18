@@ -20,6 +20,9 @@ export async function POST(request: Request) {
   const text = typeof body?.body === "string" ? body.body.trim().slice(0, 200) : "";
   const priceListId = typeof body?.price_list_id === "string" && body.price_list_id ? body.price_list_id : null;
   const path = typeof body?.path === "string" && body.path.startsWith("/") ? body.path.slice(0, 200) : "/?kampanya=1";
+  const subscriptionIds = Array.isArray(body?.subscription_ids)
+    ? (body.subscription_ids as unknown[]).filter((v): v is string => typeof v === "string").slice(0, 500)
+    : null;
   if (!title) return NextResponse.json({ error: "Başlık zorunludur." }, { status: 400 });
 
   const settings = await getTenantStorefrontSettings(tenant.id).catch(() => null);
@@ -30,6 +33,7 @@ export async function POST(request: Request) {
     url: `${getTenantStorefrontOrigin(tenant)}${path}`,
     iconUrl: settings?.logo_url || settings?.site_favicon_url || null,
     priceListId,
+    subscriptionIds,
   });
   return NextResponse.json({ ok: true, sent });
 }

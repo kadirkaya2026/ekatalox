@@ -22,6 +22,28 @@ async function resolveContext(subdomainRaw: unknown) {
   };
 }
 
+// Telefonu sipariş vermiş bir müşteriyle eşleştir (customers.phone serbest
+// biçimli: 0535..., +90535..., 535...). Eşleşme yoksa null — sahte müşteri
+// kaydı açılmaz.
+async function findCustomerIdByPhone(
+  supabase: NonNullable<ReturnType<typeof createSupabaseAdminClient>>,
+  tenantId: string,
+  phone: string,
+) {
+  const digits = phone.replace(/\D/g, "");
+  if (digits.length < 10) return null;
+  const local = digits.slice(-10);
+  const variants = [phone, digits, local, `0${local}`, `90${local}`, `+90${local}`, `+90 ${local}`];
+  const { data } = await supabase
+    .from("customers")
+    .select("id")
+    .eq("tenant_id", tenantId)
+    .in("phone", variants)
+    .limit(1)
+    .maybeSingle();
+  return data?.id ?? null;
+}
+
 export async function POST(request: Request) {
   const body = await request.json().catch(() => null);
   const sub = body?.subscription;
@@ -34,14 +56,22 @@ export async function POST(request: Request) {
   const supabase = createSupabaseAdminClient();
   if (!supabase) return NextResponse.json({ error: "Sunucu yapılandırması eksik." }, { status: 500 });
 
-  // order_id / customer_id bilerek gönderilmiyor: aynı cihaz takip
-  // sayfasından da abone olduysa o bağ korunur, yalnız duyuru alanları yazılır.
+  const name = typeof body.name === "string" ? body.name.trim().slice(0, 80) : "";
+  const phone = typeof body.phone === "string" ? body.phone.trim().slice(0, 30) : "";
+  const customerId = phone ? await findCustomerIdByPhone(supabase, ctx.tenant.id, phone) : null;
+
+  // order_id bilerek gönderilmiyor: aynı cihaz takip sayfasından da abone
+  // olduysa o bağ korunur, yalnız duyuru alanları yazılır. customer_id ise
+  // yalnız telefon eşleştiyse yazılır (eşleşmediyse mevcut değer kalsın).
   const { error } = await supabase.from("push_subscriptions").upsert(
     {
       tenant_id: ctx.tenant.id,
       kind: "campaign",
       access_code_id: ctx.accessCodeId,
       price_list_id: ctx.priceListId,
+      subscriber_name: name || null,
+      subscriber_phone: phone || null,
+      ...(customerId ? { customer_id: customerId } : {}),
       endpoint: String(sub.endpoint),
       p256dh: String(sub.keys.p256dh),
       auth: String(sub.keys.auth),
@@ -63,12 +93,15 @@ export async function GET(request: Request) {
   if (!ctx || !endpoint || !supabase) return NextResponse.json({ subscribed: false });
   const { data } = await supabase
     .from("push_subscriptions")
-    .select("id")
+    .select("id, subscriber_name, subscriber_phone")
     .eq("tenant_id", ctx.tenant.id)
     .eq("endpoint", endpoint)
     .eq("kind", "campaign")
     .maybeSingle();
-  return NextResponse.json({ subscribed: Boolean(data) }, { headers: { "Cache-Control": "no-store" } });
+  return NextResponse.json(
+    { subscribed: Boolean(data), name: data?.subscriber_name ?? null, phone: data?.subscriber_phone ?? null },
+    { headers: { "Cache-Control": "no-store" } },
+  );
 }
 
 // Duyurudan çık: satır siparişe bağlıysa (order_id dolu) silinmez, yalnız
@@ -87,7 +120,10 @@ export async function DELETE(request: Request) {
     .maybeSingle();
   if (!data) return NextResponse.json({ ok: true });
   if (data.order_id) {
-    await supabase.from("push_subscriptions").update({ kind: "order", access_code_id: null, price_list_id: null }).eq("id", data.id);
+    await supabase
+      .from("push_subscriptions")
+      .update({ kind: "order", access_code_id: null, price_list_id: null, subscriber_name: null, subscriber_phone: null })
+      .eq("id", data.id);
   } else {
     await supabase.from("push_subscriptions").delete().eq("id", data.id);
   }

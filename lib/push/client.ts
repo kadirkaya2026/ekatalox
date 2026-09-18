@@ -92,7 +92,12 @@ export async function unsubscribeDealerPush() {
 // Vitrin Kampanyalar paneli: kampanya/duyuru bildirimi aboneliği. Sipariş
 // gerekmez; sunucu tarafında şifre kapısı çerezindeki erişim kodu ve fiyat
 // listesine bağlanır (app/api/storefront/push/campaigns/route.ts).
-export async function subscribeToCampaignPush(params: { subdomain: string; vapidPublicKey: string }) {
+export async function subscribeToCampaignPush(params: {
+  subdomain: string;
+  vapidPublicKey: string;
+  name?: string;
+  phone?: string;
+}) {
   const permission = await Notification.requestPermission();
   if (permission !== "granted") return { ok: false as const, reason: "denied" as const };
 
@@ -109,7 +114,13 @@ export async function subscribeToCampaignPush(params: { subdomain: string; vapid
   const response = await fetch("/api/storefront/push/campaigns", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ subdomain: params.subdomain, subscription: subscription.toJSON(), user_agent: navigator.userAgent }),
+    body: JSON.stringify({
+      subdomain: params.subdomain,
+      subscription: subscription.toJSON(),
+      user_agent: navigator.userAgent,
+      name: params.name ?? null,
+      phone: params.phone ?? null,
+    }),
   });
   if (!response.ok) return { ok: false as const, reason: "server" as const };
   return { ok: true as const };
@@ -130,15 +141,16 @@ export async function unsubscribeCampaignPush(params: { subdomain: string }) {
 
 // Bu cihaz duyuru bildirimine kayıtlı mı? Tarayıcı aboneliği tek başına
 // yetmez (sipariş takibinden gelmiş olabilir); sunucuya sorulur.
-export async function isSubscribedToCampaignPush(params: { subdomain: string }) {
-  if (getPushSupport() !== "ok" || Notification.permission !== "granted") return false;
+export async function getCampaignPushStatus(params: { subdomain: string }) {
+  const none = { subscribed: false, name: null as string | null, phone: null as string | null };
+  if (getPushSupport() !== "ok" || Notification.permission !== "granted") return none;
   const registration = await navigator.serviceWorker.getRegistration("/");
   const sub = await registration?.pushManager.getSubscription();
-  if (!sub) return false;
+  if (!sub) return none;
   const r = await fetch(
     `/api/storefront/push/campaigns?subdomain=${encodeURIComponent(params.subdomain)}&endpoint=${encodeURIComponent(sub.endpoint)}`,
   ).catch(() => null);
-  if (!r?.ok) return false;
-  const data = (await r.json().catch(() => null)) as { subscribed?: boolean } | null;
-  return Boolean(data?.subscribed);
+  if (!r?.ok) return none;
+  const data = (await r.json().catch(() => null)) as { subscribed?: boolean; name?: string | null; phone?: string | null } | null;
+  return { subscribed: Boolean(data?.subscribed), name: data?.name ?? null, phone: data?.phone ?? null };
 }
