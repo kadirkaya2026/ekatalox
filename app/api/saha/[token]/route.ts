@@ -4,6 +4,7 @@
 import { NextResponse } from "next/server";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { SAHA_TOKEN } from "@/lib/saha/token";
+import { readSession } from "@/lib/saha/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -14,9 +15,14 @@ function unauthorized() {
   return NextResponse.json({ error: "not found" }, { status: 404, headers: NO_STORE });
 }
 
-export async function GET(_req: Request, ctx: { params: Promise<{ token: string }> }) {
+function needLogin() {
+  return NextResponse.json({ error: "giriş gerekli" }, { status: 401, headers: NO_STORE });
+}
+
+export async function GET(req: Request, ctx: { params: Promise<{ token: string }> }) {
   const { token } = await ctx.params;
   if (token !== SAHA_TOKEN) return unauthorized();
+  if (!readSession(req.headers.get("cookie"))) return needLogin();
   const supabase = createSupabaseAdminClient();
   if (!supabase) return NextResponse.json({ error: "db yok" }, { status: 503, headers: NO_STORE });
   const { data, error } = await supabase.from("saha_ziyaret").select("ilce, kayitlar, updated_at");
@@ -29,6 +35,8 @@ export async function GET(_req: Request, ctx: { params: Promise<{ token: string 
 export async function PUT(req: Request, ctx: { params: Promise<{ token: string }> }) {
   const { token } = await ctx.params;
   if (token !== SAHA_TOKEN) return unauthorized();
+  const session = readSession(req.headers.get("cookie"));
+  if (!session) return needLogin();
   let body: { ilce?: unknown; kayitlar?: unknown };
   try {
     body = await req.json();
@@ -45,6 +53,22 @@ export async function PUT(req: Request, ctx: { params: Promise<{ token: string }
   }
   const supabase = createSupabaseAdminClient();
   if (!supabase) return NextResponse.json({ error: "db yok" }, { status: 503, headers: NO_STORE });
+
+  // Yetki: temsilci kayıt silemez ve başkasının kaydını değiştiremez; yeni kayıt onun adına yazılır.
+  type Kayit = Record<string, unknown> & { kim?: string };
+  const gelen = kayitlar as Record<string, Kayit>;
+  if (session.rol !== "admin") {
+    const { data: mevcutRow } = await supabase.from("saha_ziyaret").select("kayitlar").eq("ilce", ilce).maybeSingle();
+    const mevcut = (mevcutRow?.kayitlar ?? {}) as Record<string, Kayit>;
+    for (const id of Object.keys(mevcut)) {
+      if (!(id in gelen)) return NextResponse.json({ error: "Geri alma yetkin yok" }, { status: 403, headers: NO_STORE });
+      const eski = mevcut[id];
+      if (eski.kim && eski.kim !== session.ad && JSON.stringify(eski) !== JSON.stringify(gelen[id])) {
+        return NextResponse.json({ error: "Başkasının kaydını değiştiremezsin" }, { status: 403, headers: NO_STORE });
+      }
+    }
+    for (const id of Object.keys(gelen)) if (!mevcut[id]) gelen[id] = { ...gelen[id], kim: session.ad };
+  }
   const { error } = await supabase
     .from("saha_ziyaret")
     .upsert({ ilce, kayitlar, updated_at: new Date().toISOString() }, { onConflict: "ilce" });

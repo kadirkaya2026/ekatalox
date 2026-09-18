@@ -152,6 +152,22 @@ details.obj .body{padding:0 14px 12px;font-size:14.5px;line-height:1.45;color:va
 .sebep{margin-top:8px}
 .sebep select{width:100%;padding:10px;border:1px solid var(--line);border-radius:9px;background:var(--surface);color:var(--ink);font:inherit;font-size:14px}
 .up{font-size:12px;color:var(--ink3);margin-top:6px}
+.login{max-width:380px;margin:40px auto;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:22px}
+.login h2{margin:0 0 4px;font-size:18px}.login p{margin:0 0 14px;color:var(--ink3);font-size:13.5px}
+.login input{width:100%;padding:12px;border:1px solid var(--line);border-radius:9px;background:var(--surface);color:var(--ink);font:inherit;font-size:16px}
+.login .ok{margin-top:10px;width:100%;padding:12px;border-radius:9px;background:var(--accent);color:var(--accent-ink);font-weight:600}
+.login .err{color:var(--neg);font-size:13px;margin-top:8px;min-height:18px}
+.adm{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:10px}
+.adm h3{margin:0 0 10px;font-size:15px}
+.adm .frm{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.adm input,.adm select{padding:10px;border:1px solid var(--line);border-radius:9px;background:var(--surface);color:var(--ink);font:inherit;font-size:14px;min-width:0}
+.adm .add{grid-column:1/-1;padding:10px;border-radius:9px;background:var(--accent);color:var(--accent-ink);font-weight:600}
+.adm ul{list-style:none;padding:0;margin:10px 0 0;display:flex;flex-direction:column;gap:6px}
+.adm li{display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--surface2);border-radius:8px;font-size:14px}
+.adm li .r{font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--ink3)}
+.adm li button{margin-left:auto;color:var(--neg);font-size:13px;font-weight:600}
+.row.locked .st,.row.locked .media,.row.locked .note,.row.locked .sebep,.row.locked .undo{opacity:.55;pointer-events:none}
+.row.locked .audios,.row.locked .thumbs{opacity:1;pointer-events:auto}
 .more{margin:12px auto 0;display:block;padding:10px 18px;border-radius:9px;border:1px solid var(--line);background:var(--surface);font-weight:500}
 :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 </style>
@@ -161,14 +177,14 @@ details.obj .body{padding:0 14px 12px;font-size:14.5px;line-height:1.45;color:va
   <button class="back" id="back" hidden aria-label="Geri">‹</button>
   <h1 id="title">Tekel Saha<span class="sub" id="subtitle">İstanbul · 39 ilçe</span></h1>
 </header>
-<div class="tabs" id="tabs" role="tablist">
+<div class="tabs" id="tabs" role="tablist" hidden>
   <button class="tab" role="tab" id="tab-ilceler" aria-selected="true">İlçeler</button>
   <button class="tab" role="tab" id="tab-ziyaretler" aria-selected="false">Ziyaretler</button>
   <button class="tab" role="tab" id="tab-taktik" aria-selected="false">Satış Taktikleri</button>
 </div>
 <main>
   <div class="sync" id="sync">kayıtlar yükleniyor…</div>
-  <div class="who" id="who" hidden><span>Temsilci: <b id="whoName"></b></span><button id="whoChange" type="button">Değiştir</button></div>
+  <div class="who" id="who" hidden><span><b id="whoName"></b> <span id="whoRol"></span></span><span><button id="whoAdmin" type="button" hidden>Kullanıcılar</button> · <button id="whoPass" type="button">Şifre</button> · <button id="whoOut" type="button">Çıkış</button></span></div>
   <div id="view"></div>
 </main>
 
@@ -196,8 +212,9 @@ details.obj .body{padding:0 14px 12px;font-size:14.5px;line-height:1.45;color:va
   const API='/api/saha/tk-llt6yveiiqsapk1mma';
   let online=false;
   async function pull(){
+    if(!authed) return;
     try{
-      const r=await fetch(API,{cache:'no-store'}); if(!r.ok) throw new Error('HTTP '+r.status);
+      const r=await fetch(API,{cache:'no-store'}); if(r.status===401){ renderLogin('Oturum bitti, tekrar gir'); return; } if(!r.ok) throw new Error('HTTP '+r.status);
       const j=await r.json(); const merged={};
       for(const il in (j.ziyaret||{})) merged[il]={...j.ziyaret[il]};
       // cihazda olup sunucuda olmayanları (çevrimdışı işaretler) geri yükle
@@ -209,7 +226,6 @@ details.obj .body{padding:0 14px 12px;font-size:14.5px;line-height:1.45;color:va
       render();
     }catch(e){ online=false; setSync('bulut bağlantısı yok, cihazda kaydediliyor', true); render(); }
   }
-  pull();
   document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible') pull(); });
 
   const writeTimers = {};
@@ -220,6 +236,8 @@ details.obj .body{padding:0 14px 12px;font-size:14.5px;line-height:1.45;color:va
       try{
         const clean={}; for(const id in (visits[ilce]||{})){ const {_consent,...rest}=visits[ilce][id]; clean[id]=rest; }
         const r=await fetch(API,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({ilce,kayitlar:clean})});
+        if(r.status===401){ renderLogin('Oturum bitti, tekrar gir'); return; }
+        if(r.status===403){ const j=await r.json().catch(()=>({})); setSync(j.error||'Yetkin yok', true); pull(); return; }
         if(!r.ok) throw new Error('HTTP '+r.status);
         online=true; setSync('kayıtlar bulutta · '+countAll()+' işaretli bayi');
       }catch(e){ online=false; setSync('kayıt buluta yazılamadı · cihazda duruyor, bağlanınca gönderilir', true); }
@@ -236,7 +254,6 @@ details.obj .body{padding:0 14px 12px;font-size:14.5px;line-height:1.45;color:va
     if(k==='geri'){ if(cur&&((cur.foto&&cur.foto.length)||(cur.ses&&cur.ses.length))&&!confirm('Bu ziyaretin fotoğraf/ses kayıtları var. Yine de geri alınsın mı?')) return; delete visits[ilce][id]; }
     else if(k==='gidildi'){
       if(!cur){
-        if(!rep){ askWho(); return; }
         const r={ d:'gidildi', n:'', t:new Date().toISOString(), kim:rep, foto:[], ses:[] };
         visits[ilce][id]=r; persist(ilce); render();
         // konum: bayiye mesafe (150 m üstü bayrak)
@@ -260,20 +277,44 @@ details.obj .body{padding:0 14px 12px;font-size:14.5px;line-height:1.45;color:va
     cur.n = n; visits[ilce][id]=cur; persist(ilce);
   }
 
-  // ---- temsilci kimliği (cihazda; her kayda yazılır)
-  const WHO='saha-temsilci'; let rep='';
-  try{ rep=localStorage.getItem(WHO)||''; }catch(e){}
-  function showWho(){ const w=$('#who'); w.hidden=!rep; $('#whoName').textContent=rep; }
-  function askWho(){
-    const m=document.createElement('div'); m.className='modal';
-    m.innerHTML='<div class="card"><h2>Sen kimsin?</h2><p>Adın her ziyaret kaydına işlenir; Kadir kimin nereye gittiğini böyle görür.</p><input id="whoInput" placeholder="Ad Soyad" autocomplete="name" value="'+esc(rep)+'"><button class="ok" id="whoOk">Devam</button></div>';
-    document.body.appendChild(m);
-    const inp=m.querySelector('#whoInput'); inp.focus();
-    const done=()=>{ const v=inp.value.trim(); if(v.length<2){ inp.focus(); return; } rep=v; try{ localStorage.setItem(WHO,rep); }catch(e){} m.remove(); showWho(); };
-    m.querySelector('#whoOk').addEventListener('click',done); inp.addEventListener('keydown',e=>{ if(e.key==='Enter') done(); });
+  // ---- oturum: kişiye özel şifreyle giriş; ad ve rol sunucudan gelir
+  let rep='', rol='', authed=false;
+  const isAdmin=()=>rol==='admin';
+  function showWho(){ const w=$('#who'); w.hidden=!authed; $('#whoName').textContent=rep; $('#whoRol').textContent=isAdmin()?'· yönetici':'· temsilci'; $('#whoAdmin').hidden=!isAdmin(); }
+  function renderLogin(msg){
+    authed=false; showWho(); $('#tabs').hidden=true; setSync('');
+    view.innerHTML='<div class="login"><h2>Tekel Saha</h2><p>Kişisel şifreni gir; adın otomatik gelir.</p><input id="pw" type="password" placeholder="Şifre" autocomplete="current-password" inputmode="text"><button class="ok" id="pwOk">Giriş</button><div class="err" id="pwErr">'+esc(msg||'')+'</div></div>';
+    const pw=$('#pw'); pw.focus();
+    const go=async ()=>{ $('#pwErr').textContent=''; $('#pwOk').disabled=true;
+      try{ const r=await fetch(API+'/giris',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sifre:pw.value})}); const j=await r.json().catch(()=>({}));
+        if(!r.ok) throw new Error(j.error||'Giriş başarısız');
+        rep=j.ad; rol=j.rol; authed=true; $('#tabs').hidden=false; showWho(); route.tab='ilceler'; route.ilce=null; render(); pull(); }
+      catch(e){ $('#pwErr').textContent=e.message; $('#pwOk').disabled=false; pw.select(); } };
+    $('#pwOk').addEventListener('click',go); pw.addEventListener('keydown',e=>{ if(e.key==='Enter') go(); });
   }
-  $('#whoChange').addEventListener('click',askWho);
-  showWho(); if(!rep) setTimeout(askWho,300);
+  async function whoami(){
+    try{ const r=await fetch(API+'/ben',{cache:'no-store'}); if(r.status===401){ renderLogin(); return false; } const j=await r.json(); rep=j.ad; rol=j.rol; authed=true; $('#tabs').hidden=false; showWho(); return true; }
+    catch(e){ renderLogin('Sunucuya ulaşılamadı'); return false; }
+  }
+  $('#whoOut').addEventListener('click',async ()=>{ await fetch(API+'/giris',{method:'DELETE'}).catch(()=>{}); visits={}; try{ localStorage.removeItem(LS); }catch(e){} renderLogin(); });
+  $('#whoPass').addEventListener('click',async ()=>{
+    const p1=prompt('Yeni şifre (en az 6 karakter):'); if(!p1) return; if(p1.trim().length<6){ alert('En az 6 karakter'); return; }
+    const r=await fetch(API+'/ben',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sifre:p1.trim()})}); const j=await r.json().catch(()=>({}));
+    alert(r.ok?'Şifren değişti':(j.error||'Olmadı'));
+  });
+  $('#whoAdmin').addEventListener('click',()=>{ route.tab='kullanici'; window.scrollTo(0,0); render(); });
+  async function renderKullanici(){
+    back.hidden=true; title.firstChild.nodeValue='Kullanıcılar'; subtitle.textContent='Her kişiye ayrı şifre; şifre = kimlik';
+    view.innerHTML='<div class="adm"><h3>Yeni kullanıcı</h3><div class="frm"><input id="uAd" placeholder="Ad Soyad" autocomplete="off"><input id="uPw" placeholder="Şifre (6+)" autocomplete="off"><select id="uRol"><option value="temsilci">Temsilci</option><option value="admin">Yönetici</option></select><button class="add" id="uAdd">Ekle</button></div><ul id="uList"><li>yükleniyor…</li></ul></div><div class="warn">Temsilci: yalnız kendi kayıtlarını değiştirir, geri alamaz. Yönetici: her şeyi değiştirir, kullanıcı ekler/çıkarır.</div>';
+    const load=async ()=>{ const r=await fetch(API+'/kullanici',{cache:'no-store'}); const j=await r.json().catch(()=>({})); const ul=$('#uList');
+      if(!r.ok){ ul.innerHTML='<li>'+esc(j.error||'hata')+'</li>'; return; }
+      ul.innerHTML=(j.kullanicilar||[]).filter(u=>u.aktif).map(u=>'<li><span>'+esc(u.ad)+'</span><span class="r">'+(u.rol==='admin'?'yönetici':'temsilci')+'</span>'+(u.ad!==rep?'<button data-del="'+u.id+'" data-ad="'+esc(u.ad)+'">Çıkar</button>':'')+'</li>').join('')||'<li>kullanıcı yok</li>';
+      ul.querySelectorAll('[data-del]').forEach(b=>b.addEventListener('click',async ()=>{ if(!confirm(b.dataset.ad+' çıkarılsın mı? (kayıtları kalır, girişi kapanır)')) return; await fetch(API+'/kullanici',{method:'DELETE',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:b.dataset.del})}); load(); })); };
+    $('#uAdd').addEventListener('click',async ()=>{ const ad=$('#uAd').value.trim(), sifre=$('#uPw').value.trim(), rl=$('#uRol').value;
+      const r=await fetch(API+'/kullanici',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({ad,sifre,rol:rl})}); const j=await r.json().catch(()=>({}));
+      if(!r.ok){ alert(j.error||'Eklenemedi'); return; } $('#uAd').value=''; $('#uPw').value=''; load(); });
+    load();
+  }
 
   // ---- medya: yükleme + oynatma (özel bucket, token'lı API)
   const MEDIA=API+'/medya';
@@ -333,6 +374,8 @@ details.obj .body{padding:0 14px 12px;font-size:14.5px;line-height:1.45;color:va
   // ---- rendering
   function render(){
     back.hidden = !((route.tab==='ilceler' && route.ilce) || route.tab==='yakin');
+    if(!authed){ return; }
+    if(route.tab==='kullanici'){ if(isAdmin()) renderKullanici(); else { route.tab='ilceler'; renderIlceler(); } return; }
     if(route.tab==='yakin') renderYakin();
     else if(route.tab==='taktik') renderTaktik();
     else if(route.tab==='ilceler' && !route.ilce) renderIlceler();
@@ -411,7 +454,8 @@ details.obj .body{padding:0 14px 12px;font-size:14.5px;line-height:1.45;color:va
 
   function dealerRow(k,rec,dm,ilceAd){
     const tel=telHref(k.p);
-    return '<div class="row dealer'+(rec?' visited '+rec.d:'')+'" data-id="'+k.i+'">'+
+    const locked = !!(rec && rec.kim && rec.kim!==rep && !isAdmin());
+    return '<div class="row dealer'+(rec?' visited '+rec.d:'')+(locked?' locked':'')+'" data-id="'+k.i+'">'+
       '<div class="top"><div style="flex:1;min-width:0"><div class="nm">'+esc(k.n)+'</div>'+
       '<div class="meta">'+(ilceAd?'<span>'+esc(ilceAd)+' ·</span>':'')+'<span>'+esc(k.m)+'</span>'+(k.t?'<span>· '+esc(k.t)+'</span>':'')+(dm!=null?'<span class="dist">· '+fmtDist(dm)+'</span>':'')+'</div></div>'+
       (rec?'<span class="badge '+rec.d+'">'+LABEL[rec.d]+'</span>':'')+'</div>'+
@@ -421,7 +465,7 @@ details.obj .body{padding:0 14px 12px;font-size:14.5px;line-height:1.45;color:va
       (!rec
         ? '<div class="st one"><button data-k="gidildi" aria-pressed="false">✓ Gidildi</button></div>'
         : '<div class="st">'+['olumlu','olumsuz'].map(s=>'<button data-k="'+s+'" aria-pressed="'+(rec.d===s)+'">'+LABEL[s]+'</button>').join('')+'</div>'+
-          '<button type="button" class="undo" data-k="geri">Gidilmedi olarak geri al</button>')+
+          (isAdmin()?'<button type="button" class="undo" data-k="geri">Gidilmedi olarak geri al</button>':''))+
       (rec?mediaBlock(k,rec):'')+
       (rec&&rec.d==='olumsuz'?'<div class="sebep"><select data-sebep="'+k.i+'"><option value="">Red sebebi seç…</option>'+SEBEP.map(x=>'<option'+(rec.sebep===x?' selected':'')+'>'+x+'</option>').join('')+'</select></div>':'')+
       (rec&&rec.d!=='gidildi'?'<div class="note"><label for="not-'+k.i+'">Not</label><textarea id="not-'+k.i+'" placeholder="Kimle konuştun, ne dedi, ne zaman tekrar uğranacak…" maxlength="600">'+esc(rec.n||'')+'</textarea><div class="nrow"><button type="button" class="save" data-save="'+k.i+'">Notu kaydet</button><span class="saved" data-saved="'+k.i+'" hidden>kaydedildi ✓</span><span class="when">'+fmtWhen(rec.t)+'</span></div></div>':'')+
@@ -633,7 +677,7 @@ details.obj .body{padding:0 14px 12px;font-size:14.5px;line-height:1.45;color:va
   $('#tab-ilceler').addEventListener('click',()=>{ route.tab='ilceler'; route.ilce=null; route.q=''; route.filter='hepsi'; route.sort='ad'; shown=80; window.scrollTo(0,0); render(); });
   $('#tab-ziyaretler').addEventListener('click',()=>{ route.tab='ziyaretler'; render(); });
   $('#tab-taktik').addEventListener('click',()=>{ route.tab='taktik'; window.scrollTo(0,0); render(); });
-  render();
+  whoami().then(ok=>{ if(ok){ render(); pull(); } });
 })();
 </script>
 </body>

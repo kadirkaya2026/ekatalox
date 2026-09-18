@@ -4,6 +4,7 @@
 import { NextResponse } from "next/server";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { SAHA_TOKEN } from "@/lib/saha/token";
+import { readSession } from "@/lib/saha/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -25,6 +26,7 @@ const bad = (m: string, status = 400) => NextResponse.json({ error: m }, { statu
 export async function POST(req: Request, ctx: { params: Promise<{ token: string }> }) {
   const { token } = await ctx.params;
   if (token !== SAHA_TOKEN) return notFound();
+  if (!readSession(req.headers.get("cookie"))) return bad("giriş gerekli", 401);
   let form: FormData;
   try {
     form = await req.formData();
@@ -57,6 +59,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ token: string 
 export async function GET(req: Request, ctx: { params: Promise<{ token: string }> }) {
   const { token } = await ctx.params;
   if (token !== SAHA_TOKEN) return notFound();
+  if (!readSession(req.headers.get("cookie"))) return bad("giriş gerekli", 401);
   const path = new URL(req.url).searchParams.get("path") ?? "";
   if (!/^[a-z0-9-]+\/[A-Za-z0-9_-]+\/[A-Za-z0-9._-]+$/.test(path)) return bad("path geçersiz");
   const supabase = createSupabaseAdminClient();
