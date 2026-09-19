@@ -37,9 +37,9 @@ export default async function TenantCampaignsSettingsPage() {
   return (
     <div className="space-y-6">
       <Header
-        eyebrow="Ayarlar / Kampanyalar"
-        title="Kampanyalar"
-        description="Müşterilerinizin mağazanızdaki Kampanyalar bölümünde göreceği kartları buradan yönetin. İsterseniz sadece duyuru yapın, isterseniz sepet tutarına bağlı otomatik indirim tanımlayın."
+        eyebrow="Ayarlar / Bildirim & Kampanyalar"
+        title="Bildirim & Kampanyalar"
+        description="Müşterilerinize bildirim gönderin ve mağazanızdaki Kampanyalar bölümünde görünecek kartları yönetin. Bildirim açan müşterilere kampanya ve indirim duyurusu gönderebilir, sepet tutarına bağlı otomatik indirim tanımlayabilirsiniz."
       />
 
       <TenantPushBroadcastCard priceLists={priceLists} categories={categories} inviteUrl={`${getTenantStorefrontOrigin(session.tenant!)}/bildirim`} />

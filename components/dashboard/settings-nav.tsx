@@ -35,7 +35,7 @@ const TABS: Tab[] = [
   { href: "/settings/min-order", label: "Minimum Sepet Tutarı", icon: Wallet, group: "İçerik & İletişim" },
   { href: "/settings/cart", label: "Sepet Ayarları", icon: ClipboardList, group: "İçerik & İletişim" },
   { href: "/settings/delivery-fee", label: "Getirme Ücreti", icon: Truck, group: "İçerik & İletişim", requiredBusinessType: "market" },
-  { href: "/settings/campaigns", label: "Kampanyalar", icon: Ticket, group: "İçerik & İletişim" },
+  { href: "/settings/campaigns", label: "Bildirim & Kampanyalar", icon: Ticket, group: "İçerik & İletişim" },
   { href: "/settings/announcement", label: "Duyuru Modalı", icon: Megaphone, group: "İçerik & İletişim" },
   { href: "/settings/age-verification", label: "Yaş Doğrulama (18+)", icon: ShieldCheck, group: "İçerik & İletişim", requiredBusinessType: "market" },
   { href: "/settings/footer", label: "Footer (Sayfa Altı)", icon: PanelBottom, group: "İçerik & İletişim" },
