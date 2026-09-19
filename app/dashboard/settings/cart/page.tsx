@@ -1,5 +1,7 @@
 import { Header } from "@/components/dashboard/header";
 import { TenantCartFormSettings } from "@/components/dashboard/tenant-cart-form-settings";
+import { TenantMinCartAmountForm } from "@/components/dashboard/tenant-min-cart-amount-form";
+import { CartRecommendationsCard } from "@/components/dashboard/cart-recommendations-card";
 import { requireTenantAdminPage } from "@/lib/auth/session";
 import { getTenantStorefrontSettings } from "@/lib/data";
 
@@ -12,13 +14,23 @@ export default async function TenantCartFormSettingsPage() {
       <Header
         eyebrow="Ayarlar / Sepet Ayarları"
         title="Sepet Ayarları"
-        description="Sipariş formunda müşteriden istenen alanları (cari adı, telefon, adres, not) açıp kapatın, zorunlu yapın ve etiketlerini kendinize göre yazın."
+        description="Sipariş formu alanları, minimum sepet tutarı ve sepetteki ürün önerileri; sepetle ilgili her şey bu sayfada."
       />
 
       <TenantCartFormSettings
         initialStorefrontSettings={storefrontSettings}
         businessType={session.tenant!.business_type ?? null}
       />
+
+      <div className="space-y-2">
+        <h2 className="text-lg font-semibold text-slate-900">Minimum sepet tutarı</h2>
+        <p className="text-sm text-slate-600">
+          Sipariş verilebilmesi için sepetin ulaşması gereken en az tutar; istemezseniz kapalı bırakın.
+        </p>
+      </div>
+      <TenantMinCartAmountForm initialStorefrontSettings={storefrontSettings} />
+
+      <CartRecommendationsCard initialMode={storefrontSettings.recommendation_mode} />
     </div>
   );
 }

@@ -10,21 +10,21 @@ export const LAYOUT_OPTIONS: StorefrontLayoutOption[] = [
   {
     key: "classic-grid",
     title: "Klasik Grid",
-    description: "Mevcut vitrin düzeni; dengeli kart grid’i.",
+    description: "Ürünler orta boy kutular (kartlar) hâlinde yan yana dizilir; kategoriler üstte buton olarak durur. En tanıdık, herkese uygun görünüm.",
   },
   {
     key: "catalog-dense",
     title: "Yoğun Grid",
-    description: "Daha sık sütunlar; çok ürünlü kataloglar için.",
+    description: "Aynı kart görünümü ama kutular daha küçük; bir satıra daha çok ürün sığar, müşteri daha az kaydırır. Ürün sayısı çok olanlar için.",
   },
   {
     key: "catalog-list",
     title: "Liste Görünümü",
-    description: "Satır satır SKU, fiyat ve stok; B2B tarama için ideal.",
+    description: "Kutu yok: ürünler Excel gibi satır satır listelenir (ad, model kodu, fiyat, stok). Model koduna bakıp hızlı sipariş geçen toptan alıcılar için.",
   },
   {
     key: "sidebar-pro",
     title: "Sidebar Pro",
-    description: "Sol kategori ağacı + kompakt grid; çok kategorili B2B vitrin.",
+    description: "Kategoriler solda liste olarak sabit durur, ürünler sağda küçük kartlarla. Kategorisi çok olan mağazalarda müşteri kaybolmaz.",
   },
 ];

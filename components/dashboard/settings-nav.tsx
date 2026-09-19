@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import {
   Clock, ClipboardList, CreditCard, Globe, ImageIcon, LayoutTemplate,
   Megaphone, PanelBottom, Palette, ShieldCheck, Store, Ticket, Truck,
-  UserCircle, Wallet, type LucideIcon,
+  UserCircle, type LucideIcon,
 } from "lucide-react";
 import { hasPlanFeature, type PlanFeature, type TenantPlan } from "@/lib/billing/plans";
 import type { TenantBusinessType } from "@/lib/types";
@@ -32,7 +32,6 @@ const TABS: Tab[] = [
   { href: "/settings/homepage", label: "Ana Sayfa İçerikleri", icon: LayoutTemplate, group: "Marka & Görünüm" },
   { href: "/settings/banner", label: "Anasayfa Banner'ı", icon: ImageIcon, group: "Marka & Görünüm" },
   { href: "/settings/hours", label: "Çalışma Saatleri", icon: Clock, group: "İçerik & İletişim" },
-  { href: "/settings/min-order", label: "Minimum Sepet Tutarı", icon: Wallet, group: "İçerik & İletişim" },
   { href: "/settings/cart", label: "Sepet Ayarları", icon: ClipboardList, group: "İçerik & İletişim" },
   { href: "/settings/delivery-fee", label: "Getirme Ücreti", icon: Truck, group: "İçerik & İletişim", requiredBusinessType: "market" },
   { href: "/settings/campaigns", label: "Bildirim & Kampanyalar", icon: Ticket, group: "İçerik & İletişim" },

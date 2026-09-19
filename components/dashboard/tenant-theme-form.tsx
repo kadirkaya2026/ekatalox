@@ -48,7 +48,7 @@ interface ThemeFormState {
   recommendation_mode: RecommendationMode;
 }
 
-type ThemeFormTab = "presets" | "brand" | "theme" | "layout" | "recommendations" | "appearance";
+type ThemeFormTab = "presets" | "brand" | "theme" | "layout" | "appearance";
 
 const THEME_FORM_TABS: Array<{
   key: ThemeFormTab;
@@ -59,7 +59,6 @@ const THEME_FORM_TABS: Array<{
   { key: "brand", label: "Marka Renkleri", icon: Palette },
   { key: "theme", label: "Hazır Tema", icon: Palette },
   { key: "layout", label: "Vitrin Düzeni", icon: LayoutGrid },
-  { key: "recommendations", label: "Sepet Önerileri", icon: Sparkles },
   { key: "appearance", label: "Yazı Tipi ve Stiller", icon: Type },
 ];
 
@@ -543,8 +542,29 @@ export function TenantThemeForm({
                   <LayoutGrid className="size-5 text-emerald-700" />
                   <h2 className="text-lg font-semibold text-slate-900">Vitrin düzeni</h2>
                 </div>
-                <p className="mt-1 mb-4 text-sm text-slate-600">
-                  Ürünlerin ve kategorilerin vitrinde nasıl dizileceğini seçin.
+                <p className="mt-1 text-sm text-slate-600">
+                  Müşteri mağazaya girince ürünlerin nasıl dizileceğini ve kategori menüsünün nerede
+                  duracağını seçersiniz. Ürünler, fiyatlar ve logo değişmez; yalnız yerleşim değişir.
+                </p>
+                <div className="mt-3 mb-4 grid gap-2 sm:grid-cols-2">
+                  <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700">
+                    <p className="font-semibold text-slate-900">Kategoriler nerede?</p>
+                    <p className="mt-1">
+                      <strong>Üstte butonlar</strong> (Klasik, Yoğun, Liste) ya da{" "}
+                      <strong>solda sabit liste</strong> (Sidebar Pro).
+                    </p>
+                  </div>
+                  <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700">
+                    <p className="font-semibold text-slate-900">Ürünler nasıl görünür?</p>
+                    <p className="mt-1">
+                      <strong>Kutu kutu kartlar</strong> (Klasik: orta boy, Yoğun: küçük, çok ürün) ya
+                      da <strong>Excel gibi satır satır</strong> (Liste: ad, kod, fiyat, stok).
+                    </p>
+                  </div>
+                </div>
+                <p className="mb-4 text-xs text-slate-500">
+                  Emin değilseniz seçip &quot;Hazır Tema&quot; sekmesindeki <strong>Mağazada önizle</strong> ile
+                  kendi ürünlerinizle yeni sekmede görün.
                 </p>
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
                   {LAYOUT_OPTIONS.map((layout) => {
@@ -575,37 +595,6 @@ export function TenantThemeForm({
                     );
                   })}
                 </div>
-              </div>
-            ) : null}
-
-            {activeTab === "recommendations" ? (
-              <div>
-                <div className="flex items-center gap-2">
-                  <Sparkles className="size-5 text-emerald-700" />
-                  <h2 className="text-lg font-semibold text-slate-900">Sepet ürün önerileri</h2>
-                </div>
-                <p className="mt-1 mb-4 text-sm text-slate-600">
-                  &quot;Bunları da beğenebilirsiniz&quot; alanında müşteriye hangi ürünlerin
-                  önerileceğini seçin.
-                </p>
-                <OptionPicker
-                  label="Öneri modu"
-                  options={[
-                    {
-                      key: "auto" as RecommendationMode,
-                      title: "Otomatik",
-                      description: "Sepetteki ürünler hariç, katalogdan otomatik ürün önerilir.",
-                    },
-                    {
-                      key: "manual" as RecommendationMode,
-                      title: "Manuel (seçtiğim ürünler)",
-                      description:
-                        "Ürün listesinde işaretlediğiniz ürünler önerilir. Ürünler yönetimi sayfasından işaretleyin.",
-                    },
-                  ]}
-                  value={form.recommendation_mode}
-                  onChange={(value) => updateField("recommendation_mode", value)}
-                />
               </div>
             ) : null}
 
