@@ -7,36 +7,34 @@ import {
   BarChart3,
   Building2,
   ClipboardList,
-  Clock,
+
   Contact,
-  CreditCard,
+
   FolderTree,
-  Globe,
-  ImageIcon,
+
   KeyRound,
   LayoutDashboard,
-  LayoutTemplate,
+
   Lightbulb,
   Magnet,
   MapPin,
-  Megaphone,
+
   PackagePlus,
-  Palette,
-  PanelBottom,
+
   PlusCircle,
   QrCode,
   ScanBarcode,
   ScrollText,
   Settings,
-  ShieldCheck,
+
   Sparkles,
   Star,
   Store,
   Ticket,
   TrendingUp,
-  Truck,
+
   UploadCloud,
-  UserCircle,
+
   Wallet,
 } from "lucide-react";
 import { EkataloxLogo } from "@/components/brand/ekatalox-logo";
@@ -170,97 +168,6 @@ const tenantLinks: SidebarLink[] = [
     href: "/settings",
     label: "Ayarlar",
     icon: Settings,
-    children: [
-      { href: "/settings", label: "Hesap ve Üyelik", icon: UserCircle, group: "Hesap" },
-      {
-        href: "/settings/domain",
-        label: "Özel Alan Adı",
-        icon: Globe,
-        group: "Hesap",
-        requiredFeature: "custom_domain",
-      },
-      {
-        href: "/settings/theme",
-        label: "Tema & Marka Renkleri",
-        icon: Palette,
-        group: "Marka & Görünüm",
-      },
-      {
-        href: "/settings/identity",
-        label: "Mağaza Kimliği",
-        icon: Store,
-        group: "Marka & Görünüm",
-      },
-      {
-        href: "/settings/homepage",
-        label: "Ana Sayfa İçerikleri",
-        icon: LayoutTemplate,
-        group: "Marka & Görünüm",
-      },
-      {
-        href: "/settings/banner",
-        label: "Anasayfa Banner'ı",
-        icon: ImageIcon,
-        group: "Marka & Görünüm",
-      },
-      {
-        href: "/settings/hours",
-        label: "Çalışma Saatleri",
-        icon: Clock,
-        group: "İçerik & İletişim",
-      },
-      {
-        href: "/settings/min-order",
-        label: "Minimum Sepet Tutarı",
-        icon: Wallet,
-        group: "İçerik & İletişim",
-      },
-      {
-        href: "/settings/cart",
-        label: "Sepet Ayarları",
-        icon: ClipboardList,
-        group: "İçerik & İletişim",
-      },
-      {
-        href: "/settings/delivery-fee",
-        label: "Getirme Ücreti",
-        icon: Truck,
-        group: "İçerik & İletişim",
-        requiredBusinessType: "market",
-      },
-      {
-        href: "/settings/campaigns",
-        label: "Kampanyalar",
-        icon: Ticket,
-        group: "İçerik & İletişim",
-      },
-      {
-        href: "/settings/announcement",
-        label: "Duyuru Modalı",
-        icon: Megaphone,
-        group: "İçerik & İletişim",
-      },
-      {
-        href: "/settings/age-verification",
-        label: "Yaş Doğrulama (18+)",
-        icon: ShieldCheck,
-        group: "İçerik & İletişim",
-        requiredBusinessType: "market",
-      },
-      {
-        href: "/settings/footer",
-        label: "Footer (Sayfa Altı)",
-        icon: PanelBottom,
-        group: "İçerik & İletişim",
-      },
-      {
-        href: "/settings/payment",
-        label: "Ödeme ve Kampanyalar",
-        icon: CreditCard,
-        group: "Ödeme",
-        requiredFeature: "payment_settings",
-      },
-    ],
   },
 ];
 
@@ -329,7 +236,8 @@ export function Sidebar({
     return (
       pathname === `/dashboard${href}` ||
       pathname === `/admin${href}` ||
-      pathname?.endsWith(href)
+      pathname?.endsWith(href) ||
+      (href === "/settings" && (pathname?.includes("/settings") ?? false))
     );
   }
 
