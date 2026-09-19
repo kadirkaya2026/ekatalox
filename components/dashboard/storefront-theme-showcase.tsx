@@ -444,19 +444,19 @@ function DesktopFrame({ children }: { children: React.ReactNode }) {
         <span className="size-2.5 rounded-full bg-slate-300" />
         <span className="size-2.5 rounded-full bg-slate-300" />
       </div>
-      <div className="max-h-[560px] overflow-y-auto">{children}</div>
+      <div>{children}</div>
     </div>
   );
 }
 
 function MobileFrame({ children }: { children: React.ReactNode }) {
   return (
-    <div className="mx-auto w-[300px] overflow-hidden rounded-[2rem] border-[6px] border-slate-900 bg-slate-900 shadow-sm">
+    <div className="mx-auto w-full max-w-[300px] overflow-hidden rounded-[2rem] border-[6px] border-slate-900 bg-slate-900 shadow-sm">
       <div className="relative overflow-hidden rounded-[1.4rem] bg-white">
         <div className="flex justify-center bg-slate-900 pb-1 pt-1.5">
           <div className="h-4 w-24 rounded-full bg-slate-900" />
         </div>
-        <div className="max-h-[600px] overflow-y-auto">{children}</div>
+        <div>{children}</div>
       </div>
     </div>
   );
@@ -491,8 +491,8 @@ export function StorefrontThemeShowcase({
   const title = storefrontTitle?.trim() || "Mağaza Adı";
 
   return (
-    <div className="grid gap-6 xl:grid-cols-[1.5fr_0.9fr] xl:items-start">
-      <div>
+    <div className="grid gap-6 xl:grid-cols-[minmax(0,1.5fr)_minmax(0,0.9fr)] xl:items-start">
+      <div className="min-w-0">
         <p className="mb-2 text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
           Masaüstü
         </p>
@@ -511,7 +511,7 @@ export function StorefrontThemeShowcase({
         </DesktopFrame>
       </div>
 
-      <div>
+      <div className="min-w-0">
         <p className="mb-2 text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
           Mobil
         </p>
