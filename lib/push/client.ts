@@ -97,6 +97,8 @@ export async function subscribeToCampaignPush(params: {
   vapidPublicKey: string;
   name?: string;
   phone?: string;
+  /** /bildirim tek-link daveti (çerezsiz ana ekran uygulamasında bağlamı taşır). */
+  inviteToken?: string;
 }) {
   const permission = await Notification.requestPermission();
   if (permission !== "granted") return { ok: false as const, reason: "denied" as const };
@@ -120,6 +122,7 @@ export async function subscribeToCampaignPush(params: {
       user_agent: navigator.userAgent,
       name: params.name ?? null,
       phone: params.phone ?? null,
+      inviteToken: params.inviteToken ?? null,
     }),
   });
   if (!response.ok) return { ok: false as const, reason: "server" as const };

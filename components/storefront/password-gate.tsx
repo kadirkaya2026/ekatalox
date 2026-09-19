@@ -40,7 +40,10 @@ function PasswordGateForm({
         return;
       }
 
-      window.location.assign("/");
+      // Şifre kapısı rewrite ile gösterilir (adres çubuğu istenen sayfada kalır);
+      // girişten sonra ana sayfaya değil, o sayfaya dön (ör. /bildirim?t=…).
+      const { pathname, search } = window.location;
+      window.location.assign(pathname && pathname !== "/" ? `${pathname}${search}` : "/");
     });
   }
 

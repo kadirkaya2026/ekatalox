@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { getStorefrontTenant } from "@/lib/data";
 import { readStorefrontPriceList } from "@/lib/storefront/session";
+import { INVITE_TOKEN_RE } from "@/lib/push/invite";
 
 // Kampanya/duyuru bildirimi aboneliği (vitrin Kampanyalar paneli).
 // Sipariş takibindeki aboneliğin aksine token yok: müşteri şifre kapısından
@@ -33,6 +34,24 @@ export async function POST(request: Request) {
 
   const supabase = createSupabaseAdminClient();
   if (!supabase) return NextResponse.json({ error: "Sunucu yapılandırması eksik." }, { status: 500 });
+
+  // /bildirim tek-link akışı: ana ekran uygulamasında çerez olmayabilir; davet
+  // kaydındaki erişim kodu/fiyat listesi çerezin yerine geçer ve davet
+  // "abone oldu" diye işaretlenir (app/api/storefront/push/invite/route.ts).
+  const inviteToken = typeof body.inviteToken === "string" && INVITE_TOKEN_RE.test(body.inviteToken) ? body.inviteToken : null;
+  if (inviteToken) {
+    const { data: invite } = await supabase
+      .from("push_invites")
+      .select("id, access_code_id, price_list_id")
+      .eq("tenant_id", ctx.tenant.id)
+      .eq("token", inviteToken)
+      .maybeSingle();
+    if (invite) {
+      if (!ctx.accessCodeId && invite.access_code_id) ctx.accessCodeId = invite.access_code_id;
+      if (!ctx.priceListId && invite.price_list_id) ctx.priceListId = invite.price_list_id;
+      await supabase.from("push_invites").update({ subscribed_at: new Date().toISOString() }).eq("id", invite.id);
+    }
+  }
 
   // Ad/telefon doğrulanmamış BEYANDIR: mevcut bir müşteri kaydına
   // (customers) bilerek bağlanmaz. Bağlansaydı başkasının numarasını yazan

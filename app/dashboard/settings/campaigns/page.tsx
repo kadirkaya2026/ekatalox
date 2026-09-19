@@ -5,6 +5,7 @@ import { requireTenantAdminPage } from "@/lib/auth/session";
 import { getTenantCategories, getTenantPriceLists } from "@/lib/data";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import type { TenantCampaign } from "@/lib/types";
+import { getTenantStorefrontOrigin } from "@/lib/push/send-tenant-broadcast-push";
 
 // Admin ekranı vitrinden farklı olarak PASİF ve süresi geçmiş kampanyaları
 // da göstermeli (bayi onları düzenleyebilsin), o yüzden getStorefrontCampaigns
@@ -41,7 +42,7 @@ export default async function TenantCampaignsSettingsPage() {
         description="Müşterilerinizin mağazanızdaki Kampanyalar bölümünde göreceği kartları buradan yönetin. İsterseniz sadece duyuru yapın, isterseniz sepet tutarına bağlı otomatik indirim tanımlayın."
       />
 
-      <TenantPushBroadcastCard priceLists={priceLists} categories={categories} />
+      <TenantPushBroadcastCard priceLists={priceLists} categories={categories} inviteUrl={`${getTenantStorefrontOrigin(session.tenant!)}/bildirim`} />
 
       <TenantCampaignsForm
         initialCampaigns={campaigns}

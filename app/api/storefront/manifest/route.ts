@@ -11,6 +11,11 @@ export async function GET(request: Request) {
   const tenant = subdomain ? await getStorefrontTenant(subdomain) : null;
   if (!tenant) return NextResponse.json({ error: "Bulunamadı." }, { status: 404 });
 
+  // /bildirim tek-link akışı: ana ekran ikonu davet token'ıyla açılsın ki
+  // Safari'de yazılan ad/telefon ana ekran uygulamasında da bilinsin.
+  const startRaw = url.searchParams.get("start") ?? "";
+  const startUrl = /^\/bildirim\?t=[A-Za-z0-9_-]{16,64}$/.test(startRaw) ? `${startRaw}&app=1` : "/?app=1";
+
   const settings = await getTenantStorefrontSettings(tenant.id);
   const name = settings.storefront_title?.trim() || tenant.company_name;
   const icon = settings.logo_url || settings.site_favicon_url || "/ekatalox-logo-v2.png";
@@ -19,7 +24,7 @@ export async function GET(request: Request) {
     {
       name,
       short_name: name.length > 12 ? name.slice(0, 12) : name,
-      start_url: "/?app=1",
+      start_url: startUrl,
       scope: "/",
       display: "standalone",
       background_color: "#ffffff",

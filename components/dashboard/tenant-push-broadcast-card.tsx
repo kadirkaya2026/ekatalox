@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Bell, Loader2, RefreshCw, Search, Send, X } from "lucide-react";
+import { Bell, Check, Copy, Link2, Loader2, RefreshCw, Search, Send, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { InlineAlert } from "@/components/ui/inline-alert";
@@ -18,7 +18,12 @@ import { cn } from "@/lib/utils";
 // metinde {ad} yazılırsa herkese kendi adıyla gider.
 type TargetType = "campaigns" | "category" | "product";
 
-export function TenantPushBroadcastCard({ priceLists, categories }: { priceLists: PriceList[]; categories: Category[] }) {
+export function TenantPushBroadcastCard({ priceLists, categories, inviteUrl }: { priceLists: PriceList[]; categories: Category[]; inviteUrl?: string }) {
+  const [copied, setCopied] = useState(false);
+  async function copyInvite() {
+    if (!inviteUrl) return;
+    try { await navigator.clipboard.writeText(inviteUrl); setCopied(true); setTimeout(() => setCopied(false), 2000); } catch { /* yok say */ }
+  }
   const [rows, setRows] = useState<PushSubscriberRow[] | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [filterList, setFilterList] = useState<string>("");
@@ -127,6 +132,22 @@ export function TenantPushBroadcastCard({ priceLists, categories }: { priceLists
           Kişi seçin ya da hiç seçmeden herkese gönderin. Metinde <code className="rounded bg-muted px-1">(ad)</code> yazarsanız herkese kendi adıyla gider.
         </p>
       </div>
+
+      {inviteUrl ? (
+        <div className="rounded-xl border border-dashed p-3">
+          <p className="flex items-center gap-2 text-sm font-semibold text-foreground"><Link2 className="size-4" /> Müşteriye gönderilecek link</p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            {"WhatsApp'tan bu linki atın: müşteri adını ve telefonunu yazıp bildirimi tek dokunuşla açar. iPhone'da site ana ekrana eklenir (Apple şartı), sayfa adım adım gösterir."}
+          </p>
+          <div className="mt-2 flex items-center gap-2">
+            <code className="min-w-0 flex-1 truncate rounded bg-muted px-2 py-1.5 text-xs">{inviteUrl}</code>
+            <Button type="button" variant="secondary" onClick={() => void copyInvite()}>
+              {copied ? <Check className="size-4" /> : <Copy className="size-4" />}
+              {copied ? "Kopyalandı" : "Kopyala"}
+            </Button>
+          </div>
+        </div>
+      ) : null}
 
       <div className="grid gap-3">
         <Input

@@ -390,7 +390,9 @@ export async function proxy(request: NextRequest) {
     // gelir; şifre/yaş/kota kapılarından bağımsız açılmalı — token'ın kendisi
     // yetkidir. Kota dolu olsa da müşteri verdiği siparişin durumunu görebilir.
     // /siparislerim: telefon numarasıyla sipariş listesi — aynı gerekçe.
-    if (pathname.startsWith("/siparis/") || pathname === "/siparislerim") {
+    // /bildirim: tek-link bildirim daveti — ana ekran uygulamasında çerez
+    // olmayabilir, sayfa şifre kapısını kendisi gösterir/çözer.
+    if (pathname.startsWith("/siparis/") || pathname === "/siparislerim" || pathname === "/bildirim") {
       const trackUrl = request.nextUrl.clone();
       trackUrl.pathname = `/store/${hostResolution.subdomain}${pathname}`;
       const trackResponse = NextResponse.rewrite(trackUrl);
