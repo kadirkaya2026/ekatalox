@@ -15,14 +15,14 @@ export function SettingsTabs<T extends string>({
   layoutId: string;
 }) {
   return (
-    <div className="flex flex-wrap border-b border-slate-100 dark:border-slate-800">
+    <div className="flex overflow-x-auto border-b border-slate-100 dark:border-slate-800 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
       {tabs.map((tab) => (
         <button
           key={tab.key}
           type="button"
           onClick={() => onChange(tab.key)}
           className={cn(
-            "relative flex items-center gap-2 px-4 py-3 text-sm font-semibold transition sm:px-5",
+            "relative flex shrink-0 items-center gap-2 whitespace-nowrap px-4 py-3 text-sm font-semibold transition sm:px-5",
             activeTab === tab.key
               ? "text-emerald-700 dark:text-emerald-400"
               : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200",
