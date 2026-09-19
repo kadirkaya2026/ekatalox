@@ -2,27 +2,26 @@ import { EsnafThemePicker } from "@/components/dashboard/esnaf-theme-picker";
 import { Header } from "@/components/dashboard/header";
 import { TenantThemeForm } from "@/components/dashboard/tenant-theme-form";
 import { requireTenantAdminPage } from "@/lib/auth/session";
-import { getTenantProducts, getTenantStorefrontSettings } from "@/lib/data";
+import { getTenantStorefrontSettings } from "@/lib/data";
 import type { EsnafThemeKey } from "@/lib/storefront/esnaf-themes";
 import { appEnv } from "@/lib/env";
 
-export default async function TenantThemeSettingsPage() {
+type ThemePageProps = { searchParams?: Promise<Record<string, string | string[] | undefined>> };
+
+export default async function TenantThemeSettingsPage(props: ThemePageProps) {
+  const sp = (await props.searchParams) ?? {};
+  const pick = (k: string) => (typeof sp[k] === "string" && sp[k] ? (sp[k] as string) : undefined);
+  // Önizleme sekmesindeki "Bu temayı uygula" buraya ?apply=1&... ile döner;
+  // form açılınca aynı PATCH yoluyla kaydeder (yetki/plan kontrolü panelde).
+  const autoApply = pick("apply") === "1"
+    ? { preset: pick("preset"), theme: pick("theme"), layout: pick("layout"), header: pick("header"), footer: pick("footer"), hero: pick("hero"), bp: pick("bp"), ba: pick("ba") }
+    : null;
   const session = await requireTenantAdminPage();
   const tenant = session.tenant!;
   const storefrontSettings = await getTenantStorefrontSettings(tenant.id);
   const isEsnaf = tenant.business_type === "market";
 
   if (!isEsnaf) {
-    // Önizlemede sahte ürün yerine mağazanın gerçek ürünleri görünsün:
-    // bayi, temayı seçince vitrinin gerçekten nasıl görüneceğini görür.
-    const products = await getTenantProducts(tenant.id);
-    const previewProducts = products.slice(0, 8).map((product) => ({
-      name: product.product_name,
-      price: product.prices?.[0]?.price ?? product.discount_price ?? null,
-      currency: product.currency,
-      inStock: product.is_in_stock,
-      imageUrl: product.image_url,
-    }));
 
     return (
       <div className="space-y-6">
@@ -35,8 +34,8 @@ export default async function TenantThemeSettingsPage() {
           initialStorefrontSettings={storefrontSettings}
           tenantPlan={tenant.plan ?? "baslangic"}
           companyName={tenant.company_name}
-          previewProducts={previewProducts}
           previewUrl={`https://${tenant.subdomain}.${appEnv.rootDomain}/?preview=1`}
+          autoApply={autoApply}
         />
       </div>
     );

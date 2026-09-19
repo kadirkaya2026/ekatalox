@@ -46,6 +46,9 @@ import {
 import type { Category } from "@/lib/types";
 import { getNextOpening, isStoreOpenNow } from "@/lib/storefront/business-hours";
 import { getStorefrontHomePath } from "@/lib/storefront/paths";
+import { STOREFRONT_THEME_PRESETS } from "@/lib/storefront/theme-presets";
+import { StorefrontPreviewBar } from "@/components/storefront/storefront-preview-bar";
+import { appEnv } from "@/lib/env";
 import {
   isStorefrontPriceListStateValid,
   readStorefrontPriceList,
@@ -95,10 +98,14 @@ function applyPreviewOverrides<T extends object>(
 ): T {
   const str = (k: string) => (typeof sp[k] === "string" && sp[k] ? (sp[k] as string) : null);
   const o: Record<string, string> = {};
+  // Hazır paket: tüm paket ayarları (tema, düzen, header, footer, hero, kart, yazı tipi)
+  const preset = str("preset") ? STOREFRONT_THEME_PRESETS.find((x) => x.key === str("preset")) : null;
+  if (preset) Object.assign(o, preset.settings as unknown as Record<string, string>);
   if (str("theme")) o.theme_key = str("theme")!;
   if (str("layout")) o.layout_key = str("layout")!;
   if (str("header")) o.header_style_key = str("header")!;
   if (str("footer")) o.footer_style_key = str("footer")!;
+  if (str("hero")) o.hero_style_key = str("hero")!;
   if (str("bp")) o.brand_primary_color = str("bp")!;
   if (str("ba")) o.brand_accent_color = str("ba")!;
   return { ...settings, ...o } as T;
@@ -282,6 +289,16 @@ export default async function StorefrontPage(props: PageProps<"/store/[subdomain
   const campaigns = await getStorefrontCampaigns(tenant.id);
 
   const viewSettings = isPreview ? applyPreviewOverrides(storefrontSettings, searchParams) : storefrontSettings;
+  const previewPreset = isPreview && typeof searchParams.preset === "string"
+    ? STOREFRONT_THEME_PRESETS.find((x) => x.key === searchParams.preset) ?? null
+    : null;
+  const previewLabel = previewPreset ? previewPreset.title : String(viewSettings.theme_key);
+  const applyQuery = new URLSearchParams({ apply: "1" });
+  for (const k of ["preset", "theme", "layout", "header", "footer", "hero", "bp", "ba"]) {
+    const v = searchParams[k];
+    if (typeof v === "string" && v) applyQuery.set(k, v);
+  }
+  const previewApplyHref = `https://app.${appEnv.rootDomain}/settings/theme?${applyQuery.toString()}`;
   const footerVisible = viewSettings.is_footer_visible;
   const headersList = await headers();
   const requestHost = getRequestHostFromHeaders(headersList);
@@ -326,6 +343,7 @@ export default async function StorefrontPage(props: PageProps<"/store/[subdomain
           hasBottomNav={isMarketOrTekelTenant(tenant)}
         />
       ) : null}
+      {isPreview ? <StorefrontPreviewBar applyHref={previewApplyHref} label={previewLabel} /> : null}
     </StorefrontPageShell>
   );
 }

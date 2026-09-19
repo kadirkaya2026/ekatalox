@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { ExternalLink, LayoutGrid, Palette, RotateCcw, Sparkles, Type } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -9,7 +9,6 @@ import { SettingsTabs } from "@/components/dashboard/settings-tabs";
 import { Input } from "@/components/ui/input";
 import { PlanFeatureGate } from "@/components/dashboard/plan-feature-gate";
 import { StorefrontThemePreview } from "@/components/dashboard/storefront-theme-preview";
-import { StorefrontThemeShowcase, type ShowcaseProduct } from "@/components/dashboard/storefront-theme-showcase";
 import type {
   ProductImageBackgroundKey,
   RecommendationMode,
@@ -122,14 +121,17 @@ export function TenantThemeForm({
   initialStorefrontSettings,
   tenantPlan,
   companyName,
-  previewProducts,
   previewUrl,
+  autoApply,
 }: {
   initialStorefrontSettings: TenantStorefrontSettings;
   tenantPlan: TenantPlan;
   companyName: string;
-  previewProducts?: ShowcaseProduct[];
   previewUrl?: string;
+  autoApply?: {
+    preset?: string; theme?: string; layout?: string; header?: string;
+    footer?: string; hero?: string; bp?: string; ba?: string;
+  } | null;
 }) {
   const [form, setForm] = useState<ThemeFormState>(
     toThemeFormState(initialStorefrontSettings),
@@ -145,10 +147,11 @@ export function TenantThemeForm({
 
   const previewTitle = initialStorefrontSettings.storefront_title ?? "";
   const previewLogoUrl = initialStorefrontSettings.logo_url;
-  // Canlı önizleme adresi: gerçek mağaza + seçili (kaydedilmemiş) tema.
-  const livePreviewSrc = previewUrl
+  // "Önizle": yeni sekmede gerçek mağaza, seçili (kaydedilmemiş) temayla.
+  const themePreviewHref = previewUrl
     ? `${previewUrl}&theme=${encodeURIComponent(form.theme_key)}&layout=${encodeURIComponent(form.layout_key)}&header=${encodeURIComponent(form.header_style_key)}&footer=${encodeURIComponent(form.footer_style_key)}${form.brand_primary_color ? `&bp=${encodeURIComponent(form.brand_primary_color)}` : ""}${form.brand_accent_color ? `&ba=${encodeURIComponent(form.brand_accent_color)}` : ""}`
-    : "";
+    : null;
+  const presetPreviewHref = (key: string) => (previewUrl ? `${previewUrl}&preset=${encodeURIComponent(key)}` : null);
 
   function updateField<K extends keyof ThemeFormState>(key: K, value: ThemeFormState[K]) {
     setForm((current) => ({ ...current, [key]: value }));
@@ -212,10 +215,12 @@ export function TenantThemeForm({
     );
   }
 
-  function applyPreset(preset: StorefrontThemePreset) {
-    const confirmed = window.confirm(
-      `"${preset.title}" paketini uygulamak istediğinize emin misiniz? Tema, düzen ve görünüm ayarlarınız bu pakete göre değişecek.`,
-    );
+  function applyPreset(preset: StorefrontThemePreset, opts?: { skipConfirm?: boolean }) {
+    const confirmed =
+      opts?.skipConfirm ||
+      window.confirm(
+        `"${preset.title}" paketini uygulamak istediğinize emin misiniz? Tema, düzen ve görünüm ayarlarınız bu pakete göre değişecek.`,
+      );
 
     if (!confirmed) {
       return;
@@ -266,6 +271,46 @@ export function TenantThemeForm({
     });
   }
 
+  // Önizleme sekmesinden "Bu temayı uygula" ile gelindiyse (?apply=1) bir kez
+  // otomatik uygula, sonra adresi temizle.
+  useEffect(() => {
+    if (!autoApply) return;
+    // Bir mikro görev sonra: effect içinde doğrudan setState kuralına takılmasın.
+    const timer = setTimeout(() => {
+    const preset = autoApply.preset ? STOREFRONT_THEME_PRESETS.find((x) => x.key === autoApply.preset) : null;
+    if (preset) {
+      applyPreset(preset, { skipConfirm: true });
+    } else {
+      const payload: Record<string, unknown> = {};
+      if (autoApply.theme) payload.theme_key = autoApply.theme;
+      if (autoApply.layout) payload.layout_key = autoApply.layout;
+      if (autoApply.bp !== undefined) payload.brand_primary_color = autoApply.bp || null;
+      if (autoApply.ba !== undefined) payload.brand_accent_color = autoApply.ba || null;
+      if (canUseAdvancedAppearance) {
+        if (autoApply.header) payload.header_style_key = autoApply.header;
+        if (autoApply.footer) payload.footer_style_key = autoApply.footer;
+        if (autoApply.hero) payload.hero_style_key = autoApply.hero;
+      }
+      if (Object.keys(payload).length) {
+        startApplyTransition(async () => {
+          const response = await fetch("/api/tenant/settings", {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
+          const result = await response.json();
+          if (response.ok && result.storefrontSettings) setForm(toThemeFormState(result.storefrontSettings));
+          setSaveMessage(response.ok ? "Önizlediğiniz tema uygulandı." : result.error ?? "Tema uygulanamadı.");
+          router.refresh();
+        });
+      }
+    }
+    router.replace("/settings/theme");
+    }, 0);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- yalnız ilk açılışta
+  }, []);
+
   return (
     <form onSubmit={save}>
       <div className="space-y-6">
@@ -285,11 +330,10 @@ export function TenantThemeForm({
                   <h2 className="text-lg font-semibold text-slate-900">Hazır paketler</h2>
                 </div>
                 <p className="mt-1 mb-4 text-sm text-slate-600">
-                  Sektörünüze uygun hazır bir paket seçin: renk teması, vitrin düzeni, header,
-                  footer ve hero görünümü tek tıkla birlikte değişir. Uyguladıktan sonra diğer
-                  sekmelerden ince ayar yapabilirsiniz.
+                  Sektörünüze uygun paketi seçin. <strong>Önizle</strong> ile mağazanız yeni sekmede
+                  o temayla, kendi ürünlerinizle açılır; beğenirseniz oradan ya da buradan uygulayın.
                 </p>
-                <div className="grid grid-cols-1 gap-6">
+                <div className="grid gap-4 sm:grid-cols-2">
                   {STOREFRONT_THEME_PRESETS.map((preset) => {
                     const isSelected =
                       form.theme_key === preset.settings.theme_key &&
@@ -297,64 +341,54 @@ export function TenantThemeForm({
                       form.header_style_key === preset.settings.header_style_key &&
                       form.footer_style_key === preset.settings.footer_style_key;
                     const isApplying = applyPending && applyingPresetKey === preset.key;
+                    const href = presetPreviewHref(preset.key);
 
                     return (
                       <div
                         key={preset.key}
                         className={cn(
-                          "rounded-2xl border p-4",
+                          "flex flex-col overflow-hidden rounded-2xl border",
                           isSelected
-                            ? "border-emerald-500 bg-emerald-50/50 ring-1 ring-emerald-500/30"
+                            ? "border-emerald-500 ring-1 ring-emerald-500/30"
                             : "border-slate-200 bg-white",
                         )}
                       >
-                        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-                          <div>
-                            <p className="inline-flex rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-600">
-                              {preset.sector}
-                            </p>
-                            <h3 className="mt-1.5 text-base font-semibold text-slate-900">
-                              {preset.title}
-                            </h3>
-                          </div>
-                          <a
-                            href={`https://${preset.demoSubdomain}.ekatalox.com`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 hover:underline"
-                          >
-                            Canlı demoyu gör
-                            <ExternalLink className="size-3.5" />
-                          </a>
-                        </div>
-                        <p className="mb-4 text-sm leading-6 text-slate-500">
-                          {preset.description}
-                        </p>
-
-                        <StorefrontThemeShowcase
-                          themeKey={preset.settings.theme_key}
-                          layoutKey={preset.settings.layout_key}
-                          headerStyleKey={preset.settings.header_style_key}
-                          footerStyleKey={preset.settings.footer_style_key}
-                          heroStyleKey={preset.settings.hero_style_key}
-                          storefrontTitle={previewTitle}
-                          logoUrl={previewLogoUrl}
-                          products={previewProducts}
+                        {/* eslint-disable-next-line @next/next/no-img-element -- statik küçük resim */}
+                        <img
+                          src={preset.thumbnailDesktop}
+                          alt={`${preset.title} önizleme`}
+                          className="h-40 w-full object-cover object-top"
+                          loading="lazy"
                         />
-
-                        <Button
-                          type="button"
-                          className="mt-4 w-full"
-                          variant={isSelected ? "secondary" : "primary"}
-                          disabled={applyPending}
-                          onClick={() => applyPreset(preset)}
-                        >
-                          {isApplying
-                            ? "Uygulanıyor..."
-                            : isSelected
-                              ? "Bu paket uygulandı"
-                              : "Bu paketi uygula"}
-                        </Button>
+                        <div className="flex flex-1 flex-col p-4">
+                          <p className="inline-flex w-fit rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-600">
+                            {preset.sector}
+                          </p>
+                          <h3 className="mt-1.5 text-base font-semibold text-slate-900">{preset.title}</h3>
+                          <p className="mt-1 flex-1 text-sm leading-6 text-slate-500">{preset.description}</p>
+                          <div className="mt-4 flex gap-2">
+                            {href ? (
+                              <a
+                                href={href}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-900 hover:bg-slate-50"
+                              >
+                                <ExternalLink className="size-4" />
+                                Önizle
+                              </a>
+                            ) : null}
+                            <Button
+                              type="button"
+                              className="flex-1"
+                              variant={isSelected ? "secondary" : "primary"}
+                              disabled={applyPending}
+                              onClick={() => applyPreset(preset)}
+                            >
+                              {isApplying ? "Uygulanıyor..." : isSelected ? "Uygulandı" : "Uygula"}
+                            </Button>
+                          </div>
+                        </div>
                       </div>
                     );
                   })}
@@ -483,35 +517,22 @@ export function TenantThemeForm({
                 </div>
 
                 <div className="mt-8 border-t border-slate-100 pt-6">
-                  <h3 className="text-sm font-semibold text-slate-900">
-                    Seçili temanın önizlemesi
-                  </h3>
+                  <h3 className="text-sm font-semibold text-slate-900">Seçili temayı mağazanızda görün</h3>
                   <p className="mt-1 mb-4 text-sm text-slate-600">
-                    Bu, mağazanızın gerçek hali: seçtiğiniz tema anında uygulanır. Şifre sorarsa
-                    mağaza şifrenizi bir kez girin.
+                    Mağazanız yeni sekmede seçtiğiniz temayla, kendi ürünlerinizle açılır. Şifre
+                    sorarsa mağaza şifrenizi bir kez girin. Beğenirseniz oradan &quot;Bu temayı uygula&quot; deyin.
                   </p>
-                  {previewUrl ? (
-                    <div className="overflow-hidden rounded-2xl border border-slate-200 bg-slate-50">
-                      <iframe
-                        key={livePreviewSrc}
-                        src={livePreviewSrc}
-                        title="Mağaza canlı önizleme"
-                        className="block h-[720px] w-full bg-white"
-                        loading="lazy"
-                        sandbox="allow-same-origin allow-scripts allow-forms"
-                      />
-                    </div>
-                  ) : (
-                    <StorefrontThemeShowcase
-                      themeKey={form.theme_key}
-                      layoutKey={form.layout_key}
-                      storefrontTitle={previewTitle}
-                      logoUrl={previewLogoUrl}
-                      brandPrimaryColor={form.brand_primary_color || null}
-                      brandAccentColor={form.brand_accent_color || null}
-                      products={previewProducts}
-                    />
-                  )}
+                  {themePreviewHref ? (
+                    <a
+                      href={themePreviewHref}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-800"
+                    >
+                      <ExternalLink className="size-4" />
+                      Mağazada önizle
+                    </a>
+                  ) : null}
                 </div>
               </div>
             ) : null}
