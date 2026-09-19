@@ -9,7 +9,7 @@ import { SettingsTabs } from "@/components/dashboard/settings-tabs";
 import { Input } from "@/components/ui/input";
 import { PlanFeatureGate } from "@/components/dashboard/plan-feature-gate";
 import { StorefrontThemePreview } from "@/components/dashboard/storefront-theme-preview";
-import { StorefrontThemeShowcase } from "@/components/dashboard/storefront-theme-showcase";
+import { StorefrontThemeShowcase, type ShowcaseProduct } from "@/components/dashboard/storefront-theme-showcase";
 import type {
   ProductImageBackgroundKey,
   RecommendationMode,
@@ -122,10 +122,12 @@ export function TenantThemeForm({
   initialStorefrontSettings,
   tenantPlan,
   companyName,
+  previewProducts,
 }: {
   initialStorefrontSettings: TenantStorefrontSettings;
   tenantPlan: TenantPlan;
   companyName: string;
+  previewProducts?: ShowcaseProduct[];
 }) {
   const [form, setForm] = useState<ThemeFormState>(
     toThemeFormState(initialStorefrontSettings),
@@ -331,6 +333,7 @@ export function TenantThemeForm({
                           heroStyleKey={preset.settings.hero_style_key}
                           storefrontTitle={previewTitle}
                           logoUrl={previewLogoUrl}
+                          products={previewProducts}
                         />
 
                         <Button
@@ -488,6 +491,7 @@ export function TenantThemeForm({
                     logoUrl={previewLogoUrl}
                     brandPrimaryColor={form.brand_primary_color || null}
                     brandAccentColor={form.brand_accent_color || null}
+                    products={previewProducts}
                   />
                 </div>
               </div>

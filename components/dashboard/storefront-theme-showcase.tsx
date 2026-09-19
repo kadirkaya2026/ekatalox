@@ -11,11 +11,21 @@ import { getStorefrontLayout } from "@/lib/storefront/layouts";
 import { getStorefrontTheme } from "@/lib/storefront/themes";
 import { cn, formatCurrency } from "@/lib/utils";
 
-const SHOWCASE_PRODUCTS = [
-  { name: "Kablosuz Kulaklık", price: 1299, inStock: true },
-  { name: "Akıllı Saat", price: 2490, inStock: true },
-  { name: "Bluetooth Hoparlör", price: 899, inStock: true },
-  { name: "Şarj Kablosu", price: 149, inStock: false },
+export type ShowcaseProduct = {
+  name: string;
+  price: number | null;
+  currency?: string;
+  inStock: boolean;
+  imageUrl?: string | null;
+};
+
+// Mağazanın gerçek ürünü yoksa (ör. hiç ürün eklenmemişse) gösterilecek
+// yedek örnekler.
+const SHOWCASE_PRODUCTS: ShowcaseProduct[] = [
+  { name: "Ürün adı", price: 1299, inStock: true },
+  { name: "Ürün adı", price: 2490, inStock: true },
+  { name: "Ürün adı", price: 899, inStock: true },
+  { name: "Ürün adı", price: 149, inStock: false },
 ];
 
 function ShowcaseProductCard({
@@ -24,7 +34,7 @@ function ShowcaseProductCard({
   dense,
 }: {
   theme: ReturnType<typeof getStorefrontTheme>;
-  product: (typeof SHOWCASE_PRODUCTS)[number];
+  product: ShowcaseProduct;
   dense?: boolean;
 }) {
   return (
@@ -35,15 +45,22 @@ function ShowcaseProductCard({
         "hover:translate-y-0 hover:shadow-none",
       )}
     >
-      <div className={cn(theme.productImageWrap, "relative aspect-square")}>
-        <div className="flex h-full items-center justify-center">
-          <Store className={cn(dense ? "size-5" : "size-7", theme.logoPlaceholder)} />
-        </div>
+      <div className={cn(theme.productImageWrap, "relative aspect-square overflow-hidden")}>
+        {product.imageUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element -- küçük önizleme, next/image gerekmez
+          <img src={product.imageUrl} alt="" className="h-full w-full object-cover" loading="lazy" />
+        ) : (
+          <div className="flex h-full items-center justify-center">
+            <Store className={cn(dense ? "size-5" : "size-7", theme.logoPlaceholder)} />
+          </div>
+        )}
       </div>
       <div className={cn("space-y-1", dense ? "p-2" : "p-2.5")}>
-        <p className={cn("font-extrabold", dense ? "text-[11px]" : "text-sm", theme.productPrice)}>
-          {formatCurrency(product.price, "TRY")}
-        </p>
+        {product.price != null ? (
+          <p className={cn("font-extrabold", dense ? "text-[11px]" : "text-sm", theme.productPrice)}>
+            {formatCurrency(product.price, (product.currency ?? "TRY") as "TRY" | "USD" | "EUR")}
+          </p>
+        ) : null}
         <p
           className={cn(
             "line-clamp-1 font-semibold",
@@ -379,11 +396,13 @@ function ShowcaseBody({
   layout,
   variant,
   heroStyleKey,
+  items,
 }: {
   theme: ReturnType<typeof getStorefrontTheme>;
   layout: ReturnType<typeof getStorefrontLayout>;
   variant: "desktop" | "mobile";
   heroStyleKey: StorefrontHeroStyleKey;
+  items: ShowcaseProduct[];
 }) {
   const showSidebar = variant === "desktop" && layout.categoryNav === "sidebar";
   const gridCols =
@@ -392,10 +411,9 @@ function ShowcaseBody({
         ? "grid grid-cols-3 gap-2.5"
         : "grid grid-cols-4 gap-2.5"
       : "grid grid-cols-2 gap-2";
-  const products =
-    variant === "desktop" && !showSidebar
-      ? [...SHOWCASE_PRODUCTS, ...SHOWCASE_PRODUCTS].slice(0, 8)
-      : SHOWCASE_PRODUCTS;
+  const pool = items.length ? items : SHOWCASE_PRODUCTS;
+  const need = variant === "desktop" ? (showSidebar ? 6 : 6) : 4;
+  const products = Array.from({ length: need }, (_, i) => pool[i % pool.length]);
 
   const grid = (
     <div className={gridCols}>
@@ -472,6 +490,7 @@ export function StorefrontThemeShowcase({
   logoUrl,
   brandPrimaryColor,
   brandAccentColor,
+  products,
 }: {
   themeKey: StorefrontThemeKey;
   layoutKey?: StorefrontLayoutKey;
@@ -482,6 +501,7 @@ export function StorefrontThemeShowcase({
   logoUrl?: string | null;
   brandPrimaryColor?: string | null;
   brandAccentColor?: string | null;
+  products?: ShowcaseProduct[];
 }) {
   const theme = applyBrandColorOverrides(getStorefrontTheme(themeKey), {
     brand_primary_color: brandPrimaryColor ?? null,
@@ -489,6 +509,7 @@ export function StorefrontThemeShowcase({
   });
   const layout = getStorefrontLayout(layoutKey);
   const title = storefrontTitle?.trim() || "Mağaza Adı";
+  const items = products && products.length ? products : SHOWCASE_PRODUCTS;
 
   return (
     <div className="grid gap-6 xl:grid-cols-[minmax(0,1.5fr)_minmax(0,0.9fr)] xl:items-start">
@@ -505,7 +526,7 @@ export function StorefrontThemeShowcase({
               variant="desktop"
               headerStyleKey={headerStyleKey}
             />
-            <ShowcaseBody theme={theme} layout={layout} variant="desktop" heroStyleKey={heroStyleKey} />
+            <ShowcaseBody theme={theme} layout={layout} variant="desktop" heroStyleKey={heroStyleKey} items={items} />
             <ShowcaseFooter theme={theme} footerStyleKey={footerStyleKey} variant="desktop" />
           </div>
         </DesktopFrame>
@@ -524,7 +545,7 @@ export function StorefrontThemeShowcase({
               variant="mobile"
               headerStyleKey={headerStyleKey}
             />
-            <ShowcaseBody theme={theme} layout={layout} variant="mobile" heroStyleKey={heroStyleKey} />
+            <ShowcaseBody theme={theme} layout={layout} variant="mobile" heroStyleKey={heroStyleKey} items={items} />
             <ShowcaseFooter theme={theme} footerStyleKey={footerStyleKey} variant="mobile" />
           </div>
         </MobileFrame>
