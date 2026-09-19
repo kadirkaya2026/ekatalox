@@ -1,6 +1,7 @@
 import { Header } from "@/components/dashboard/header";
 import { TenantCampaignsForm } from "@/components/dashboard/tenant-campaigns-form";
 import { TenantPushBroadcastCard } from "@/components/dashboard/tenant-push-broadcast-card";
+import { SettingsTabShell } from "@/components/dashboard/settings-tab-shell";
 import { requireTenantAdminPage } from "@/lib/auth/session";
 import { getTenantCategories, getTenantPriceLists } from "@/lib/data";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
@@ -42,12 +43,28 @@ export default async function TenantCampaignsSettingsPage() {
         description="Müşterilerinize bildirim gönderin ve mağazanızdaki Kampanyalar bölümünde görünecek kartları yönetin. Bildirim açan müşterilere kampanya ve indirim duyurusu gönderebilir, sepet tutarına bağlı otomatik indirim tanımlayabilirsiniz."
       />
 
-      <TenantPushBroadcastCard priceLists={priceLists} categories={categories} inviteUrl={`${getTenantStorefrontOrigin(session.tenant!)}/bildirim`} />
-
-      <TenantCampaignsForm
-        initialCampaigns={campaigns}
-        categories={categories}
-        businessType={session.tenant!.business_type}
+      <SettingsTabShell
+        layoutId="campaign-settings-tabs"
+        tabs={[
+          { key: "push", label: "Müşterilere bildirim gönder" },
+          { key: "cards", label: "Kampanya kartları" },
+        ]}
+        panels={{
+          push: (
+            <TenantPushBroadcastCard
+              priceLists={priceLists}
+              categories={categories}
+              inviteUrl={`${getTenantStorefrontOrigin(session.tenant!)}/bildirim`}
+            />
+          ),
+          cards: (
+            <TenantCampaignsForm
+              initialCampaigns={campaigns}
+              categories={categories}
+              businessType={session.tenant!.business_type}
+            />
+          ),
+        }}
       />
     </div>
   );
