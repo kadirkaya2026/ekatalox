@@ -4,6 +4,7 @@ import { TenantThemeForm } from "@/components/dashboard/tenant-theme-form";
 import { requireTenantAdminPage } from "@/lib/auth/session";
 import { getTenantProducts, getTenantStorefrontSettings } from "@/lib/data";
 import type { EsnafThemeKey } from "@/lib/storefront/esnaf-themes";
+import { appEnv } from "@/lib/env";
 
 export default async function TenantThemeSettingsPage() {
   const session = await requireTenantAdminPage();
@@ -35,6 +36,7 @@ export default async function TenantThemeSettingsPage() {
           tenantPlan={tenant.plan ?? "baslangic"}
           companyName={tenant.company_name}
           previewProducts={previewProducts}
+          previewUrl={`https://${tenant.subdomain}.${appEnv.rootDomain}/?preview=1`}
         />
       </div>
     );

@@ -130,6 +130,13 @@ async function maybeRedirectStorefrontRequest(params: {
     return null;
   }
 
+  // Panel içi tema önizlemesi (?preview=1) ekatalox alt alan adından iframe'le
+  // açılır; custom domain'e yönlendirilirse aynı-site çerezi çalışmaz. Kapı
+  // ve yetki değişmez, yalnız bu kanonik yönlendirme atlanır.
+  if (params.request.nextUrl.searchParams.get("preview") === "1") {
+    return null;
+  }
+
   const subdomain = params.hostResolution.subdomain;
   const tenant = await cachedTenantLookup(`subdomain:${subdomain}`, () =>
     getStorefrontTenant(subdomain),

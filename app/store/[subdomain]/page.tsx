@@ -86,8 +86,28 @@ export async function generateMetadata(
   };
 }
 
+// Panelden tema önizlemesi (?preview=1): kaydedilmemiş tema seçimini URL'den
+// alıp görünüm ayarlarının üstüne yazar. Yalnız görsel; şifre kapısı, fiyat
+// listesi ve yetki kontrolleri aynen uygulanır (bayi iframe'de şifresini girer).
+function applyPreviewOverrides<T extends object>(
+  settings: T,
+  sp: Record<string, string | string[] | undefined>,
+): T {
+  const str = (k: string) => (typeof sp[k] === "string" && sp[k] ? (sp[k] as string) : null);
+  const o: Record<string, string> = {};
+  if (str("theme")) o.theme_key = str("theme")!;
+  if (str("layout")) o.layout_key = str("layout")!;
+  if (str("header")) o.header_style_key = str("header")!;
+  if (str("footer")) o.footer_style_key = str("footer")!;
+  if (str("bp")) o.brand_primary_color = str("bp")!;
+  if (str("ba")) o.brand_accent_color = str("ba")!;
+  return { ...settings, ...o } as T;
+}
+
 export default async function StorefrontPage(props: PageProps<"/store/[subdomain]">) {
   const { subdomain } = await props.params;
+  const searchParams = ((await props.searchParams) ?? {}) as Record<string, string | string[] | undefined>;
+  const isPreview = searchParams.preview === "1";
   const tenant = await getStorefrontTenant(subdomain);
 
   if (!tenant) {
@@ -261,7 +281,8 @@ export default async function StorefrontPage(props: PageProps<"/store/[subdomain
   // Süresi geçmiş/pasif kampanyalar getStorefrontCampaigns içinde süzülüyor.
   const campaigns = await getStorefrontCampaigns(tenant.id);
 
-  const footerVisible = storefrontSettings.is_footer_visible;
+  const viewSettings = isPreview ? applyPreviewOverrides(storefrontSettings, searchParams) : storefrontSettings;
+  const footerVisible = viewSettings.is_footer_visible;
   const headersList = await headers();
   const requestHost = getRequestHostFromHeaders(headersList);
   // Boş bırakılırsa altbilgi "©2026 eKatalox" bağlantısı basıyor.
@@ -270,12 +291,12 @@ export default async function StorefrontPage(props: PageProps<"/store/[subdomain
   // adı olmasa da bayinin kendi adı yazılıyor.
   const copyrightTenantName =
     isTenantCustomDomainHost(requestHost, tenant) || isMarketOrTekelTenant(tenant)
-      ? (tenant.company_name ?? storefrontSettings.storefront_title ?? null)
+      ? (tenant.company_name ?? viewSettings.storefront_title ?? null)
       : null;
 
   return (
     <StorefrontPageShell
-      storefrontSettings={storefrontSettings}
+      storefrontSettings={viewSettings}
       subdomain={subdomain}
       hidePoweredBy={isWhiteLabelStorefront(tenant)}
       pickupWording={Boolean(tenant.is_tekel)}
@@ -291,7 +312,7 @@ export default async function StorefrontPage(props: PageProps<"/store/[subdomain
         bestSellerProducts={bestSellerProducts}
         recommendationPool={recommendationPool}
         categoryRepresentativeImages={categoryRepresentativeImages}
-        storefrontSettings={storefrontSettings}
+        storefrontSettings={viewSettings}
         sections={sections}
         subdomain={subdomain}
         campaigns={campaigns}
@@ -300,7 +321,7 @@ export default async function StorefrontPage(props: PageProps<"/store/[subdomain
       />
       {footerVisible ? (
         <StorefrontFooter
-          settings={storefrontSettings}
+          settings={viewSettings}
           copyrightTenantName={copyrightTenantName}
           hasBottomNav={isMarketOrTekelTenant(tenant)}
         />

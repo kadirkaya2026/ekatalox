@@ -123,11 +123,13 @@ export function TenantThemeForm({
   tenantPlan,
   companyName,
   previewProducts,
+  previewUrl,
 }: {
   initialStorefrontSettings: TenantStorefrontSettings;
   tenantPlan: TenantPlan;
   companyName: string;
   previewProducts?: ShowcaseProduct[];
+  previewUrl?: string;
 }) {
   const [form, setForm] = useState<ThemeFormState>(
     toThemeFormState(initialStorefrontSettings),
@@ -143,6 +145,10 @@ export function TenantThemeForm({
 
   const previewTitle = initialStorefrontSettings.storefront_title ?? "";
   const previewLogoUrl = initialStorefrontSettings.logo_url;
+  // Canlı önizleme adresi: gerçek mağaza + seçili (kaydedilmemiş) tema.
+  const livePreviewSrc = previewUrl
+    ? `${previewUrl}&theme=${encodeURIComponent(form.theme_key)}&layout=${encodeURIComponent(form.layout_key)}&header=${encodeURIComponent(form.header_style_key)}&footer=${encodeURIComponent(form.footer_style_key)}${form.brand_primary_color ? `&bp=${encodeURIComponent(form.brand_primary_color)}` : ""}${form.brand_accent_color ? `&ba=${encodeURIComponent(form.brand_accent_color)}` : ""}`
+    : "";
 
   function updateField<K extends keyof ThemeFormState>(key: K, value: ThemeFormState[K]) {
     setForm((current) => ({ ...current, [key]: value }));
@@ -481,18 +487,31 @@ export function TenantThemeForm({
                     Seçili temanın önizlemesi
                   </h3>
                   <p className="mt-1 mb-4 text-sm text-slate-600">
-                    Mağazanız, seçtiğiniz temayla masaüstünde ve mobilde müşterilerinize böyle
-                    görünecek.
+                    Bu, mağazanızın gerçek hali: seçtiğiniz tema anında uygulanır. Şifre sorarsa
+                    mağaza şifrenizi bir kez girin.
                   </p>
-                  <StorefrontThemeShowcase
-                    themeKey={form.theme_key}
-                    layoutKey={form.layout_key}
-                    storefrontTitle={previewTitle}
-                    logoUrl={previewLogoUrl}
-                    brandPrimaryColor={form.brand_primary_color || null}
-                    brandAccentColor={form.brand_accent_color || null}
-                    products={previewProducts}
-                  />
+                  {previewUrl ? (
+                    <div className="overflow-hidden rounded-2xl border border-slate-200 bg-slate-50">
+                      <iframe
+                        key={livePreviewSrc}
+                        src={livePreviewSrc}
+                        title="Mağaza canlı önizleme"
+                        className="block h-[720px] w-full bg-white"
+                        loading="lazy"
+                        sandbox="allow-same-origin allow-scripts allow-forms"
+                      />
+                    </div>
+                  ) : (
+                    <StorefrontThemeShowcase
+                      themeKey={form.theme_key}
+                      layoutKey={form.layout_key}
+                      storefrontTitle={previewTitle}
+                      logoUrl={previewLogoUrl}
+                      brandPrimaryColor={form.brand_primary_color || null}
+                      brandAccentColor={form.brand_accent_color || null}
+                      products={previewProducts}
+                    />
+                  )}
                 </div>
               </div>
             ) : null}
