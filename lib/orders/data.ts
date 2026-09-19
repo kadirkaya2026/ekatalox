@@ -1,6 +1,7 @@
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import type { OrderStatus, OrderStatusEvent, StorefrontOrder } from "@/lib/types";
 import { ORDER_STATUSES } from "@/lib/orders/status";
+import { getIstanbulToday } from "@/lib/dates/istanbul";
 
 // Sipariş listesi/detayı — bayi paneli. Tüm sorgular tenant_id ile sınırlı;
 // tarih aralığı Europe/Istanbul takvim günü olarak yorumlanır.
@@ -169,4 +170,33 @@ export async function getOrderByTrackingToken(token: string) {
     .eq("order_id", order.id)
     .order("created_at", { ascending: true });
   return { order: order as StorefrontOrder, events: (events ?? []) as OrderStatusEvent[] };
+}
+
+// Genel Bakış kartları: bugün oluşturulan sipariş (PDF) sayısı ve toplam tutarı.
+// Her sipariş bir PDF demektir. İptaller tutara katılmaz ama sayıya katılır
+// (PDF yine oluşturulmuştur). Karışık para birimi olursa tutarlar toplanır
+// (çoğu bayi tek para birimi kullanır).
+export async function getTenantTodayOrderSummary(
+  tenantId: string,
+): Promise<{ count: number; totalAmount: number; currency: string }> {
+  const supabase = createSupabaseAdminClient();
+  if (!supabase) return { count: 0, totalAmount: 0, currency: "TRY" };
+  const today = getIstanbulToday();
+  const { data } = await supabase
+    .from("orders")
+    .select("total_amount, currency, status")
+    .eq("tenant_id", tenantId)
+    .gte("created_at", istanbulDayStart(today))
+    .lte("created_at", istanbulDayEnd(today));
+  const rows = data ?? [];
+  let totalAmount = 0;
+  const currencyCounts = new Map<string, number>();
+  for (const r of rows) {
+    const cur = (r.currency as string) || "TRY";
+    currencyCounts.set(cur, (currencyCounts.get(cur) ?? 0) + 1);
+    if (r.status !== "cancelled") totalAmount += Number(r.total_amount) || 0;
+  }
+  const currency =
+    [...currencyCounts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? "TRY";
+  return { count: rows.length, totalAmount, currency };
 }
