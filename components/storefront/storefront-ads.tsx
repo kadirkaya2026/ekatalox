@@ -66,13 +66,12 @@ export function StorefrontAdProductCard({ ads, subdomain, compact = false }: AdP
         href={href}
         target="_blank"
         rel="noopener noreferrer"
-        className="flex items-center gap-3 rounded-xl border border-dashed border-emerald-300 bg-emerald-50/60 px-3 py-2 text-slate-800 dark:border-emerald-700 dark:bg-emerald-950/30 dark:text-slate-100"
+        className="flex items-center gap-3 rounded-xl border border-dashed border-emerald-300 bg-emerald-50/60 px-3 py-2 text-slate-800"
       >
-        <EkataloxLogo variant="light" alt="eKatalox" className="h-4 w-[70px] shrink-0 dark:hidden" />
-        <EkataloxLogo variant="dark" alt="eKatalox" className="hidden h-4 w-[70px] shrink-0 dark:block" />
+        <EkataloxLogo variant="light" alt="eKatalox" className="h-4 w-[70px] shrink-0" />
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-semibold">{ads.product_card.title}</p>
-          <p className="truncate text-xs text-slate-600 dark:text-slate-300">{ads.product_card.text}</p>
+          <p className="truncate text-xs text-slate-600">{ads.product_card.text}</p>
         </div>
         <span className="shrink-0 rounded-full bg-emerald-600 px-3 py-1 text-xs font-semibold text-white">
           {ads.product_card.cta_label}
@@ -86,18 +85,17 @@ export function StorefrontAdProductCard({ ads, subdomain, compact = false }: AdP
       href={href}
       target="_blank"
       rel="noopener noreferrer"
-      className="flex h-full min-h-[220px] flex-col justify-between rounded-2xl border border-dashed border-emerald-300 bg-gradient-to-br from-emerald-50 to-white p-4 text-slate-800 transition hover:border-emerald-400 hover:shadow-md dark:border-emerald-700 dark:from-emerald-950/40 dark:to-slate-900 dark:text-slate-100"
+      className="flex h-full min-h-[220px] flex-col justify-between rounded-2xl border border-dashed border-emerald-300 bg-gradient-to-br from-emerald-50 to-white p-4 text-slate-800 transition hover:border-emerald-400 hover:shadow-md"
     >
       <div>
         <div className="flex items-center justify-between">
-          <EkataloxLogo variant="light" alt="eKatalox" className="h-4 w-[70px] dark:hidden" />
-          <EkataloxLogo variant="dark" alt="eKatalox" className="hidden h-4 w-[70px] dark:block" />
-          <span className="rounded bg-slate-200 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-slate-600 dark:bg-slate-700 dark:text-slate-300">
+          <EkataloxLogo variant="light" alt="eKatalox" className="h-4 w-[70px]" />
+          <span className="rounded bg-slate-200 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-slate-600">
             Reklam
           </span>
         </div>
         <p className="mt-4 text-base font-semibold leading-snug">{ads.product_card.title}</p>
-        <p className="mt-2 text-sm leading-relaxed text-slate-600 dark:text-slate-300">{ads.product_card.text}</p>
+        <p className="mt-2 text-sm leading-relaxed text-slate-600">{ads.product_card.text}</p>
       </div>
       <span className="mt-4 inline-flex w-full items-center justify-center rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white">
         {ads.product_card.cta_label}
@@ -120,14 +118,13 @@ export function StorefrontAdInline({
   return (
     <div
       className={cn(
-        "rounded-xl border border-slate-200 bg-slate-50 p-3 text-slate-700 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-200",
+        "rounded-xl border border-slate-200 bg-slate-50 p-3 text-slate-700",
         placement === "password_gate" ? "mx-auto mt-6 w-full max-w-md" : "mt-4",
       )}
     >
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
-          <EkataloxLogo variant="light" alt="eKatalox" className="h-3.5 w-[62px] dark:hidden" />
-          <EkataloxLogo variant="dark" alt="eKatalox" className="hidden h-3.5 w-[62px] dark:block" />
+          <EkataloxLogo variant="light" alt="eKatalox" className="h-3.5 w-[62px]" />
           <span className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">{title}</span>
         </div>
       </div>
@@ -137,7 +134,7 @@ export function StorefrontAdInline({
           href={href}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 hover:underline dark:text-emerald-300"
+          className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 hover:underline"
         >
           {block.cta_label} <ExternalLink className="size-3" />
         </a>
@@ -211,14 +208,13 @@ export function StorefrontAdPopup({ ads, subdomain, suspended = false }: AdProps
       onClick={() => setOpen(false)}
     >
       <div
-        className="w-full max-w-sm rounded-2xl bg-white p-5 text-slate-800 shadow-2xl dark:bg-slate-900 dark:text-slate-100"
+        className="w-full max-w-sm rounded-2xl bg-white p-5 text-slate-800 shadow-2xl"
         onClick={(event) => event.stopPropagation()}
       >
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <EkataloxLogo variant="light" alt="eKatalox" className="h-4 w-[70px] dark:hidden" />
-            <EkataloxLogo variant="dark" alt="eKatalox" className="hidden h-4 w-[70px] dark:block" />
-            <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+            <EkataloxLogo variant="light" alt="eKatalox" className="h-4 w-[70px]" />
+            <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-slate-500">
               Reklam
             </span>
           </div>
@@ -226,13 +222,13 @@ export function StorefrontAdPopup({ ads, subdomain, suspended = false }: AdProps
             type="button"
             onClick={() => setOpen(false)}
             aria-label="Kapat"
-            className="rounded-full p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800"
+            className="rounded-full p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
           >
             <X className="size-4" />
           </button>
         </div>
         <p className="mt-4 text-lg font-semibold leading-snug">{ads.popup.title}</p>
-        <p className="mt-2 text-sm leading-relaxed text-slate-600 dark:text-slate-300">{ads.popup.text}</p>
+        <p className="mt-2 text-sm leading-relaxed text-slate-600">{ads.popup.text}</p>
         <a
           href={buildStorefrontAdHref(ads.cta_url, "popup", subdomain)}
           target="_blank"
@@ -244,7 +240,7 @@ export function StorefrontAdPopup({ ads, subdomain, suspended = false }: AdProps
         <button
           type="button"
           onClick={() => setOpen(false)}
-          className="mt-2 w-full py-1.5 text-xs text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
+          className="mt-2 w-full py-1.5 text-xs text-slate-500 hover:text-slate-700"
         >
           Kataloğa devam et
         </button>
