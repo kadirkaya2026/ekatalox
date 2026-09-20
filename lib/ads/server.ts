@@ -1,4 +1,4 @@
-import { cache } from "react";
+import { revalidateTag, unstable_cache } from "next/cache";
 import { planShowsStorefrontAds } from "@/lib/billing/plans";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import type { Tenant } from "@/lib/types";
@@ -9,25 +9,37 @@ import {
   type StorefrontAdsConfig,
 } from "@/lib/ads/config";
 
+export const STOREFRONT_ADS_CACHE_TAG = "platform_storefront_ads";
+
 // platform_settings tablosu (0125) henüz uygulanmadıysa ya da satır yoksa
 // sessizce varsayılana düşer — vitrin hiçbir zaman bu yüzden çökmemeli.
-export const getStorefrontAdsConfig = cache(async function getStorefrontAdsConfig(): Promise<StorefrontAdsConfig> {
-  const supabase = createSupabaseAdminClient();
-  if (!supabase) return DEFAULT_STOREFRONT_ADS_CONFIG;
+// unstable_cache şart: şifre ekranı (/gate) statik/ISR üretilir, orada
+// önbelleksiz sorgu 500 veriyordu. Kayıtta tag ile tazelenir.
+const readStorefrontAdsConfig = unstable_cache(
+  async (): Promise<StorefrontAdsConfig> => {
+    const supabase = createSupabaseAdminClient();
+    if (!supabase) return DEFAULT_STOREFRONT_ADS_CONFIG;
 
-  try {
-    const { data, error } = await supabase
-      .from("platform_settings")
-      .select("value")
-      .eq("key", STOREFRONT_ADS_SETTINGS_KEY)
-      .maybeSingle();
+    try {
+      const { data, error } = await supabase
+        .from("platform_settings")
+        .select("value")
+        .eq("key", STOREFRONT_ADS_SETTINGS_KEY)
+        .maybeSingle();
 
-    if (error || !data) return DEFAULT_STOREFRONT_ADS_CONFIG;
-    return normalizeStorefrontAdsConfig(data.value);
-  } catch {
-    return DEFAULT_STOREFRONT_ADS_CONFIG;
-  }
-});
+      if (error || !data) return DEFAULT_STOREFRONT_ADS_CONFIG;
+      return normalizeStorefrontAdsConfig(data.value);
+    } catch {
+      return DEFAULT_STOREFRONT_ADS_CONFIG;
+    }
+  },
+  ["platform-storefront-ads"],
+  { revalidate: 300, tags: [STOREFRONT_ADS_CACHE_TAG] },
+);
+
+export async function getStorefrontAdsConfig(): Promise<StorefrontAdsConfig> {
+  return readStorefrontAdsConfig();
+}
 
 export async function saveStorefrontAdsConfig(
   config: StorefrontAdsConfig,
@@ -55,6 +67,7 @@ export async function saveStorefrontAdsConfig(
         : error.message,
     };
   }
+  revalidateTag(STOREFRONT_ADS_CACHE_TAG, "max");
   return { ok: true };
 }
 
