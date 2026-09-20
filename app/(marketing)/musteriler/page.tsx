@@ -24,7 +24,7 @@ export default function CustomersPage() {
               <ButtonLink href="/basvuru" tone="outline">Ücretsiz kur</ButtonLink>
             </div>
           </div>
-          <PhoneFrame src="/site/toptan-hero-iphone.png" alt="Örnek toptan katalog, telefon görünümü" priority />
+          <PhoneFrame src="/site/toptan-hero-iphone-v2.png" alt="Örnek toptan katalog, telefon görünümü" priority />
         </Container>
       </Section>
       <Section>

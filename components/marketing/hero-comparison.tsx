@@ -41,7 +41,7 @@ export function HeroComparison() {
       <div className="shrink-0">
         <div className="rounded-[13.5%/6.5%] shadow-[0_0_60px_-8px_rgba(34,197,94,0.35)]">
           <PhoneFrame
-            src="/site/toptan-hero-iphone.png"
+            src="/site/toptan-hero-iphone-v2.png"
             alt="Demo toptan kataloğunun gerçek ekran görüntüsü"
             priority
             className="w-[220px] sm:w-[240px]"
