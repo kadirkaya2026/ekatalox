@@ -15,6 +15,7 @@ import {
   isMarketOrTekelTenant,
   isWhiteLabelStorefront,
 } from "@/lib/storefront/white-label";
+import { resolveStorefrontAds } from "@/lib/ads/server";
 import { StorefrontClient } from "@/components/storefront/storefront-client";
 import { StorefrontFooter } from "@/components/storefront/storefront-footer";
 import { StorefrontSectionBreadcrumb } from "@/components/storefront/storefront-section-breadcrumb";
@@ -120,19 +121,24 @@ export default async function SectionDetailPage(props: {
       );
     }
 
-    const settings = await getTenantStorefrontSettings(tenant.id);
+    const [settings, ads] = await Promise.all([
+      getTenantStorefrontSettings(tenant.id),
+      resolveStorefrontAds(tenant),
+    ]);
 
     return (
       <StorefrontPageShell
         storefrontSettings={settings}
         subdomain={subdomain}
         hidePoweredBy={isWhiteLabelStorefront(tenant)}
+        ads={ads}
       >
         <PasswordGate
           subdomain={subdomain}
           companyName={tenant.company_name}
           themeKey={settings.theme_key}
           isThemeToggleVisible={settings.is_theme_toggle_visible}
+          ads={ads}
         />
       </StorefrontPageShell>
     );
@@ -174,6 +180,8 @@ export default async function SectionDetailPage(props: {
       ? (tenant.company_name ?? storefrontSettings.storefront_title ?? null)
       : null;
 
+  const ads = await resolveStorefrontAds(tenant);
+
   return (
     <StorefrontPageShell
       storefrontSettings={storefrontSettings}
@@ -181,6 +189,7 @@ export default async function SectionDetailPage(props: {
       hidePoweredBy={isWhiteLabelStorefront(tenant)}
       pickupWording={Boolean(tenant.is_tekel)}
       className={footerVisible ? "pb-0" : undefined}
+      ads={ads}
     >
       <div className="container-shell py-4">
         <StorefrontSectionBreadcrumb
@@ -191,6 +200,7 @@ export default async function SectionDetailPage(props: {
 
       <StorefrontClient
         tenant={tenant}
+        ads={ads}
         categories={categories}
         initialProducts={sectionProducts}
         initialProductTotal={sectionProducts.length}

@@ -17,6 +17,7 @@ import {
 
   Lightbulb,
   Magnet,
+  Megaphone,
   MapPin,
 
   PackagePlus,
@@ -178,6 +179,7 @@ const adminLinks: SidebarLink[] = [
   { href: "/product-suggestions", label: "Ürün Önerileri", icon: PackagePlus },
   { href: "/basvurular", label: "Başvurular", icon: ClipboardList },
   { href: "/kuponlar", label: "Kuponlar", icon: Ticket },
+  { href: "/reklamlar", label: "eKatalox Reklamları", icon: Megaphone },
   { href: "/ziyaretciler", label: "Ziyaretçi Analitiği", icon: BarChart3 },
   { href: "/logs", label: "Giriş Logları", icon: ScrollText },
 ];

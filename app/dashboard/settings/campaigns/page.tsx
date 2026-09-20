@@ -2,6 +2,7 @@ import { Header } from "@/components/dashboard/header";
 import { TenantCampaignsForm } from "@/components/dashboard/tenant-campaigns-form";
 import { TenantPushBroadcastCard } from "@/components/dashboard/tenant-push-broadcast-card";
 import { SettingsTabShell } from "@/components/dashboard/settings-tab-shell";
+import { PlanFeatureGate } from "@/components/dashboard/plan-feature-gate";
 import { requireTenantAdminPage } from "@/lib/auth/session";
 import { getTenantCategories, getTenantPriceLists } from "@/lib/data";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
@@ -51,11 +52,17 @@ export default async function TenantCampaignsSettingsPage() {
         ]}
         panels={{
           push: (
-            <TenantPushBroadcastCard
-              priceLists={priceLists}
-              categories={categories}
-              inviteUrl={`${getTenantStorefrontOrigin(session.tenant!)}/bildirim`}
-            />
+            <PlanFeatureGate
+              feature="push_notifications"
+              plan={session.tenant!.plan}
+              companyName={session.tenant!.company_name}
+            >
+              <TenantPushBroadcastCard
+                priceLists={priceLists}
+                categories={categories}
+                inviteUrl={`${getTenantStorefrontOrigin(session.tenant!)}/bildirim`}
+              />
+            </PlanFeatureGate>
           ),
           cards: (
             <TenantCampaignsForm

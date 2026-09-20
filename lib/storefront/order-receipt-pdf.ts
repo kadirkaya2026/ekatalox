@@ -32,6 +32,9 @@ export interface GenerateOrderReceiptPdfParams {
   paymentMethodLabel: string | null;
   note?: string | null;
   catalogMode?: boolean;
+  // Ücretsiz plan: fişin en altında eKatalox reklam satırı ("#" kullanma,
+  // alt kümelenmiş fontta glif yok). Bkz. lib/ads/config.ts order_footer.
+  footerLine?: string | null;
 }
 
 const PDF_FONT = "Roboto";
@@ -357,7 +360,10 @@ export async function generateOrderReceiptPdf(
     "Bu Fiş 24 Saat Sonra Sistemden Silinecektir. Kaydetmeyi Unutmayın!";
   const footerY = pageHeight - margin;
 
-  if (cursorY > footerY - 8) {
+  const adLine = params.footerLine?.replace(/#/g, "").trim() ?? "";
+  const reservedFooter = adLine ? 14 : 8;
+
+  if (cursorY > footerY - reservedFooter) {
     doc.addPage();
   }
 
@@ -366,6 +372,13 @@ export async function generateOrderReceiptPdf(
   doc.setFontSize(PDF_FONT_SIZE.footer);
   doc.text(footerWarning, pageWidth / 2, footerY, { align: "center" });
   doc.setTextColor(15, 23, 42);
+
+  if (adLine) {
+    doc.setTextColor(100, 116, 139);
+    doc.setFontSize(9);
+    doc.text(adLine, pageWidth / 2, footerY + 5, { align: "center" });
+    doc.setTextColor(15, 23, 42);
+  }
 
   const pdfOutput = doc.output("arraybuffer");
   return new Uint8Array(pdfOutput);

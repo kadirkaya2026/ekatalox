@@ -29,6 +29,7 @@ import { createShortLink } from "@/lib/storage/short-links";
 import { storefrontOrderPdfSchema } from "@/lib/validators/storefront-order-pdf";
 import { ALCOHOL_ONLINE_ORDER_ERROR } from "@/lib/products/alcohol";
 import type { CartItem } from "@/lib/types";
+import { resolveStorefrontAds } from "@/lib/ads/server";
 import {
   findMissingRequiredCartFields,
   resolveCartFormConfig,
@@ -187,6 +188,10 @@ export async function POST(request: Request) {
   // IP taşkın freni: aynı IP 10 dakikada 5'ten fazla deneme yaparsa 1 saat
   // engellenir; bayi panelden kaldırabilir/uzatabilir/süresize çevirebilir.
   const clientIp = getClientIp(request);
+  // Ücretsiz plan: fişin altına eKatalox reklam satırı (süper admin ayarı).
+  const storefrontAds = await resolveStorefrontAds(tenant);
+  const adFooterLine = storefrontAds?.order_footer.enabled ? storefrontAds.order_footer.text : null;
+
   const ipGuard = await checkOrderIpGuard(supabase, tenant.id, clientIp);
   if (ipGuard.blocked) {
     return errorResponse(requestId, ipBlockedMessage(ipGuard), 429, {
@@ -308,6 +313,7 @@ export async function POST(request: Request) {
         paymentMethodLabel: catalogPaymentMethodLabel,
         note: parsed.data.note,
         catalogMode: true,
+        footerLine: adFooterLine,
       });
 
       const securePdfId = crypto.randomUUID();
@@ -508,6 +514,7 @@ export async function POST(request: Request) {
           })
         : null,
       note: parsed.data.note,
+      footerLine: adFooterLine,
     });
 
     logOrderPdfServerEvent("info", "pdf_generated", {

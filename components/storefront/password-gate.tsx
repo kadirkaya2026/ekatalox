@@ -8,13 +8,17 @@ import { StorefrontThemeProvider, useStorefrontTheme } from "@/lib/storefront/th
 import { useStorefrontLocale } from "@/lib/storefront/locale-context";
 import { StorefrontThemeToggle } from "@/components/storefront/storefront-theme-toggle";
 import { StorefrontLanguageSwitcher } from "@/components/storefront/storefront-language-switcher";
+import { StorefrontAdInline } from "@/components/storefront/storefront-ads";
+import type { StorefrontAdsConfig } from "@/lib/ads/config";
 
 function PasswordGateForm({
   subdomain,
   companyName,
+  ads,
 }: {
   subdomain: string;
   companyName: string;
+  ads?: StorefrontAdsConfig | null;
 }) {
   const theme = useStorefrontTheme();
   const { t } = useStorefrontLocale();
@@ -70,6 +74,7 @@ function PasswordGateForm({
           </Button>
           {error ? <p className={`text-sm ${theme.gateError}`}>{error}</p> : null}
         </form>
+        {ads ? <StorefrontAdInline ads={ads} subdomain={subdomain} placement="password_gate" /> : null}
       </div>
     </div>
   );
@@ -80,11 +85,13 @@ export function PasswordGate({
   companyName,
   themeKey = "minimal",
   isThemeToggleVisible = true,
+  ads,
 }: {
   subdomain: string;
   companyName: string;
   themeKey?: StorefrontThemeKey | string;
   isThemeToggleVisible?: boolean;
+  ads?: StorefrontAdsConfig | null;
 }) {
   return (
     <StorefrontThemeProvider themeKey={themeKey}>
@@ -93,7 +100,7 @@ export function PasswordGate({
           <StorefrontLanguageSwitcher />
           {isThemeToggleVisible ? <StorefrontThemeToggle /> : null}
         </div>
-        <PasswordGateForm subdomain={subdomain} companyName={companyName} />
+        <PasswordGateForm subdomain={subdomain} companyName={companyName} ads={ads} />
       </div>
     </StorefrontThemeProvider>
   );

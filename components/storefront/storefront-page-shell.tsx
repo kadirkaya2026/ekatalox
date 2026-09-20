@@ -11,6 +11,8 @@ import { StorefrontLocaleProvider } from "@/lib/storefront/locale-context";
 import type { TenantStorefrontSettings } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { StorefrontPoweredByBar } from "@/components/storefront/storefront-powered-by-bar";
+import { StorefrontAdBottomBar } from "@/components/storefront/storefront-ads";
+import type { StorefrontAdsConfig } from "@/lib/ads/config";
 import { StorefrontThemeReset } from "@/components/storefront/storefront-theme-reset";
 
 function StorefrontPageShellInner({
@@ -19,6 +21,8 @@ function StorefrontPageShellInner({
   style,
   isThemeToggleVisible,
   hidePoweredBy,
+  ads,
+  subdomain,
   children,
 }: {
   className?: string;
@@ -26,6 +30,8 @@ function StorefrontPageShellInner({
   style?: CSSProperties;
   isThemeToggleVisible: boolean;
   hidePoweredBy?: boolean;
+  ads?: StorefrontAdsConfig | null;
+  subdomain: string;
   children: React.ReactNode;
 }) {
   const theme = useStorefrontTheme();
@@ -39,7 +45,11 @@ function StorefrontPageShellInner({
     >
       <StorefrontThemeReset isToggleVisible={isThemeToggleVisible} />
       {children}
-      {hidePoweredBy ? null : <StorefrontPoweredByBar />}
+      {ads ? (
+        <StorefrontAdBottomBar ads={ads} subdomain={subdomain} />
+      ) : hidePoweredBy ? null : (
+        <StorefrontPoweredByBar />
+      )}
     </div>
   );
 }
@@ -51,6 +61,7 @@ export function StorefrontPageShell({
   className,
   hidePoweredBy,
   pickupWording,
+  ads,
   children,
 }: {
   storefrontSettings?: Pick<
@@ -71,6 +82,9 @@ export function StorefrontPageShell({
   hidePoweredBy?: boolean;
   // Tekel vitrini: "sepet" yerine "sipariş listesi" dili (tenants.is_tekel).
   pickupWording?: boolean;
+  // Ücretsiz plan: eKatalox reklam bandı (rozetin yerine geçer, white-label'ı
+  // ezer). null/undefined = reklam yok. Bkz. lib/ads/server.ts.
+  ads?: StorefrontAdsConfig | null;
   children: React.ReactNode;
 }) {
   const resolvedThemeKey = storefrontSettings?.theme_key ?? themeKey ?? "minimal";
@@ -105,6 +119,8 @@ export function StorefrontPageShell({
           style={brandStyle}
           isThemeToggleVisible={storefrontSettings?.is_theme_toggle_visible !== false}
           hidePoweredBy={hidePoweredBy}
+          ads={ads}
+          subdomain={subdomain}
         >
           {children}
         </StorefrontPageShellInner>

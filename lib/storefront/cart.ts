@@ -784,6 +784,9 @@ export function buildWhatsAppMessage(params: {
   // hem de her siparişte WhatsApp geçmişinde kayıtlı bir "elden teslim"
   // beyanını sağlar.
   isTekel?: boolean;
+  // Ücretsiz plan: mesajın son satırı eKatalox reklamı (süper admin ayarı,
+  // bkz. lib/ads/config.ts order_footer). Ücretli planlarda geçilmez.
+  footerLine?: string | null;
 }) {
   const lines = [
     `Merhaba, ${params.tenantName} için sipariş oluşturmak istiyorum`,
@@ -814,6 +817,10 @@ export function buildWhatsAppMessage(params: {
   // trackingUrl parametresi geriye dönük uyumluluk için duruyor.
   if (params.isTekel) {
     lines.push(`🏪 Bu sipariş mağazadan elden teslim alınacaktır. Kargo/gönderi yapılmamaktadır.`);
+  }
+
+  if (params.footerLine?.trim()) {
+    lines.push("", params.footerLine.trim());
   }
 
   return lines.join("\n");

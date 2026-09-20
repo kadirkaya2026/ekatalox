@@ -49,6 +49,7 @@ import { getStorefrontHomePath } from "@/lib/storefront/paths";
 import { STOREFRONT_THEME_PRESETS } from "@/lib/storefront/theme-presets";
 import { StorefrontPreviewBar } from "@/components/storefront/storefront-preview-bar";
 import { appEnv } from "@/lib/env";
+import { resolveStorefrontAds } from "@/lib/ads/server";
 import {
   isStorefrontPriceListStateValid,
   readStorefrontPriceList,
@@ -166,19 +167,24 @@ export default async function StorefrontPage(props: PageProps<"/store/[subdomain
       );
     }
 
-    const settings = await getTenantStorefrontSettings(tenant.id);
+    const [settings, ads] = await Promise.all([
+      getTenantStorefrontSettings(tenant.id),
+      resolveStorefrontAds(tenant),
+    ]);
 
     return (
       <StorefrontPageShell
         storefrontSettings={settings}
         subdomain={subdomain}
         hidePoweredBy={isWhiteLabelStorefront(tenant)}
+        ads={ads}
       >
         <PasswordGate
           subdomain={subdomain}
           companyName={tenant.company_name}
           themeKey={settings.theme_key}
           isThemeToggleVisible={settings.is_theme_toggle_visible}
+          ads={ads}
         />
       </StorefrontPageShell>
     );
@@ -300,6 +306,7 @@ export default async function StorefrontPage(props: PageProps<"/store/[subdomain
   }
   const previewApplyHref = `https://app.${appEnv.rootDomain}/settings/theme?${applyQuery.toString()}`;
   const footerVisible = viewSettings.is_footer_visible;
+  const ads = await resolveStorefrontAds(tenant);
   const headersList = await headers();
   const requestHost = getRequestHostFromHeaders(headersList);
   // Boş bırakılırsa altbilgi "©2026 eKatalox" bağlantısı basıyor.
@@ -318,9 +325,11 @@ export default async function StorefrontPage(props: PageProps<"/store/[subdomain
       hidePoweredBy={isWhiteLabelStorefront(tenant)}
       pickupWording={Boolean(tenant.is_tekel)}
       className={footerVisible ? "pb-0" : undefined}
+      ads={ads}
     >
       <StorefrontClient
         tenant={tenant}
+        ads={ads}
         categories={categoriesForStorefront}
         initialProducts={firstPage.products}
         initialProductTotal={firstPage.total}

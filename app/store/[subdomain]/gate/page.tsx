@@ -10,6 +10,7 @@ import { StoreClosedNotice } from "@/components/storefront/store-closed-notice";
 import { StorefrontSuspendedNotice } from "@/components/storefront/storefront-suspended-notice";
 import { StorefrontPageShell } from "@/components/storefront/storefront-page-shell";
 import { buildStorefrontIcons, buildStorefrontTitle, isWhiteLabelStorefront } from "@/lib/storefront/white-label";
+import { resolveStorefrontAds } from "@/lib/ads/server";
 import { StorefrontLocaleProvider } from "@/lib/storefront/locale-context";
 import { getAppearanceFromSettings } from "@/lib/storefront/appearance";
 import { isTrialExpired } from "@/lib/billing/trial";
@@ -84,19 +85,24 @@ export default async function StorefrontGatePage(
     );
   }
 
-  const settings = await getTenantStorefrontSettings(tenant.id);
+  const [settings, ads] = await Promise.all([
+    getTenantStorefrontSettings(tenant.id),
+    resolveStorefrontAds(tenant),
+  ]);
 
   return (
     <StorefrontPageShell
         storefrontSettings={settings}
         subdomain={subdomain}
         hidePoweredBy={isWhiteLabelStorefront(tenant)}
+        ads={ads}
       >
       <PasswordGate
         subdomain={subdomain}
         companyName={tenant.company_name}
         themeKey={settings.theme_key}
         isThemeToggleVisible={settings.is_theme_toggle_visible}
+        ads={ads}
       />
     </StorefrontPageShell>
   );

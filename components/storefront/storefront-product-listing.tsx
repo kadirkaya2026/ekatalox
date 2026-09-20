@@ -6,6 +6,11 @@ import {
   StorefrontProductCard,
 } from "@/components/storefront/storefront-product-card";
 import { StorefrontProductListRow } from "@/components/storefront/storefront-product-list-row";
+import { Fragment, type ReactNode } from "react";
+
+// Ücretsiz plan: her `every` üründen sonra bir reklam kartı (bkz.
+// components/storefront/storefront-ads.tsx). Grid ve liste görünümünde aynı.
+export type StorefrontAdSlot = { every: number; card: ReactNode; row: ReactNode };
 
 export function StorefrontProductListing({
   products,
@@ -18,8 +23,10 @@ export function StorefrontProductListing({
   onIncrease,
   onDecrease,
   onOpenAddToCart,
+  adSlot,
 }: {
   products: StorefrontProduct[];
+  adSlot?: StorefrontAdSlot | null;
   cartQuantityByProductId: Map<string, number>;
   cartVariantCountByProductId: Map<string, number>;
   productCardClassName: string;
@@ -32,13 +39,16 @@ export function StorefrontProductListing({
 }) {
   const layout = useStorefrontLayout();
   const containerClass = gridClassName ?? layout.productGridClass;
+  const adEvery = adSlot && adSlot.every > 0 ? adSlot.every : 0;
+  const renderAd = (index: number, node: ReactNode) =>
+    adEvery && (index + 1) % adEvery === 0 ? <Fragment key={`ad-${index}`}>{node}</Fragment> : null;
 
   if (layout.productView === "list-row") {
     return (
       <div className={containerClass}>
-        {products.map((product) => (
+        {products.map((product, index) => (
+          <Fragment key={product.id}>
           <StorefrontProductListRow
-            key={product.id}
             product={product}
             cartQuantity={
               product.has_variants
@@ -51,6 +61,8 @@ export function StorefrontProductListing({
             onDecrease={onDecrease}
             onOpenAddToCart={onOpenAddToCart}
           />
+          {renderAd(index, adSlot?.row)}
+          </Fragment>
         ))}
       </div>
     );
@@ -58,9 +70,9 @@ export function StorefrontProductListing({
 
   return (
     <div className={containerClass}>
-      {products.map((product) => (
+      {products.map((product, index) => (
+        <Fragment key={product.id}>
         <StorefrontProductCard
-          key={product.id}
           product={product}
           cartQuantity={
             product.has_variants
@@ -75,6 +87,8 @@ export function StorefrontProductListing({
           onDecrease={onDecrease}
           onOpenAddToCart={onOpenAddToCart}
         />
+        {renderAd(index, adSlot?.card)}
+        </Fragment>
       ))}
     </div>
   );

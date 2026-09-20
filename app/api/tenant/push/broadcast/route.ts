@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSessionContext } from "@/lib/auth/session";
-import { ensureTenantAdminResponse } from "@/lib/tenancy/guards";
+import { ensureTenantAdminResponse, ensureTenantPlanFeatureResponse } from "@/lib/tenancy/guards";
 import { getTenantStorefrontSettings } from "@/lib/data";
 import {
   countTenantBroadcastSubscribers,
@@ -36,7 +36,8 @@ async function resolveTarget(
 // Serbest duyuru: "Yeni ürün geldi", "Stok azalıyor" gibi. Başlık + metin,
 // isteğe bağlı fiyat listesi filtresi (yalnız o şifreyle girenler alır).
 export async function POST(request: Request) {
-  const guard = await ensureTenantAdminResponse();
+  // Ücretsiz planda bildirim gönderme kapalı (lib/billing/plans.ts).
+  const guard = await ensureTenantPlanFeatureResponse("push_notifications");
   if (guard) return guard;
   const session = await getSessionContext();
   const tenant = session.tenant!;

@@ -132,6 +132,12 @@ import {
 import { getStorefrontLayout } from "@/lib/storefront/layouts";
 import { getNextOpening, isStoreOpenNow, type NextOpening } from "@/lib/storefront/business-hours";
 import { StoreClosedOverlay } from "@/components/storefront/store-closed-overlay";
+import {
+  StorefrontAdInline,
+  StorefrontAdPopup,
+  StorefrontAdProductCard,
+} from "@/components/storefront/storefront-ads";
+import type { StorefrontAdsConfig } from "@/lib/ads/config";
 
 function getCartStorageKey(tenantId: string) {
   return `ekatalox_cart_${tenantId}`;
@@ -951,6 +957,7 @@ export function StorefrontClient({
   hasPageFooter = false,
   isCatalogOnly = false,
   sectionMode = false,
+  ads = null,
 }: {
   tenant: Tenant;
   categories: Category[];
@@ -979,6 +986,9 @@ export function StorefrontClient({
   // kategori filtresi /api/storefront/products'a (tüm katalog) gitmemeli,
   // sadece initialProducts üzerinde istemci taraflı filtrelenmeli.
   sectionMode?: boolean;
+  // Ücretsiz plan: eKatalox reklam yerleşimleri (ürün kartı, pop-up, ürün
+  // detayı, WhatsApp mesajı). null = reklam yok. Bkz. lib/ads/server.ts.
+  ads?: StorefrontAdsConfig | null;
 }) {
   const [cart, setCart] = useState<CartItem[]>(() => {
     if (typeof window === "undefined") {
@@ -2355,9 +2365,10 @@ export function StorefrontClient({
         pdfUrl,
         trackingUrl,
         isTekel,
+        footerLine: ads?.order_footer.enabled ? ads.order_footer.text : null,
       });
     },
-    [customerReferenceName, customerAddress, customerPhone, isMarketTenant, isTekel, tenant.company_name, cartFormConfig],
+    [customerReferenceName, customerAddress, customerPhone, isMarketTenant, isTekel, tenant.company_name, cartFormConfig, ads],
   );
 
   const clearWhatsappHandoff = useCallback(() => {
@@ -3860,6 +3871,10 @@ export function StorefrontClient({
             <div className={cn("shrink-0", theme.modalSurface)}>{tabContent}</div>
           ) : null}
 
+          {ads?.product_detail.enabled ? (
+            <StorefrontAdInline ads={ads} subdomain={subdomain} placement="product_detail" />
+          ) : null}
+
           {!activePreviewTab && pairPreviewProducts.length ? (
             <div className="mt-4">
               <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.22em] text-emerald-600">
@@ -4409,6 +4424,15 @@ export function StorefrontClient({
                       onIncrease={handleIncreaseCartItem}
                       onDecrease={handleDecreaseCartItem}
                       onOpenAddToCart={handleQuickAddOrOpenModal}
+                      adSlot={
+                        ads?.product_card.enabled
+                          ? {
+                              every: ads.product_card.every_n,
+                              card: <StorefrontAdProductCard ads={ads} subdomain={subdomain} />,
+                              row: <StorefrontAdProductCard ads={ads} subdomain={subdomain} compact />,
+                            }
+                          : null
+                      }
                     />
                   ) : (
                     <Card className={cn("rounded-[2rem] border-0 p-10 text-center", theme.surfaceMuted)}>
@@ -4693,6 +4717,20 @@ export function StorefrontClient({
         isCatalogOnly={isCatalogOnly}
       />
       {renderProductPreviewModal()}
+
+      {ads?.popup.enabled ? (
+        <StorefrontAdPopup
+          ads={ads}
+          subdomain={subdomain}
+          suspended={
+            isCartOpen ||
+            Boolean(previewProduct) ||
+            isSearchSheetOpen ||
+            isCampaignsSheetOpen ||
+            Boolean(whatsappHandoff)
+          }
+        />
+      ) : null}
 
       {showBusyModal ? (
         <AnnouncementModal

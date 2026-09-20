@@ -17,6 +17,7 @@ import { getAppearanceFromSettings } from "@/lib/storefront/appearance";
 import { StorefrontLocaleProvider } from "@/lib/storefront/locale-context";
 import { readStorefrontPriceList } from "@/lib/storefront/session";
 import { buildStorefrontIcons, buildStorefrontTitle, isWhiteLabelStorefront } from "@/lib/storefront/white-label";
+import { resolveStorefrontAds } from "@/lib/ads/server";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
 type PushInvitePageProps = {
@@ -70,15 +71,18 @@ export default async function PushInvitePage(props: PushInvitePageProps) {
     if (data) invite = { name: data.subscriber_name, phone: data.subscriber_phone, subscribed: Boolean(data.subscribed_at) };
   }
 
+  const ads = await resolveStorefrontAds(tenant);
+
   const locale = (
     <StorefrontLocaleProvider subdomain={subdomain} initialLocale={settings.default_locale} pickupWording={Boolean(tenant.is_tekel)}>
       {tenant.is_password_protected && !hasSession && !invite ? (
-        <StorefrontPageShell storefrontSettings={settings} subdomain={subdomain} hidePoweredBy={isWhiteLabelStorefront(tenant)}>
+        <StorefrontPageShell storefrontSettings={settings} subdomain={subdomain} hidePoweredBy={isWhiteLabelStorefront(tenant)} ads={ads}>
           <PasswordGate
             subdomain={subdomain}
             companyName={tenant.company_name}
             themeKey={settings.theme_key}
             isThemeToggleVisible={settings.is_theme_toggle_visible}
+            ads={ads}
           />
         </StorefrontPageShell>
       ) : (
