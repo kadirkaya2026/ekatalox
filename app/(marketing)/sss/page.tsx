@@ -75,7 +75,7 @@ const GROUPS: FaqGroup[] = [
       },
       {
         q: "Kendi alan adımı kullanabilir miyim?",
-        a: "Profesyonel ve Kurumsal paketlerde. katalog.firmaniz.com gibi bir adresi kataloğunuza bağlarız; DNS ayarını adım adım anlatırız.",
+        a: "Kurumsal pakette. katalog.firmaniz.com gibi bir adresi kataloğunuza bağlarız; DNS ayarını adım adım anlatırız.",
       },
       {
         q: "Bilgisayar gerekir mi?",

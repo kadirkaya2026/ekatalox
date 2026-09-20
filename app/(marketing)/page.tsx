@@ -63,7 +63,7 @@ const FEATURES = [
   { title: "Kampanya ve öne çıkanlar", body: "Banner, kampanya kartı, indirimli ürün ve öne çıkanlar bölümü. Yeni gelen ürünü ilk sırada gösterin." },
   { title: "Bayilere bildirim", body: "Yeni ürün, stok geldi, kampanya başladı. Bildirim açan bayilerin telefonuna anında düşer." },
   { title: "Raporlar", body: "Kim ne zaman girdi, hangi ürünlere baktı, hangi ilden. Bugün kaç sipariş PDF'i oluştu." },
-  { title: "Kendi alan adınız ve temanız", body: "katalog.firmaniz.com, logonuz, renkleriniz. Hazır temalardan seçin, gerçek ürünlerinizle önizleyin." },
+  { title: "Tema ve marka görünümü", body: "Logonuz, renkleriniz. Hazır temalardan seçin, gerçek ürünlerinizle önizleyin." },
 ];
 
 const SEGMENTS = [

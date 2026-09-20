@@ -62,7 +62,7 @@ export const TOPTAN_PLANS: ToptanPlan[] = [
   {
     slug: "professional",
     name: "Profesyonel",
-    tagline: "Kendi alan adınız, bayilerinize bildirim, sınırsız fiyat listesi.",
+    tagline: "Bayilerinize anlık bildirim, ödeme ayarları, sınırsız fiyat listesi.",
     yearlyPrice: 10_000,
     featured: true,
     ads: false,
@@ -72,7 +72,6 @@ export const TOPTAN_PLANS: ToptanPlan[] = [
     features: [
       "Başlangıç paketinin tamamı",
       "2.500 ürün, sınırsız fiyat listesi",
-      "Kendi alan adınız (katalog.firmaniz.com)",
       "Bayilere anlık bildirim (yeni ürün, kampanya, stok)",
       "Ödeme ve vade ayarları",
       "Aylık 20.000 ziyaretçi",
@@ -81,7 +80,7 @@ export const TOPTAN_PLANS: ToptanPlan[] = [
   {
     slug: "corporate",
     name: "Kurumsal",
-    tagline: "Büyük katalog, satış ve kârlılık takibi, öncelikli destek.",
+    tagline: "Kendi alan adınız, satış ve kârlılık takibi, öncelikli destek.",
     yearlyPrice: 15_000,
     featured: false,
     ads: false,
@@ -91,6 +90,7 @@ export const TOPTAN_PLANS: ToptanPlan[] = [
     features: [
       "Profesyonel paketinin tamamı",
       "5.000 ürün",
+      "Kendi alan adınız (katalog.firmaniz.com)",
       "Satış ve kârlılık raporu",
       "Öncelikli destek hattı",
       "Aylık 50.000 ziyaretçi",

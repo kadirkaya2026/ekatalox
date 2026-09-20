@@ -32,7 +32,7 @@ const COMPARISON: Row[] = [
   { label: "Banner, kampanya kartı, indirim, öne çıkanlar", cells: [true, true, true, true] },
   { label: "Tema, gelişmiş görünüm, ana sayfa düzenleyici", cells: [true, true, true, true] },
   { label: "Raporlar (ziyaret, ürün, il)", cells: [false, true, true, true] },
-  { label: "Kendi alan adınız", cells: [false, false, true, true] },
+  { label: "Kendi alan adınız", cells: [false, false, false, true] },
   { label: "Bayilere bildirim gönderme", cells: [false, false, true, true] },
   { label: "Ödeme ve vade ayarları", cells: [false, false, true, true] },
   { label: "Satış ve kârlılık raporu", cells: [false, false, false, true] },

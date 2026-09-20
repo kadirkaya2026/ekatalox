@@ -176,22 +176,22 @@ export const PLAN_MARKETING_META: Record<TenantPlan, PlanMarketingMeta> = {
   },
   professional: {
     name: "Profesyonel",
-    tagline: "Kendi alan adı ve müşterilere bildirim",
+    tagline: "Müşterilere bildirim ve ödeme ayarları",
     bullets: [
       "2.500 ürüne kadar",
       "Sınırsız fiyat listesi, aylık 20.000 ziyaretçi",
-      "Özel alan adı, müşterilere bildirim, ödeme ayarları",
+      "Müşterilere bildirim, ödeme ve vade ayarları",
     ],
     featured: true,
     hidden: true,
   },
   corporate: {
     name: "Kurumsal",
-    tagline: "Satış & kârlılık ve öncelikli destek",
+    tagline: "Özel alan adı, satış & kârlılık ve öncelikli destek",
     bullets: [
       "5.000 ürüne kadar",
       "Sınırsız fiyat listesi, aylık 50.000 ziyaretçi",
-      "Satış & kârlılık raporu, öncelikli destek",
+      "Özel alan adı, satış & kârlılık raporu, öncelikli destek",
     ],
     featured: false,
     hidden: true,
@@ -292,8 +292,8 @@ export const PLAN_PRICING: Record<
   },
   free: { price: "₺0", unit: "", highlight: "eKatalox reklamlarıyla ücretsiz" },
   starter: { price: "₺5.000", unit: "/ Yıl", highlight: "Reklamsız vitrin ve raporlar" },
-  professional: { price: "₺10.000", unit: "/ Yıl", highlight: "Özel alan adı ve bildirim" },
-  corporate: { price: "₺15.000", unit: "/ Yıl", highlight: "Satış & kârlılık ve öncelikli destek" },
+  professional: { price: "₺10.000", unit: "/ Yıl", highlight: "Bayilere bildirim ve ödeme ayarları" },
+  corporate: { price: "₺15.000", unit: "/ Yıl", highlight: "Özel alan adı, satış & kârlılık" },
 };
 
 export const PLAN_PRICE_LIST_LIMITS: Record<TenantPlan, number | null> = {
@@ -391,10 +391,11 @@ const ESNAF_FEATURES: Record<PlanFeature, boolean> = {
   ad_free: true,
 };
 
-// Toptancı merdiveni (20 Eyl 2026). Ücretsiz: banner, indirim, vitrin ürünleri,
-// gelişmiş görünüm ve ana sayfa blokları AÇIK; raporlar KİLİTLİ; vitrinde
-// eKatalox reklamı var. Başlangıç: + raporlar, reklamsız. Profesyonel: + özel
-// alan adı, bildirim, ödeme ayarları. Kurumsal: + satış & kârlılık.
+// Toptancı merdiveni (20 Eyl 2026, güncelleme 21 Eyl). Ücretsiz: banner,
+// indirim, vitrin ürünleri, gelişmiş görünüm ve ana sayfa blokları AÇIK;
+// raporlar KİLİTLİ; vitrinde eKatalox reklamı var. Başlangıç: + raporlar,
+// reklamsız. Profesyonel: + bildirim, ödeme ayarları. Kurumsal: + özel alan
+// adı, satış & kârlılık (kullanıcı isteği: özel alan adı yalnız Kurumsal'da).
 const TOPTAN_FREE_FEATURES: Record<PlanFeature, boolean> = {
   reports: false,
   payment_settings: false,
@@ -418,13 +419,13 @@ const TOPTAN_STARTER_FEATURES: Record<PlanFeature, boolean> = {
 
 const TOPTAN_PROFESSIONAL_FEATURES: Record<PlanFeature, boolean> = {
   ...TOPTAN_STARTER_FEATURES,
-  custom_domain: true,
   push_notifications: true,
   payment_settings: true,
 };
 
 const TOPTAN_CORPORATE_FEATURES: Record<PlanFeature, boolean> = {
   ...TOPTAN_PROFESSIONAL_FEATURES,
+  custom_domain: true,
   sales_accounting: true,
   online_payment: true,
 };

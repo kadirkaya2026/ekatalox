@@ -88,7 +88,7 @@ const GROUPS: FeatureGroup[] = [
     features: [
       { title: "Hazır temalar ve gerçek önizleme", body: "Temayı kendi ürünlerinizle gerçek katalogda önizleyin, beğenirseniz uygulayın." },
       { title: "Gelişmiş görünüm", body: "Yazı tipi, kart stili, üst bölüm ve alt bilgi düzeni, ana sayfa blokları." },
-      { title: "Kendi alan adınız", body: "katalog.firmaniz.com ya da firmaniz.com. DNS ayarını biz anlatırız, bağlantıyı biz yaparız.", from: "Profesyonel" },
+      { title: "Kendi alan adınız", body: "katalog.firmaniz.com ya da firmaniz.com. DNS ayarını biz anlatırız, bağlantıyı biz yaparız.", from: "Kurumsal" },
       { title: "Ana ekrana ekleme", body: "Bayi kataloğu telefonuna uygulama gibi ekler; sizin logonuzla açılır, bildirim alır." },
     ],
   },
