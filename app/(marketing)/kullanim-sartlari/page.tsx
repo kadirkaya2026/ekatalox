@@ -50,7 +50,7 @@ const sections = [
     title: '5. Abonelik, Ücretlendirme ve İptal',
     body: [
       'Hizmet, /fiyatlandırma sayfasında ilan edilen paketler üzerinden yıllık veya aylık abonelik esasıyla sunulur. Fiyatlara KDV dahil değildir. Ücretler, seçilen paket ve ödeme periyoduna göre önceden tahsil edilir.',
-      '14 günlük ücretsiz deneme süresi boyunca herhangi bir ücret talep edilmez. Deneme süresi sonunda bir paket seçilmezse hesap askıya alınabilir.',
+      'Ücretsiz plan süresiz olarak ücretsizdir; karşılığında vitrinde eKatalox tanıtımları gösterilir. Ücretli paketler yıllık peşin ödenir; ödemesi yapılmayan paket talepleri açılmaz ve hesap Ücretsiz planda kalır.',
       'Aboneliğinizi dilediğiniz zaman iptal edebilirsiniz. Yıllık ödemede iptal sonrası kalan dönem için ücret iadesi yapılmaz; aylık ödemede iptal sonrası kalan günler için ayrıca ücret tahsil edilmez. İptal talepleri info@ekatalox.com üzerinden iletilir.',
       'Kredi kartı ile taksitli ödemelerde, taksit sayısına bağlı banka vade farkı uygulanabilir; bu durum ödeme ekranında ayrıca belirtilir.',
     ],

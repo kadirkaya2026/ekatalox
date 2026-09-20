@@ -1,6 +1,5 @@
 // Satış ekibine yeni self-servis kayıt bildirimi (CONTACT_RECIPIENT).
-import { formatTry } from "@/lib/billing/esnaf-plans";
-import { SECTOR_THEME_MAP } from "@/lib/storefront/esnaf-themes";
+import { formatTry, TOPTAN_SECTOR_OPTIONS } from "@/lib/billing/toptan-plans";
 import {
   button,
   dataRow,
@@ -41,16 +40,16 @@ export interface SignupNotificationParams {
 
 export function buildSignupNotificationEmail(params: SignupNotificationParams) {
   const adminUrl = `https://admin.ekatalox.com/tenants/${params.tenantId}`;
-  const sectorLabel = SECTOR_THEME_MAP[params.sector]?.label ?? params.sector;
+  const sectorLabel = TOPTAN_SECTOR_OPTIONS.find((o) => o.value === params.sector)?.label ?? params.sector;
   const periodLabel = params.billingPeriod === "yearly" ? "Yıllık" : "Aylık";
-  const fullAddress = [params.neighborhood, params.address, `${params.district} / ${params.city}`]
+  const fullAddress = [params.neighborhood, params.address, [params.district, params.city].filter(Boolean).join(" / ")]
     .filter(Boolean)
     .join(", ");
 
   const bodyHtml = [
     heading("Yeni self-servis kayıt"),
     paragraph(
-      `<strong>${params.businessName}</strong> (${sectorLabel}) kayıt formunu tamamladı ve mağazası açıldı. Ürün yükleme ve magnet kargosu için temsilci araması gerekiyor.`,
+      `<strong>${params.businessName}</strong> (${sectorLabel}) kayıt formunu tamamladı; kataloğu Ücretsiz planla açıldı. Ücretli paket talebi varsa ödeme için aranmalı; ürün yükleme desteği sorulmalı.`,
     ),
     button(adminUrl, "Admin panelinde aç"),
     subheading("İşletme"),

@@ -5,15 +5,15 @@ import { SITE } from "@/lib/marketing/site";
 
 export const metadata: Metadata = {
   title: "Yardım merkezi",
-  description: "Kurulum, sipariş alma, magnet, ödeme ve hesap konularında yardım.",
+  description: "Kurulum, ürün yükleme, bayi şifreleri, sipariş alma, paket ve hesap konularında yardım.",
 };
 
 const TOPICS = [
-  { title: "Başlarken", desc: "Başvuru, kurulum ve ilk siparişe kadar olan yol.", href: "/nasil-calisir" },
-  { title: "Sipariş alma", desc: "Sepet, WhatsApp'a düşen PDF, durum bildirimleri.", href: "/ozellikler#siparis" },
-  { title: "Magnetler", desc: "QR magnet nedir, nasıl dağıtılır, panelde ne görünür.", href: "/magnet" },
-  { title: "Paket ve ödeme", desc: "Esnaf ve Esnaf Plus, aylık/yıllık, deneme süresi.", href: "/fiyatlandirma" },
-  { title: "Sık sorulan sorular", desc: "Müşteri uygulama kullanmaz mı, ürünleri kim girer, iptal.", href: "/sss" },
+  { title: "Başlarken", desc: "Kayıt, Excel ile ürün yükleme ve ilk siparişe kadar olan yol.", href: "/nasil-calisir" },
+  { title: "Bayi şifreleri ve fiyat listeleri", desc: "Şifre nasıl verilir, kim hangi fiyatı görür.", href: "/ozellikler#katalog" },
+  { title: "Sipariş alma", desc: "Sepet, WhatsApp'a düşen PDF, sipariş formu alanları.", href: "/ozellikler#siparis" },
+  { title: "Paket ve ödeme", desc: "Ücretsiz plan, yıllık paketler, reklamlar, limitler.", href: "/fiyatlandirma" },
+  { title: "Sık sorulan sorular", desc: "Bayi uygulama indirir mi, ürünleri kim yükler, iptal.", href: "/sss" },
   { title: "Hesap", desc: "Giriş, şifre yenileme, panel adresi.", href: "/sifremi-unuttum" },
 ];
 

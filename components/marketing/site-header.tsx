@@ -4,26 +4,22 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { ChevronDown, Menu, X } from "lucide-react";
-import { NAV_LINKS } from "@/lib/marketing/site";
-import { SECTORS } from "@/lib/marketing/sectors";
+import { Menu, X } from "lucide-react";
+import { NAV_LINKS, SIGNUP_CTA } from "@/lib/marketing/site";
 import { cn } from "@/lib/utils";
 
 export function SiteHeader() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
-  const [sectorsOpen, setSectorsOpen] = useState(false);
 
   // Rota değişince mobil menüyü kapat (render sırasında, effect değil).
   const [prevPathname, setPrevPathname] = useState(pathname);
   if (pathname !== prevPathname) {
     setPrevPathname(pathname);
     setOpen(false);
-    setSectorsOpen(false);
   }
 
   const isActive = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
-  const sectorActive = SECTORS.some((s) => pathname === `/${s.slug}`);
 
   return (
     <header className="sticky top-0 z-40 border-b border-brand-line bg-white/95 backdrop-blur-sm">
@@ -33,36 +29,7 @@ export function SiteHeader() {
         </Link>
 
         <nav className="hidden items-center gap-1 lg:flex" aria-label="Ana menü">
-          <Link
-            href={NAV_LINKS[0].href}
-            className={cn("rounded-md px-3 py-2 text-sm font-medium text-brand-ink hover:bg-brand-navy-soft", isActive(NAV_LINKS[0].href) && "text-brand-green")}
-          >
-            {NAV_LINKS[0].label}
-          </Link>
-          <div className="relative" onMouseEnter={() => setSectorsOpen(true)} onMouseLeave={() => setSectorsOpen(false)}>
-            <button
-              type="button"
-              aria-expanded={sectorsOpen}
-              onClick={() => setSectorsOpen((v) => !v)}
-              className={cn("flex items-center gap-1 rounded-md px-3 py-2 text-sm font-medium text-brand-ink hover:bg-brand-navy-soft", sectorActive && "text-brand-green")}
-            >
-              Kimler için <ChevronDown className="size-4" />
-            </button>
-            {sectorsOpen ? (
-              <div className="absolute left-0 top-full w-64 rounded-lg border border-brand-line bg-white p-2 shadow-lg">
-                {SECTORS.map((s) => (
-                  <Link
-                    key={s.slug}
-                    href={`/${s.slug}`}
-                    className={cn("block rounded-md px-3 py-2 text-sm text-brand-ink hover:bg-brand-navy-soft", pathname === `/${s.slug}` && "text-brand-green")}
-                  >
-                    {s.label}
-                  </Link>
-                ))}
-              </div>
-            ) : null}
-          </div>
-          {NAV_LINKS.slice(1).map((l) => (
+          {NAV_LINKS.map((l) => (
             <Link
               key={l.href}
               href={l.href}
@@ -78,7 +45,7 @@ export function SiteHeader() {
             Giriş
           </Link>
           <Link href="/basvuru" className="rounded-md bg-brand-green px-4 py-2 text-sm font-semibold text-white hover:bg-[#126A4F]">
-            Ücretsiz başvur
+            {SIGNUP_CTA}
           </Link>
         </div>
 
@@ -96,18 +63,7 @@ export function SiteHeader() {
       {open ? (
         <div className="border-t border-brand-line bg-white lg:hidden">
           <nav className="mx-auto flex max-w-6xl flex-col px-5 py-3" aria-label="Mobil menü">
-            <Link href={NAV_LINKS[0].href} className="rounded-md px-3 py-3 text-base font-medium">
-              {NAV_LINKS[0].label}
-            </Link>
-            <p className="px-3 pb-1 pt-3 text-xs font-semibold uppercase tracking-[0.12em] text-brand-muted">Kimler için</p>
-            <div className="grid grid-cols-2 gap-1">
-              {SECTORS.map((s) => (
-                <Link key={s.slug} href={`/${s.slug}`} className="rounded-md px-3 py-2 text-sm">
-                  {s.label}
-                </Link>
-              ))}
-            </div>
-            {NAV_LINKS.slice(1).map((l) => (
+            {NAV_LINKS.map((l) => (
               <Link key={l.href} href={l.href} className="rounded-md px-3 py-3 text-base font-medium">
                 {l.label}
               </Link>
@@ -117,7 +73,7 @@ export function SiteHeader() {
                 Giriş
               </Link>
               <Link href="/basvuru" className="flex-1 rounded-md bg-brand-green px-4 py-3 text-center text-sm font-semibold text-white">
-                Ücretsiz başvur
+                {SIGNUP_CTA}
               </Link>
             </div>
           </nav>

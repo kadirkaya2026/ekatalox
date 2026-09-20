@@ -27,7 +27,13 @@ export async function POST(request: Request) {
   }
 
   return NextResponse.json(
-    { storeUrl: result.storeUrl, panelUrl: result.panelUrl, subdomain: result.subdomain, trialEndsAt: result.trialEndsAt },
+    {
+      storeUrl: result.storeUrl,
+      panelUrl: result.panelUrl,
+      subdomain: result.subdomain,
+      trialEndsAt: result.trialEndsAt,
+      requestedPlan: result.requestedPlan,
+    },
     { status: 201 },
   );
 }

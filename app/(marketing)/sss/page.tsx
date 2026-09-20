@@ -1,16 +1,13 @@
 import type { Metadata } from "next";
 import { ButtonLink, Container, Section, SectionHeading } from "@/components/marketing/ui";
-import { ESNAF_PLANS, ESNAF_TRIAL_DAYS, formatTry } from "@/lib/billing/esnaf-plans";
 import { SITE } from "@/lib/marketing/site";
 
 export const metadata: Metadata = {
   title: "Sık sorulan sorular",
   description:
-    "Müşterim uygulama kullanmaz mı? Ürünleri kim girecek? Komisyon var mı? İptal, ödeme, deneme süresi, tekelde alkol, veresiye ve magnetlerle ilgili sorular ve yanıtları.",
+    "Ücretsiz plan gerçekten ücretsiz mi? Reklam nerede görünür? Bayi nasıl girer, ürünleri kim yükler, fiyat listeleri nasıl çalışır? Ödeme, iptal ve limitlerle ilgili yanıtlar.",
   alternates: { canonical: "/sss" },
 };
-
-const [esnaf, esnafPlus] = ESNAF_PLANS;
 
 interface Faq {
   q: string;
@@ -24,19 +21,40 @@ interface FaqGroup {
 
 const GROUPS: FaqGroup[] = [
   {
-    title: "Müşteri tarafı",
+    title: "Ücretsiz plan",
     items: [
       {
-        q: "Müşterim uygulama kullanmaz, yaşlı müşterim çok.",
-        a: "Uygulama yok. Sipariş sayfası telefonun tarayıcısında açılır; QR kodu okutmak ya da adresi yazmak yeter. Üyelik istenmez, ilk siparişte telefon ve adres yazılır, sonrakilerde kendiliğinden dolar. Alışmayan müşteriniz yine arayabilir; sayfa telefonun yerine değil, yanına gelir.",
+        q: "Ücretsiz plan gerçekten ücretsiz mi, süresi var mı?",
+        a: "Evet, süresiz. Kart bilgisi istemeyiz, hesap kapanmaz. 200 ürün, 1 fiyat listesi ve aylık 1.000 ziyaretçiyle kataloğunuzu yayınlar, WhatsApp'tan sipariş alırsınız. Karşılığında kataloğunuzda küçük eKatalox tanıtımları görünür.",
       },
       {
-        q: "Müşteri siparişi nasıl takip eder?",
-        a: "Siz panelden “hazırlanıyor” ve “yola çıktı” dediğinizde müşteriye bildirim gider. Tekel bayilerinde “hazır, gelip alabilirsiniz” bildirimi gider.",
+        q: "Reklam derken ne görünüyor, bayimi rahatsız eder mi?",
+        a: "Sayfanın altında ince bir 'Bu katalog eKatalox ile yapıldı' bandı, ürün listesinde arada bir tanıtım kartı, ürün detayında ve sipariş fişinin altında bir satır. Rakip ya da üçüncü taraf reklamı değildir; yalnız eKatalox'un kendi tanıtımıdır. Sipariş akışını kesmez. Herhangi bir ücretli pakete geçince tamamı kalkar.",
       },
       {
-        q: "Müşteri nasıl öder?",
-        a: "Ödeme şeklini sipariş formunda seçer: kapıda nakit ya da kapıda kart gibi sizin sunduğunuz seçenekler. eKatalox müşteriden para tahsil etmez; para doğrudan size gelir.",
+        q: "Ücretsizden ücretliye geçince ne değişir?",
+        a: "Reklamlar kalkar, ürün ve fiyat listesi limitleri artar, pakete göre raporlar, kendi alan adınız ve bildirim gönderme açılır. Ürünleriniz, şifreleriniz ve bayileriniz olduğu gibi kalır; hiçbir şeyi yeniden kurmazsınız.",
+      },
+    ],
+  },
+  {
+    title: "Bayi tarafı",
+    items: [
+      {
+        q: "Bayim uygulama indirmek zorunda mı?",
+        a: "Hayır. firmaniz.ekatalox.com adresini ve şifreyi WhatsApp'tan gönderirsiniz; bayi tarayıcıda açar, şifreyi yazar, sipariş verir. İsterse ana ekranına ekler, uygulama gibi kullanır ve bildirim alır.",
+      },
+      {
+        q: "Farklı bayilere farklı fiyat gösterebilir miyim?",
+        a: "Evet. Her fiyat listesinin kendi şifresi vardır: bayi şifresiyle giren bayi fiyatını, perakende şifresiyle giren perakende fiyatını görür. Ücretsiz planda 1, Başlangıç'ta 3, Profesyonel ve Kurumsal'da sınırsız liste.",
+      },
+      {
+        q: "Şifresiz giren biri fiyatları görebilir mi?",
+        a: "Hayır. Kataloğu tamamen şifreli yapabilir ya da şifresiz ziyaretçiye yalnız ürünleri fiyatsız gösterebilirsiniz. Şifreyi paylaşan bayiyi panelde görür, şifreyi bir dakikada değiştirirsiniz.",
+      },
+      {
+        q: "Sipariş bana nasıl ulaşır?",
+        a: "Bayi sepetini gönderince sipariş fişi PDF olarak WhatsApp numaranıza düşer; panelde de listelenir. Fişte ürün kodu, adet, koli, tutar, cari adı ve not vardır.",
       },
     ],
   },
@@ -44,28 +62,24 @@ const GROUPS: FaqGroup[] = [
     title: "Kurulum ve kullanım",
     items: [
       {
-        q: "Ürünleri kim girecek?",
-        a: `Biz. Ürün listenizi ya da raf fotoğraflarınızı WhatsApp'tan gönderirsiniz; ${SITE.setupHours} saat içinde fotoğrafı ve fiyatıyla yükleriz. Sonradan fiyat değiştirmek ya da ürün eklemek panelden telefonla bir dakika sürer.`,
+        q: "Ürünleri kim yükler?",
+        a: "Siz yükleyebilirsiniz: panelde Excel şablonunu doldurup yüklersiniz, fotoğrafları toplu eklersiniz. Mevcut PDF kataloğunuzu ya da Excel listenizi bize gönderirseniz ilk yüklemeyi biz yaparız.",
       },
       {
-        q: "İnternet ya da bilgisayar gerekir mi?",
-        a: "Bilgisayar gerekmez. Siparişler WhatsApp'ınıza gelir, panel telefondan açılır. Dükkânda telefonunuzun interneti yeterlidir.",
+        q: "Fiyatları nasıl güncellerim?",
+        a: "Tek ürünü panelden, tümünü Excel ile. Değişiklik anında yayına girer; bayi kataloğu açtığında güncel fiyatı görür.",
       },
       {
-        q: "Kaç ürün yükleyebilirim?",
-        a: `${esnaf.name} paketinde ${esnaf.productLimit.toLocaleString("tr-TR")}, ${esnafPlus.name} paketinde ${esnafPlus.productLimit.toLocaleString("tr-TR")} ürüne kadar. Mahalle marketlerinin büyük kısmı için ${esnaf.name} yeterlidir.`,
+        q: "Koli ve varyant var mı?",
+        a: "Var. Ürün başına koli içi adet tanımlarsınız; bayi koli seçer, tutar hesaplanır. Renk, beden, model gibi varyantlar tek üründe toplanır.",
       },
       {
         q: "Kendi alan adımı kullanabilir miyim?",
-        a: `Evet, ${esnafPlus.name} paketinde. Örneğin dukkanim.com adresinizi sipariş sayfanıza bağlarız. ${esnaf.name} paketinde adresiniz dukkan.ekatalox.com biçimindedir.`,
+        a: "Profesyonel ve Kurumsal paketlerde. katalog.firmaniz.com gibi bir adresi kataloğunuza bağlarız; DNS ayarını adım adım anlatırız.",
       },
       {
-        q: "Tekel bayisiyim, alkol satabilir miyim?",
-        a: "Online alkol satışı yasal değildir; alkollü ürünler sayfada görünmez. Tekel bayileri için teslimat yerine hazırlat akışı çalışır: müşteri diğer ürünlerin listesini gönderir, siz hazırlarsınız, gelip dükkândan alır. Yaş doğrulama adımı sipariş öncesinde çalışır.",
-      },
-      {
-        q: "Veresiye takibi var mı?",
-        a: `${esnafPlus.name} paketinde var. Veresiye satışlar müşteri bazında panelde tutulur, tahsilat hatırlatması tek dokunuşla gider.`,
+        q: "Bilgisayar gerekir mi?",
+        a: "Gerekmez. Panel telefondan açılır; siparişler WhatsApp'a gelir. Excel yüklemesi için bilgisayar daha rahattır ama şart değildir.",
       },
     ],
   },
@@ -74,23 +88,19 @@ const GROUPS: FaqGroup[] = [
     items: [
       {
         q: "Komisyon var mı?",
-        a: `Yok. Sipariş sayısından bağımsız sabit ücret ödersiniz: ${esnaf.name} yıllık ${formatTry(esnaf.yearlyPrice)} ya da aylık ${formatTry(esnaf.monthlyPrice)}; ${esnafPlus.name} yıllık ${formatTry(esnafPlus.yearlyPrice)} ya da aylık ${formatTry(esnafPlus.monthlyPrice)}. Ne kadar çok sipariş alırsanız o kadar kârlıdır.`,
-      },
-      {
-        q: "Deneme süresi nasıl işler?",
-        a: `İlk ${ESNAF_TRIAL_DAYS} gün ücretsizdir; kart bilgisi istenmez. Kurulum ve magnetler deneme süresinde de yapılır. Süre sonunda devam etmek isterseniz ödemeyi yaparsınız, istemezseniz hiçbir ücret çıkmaz.`,
+        a: "Yok. Ücretli paketler yıllık sabit ücrettir: Başlangıç 5.000 ₺, Profesyonel 10.000 ₺, Kurumsal 15.000 ₺ (KDV hariç). Sipariş sayısı ne olursa olsun değişmez.",
       },
       {
         q: "Ödemeyi nasıl yaparım?",
-        a: "Havale/EFT ile ya da temsilcimiz üzerinden kredi kartıyla. Fatura kesilir.",
+        a: "Havale/EFT ile ya da temsilcimiz üzerinden kartla. Fatura kesilir; ödeme sonrası paket aynı gün açılır.",
       },
       {
         q: "İptal etmek istersem?",
-        a: "Aylık pakette istediğiniz ay bırakırsınız; sonraki ay ücret çıkmaz. Yıllık pakette hizmet dönem sonuna kadar sürer, yenileme yapılmaz.",
+        a: "Ücretsiz planda iptal diye bir şey yok; kullanmazsanız katalog durur. Yıllık paketlerde hizmet dönem sonuna kadar sürer, yenilemezseniz hesap Ücretsiz plana düşer; kataloğunuz açık kalır.",
       },
       {
-        q: "Magnetler ücretli mi, nasıl gelir?",
-        a: `Hediyedir. ${esnaf.name} paketinde ${esnaf.magnetCount}, ${esnafPlus.name} paketinde ${esnafPlus.magnetCount} adet magnet eKatalox tarafından basılır ve kargoyla adresinize gönderilir. Basım ve kargo için ek ücret yoktur.`,
+        q: "Ürün limitim dolarsa?",
+        a: "Bir üst pakete geçersiniz ya da +1.000 ürün eklentisi alırsınız. Limit dolduğunda yeni ürün eklenemez ama mevcut katalog çalışmaya devam eder.",
       },
     ],
   },
@@ -163,7 +173,7 @@ export default function SssPage() {
           </div>
           <div className="flex flex-col gap-4 lg:items-end">
             <ButtonLink href="/basvuru" tone="white" size="lg">
-              Ücretsiz başvur
+              Ücretsiz kataloğumu kur
             </ButtonLink>
             <a href={SITE.phoneHref} className="font-plex-mono text-lg text-white/85 hover:text-white">
               {SITE.phone}

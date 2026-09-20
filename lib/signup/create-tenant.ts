@@ -5,22 +5,15 @@
 // olursa o ana kadar yaratılanlar elle geri alınır ve signup_requests'e
 // 'failed' satırı düşer ki satış ekibi düşen kayıtları görebilsin.
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { normalizeCouponCode, validateSignupCoupon } from "@/lib/billing/coupons";
-import { getEsnafPlan, getPlanPrice, type BillingPeriod } from "@/lib/billing/esnaf-plans";
 import { getLimitForPlan } from "@/lib/billing/plans";
-import { getTrialEndDate } from "@/lib/billing/trial";
+import { getToptanPlan } from "@/lib/billing/toptan-plans";
 import { sendEmail } from "@/lib/email/send";
 import { getSalesRecipient } from "@/lib/email/transport";
 import { buildSignupNotificationEmail } from "@/lib/email/templates/signup-notification";
 import { buildWelcomeEmail } from "@/lib/email/templates/welcome";
 import { appEnv } from "@/lib/env";
 import { buildTenantBrandingPath, STOREFRONT_BRANDING_BUCKET } from "@/lib/storage/branding";
-import {
-  buildPlaceholderLogoSvg,
-  getThemeForSector,
-  SECTOR_THEME_MAP,
-} from "@/lib/storefront/esnaf-themes";
-import { seedMarketStorefrontTemplate } from "@/lib/storefront/market-template";
+import { buildPlaceholderLogoSvg } from "@/lib/storefront/esnaf-themes";
 import { registerTenantSubdomain } from "@/lib/vercel/domains";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { signupSchema, type SignupInput } from "@/lib/validators/signup";
@@ -37,7 +30,10 @@ export type CreateTenantResult =
       subdomain: string;
       storeUrl: string;
       panelUrl: string;
-      trialEndsAt: string;
+      /** Ücretsiz plan: deneme yok, her zaman null. */
+      trialEndsAt: string | null;
+      /** Formda seçilen paket (free ise yükseltme talebi yok). */
+      requestedPlan: string;
     }
   | { ok: false; status: 400 | 409 | 500; error: string; field?: string };
 
@@ -81,15 +77,14 @@ function isEmailExistsError(error: { message?: string; code?: string } | null) {
   );
 }
 
-/** Varsayılan fiyat listeleri — 0031 backfill ile aynı adlar/sıra. */
+/** Varsayılan fiyat listeleri. Ücretsiz planda 1 fiyatlı liste hakkı var
+ *  (PLAN_PRICE_LIST_LIMITS.free), o yüzden fiyatsız katalog + tek liste. */
 async function createDefaultPriceLists(supabase: SupabaseClient, tenantId: string) {
   const { data, error } = await supabase
     .from("price_lists")
     .insert([
       { tenant_id: tenantId, name: "Fiyatsız Katalog", is_catalog_only: true, sort_order: 0 },
-      { tenant_id: tenantId, name: "Perakende", is_catalog_only: false, sort_order: 1 },
-      { tenant_id: tenantId, name: "Bayi 1", is_catalog_only: false, sort_order: 2 },
-      { tenant_id: tenantId, name: "Bayi 2", is_catalog_only: false, sort_order: 3 },
+      { tenant_id: tenantId, name: "1. Liste", is_catalog_only: false, sort_order: 1 },
     ])
     .select("id, is_catalog_only, sort_order");
 
@@ -138,35 +133,14 @@ async function applyStorefrontTheme(
   input: SignupInput,
   logoUrl: string | null,
 ) {
-  const preset = getThemeForSector(input.sector);
-  const sectorMeta = SECTOR_THEME_MAP[input.sector] ?? SECTOR_THEME_MAP.diger;
-
-  const content = {
-    storefront_title: input.businessName,
-    site_tab_title: input.businessName,
-    ...(logoUrl ? { logo_url: logoUrl, site_favicon_url: logoUrl } : {}),
-  };
-
-  if (preset.settings === null) {
-    // "Vitrin": tekelsiparis'in güncel tasarımını klonla (renk dahil), sonra
-    // içerik alanlarını üstüne yaz. Şablon bulunamazsa satır burada açılır.
-    await seedMarketStorefrontTemplate(supabase, tenantId);
-    const { error } = await supabase
-      .from("tenant_storefront_settings")
-      .upsert({ tenant_id: tenantId, esnaf_theme_key: "vitrin", ...content }, { onConflict: "tenant_id" });
-    if (error) {
-      throw new Error(`tenant_storefront_settings: ${error.message}`);
-    }
-    return;
-  }
-
+  // Toptancı vitrini: sistem varsayılan temasıyla açılır (bayi panelden
+  // "Hazır Tema" seçer); yalnız ad, sekme başlığı ve yer tutucu logo yazılır.
   const { error } = await supabase.from("tenant_storefront_settings").upsert(
     {
       tenant_id: tenantId,
-      ...preset.settings,
-      esnaf_theme_key: preset.key,
-      brand_primary_color: sectorMeta.brandPrimaryColor,
-      ...content,
+      storefront_title: input.businessName,
+      site_tab_title: input.businessName,
+      ...(logoUrl ? { logo_url: logoUrl, site_favicon_url: logoUrl } : {}),
     },
     { onConflict: "tenant_id" },
   );
@@ -197,34 +171,28 @@ export async function createSelfServiceTenant(
     return { ok: false, status: 500, error: "Sunucu yapılandırması eksik." };
   }
 
-  const esnafPlan = getEsnafPlan(input.plan);
-  if (!esnafPlan) {
+  // Hesap her zaman Ücretsiz planla açılır (20 Eyl 2026 freemium). Formda
+  // ücretli paket seçildiyse bu bir taleptir: satış e-postasına düşer, ödeme
+  // sonrası süper admin paketi yükseltir.
+  const requestedPlan = getToptanPlan(input.plan);
+  if (!requestedPlan) {
     return { ok: false, status: 400, error: "Geçerli bir paket seçin.", field: "plan" };
   }
-  const planId = esnafPlan.planId as "pro" | "business";
-  const billingPeriod: BillingPeriod = input.billingPeriod;
+  const planId = "free" as const;
+  const billingPeriod = "yearly" as const;
 
   // (a) alt alan adı
   if (await isSubdomainTaken(supabase, input.subdomain)) {
     return {
       ok: false,
       status: 409,
-      error: "Bu mağaza adresi kullanımda. Lütfen başka bir ad deneyin.",
+      error: "Bu katalog adresi kullanımda. Lütfen başka bir ad deneyin.",
       field: "subdomain",
     };
   }
 
-  // (c) kupon
-  const couponCode = input.couponCode ? normalizeCouponCode(input.couponCode) : "";
-  const listPrice = getPlanPrice(esnafPlan, billingPeriod);
-  let finalPrice = listPrice;
-  if (couponCode) {
-    const validation = await validateSignupCoupon(supabase, couponCode, planId, billingPeriod);
-    if (!validation.ok) {
-      return { ok: false, status: 400, error: validation.message, field: "couponCode" };
-    }
-    finalPrice = validation.finalPrice;
-  }
+  const listPrice = requestedPlan.yearlyPrice;
+  const finalPrice = listPrice;
 
   const requestBase = {
     business_name: input.businessName,
@@ -239,9 +207,10 @@ export async function createSelfServiceTenant(
     tax_office: input.taxOffice || null,
     tax_number: input.taxNumber || null,
     subdomain: input.subdomain,
-    plan: planId,
+    // signup_requests.plan = talep edilen paket (tenants.plan her zaman free).
+    plan: requestedPlan.slug,
     billing_period: billingPeriod,
-    coupon_code: couponCode || null,
+    coupon_code: null,
     list_price: listPrice,
     final_price: finalPrice,
     ip_address: meta.ipAddress ?? null,
@@ -264,8 +233,7 @@ export async function createSelfServiceTenant(
     }
   }
 
-  const trialEndsAt = getTrialEndDate();
-  const isTekel = input.sector === "tekel";
+  const trialEndsAt: string | null = null;
 
   // (d) tenant
   const { data: tenant, error: tenantError } = await supabase
@@ -277,13 +245,12 @@ export async function createSelfServiceTenant(
       max_product_limit: getLimitForPlan(planId),
       whatsapp_number: input.whatsappNumber,
       status: "active",
-      business_type: "market",
-      is_tekel: isTekel,
-      // (i) tekel: yaş doğrulama kapısı zorunlu
-      age_verification_required: isTekel,
+      business_type: "general",
+      is_tekel: false,
+      age_verification_required: false,
       sector: input.sector,
       billing_period: billingPeriod,
-      coupon_code: couponCode || null,
+      coupon_code: null,
       contact_email: input.email,
       contact_full_name: input.fullName,
       billing_address: {
@@ -309,7 +276,7 @@ export async function createSelfServiceTenant(
       ? {
           ok: false,
           status: 409,
-          error: "Bu mağaza adresi kullanımda. Lütfen başka bir ad deneyin.",
+          error: "Bu katalog adresi kullanımda. Lütfen başka bir ad deneyin.",
           field: "subdomain",
         }
       : { ok: false, status: 500, error: GENERIC_ERROR };
@@ -404,16 +371,6 @@ export async function createSelfServiceTenant(
     return { ok: false, status: 500, error: GENERIC_ERROR };
   }
 
-  // (j) kupon kullanımını düş — başarısızlık kaydı bozmaz, sadece loglanır.
-  if (couponCode) {
-    const { data: redeemed, error: redeemError } = await supabase.rpc("redeem_signup_coupon", {
-      p_code: couponCode,
-    });
-    if (redeemError || redeemed !== true) {
-      console.error("[signup] kupon düşülemedi:", couponCode, redeemError?.message ?? "false");
-    }
-  }
-
   // (k) kayıt izi
   await logRequest("created", tenantId);
 
@@ -426,12 +383,8 @@ export async function createSelfServiceTenant(
     email: input.email,
     storeUrl,
     panelUrl,
-    trialEndsAt,
-    planName: esnafPlan.name,
-    billingPeriod,
-    listPrice,
-    finalPrice,
-    couponCode: couponCode || null,
+    requestedPlanName: requestedPlan.name,
+    requestedPlanPrice: requestedPlan.yearlyPrice,
   });
   const notification = buildSignupNotificationEmail({
     tenantId,
@@ -449,11 +402,11 @@ export async function createSelfServiceTenant(
     taxNumber: input.taxNumber,
     subdomain: input.subdomain,
     storeUrl,
-    planName: esnafPlan.name,
+    planName: `Ücretsiz (talep: ${requestedPlan.name})`,
     billingPeriod,
     listPrice,
     finalPrice,
-    couponCode: couponCode || null,
+    couponCode: null,
     trialEndsAt,
     ipAddress: meta.ipAddress ?? null,
   });
@@ -481,5 +434,6 @@ export async function createSelfServiceTenant(
     storeUrl,
     panelUrl,
     trialEndsAt,
+    requestedPlan: requestedPlan.slug,
   };
 }

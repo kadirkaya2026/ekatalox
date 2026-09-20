@@ -1,14 +1,13 @@
 import Link from "next/link";
 import Image from "next/image";
 import { SITE } from "@/lib/marketing/site";
-import { SECTORS } from "@/lib/marketing/sectors";
 
 const PRODUCT_LINKS = [
   { href: "/nasil-calisir", label: "Nasıl çalışır" },
   { href: "/ozellikler", label: "Özellikler" },
   { href: "/fiyatlandirma", label: "Fiyatlandırma" },
-  { href: "/magnet", label: "Magnet programı" },
   { href: "/sss", label: "Sık sorulan sorular" },
+  { href: SITE.demoUrl, label: "Demo katalog" },
 ];
 
 const COMPANY_LINKS = [
@@ -28,11 +27,11 @@ export function SiteFooter() {
   const hasLegal = Boolean(company.legalName || company.address);
   return (
     <footer className="border-t border-brand-line bg-white">
-      <div className="mx-auto grid w-full max-w-6xl gap-10 px-5 py-14 sm:px-8 md:grid-cols-[1.4fr_1fr_1fr_1fr_1fr]">
+      <div className="mx-auto grid w-full max-w-6xl gap-10 px-5 py-14 sm:px-8 md:grid-cols-[1.6fr_1fr_1fr_1fr]">
         <div>
           <Image src="/ekatalox-logo-kurumsal.png" alt="eKatalox" width={132} height={34} className="h-8 w-auto" />
           <p className="mt-4 max-w-xs text-sm leading-relaxed text-brand-muted">
-            Mahalle esnafı için komisyonsuz WhatsApp sipariş sistemi. Kurulumu biz yapıyoruz, siparişi siz hazırlıyorsunuz.
+            Toptancılar için ücretsiz online katalog ve WhatsApp sipariş sistemi. Bayiniz şifreyle girer, kendi fiyatını görür, sipariş verir.
           </p>
           <div className="mt-5 space-y-1 text-sm">
             <a href={SITE.phoneHref} className="block font-plex-mono font-medium text-brand-navy">{SITE.phone}</a>
@@ -41,7 +40,6 @@ export function SiteFooter() {
           </div>
         </div>
         <FooterColumn title="Ürün" links={PRODUCT_LINKS} />
-        <FooterColumn title="Kimler için" links={SECTORS.map((s) => ({ href: `/${s.slug}`, label: s.label }))} />
         <FooterColumn title="Şirket" links={COMPANY_LINKS} />
         <FooterColumn title="Yasal" links={LEGAL_LINKS} />
       </div>

@@ -1,29 +1,26 @@
 "use client";
 
-// Başvuru formu (8 Eyl 2026). POST /api/signup sözleşmesi:
+// Kayıt formu (20 Eyl 2026 freemium). POST /api/signup sözleşmesi:
 // {businessName, sector, fullName, phone, email, password, city, district,
 //  neighborhood, address, taxOffice, taxNumber, whatsappNumber, subdomain,
-//  plan, billingPeriod, couponCode, termsAccepted:true}
-// 201 → {storeUrl, panelUrl, subdomain, trialEndsAt}; 400/409 → {error, field?}
+//  plan, termsAccepted:true}
+// 201 → {storeUrl, panelUrl, subdomain, requestedPlan}; 400/409 → {error, field?}
+// Hesap her zaman Ücretsiz açılır; ücretli paket seçimi satış ekibine talep olarak gider.
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import {
-  ESNAF_PLANS,
-  ESNAF_TRIAL_DAYS,
   formatTry,
-  getEsnafPlan,
-  getPlanPrice,
-  yearlySavingsPct,
-  type BillingPeriod,
-  type EsnafPlanSlug,
-} from "@/lib/billing/esnaf-plans";
-import { SIGNUP_SECTOR_OPTIONS } from "@/lib/marketing/sectors";
+  getToptanPlan,
+  isToptanPlanSlug,
+  TOPTAN_PLANS,
+  TOPTAN_SECTOR_OPTIONS,
+  type ToptanPlanSlug,
+} from "@/lib/billing/toptan-plans";
 import { SITE } from "@/lib/marketing/site";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Field, FormAlert, fieldInputClass } from "@/components/marketing/form-field";
-import { CouponBox, type CouponResult } from "@/components/marketing/coupon-box";
 import { cn } from "@/lib/utils";
 
 type FormState = {
@@ -42,7 +39,6 @@ type FormState = {
   taxNumber: string;
   whatsappNumber: string;
   subdomain: string;
-  couponCode: string;
   termsAccepted: boolean;
 };
 
@@ -55,7 +51,7 @@ type SubdomainState =
   | { status: "taken"; message?: string; suggestion?: string }
   | { status: "error"; message: string };
 
-type Success = { storeUrl: string; panelUrl: string; subdomain: string; trialEndsAt: string };
+type Success = { storeUrl: string; panelUrl: string; subdomain: string; requestedPlan: string };
 
 const PHONE_RE = /^05\d{9}$/;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -78,22 +74,9 @@ function normalizePhone(value: string) {
   return value.replace(/[\s()-]/g, "");
 }
 
-function isPlanSlug(v: string | undefined): v is EsnafPlanSlug {
-  return v === "esnaf" || v === "esnaf_plus";
-}
-
-export function SignupForm({
-  initialPlan,
-  initialPeriod,
-  initialSector,
-}: {
-  initialPlan?: string;
-  initialPeriod?: string;
-  initialSector?: string;
-}) {
-  const [plan, setPlan] = useState<EsnafPlanSlug>(isPlanSlug(initialPlan) ? initialPlan : "esnaf_plus");
-  const [period, setPeriod] = useState<BillingPeriod>(initialPeriod === "monthly" ? "monthly" : "yearly");
-  const sectorValid = SIGNUP_SECTOR_OPTIONS.some((o) => o.value === initialSector);
+export function SignupForm({ initialPlan, initialSector }: { initialPlan?: string; initialSector?: string }) {
+  const [plan, setPlan] = useState<ToptanPlanSlug>(isToptanPlanSlug(initialPlan) ? initialPlan : "free");
+  const sectorValid = TOPTAN_SECTOR_OPTIONS.some((o) => o.value === initialSector);
 
   const [form, setForm] = useState<FormState>({
     businessName: "",
@@ -111,20 +94,18 @@ export function SignupForm({
     taxNumber: "",
     whatsappNumber: "",
     subdomain: "",
-    couponCode: "",
     termsAccepted: false,
   });
   const [errors, setErrors] = useState<Errors>({});
   const [subdomainTouched, setSubdomainTouched] = useState(false);
   const [whatsappTouched, setWhatsappTouched] = useState(false);
   const [subdomainState, setSubdomainState] = useState<SubdomainState>({ status: "idle" });
-  const [couponResult, setCouponResult] = useState<CouponResult | null>(null);
   const [sending, setSending] = useState(false);
   const [success, setSuccess] = useState<Success | null>(null);
   const formRef = useRef<HTMLFormElement>(null);
 
-  const selectedPlan = getEsnafPlan(plan) ?? ESNAF_PLANS[0];
-  const listPrice = getPlanPrice(selectedPlan, period);
+  const selectedPlan = getToptanPlan(plan) ?? TOPTAN_PLANS[0];
+  const paidRequested = selectedPlan.yearlyPrice > 0;
 
   function update<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((f) => ({ ...f, [key]: value }));
@@ -191,9 +172,6 @@ export function SignupForm({
     if (form.password.length < 8) e.password = "Şifre en az 8 karakter olmalı.";
     if (form.passwordRepeat !== form.password) e.passwordRepeat = "Şifreler aynı değil.";
     if (!form.city.trim()) e.city = "İl yazın.";
-    if (!form.district.trim()) e.district = "İlçe yazın.";
-    if (!form.neighborhood.trim()) e.neighborhood = "Mahalle yazın.";
-    if (form.address.trim().length < 10) e.address = "Açık adresi yazın (sokak, no).";
     if (!PHONE_RE.test(normalizePhone(form.whatsappNumber))) e.whatsappNumber = "WhatsApp numarası 05 ile başlayan 11 hane olmalı.";
     if (form.subdomain.length < 3 || !SUBDOMAIN_RE.test(form.subdomain))
       e.subdomain = "En az 3 karakter; yalnız küçük harf, rakam ve tire.";
@@ -239,14 +217,12 @@ export function SignupForm({
           whatsappNumber: normalizePhone(form.whatsappNumber),
           subdomain: form.subdomain,
           plan,
-          billingPeriod: period,
-          couponCode: couponResult?.valid ? couponResult.code : form.couponCode.trim().toLocaleUpperCase("tr-TR"),
           termsAccepted: true,
         }),
       });
       const data = (await res.json().catch(() => null)) as (Partial<Success> & { error?: string; field?: string }) | null;
       if (res.status === 201 && data?.storeUrl && data.panelUrl && data.subdomain) {
-        setSuccess({ storeUrl: data.storeUrl, panelUrl: data.panelUrl, subdomain: data.subdomain, trialEndsAt: data.trialEndsAt ?? "" });
+        setSuccess({ storeUrl: data.storeUrl, panelUrl: data.panelUrl, subdomain: data.subdomain, requestedPlan: data.requestedPlan ?? plan });
         window.scrollTo({ top: 0 });
         return;
       }
@@ -265,20 +241,21 @@ export function SignupForm({
 
   if (success) return <SuccessScreen data={success} email={form.email} />;
 
+
   return (
     <form ref={formRef} onSubmit={submit} noValidate className="grid gap-10 lg:grid-cols-[1.5fr_1fr] lg:items-start">
       <div className="space-y-10">
         {errors.form ? <FormAlert tone="error">{errors.form}</FormAlert> : null}
 
         {/* 1. İşletme */}
-        <Fieldset legend="İşletmeniz" hint="Vitrinde görünecek ad ve sektör. Sektör, temanızı belirler.">
+        <Fieldset legend="Firmanız" hint="Katalogda görünecek firma adı ve sektörünüz.">
           <Field id="businessName" label="İşletme adı" error={errors.businessName} className="sm:col-span-2">
             <Input
               id="businessName"
               name="businessName"
               value={form.businessName}
               onChange={(e) => onBusinessName(e.target.value)}
-              placeholder="Örn. Yıldız Market"
+              placeholder="Örn. Yıldız Toptan"
               autoComplete="organization"
               aria-invalid={Boolean(errors.businessName)}
               className={fieldInputClass}
@@ -294,7 +271,7 @@ export function SignupForm({
               className={cn(fieldInputClass, "text-[16px]")}
             >
               <option value="">Seçin</option>
-              {SIGNUP_SECTOR_OPTIONS.map((o) => (
+              {TOPTAN_SECTOR_OPTIONS.map((o) => (
                 <option key={o.value} value={o.value}>
                   {o.label}
                 </option>
@@ -303,7 +280,7 @@ export function SignupForm({
           </Field>
           <Field
             id="subdomain"
-            label="Mağaza adresi"
+            label="Katalog adresi"
             error={errors.subdomain}
             hint={subdomainHint(subdomainState, form.subdomain)}
           >
@@ -316,7 +293,7 @@ export function SignupForm({
                   setSubdomainTouched(true);
                   update("subdomain", toSubdomain(e.target.value));
                 }}
-                placeholder="yildizmarket"
+                placeholder="yildiztoptan"
                 autoComplete="off"
                 spellCheck={false}
                 aria-invalid={Boolean(errors.subdomain)}
@@ -377,18 +354,15 @@ export function SignupForm({
         </Fieldset>
 
         {/* 3. Adres */}
-        <Fieldset legend="Dükkân adresi" hint="Teslimat bölgesi ve müşteri konumu bu adrese göre ayarlanır.">
+        <Fieldset legend="Firma bilgileri" hint="Yalnız il zorunlu. Adres ve vergi bilgilerini fatura aşamasında da ekleyebilirsiniz.">
           <Field id="city" label="İl" error={errors.city}>
             <Input id="city" name="city" value={form.city} onChange={(e) => update("city", e.target.value)} autoComplete="address-level1" aria-invalid={Boolean(errors.city)} className={fieldInputClass} />
           </Field>
-          <Field id="district" label="İlçe" error={errors.district}>
-            <Input id="district" name="district" value={form.district} onChange={(e) => update("district", e.target.value)} autoComplete="address-level2" aria-invalid={Boolean(errors.district)} className={fieldInputClass} />
+          <Field id="district" label="İlçe" optional>
+            <Input id="district" name="district" value={form.district} onChange={(e) => update("district", e.target.value)} autoComplete="address-level2" className={fieldInputClass} />
           </Field>
-          <Field id="neighborhood" label="Mahalle" error={errors.neighborhood} className="sm:col-span-2">
-            <Input id="neighborhood" name="neighborhood" value={form.neighborhood} onChange={(e) => update("neighborhood", e.target.value)} aria-invalid={Boolean(errors.neighborhood)} className={fieldInputClass} />
-          </Field>
-          <Field id="address" label="Açık adres" error={errors.address} className="sm:col-span-2">
-            <Textarea id="address" name="address" value={form.address} onChange={(e) => update("address", e.target.value)} placeholder="Sokak, kapı no, kat" autoComplete="street-address" aria-invalid={Boolean(errors.address)} className={cn(fieldInputClass, "min-h-20")} />
+          <Field id="address" label="Adres" optional className="sm:col-span-2">
+            <Textarea id="address" name="address" value={form.address} onChange={(e) => update("address", e.target.value)} placeholder="Mahalle, sokak, kapı no" autoComplete="street-address" className={cn(fieldInputClass, "min-h-20")} />
           </Field>
           <Field id="taxOffice" label="Vergi dairesi" optional>
             <Input id="taxOffice" name="taxOffice" value={form.taxOffice} onChange={(e) => update("taxOffice", e.target.value)} className={fieldInputClass} />
@@ -399,31 +373,10 @@ export function SignupForm({
         </Fieldset>
 
         {/* 4. Paket */}
-        <Fieldset legend="Paket" hint={`İlk ${ESNAF_TRIAL_DAYS} gün ücretsiz; deneme bitmeden temsilciniz arar, kart istenmez.`}>
-          <div className="sm:col-span-2">
-            <div role="group" aria-label="Ödeme dönemi" className="inline-flex rounded-md border border-brand-line bg-white p-1">
-              {(["monthly", "yearly"] as BillingPeriod[]).map((p) => (
-                <button
-                  key={p}
-                  type="button"
-                  aria-pressed={period === p}
-                  onClick={() => {
-                    setPeriod(p);
-                    setCouponResult(null);
-                  }}
-                  className={cn(
-                    "rounded px-4 py-2 text-sm font-semibold",
-                    period === p ? "bg-brand-navy text-white" : "text-brand-ink hover:bg-brand-navy-soft",
-                  )}
-                >
-                  {p === "monthly" ? "Aylık" : "Yıllık"}
-                </button>
-              ))}
-            </div>
-            <span className="ml-3 text-sm font-semibold text-brand-green">Yıllıkta %{yearlySavingsPct(ESNAF_PLANS[0])} tasarruf</span>
-          </div>
-          {ESNAF_PLANS.map((p) => {
+        <Fieldset legend="Paket" hint="Hesabınız hemen Ücretsiz planla açılır. Ücretli paket seçerseniz temsilcimiz arar, ödeme sonrası paketiniz açılır; o zamana kadar ücretsiz kullanırsınız.">
+          {TOPTAN_PLANS.map((p) => {
             const checked = plan === p.slug;
+            const isFree = p.yearlyPrice === 0;
             return (
               <label
                 key={p.slug}
@@ -437,39 +390,25 @@ export function SignupForm({
                   name="plan"
                   value={p.slug}
                   checked={checked}
-                  onChange={() => {
-                    setPlan(p.slug);
-                    setCouponResult(null);
-                  }}
+                  onChange={() => setPlan(p.slug)}
                   className="mt-1 size-4 accent-brand-green"
                 />
                 <span className="flex-1">
                   <span className="flex items-baseline justify-between gap-2">
                     <span className="font-bold text-brand-navy">{p.name}</span>
                     <span className="font-plex-mono text-sm tabular-nums text-brand-navy">
-                      {formatTry(getPlanPrice(p, period))} {period === "yearly" ? "/ yıl" : "/ ay"}
+                      {isFree ? "0 ₺" : `${formatTry(p.yearlyPrice)} / yıl`}
                     </span>
                   </span>
                   <span className="mt-1 block text-sm text-brand-muted">{p.tagline}</span>
                   <span className="mt-1 block text-xs text-brand-muted">
-                    {p.magnetCount} magnet hediye, {p.productLimit.toLocaleString("tr-TR")} ürüne kadar
+                    {p.productLimit.toLocaleString("tr-TR")} ürün · {p.priceListLimit === null ? "sınırsız" : p.priceListLimit} fiyat listesi ·{" "}
+                    {isFree ? "eKatalox reklamlı" : "reklamsız"}
                   </span>
                 </span>
               </label>
             );
           })}
-          <div className="sm:col-span-2">
-            <CouponBox
-              compact
-              label="Kupon kodu"
-              plan={plan}
-              period={period}
-              value={form.couponCode}
-              onValueChange={(v) => update("couponCode", v)}
-              result={couponResult}
-              onResult={setCouponResult}
-            />
-          </div>
         </Fieldset>
 
         {/* 5. Onay */}
@@ -507,9 +446,9 @@ export function SignupForm({
             disabled={sending}
             className="inline-flex w-full items-center justify-center rounded-md bg-brand-green px-7 py-4 text-base font-semibold text-white hover:bg-[#126A4F] disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
           >
-            {sending ? "Gönderiliyor" : "Mağazamı kur"}
+            {sending ? "Kuruluyor" : "Kataloğumu kur"}
           </button>
-          <p className="mt-3 text-sm text-brand-muted">Gönderdikten sonra giriş bilgileri e-postanıza gelir; kurulumu ekibimiz yaklaşık {SITE.setupHours} saatte tamamlar.</p>
+          <p className="mt-3 text-sm text-brand-muted">Kataloğunuz o an açılır, giriş bilgileri e-postanıza gelir. Kart bilgisi istenmez.</p>
         </div>
       </div>
 
@@ -517,25 +456,28 @@ export function SignupForm({
       <aside className="rounded-lg border border-brand-line bg-white p-6 lg:sticky lg:top-24">
         <p className="text-xs font-semibold uppercase tracking-[0.12em] text-brand-muted">Özet</p>
         <dl className="mt-4 space-y-3 text-sm">
-          <SummaryRow label="Paket" value={selectedPlan.name} />
-          <SummaryRow label="Dönem" value={period === "yearly" ? "Yıllık" : "Aylık"} />
-          <SummaryRow label="Liste fiyatı" value={`${formatTry(listPrice)} ${period === "yearly" ? "/ yıl" : "/ ay"}`} mono />
-          {couponResult?.valid ? (
-            <>
-              <SummaryRow label={`Kupon ${couponResult.code}`} value={`− ${formatTry(Math.max(0, couponResult.listPrice - couponResult.finalPrice))}`} mono />
-              <SummaryRow label="Kuponlu fiyat" value={formatTry(couponResult.finalPrice)} mono strong />
-            </>
-          ) : null}
+          <SummaryRow label="Açılacak plan" value="Ücretsiz" />
+          {paidRequested ? <SummaryRow label="Talep edilen paket" value={selectedPlan.name} /> : null}
+          <SummaryRow
+            label={paidRequested ? "Paket ücreti" : "Ücret"}
+            value={paidRequested ? `${formatTry(selectedPlan.yearlyPrice)} / yıl` : "0 ₺"}
+            mono
+            strong
+          />
           {form.subdomain ? <SummaryRow label="Adres" value={`${form.subdomain}.ekatalox.com`} mono /> : null}
         </dl>
-        <p className="mt-4 text-xs text-brand-muted">Fiyatlar KDV hariçtir.</p>
+        <p className="mt-4 text-xs text-brand-muted">Fiyatlar yıllık ve KDV hariçtir.</p>
         <div className="mt-5 rounded-md bg-brand-green-soft px-4 py-3 text-sm font-semibold text-brand-green">
-          {ESNAF_TRIAL_DAYS} gün ücretsiz, kart istenmez.
+          Kart bilgisi istenmez, kataloğunuz hemen açılır.
         </div>
         <ul className="mt-5 space-y-2 text-sm text-brand-muted">
-          <li>Ürünleri fotoğraf ve fiyatıyla biz yükleriz.</li>
-          <li>{selectedPlan.magnetCount} adet QR magnet hediye.</li>
-          <li>Ödeme: havale/EFT ya da temsilci aracılığıyla kart.</li>
+          <li>Ürünlerinizi Excel ile yükleyin ya da PDF/Excel&apos;inizi gönderin, biz yükleyelim.</li>
+          <li>Bayilerinize şifre verin, WhatsApp&apos;tan sipariş alın.</li>
+          {paidRequested ? (
+            <li>Ödeme: havale/EFT ya da temsilci aracılığıyla kart. Ödeme sonrası paket açılır.</li>
+          ) : (
+            <li>Ücretsiz planda küçük eKatalox tanıtımları görünür; istediğiniz an paket alırsınız.</li>
+          )}
         </ul>
         <p className="mt-5 text-sm">
           Sorunuz mu var?{" "}
@@ -584,27 +526,35 @@ function SummaryRow({ label, value, mono, strong }: { label: string; value: stri
 }
 
 function SuccessScreen({ data, email }: { data: Success; email: string }) {
-  const trialEnds = data.trialEndsAt ? formatDateTr(data.trialEndsAt) : null;
+  const requested = getToptanPlan(data.requestedPlan);
+  const paidRequested = Boolean(requested && requested.yearlyPrice > 0);
   return (
     <div className="mx-auto max-w-2xl">
-      <FormAlert tone="success">Başvurunuz alındı, mağazanız oluşturuldu.</FormAlert>
-      <h2 className="mt-6 text-3xl font-bold tracking-[-0.02em] text-brand-navy">Mağazanız hazır</h2>
+      <FormAlert tone="success">Kaydınız tamamlandı, kataloğunuz açıldı.</FormAlert>
+      <h2 className="mt-6 text-3xl font-bold tracking-[-0.02em] text-brand-navy">Kataloğunuz hazır</h2>
       <p className="mt-3 text-base leading-relaxed text-brand-muted">
-        Giriş bilgileri <span className="font-semibold text-brand-ink">{email}</span> adresine gönderildi. Deneme süreniz
-        {trialEnds ? ` ${trialEnds} tarihine kadar` : ` ${ESNAF_TRIAL_DAYS} gün`} ücretsizdir.
+        Giriş bilgileri <span className="font-semibold text-brand-ink">{email}</span> adresine gönderildi. Panele kayıt
+        sırasında belirlediğiniz şifreyle girin.
       </p>
       <dl className="mt-6 divide-y divide-brand-line rounded-lg border border-brand-line bg-white">
-        <LinkRow label="Mağaza adresi" href={data.storeUrl} />
+        <LinkRow label="Katalog adresi" href={data.storeUrl} />
         <LinkRow label="Yönetim paneli" href={data.panelUrl} />
       </dl>
+      {paidRequested && requested ? (
+        <div className="mt-6 rounded-md border border-brand-line bg-brand-paper px-4 py-3 text-sm leading-relaxed">
+          <strong className="text-brand-navy">{requested.name} paketi talebiniz alındı.</strong> Temsilcimiz arayıp ödeme
+          bilgisini iletecek; ödeme sonrası paketiniz açılır ve reklamlar kalkar. O zamana kadar Ücretsiz planı
+          kullanabilirsiniz.
+        </div>
+      ) : null}
       <h3 className="mt-8 text-lg font-bold text-brand-navy">Sırada ne var</h3>
       <ol className="mt-3 list-decimal space-y-2 pl-5 text-base leading-relaxed">
-        <li>Ekibimiz sizi arayıp ürün listenizi ister; fotoğraf ve fiyatları biz yükleriz.</li>
-        <li>Kurulum yaklaşık {SITE.setupHours} saat sürer; bitince mağazanız yayına alınır.</li>
-        <li>QR magnetleriniz basılıp adresinize gönderilir.</li>
+        <li>Panele girin, Ürünler bölümünden Excel ile yükleyin. İsterseniz PDF/Excel kataloğunuzu bize gönderin, biz yükleyelim.</li>
+        <li>Ayarlar &gt; Şifreler&apos;den bayi şifrenizi belirleyin; adresi ve şifreyi bayilerinize WhatsApp&apos;tan gönderin.</li>
+        <li>Bayi sepetini doldurup gönderince sipariş fişi WhatsApp numaranıza PDF olarak düşer.</li>
       </ol>
       <p className="mt-6 text-sm text-brand-muted">
-        Temsilciniz:{" "}
+        Yardım için:{" "}
         <a href={SITE.phoneHref} className="font-plex-mono font-semibold text-brand-navy">
           {SITE.phone}
         </a>{" "}
@@ -625,10 +575,4 @@ function LinkRow({ label, href }: { label: string; href: string }) {
       </dd>
     </div>
   );
-}
-
-function formatDateTr(iso: string) {
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return null;
-  return d.toLocaleDateString("tr-TR", { day: "numeric", month: "long", year: "numeric" });
 }

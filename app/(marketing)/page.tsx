@@ -2,57 +2,100 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
-import { CommissionCalculator } from "@/components/marketing/commission-calculator";
 import { PhoneFrame } from "@/components/marketing/phone-frame";
-import { ButtonLink, CheckList, Container, Eyebrow, Section, SectionHeading } from "@/components/marketing/ui";
-import { ESNAF_PLANS, ESNAF_TRIAL_DAYS, formatTry } from "@/lib/billing/esnaf-plans";
-import { SECTORS } from "@/lib/marketing/sectors";
+import { PlanCards } from "@/components/marketing/plan-cards";
+import { ButtonLink, Container, Eyebrow, Section, SectionHeading } from "@/components/marketing/ui";
+import { TOPTAN_PLANS } from "@/lib/billing/toptan-plans";
 import { SITE } from "@/lib/marketing/site";
 
-// Ana sayfa (8 Eyl 2026 yeniden konumlandırma): mahalle esnafı için
-// komisyonsuz WhatsApp sipariş sistemi. Sunucu bileşeni; tek istemci parçası
-// komisyon hesaplayıcı. Görseller public/site altındaki gerçek ekran görüntüleri.
+// Ana sayfa (20 Eyl 2026 yeniden konumlandırma): PDF katalog yaptıran her
+// toptancı/üretici için ücretsiz online katalog + WhatsApp sipariş. Ücretsiz
+// plan ön planda; ücretli paketler de listelenir. Sunucu bileşeni.
 
 export const metadata: Metadata = {
-  title: { absolute: "eKatalox — Mahallenizin siparişi WhatsApp'ınıza gelsin" },
+  title: { absolute: "eKatalox — Toptancılar için ücretsiz online katalog ve WhatsApp sipariş" },
   description:
-    "Market, tekel, manav, kasap ve petshoplar için komisyonsuz WhatsApp sipariş sistemi. Kurulumu 2 saatte biz yapıyoruz, 1 ay ücretsiz, QR magnetler hediye.",
+    "PDF kataloğunuzu canlı bir sipariş sayfasına çevirin. Bayileriniz şifreyle girsin, kendi fiyat listesini görsün, WhatsApp'tan sipariş versin. Ücretsiz plan, kart istenmez, 5 dakikada kurulum.",
   alternates: { canonical: "/" },
 };
 
 const PROBLEMS = [
   {
-    title: "“Hangi üründen, kaç tane?” yok",
-    body: "Müşteri ürünü fotoğrafından seçer, adedi kendisi yazar. Telefonda marka ve gramaj tarif etmek biter.",
+    title: "“Fiyat değişti, PDF'i yeniden yolla” yok",
+    body: "Fiyatı panelden değiştirirsiniz, bayi o an güncel fiyatı görür. Yüzlerce kişiye yeni PDF atmak, eski listeden sipariş almak biter.",
   },
   {
-    title: "Yanlış sipariş yok",
-    body: "Sipariş; ürün listesi, adres, telefon ve ödeme şekliyle PDF olarak WhatsApp'ınıza düşer. Sözlü aktarım, unutulan kalem kalmaz.",
+    title: "“Bayiye başka, perakendeye başka fiyat” derdi yok",
+    body: "Her müşteri grubuna ayrı şifre, ayrı fiyat listesi. Kim hangi şifreyle girdiyse onun fiyatını görür; kimse başkasının fiyatını görmez.",
   },
   {
-    title: "“Nerede kaldı?” araması yok",
-    body: "Hazırlanıyor ve yola çıktı bildirimleri tek dokunuşla müşteriye gider. Telefon sizin için çalmaz.",
+    title: "“Şundan 3 koli, bundan 5 paket” karmaşası yok",
+    body: "Bayi sepetini doldurur, sipariş ürün kodu, adet, koli ve tutarla PDF olarak WhatsApp'ınıza düşer. Sesli mesajdan sipariş çözmek biter.",
   },
 ];
 
 const STEPS = [
   {
     no: "01",
-    title: "Müşteri sipariş sayfanızı açar",
-    body: "Buzdolabındaki QR magneti okutur ya da adresi yazar. Uygulama indirmez; sayfa tarayıcıda açılır. Sepetini doldurur, eksik kalan ürünler için öneri görür.",
-    image: { src: "/site/demo-oneri.png", alt: "Sipariş sayfasında sepetteki ürünlere uygun öneri ekranı" },
+    title: "Ürünlerinizi yükleyin",
+    body: "Excel'den, fotoğraftan ya da tek tek. Ürün kodu, koli içi adet, varyant ve üç fiyat listesi. İsterseniz mevcut PDF kataloğunuzu gönderin, ilk yüklemeyi biz yapalım.",
+    image: { src: "/site/toptan-katalog.png", alt: "Toptan kataloğun telefon görünümü: kategoriler ve ürün kartları" },
   },
   {
     no: "02",
-    title: "Adres, telefon ve ödeme şeklini yazar",
-    body: "Daha önce sipariş verdiyse bilgileri kendiliğinden dolar. İsterse konumunu ekler, sipariş notu yazar. Teslimat ücreti ve ücretsiz teslimat barajı sizin ayarınıza göre hesaplanır.",
-    image: { src: "/site/demo-siparis-bilgileri.png", alt: "Sipariş bilgileri formu: ödeme yöntemi, telefon, ad ve adres" },
+    title: "Bayilerinize şifre verin",
+    body: "firmaniz.ekatalox.com adresini ve şifreyi WhatsApp'tan paylaşın. Uygulama indirmez, üye olmaz; şifreyi yazar, kendi fiyat listesiyle kataloğa girer.",
+    image: { src: "/site/toptan-giris.png", alt: "Şifreli bayi giriş ekranı" },
   },
   {
     no: "03",
     title: "Sipariş WhatsApp'ınıza PDF olarak gelir",
-    body: "Siz hazırlarsınız, panelden “hazırlanıyor” ve “yola çıktı” dersiniz; müşteriye bildirim gider. Tekel bayilerinde teslimat yerine hazırlat akışı çalışır, müşteri dükkândan alır.",
-    image: { src: "/site/demo-konum.png", alt: "Adres alanı, konum ekleme seçeneği ve sipariş notu" },
+    body: "Bayi sepetini doldurur, adını ve notunu yazar, tek dokunuşla gönderir. Siz düzenli bir sipariş fişi alırsınız; kim, ne, kaç adet, ne tutar.",
+    image: { src: "/site/toptan-sepet.png", alt: "Sepet ve WhatsApp'a gönderilecek sipariş özeti" },
+  },
+];
+
+const FEATURES = [
+  { title: "Şifreli katalog", body: "Fiyatlar herkese açık değil. Bayi şifresiyle girer; şifresiz ziyaretçi isterseniz yalnız ürünleri görür." },
+  { title: "Üç fiyat listesi", body: "Bayi, perakende, özel müşteri. Her şifre ayrı listeye açılır, aynı katalog üç fiyatla çalışır." },
+  { title: "Koli, paket, adet", body: "Ürün başına koli içi adet ve varyant (renk, beden, model). Bayi koli seçer, tutar kendiliğinden hesaplanır." },
+  { title: "WhatsApp'a PDF sipariş", body: "Sipariş fişi PDF olarak WhatsApp'ınıza gelir. Cari adı, telefon, not ve kalemler tek sayfada." },
+  { title: "Kampanya ve öne çıkanlar", body: "Banner, kampanya kartı, indirimli ürün ve öne çıkanlar bölümü. Yeni gelen ürünü ilk sırada gösterin." },
+  { title: "Bayilere bildirim", body: "Yeni ürün, stok geldi, kampanya başladı. Bildirim açan bayilerin telefonuna anında düşer." },
+  { title: "Raporlar", body: "Kim ne zaman girdi, hangi ürünlere baktı, hangi ilden. Bugün kaç sipariş PDF'i oluştu." },
+  { title: "Kendi alan adınız ve temanız", body: "katalog.firmaniz.com, logonuz, renkleriniz. Hazır temalardan seçin, gerçek ürünlerinizle önizleyin." },
+];
+
+const SEGMENTS = [
+  "Telefon aksesuarı ve elektronik",
+  "Gıda ve içecek toptancıları",
+  "Tekstil, giyim ve ayakkabı",
+  "Hırdavat, nalburiye ve yapı",
+  "Kozmetik ve kişisel bakım",
+  "Kırtasiye ve oyuncak",
+  "Ambalaj ve temizlik",
+  "Elektrik ve aydınlatma",
+  "Ev, mutfak ve züccaciye",
+  "Otomotiv ve yedek parça",
+  "Üreticiler ve distribütörler",
+];
+
+const FAQ = [
+  {
+    q: "Ücretsiz plan gerçekten ücretsiz mi?",
+    a: "Evet. Kart bilgisi istemeyiz, süre sınırı yoktur. 200 ürüne kadar kataloğunuzu yayınlar, WhatsApp'tan sipariş alırsınız. Karşılığında kataloğunuzda küçük eKatalox reklamları görünür.",
+  },
+  {
+    q: "Reklamlar nerede görünür, bayimi rahatsız eder mi?",
+    a: "Sayfanın altında ince bir bant, ürün listesinde arada bir kart ve sipariş fişinin altında bir satır. Rakip ya da üçüncü taraf reklamı değildir, yalnız eKatalox'un kendi tanıtımıdır. Herhangi bir ücretli pakete geçince tamamı kalkar.",
+  },
+  {
+    q: "Ürünleri kim yükler?",
+    a: "Siz yükleyebilirsiniz: Excel şablonu, fotoğraf ve panel. Mevcut PDF kataloğunuzu ya da Excel listenizi bize gönderirseniz ilk yüklemeyi biz yaparız.",
+  },
+  {
+    q: "Bayim nasıl girer, uygulama indirmesi gerekir mi?",
+    a: "Hayır. firmaniz.ekatalox.com adresini ve şifreyi WhatsApp'tan gönderirsiniz; bayi tarayıcıda açar, şifreyi yazar, sipariş verir. İsterse ana ekranına ekler, uygulama gibi kullanır.",
   },
 ];
 
@@ -82,15 +125,23 @@ const structuredData = {
       applicationCategory: "BusinessApplication",
       operatingSystem: "Web",
       description:
-        "Market, tekel, manav, kasap, çiçekçi ve petshoplar için komisyonsuz WhatsApp sipariş sistemi. Müşteri ürünleri telefonundan seçer, sipariş adres ve telefonuyla WhatsApp'a PDF olarak gelir. Kurulum eKatalox tarafından yapılır.",
+        "Toptancılar, üreticiler ve distribütörler için şifreli online katalog ve WhatsApp sipariş sistemi. Ücretsiz plan; ürünler bir kez yüklenir, bayiler kendi fiyat listesiyle girer, sipariş PDF olarak WhatsApp'a gelir.",
       url: SITE.url,
       inLanguage: "tr",
-      offers: ESNAF_PLANS.map((p) => ({
+      offers: TOPTAN_PLANS.map((p) => ({
         "@type": "Offer",
-        name: `${p.name} paketi (yıllık)`,
+        name: p.yearlyPrice ? `${p.name} paketi (yıllık)` : `${p.name} plan`,
         price: String(p.yearlyPrice),
         priceCurrency: "TRY",
-        description: `${ESNAF_TRIAL_DAYS} gün ücretsiz deneme, komisyon yok`,
+        description: p.ads ? "Ücretsiz, eKatalox reklamlı, kart istenmez" : "Yıllık, KDV hariç, reklamsız",
+      })),
+    },
+    {
+      "@type": "FAQPage",
+      mainEntity: FAQ.map((f) => ({
+        "@type": "Question",
+        name: f.q,
+        acceptedAnswer: { "@type": "Answer", text: f.a },
       })),
     },
   ],
@@ -105,53 +156,62 @@ export default function HomePage() {
       <Section tone="white" className="pb-0 sm:pb-0">
         <Container className="grid items-center gap-12 lg:grid-cols-[1.15fr_1fr] lg:gap-16">
           <div>
-            <Eyebrow>Market, tekel, manav, kasap ve petshoplar için</Eyebrow>
+            <Eyebrow>Toptancılar, üreticiler ve distribütörler için</Eyebrow>
             <h1 className="mt-4 text-balance text-4xl font-bold leading-[1.05] tracking-[-0.025em] text-brand-navy sm:text-5xl lg:text-[3.5rem]">
-              Mahallenizin siparişi WhatsApp&apos;ınıza gelsin.
+              PDF kataloğunuz artık canlı bir sipariş sayfası.
             </h1>
             <p className="mt-6 max-w-xl text-lg leading-relaxed text-brand-muted">
-              Müşteriniz dükkânınızı telefonundan gezsin, sepetini doldursun; sipariş adresiyle ve telefonuyla yazılı
-              gelsin. Komisyon yok, aracı yok, müşteri sizin.
+              Ürünlerinizi bir kez yükleyin. Bayileriniz şifreyle girsin, kendi fiyat listesini görsün, sepetini
+              doldurup WhatsApp&apos;tan sipariş versin. Ücretsiz başlayın, kart istemeyiz.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <ButtonLink href="/basvuru" size="lg">
-                Ücretsiz başvur
+                Ücretsiz kataloğumu kur
               </ButtonLink>
               <ButtonLink href={SITE.demoUrl} tone="outline" size="lg" external>
-                Demo mağazayı aç
+                Demo kataloğu aç
               </ButtonLink>
             </div>
             <p className="mt-6 font-plex-mono text-sm text-brand-muted">
-              {SITE.setupHours} saatte kurulum · 1 ay ücretsiz · komisyon yok
+              Ücretsiz plan · 200 ürün · kart yok · {SITE.setupMinutes} dakikada kurulum · demo şifresi {SITE.demoPassword}
             </p>
           </div>
           <div className="pb-8 lg:pb-0">
-            <PhoneFrame src="/site/demo-market-iphone.png" alt="Demo market sipariş sayfasının iPhone ekran görüntüsü" priority />
+            <PhoneFrame src="/site/toptan-hero-iphone.png" alt="Demo toptan kataloğunun iPhone ekran görüntüsü" priority />
           </div>
         </Container>
         <div className="mt-16 border-b border-brand-line" />
       </Section>
 
-      {/* 2. Komisyon hesaplayıcı */}
-      <Section id="komisyon">
+      {/* 2. Ücretsiz nasıl ücretsiz */}
+      <Section>
         <Container>
           <SectionHeading
-            eyebrow="Komisyon hesabı"
-            title="Sipariş başına komisyon mu, yılda bir sabit ücret mi?"
-            lead="Aylık sipariş sayınızı ve ortalama sepetinizi girin. Ödediğiniz komisyon oranını kendiniz belirleyin; sonucu eKatalox'un yıllık sabit ücretiyle karşılaştırın."
+            eyebrow="Ücretsiz plan"
+            title="Bedava kurun, yayına alın. Büyüyünce paket seçersiniz."
+            lead="Ücretsiz planda kataloğunuzun altında ince bir eKatalox bandı ve ürün listesinde arada bir tanıtım kartı görünür. Reklamsız istediğiniz gün bir paket alırsınız; ürünleriniz, şifreleriniz ve bayileriniz olduğu gibi kalır."
           />
-          <div className="mt-10">
-            <CommissionCalculator />
+          <div className="mt-10 grid gap-6 sm:grid-cols-3">
+            {[
+              { value: "0 ₺", label: "Ücretsiz plan, kart bilgisi istenmez" },
+              { value: "200", label: "Ürün, 1 fiyat listesi, WhatsApp sipariş" },
+              { value: "Süresiz", label: "Deneme değil; kapanma tarihi yok" },
+            ].map((s) => (
+              <div key={s.label} className="rounded-lg border border-brand-line bg-white p-6">
+                <div className="font-plex-mono text-3xl font-medium tabular-nums text-brand-navy">{s.value}</div>
+                <div className="mt-2 text-sm leading-relaxed text-brand-muted">{s.label}</div>
+              </div>
+            ))}
           </div>
         </Container>
       </Section>
 
-      {/* 3. Üç dert, üç çözüm */}
+      {/* 3. Üç dert */}
       <Section tone="white">
         <Container>
           <SectionHeading
-            eyebrow="Üç dert, üç çözüm"
-            title="Telefonla sipariş almanın üç derdi var. Üçü de biter."
+            eyebrow="PDF katalogla üç dert"
+            title="Katalogla sipariş almanın üç derdi var. Üçü de biter."
           />
           <div className="mt-12 grid gap-10 md:grid-cols-3 md:gap-8">
             {PROBLEMS.map((p, i) => (
@@ -170,8 +230,8 @@ export default function HomePage() {
         <Container>
           <SectionHeading
             eyebrow="Nasıl çalışır"
-            title="Müşteri seçer, siz hazırlarsınız. Arada telefon yok."
-            lead="Aşağıdaki ekranlar demo mağazamızdan alınmış gerçek ekran görüntüleridir."
+            title="Üç adım: yükle, şifre ver, sipariş al."
+            lead="Aşağıdaki ekranlar demo kataloğumuzdan alınmış gerçek ekran görüntüleridir."
           />
           <ol className="mt-12 space-y-16">
             {STEPS.map((s, i) => (
@@ -184,7 +244,7 @@ export default function HomePage() {
                   <h3 className="mt-2 text-2xl font-semibold text-brand-navy">{s.title}</h3>
                   <p className="mt-4 text-lg leading-relaxed text-brand-muted">{s.body}</p>
                 </div>
-                <div className="mx-auto w-full max-w-[300px] overflow-hidden rounded-2xl border border-brand-line bg-[#121212]">
+                <div className="mx-auto w-full max-w-[300px] overflow-hidden rounded-2xl border border-brand-line bg-white">
                   <Image
                     src={s.image.src}
                     alt={s.image.alt}
@@ -197,105 +257,113 @@ export default function HomePage() {
               </li>
             ))}
           </ol>
-          <div className="mt-14 rounded-lg border border-brand-line bg-white p-6 sm:p-8">
-            <Eyebrow>Sipariş nereden gelir</Eyebrow>
-            <h3 className="mt-2 text-xl font-semibold text-brand-navy">QR magnet: müşterinin buzdolabında, sizin adresiniz</h3>
-            <p className="mt-3 max-w-3xl leading-relaxed text-brand-muted">
-              Her müşteriye verdiğiniz buzdolabı magnetinde size özel bir QR kod bulunur. Müşteri kodu okutur, doğrudan
-              sipariş sayfanıza gelir. Magnetler eKatalox tarafından basılır ve kargoyla size ulaşır; Esnaf paketinde 100,
-              Esnaf Plus paketinde 300 adet hediyedir.
-            </p>
-            <Link href="/magnet" className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-brand-green hover:underline">
-              Magnet programını inceleyin <ArrowRight className="size-4" />
+          <div className="mt-14 flex flex-col gap-4 rounded-lg border border-brand-line bg-white p-6 sm:flex-row sm:items-center sm:justify-between sm:p-8">
+            <div>
+              <Eyebrow>Kendiniz deneyin</Eyebrow>
+              <h3 className="mt-2 text-xl font-semibold text-brand-navy">Demo kataloğa bayi gibi girin</h3>
+              <p className="mt-2 max-w-2xl leading-relaxed text-brand-muted">
+                Şifre {SITE.demoPassword}. Ürünleri gezin, sepete koyun, sipariş fişinin nasıl geldiğine bakın.
+              </p>
+            </div>
+            <ButtonLink href={SITE.demoUrl} tone="navy" external className="shrink-0">
+              Demoyu aç <ArrowRight className="size-4" />
+            </ButtonLink>
+          </div>
+        </Container>
+      </Section>
+
+      {/* 5. Özellikler */}
+      <Section tone="white" id="ozellikler">
+        <Container>
+          <SectionHeading
+            eyebrow="Özellikler"
+            title="Toptan satışın gerektirdiği her şey, ücretsiz planda da var."
+            lead="Ürün limiti ve fiyat listesi sayısı pakete göre değişir; işleyiş her pakette aynıdır."
+          />
+          <div className="mt-12 grid gap-x-8 gap-y-10 sm:grid-cols-2 lg:grid-cols-4">
+            {FEATURES.map((f) => (
+              <div key={f.title}>
+                <h3 className="text-lg font-semibold text-brand-navy">{f.title}</h3>
+                <p className="mt-2 text-[15px] leading-relaxed text-brand-muted">{f.body}</p>
+              </div>
+            ))}
+          </div>
+          <Link href="/ozellikler" className="mt-10 inline-flex items-center gap-1.5 text-sm font-semibold text-brand-green hover:underline">
+            Tüm özellikleri inceleyin <ArrowRight className="size-4" />
+          </Link>
+        </Container>
+      </Section>
+
+      {/* 6. Kimler için */}
+      <Section>
+        <Container>
+          <SectionHeading
+            eyebrow="Kimler için"
+            title="Katalog PDF'i hazırlayıp bayiye gönderen herkes için"
+            lead="Sektör fark etmez: ürün kodu, koli içi adet ve bayi fiyatı olan her toptancı aynı düzende çalışır."
+          />
+          <ul className="mt-10 flex flex-wrap gap-3">
+            {SEGMENTS.map((s) => (
+              <li key={s} className="rounded-full border border-brand-line bg-white px-4 py-2 text-sm font-medium text-brand-navy">
+                {s}
+              </li>
+            ))}
+          </ul>
+        </Container>
+      </Section>
+
+      {/* 7. Paketler */}
+      <Section tone="white" id="paketler">
+        <Container>
+          <SectionHeading
+            eyebrow="Paketler"
+            title="Ücretsiz başlayın, büyüyünce seçin."
+            lead="Fiyatlar yıllık ve KDV hariçtir. Komisyon yok, sipariş başına ücret yok. Ücretli paketlerde reklam görünmez."
+          />
+          <div className="mt-12">
+            <PlanCards compact />
+          </div>
+          <div className="mt-8 text-center">
+            <Link href="/fiyatlandirma" className="inline-flex items-center gap-1.5 text-sm font-semibold text-brand-green hover:underline">
+              Paketleri karşılaştırın <ArrowRight className="size-4" />
             </Link>
           </div>
         </Container>
       </Section>
 
-      {/* 5. Kimler için */}
-      <Section tone="white">
+      {/* 8. SSS */}
+      <Section>
         <Container>
-          <SectionHeading
-            eyebrow="Kimler için"
-            title="Mahallede sipariş alan her dükkân için"
-            lead="Sektörünüze göre hazırlanmış ürün düzeni ve sipariş akışıyla başlarsınız."
-          />
-          <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {SECTORS.map((s) => (
-              <Link
-                key={s.slug}
-                href={`/${s.slug}`}
-                className="group flex flex-col rounded-lg border border-brand-line bg-white p-5 transition-colors hover:border-brand-navy"
-              >
-                <span className="text-xs font-semibold uppercase tracking-[0.12em] text-brand-green">{s.label}</span>
-                <span className="mt-3 text-balance text-lg font-semibold leading-snug text-brand-navy">{s.headline}</span>
-                <span className="mt-auto flex items-center gap-1 pt-5 text-sm font-medium text-brand-muted group-hover:text-brand-navy">
-                  İncele <ArrowRight className="size-4" />
-                </span>
-              </Link>
-            ))}
-          </div>
-        </Container>
-      </Section>
-
-      {/* 6. Paketler */}
-      <Section id="paketler">
-        <Container>
-          <SectionHeading
-            eyebrow="Paketler"
-            title="İki paket, sabit ücret, komisyon yok"
-            lead={`İlk ${ESNAF_TRIAL_DAYS} gün ücretsiz; kart bilgisi istenmez. Yıllık ödemede iki paket de daha uygundur.`}
-          />
-          <div className="mt-12 grid gap-6 md:grid-cols-2">
-            {ESNAF_PLANS.map((plan) => (
-              <div
-                key={plan.slug}
-                className={`flex flex-col rounded-lg border bg-white p-6 sm:p-8 ${plan.featured ? "border-brand-navy" : "border-brand-line"}`}
-              >
-                <div className="flex items-center justify-between gap-4">
-                  <h3 className="text-2xl font-semibold text-brand-navy">{plan.name}</h3>
-                  {plan.featured ? (
-                    <span className="rounded-full bg-brand-navy-soft px-3 py-1 text-xs font-semibold text-brand-navy">Önerilen</span>
-                  ) : null}
-                </div>
-                <p className="mt-1 text-brand-muted">{plan.tagline}</p>
-                <div className="mt-6 flex flex-wrap items-baseline gap-x-2">
-                  <span className="font-plex-mono text-4xl font-medium tabular-nums text-brand-navy">{formatTry(plan.yearlyPrice)}</span>
-                  <span className="text-sm text-brand-muted">/ yıl</span>
-                </div>
-                <p className="mt-1 font-plex-mono text-sm tabular-nums text-brand-muted">
-                  ya da {formatTry(plan.monthlyPrice)} / ay
-                </p>
-                <CheckList items={plan.features.slice(0, 4)} className="mt-6 text-[15px]" />
-                <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-                  <ButtonLink href="/basvuru" tone={plan.featured ? "primary" : "navy"}>
-                    Ücretsiz başla
-                  </ButtonLink>
-                  <ButtonLink href="/fiyatlandirma" tone="outline">
-                    Tüm özellikler
-                  </ButtonLink>
-                </div>
+          <SectionHeading eyebrow="Sık sorulanlar" title="Aklınıza takılanlar" />
+          <dl className="mt-10 divide-y divide-brand-line border-y border-brand-line">
+            {FAQ.map((f) => (
+              <div key={f.q} className="grid gap-3 py-6 md:grid-cols-[1fr_1.6fr] md:gap-10">
+                <dt className="text-lg font-semibold text-brand-navy">{f.q}</dt>
+                <dd className="leading-relaxed text-brand-muted">{f.a}</dd>
               </div>
             ))}
-          </div>
+          </dl>
+          <Link href="/sss" className="mt-8 inline-flex items-center gap-1.5 text-sm font-semibold text-brand-green hover:underline">
+            Tüm sorular <ArrowRight className="size-4" />
+          </Link>
         </Container>
       </Section>
 
-      {/* 7. Son çağrı */}
+      {/* 9. Son çağrı */}
       <Section tone="navy">
         <Container className="grid items-center gap-10 lg:grid-cols-[1.4fr_1fr]">
           <div>
             <h2 className="text-balance text-3xl font-bold leading-[1.1] tracking-[-0.02em] sm:text-4xl">
-              Kurulumu {SITE.setupHours} saatte yapalım, bugün sipariş almaya başlayın.
+              Kataloğunuzu bugün yayınlayın. Ücretsiz.
             </h2>
             <p className="mt-4 max-w-xl text-lg leading-relaxed text-white/75">
-              Başvuru 5 dakika sürer. Ürünlerinizi biz yükleriz, magnetleriniz kargoya verilir, ilk siparişiniz
-              WhatsApp&apos;ınıza düşer.
+              Kayıt {SITE.setupMinutes} dakika sürer, kataloğunuz o an açılır. İlk yükleme için Excel ya da PDF&apos;inizi
+              gönderin, biz yükleyelim.
             </p>
           </div>
           <div className="flex flex-col gap-4 lg:items-end">
             <ButtonLink href="/basvuru" tone="white" size="lg">
-              Ücretsiz başvur
+              Ücretsiz kataloğumu kur
             </ButtonLink>
             <a href={SITE.phoneHref} className="font-plex-mono text-lg text-white/85 hover:text-white">
               {SITE.phone}

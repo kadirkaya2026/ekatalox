@@ -4,23 +4,14 @@
 // subject, sector, message} gönderir.
 import { useState } from "react";
 import { SITE } from "@/lib/marketing/site";
+import { TOPTAN_SECTOR_OPTIONS } from "@/lib/billing/toptan-plans";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Field, FormAlert, fieldInputClass } from "@/components/marketing/form-field";
 import { cn } from "@/lib/utils";
 
-const SECTOR_OPTIONS = [
-  { value: "market", label: "Market / Bakkal" },
-  { value: "tekel", label: "Tekel Bayii" },
-  { value: "manav", label: "Manav" },
-  { value: "kasap", label: "Kasap / Şarküteri" },
-  { value: "cicekci", label: "Çiçekçi" },
-  { value: "petshop", label: "Petshop" },
-  { value: "kirtasiye", label: "Kırtasiye" },
-  { value: "toptanci", label: "Toptancı" },
-  { value: "diger", label: "Diğer" },
-];
+const SECTOR_OPTIONS = [...TOPTAN_SECTOR_OPTIONS];
 
 const SUBJECT_OPTIONS = [
   { value: "demo", label: "Demo görmek istiyorum" },
@@ -136,7 +127,7 @@ export function ContactForm({ initialSubject = "demo" }: { initialSubject?: stri
           </Select>
         </Field>
         <Field id="contact-message" label="Mesajınız" error={errors.message} className="sm:col-span-2">
-          <Textarea id="contact-message" rows={5} value={form.message} onChange={(e) => update("message", e.target.value)} placeholder="Dükkânınızı ve ihtiyacınızı kısaca anlatın." aria-invalid={Boolean(errors.message)} className={fieldInputClass} />
+          <Textarea id="contact-message" rows={5} value={form.message} onChange={(e) => update("message", e.target.value)} placeholder="Firmanızı ve ihtiyacınızı kısaca anlatın." aria-invalid={Boolean(errors.message)} className={fieldInputClass} />
         </Field>
       </div>
       <button

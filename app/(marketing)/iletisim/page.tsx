@@ -16,7 +16,7 @@ export const metadata: Metadata = {
 };
 
 const DEPARTMENTS = [
-  { name: "Satış", email: SITE.salesEmail, desc: "Demo, paket seçimi, toptancı teklifi" },
+  { name: "Satış", email: SITE.salesEmail, desc: "Demo, paket seçimi, ürün yükleme desteği" },
   { name: "Destek", email: SITE.supportEmail, desc: "Panel, sipariş akışı, teknik sorun" },
   { name: "Kurumsal", email: "kurumsal@ekatalox.com", desc: "Anlaşma, ortaklık, basın" },
 ];
@@ -56,7 +56,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
                   WhatsApp’tan yazın
                 </ButtonLink>
                 <ButtonLink href={SITE.demoUrl} tone="outline" external>
-                  Örnek mağazayı açın
+                  Demo kataloğu açın
                 </ButtonLink>
               </div>
             </div>
@@ -74,9 +74,9 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
             </ul>
 
             <p className="text-sm leading-relaxed text-brand-muted">
-              Başvurmaya hazırsanız formu atlayın:{" "}
+              Hemen başlamak istiyorsanız formu atlayın:{" "}
               <a href="/basvuru" className="font-semibold text-brand-navy underline underline-offset-4">
-                ücretsiz başvuru sayfası
+                ücretsiz kayıt sayfası
               </a>
               .
             </p>

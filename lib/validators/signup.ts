@@ -1,7 +1,7 @@
 // Self-servis kayıt formu şeması (app/api/signup). Türkçe mesajlar doğrudan
 // formda gösterilir; `path[0]` alan adı olarak istemciye döner.
 import { z } from "zod";
-import { ESNAF_SECTOR_VALUES } from "@/lib/storefront/esnaf-themes";
+import { TOPTAN_PLANS, TOPTAN_SECTOR_VALUES } from "@/lib/billing/toptan-plans";
 import {
   isReservedSubdomain,
   isValidSubdomainFormat,
@@ -53,7 +53,7 @@ export const signupSchema = z.object({
   businessName: trimmed(2, 80, "İşletme adı en az 2 karakter olmalı."),
   sector: z
     .string()
-    .refine((value) => ESNAF_SECTOR_VALUES.includes(value), "Geçerli bir sektör seçin."),
+    .refine((value) => (TOPTAN_SECTOR_VALUES as string[]).includes(value), "Geçerli bir sektör seçin."),
   fullName: trimmed(2, 80, "Ad soyad en az 2 karakter olmalı."),
   phone: trMobileSchema("Telefon"),
   email: z.preprocess(
@@ -61,17 +61,21 @@ export const signupSchema = z.object({
     z.email("Geçerli bir e-posta adresi girin."),
   ),
   password: z.string().min(8, "Şifre en az 8 karakter olmalı.").max(128, "Şifre çok uzun."),
+  // Toptancı kaydı (20 Eyl 2026): sürtünmeyi azaltmak için yalnız il zorunlu;
+  // ilçe/adres/vergi bilgileri fatura aşamasında da eklenebilir.
   city: trimmed(2, 60, "İl girin."),
-  district: trimmed(2, 60, "İlçe girin."),
-  neighborhood: trimmed(2, 80, "Mahalle girin."),
-  address: trimmed(5, 300, "Adres en az 5 karakter olmalı."),
+  district: optionalTrimmed(60),
+  neighborhood: optionalTrimmed(80),
+  address: optionalTrimmed(300),
   taxOffice: optionalTrimmed(80),
   taxNumber: optionalTrimmed(20),
   whatsappNumber: trMobileSchema("WhatsApp numarası"),
   subdomain: signupSubdomainSchema,
-  plan: z.enum(["esnaf", "esnaf_plus"], { error: "Geçerli bir paket seçin." }),
-  billingPeriod: z.enum(["monthly", "yearly"], { error: "Geçerli bir ödeme dönemi seçin." }),
-  couponCode: optionalTrimmed(40),
+  // Seçilen paket yalnız "talep"tir: hesap her zaman Ücretsiz açılır, ücretli
+  // paket satış ekibine bildirilir (bkz. lib/signup/create-tenant.ts).
+  plan: z.enum(TOPTAN_PLANS.map((plan) => plan.slug) as ["free", "starter", "professional", "corporate"], {
+    error: "Geçerli bir paket seçin.",
+  }),
   termsAccepted: z.literal(true, {
     error: "Devam etmek için Kullanım Şartları'nı kabul etmelisiniz.",
   }),

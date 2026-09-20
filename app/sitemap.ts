@@ -1,5 +1,4 @@
 import type { MetadataRoute } from "next";
-import { SECTORS } from "@/lib/marketing/sectors";
 
 const BASE_URL = "https://www.ekatalox.com";
 
@@ -10,7 +9,6 @@ const STATIC: Array<[string, MetadataRoute.Sitemap[number]["changeFrequency"], n
   ["/fiyatlandirma", "monthly", 0.9],
   ["/nasil-calisir", "monthly", 0.8],
   ["/ozellikler", "monthly", 0.8],
-  ["/magnet", "monthly", 0.7],
   ["/sss", "monthly", 0.7],
   ["/hakkimizda", "monthly", 0.5],
   ["/iletisim", "monthly", 0.6],
@@ -22,14 +20,5 @@ const STATIC: Array<[string, MetadataRoute.Sitemap[number]["changeFrequency"], n
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const lastModified = new Date();
-  const sectorEntries: MetadataRoute.Sitemap = SECTORS.map((s) => ({
-    url: `${BASE_URL}/${s.slug}`,
-    lastModified,
-    changeFrequency: "monthly",
-    priority: 0.8,
-  }));
-  return [
-    ...STATIC.map(([path, changeFrequency, priority]) => ({ url: `${BASE_URL}${path}`, lastModified, changeFrequency, priority })),
-    ...sectorEntries,
-  ];
+  return STATIC.map(([path, changeFrequency, priority]) => ({ url: `${BASE_URL}${path}`, lastModified, changeFrequency, priority }));
 }
