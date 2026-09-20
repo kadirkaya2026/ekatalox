@@ -31,6 +31,14 @@
   --color-brand-paper: #F5F7FA;
   --color-brand-amber: #B7791F;
   --color-brand-amber-soft: #FBF1DE;
+  /* Koyu SaaS teması (21 Eyl 2026): Section tone="navy" ve başlık/altbilgi
+     bu tokenları kullanır. Işıklı yeşil CTA + derin lacivert-siyah zemin. */
+  --color-brand-dark: #0A0E1A;
+  --color-brand-dark-surface: #10162A;
+  --color-brand-dark-line: rgba(255, 255, 255, 0.08);
+  --color-brand-dark-muted: #93A0B4;
+  --color-brand-neon: #22C55E;
+  --color-brand-neon-soft: rgba(34, 197, 94, 0.14);
   --font-plex: var(--font-plex-sans);
   --font-plex-mono: var(--font-plex-mono);
 }
