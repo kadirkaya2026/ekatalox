@@ -16,6 +16,7 @@ import { getAppearanceFromSettings } from "@/lib/storefront/appearance";
 import { isTrialExpired } from "@/lib/billing/trial";
 import { getStorefrontTenantCached, getTenantStorefrontSettings } from "@/lib/data";
 import { getStorefrontHomePath } from "@/lib/storefront/paths";
+import { getGateBranding } from "@/lib/storefront/gate-branding";
 
 export function generateStaticParams() {
   return [];
@@ -103,6 +104,7 @@ export default async function StorefrontGatePage(
         themeKey={settings.theme_key}
         isThemeToggleVisible={settings.is_theme_toggle_visible}
         ads={ads}
+        branding={getGateBranding(subdomain)}
       />
     </StorefrontPageShell>
   );
