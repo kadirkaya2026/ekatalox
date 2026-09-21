@@ -56,16 +56,16 @@ function PasswordGateForm({
   }
 
   const card = (
-    <div className={cn(theme.gateCard, branding && "shadow-[0_30px_80px_rgba(0,0,0,0.45)]")}>
+    <div className={cn(theme.gateCard, branding && "shadow-[0_30px_80px_rgba(0,0,0,0.45)] max-sm:p-5 [@media(max-height:700px)]:p-5")}>
       <p className={theme.gateEyebrow} style={branding ? { color: branding.accentColor } : undefined}>
         {t("gate.eyebrow")}
       </p>
       <h1 className={theme.gateTitle}>{companyName}</h1>
-      <p className={theme.gateDescription}>
+      <p className={cn(theme.gateDescription, branding && "max-sm:mt-1 max-sm:text-xs max-sm:leading-5")}>
         {t("gate.description")}
       </p>
 
-      <form onSubmit={submit} className="mt-6 space-y-4">
+      <form onSubmit={submit} className={cn("mt-6 space-y-4", branding && "max-sm:mt-4 max-sm:space-y-3 [@media(max-height:700px)]:mt-4 [@media(max-height:700px)]:space-y-3")}>
         <Input
           inputMode="numeric"
           aria-label={t("gate.passwordPlaceholder")}
@@ -85,13 +85,19 @@ function PasswordGateForm({
         </Button>
         {error ? <p className={`text-sm ${theme.gateError}`}>{error}</p> : null}
       </form>
-      {ads ? <StorefrontAdInline ads={ads} subdomain={subdomain} placement="password_gate" /> : null}
+      {ads ? (
+        // Markalı kapıda çok kısa telefon ekranlarında (iPhone SE) reklam kutusu
+        // tek ekrana sığmayı bozuyor; yalnız o durumda gizlenir.
+        <div className={cn(branding && "max-sm:[@media(max-height:700px)]:hidden")}>
+          <StorefrontAdInline ads={ads} subdomain={subdomain} placement="password_gate" />
+        </div>
+      ) : null}
     </div>
   );
 
   if (!branding) {
     return (
-      <div className="container-shell flex min-h-screen items-center justify-center py-8">
+      <div className="container-shell flex flex-1 items-center justify-center py-6 sm:py-8">
         {card}
       </div>
     );
@@ -101,7 +107,7 @@ function PasswordGateForm({
   const copy = getGateBrandingCopy(branding, locale);
 
   return (
-    <div className="relative isolate min-h-screen overflow-hidden bg-[#0a0a0a] text-white">
+    <div className="relative isolate flex flex-1 flex-col overflow-hidden bg-[#0a0a0a] text-white">
       <div
         aria-hidden
         className="absolute inset-0 -z-20 bg-cover bg-[position:72%_center] lg:bg-[position:right_center]"
@@ -121,39 +127,59 @@ function PasswordGateForm({
         style={{ background: `radial-gradient(circle, ${branding.accentColor}55 0%, transparent 70%)` }}
       />
 
-      <div className="container-shell flex min-h-screen flex-col justify-center py-20 sm:py-24">
-        <div className="w-full max-w-md lg:max-w-[460px]">
-          <div className="flex items-center gap-3">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={branding.logoMark} alt="" className="h-8 w-auto sm:h-10" />
-            <span className="text-lg font-bold tracking-[0.18em] sm:text-xl">{branding.wordmark}</span>
+      {/* Tek ekran: mobilde tek sütun, masaüstünde metin + kart yan yana;
+          kısa ekranlarda (max-height) boşluklar ve ikincil metinler daralır. */}
+      <div className="container-shell flex flex-1 flex-col justify-center py-4 sm:py-8">
+        <div className="grid gap-4 sm:gap-6 lg:grid-cols-[minmax(0,440px)_minmax(0,400px)] lg:items-center lg:gap-12">
+          <div className="pr-24 lg:pr-0">
+            <div className="flex items-center gap-3">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={branding.logoMark} alt="" className="h-7 w-auto sm:h-9" />
+              <span className="text-base font-bold tracking-[0.18em] sm:text-xl">{branding.wordmark}</span>
+            </div>
+            <p
+              className="mt-3 text-[11px] font-semibold uppercase tracking-[0.3em] sm:mt-6 sm:text-xs"
+              style={{ color: branding.accentColor }}
+            >
+              {copy.eyebrow}
+            </p>
+            <h2 className="mt-1.5 text-3xl font-bold leading-[1.05] tracking-tight max-sm:[@media(max-height:760px)]:text-2xl sm:text-4xl lg:text-5xl">
+              {copy.headline}
+            </h2>
+            <p className="mt-3 text-sm leading-6 text-white/70 max-sm:[@media(max-height:720px)]:hidden sm:text-base sm:leading-7 [@media(max-height:620px)]:hidden">
+              {copy.tagline}
+            </p>
+            <ul className="mt-4 hidden flex-wrap gap-2 sm:mt-6 lg:flex [@media(max-height:700px)]:lg:hidden">
+              {copy.chips.map((chip) => (
+                <li
+                  key={chip}
+                  className="rounded-full border border-white/15 bg-white/[0.06] px-3 py-1 text-[11px] font-medium tracking-wide text-white/80 backdrop-blur-sm"
+                >
+                  {chip}
+                </li>
+              ))}
+            </ul>
+            {copy.helpLine ? (
+              <p className="mt-4 hidden text-sm text-white/50 lg:block">{copy.helpLine}</p>
+            ) : null}
           </div>
-          <p
-            className="mt-7 text-xs font-semibold uppercase tracking-[0.3em]"
-            style={{ color: branding.accentColor }}
-          >
-            {copy.eyebrow}
-          </p>
-          <h2 className="mt-2 text-4xl font-bold leading-[1.05] tracking-tight sm:text-5xl">
-            {copy.headline}
-          </h2>
-          <p className="mt-4 text-sm leading-6 text-white/70 sm:text-base sm:leading-7">{copy.tagline}</p>
 
-          <div className="mt-7">{card}</div>
-
-          <ul className="mt-6 flex flex-wrap gap-2">
-            {copy.chips.map((chip) => (
-              <li
-                key={chip}
-                className="rounded-full border border-white/15 bg-white/[0.06] px-3 py-1 text-[11px] font-medium tracking-wide text-white/80 backdrop-blur-sm"
-              >
-                {chip}
-              </li>
-            ))}
-          </ul>
-          {copy.helpLine ? (
-            <p className="mt-5 text-xs text-white/50 sm:text-sm">{copy.helpLine}</p>
-          ) : null}
+          <div>
+            {card}
+            <ul className="mt-4 flex flex-wrap gap-1.5 lg:hidden [@media(max-height:900px)]:hidden">
+              {copy.chips.map((chip) => (
+                <li
+                  key={chip}
+                  className="rounded-full border border-white/15 bg-white/[0.06] px-2.5 py-1 text-[10px] font-medium tracking-wide text-white/80"
+                >
+                  {chip}
+                </li>
+              ))}
+            </ul>
+            {copy.helpLine ? (
+              <p className="mt-3 text-xs text-white/50 max-sm:[@media(max-height:800px)]:hidden lg:hidden">{copy.helpLine}</p>
+            ) : null}
+          </div>
         </div>
       </div>
     </div>
@@ -177,7 +203,7 @@ export function PasswordGate({
 }) {
   return (
     <StorefrontThemeProvider themeKey={themeKey}>
-      <div data-storefront className="relative min-h-screen">
+      <div data-storefront className="relative flex flex-1 flex-col">
         <div className="absolute right-4 top-4 z-10 flex items-center gap-2 sm:right-6 sm:top-6">
           <StorefrontLanguageSwitcher />
           {isThemeToggleVisible ? <StorefrontThemeToggle /> : null}

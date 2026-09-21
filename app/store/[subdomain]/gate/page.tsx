@@ -97,6 +97,8 @@ export default async function StorefrontGatePage(
         subdomain={subdomain}
         hidePoweredBy={isWhiteLabelStorefront(tenant)}
         ads={ads}
+        // Kapıda sepet çubuğu yok; temanın alt boşluğu tek ekrana sığmayı bozuyor
+        className="pb-0 xl:pb-0"
       >
       <PasswordGate
         subdomain={subdomain}
