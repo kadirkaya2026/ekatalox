@@ -32,24 +32,26 @@ function OwnerLine({ ads, subdomain, className }: AdProps & { className?: string
 export function StorefrontAdBottomBar({ ads, subdomain }: AdProps) {
   if (!ads.bottom_bar.enabled) return null;
   return (
-    <div className="sticky bottom-0 z-30 border-t border-slate-800 bg-black py-2 text-slate-200">
-      <div className="container-shell flex flex-col items-center gap-1 text-center sm:flex-row sm:justify-between sm:text-left">
-        <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-[11px]">
-          <span className="rounded bg-slate-800 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-slate-400">
+    // Mobilde tek satır (21 Eyl 2026): metin kısalır, sahip satırı yalnız
+    // geniş ekranda; bant Safari alt çubuğuyla birlikte fazla yer kaplıyordu.
+    <div className="sticky bottom-0 z-30 border-t border-slate-800 bg-black py-1.5 text-slate-200">
+      <div className="container-shell flex items-center justify-between gap-3">
+        <div className="flex min-w-0 items-center gap-2 text-[11px]">
+          <span className="shrink-0 rounded bg-slate-800 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-slate-400">
             Reklam
           </span>
-          <EkataloxLogo variant="dark" alt="eKatalox" className="h-3.5 w-[62px]" />
-          <span>{ads.bottom_bar.text}</span>
+          <EkataloxLogo variant="dark" alt="eKatalox" className="h-3.5 w-[62px] shrink-0" />
+          <span className="hidden min-w-0 truncate min-[480px]:inline">{ads.bottom_bar.text}</span>
           <a
             href={buildStorefrontAdHref(ads.cta_url, "bottom_bar", subdomain)}
             target="_blank"
             rel="noopener noreferrer"
-            className="font-semibold text-emerald-300 hover:text-emerald-200"
+            className="shrink-0 whitespace-nowrap font-semibold text-emerald-300 hover:text-emerald-200"
           >
             {ads.bottom_bar.cta_label} →
           </a>
         </div>
-        <OwnerLine ads={ads} subdomain={subdomain} />
+        <OwnerLine ads={ads} subdomain={subdomain} className="hidden shrink-0 sm:block" />
       </div>
     </div>
   );
