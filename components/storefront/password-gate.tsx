@@ -57,7 +57,9 @@ function PasswordGateForm({
 
   const card = (
     <div className={cn(theme.gateCard, branding && "shadow-[0_30px_80px_rgba(0,0,0,0.45)]")}>
-      <p className={theme.gateEyebrow}>{t("gate.eyebrow")}</p>
+      <p className={theme.gateEyebrow} style={branding ? { color: branding.accentColor } : undefined}>
+        {t("gate.eyebrow")}
+      </p>
       <h1 className={theme.gateTitle}>{companyName}</h1>
       <p className={theme.gateDescription}>
         {t("gate.description")}
@@ -72,7 +74,13 @@ function PasswordGateForm({
           onChange={(event) => setCode(event.target.value)}
           className={theme.formField}
         />
-        <Button type="submit" className={`w-full ${theme.primaryButton}`} disabled={pending}>
+        <Button
+          type="submit"
+          className={cn("w-full", theme.primaryButton, branding && "border-0 text-white hover:brightness-110")}
+          // Markalı kapıda buton tema rengi yerine markanın vurgu rengini alır
+          style={branding ? { backgroundColor: branding.accentColor } : undefined}
+          disabled={pending}
+        >
           {pending ? t("gate.verifying") : t("gate.submit")}
         </Button>
         {error ? <p className={`text-sm ${theme.gateError}`}>{error}</p> : null}
