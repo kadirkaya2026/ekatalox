@@ -61,6 +61,46 @@ const GATE_BRANDING: Record<string, GateBranding> = {
       },
     },
   },
+  demotoptan: {
+    backgroundImage: "/gate/demotoptan/bg.jpg",
+    logoMark: "/gate/demotoptan/logo-mark.png",
+    wordmark: "DEMOTOPTAN",
+    accentColor: "#3B82F6",
+    copy: {
+      tr: {
+        eyebrow: "Bayi Portalı",
+        headline: "Aksesuarda Toptan Güç.",
+        tagline:
+          "Baseus ve Toocki telefon aksesuarları; kablodan şarj aletine, kılıftan USB-C hub'a güncel toptan fiyat listesi bayilerimize özel.",
+        chips: ["Şarj Kablosu", "Şarj Adaptörü", "USB-C Hub", "Telefon Kılıfı", "Araç İçi", "3 Fiyat Kademesi"],
+        helpLine: "Şifreniz yok mu? WhatsApp'tan bize yazın.",
+      },
+      en: {
+        eyebrow: "Dealer Portal",
+        headline: "Wholesale Power in Accessories.",
+        tagline:
+          "Baseus and Toocki phone accessories; from cables to chargers, cases to USB-C hubs, the current wholesale price list exclusively for our dealers.",
+        chips: ["Cables", "Chargers", "USB-C Hubs", "Phone Cases", "Car Accessories", "3 Price Tiers"],
+        helpLine: "No password? Message us on WhatsApp.",
+      },
+      de: {
+        eyebrow: "Händlerportal",
+        headline: "Großhandelsstärke bei Zubehör.",
+        tagline:
+          "Baseus- und Toocki-Handyzubehör; von Kabeln bis Ladegeräten, von Hüllen bis USB-C-Hubs, die aktuelle Großhandelspreisliste exklusiv für unsere Händler.",
+        chips: ["Kabel", "Ladegeräte", "USB-C-Hubs", "Handyhüllen", "Auto-Zubehör", "3 Preisstufen"],
+        helpLine: "Kein Passwort? Schreiben Sie uns über WhatsApp.",
+      },
+      ru: {
+        eyebrow: "Портал дилера",
+        headline: "Оптовая сила в аксессуарах.",
+        tagline:
+          "Аксессуары Baseus и Toocki; от кабелей до зарядных устройств, от чехлов до USB-C хабов, актуальный оптовый прайс-лист только для наших дилеров.",
+        chips: ["Кабели", "Зарядные устройства", "USB-C хабы", "Чехлы", "Автоаксессуары", "3 уровня цен"],
+        helpLine: "Нет пароля? Напишите нам в WhatsApp.",
+      },
+    },
+  },
 };
 
 export function getGateBranding(subdomain: string): GateBranding | null {
