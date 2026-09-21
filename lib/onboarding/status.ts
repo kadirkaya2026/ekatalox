@@ -64,9 +64,11 @@ export interface OnboardingStatus {
  *  etmemek için). Kart üzerinden herkes elle açabilir. */
 export const ONBOARDING_AUTO_OPEN_SINCE = "2026-09-21T00:00:00Z";
 
-/** Kayıtta yüklenen yer tutucu SVG (lib/signup/create-tenant.ts) gerçek logo sayılmaz. */
+/** Kayıtta yüklenen yer tutucu SVG gerçek logo sayılmaz. Yol
+ *  `{tenantId}/branding/logo-placeholder.svg` (buildTenantBrandingPath
+ *  "logo-" öneki ekler), o yüzden yalnız dosya adına bakılır. */
 export function isRealLogo(logoUrl: string | null | undefined) {
-  return Boolean(logoUrl) && !/\/placeholder\.svg(\?|$)/.test(logoUrl ?? "");
+  return Boolean(logoUrl) && !/placeholder\.svg(\?|$)/i.test(logoUrl ?? "");
 }
 
 export function isThemeCustomized(
