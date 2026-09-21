@@ -118,6 +118,8 @@ export interface Tenant {
   signup_source?: TenantSignupSource | null;
   first_order_email_sent_at?: string | null;
   trial_reminder_sent_at?: string | null;
+  /** Kurulum sihirbazı kapatıldı/bitirildi (0126). null = ilk girişte otomatik açılır. */
+  onboarding_dismissed_at?: string | null;
 }
 
 export type TenantBusinessType = "general" | "market";

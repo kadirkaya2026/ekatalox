@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Box, ShoppingCart, Wallet } from "lucide-react";
 import { Header } from "@/components/dashboard/header";
+import { OnboardingWizard } from "@/components/dashboard/onboarding-wizard";
 import { OnlineNowCard } from "@/components/dashboard/online-now-card";
 import { Card } from "@/components/ui/card";
 import { requireTenantAdminPage } from "@/lib/auth/session";
@@ -10,6 +11,8 @@ import {
   getEffectiveProductLimit,
 } from "@/lib/billing/plans";
 import { getTenantDashboardSummary } from "@/lib/data";
+import { appEnv } from "@/lib/env";
+import { getOnboardingThemePresets, getTenantOnboardingStatus } from "@/lib/onboarding/status";
 import { getTenantOrdersPage, getTenantTodayOrderSummary } from "@/lib/orders/data";
 import type { StorefrontOrder } from "@/lib/types";
 import { formatCurrency } from "@/lib/utils";
@@ -26,11 +29,13 @@ function fmtTime(iso: string) {
 export default async function DashboardHomePage() {
   const session = await requireTenantAdminPage();
   const tenant = session.tenant!;
-  const [summary, ordersPage, today, presence] = await Promise.all([
+  const storeUrl = `https://${tenant.subdomain}.${appEnv.rootDomain}`;
+  const [summary, ordersPage, today, presence, onboarding] = await Promise.all([
     getTenantDashboardSummary(tenant),
     getTenantOrdersPage(tenant.id, { page: 1, pageSize: 5 }),
     getTenantTodayOrderSummary(tenant.id),
     getTenantOnlinePresence(tenant.id),
+    getTenantOnboardingStatus(tenant, storeUrl),
   ]);
 
   const plan = tenant.plan ?? "baslangic";
@@ -55,6 +60,10 @@ export default async function DashboardHomePage() {
         title="Genel Bakış"
         description="Mağazanızın güncel istatistikleri ve son hareketleri."
       />
+
+      {/* Kurulum sihirbazı: yeni tenant'ta ilk girişte açılır, eksik adım
+          kaldıkça "%X tamamlandı" kartı burada durur. */}
+      <OnboardingWizard status={onboarding} presets={getOnboardingThemePresets()} tenantId={tenant.id} />
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {stats.map((s) => (
