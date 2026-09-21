@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 import { PhoneFrame } from "@/components/marketing/phone-frame";
 import { ButtonLink, Container, Section, SectionHeading } from "@/components/marketing/ui";
 import { SITE } from "@/lib/marketing/site";
@@ -24,7 +23,7 @@ export default function CustomersPage() {
               <ButtonLink href="/basvuru" tone="outline">Ücretsiz kur</ButtonLink>
             </div>
           </div>
-          <PhoneFrame src="/site/toptan-hero-iphone-v2.png" alt="Örnek toptan katalog, telefon görünümü" priority />
+          <PhoneFrame src="/site/toptan-hero-iphone-v3.png" alt="Örnek toptan katalog, telefon görünümü" priority />
         </Container>
       </Section>
       <Section>
@@ -36,9 +35,7 @@ export default function CustomersPage() {
               { src: "/site/toptan-sepet.png", alt: "Sepet ve sipariş özeti", title: "Sepet ve sipariş", text: "Adet ve koli seçimi, cari adı, not; sipariş size PDF olarak düşer." },
             ].map((s) => (
               <figure key={s.src} className="rounded-lg border border-brand-line bg-white p-5">
-                <div className="mx-auto w-56 overflow-hidden rounded-xl border border-brand-line bg-white">
-                  <Image src={s.src} alt={s.alt} width={780} height={1688} className="h-auto w-full" />
-                </div>
+                <PhoneFrame src={s.src} alt={s.alt} className="w-56 sm:w-56" />
                 <figcaption className="mt-4">
                   <p className="font-semibold">{s.title}</p>
                   <p className="mt-1 text-sm text-brand-muted">{s.text}</p>

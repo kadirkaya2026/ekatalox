@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Image from "next/image";
+import { PhoneFrame } from "@/components/marketing/phone-frame";
 import { ButtonLink, CheckList, Container, Eyebrow, Section, SectionHeading } from "@/components/marketing/ui";
 import { SITE } from "@/lib/marketing/site";
 
@@ -110,9 +110,7 @@ export default function NasilCalisirPage() {
           <div className="mt-12 grid gap-10 sm:grid-cols-3 sm:gap-8">
             {SCREENS.map((sc) => (
               <figure key={sc.src}>
-                <div className="mx-auto w-full max-w-[280px] overflow-hidden rounded-2xl border border-brand-line bg-white">
-                  <Image src={sc.src} alt={sc.alt} width={780} height={1688} sizes="(min-width: 640px) 280px, 80vw" className="h-auto w-full" />
-                </div>
+                <PhoneFrame src={sc.src} alt={sc.alt} className="w-[240px] sm:w-[250px]" />
                 <figcaption className="mx-auto mt-4 max-w-[280px]">
                   <span className="block font-semibold text-brand-navy">{sc.title}</span>
                   <span className="mt-1 block text-sm leading-relaxed text-brand-muted">{sc.body}</span>
