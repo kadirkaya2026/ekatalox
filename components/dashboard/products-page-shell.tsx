@@ -1,6 +1,7 @@
 "use client";
 
 import { ProductsManager } from "@/components/dashboard/products-manager";
+import type { ProductStockFilter } from "@/lib/products/constants";
 import type { Category, PriceList, Product, Tenant } from "@/lib/types";
 
 interface Props {
@@ -10,6 +11,7 @@ interface Props {
   initialCategories: Category[];
   priceLists: PriceList[];
   initialSearchTerm?: string;
+  initialStockFilter?: ProductStockFilter;
   focusProductId?: string | null;
 }
 
@@ -20,6 +22,7 @@ export function ProductsPageShell({
   initialCategories,
   priceLists,
   initialSearchTerm,
+  initialStockFilter,
   focusProductId,
 }: Props) {
   return (
@@ -30,6 +33,7 @@ export function ProductsPageShell({
       initialCategories={initialCategories}
       priceLists={priceLists}
       initialSearchTerm={initialSearchTerm}
+      initialStockFilter={initialStockFilter}
       focusProductId={focusProductId}
     />
   );

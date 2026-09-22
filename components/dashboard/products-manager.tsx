@@ -100,6 +100,7 @@ export function ProductsManager({
   initialCategories,
   priceLists,
   initialSearchTerm = "",
+  initialStockFilter = "all",
   focusProductId = null,
 }: {
   tenant: Tenant;
@@ -111,6 +112,9 @@ export function ProductsManager({
   // Sunucu bu terimle zaten filtreledi; ilk render'da tekrar fetch olmasın
   // diye debounce'lu kopya da aynı değerle başlatılıyor.
   initialSearchTerm?: string;
+  // Genel Bakış "stok dışı" bağlantısı ?stock=out_of_stock ile gelir; sunucu
+  // ilk sayfayı bu süzgeçle çekti, istemci de aynı süzgeçle başlar.
+  initialStockFilter?: ProductStockFilter;
   focusProductId?: string | null;
 }) {
   const pricedLists = useMemo(
@@ -131,7 +135,7 @@ export function ProductsManager({
   const [isSelectingAllFiltered, setIsSelectingAllFiltered] = useState(false);
   const [allFilteredSelectedFlag, setAllFilteredSelectedFlag] = useState(false);
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
-  const [stockFilter, setStockFilterRaw] = useState<ProductStockFilter>("all");
+  const [stockFilter, setStockFilterRaw] = useState<ProductStockFilter>(initialStockFilter);
   const [draggedProductId, setDraggedProductId] = useState<string | null>(null);
   const [inlineCategoryProductId, setInlineCategoryProductId] = useState<string | null>(null);
   const [bulkCategoryId, setBulkCategoryId] = useState<string>("");
