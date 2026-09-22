@@ -11,7 +11,7 @@ import { ProductVariantMatrixModal } from "@/components/dashboard/product-varian
 import { ProductsBulkActionBar } from "@/components/dashboard/products-bulk-action-bar";
 import { ProductsTable } from "@/components/dashboard/products-table";
 import { ProductsToolbar } from "@/components/dashboard/products-toolbar";
-import type { ProductStockFilter } from "@/lib/products/constants";
+import type { ProductQualityFilter, ProductStockFilter } from "@/lib/products/constants";
 import {
   buildCategoryTree,
   flattenCategoryTree,
@@ -30,7 +30,6 @@ import type { Category, PriceList, Product, Tenant } from "@/lib/types";
 // kategori filtresi ve sayfalama artık sunucu tarafında (bkz.
 // getTenantProductsPage), her seferinde sadece bir sayfalık satır geliyor.
 const PRODUCTS_PAGE_SIZE = 100;
-const SEARCH_DEBOUNCE_MS = 350;
 
 // Yüzlerce sayfalık bir kataloğu tek tek "Sonraki" ile gezmek yerine, sayfa
 // numarasını yazıp doğrudan o sayfaya atlamak için.
@@ -101,6 +100,7 @@ export function ProductsManager({
   priceLists,
   initialSearchTerm = "",
   initialStockFilter = "all",
+  initialQualityFilter = "all",
   focusProductId = null,
 }: {
   tenant: Tenant;
@@ -115,6 +115,8 @@ export function ProductsManager({
   // Genel Bakış "stok dışı" bağlantısı ?stock=out_of_stock ile gelir; sunucu
   // ilk sayfayı bu süzgeçle çekti, istemci de aynı süzgeçle başlar.
   initialStockFilter?: ProductStockFilter;
+  // Genel Bakış "Görselsiz / Fiyatsız ürün" bağlantısı ?quality= ile gelir.
+  initialQualityFilter?: ProductQualityFilter;
   focusProductId?: string | null;
 }) {
   const pricedLists = useMemo(
@@ -136,6 +138,7 @@ export function ProductsManager({
   const [allFilteredSelectedFlag, setAllFilteredSelectedFlag] = useState(false);
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
   const [stockFilter, setStockFilterRaw] = useState<ProductStockFilter>(initialStockFilter);
+  const [qualityFilter, setQualityFilterRaw] = useState<ProductQualityFilter>(initialQualityFilter);
   const [draggedProductId, setDraggedProductId] = useState<string | null>(null);
   const [inlineCategoryProductId, setInlineCategoryProductId] = useState<string | null>(null);
   const [bulkCategoryId, setBulkCategoryId] = useState<string>("");
@@ -176,10 +179,6 @@ export function ProductsManager({
     return [...new Set(matchedRootIds.flatMap((id) => getDescendantCategoryIds(categories, id)))];
   }, [categories, debouncedSearchTerm]);
 
-  useEffect(() => {
-    const timeout = setTimeout(() => setDebouncedSearchTerm(searchTerm), SEARCH_DEBOUNCE_MS);
-    return () => clearTimeout(timeout);
-  }, [searchTerm]);
 
   const usage = useMemo(() => {
     const limit = getEffectiveProductLimit(tenant.plan ?? "baslangic", tenant.product_limit_addon);
@@ -200,6 +199,7 @@ export function ProductsManager({
       if (expandedCategoryIds.length) params.set("categoryIds", expandedCategoryIds.join(","));
       if (matchCategoryIds.length) params.set("matchCategoryIds", matchCategoryIds.join(","));
       if (stockFilter !== "all") params.set("stock", stockFilter);
+      if (qualityFilter !== "all") params.set("quality", qualityFilter);
 
       const response = await fetch(`/api/tenant/products?${params.toString()}`);
       const result = await response.json();
@@ -226,12 +226,25 @@ export function ProductsManager({
     }
     void fetchPage(page);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, debouncedSearchTerm, categoryFilterKey, matchCategoryKey, stockFilter]);
+  }, [page, debouncedSearchTerm, categoryFilterKey, matchCategoryKey, stockFilter, qualityFilter]);
 
+  // Arama artık yazarken değil Enter/ara düğmesiyle çalışır (kullanıcı
+  // isteği, 22 Eyl 2026: "lc" yazıp devamını getirirken yarım terimle
+  // arıyordu). Kutu boşaltılınca liste hemen sıfırlanır.
   function setSearchTerm(value: string) {
     setSearchTermRaw(value);
-    setPage(1);
     setHighlightedProductId(null);
+    if (!value.trim() && debouncedSearchTerm) {
+      setDebouncedSearchTerm("");
+      setPage(1);
+    }
+  }
+
+  function submitSearch() {
+    const next = searchTerm.trim();
+    if (next === debouncedSearchTerm) return;
+    setDebouncedSearchTerm(next);
+    setPage(1);
   }
 
   function toggleCategoryFilter(categoryId: string) {
@@ -252,6 +265,13 @@ export function ProductsManager({
   // ürünler seçili kalıp toplu işleme sessizce dahil olurdu.
   function setStockFilter(value: ProductStockFilter) {
     setStockFilterRaw(value);
+    setPage(1);
+    setSelectedProductIds([]);
+    setAllFilteredSelectedFlag(false);
+  }
+
+  function setQualityFilter(value: ProductQualityFilter) {
+    setQualityFilterRaw(value);
     setPage(1);
     setSelectedProductIds([]);
     setAllFilteredSelectedFlag(false);
@@ -355,6 +375,7 @@ export function ProductsManager({
       if (expandedCategoryIds.length) params.set("categoryIds", expandedCategoryIds.join(","));
       if (matchCategoryIds.length) params.set("matchCategoryIds", matchCategoryIds.join(","));
       if (stockFilter !== "all") params.set("stock", stockFilter);
+      if (qualityFilter !== "all") params.set("quality", qualityFilter);
 
       const response = await fetch(`/api/tenant/products?${params.toString()}`);
       const result = await response.json();
@@ -630,12 +651,15 @@ export function ProductsManager({
           <ProductsToolbar
             searchTerm={searchTerm}
             onSearchChange={setSearchTerm}
+            onSearchSubmit={submitSearch}
             flatCategories={flatCategories}
             selectedCategoryIds={selectedCategoryIds}
             onToggleCategory={toggleCategoryFilter}
             onClearCategories={clearCategoryFilters}
             stockFilter={stockFilter}
             onStockFilterChange={setStockFilter}
+            qualityFilter={qualityFilter}
+            onQualityFilterChange={setQualityFilter}
           />
 
           {selectedProductIds.length ? (

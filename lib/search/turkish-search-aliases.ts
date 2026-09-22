@@ -222,3 +222,24 @@ export function buildProductNameSearchClause(term: string, field: string = "prod
 
   return [andOfWords, ...extraConditions].join(",");
 }
+
+/**
+ * Ad + SKU'nun tire/boşluk/noktalama bağımsız hali — products.search_key
+ * (0129) ile aynı kural: küçük harf, yalnız harf ve rakam. "lc-101", "lc 101"
+ * ve "lc101" aynı anahtara iner. Not: toLocaleLowerCase("tr") KULLANILMAZ,
+ * PostgreSQL lower() ile aynı sonucu vermesi için düz toLowerCase (I→i).
+ */
+export function normalizeSearchKey(term: string): string {
+  return term.toLowerCase().replace(/[^\p{L}\p{N}]/gu, "");
+}
+
+/**
+ * products tablosu için ortak arama OR süzgeci: ad (kelime başı), SKU
+ * (substring) ve 3+ karakterde normalize anahtar (tire bağımsız).
+ */
+export function buildProductSearchOrFilter(escapedTerm: string): string {
+  const parts = [buildProductNameSearchClause(escapedTerm), `sku_code.ilike.%${escapedTerm}%`];
+  const key = normalizeSearchKey(escapedTerm);
+  if (key.length >= 3) parts.push(`search_key.ilike.%${key}%`);
+  return parts.join(",");
+}

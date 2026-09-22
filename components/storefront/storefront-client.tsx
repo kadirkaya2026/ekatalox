@@ -53,7 +53,7 @@ import {
 import { resolveCartFormConfig } from "@/lib/storefront/cart-form-config";
 import { useResolvedStorefrontTheme } from "@/lib/storefront/use-resolved-storefront-theme";
 import { StorefrontThemeProvider, useStorefrontTheme } from "@/lib/storefront/theme-context";
-import { containsWholeWord, expandCategorySearchTerm } from "@/lib/search/turkish-search-aliases";
+import { containsWholeWord, expandCategorySearchTerm, normalizeSearchKey } from "@/lib/search/turkish-search-aliases";
 import { useStorefrontLocale, type TranslateFn } from "@/lib/storefront/locale-context";
 import type { StorefrontTheme } from "@/lib/storefront/themes";
 import { StorefrontLayoutProvider } from "@/lib/storefront/layout-context";
@@ -1174,7 +1174,13 @@ export function StorefrontClient({
   // hazırlama" diline döner (kullanıcı isteği, 20 Ağu 2026).
   const isTekel = tenant.is_tekel;
   const [searchInput, setSearchInput] = useState("");
-  const debouncedSearchTerm = useDebouncedValue(searchInput, 250);
+  // Üst başlıktaki arama yazarken değil Enter/büyüteçle çalışır (kullanıcı
+  // isteği, 22 Eyl 2026: "lc" yazıp devamını getirirken yarım terimle
+  // arıyordu). Market/tekel alt-menü arama sayfası ise canlı kalır
+  // (handleSearchChangeLive). Değişken adı eski (debounced) — tüm süzme/
+  // analitik akışı buna bağlı, davranış değişti, isim kaldı.
+  const [committedSearch, setCommittedSearch] = useState("");
+  const debouncedSearchTerm = committedSearch;
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>("all");
   const [selectedProduct, setSelectedProduct] = useState<StorefrontProduct | null>(null);
   const [previewProduct, setPreviewProduct] = useState<StorefrontProduct | null>(null);
@@ -2988,8 +2994,14 @@ export function StorefrontClient({
 
         const normalizedName = product.product_name.toLocaleLowerCase("tr-TR");
         const normalizedSku = product.sku_code?.toLocaleLowerCase("tr-TR") ?? "";
+        // Tire/boşluk bağımsız eşleşme ("lc101" ↔ "LC-101"), sunucu tarafındaki
+        // search_key ile aynı kural.
+        const searchKey = normalizeSearchKey(normalizedSearch);
+        const matchesKey =
+          searchKey.length >= 3 &&
+          normalizeSearchKey(`${product.product_name}${product.sku_code ?? ""}`).includes(searchKey);
 
-        return normalizedName.includes(normalizedSearch) || normalizedSku.includes(normalizedSearch);
+        return normalizedName.includes(normalizedSearch) || normalizedSku.includes(normalizedSearch) || matchesKey;
       });
 
       setProducts(filtered);
@@ -3057,6 +3069,18 @@ export function StorefrontClient({
 
   function handleSearchChange(value: string) {
     setSearchInput(value);
+    // Kutu boşaltılınca liste hemen sıfırlanır; Enter beklenmez.
+    if (!value.trim()) setCommittedSearch("");
+  }
+
+  function handleSearchSubmit() {
+    setCommittedSearch(searchInput.trim());
+  }
+
+  // Market/tekel alt-menü arama sayfası: yazarken canlı sonuç (eski davranış).
+  function handleSearchChangeLive(value: string) {
+    setSearchInput(value);
+    setCommittedSearch(value.trim());
   }
 
   function openAddToCartFromDetail(product: StorefrontProduct) {
@@ -3978,6 +4002,7 @@ export function StorefrontClient({
         homeHref={homeHref}
         searchInput={searchInput}
         onSearchChange={handleSearchChange}
+        onSearchSubmit={handleSearchSubmit}
         cartItemCount={badgeCartCount}
         cartTotalEntries={cartTotalEntries}
         cartTotal={cartTotal}
@@ -4575,13 +4600,13 @@ export function StorefrontClient({
           isOpen={isSearchSheetOpen && !isCartOpen && !isCampaignsSheetOpen}
           value={searchInput}
           resultCount={productTotal}
-          onChange={handleSearchChange}
+          onChange={handleSearchChangeLive}
           onClose={() => {
             // X'e basınca aramayı da iptal et — yoksa yazılan kelime state'te
             // kalıp kategori tıklamalarında süzmeye devam ediyordu (kullanıcı
             // isteği, 4 Eyl 2026). Bu yüzey yalnız market/tekelde var.
             setIsSearchSheetOpen(false);
-            setSearchInput("");
+            handleSearchChange("");
           }}
         />
       ) : null}

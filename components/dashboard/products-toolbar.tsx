@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { ArrowUpDown, Check, ChevronDown, ListFilter } from "lucide-react";
-import type { ProductStockFilter } from "@/lib/products/constants";
+import { ArrowUpDown, Check, ChevronDown, ListFilter, Search, X } from "lucide-react";
+import type { ProductQualityFilter, ProductStockFilter } from "@/lib/products/constants";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type { CategoryNode } from "@/lib/categories/tree";
@@ -17,21 +17,27 @@ const STOCK_FILTER_OPTIONS: { value: ProductStockFilter; label: string }[] = [
 export function ProductsToolbar({
   searchTerm,
   onSearchChange,
+  onSearchSubmit,
   flatCategories,
   selectedCategoryIds,
   onToggleCategory,
   onClearCategories,
   stockFilter,
   onStockFilterChange,
+  qualityFilter,
+  onQualityFilterChange,
 }: {
   searchTerm: string;
   onSearchChange: (value: string) => void;
+  onSearchSubmit: () => void;
   flatCategories: CategoryNode[];
   selectedCategoryIds: string[];
   onToggleCategory: (categoryId: string) => void;
   onClearCategories: () => void;
   stockFilter: ProductStockFilter;
   onStockFilterChange: (value: ProductStockFilter) => void;
+  qualityFilter: ProductQualityFilter;
+  onQualityFilterChange: (value: ProductQualityFilter) => void;
 }) {
   const [categoryFilterOpen, setCategoryFilterOpen] = useState(false);
   const categoryFilterRef = useRef<HTMLDivElement | null>(null);
@@ -61,13 +67,25 @@ export function ProductsToolbar({
           </p>
         </div>
         <div className="flex w-full flex-col gap-3 sm:flex-row lg:max-w-2xl lg:justify-end">
-          <div className="w-full lg:max-w-md">
+          <form
+            className="flex w-full gap-2 lg:max-w-md"
+            onSubmit={(event) => {
+              event.preventDefault();
+              onSearchSubmit();
+            }}
+          >
             <Input
-              placeholder="Ürün adı veya model no ara"
+              type="search"
+              enterKeyHint="search"
+              placeholder="Ürün adı veya model no yazıp Enter'a basın"
               value={searchTerm}
               onChange={(event) => onSearchChange(event.target.value)}
             />
-          </div>
+            <Button type="submit" variant="secondary" className="h-11 shrink-0 gap-1.5 px-3 sm:h-10" aria-label="Ara">
+              <Search className="size-4" />
+              Ara
+            </Button>
+          </form>
           <div className="relative w-full sm:w-auto" ref={categoryFilterRef}>
             <Button
               variant="secondary"
@@ -180,6 +198,18 @@ export function ProductsToolbar({
               ? "Sadece satışa açık ürünler listeleniyor."
               : "Sadece satışa kapalı ürünler listeleniyor."}
           </span>
+        ) : null}
+        {/* Katalog kalitesi süzgeci: Genel Bakış'tan gelir, burada kapatılır. */}
+        {qualityFilter !== "all" ? (
+          <button
+            type="button"
+            onClick={() => onQualityFilterChange("all")}
+            className="inline-flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-800 hover:bg-amber-100"
+            title="Süzgeci kaldır"
+          >
+            {qualityFilter === "no_image" ? "Sadece görselsiz ürünler" : "Sadece fiyatsız ürünler"}
+            <X className="size-3.5" />
+          </button>
         ) : null}
       </div>
 

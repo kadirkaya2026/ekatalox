@@ -60,3 +60,15 @@ export function parseProductStockFilter(value: unknown): ProductStockFilter {
     ? (value as ProductStockFilter)
     : "all";
 }
+
+// Katalog kalitesi süzgeci (Genel Bakış "Görselsiz / Fiyatsız ürün"
+// bağlantıları): products.has_image / has_price kolonları (0129).
+export const productQualityFilters = ["all", "no_image", "no_price"] as const;
+
+export type ProductQualityFilter = (typeof productQualityFilters)[number];
+
+export function parseProductQualityFilter(value: unknown): ProductQualityFilter {
+  return productQualityFilters.includes(value as ProductQualityFilter)
+    ? (value as ProductQualityFilter)
+    : "all";
+}

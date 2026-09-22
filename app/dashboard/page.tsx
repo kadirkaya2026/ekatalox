@@ -384,7 +384,7 @@ export default async function DashboardHomePage() {
               warn={quality.outOfStock > 0}
             />
             <MetricRow
-              href="/products"
+              href="/products?quality=no_image"
               icon={ImageOff}
               label="Görselsiz ürün"
               hint={quality.noImage > 0 ? "Görselsiz ürün daha az sepete girer." : "Eksik yok."}
@@ -392,7 +392,7 @@ export default async function DashboardHomePage() {
               warn={quality.noImage > 0}
             />
             <MetricRow
-              href="/products"
+              href="/products?quality=no_price"
               icon={Tag}
               label="Fiyatsız ürün"
               hint={quality.noPrice > 0 ? "Hiçbir fiyat listesinde fiyatı yok." : "Eksik yok."}

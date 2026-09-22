@@ -36,6 +36,7 @@ export interface StorefrontHeaderProps {
   homeHref?: string;
   searchInput: string;
   onSearchChange: (value: string) => void;
+  onSearchSubmit: () => void;
   cartItemCount: number;
   cartTotalEntries: Array<{ currency: string; total: number }>;
   cartTotal: number;
@@ -176,24 +177,38 @@ function HeaderSearch({
   const { t } = useStorefrontLocale();
 
   return (
-    <div
+    <form
+      role="search"
+      onSubmit={(event) => {
+        event.preventDefault();
+        props.onSearchSubmit();
+      }}
       className={cn(
         theme.searchWrap,
         "h-10 min-w-0 max-w-none rounded-full shadow-none lg:h-11 lg:w-full lg:max-w-md",
         className,
       )}
     >
-      <Search className={cn(theme.searchIcon, "left-4 size-4")} />
+      {/* Büyüteç artık düğme: Enter ya da tıklama arar (yazarken aramaz). */}
+      <button
+        type="submit"
+        aria-label={t("header.searchPlaceholder")}
+        className={cn(theme.searchIcon, "left-3 flex size-7 items-center justify-center rounded-full")}
+      >
+        <Search className="size-4" />
+      </button>
       <input
+        type="search"
+        enterKeyHint="search"
         placeholder={t("header.searchPlaceholder")}
         value={props.searchInput}
         onChange={(event) => props.onSearchChange(event.target.value)}
         className={cn(
           theme.searchInput,
-          "h-10 w-full rounded-full border-0 bg-transparent py-2 pl-10 pr-4 text-[16px] lg:h-11",
+          "h-10 w-full rounded-full border-0 bg-transparent py-2 pl-11 pr-4 text-[16px] lg:h-11",
         )}
       />
-    </div>
+    </form>
   );
 }
 

@@ -16,7 +16,7 @@ import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { getCurrentMonthVisitorCountsByTenant, getDateRange } from "@/lib/analytics/queries";
 import { normalizeProductDescription } from "@/lib/products/description-html";
 import { normalizeProductRecord } from "@/lib/products/records";
-import type { ProductStockFilter } from "@/lib/products/constants";
+import type { ProductQualityFilter, ProductStockFilter } from "@/lib/products/constants";
 import { productWithVariantsAndPricesSelect } from "@/lib/products/queries";
 import { getPricedLists, normalizePriceListRecord, sortPriceLists } from "@/lib/price-lists/records";
 import { getPriceListDisplayName } from "@/lib/price-lists/constants";
@@ -24,7 +24,7 @@ import { ensureDefaultPriceListsForTenant, fetchTenantPriceLists } from "@/lib/p
 import { DEFAULT_HOMEPAGE_BLOCKS, normalizeHomepageBlocks } from "@/lib/storefront/homepage-blocks";
 import { toStorefrontProduct } from "@/lib/storefront/pricing";
 import { getSmartDefaultAppearance } from "@/lib/storefront/smart-defaults";
-import { buildProductNameSearchClause, expandSearchTerms } from "@/lib/search/turkish-search-aliases";
+import { buildProductNameSearchClause, buildProductSearchOrFilter, expandSearchTerms } from "@/lib/search/turkish-search-aliases";
 import { getDescendantCategoryIds } from "@/lib/categories/tree";
 import { DEFAULT_BUSINESS_HOURS, WEEKDAY_ORDER } from "@/lib/storefront/business-hours";
 import type {
@@ -619,6 +619,7 @@ export async function getTenantProductsPage(params: {
   categoryIds?: string[];
   matchCategoryIds?: string[];
   stockFilter?: ProductStockFilter;
+  qualityFilter?: ProductQualityFilter;
 }): Promise<{ products: Product[]; total: number }> {
   const supabase = createSupabaseAdminClient();
 
@@ -652,11 +653,10 @@ export async function getTenantProductsPage(params: {
   const orFilter = term
     ? (() => {
         const escapedTerm = term.replace(/[()]/g, "");
-        const nameConditions = buildProductNameSearchClause(escapedTerm);
         const categoryMatch = params.matchCategoryIds?.length
           ? `,category_id.in.(${params.matchCategoryIds.join(",")})`
           : "";
-        return `${nameConditions},sku_code.ilike.%${escapedTerm}%${categoryMatch}`;
+        return `${buildProductSearchOrFilter(escapedTerm)}${categoryMatch}`;
       })()
     : null;
 
@@ -667,6 +667,8 @@ export async function getTenantProductsPage(params: {
   if (params.categoryIds?.length) primaryQuery = primaryQuery.in("category_id", params.categoryIds);
   if (params.stockFilter === "in_stock") primaryQuery = primaryQuery.eq("is_in_stock", true);
   if (params.stockFilter === "out_of_stock") primaryQuery = primaryQuery.eq("is_in_stock", false);
+  if (params.qualityFilter === "no_image") primaryQuery = primaryQuery.eq("has_image", false);
+  if (params.qualityFilter === "no_price") primaryQuery = primaryQuery.eq("has_price", false);
   if (orFilter) primaryQuery = primaryQuery.or(orFilter);
   primaryQuery = primaryQuery
     .order("display_order", { ascending: true })
@@ -686,6 +688,8 @@ export async function getTenantProductsPage(params: {
   if (params.categoryIds?.length) fallbackQuery = fallbackQuery.in("category_id", params.categoryIds);
   if (params.stockFilter === "in_stock") fallbackQuery = fallbackQuery.eq("is_in_stock", true);
   if (params.stockFilter === "out_of_stock") fallbackQuery = fallbackQuery.eq("is_in_stock", false);
+  if (params.qualityFilter === "no_image") fallbackQuery = fallbackQuery.eq("has_image", false);
+  if (params.qualityFilter === "no_price") fallbackQuery = fallbackQuery.eq("has_price", false);
   if (orFilter) fallbackQuery = fallbackQuery.or(orFilter);
   fallbackQuery = fallbackQuery
     .order("display_order", { ascending: true })
@@ -708,6 +712,7 @@ export async function getTenantProductIdsForFilter(params: {
   categoryIds?: string[];
   matchCategoryIds?: string[];
   stockFilter?: ProductStockFilter;
+  qualityFilter?: ProductQualityFilter;
 }): Promise<string[]> {
   const supabase = createSupabaseAdminClient();
   if (!supabase) return [];
@@ -716,11 +721,10 @@ export async function getTenantProductIdsForFilter(params: {
   const orFilter = term
     ? (() => {
         const escapedTerm = term.replace(/[()]/g, "");
-        const nameConditions = buildProductNameSearchClause(escapedTerm);
         const categoryMatch = params.matchCategoryIds?.length
           ? `,category_id.in.(${params.matchCategoryIds.join(",")})`
           : "";
-        return `${nameConditions},sku_code.ilike.%${escapedTerm}%${categoryMatch}`;
+        return `${buildProductSearchOrFilter(escapedTerm)}${categoryMatch}`;
       })()
     : null;
 
@@ -734,6 +738,8 @@ export async function getTenantProductIdsForFilter(params: {
     if (params.categoryIds?.length) query = query.in("category_id", params.categoryIds);
     if (params.stockFilter === "in_stock") query = query.eq("is_in_stock", true);
     if (params.stockFilter === "out_of_stock") query = query.eq("is_in_stock", false);
+    if (params.qualityFilter === "no_image") query = query.eq("has_image", false);
+    if (params.qualityFilter === "no_price") query = query.eq("has_price", false);
     if (orFilter) query = query.or(orFilter);
     query = query.range(from, from + pageSize - 1);
 
@@ -1362,7 +1368,7 @@ async function getCachedStorefrontProductRowsPage(
       const escapedTerm = term ? term.replace(/[()]/g, "") : "";
       const categoryMatch = matchCategoryIds.length ? `,category_id.in.(${matchCategoryIds.join(",")})` : "";
       const orFilter = term
-        ? `${buildProductNameSearchClause(escapedTerm)},sku_code.ilike.%${escapedTerm}%${categoryMatch}`
+        ? `${buildProductSearchOrFilter(escapedTerm)}${categoryMatch}`
         : null;
 
       function buildQuery(select: string, useOrFilter: string | null, head: boolean) {
@@ -1508,7 +1514,7 @@ async function getCachedStorefrontPricingRows(
       const escapedTerm = term ? term.replace(/[()]/g, "") : "";
       const categoryMatch = matchCategoryIds.length ? `,category_id.in.(${matchCategoryIds.join(",")})` : "";
       const orFilter = term
-        ? `${buildProductNameSearchClause(escapedTerm)},sku_code.ilike.%${escapedTerm}%${categoryMatch}`
+        ? `${buildProductSearchOrFilter(escapedTerm)}${categoryMatch}`
         : null;
       const resolvedFilter: StorefrontProductRowFilter = {
         tenantId: resolvedTenantId,
