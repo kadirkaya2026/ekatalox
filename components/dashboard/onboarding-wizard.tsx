@@ -70,21 +70,37 @@ export function OnboardingWizard({
   status,
   presets,
   tenantId,
+  forceOpen = false,
 }: {
   status: OnboardingStatus;
   presets: OnboardingThemePreset[];
   tenantId: string;
+  // Ayarlar → "Sihirbazı baştan başlat" (?sihirbaz=1): kurulum tamamlanmış
+  // ya da daha önce kapatılmış olsa da 1. adımdan açılır.
+  forceOpen?: boolean;
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   // Her açılışta modal sıfırdan kurulsun (ilk eksik adımdan başlar).
   const [session, setSession] = useState(0);
+  const [fromStart, setFromStart] = useState(forceOpen);
   const [done, setDone] = useState<Done>(() =>
     Object.fromEntries(status.steps.map((s) => [s.id, s.completed])) as Done,
   );
 
   // İlk giriş: sunucu "aç" dediyse ve bu tarayıcıda daha önce kapatılmadıysa.
   useEffect(() => {
+    if (forceOpen) {
+      // Yeniden başlatma: yerel "kapatıldı" izi silinir, adres temizlenir.
+      try {
+        localStorage.removeItem(localKey(tenantId));
+      } catch {
+        /* özel pencere vb. */
+      }
+      const raf = requestAnimationFrame(() => setOpen(true));
+      window.history.replaceState(null, "", window.location.pathname);
+      return () => cancelAnimationFrame(raf);
+    }
     if (!status.autoOpen || readLocalDismissed(tenantId)) return;
     const raf = requestAnimationFrame(() => setOpen(true));
     return () => cancelAnimationFrame(raf);
@@ -94,6 +110,7 @@ export function OnboardingWizard({
 
   function openWizard() {
     setSession((n) => n + 1);
+    setFromStart(false);
     setOpen(true);
   }
 
@@ -143,6 +160,7 @@ export function OnboardingWizard({
         presets={presets}
         tenantId={tenantId}
         percent={percent}
+        startAtFirst={fromStart}
         onDone={markDone}
         onDismiss={dismiss}
       />
@@ -219,6 +237,7 @@ function WizardModal({
   presets,
   tenantId,
   percent,
+  startAtFirst = false,
   onDone,
   onDismiss,
 }: {
@@ -229,13 +248,17 @@ function WizardModal({
   presets: OnboardingThemePreset[];
   tenantId: string;
   percent: number;
+  // Baştan başlatmada tamamlanmış adımlar atlanmaz, 1. adımdan gidilir.
+  startAtFirst?: boolean;
   onDone: (id: OnboardingStepId) => void;
   onDismiss: () => void;
 }) {
-  const firstIncomplete = Math.max(
-    0,
-    steps.findIndex((s) => !done[s.id]),
-  );
+  const firstIncomplete = startAtFirst
+    ? 0
+    : Math.max(
+        0,
+        steps.findIndex((s) => !done[s.id]),
+      );
   const [index, setIndex] = useState(firstIncomplete);
   const bodyRef = useRef<HTMLDivElement>(null);
 

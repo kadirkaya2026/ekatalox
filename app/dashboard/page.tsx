@@ -225,8 +225,15 @@ function LockedCard({ title, text }: { title: string; text: string }) {
   );
 }
 
-export default async function DashboardHomePage() {
+export default async function DashboardHomePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ sihirbaz?: string }>;
+}) {
   const session = await requireTenantAdminPage();
+  // Ayarlar → "Sihirbazı baştan başlat" buraya ?sihirbaz=1 ile gelir.
+  const { sihirbaz } = await searchParams;
+  const forceWizard = sihirbaz === "1";
   const tenant = session.tenant!;
   const storeUrl = `https://${tenant.subdomain}.${appEnv.rootDomain}`;
   // Ürün ilgisi + fiyat listesi girişleri Raporlar özelliğine bağlı (plan
@@ -264,7 +271,12 @@ export default async function DashboardHomePage() {
 
       {/* Kurulum sihirbazı: yeni tenant'ta ilk girişte açılır, eksik adım
           kaldıkça "%X tamamlandı" kartı burada durur. */}
-      <OnboardingWizard status={onboarding} presets={getOnboardingThemePresets()} tenantId={tenant.id} />
+      <OnboardingWizard
+        status={onboarding}
+        presets={getOnboardingThemePresets()}
+        tenantId={tenant.id}
+        forceOpen={forceWizard}
+      />
 
       {/* Üst şerit: 4 anahtar sayı */}
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
