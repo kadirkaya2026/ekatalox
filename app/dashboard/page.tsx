@@ -87,7 +87,20 @@ export default async function DashboardHomePage() {
             </Link>
           </div>
           {recent.length === 0 ? (
-            <p className="py-10 text-center text-sm text-slate-500">Henüz sipariş bulunmuyor.</p>
+            <p className="py-10 text-center text-sm text-slate-500">
+              {today.count > 0 ? (
+                <>
+                  Sipariş listesi yalnız telefon numarası alınan siparişlerde oluşur. Siparişleri
+                  burada görmek için{" "}
+                  <Link href="/settings/cart" className="font-semibold text-emerald-700 hover:underline">
+                    Sepet Ayarları
+                  </Link>
+                  &apos;ndan Telefon alanını açın.
+                </>
+              ) : (
+                "Henüz sipariş bulunmuyor."
+              )}
+            </p>
           ) : (
             <div className="mt-4 overflow-x-auto">
               <table className="w-full text-sm">

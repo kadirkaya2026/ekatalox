@@ -173,30 +173,63 @@ export async function getOrderByTrackingToken(token: string) {
 }
 
 // Genel Bakış kartları: bugün oluşturulan sipariş (PDF) sayısı ve toplam tutarı.
-// Her sipariş bir PDF demektir. İptaller tutara katılmaz ama sayıya katılır
-// (PDF yine oluşturulmuştur). Karışık para birimi olursa tutarlar toplanır
-// (çoğu bayi tek para birimi kullanır).
+//
+// Kaynak `orders` DEĞİL, `storefront_analytics_orders_daily`: orders tablosuna
+// yalnız telefon toplanan siparişler yazılır (market tipi), toptancı/genel
+// tenantlarda (ör. Lucatech) telefon alanı yok → orders hep boş kalıyor ve
+// kartlar 0 / ₺0,00 gösteriyordu. Günlük istatistik ise her PDF'te para
+// birimiyle birlikte yazılır (record_storefront_order_stat, İstanbul günü).
+//
+// Sayı: CATALOG (fiyatsız katalog PDF'i) dahil tüm PDF'ler. Tutar + para
+// birimi: bugün en çok sipariş gelen fiyatlı para birimi (karışık para
+// birimi toplanmaz — USD ile TL toplamak anlamsız). İptal edilen siparişler
+// (yalnız orders'ta izlenebilir) tutardan düşülür, sayıdan düşülmez.
 export async function getTenantTodayOrderSummary(
   tenantId: string,
 ): Promise<{ count: number; totalAmount: number; currency: string }> {
   const supabase = createSupabaseAdminClient();
   if (!supabase) return { count: 0, totalAmount: 0, currency: "TRY" };
   const today = getIstanbulToday();
-  const { data } = await supabase
-    .from("orders")
-    .select("total_amount, currency, status")
-    .eq("tenant_id", tenantId)
-    .gte("created_at", istanbulDayStart(today))
-    .lte("created_at", istanbulDayEnd(today));
-  const rows = data ?? [];
-  let totalAmount = 0;
-  const currencyCounts = new Map<string, number>();
-  for (const r of rows) {
-    const cur = (r.currency as string) || "TRY";
-    currencyCounts.set(cur, (currencyCounts.get(cur) ?? 0) + 1);
-    if (r.status !== "cancelled") totalAmount += Number(r.total_amount) || 0;
+  const [{ data: dailyRows }, { data: cancelledRows }] = await Promise.all([
+    supabase
+      .from("storefront_analytics_orders_daily")
+      .select("currency, order_count, total_amount")
+      .eq("tenant_id", tenantId)
+      .eq("stat_date", today),
+    supabase
+      .from("orders")
+      .select("total_amount, currency")
+      .eq("tenant_id", tenantId)
+      .eq("status", "cancelled")
+      .gte("created_at", istanbulDayStart(today))
+      .lte("created_at", istanbulDayEnd(today)),
+  ]);
+
+  let count = 0;
+  let top: { currency: string; orderCount: number; totalAmount: number } | null = null;
+  for (const row of dailyRows ?? []) {
+    const orderCount = Number(row.order_count) || 0;
+    count += orderCount;
+    if (row.currency === "CATALOG") continue;
+    if (!top || orderCount > top.orderCount) {
+      top = {
+        currency: row.currency as string,
+        orderCount,
+        totalAmount: Number(row.total_amount) || 0,
+      };
+    }
   }
-  const currency =
-    [...currencyCounts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? "TRY";
-  return { count: rows.length, totalAmount, currency };
+
+  if (!top) return { count, totalAmount: 0, currency: "TRY" };
+
+  let cancelled = 0;
+  for (const row of cancelledRows ?? []) {
+    if (row.currency === top.currency) cancelled += Number(row.total_amount) || 0;
+  }
+
+  return {
+    count,
+    totalAmount: Math.max(top.totalAmount - cancelled, 0),
+    currency: top.currency,
+  };
 }
