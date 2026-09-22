@@ -239,6 +239,8 @@ export function OrdersManager({
       }
     };
     const payment = formatPaymentMethod(order.payment_method);
+    // Telefonsuz siparişte (toptancı/genel tenant, 0127) WhatsApp düğmesi yok.
+    const waHref = buildOrderStatusWhatsAppHref({ order, status: order.status, tenantName, isTekel, trackingUrl });
     return (
       <Card className="overflow-hidden p-0">
         {/* Üst şerit: geri + araçlar */}
@@ -258,17 +260,19 @@ export function OrdersManager({
                 Yazdır
               </a>
             </Button>
-            <Button asChild variant="secondary">
-              <a
-                href={buildOrderStatusWhatsAppHref({ order, status: order.status, tenantName, isTekel, trackingUrl })}
-                target="_blank"
-                rel="noreferrer"
-                title="Müşteriye WhatsApp'tan durum mesajı gönder"
-              >
-                <MessageCircle className="size-4" />
-                WhatsApp
-              </a>
-            </Button>
+            {waHref ? (
+              <Button asChild variant="secondary">
+                <a
+                  href={waHref}
+                  target="_blank"
+                  rel="noreferrer"
+                  title="Müşteriye WhatsApp'tan durum mesajı gönder"
+                >
+                  <MessageCircle className="size-4" />
+                  WhatsApp
+                </a>
+              </Button>
+            ) : null}
           </div>
         </div>
 
@@ -292,8 +296,10 @@ export function OrdersManager({
 
           {/* Müşteri */}
           <div className="rounded-xl bg-slate-50 px-4 py-3 text-sm">
-            <p className="font-semibold text-slate-900">{order.customer_name}</p>
-            <a href={`tel:${order.customer_phone}`} className="text-slate-700 hover:underline">{order.customer_phone}</a>
+            <p className="font-semibold text-slate-900">{order.customer_name || "İsimsiz müşteri"}</p>
+            {order.customer_phone ? (
+              <a href={`tel:${order.customer_phone}`} className="text-slate-700 hover:underline">{order.customer_phone}</a>
+            ) : null}
             {order.customer_address ? <p className="mt-0.5 text-slate-600">{order.customer_address}</p> : null}
             {order.note ? (
               <p className="mt-2 rounded-lg bg-amber-50 px-3 py-2 text-amber-900">
@@ -544,13 +550,13 @@ export function OrdersManager({
             {(() => {
               const groups = new Map<
                 string,
-                { name: string; phone: string; customerId: string | null; count: number; total: number; currency: string }
+                { key: string; name: string; phone: string; customerId: string | null; count: number; total: number; currency: string }
               >();
               for (const o of page.orders) {
                 const key = o.customer_phone || o.id;
                 const g =
                   groups.get(key) ??
-                  { name: o.customer_name, phone: o.customer_phone, customerId: o.customer_id, count: 0, total: 0, currency: o.currency };
+                  { key, name: o.customer_name || "İsimsiz müşteri", phone: o.customer_phone ?? "", customerId: o.customer_id, count: 0, total: 0, currency: o.currency };
                 g.count += 1;
                 if (o.currency === g.currency) g.total += o.total_amount;
                 if (!g.customerId && o.customer_id) g.customerId = o.customer_id;
@@ -559,10 +565,10 @@ export function OrdersManager({
               return [...groups.values()]
                 .sort((a, b) => b.total - a.total)
                 .map((g) => (
-                  <div key={g.phone} className="flex flex-wrap items-center gap-3 px-4 py-2.5 text-sm">
+                  <div key={g.key} className="flex flex-wrap items-center gap-3 px-4 py-2.5 text-sm">
                     <div className="min-w-0">
                       <p className="font-semibold text-slate-900">{g.name}</p>
-                      <p className="text-xs text-slate-500">{g.phone} · {g.count} sipariş</p>
+                      <p className="text-xs text-slate-500">{g.phone ? `${g.phone} · ` : ""}{g.count} sipariş</p>
                     </div>
                     <span className="ml-auto font-semibold tabular-nums text-red-700">
                       {g.currency === "CATALOG" ? "—" : formatCurrency(g.total, g.currency as CurrencyCode)}
@@ -619,7 +625,8 @@ export function OrdersManager({
                   </button>
                   <span className="text-right text-sm font-semibold tabular-nums text-slate-900 md:hidden">{formatOrderTotal(order)}</span>
                   <button type="button" onClick={() => void openOrder(order)} className="col-span-2 min-w-0 truncate text-left text-sm text-slate-700 hover:underline md:col-span-1">
-                    {order.customer_name} <span className="text-slate-400">· {order.customer_phone}</span>
+                    {order.customer_name || "İsimsiz müşteri"}
+                    {order.customer_phone ? <span className="text-slate-400"> · {order.customer_phone}</span> : null}
                     {order.magnet_mismatch ? (
                       <span
                         className="ml-1.5 rounded-full bg-red-100 px-2 py-0.5 text-[11px] font-semibold text-red-700"

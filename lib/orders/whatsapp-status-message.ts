@@ -11,11 +11,13 @@ export function buildOrderStatusWhatsAppHref(params: {
   tenantName: string;
   isTekel: boolean;
   trackingUrl: string | null;
-}) {
+}): string | null {
+  // Telefonsuz sipariş (0127): gönderilecek numara yok.
+  if (!params.order.customer_phone) return null;
   const digits = normalizeCustomerPhone(params.order.customer_phone);
   // TR yerel biçim (05xx…) → uluslararası (905xx…)
   const intl = digits.startsWith("0") ? `9${digits}` : digits.startsWith("90") ? digits : `90${digits}`;
-  const ad = params.order.customer_name.trim().split(/\s+/)[0] ?? "";
+  const ad = params.order.customer_name.trim().split(/\s+/)[0] || "";
   const lines = [
     `Merhaba ${ad}, ${params.tenantName} — ${formatOrderNo(params.order)} numaralı siparişiniz:`,
     `✅ Durum: ${getStatusLabel(params.status, { isTekel: params.isTekel })}`,

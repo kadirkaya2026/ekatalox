@@ -234,8 +234,9 @@ export interface StorefrontOrder {
   // 0093: bayi başına sıralı 6 haneli numara (100001…). Müşteriye/bayiye gösterilen bu.
   order_no: number | null;
   customer_name: string;
-  customer_phone: string;
-  customer_address: string;
+  // 0127: telefon toplamayan (toptancı/genel) tenantlarda null.
+  customer_phone: string | null;
+  customer_address: string | null;
   currency: string;
   total_amount: number;
   payment_method: "cash" | "card" | null;

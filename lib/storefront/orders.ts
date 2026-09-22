@@ -2,11 +2,9 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { CartItem } from "@/lib/types";
 import { normalizeCustomerPhone } from "@/lib/storefront/customer-phone";
 
-// Market tenant checkout'ta zaten toplanan isim/adres/telefon (bkz.
-// storefront-cart-drawer.tsx) buradan kalıcı customers/orders tablolarına
-// yazılır. Telefon veya adres yoksa (genel tenant, ya da müşteri boş
-// bıraktıysa — mixed-currency PDF hatası gibi durumlarda da olabilir)
-// sessizce atlanır; bu bir sipariş engelleyici değil, sadece raporlama.
+// Checkout'ta toplanan isim/adres/telefon (bkz. storefront-cart-drawer.tsx)
+// buradan kalıcı customers/orders tablolarına yazılır. Kayıt hatası sipariş/
+// WhatsApp akışını engellemez; bu sadece bayi paneli raporlaması.
 export async function recordStorefrontOrder(params: {
   supabase: SupabaseClient;
   tenantId: string;
@@ -23,17 +21,16 @@ export async function recordStorefrontOrder(params: {
   // satırına yazılır ve İLK siparişse magnet sessizce sahiplenilir.
   magnetCodeId?: string | null;
 }): Promise<{ orderId: string; trackingToken: string | null; orderNo: number | null } | null> {
-  const phone = normalizeCustomerPhone(params.customerPhone);
+  const phone = normalizeCustomerPhone(params.customerPhone ?? "") || null;
   const name = params.customerName.trim();
   const address = params.customerAddress.trim();
 
-  // Adres ARTIK zorunlu degil. Tekel (gel-al) bayilerinde adres bos
-  // gonderiliyordu ve bu satir yuzunden o bayilerin HICBIR siparisi
-  // kaydedilmiyordu — ne musteri defteri olusuyordu ne de magnet
-  // sahiplenmesi calisabilirdi. Telefon + isim yeterli.
-  if (!phone || !name) {
-    return null;
-  }
+  // Hiçbir alan zorunlu değil (kullanıcı kararı, 22 Eyl 2026): toptancı/genel
+  // tenantlarda telefon alanı yok, eskiden "telefon+isim yoksa kaydetme"
+  // kuralı yüzünden o bayilerin HİÇBİR siparişi panele düşmüyordu. Artık her
+  // PDF bir sipariş satırı olur (cari adı boşsa boş, tutar+kalemler+tarih).
+  // Telefon yoksa RPC müşteri defterine yazmaz, engel/magnet sahiplenme atlar
+  // (0127).
 
   // Maliyet, SİPARİŞ ANINDA kaleme dondurulur (unit_cost). Ürünün alış fiyatı
   // sonradan değişse de bu siparişin kârı değişmez. Ürün para birimi sipariş
