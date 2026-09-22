@@ -6,6 +6,9 @@ import type { AnalyticsPeriod } from "@/lib/validators/analytics";
 export interface AnalyticsProductRow {
   productId: string;
   productName: string;
+  // Ürünler sayfasına bağlantı için: uzun/özel karakterli adla arama
+  // güvenilir değil, SKU ile aranır (bildirim zili bağlantısıyla aynı yöntem).
+  skuCode: string;
   count: number;
 }
 
@@ -514,7 +517,7 @@ export async function getTenantAnalyticsReport(
 
     const { data: products } = await supabase
       .from("products")
-      .select("id, product_name")
+      .select("id, product_name, sku_code")
       .eq("tenant_id", tenantId)
       .in("id", productIds);
 
@@ -524,11 +527,15 @@ export async function getTenantAnalyticsReport(
         product.product_name as string,
       ]),
     );
+    const productSkus = new Map(
+      (products ?? []).map((product) => [product.id as string, (product.sku_code as string) ?? ""]),
+    );
 
     topViewedProducts = [...aggregated.entries()]
       .map(([productId, stats]) => ({
         productId,
         productName: productNames.get(productId) ?? "Silinmiş ürün",
+        skuCode: productSkus.get(productId) ?? "",
         count: stats.viewCount,
       }))
       .filter((row) => row.count > 0)
@@ -539,6 +546,7 @@ export async function getTenantAnalyticsReport(
       .map(([productId, stats]) => ({
         productId,
         productName: productNames.get(productId) ?? "Silinmiş ürün",
+        skuCode: productSkus.get(productId) ?? "",
         count: stats.cartAddCount,
       }))
       .filter((row) => row.count > 0)
