@@ -75,6 +75,20 @@ export async function PATCH(
         { status: 409 },
       );
     }
+
+    // Bir mağazanın kurumsal site alan adı (0134) katalog adresi olamaz.
+    const { data: kurumsalOwner } = await supabase
+      .from("tenants")
+      .select("id")
+      .eq("kurumsal_domain", updatePayload.custom_domain as string)
+      .limit(1);
+
+    if (kurumsalOwner?.length) {
+      return NextResponse.json(
+        { error: "Bu alan adı bir mağazanın kurumsal site alan adı olarak kullanılıyor." },
+        { status: 409 },
+      );
+    }
   }
 
   if (gift_months) {

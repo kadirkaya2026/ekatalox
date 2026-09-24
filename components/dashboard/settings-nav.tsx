@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  Clock, ClipboardList, CreditCard, Globe, ImageIcon, LayoutTemplate,
+  Building2, Clock, ClipboardList, CreditCard, Globe, ImageIcon, LayoutTemplate,
   Megaphone, PanelBottom, Palette, ShieldCheck, Store, Ticket, Truck,
   UserCircle, type LucideIcon,
 } from "lucide-react";
@@ -31,6 +31,7 @@ const TABS: Tab[] = [
   { href: "/settings/identity", label: "Mağaza Kimliği", icon: Store, group: "Marka & Görünüm" },
   { href: "/settings/homepage", label: "Ana Sayfa İçerikleri", icon: LayoutTemplate, group: "Marka & Görünüm" },
   { href: "/settings/banner", label: "Anasayfa Banner'ı", icon: ImageIcon, group: "Marka & Görünüm" },
+  { href: "/settings/kurumsal", label: "Kurumsal Site", icon: Building2, group: "Marka & Görünüm", requiredBusinessType: "general" },
   { href: "/settings/hours", label: "Çalışma Saatleri", icon: Clock, group: "İçerik & İletişim" },
   { href: "/settings/cart", label: "Sepet Ayarları", icon: ClipboardList, group: "İçerik & İletişim" },
   { href: "/settings/delivery-fee", label: "Getirme Ücreti", icon: Truck, group: "İçerik & İletişim", requiredBusinessType: "market" },

@@ -27,6 +27,8 @@ import {
   type HostResolution,
 } from "@/lib/tenancy/resolve-host";
 import { isTenantCustomDomainHost } from "@/lib/tenancy/request-host";
+import { hasKurumsalSiteAccess } from "@/lib/kurumsal/domain";
+import { getTenantByKurumsalDomain, isKurumsalSitePublished } from "@/lib/kurumsal/tenant-lookup";
 
 /**
  * Resolve the effective hostname for a request.
@@ -78,6 +80,69 @@ async function cachedTenantLookup(
   });
 
   return value;
+}
+
+// Kurumsal sitenin yayında olup olmadığı (katalog adresindeki /kurumsal
+// yollarını 301'lemek için); tenant sorgusu gibi 60 sn bellekte.
+const kurumsalPublishedCache = new Map<string, { value: boolean; expires: number }>();
+
+async function cachedKurumsalPublished(tenantId: string): Promise<boolean> {
+  const hit = kurumsalPublishedCache.get(tenantId);
+  if (hit && hit.expires > Date.now()) return hit.value;
+  const value = await isKurumsalSitePublished(tenantId);
+  if (kurumsalPublishedCache.size >= TENANT_LOOKUP_MAX_ENTRIES) kurumsalPublishedCache.clear();
+  kurumsalPublishedCache.set(tenantId, { value, expires: Date.now() + TENANT_LOOKUP_TTL_MS });
+  return value;
+}
+
+/**
+ * Kurumsal site alan adı (tenants.kurumsal_domain, bkz. 0134): ör.
+ * lucatech.com.tr kökünde tenant'ın kurumsal sitesi yayınlanır. Şifre/yaş/
+ * kota kapısı, magnet ve noindex YOK (bilerek Google'a açık). Yol eşlemesi:
+ *   /            → /store/{sub}/kurumsal
+ *   /kategori/*  → /store/{sub}/kurumsal/kategori/*
+ *   /urun/*      → /store/{sub}/kurumsal/urun/*
+ *   /robots.txt  → /store/{sub}/kurumsal/robots
+ *   /sitemap.xml → /store/{sub}/kurumsal/sitemap
+ *   diğer        → kurumsal 404 (vitrin kapısına ASLA düşmez)
+ * www.alanadi → alanadi 301. Paket/yayın kontrolü sayfaların kendisinde
+ * (yoksa 404). Platform ve özel katalog alan adlarında null döner.
+ */
+async function maybeServeKurumsalHost(request: NextRequest, pathname: string): Promise<NextResponse | null> {
+  const normalizedHost = stripPort(effectiveHost(request) ?? "");
+  if (!normalizedHost || resolveHost(normalizedHost).kind !== "unknown") return null;
+  if (normalizedHost.endsWith(`.${appEnv.rootDomain}`) || normalizedHost.endsWith(".localhost")) return null;
+
+  const apex = normalizedHost.replace(/^www\./, "");
+  const tenant = await cachedTenantLookup(`kurumsal-domain:${apex}`, () => getTenantByKurumsalDomain(apex));
+  if (!tenant) return null;
+
+  if (normalizedHost !== apex) {
+    const redirectUrl = new URL(
+      `${pathname}${request.nextUrl.search}`,
+      `${request.headers.get("x-forwarded-proto") ?? "https"}://${apex}`,
+    );
+    return NextResponse.redirect(redirectUrl, 301);
+  }
+
+  const base = `/store/${tenant.subdomain}/kurumsal`;
+  let internalPath: string;
+  if (pathname === "/" || pathname === "") {
+    internalPath = base;
+  } else if (/^\/(kategori|urun)\/[^/]+\/?$/.test(pathname)) {
+    internalPath = `${base}${pathname.replace(/\/$/, "")}`;
+  } else if (pathname === "/robots.txt") {
+    internalPath = `${base}/robots`;
+  } else if (pathname === "/sitemap.xml") {
+    internalPath = `${base}/sitemap`;
+  } else {
+    // Bilinmeyen yol: kurumsal kapsamında olmayan bir rota → Next 404 sayfası.
+    internalPath = `${base}/bulunamadi/yok`;
+  }
+
+  const rewriteUrl = request.nextUrl.clone();
+  rewriteUrl.pathname = internalPath;
+  return NextResponse.rewrite(rewriteUrl);
 }
 
 async function resolveRequestHost(hostHeader: string | null): Promise<HostResolution> {
@@ -279,6 +344,12 @@ async function maybeServeLegacyBrowserNotice({
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
+  // Kurumsal alan adında robots/sitemap tenant'a özel; diğer tüm hostlarda
+  // eskisi gibi app/robots.ts ve app/sitemap.ts'e gider.
+  if (pathname === "/robots.txt" || pathname === "/sitemap.xml") {
+    return (await maybeServeKurumsalHost(request, pathname)) ?? NextResponse.next();
+  }
+
   if (
     pathname.startsWith("/api") ||
     pathname.startsWith("/_next") ||
@@ -299,6 +370,16 @@ export async function proxy(request: NextRequest) {
   const isManagedProductionHost = normalizedHost.endsWith(`.${appEnv.rootDomain}`);
   const isManagedLocalHost = normalizedHost.endsWith(".localhost");
 
+  // Kurumsal site alan adı: özel katalog alan adı değilse (resolveRequestHost
+  // "unknown" döndü) ve bir tenant'ın kurumsal_domain'iyse burada biter —
+  // vitrin kanonik yönlendirmesi ve kapılar hiç çalışmaz.
+  if (hostResolution.kind === "unknown" && !isManagedProductionHost && !isManagedLocalHost) {
+    const kurumsalResponse = await maybeServeKurumsalHost(request, pathname);
+    if (kurumsalResponse) {
+      return kurumsalResponse;
+    }
+  }
+
   if (hostResolution.kind === "unknown" && (isManagedProductionHost || isManagedLocalHost)) {
     return new NextResponse("Not Found", { status: 404 });
   }
@@ -318,6 +399,40 @@ export async function proxy(request: NextRequest) {
 
   if (hostResolution.kind === "marketing") {
     return NextResponse.next();
+  }
+
+  // Katalog adresindeki (alt alan adı / özel alan adı) eski /kurumsal yolları:
+  // kurumsal site artık yalnız tenant'ın kendi kök alan adında. Alan adı
+  // bağlı, paket kapsıyor ve site yayındaysa oradaki karşılığına 301; yoksa
+  // 404. Kanonik custom_domain yönlendirmesinden ÖNCE (çift 301 olmasın).
+  if (
+    hostResolution.kind === "storefront" &&
+    hostResolution.subdomain &&
+    (pathname === "/kurumsal" || pathname.startsWith("/kurumsal/"))
+  ) {
+    const subdomain = hostResolution.subdomain;
+    const kurumsalTenant = await cachedTenantLookup(`subdomain:${subdomain}`, () =>
+      getStorefrontTenant(subdomain),
+    );
+    const kurumsalDomain = kurumsalTenant?.kurumsal_domain?.trim().toLowerCase();
+
+    if (
+      kurumsalTenant &&
+      kurumsalDomain &&
+      hasKurumsalSiteAccess(kurumsalTenant) &&
+      (await cachedKurumsalPublished(kurumsalTenant.id))
+    ) {
+      const rest = pathname.slice("/kurumsal".length) || "/";
+      const target = new URL(rest, `https://${kurumsalDomain}`);
+      return NextResponse.redirect(target, 301);
+    }
+
+    const notFoundUrl = request.nextUrl.clone();
+    notFoundUrl.pathname = `/store/${subdomain}/kurumsal/bulunamadi/yok`;
+    notFoundUrl.search = "";
+    const notFoundResponse = NextResponse.rewrite(notFoundUrl);
+    notFoundResponse.headers.set("X-Robots-Tag", "noindex, nofollow");
+    return notFoundResponse;
   }
 
   const redirectResponse = await maybeRedirectStorefrontRequest({

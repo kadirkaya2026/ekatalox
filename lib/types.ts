@@ -85,6 +85,8 @@ export interface Tenant {
   whatsapp_number: string;
   is_whatsapp_order_direct: boolean;
   custom_domain: string | null;
+  /** Kurumsal sitenin yayınlandığı kök alan adı (0134); süper admin bağlar. */
+  kurumsal_domain?: string | null;
   trial_ends_at: string | null;
   /** Ücretli paket denemesi bitişi (0132); dolunca Ücretsiz plana düşer. */
   plan_trial_ends_at?: string | null;

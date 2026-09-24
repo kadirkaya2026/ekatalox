@@ -11,6 +11,7 @@ import {
   Contact,
 
   FolderTree,
+  Inbox,
 
   KeyRound,
   LayoutDashboard,
@@ -125,6 +126,14 @@ const tenantLinks: SidebarLink[] = [
     ],
   },
   { href: "/access-codes", label: "Şifreler", icon: KeyRound },
+  // Kurumsal sitedeki (/kurumsal) başvuru formundan gelen bayilik talepleri.
+  {
+    href: "/basvurular",
+    label: "Bayi Başvuruları",
+    icon: Inbox,
+    requiredFeature: "kurumsal_site",
+    requiredBusinessType: "general",
+  },
   {
     href: "/customers",
     label: "Müşteriler",

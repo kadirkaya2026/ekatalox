@@ -17,6 +17,7 @@ import {
 import { Header } from "@/components/dashboard/header";
 import { OnboardingWizard } from "@/components/dashboard/onboarding-wizard";
 import { OnlineNowCard } from "@/components/dashboard/online-now-card";
+import { KurumsalProgressCard } from "@/components/dashboard/kurumsal-progress-card";
 import { Card } from "@/components/ui/card";
 import { requireTenantAdminPage } from "@/lib/auth/session";
 import { getTenantOnlinePresence } from "@/lib/analytics/presence";
@@ -31,6 +32,8 @@ import { getTenantCatalogQuality, getTenantPushSubscriberCount } from "@/lib/das
 import { appEnv } from "@/lib/env";
 import { getOnboardingThemePresets, getTenantOnboardingStatus } from "@/lib/onboarding/status";
 import { formatOrderNo } from "@/lib/orders/format";
+import { hasKurumsalSiteAccess } from "@/lib/kurumsal/domain";
+import { getKurumsalSite } from "@/lib/storefront/kurumsal-content";
 import { getTenantOrdersPage, getTenantTodayOrderSummary } from "@/lib/orders/data";
 import type { StorefrontOrder } from "@/lib/types";
 import { formatCurrency } from "@/lib/utils";
@@ -239,7 +242,9 @@ export default async function DashboardHomePage({
   // Ürün ilgisi + fiyat listesi girişleri Raporlar özelliğine bağlı (plan
   // kapısı /reports ile aynı); ücretsiz planda bu kartlar kilitli görünür.
   const canUseReports = hasPlanFeature(tenant.plan, "reports");
-  const [summary, ordersPage, today, presence, onboarding, report, quality, pushSubscribers] =
+  // Kurumsal site kartı yalnız toptancı (general) tenant'larda.
+  const showKurumsal = tenant.business_type === "general";
+  const [summary, ordersPage, today, presence, onboarding, report, quality, pushSubscribers, kurumsalSite] =
     await Promise.all([
       getTenantDashboardSummary(tenant),
       getTenantOrdersPage(tenant.id, { page: 1, pageSize: 6 }),
@@ -251,6 +256,7 @@ export default async function DashboardHomePage({
       canUseReports ? getTenantAnalyticsReport(tenant.id, "monthly") : null,
       getTenantCatalogQuality(tenant.id),
       getTenantPushSubscriberCount(tenant.id),
+      showKurumsal && hasKurumsalSiteAccess(tenant) ? getKurumsalSite(tenant.id) : null,
     ]);
 
   const plan = tenant.plan ?? "baslangic";
@@ -277,6 +283,14 @@ export default async function DashboardHomePage({
         tenantId={tenant.id}
         forceOpen={forceWizard}
       />
+
+      {showKurumsal ? (
+        <KurumsalProgressCard
+          entitled={hasKurumsalSiteAccess(tenant)}
+          site={kurumsalSite}
+          kurumsalDomain={tenant.kurumsal_domain}
+        />
+      ) : null}
 
       {/* Üst şerit: 4 anahtar sayı */}
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">

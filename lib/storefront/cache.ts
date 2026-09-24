@@ -6,6 +6,7 @@ export function revalidateStorefrontCache(params: {
 }) {
   revalidatePath(`/store/${params.subdomain}`);
   revalidatePath(`/store/${params.subdomain}/gate`);
+  revalidatePath(`/store/${params.subdomain}/kurumsal`);
   revalidateTag(`storefront_${params.tenantId}`, "max");
   revalidateTag(`tenant_subdomain_${params.subdomain}`, "max");
 }

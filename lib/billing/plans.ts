@@ -35,7 +35,11 @@ export type PlanFeature =
   | "push_notifications"
   // Vitrinde eKatalox reklamı YOK. Sadece "free" planında false; reklam
   // yerleşimleri lib/ads/config.ts ile süper adminden yönetilir.
-  | "ad_free";
+  | "ad_free"
+  // Kurumsal site (tenant'ın kendi kök alan adında şifresiz tanıtım sitesi +
+  // bayi başvuru formu, bkz. 0133/0134). Yalnız en üst paketlerde: toptancı
+  // "corporate" (Kurumsal), eski "kurumsal" ve özel "vip".
+  | "kurumsal_site";
 
 export interface PlanOption {
   id: TenantPlan;
@@ -356,6 +360,7 @@ const PROFESSIONAL_FEATURES: Record<PlanFeature, boolean> = {
   sales_accounting: true,
   push_notifications: true,
   ad_free: true,
+  kurumsal_site: false,
 };
 
 const STARTER_FEATURES: Record<PlanFeature, boolean> = {
@@ -371,6 +376,7 @@ const STARTER_FEATURES: Record<PlanFeature, boolean> = {
   sales_accounting: false,
   push_notifications: true,
   ad_free: true,
+  kurumsal_site: false,
 };
 
 // Esnaf (pro): banner, ürün indirimi, vitrin ürünleri, ödeme/kampanya
@@ -390,6 +396,7 @@ const ESNAF_FEATURES: Record<PlanFeature, boolean> = {
   sales_accounting: false,
   push_notifications: true,
   ad_free: true,
+  kurumsal_site: false,
 };
 
 // Toptancı merdiveni (20 Eyl 2026, güncelleme 21 Eyl). Ücretsiz: banner,
@@ -410,6 +417,7 @@ const TOPTAN_FREE_FEATURES: Record<PlanFeature, boolean> = {
   sales_accounting: false,
   push_notifications: false,
   ad_free: false,
+  kurumsal_site: false,
 };
 
 const TOPTAN_STARTER_FEATURES: Record<PlanFeature, boolean> = {
@@ -429,6 +437,7 @@ const TOPTAN_CORPORATE_FEATURES: Record<PlanFeature, boolean> = {
   custom_domain: true,
   sales_accounting: true,
   online_payment: true,
+  kurumsal_site: true,
 };
 
 export const PLAN_FEATURES: Record<TenantPlan, Record<PlanFeature, boolean>> = {
@@ -441,6 +450,7 @@ export const PLAN_FEATURES: Record<TenantPlan, Record<PlanFeature, boolean>> = {
   kurumsal: {
     ...PROFESSIONAL_FEATURES,
     online_payment: true,
+    kurumsal_site: true,
   },
   start: STARTER_FEATURES,
   pro: ESNAF_FEATURES,
@@ -452,6 +462,7 @@ export const PLAN_FEATURES: Record<TenantPlan, Record<PlanFeature, boolean>> = {
   vip: {
     ...PROFESSIONAL_FEATURES,
     online_payment: true,
+    kurumsal_site: true,
   },
 };
 
@@ -468,6 +479,7 @@ const PLAN_FEATURE_LABELS: Record<PlanFeature, string> = {
   sales_accounting: "Satış & Kârlılık raporu",
   push_notifications: "Müşterilere bildirim gönderme",
   ad_free: "Reklamsız vitrin",
+  kurumsal_site: "Kurumsal site",
 };
 
 const PLAN_FEATURE_UPGRADE_MESSAGES: Partial<Record<PlanFeature, string>> = {
@@ -478,6 +490,8 @@ const PLAN_FEATURE_UPGRADE_MESSAGES: Partial<Record<PlanFeature, string>> = {
     "Ciro, kâr ve kâr marjı raporlarını görmek için paketinizi yükseltmeniz gerekmektedir.",
   online_payment:
     "iyzico, Paynet gibi sanal POS firmalarından siteniz üzerinden ödeme alabilmek için paketinizi yükseltmeniz gerekmektedir.",
+  kurumsal_site:
+    "Kendi alan adınızda (firmaniz.com) kurumsal site ve bayi başvuru formu en üst pakette (Kurumsal) kullanılabilir.",
   custom_domain:
     "firmadınız.com gibi tamamen size ait bir alan adı kullanabilmek için paketinizi yükseltmeniz gerekmektedir.",
 };
@@ -497,7 +511,7 @@ export const ONLINE_PAYMENT_BODY_KEYS = [] as const;
 
 export const CUSTOM_DOMAIN_BODY_KEYS = ["custom_domain"] as const;
 
-const PACKAGE_UPGRADE_PHONE = "905354172510";
+export const PACKAGE_UPGRADE_PHONE = "905354172510";
 
 const planById = new Map(PLAN_OPTIONS.map((plan) => [plan.id, plan]));
 // Aynı limit birden çok planda olabilir (profesyonel/pro = 1000,
