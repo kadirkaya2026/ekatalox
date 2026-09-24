@@ -5,7 +5,7 @@ import { WhatsAppGlyph } from "@/components/marketing/contact-dock";
 // Ana sayfa hero görseli (24 Eyl 2026): telefonda demo toptan kataloğunun
 // gerçek ekran görüntüsü, üstünde bayinin siparişinin WhatsApp'a PDF olarak
 // düştüğü an. Sipariş kartındaki rakamlar demo mağazanın gerçek sepet ekran
-// görüntüsüyle (public/site/toptan-sepet.png: 5 kalem, 12 ürün, ₺13.588) aynı.
+// görüntüsüyle (public/site/toptan-sepet-v2.png: 3 kalem, 12 ürün, ₺6.288) aynı.
 // Tek hareket: kart sayfa açılışında bir kez içeri kayar (reduced-motion'da yok).
 export function HeroOrderVisual() {
   return (
@@ -13,7 +13,7 @@ export function HeroOrderVisual() {
       <div className="ml-auto w-[210px] sm:w-[250px] lg:mr-4">
         <div className="rounded-[13.5%/6.5%] shadow-[0_0_70px_-10px_rgba(34,197,94,0.35)]">
           <PhoneFrame
-            src="/site/toptan-hero-iphone-v3.png"
+            src="/site/toptan-katalog-v2.png"
             alt="Demo toptan kataloğunun bayi ekranı"
             priority
             className="w-full sm:w-full"
@@ -46,9 +46,9 @@ export function HeroOrderVisual() {
             </div>
           </div>
           <div className="mt-2 space-y-0.5 px-1 text-[12.5px] leading-snug text-white/90">
-            <p>5 kalem, 12 ürün</p>
+            <p>3 kalem, 12 ürün</p>
             <p>
-              Toplam <span className="font-semibold tabular-nums">₺13.588,00</span>
+              Toplam <span className="font-semibold tabular-nums">₺6.288,00</span>
             </p>
           </div>
           <p className="mt-1 text-right text-[10px] text-white/50">14:32 ✓✓</p>

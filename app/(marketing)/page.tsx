@@ -61,13 +61,13 @@ const STEPS = [
   {
     title: "Bayilerinize şifre verin",
     body: "firmaniz.ekatalox.com adresini ve şifreyi WhatsApp'tan paylaşın. Uygulama indirmek gerekmez.",
-    image: "/site/toptan-giris.png",
+    image: "/site/toptan-giris-v2.png",
     alt: "Bayinin şifreyle giriş ekranı",
   },
   {
     title: "Sipariş WhatsApp'a gelir",
     body: "Bayi sepetini doldurup gönderir, sipariş fişi PDF olarak WhatsApp numaranıza düşer.",
-    image: "/site/toptan-sepet.png",
+    image: "/site/toptan-sepet-v2.png",
     alt: "Bayinin sepeti ve WhatsApp ile sipariş düğmesi",
   },
 ];

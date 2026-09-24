@@ -99,9 +99,9 @@ const FIELD_STEP: Record<string, SignupStepIndex> = {
 };
 
 const STEP_VISUAL: Record<0 | 1 | 2, { src: string; alt: string; caption: string }> = {
-  0: { src: "/site/toptan-katalog.png", alt: "Demo toptan kataloğunun ürün listesi", caption: "Bayileriniz kataloğu telefondan böyle görür" },
-  1: { src: "/site/toptan-sepet.png", alt: "Demo katalogda dolu sepet ve WhatsApp ile gönder tuşu", caption: "Sepet WhatsApp'a sipariş fişi olarak düşer" },
-  2: { src: "/site/toptan-giris.png", alt: "Demo kataloğun bayi şifre giriş ekranı", caption: "Fiyatlar yalnız şifre verdiğiniz bayilere açılır" },
+  0: { src: "/site/toptan-katalog-v2.png", alt: "Demo toptan kataloğunun ürün listesi", caption: "Bayileriniz kataloğu telefondan böyle görür" },
+  1: { src: "/site/toptan-sepet-v2.png", alt: "Demo katalogda dolu sepet ve WhatsApp ile gönder tuşu", caption: "Sepet WhatsApp'a sipariş fişi olarak düşer" },
+  2: { src: "/site/toptan-giris-v2.png", alt: "Demo kataloğun bayi şifre giriş ekranı", caption: "Fiyatlar yalnız şifre verdiğiniz bayilere açılır" },
 };
 
 export function SignupForm({ initialPlan, initialSector }: { initialPlan?: string; initialSector?: string }) {
