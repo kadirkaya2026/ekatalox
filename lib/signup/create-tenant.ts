@@ -5,6 +5,7 @@
 // olursa o ana kadar yaratılanlar elle geri alınır ve signup_requests'e
 // 'failed' satırı düşer ki satış ekibi düşen kayıtları görebilsin.
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { getPlanTrialEndDate } from "@/lib/billing/plan-trial";
 import { getLimitForPlan } from "@/lib/billing/plans";
 import { getToptanPlan } from "@/lib/billing/toptan-plans";
 import { sendEmail } from "@/lib/email/send";
@@ -172,14 +173,17 @@ export async function createSelfServiceTenant(
     return { ok: false, status: 500, error: "Sunucu yapılandırması eksik." };
   }
 
-  // Hesap her zaman Ücretsiz planla açılır (20 Eyl 2026 freemium). Formda
-  // ücretli paket seçildiyse bu bir taleptir: satış e-postasına düşer, ödeme
-  // sonrası süper admin paketi yükseltir.
+  // Ücretsiz seçen Ücretsiz açılır. Ücretli paket seçen o paketle
+  // PAID_PLAN_TRIAL_DAYS (14) gün deneme olarak açılır (25 Eyl 2026); ödeme
+  // gelmezse /api/cron/plan-trial Ücretsiz plana düşürür, süper admin ödeme
+  // alınca "Ödeme alındı" ile kalıcılaştırır.
   const requestedPlan = getToptanPlan(input.plan);
   if (!requestedPlan) {
     return { ok: false, status: 400, error: "Geçerli bir paket seçin.", field: "plan" };
   }
-  const planId = "free" as const;
+  const paidTrial = requestedPlan.yearlyPrice > 0;
+  const planId = requestedPlan.slug;
+  const planTrialEndsAt = paidTrial ? getPlanTrialEndDate() : null;
   const billingPeriod = "yearly" as const;
 
   // (a) alt alan adı
@@ -208,7 +212,7 @@ export async function createSelfServiceTenant(
     tax_office: input.taxOffice || null,
     tax_number: input.taxNumber || null,
     subdomain: input.subdomain,
-    // signup_requests.plan = talep edilen paket (tenants.plan her zaman free).
+    // signup_requests.plan = talep edilen paket (ücretliyse tenant bu paketle denemede açılır).
     plan: requestedPlan.slug,
     billing_period: billingPeriod,
     coupon_code: null,
@@ -264,6 +268,7 @@ export async function createSelfServiceTenant(
       },
       signup_source: "self_service",
       trial_ends_at: trialEndsAt,
+      plan_trial_ends_at: planTrialEndsAt,
     })
     .select("id, subdomain")
     .single();
@@ -386,6 +391,7 @@ export async function createSelfServiceTenant(
     panelUrl,
     requestedPlanName: requestedPlan.name,
     requestedPlanPrice: requestedPlan.yearlyPrice,
+    planTrialEndsAt,
   });
   // Alt alan adını Vercel'e ekle (yoksa Cloudflare 525). E-postalardan ÖNCE:
   // eklenemezse satış bildirimine kırmızı uyarı düşer. Başarısızlık kaydı bozmaz.
@@ -407,6 +413,7 @@ export async function createSelfServiceTenant(
     storeUrl,
     requestedPlanName: requestedPlan.name,
     requestedPlanPrice: requestedPlan.yearlyPrice,
+    planTrialEndsAt,
     domainOk: domainResult.ok,
     domainError: domainResult.ok ? null : (domainResult.reason ?? null),
     ipAddress: meta.ipAddress ?? null,

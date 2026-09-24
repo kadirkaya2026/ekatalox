@@ -9,6 +9,7 @@ import {
   dataRow,
   dataTable,
   escapeHtml,
+  formatDateTr,
   heading,
   linkRow,
   paragraph,
@@ -31,6 +32,8 @@ export interface SignupNotificationParams {
   /** Formda seçilen paket; fiyatı 0 ise Ücretsiz. */
   requestedPlanName: string;
   requestedPlanPrice: number;
+  /** Ücretli paket denemesinin bitişi (0132); Ücretsiz seçildiyse null. */
+  planTrialEndsAt: string | null;
   /** Alt alan adı Vercel projesine eklendi mi (eklenmediyse site açılmaz). */
   domainOk: boolean;
   domainError?: string | null;
@@ -50,6 +53,7 @@ export function buildSignupNotificationEmail(params: SignupNotificationParams) {
   const adminUrl = `https://admin.ekatalox.com/tenants/${params.tenantId}`;
   const sectorLabel = TOPTAN_SECTOR_OPTIONS.find((o) => o.value === params.sector)?.label ?? params.sector;
   const paidRequested = params.requestedPlanPrice > 0;
+  const trialEnd = formatDateTr(params.planTrialEndsAt) || "—";
   const business = escapeHtml(params.businessName);
   const planLine = `${params.requestedPlanName} — ${formatTry(params.requestedPlanPrice)} / yıl (KDV hariç)`;
   const telHref = `tel:+${digitsOnly(params.phone)}`;
@@ -61,7 +65,7 @@ export function buildSignupNotificationEmail(params: SignupNotificationParams) {
     heading(paidRequested ? "Ücretli paket talebi" : "Yeni kayıt"),
     paragraph(
       paidRequested
-        ? `<strong>${business}</strong> kayıt oldu ve <strong>${escapeHtml(params.requestedPlanName)}</strong> paketini istedi. Kataloğu şu an <strong>Ücretsiz</strong> planla açık; ödeme alınana kadar ücretsiz planda kalır.`
+        ? `<strong>${business}</strong> kayıt oldu ve <strong>${escapeHtml(params.requestedPlanName)}</strong> paketini istedi. Kataloğu <strong>${escapeHtml(params.requestedPlanName)}</strong> paketiyle <strong>14 gün deneme</strong> olarak açıldı (bitiş: ${escapeHtml(trialEnd)}). Ödeme gelmezse deneme bitiminde otomatik Ücretsiz plana düşer.`
         : `<strong>${business}</strong> kayıt oldu, kataloğu <strong>Ücretsiz</strong> planla açıldı.`,
     ),
     params.domainOk
@@ -77,7 +81,7 @@ export function buildSignupNotificationEmail(params: SignupNotificationParams) {
       ? alertBox(
           "#D97706",
           "#FFFBEB",
-          `<strong>Yapılacaklar</strong><br>1. Müşteriyi arayın: <a href="${telHref}" style="color:#0F172A;">${escapeHtml(params.phone)}</a> ya da <a href="${waHref}" style="color:#157A5B;">WhatsApp'tan yazın</a>.<br>2. Ödeme bilgisini iletin: <strong>${escapeHtml(planLine)}</strong>.<br>3. Ödeme gelince admin panelinden paketi <strong>${escapeHtml(params.requestedPlanName)}</strong> yapın; reklamlar kalkar, limitler açılır.`,
+          `<strong>Yapılacaklar</strong><br>1. Müşteriyi arayın: <a href="${telHref}" style="color:#0F172A;">${escapeHtml(params.phone)}</a> ya da <a href="${waHref}" style="color:#157A5B;">WhatsApp'tan yazın</a>.<br>2. Ödeme bilgisini iletin: <strong>${escapeHtml(planLine)}</strong>.<br>3. Ödeme gelince admin panelinde mağazayı açıp <strong>“Ödeme alındı”</strong> düğmesine basın; paket 12 aylık kalıcı üyeliğe döner. Basılmazsa ${escapeHtml(trialEnd)} tarihinde Ücretsiz plana düşer.`,
         )
       : alertBox(
           "#157A5B",
@@ -101,7 +105,7 @@ export function buildSignupNotificationEmail(params: SignupNotificationParams) {
     subheading("Paket"),
     dataTable(
       [
-        dataRow("Şu anki plan", "Ücretsiz"),
+        dataRow("Şu anki plan", paidRequested ? `${params.requestedPlanName} (deneme, bitiş ${trialEnd})` : "Ücretsiz"),
         dataRow("İstenen paket", paidRequested ? planLine : "Ücretsiz (ücretli paket istemedi)"),
       ].join(""),
     ),
@@ -126,7 +130,7 @@ export function buildSignupNotificationEmail(params: SignupNotificationParams) {
     `Mağaza: ${params.storeUrl}`,
     "",
     paidRequested
-      ? `Yapılacaklar: müşteriyi arayın, ödeme bilgisini iletin, ödeme gelince paketi ${params.requestedPlanName} yapın.`
+      ? `${params.requestedPlanName} 14 gün deneme (bitiş ${trialEnd}). Yapılacaklar: müşteriyi arayın, ödeme bilgisini iletin, ödeme gelince admin panelinde "Ödeme alındı" deyin.`
       : "Hesap Ücretsiz planla açıldı. Ürün yükleme desteği için aranabilir.",
     "",
     `Admin: ${adminUrl}`,

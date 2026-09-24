@@ -15,6 +15,9 @@ import {
   isTrialExpired,
   isTrialTenant,
 } from "@/lib/billing/trial";
+import { getPlanTrialDaysLeft } from "@/lib/billing/plan-trial";
+import { getToptanPlan } from "@/lib/billing/toptan-plans";
+import { SITE } from "@/lib/marketing/site";
 
 // iPhone'da bildirim yalnız ana ekrana eklenmiş panelde çalışır. Ana ekran
 // ikonu ve adı BAYİNİN logosu/adı olsun (eKatalox değil): manifest tenant'a
@@ -77,6 +80,17 @@ export default async function DashboardLayout({
         />
       </div>
       <main className="container-shell py-6 md:h-screen md:overflow-y-auto">
+        {tenant && tenant.plan_trial_ends_at ? (
+          <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+            <span className="font-semibold">{getToptanPlan(tenant.plan)?.name ?? "Paket"} denemesi:</span>{" "}
+            <strong>{getPlanTrialDaysLeft(tenant)} gün</strong> kaldı. Ödeme alındığında paketiniz kalıcı olur;
+            alınmazsa kataloğunuz kapanmadan Ücretsiz plana geçer. Ödeme için{" "}
+            <a href={SITE.whatsappHref} target="_blank" rel="noopener noreferrer" className="font-semibold underline">
+              WhatsApp&apos;tan yazın
+            </a>
+            .
+          </div>
+        ) : null}
         {trialDaysLeft !== null ? (
           <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
             <span className="font-semibold">Deneme hesabı:</span> Deneme

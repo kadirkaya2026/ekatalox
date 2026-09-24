@@ -88,13 +88,25 @@ export const tenantUpdateSchema = z
     end_trial: z.boolean().optional(),
     start_trial: z.boolean().optional(),
     gift_months: z.number().int().min(1).max(24).optional(),
+    // Ücretli paket denemesindeki mağazadan ödeme alındı: deneme biter,
+    // mevcut paket bugünden itibaren 12 aylık üyeliğe döner (0132).
+    confirm_plan_payment: z.boolean().optional(),
   })
   .transform((data) => {
     // end_trial / start_trial DB kolonu değil; trial_ends_at'e çevrilir.
     // end_trial: süper admin paket atadığında deneme sonlanır.
     // start_trial: mevcut hesap bugünden itibaren 14 günlük denemeye alınır.
     // gift_months route'ta işlenir (mevcut bitişe göre hesap gerekir).
-    const { end_trial, start_trial, ...rest } = data;
+    const { end_trial, start_trial, confirm_plan_payment, ...rest } = data;
+    if (confirm_plan_payment) {
+      return {
+        ...rest,
+        plan_trial_ends_at: null,
+        plan_trial_reminder_sent_at: null,
+        plan_started_at: new Date().toISOString(),
+        plan_expires_at: getPlanPeriodEnd(),
+      };
+    }
     const mapped = end_trial
       ? { ...rest, trial_ends_at: null }
       : start_trial
@@ -103,11 +115,14 @@ export const tenantUpdateSchema = z
 
     if (mapped.plan) {
       // Paket onayı: ödeme alındı, üyelik dönemi o günden itibaren 12 ay.
+      // Elle paket atamak ücretli paket denemesini de bitirir.
       return {
         ...mapped,
         max_product_limit: getLimitForPlan(mapped.plan),
         plan_started_at: new Date().toISOString(),
         plan_expires_at: getPlanPeriodEnd(),
+        plan_trial_ends_at: null,
+        plan_trial_reminder_sent_at: null,
       };
     }
 

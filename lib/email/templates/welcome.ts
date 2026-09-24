@@ -1,6 +1,7 @@
-// Karşılama e-postası: kayıt tamamlandığında toptancıya gider (20 Eyl 2026
-// freemium). Hesap Ücretsiz planla açılır; ücretli paket seçildiyse
-// "sizi arayacağız" notu düşer.
+// Karşılama e-postası: kayıt tamamlandığında toptancıya gider. Ücretsiz seçen
+// Ücretsiz planla açılır; ücretli paket seçen o paketle 14 gün denemede açılır
+// (25 Eyl 2026) ve "sizi arayacağız, ödeme gelmezse Ücretsiz plana geçer" notu düşer.
+import { PAID_PLAN_TRIAL_DAYS } from "@/lib/billing/plan-trial";
 import { formatTry } from "@/lib/billing/toptan-plans";
 import { SITE } from "@/lib/marketing/site";
 import {
@@ -9,6 +10,7 @@ import {
   dataRow,
   dataTable,
   escapeHtml,
+  formatDateTr,
   heading,
   linkRow,
   noteBox,
@@ -26,15 +28,19 @@ export interface WelcomeEmailParams {
   panelUrl: string;
   requestedPlanName: string;
   requestedPlanPrice: number;
+  /** Ücretli paket denemesinin bitişi; Ücretsiz seçildiyse null. */
+  planTrialEndsAt: string | null;
 }
 
 export function buildWelcomeEmail(params: WelcomeEmailParams) {
   const paidRequested = params.requestedPlanPrice > 0;
+  const trialEnd = formatDateTr(params.planTrialEndsAt);
+  const planLabel = paidRequested ? `${params.requestedPlanName} paketiyle` : "Ücretsiz planla";
 
   const bodyHtml = [
     heading(`Kataloğunuz hazır, ${escapeHtml(params.fullName)}!`),
     paragraph(
-      `<strong>${escapeHtml(params.businessName)}</strong> için online kataloğunuz Ücretsiz planla açıldı. Bayileriniz aşağıdaki adresten şifreyle girip sipariş verebilir.`,
+      `<strong>${escapeHtml(params.businessName)}</strong> için online kataloğunuz ${escapeHtml(planLabel)} açıldı${paidRequested ? ` (${PAID_PLAN_TRIAL_DAYS} gün deneme)` : ""}. Bayileriniz aşağıdaki adresten şifreyle girip sipariş verebilir.`,
     ),
     dataTable(
       [
@@ -55,7 +61,7 @@ export function buildWelcomeEmail(params: WelcomeEmailParams) {
     ]),
     paidRequested
       ? noteBox(
-          `<strong>${escapeHtml(params.requestedPlanName)} paketi</strong> talebiniz bize ulaştı (${escapeHtml(formatTry(params.requestedPlanPrice))} / yıl, KDV hariç). Temsilcimiz en kısa sürede arayıp ödeme bilgisini iletecek; ödeme sonrası paketiniz açılır ve reklamlar kalkar. O zamana kadar Ücretsiz planı kullanmaya devam edebilirsiniz.`,
+          `<strong>${escapeHtml(params.requestedPlanName)} paketi</strong> ${PAID_PLAN_TRIAL_DAYS} gün boyunca tüm özellikleriyle, reklamsız açık${trialEnd ? ` (${escapeHtml(trialEnd)} tarihine kadar)` : ""}. Temsilcimiz arayıp ödeme bilgisini iletecek (${escapeHtml(formatTry(params.requestedPlanPrice))} / yıl, KDV hariç). Ödeme alınınca paketiniz kalıcı olur; ödeme gelmezse deneme bitiminde kataloğunuz kapanmaz, Ücretsiz plana geçer.`,
         )
       : paragraph(
           `Ücretsiz planda kataloğunuzda küçük eKatalox tanıtımları görünür. Reklamsız kullanmak ya da ürün limitini artırmak isterseniz paneldeki Paketim sayfasından ya da bize yazarak istediğiniz zaman paket seçebilirsiniz.`,
@@ -68,7 +74,7 @@ export function buildWelcomeEmail(params: WelcomeEmailParams) {
   const text = renderEmailText([
     `Kataloğunuz hazır, ${params.fullName}!`,
     "",
-    `${params.businessName} için online kataloğunuz Ücretsiz planla açıldı.`,
+    `${params.businessName} için online kataloğunuz ${planLabel} açıldı${paidRequested ? ` (${PAID_PLAN_TRIAL_DAYS} gün deneme)` : ""}.`,
     `Katalog adresiniz: ${params.storeUrl}`,
     `Yönetim paneli: ${params.panelUrl}`,
     `Giriş e-postanız: ${params.email}`,
@@ -80,7 +86,7 @@ export function buildWelcomeEmail(params: WelcomeEmailParams) {
     "- Siparişler WhatsApp numaranıza PDF olarak gelir.",
     "",
     paidRequested
-      ? `${params.requestedPlanName} paketi talebiniz alındı (${formatTry(params.requestedPlanPrice)} / yıl, KDV hariç). Temsilcimiz arayıp ödeme bilgisini iletecek.`
+      ? `${params.requestedPlanName} paketi ${PAID_PLAN_TRIAL_DAYS} gün deneme olarak açık${trialEnd ? ` (${trialEnd} tarihine kadar)` : ""}. Temsilcimiz arayıp ödeme bilgisini iletecek (${formatTry(params.requestedPlanPrice)} / yıl, KDV hariç); ödeme gelmezse Ücretsiz plana geçersiniz.`
       : "Ücretsiz planda kataloğunuzda küçük eKatalox tanıtımları görünür; istediğiniz zaman paket seçebilirsiniz.",
   ]);
 

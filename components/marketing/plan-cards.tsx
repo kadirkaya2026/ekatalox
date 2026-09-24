@@ -76,7 +76,7 @@ export function PlanCards({ compact = false, dark = false }: { compact?: boolean
               </Link>
               {!isFree ? (
                 <p className={cn("mt-2 text-center text-xs", dark ? "text-white/45" : "text-brand-muted")}>
-                  Hesabınız hemen açılır, ödeme için sizi ararız.
+                  14 gün ücretsiz deneyin, ödeme için sizi ararız.
                 </p>
               ) : null}
             </div>

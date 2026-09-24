@@ -16,6 +16,7 @@ import {
   getPlanLabel,
   PLAN_OPTIONS,
 } from "@/lib/billing/plans";
+import { getPlanTrialDaysLeft } from "@/lib/billing/plan-trial";
 import { TRIAL_DURATION_DAYS } from "@/lib/billing/trial";
 import { getPriceListDisplayName, normalizePriceListName } from "@/lib/price-lists/constants";
 import { SECTOR_THEME_MAP } from "@/lib/storefront/esnaf-themes";
@@ -220,6 +221,30 @@ export function AdminTenantDetailPanel({ tenant: initialTenant }: { tenant: Tena
 
       setTenant((current) => ({ ...current, ...result.tenant }));
       setMessage(`Üyeliğe ${giftMonths} ay hediye eklendi.`);
+    });
+  }
+
+  // Ücretli paket denemesindeki mağazadan ödeme alındı (0132): deneme biter,
+  // mevcut paket 12 aylık kalıcı üyeliğe döner.
+  function confirmPlanPayment() {
+    setMessage(null);
+
+    startTransition(async () => {
+      const response = await fetch(`/api/admin/tenants/${tenant.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ confirm_plan_payment: true }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        setMessage(result.error ?? "Ödeme onayı kaydedilemedi.");
+        return;
+      }
+
+      setTenant((current) => ({ ...current, ...result.tenant }));
+      setMessage("Ödeme alındı; paket 12 aylık kalıcı üyeliğe döndü.");
     });
   }
 
@@ -538,6 +563,7 @@ export function AdminTenantDetailPanel({ tenant: initialTenant }: { tenant: Tena
   }
 
   const trialBadge = getTrialBadge(tenant.trial_ends_at);
+  const planTrialDaysLeft = getPlanTrialDaysLeft(tenant);
 
   return (
     <div className="space-y-6">
@@ -597,6 +623,11 @@ export function AdminTenantDetailPanel({ tenant: initialTenant }: { tenant: Tena
                 {tenant.status === "active" ? "Aktif" : "Askıda"}
               </Badge>
               {trialBadge ? <Badge className={trialBadge.className}>{trialBadge.label}</Badge> : null}
+              {planTrialDaysLeft !== null ? (
+                <Badge className="bg-amber-50 text-amber-700">
+                  Paket denemesi — {planTrialDaysLeft} gün kaldı, ödeme bekleniyor
+                </Badge>
+              ) : null}
               {tenant.business_type === "market" ? (
                 <Badge className="bg-violet-50 text-violet-700">Market</Badge>
               ) : null}
@@ -616,6 +647,11 @@ export function AdminTenantDetailPanel({ tenant: initialTenant }: { tenant: Tena
           </div>
 
           <div className="flex flex-wrap gap-2">
+            {tenant.plan_trial_ends_at ? (
+              <Button onClick={confirmPlanPayment} disabled={pending}>
+                Ödeme alındı — paketi kalıcı yap
+              </Button>
+            ) : null}
             <Button
               variant="secondary"
               onClick={() => toggleTenantTrial(tenant.trial_ends_at ? "end" : "start")}

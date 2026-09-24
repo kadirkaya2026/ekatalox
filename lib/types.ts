@@ -86,6 +86,9 @@ export interface Tenant {
   is_whatsapp_order_direct: boolean;
   custom_domain: string | null;
   trial_ends_at: string | null;
+  /** Ücretli paket denemesi bitişi (0132); dolunca Ücretsiz plana düşer. */
+  plan_trial_ends_at?: string | null;
+  plan_trial_reminder_sent_at?: string | null;
   plan_started_at: string | null;
   plan_expires_at: string | null;
   visitor_limit_addon: number;
