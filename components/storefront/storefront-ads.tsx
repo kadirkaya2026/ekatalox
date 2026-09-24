@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { ExternalLink, X } from "lucide-react";
 import { EkataloxLogo } from "@/components/brand/ekatalox-logo";
 import { buildStorefrontAdHref, type StorefrontAdsConfig } from "@/lib/ads/config";
+import { SITE } from "@/lib/marketing/site";
 import { cn } from "@/lib/utils";
 
 // eKatalox'un kendi reklam yerleşimleri — yalnız Ücretsiz plandaki vitrinlerde
@@ -13,6 +14,10 @@ import { cn } from "@/lib/utils";
 type AdProps = { ads: StorefrontAdsConfig; subdomain?: string | null };
 
 const AD_LABEL = "eKatalox Reklamları";
+
+// Demo mağazanın (SITE.demoUrl) şifre ekranında reklam kutusunda giriş şifresi
+// kırmızıyla yazılır; ziyaretçi eKatalox sitesinden gelmeden de girebilsin.
+const DEMO_SUBDOMAIN = new URL(SITE.demoUrl).hostname.split(".")[0];
 
 function OwnerLine({ ads, subdomain, className }: AdProps & { className?: string }) {
   if (!ads.owner_text) return null;
@@ -130,6 +135,9 @@ export function StorefrontAdInline({
           <span className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">{title}</span>
         </div>
       </div>
+      {placement === "password_gate" && subdomain === DEMO_SUBDOMAIN ? (
+        <p className="mt-2 text-sm font-bold text-red-600">Mağaza giriş şifresi: {SITE.demoPassword}</p>
+      ) : null}
       <p className="mt-2 text-xs leading-relaxed">{block.text}</p>
       <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
         <a
