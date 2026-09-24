@@ -1,16 +1,33 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowRight, KeyRound, MessageCircle, UploadCloud } from "lucide-react";
-import { HeroComparison } from "@/components/marketing/hero-comparison";
+import {
+  ArrowRight,
+  BarChart3,
+  BellRing,
+  Check,
+  FileSpreadsheet,
+  FileText,
+  Lock,
+  Megaphone,
+  Package,
+  Palette,
+  Tags,
+} from "lucide-react";
+import { MARKETING_WHATSAPP_HREF, WhatsAppGlyph } from "@/components/marketing/contact-dock";
+import { HeroOrderVisual } from "@/components/marketing/hero-order-visual";
+import { PhoneFrame } from "@/components/marketing/phone-frame";
 import { PlanCards } from "@/components/marketing/plan-cards";
-import { ButtonLink, Container, Eyebrow, Section, SectionHeading } from "@/components/marketing/ui";
+import { ButtonLink, Container, Section, SectionHeading } from "@/components/marketing/ui";
 import { TOPTAN_PLANS } from "@/lib/billing/toptan-plans";
-import { SITE } from "@/lib/marketing/site";
+import { CUSTOMER_NAMES, SITE } from "@/lib/marketing/site";
 
-// Ana sayfa (21 Eyl 2026 koyu tema yeniden tasarımı): PDF katalog yaptıran
-// her toptancı/üretici için ücretsiz online katalog + WhatsApp sipariş.
-// Koyu/yeşil SaaS görünümü — kullanıcının Gemini'ye çizdirdiği örneğe göre.
-// Sunucu bileşeni.
+// Ana sayfa (24 Eyl 2026 reklam öncesi yeniden düzen; tema 21 Eyl koyu/yeşil).
+// Hedef: Instagram/Meta reklamından gelen toptancı ilk ekranda ne olduğunu
+// anlasın ve "Ücretsiz kataloğumu kur"a ya da WhatsApp'a geçsin.
+// Sıra: hero (katalog + WhatsApp'a düşen sipariş) → müşteri şeridi → PDF'le
+// önce/sonra → 3 adım (gerçek ekran görüntüleri) → özellikler → paketler →
+// SSS → son çağrı. Eski "Ücretsiz plan" ve "Kimler için" bölümleri kaldırıldı
+// (bilgisi hero, paketler ve SSS'de). Sunucu bileşeni.
 
 export const metadata: Metadata = {
   title: { absolute: "eKatalox — Toptancılar için ücretsiz online katalog ve WhatsApp sipariş" },
@@ -19,65 +36,96 @@ export const metadata: Metadata = {
   alternates: { canonical: "/" },
 };
 
-const PROBLEMS = [
+const BEFORE_AFTER = [
   {
-    title: "“Fiyat değişti, PDF'i yeniden yolla” yok",
-    body: "Fiyatı panelden değiştirirsiniz, bayi o an güncel fiyatı görür. Yüzlerce kişiye yeni PDF atmak, eski listeden sipariş almak biter.",
+    before: "Fiyat değişince yeni PDF hazırlayıp yüzlerce bayiye tekrar gönderiyorsunuz.",
+    after: "Fiyatı panelde değiştirirsiniz, bayi o an güncel fiyatı görür.",
   },
   {
-    title: "“Bayiye başka, perakendeye başka fiyat” derdi yok",
-    body: "Her müşteri grubuna ayrı şifre, ayrı fiyat listesi. Kim hangi şifreyle girdiyse onun fiyatını görür; kimse başkasının fiyatını görmez.",
+    before: "Bayiye başka, perakendeye başka fiyat için ayrı ayrı PDF tutuyorsunuz.",
+    after: "Her müşteri grubuna ayrı şifre; kim hangi şifreyle girdiyse yalnız kendi fiyatını görür.",
   },
   {
-    title: "“Şundan 3 koli, bundan 5 paket” karmaşası yok",
-    body: "Bayi sepetini doldurur, sipariş ürün kodu, adet, koli ve tutarla PDF olarak WhatsApp'ınıza düşer. Sesli mesajdan sipariş çözmek biter.",
+    before: "Siparişler sesli mesajla, ekran görüntüsüyle, “şundan 3 koli” diye geliyor.",
+    after: "Sipariş ürün kodu, adet, koli ve tutarla tek sayfa PDF olarak WhatsApp'ınıza düşer.",
   },
 ];
 
 const STEPS = [
   {
-    no: "01",
-    icon: UploadCloud,
     title: "Ürünlerinizi yükleyin",
-    body: "Excel'den, fotoğraftan ya da tek tek. Ürün kodu, koli içi adet, varyant ve fiyat listeleri.",
+    body: "Excel'den, fotoğraftan ya da tek tek. PDF'inizi gönderirseniz ilk yüklemeyi biz yaparız.",
+    image: null,
+    alt: "Ürün listesi Excel dosyası",
   },
   {
-    no: "02",
-    icon: KeyRound,
     title: "Bayilerinize şifre verin",
-    body: "firmaniz.ekatalox.com adresini ve şifreyi WhatsApp'tan paylaşın; bayi kendi fiyat listesiyle girer.",
+    body: "firmaniz.ekatalox.com adresini ve şifreyi WhatsApp'tan paylaşın. Uygulama indirmek gerekmez.",
+    image: "/site/toptan-giris.png",
+    alt: "Bayinin şifreyle giriş ekranı",
   },
   {
-    no: "03",
-    icon: MessageCircle,
     title: "Sipariş WhatsApp'a gelir",
-    body: "Bayi sepetini doldurur, gönderir. Sipariş fişi PDF olarak WhatsApp numaranıza düşer.",
+    body: "Bayi sepetini doldurup gönderir, sipariş fişi PDF olarak WhatsApp numaranıza düşer.",
+    image: "/site/toptan-sepet.png",
+    alt: "Bayinin sepeti ve WhatsApp ile sipariş düğmesi",
   },
 ];
+
+// 1. adım görseli: demo mağazanın (demotoptan) gerçek ilk 8 ürünü, kod ve
+// fiyatları DB'den (24 Eyl 2026), adlar kısaltılmış.
+const EXCEL_ROWS = [
+  ["BSU-001", "Baseus Pudding USB-C Lightning 20W", "499"],
+  ["BSU-002", "Toocki Dual Band Wi-Fi Adaptörü", "599"],
+  ["BSU-003", "Toocki Tangxin USB-C Lightning 27W", "499"],
+  ["BSU-004", "Toocki 20W PD Yaylı Kablo", "499"],
+  ["BSU-005", "Toocki 100W Type-C Kablo", "599"],
+  ["BSU-006", "Toocki 66W USB-A Type-C Kablo", "499"],
+  ["BSU-007", "Baseus Fish-Eye 100W Kablo", "599"],
+  ["BSU-008", "Baseus Fish Eye Lightning 2A", "699"],
+];
+
+function ExcelSheet({ label }: { label: string }) {
+  return (
+    <div
+      role="img"
+      aria-label={label}
+      className="flex aspect-[71.9/150] w-full flex-col overflow-hidden rounded-[10%/4.8%] border border-white/15 bg-white text-left shadow-[0_24px_48px_-24px_rgba(0,0,0,0.6)]"
+    >
+      <div className="flex items-center gap-1.5 bg-[#107C41] px-[7%] py-[6%] text-[clamp(8px,2.6vw,12px)] font-semibold text-white">
+        <FileSpreadsheet className="size-[1.2em] shrink-0" aria-hidden />
+        urunler.xlsx
+      </div>
+      <div className="grid grid-cols-[auto_1fr_auto] gap-x-[6%] border-b border-black/10 bg-[#F3F4F6] px-[7%] py-[4%] text-[clamp(6px,1.9vw,9px)] font-semibold text-black/55">
+        <span>Kod</span>
+        <span>Ürün</span>
+        <span>Fiyat</span>
+      </div>
+      <div className="flex-1 divide-y divide-black/5">
+        {EXCEL_ROWS.map(([code, name, price]) => (
+          <div
+            key={code}
+            className="grid grid-cols-[auto_1fr_auto] gap-x-[6%] px-[7%] py-[4.5%] text-[clamp(6px,1.9vw,9px)] leading-tight text-black/80"
+          >
+            <span className="tabular-nums text-black/50">{code}</span>
+            <span className="truncate">{name}</span>
+            <span className="tabular-nums">₺{price}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 const FEATURES = [
-  { title: "Şifreli katalog", body: "Fiyatlar herkese açık değil. Bayi şifresiyle girer; şifresiz ziyaretçi isterseniz yalnız ürünleri görür." },
-  { title: "Üç fiyat listesi", body: "Bayi, perakende, özel müşteri. Her şifre ayrı listeye açılır, aynı katalog üç fiyatla çalışır." },
-  { title: "Koli, paket, adet", body: "Ürün başına koli içi adet ve varyant (renk, beden, model). Bayi koli seçer, tutar kendiliğinden hesaplanır." },
-  { title: "WhatsApp'a PDF sipariş", body: "Sipariş fişi PDF olarak WhatsApp'ınıza gelir. Cari adı, telefon, not ve kalemler tek sayfada." },
-  { title: "Kampanya ve öne çıkanlar", body: "Banner, kampanya kartı, indirimli ürün ve öne çıkanlar bölümü. Yeni gelen ürünü ilk sırada gösterin." },
-  { title: "Bayilere bildirim", body: "Yeni ürün, stok geldi, kampanya başladı. Bildirim açan bayilerin telefonuna anında düşer." },
-  { title: "Raporlar", body: "Kim ne zaman girdi, hangi ürünlere baktı, hangi ilden. Bugün kaç sipariş PDF'i oluştu." },
-  { title: "Tema ve marka görünümü", body: "Logonuz, renkleriniz. Hazır temalardan seçin, gerçek ürünlerinizle önizleyin." },
-];
-
-const SEGMENTS = [
-  "Telefon aksesuarı ve elektronik",
-  "Gıda ve içecek toptancıları",
-  "Tekstil, giyim ve ayakkabı",
-  "Hırdavat, nalburiye ve yapı",
-  "Kozmetik ve kişisel bakım",
-  "Kırtasiye ve oyuncak",
-  "Ambalaj ve temizlik",
-  "Elektrik ve aydınlatma",
-  "Ev, mutfak ve züccaciye",
-  "Otomotiv ve yedek parça",
-  "Üreticiler ve distribütörler",
+  { icon: Lock, title: "Şifreli katalog", body: "Fiyatlar herkese açık değil. Şifresiz ziyaretçi isterseniz yalnız ürünleri görür." },
+  { icon: Tags, title: "Ayrı fiyat listeleri", body: "Bayi, perakende, özel müşteri. Aynı katalog her şifrede kendi fiyatıyla açılır." },
+  { icon: Package, title: "Koli, paket, adet", body: "Koli içi adet ve varyant (renk, beden, model). Tutar kendiliğinden hesaplanır." },
+  { icon: FileText, title: "WhatsApp'a PDF sipariş", body: "Cari adı, telefon, not ve kalemler tek sayfada, doğrudan WhatsApp'ınızda." },
+  { icon: Megaphone, title: "Kampanya ve öne çıkanlar", body: "Banner, kampanya kartı, indirimli ürün. Yeni gelen ürünü ilk sırada gösterin." },
+  { icon: BellRing, title: "Bayilere bildirim", body: "Yeni ürün, stok geldi, kampanya başladı. Bildirim açan bayinin telefonuna düşer." },
+  { icon: BarChart3, title: "Raporlar", body: "Kim ne zaman girdi, hangi ürünlere baktı, hangi ilden. Bugün kaç sipariş geldi." },
+  { icon: Palette, title: "Kendi logonuz ve renkleriniz", body: "Hazır temalardan seçin, gerçek ürünlerinizle önizleyin." },
 ];
 
 const FAQ = [
@@ -98,6 +146,8 @@ const FAQ = [
     a: "Hayır. firmaniz.ekatalox.com adresini ve şifreyi WhatsApp'tan gönderirsiniz; bayi tarayıcıda açar, şifreyi yazar, sipariş verir. İsterse ana ekranına ekler, uygulama gibi kullanır.",
   },
 ];
+
+const HERO_POINTS = ["Ücretsiz plan, süre sınırı yok", "Kart bilgisi istenmez", `${SITE.setupMinutes} dakikada kurulum`];
 
 const structuredData = {
   "@context": "https://schema.org",
@@ -152,172 +202,152 @@ export default function HomePage() {
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }} />
 
-      {/* 1. Hero — koyu zemin */}
-      <Section tone="navy" glow className="pb-14 pt-16 sm:pb-20 sm:pt-20">
-        <Container className="grid items-center gap-12 lg:grid-cols-[1.1fr_1fr] lg:gap-10">
+      {/* 1. Hero — koyu zemin; görsel: katalog + WhatsApp'a düşen sipariş */}
+      <Section tone="navy" glow className="pb-14 pt-12 sm:pb-20 sm:pt-20">
+        <Container className="grid items-center gap-10 lg:grid-cols-[1.1fr_1fr] lg:gap-10">
           <div>
-            <Eyebrow dark>Toptancılar, üreticiler ve distribütörler için</Eyebrow>
-            <h1 className="mt-4 text-balance text-4xl font-bold leading-[1.05] tracking-[-0.025em] text-white sm:text-5xl lg:text-[3.4rem]">
+            <p className="text-sm font-medium text-brand-neon">Toptancılar ve üreticiler için</p>
+            <h1 className="mt-3 text-balance text-[2.35rem] font-bold leading-[1.05] tracking-[-0.025em] text-white sm:text-5xl lg:text-[3.4rem]">
               PDF kataloğunuz artık canlı bir sipariş sayfası.
             </h1>
-            <p className="mt-6 max-w-xl text-lg leading-relaxed text-white/65">
-              Ürünlerinizi bir kez yükleyin. Bayileriniz şifreyle girsin, kendi fiyat listesini görsün, sepetini
-              doldurup WhatsApp&apos;tan sipariş versin. Ücretsiz başlayın, kart istemeyiz.
+            <p className="mt-5 max-w-xl text-lg leading-relaxed text-white/70">
+              Ürünlerinizi bir kez yükleyin. Bayileriniz şifreyle girsin, kendi fiyatını görsün, sepetini doldurup
+              WhatsApp&apos;tan sipariş versin.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <ButtonLink href="/basvuru" size="lg">
                 Ücretsiz kataloğumu kur
               </ButtonLink>
-              <ButtonLink href={SITE.demoUrl} tone="outline-dark" size="lg" external>
+              <ButtonLink href={SITE.demoEnterUrl} tone="outline-dark" size="lg" external>
                 Demo kataloğu aç
               </ButtonLink>
             </div>
-            <p className="mt-6 font-plex-mono text-sm text-white/45">
-              Ücretsiz plan · 200 ürün · kart yok · {SITE.setupMinutes} dakikada kurulum · demo şifresi {SITE.demoPassword}
-            </p>
+            <ul className="mt-7 flex flex-col gap-2 text-[15px] text-white/65 sm:flex-row sm:flex-wrap sm:gap-x-6">
+              {HERO_POINTS.map((p) => (
+                <li key={p} className="flex items-center gap-2">
+                  <Check className="size-4 shrink-0 text-brand-neon" aria-hidden />
+                  {p}
+                </li>
+              ))}
+            </ul>
           </div>
-          <div className="flex justify-center pb-4 lg:justify-end lg:pb-0">
-            <HeroComparison />
-          </div>
+          <HeroOrderVisual />
         </Container>
       </Section>
 
-      {/* 2. Ücretsiz nasıl ücretsiz — açık zemin, koyu kartlar */}
-      <Section>
-        <Container>
-          <SectionHeading
-            eyebrow="Ücretsiz plan"
-            title="Bedava kurun, yayına alın. Büyüyünce paket seçersiniz."
-            lead="Ücretsiz planda kataloğunuzun altında ince bir eKatalox bandı ve ürün listesinde arada bir tanıtım kartı görünür. Reklamsız istediğiniz gün bir paket alırsınız; ürünleriniz, şifreleriniz ve bayileriniz olduğu gibi kalır."
-          />
-          <div className="mt-10 grid gap-6 sm:grid-cols-3">
-            {[
-              { value: "0 ₺", label: "Ücretsiz plan, kart bilgisi istenmez" },
-              { value: "200", label: "Ürün, 1 fiyat listesi, WhatsApp sipariş" },
-              { value: "Süresiz", label: "Deneme değil; kapanma tarihi yok" },
-            ].map((s) => (
-              <div
-                key={s.label}
-                className="rounded-2xl border border-white/10 bg-brand-dark p-6 shadow-[0_20px_50px_-24px_rgba(0,0,0,0.5)]"
-              >
-                <div className="font-plex-mono text-3xl font-medium tabular-nums text-brand-neon">{s.value}</div>
-                <div className="mt-2 text-sm leading-relaxed text-white/60">{s.label}</div>
-              </div>
-            ))}
-          </div>
-        </Container>
-      </Section>
+      {/* 2. Müşteri şeridi — yalnız gerçek müşteriler (lib/marketing/site.ts) */}
+      {CUSTOMER_NAMES.length > 0 ? (
+        <section className="border-b border-brand-line bg-white py-7">
+          <Container className="flex flex-col items-center gap-4 text-center sm:flex-row sm:justify-center sm:gap-10">
+            <p className="text-sm text-brand-muted">Siparişlerini eKatalox&apos;tan alan firmalar</p>
+            <ul className="flex flex-wrap items-center justify-center gap-x-10 gap-y-2">
+              {CUSTOMER_NAMES.map((name) => (
+                <li key={name} className="text-2xl font-bold tracking-[-0.02em] text-brand-navy/80">
+                  {name}
+                </li>
+              ))}
+            </ul>
+          </Container>
+        </section>
+      ) : null}
 
-      {/* 3. Üç dert */}
+      {/* 3. PDF'le önce / eKatalox'la sonra */}
       <Section tone="white">
         <Container>
-          <SectionHeading
-            eyebrow="PDF katalogla üç dert"
-            title="Katalogla sipariş almanın üç derdi var. Üçü de biter."
-          />
-          <div className="mt-12 grid gap-10 md:grid-cols-3 md:gap-8">
-            {PROBLEMS.map((p, i) => (
-              <div key={p.title} className="border-t-2 border-brand-green pt-5">
-                <span className="font-plex-mono text-sm text-brand-muted">0{i + 1}</span>
-                <h3 className="mt-2 text-xl font-semibold text-brand-navy">{p.title}</h3>
-                <p className="mt-3 leading-relaxed text-brand-muted">{p.body}</p>
+          <SectionHeading title="PDF katalogla sipariş almanın üç derdi, üçü de biter." />
+          <div className="mt-10 overflow-hidden rounded-2xl border border-brand-line">
+            <div className="hidden grid-cols-2 bg-brand-paper text-sm font-semibold text-brand-muted md:grid">
+              <p className="px-6 py-3">PDF katalogla</p>
+              <p className="border-l border-brand-line px-6 py-3 text-brand-green">eKatalox ile</p>
+            </div>
+            {BEFORE_AFTER.map((row) => (
+              <div key={row.after} className="grid border-t border-brand-line first:border-t-0 md:grid-cols-2 md:first:border-t">
+                <p className="px-6 pb-2 pt-5 leading-relaxed text-brand-muted line-through decoration-brand-muted/40 md:py-5">
+                  {row.before}
+                </p>
+                <p className="flex gap-3 px-6 pb-5 pt-1 font-medium leading-relaxed text-brand-navy md:border-l md:border-brand-line md:py-5">
+                  <Check className="mt-1 size-4 shrink-0 text-brand-green" aria-hidden />
+                  {row.after}
+                </p>
               </div>
             ))}
           </div>
         </Container>
       </Section>
 
-      {/* 4. Nasıl çalışır — koyu zemin, ikonlu kartlar + oklar */}
+      {/* 4. Nasıl çalışır — gerçek ekran görüntüleri; gerçekten sıralı olduğu için numaralı */}
       <Section id="nasil-calisir" tone="navy" glow>
         <Container>
-          <SectionHeading
-            dark
-            align="center"
-            eyebrow="Nasıl çalışır"
-            title="Üç adım: yükle, şifre ver, sipariş al."
-            className="mx-auto"
-          />
-          <div className="mt-14 flex flex-col items-stretch gap-4 md:flex-row md:items-center md:justify-center md:gap-3">
+          <SectionHeading dark align="center" title="Üç adımda sipariş almaya başlayın." className="mx-auto" />
+          <ol className="mt-12 grid gap-8 md:grid-cols-3 md:gap-8">
             {STEPS.map((s, i) => (
-              <div key={s.no} className="flex flex-1 items-center gap-3 md:items-stretch">
-                <div className="flex-1 rounded-2xl border border-white/10 bg-brand-dark-surface p-6">
-                  <div className="flex size-11 items-center justify-center rounded-xl bg-brand-neon/15 text-brand-neon">
-                    <s.icon className="size-5" />
-                  </div>
-                  <p className="mt-4 font-plex-mono text-xs text-white/40">{s.no}</p>
-                  <h3 className="mt-1 text-lg font-semibold text-white">{s.title}</h3>
-                  <p className="mt-2 text-sm leading-relaxed text-white/60">{s.body}</p>
+              <li key={s.title} className="flex items-center gap-5 md:flex-col md:text-center">
+                <div className="w-[112px] shrink-0 md:w-[190px]">
+                  {s.image ? (
+                    <PhoneFrame src={s.image} alt={s.alt} className="w-full sm:w-full" />
+                  ) : (
+                    <ExcelSheet label={s.alt} />
+                  )}
                 </div>
-                {i < STEPS.length - 1 ? (
-                  <ArrowRight aria-hidden className="hidden size-5 shrink-0 rotate-90 text-white/25 md:block md:rotate-0" />
-                ) : null}
-              </div>
+                <div className="md:mt-2">
+                  <p className="flex items-center gap-2.5 text-lg font-semibold text-white md:justify-center">
+                    <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-brand-neon text-sm font-bold text-brand-dark">
+                      {i + 1}
+                    </span>
+                    {s.title}
+                  </p>
+                  <p className="mt-2 max-w-xs text-[15px] leading-relaxed text-white/65 md:mx-auto">{s.body}</p>
+                </div>
+              </li>
             ))}
-          </div>
-          <div className="mt-8 flex flex-col gap-4 rounded-2xl border border-white/10 bg-brand-dark-surface p-6 sm:flex-row sm:items-center sm:justify-between sm:p-8">
+          </ol>
+          <div className="mx-auto mt-14 flex max-w-3xl flex-col items-center gap-4 rounded-2xl border border-white/10 bg-white/[0.04] p-6 text-center sm:flex-row sm:justify-between sm:p-7 sm:text-left">
             <div>
-              <Eyebrow dark>Kendiniz deneyin</Eyebrow>
-              <h3 className="mt-2 text-xl font-semibold text-white">Demo kataloğa bayi gibi girin</h3>
-              <p className="mt-2 max-w-2xl leading-relaxed text-white/60">
-                Şifre {SITE.demoPassword}. Ürünleri gezin, sepete koyun, sipariş fişinin nasıl geldiğine bakın.
-              </p>
+              <h3 className="text-lg font-semibold text-white">Bayi gibi girip kendiniz deneyin</h3>
+              <p className="mt-1 text-white/65">Ürünleri gezin, sepete koyun, sipariş fişinin nasıl geldiğine bakın.</p>
             </div>
-            <ButtonLink href={SITE.demoUrl} tone="outline-dark" external className="shrink-0">
-              Demoyu aç <ArrowRight className="size-4" />
+            <ButtonLink href={SITE.demoEnterUrl} tone="outline-dark" external className="shrink-0">
+              Demo kataloğu aç
             </ButtonLink>
           </div>
         </Container>
       </Section>
 
-      {/* 5. Özellikler */}
+      {/* 5. Özellikler + sektörler tek cümlede */}
       <Section tone="white" id="ozellikler">
         <Container>
           <SectionHeading
-            eyebrow="Özellikler"
             title="Toptan satışın gerektirdiği her şey, ücretsiz planda da var."
             lead="Ürün limiti ve fiyat listesi sayısı pakete göre değişir; işleyiş her pakette aynıdır."
           />
-          <div className="mt-12 grid gap-x-8 gap-y-10 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="mt-12 grid gap-x-10 gap-y-8 sm:grid-cols-2 lg:grid-cols-4">
             {FEATURES.map((f) => (
               <div key={f.title}>
-                <h3 className="text-lg font-semibold text-brand-navy">{f.title}</h3>
-                <p className="mt-2 text-[15px] leading-relaxed text-brand-muted">{f.body}</p>
+                <f.icon className="size-5 text-brand-green" aria-hidden />
+                <h3 className="mt-3 font-semibold text-brand-navy">{f.title}</h3>
+                <p className="mt-1.5 text-[15px] leading-relaxed text-brand-muted">{f.body}</p>
               </div>
             ))}
           </div>
-          <Link href="/ozellikler" className="mt-10 inline-flex items-center gap-1.5 text-sm font-semibold text-brand-green hover:underline">
-            Tüm özellikleri inceleyin <ArrowRight className="size-4" />
+          <p className="mt-12 max-w-3xl border-t border-brand-line pt-8 leading-relaxed text-brand-muted">
+            <span className="font-semibold text-brand-navy">Sektör fark etmez.</span> Telefon aksesuarı, gıda, tekstil,
+            hırdavat, kozmetik, kırtasiye, ambalaj, elektrik, züccaciye, yedek parça: ürün kodu, koli içi adet ve bayi
+            fiyatı olan her toptancı aynı düzende çalışır.
+          </p>
+          <Link href="/ozellikler" className="mt-6 inline-flex items-center gap-1.5 text-sm font-semibold text-brand-green hover:underline">
+            Tüm özellikleri inceleyin <ArrowRight className="size-4" aria-hidden />
           </Link>
         </Container>
       </Section>
 
-      {/* 6. Kimler için */}
-      <Section>
-        <Container>
-          <SectionHeading
-            eyebrow="Kimler için"
-            title="Katalog PDF'i hazırlayıp bayiye gönderen herkes için"
-            lead="Sektör fark etmez: ürün kodu, koli içi adet ve bayi fiyatı olan her toptancı aynı düzende çalışır."
-          />
-          <ul className="mt-10 flex flex-wrap gap-3">
-            {SEGMENTS.map((s) => (
-              <li key={s} className="rounded-full border border-brand-line bg-white px-4 py-2 text-sm font-medium text-brand-navy">
-                {s}
-              </li>
-            ))}
-          </ul>
-        </Container>
-      </Section>
-
-      {/* 7. Paketler — koyu zemin */}
+      {/* 6. Paketler — koyu zemin */}
       <Section tone="navy" glow id="paketler">
         <Container>
           <SectionHeading
             dark
             align="center"
             className="mx-auto"
-            eyebrow="Paketler"
-            title="Ücretsiz başlayın, büyüyünce seçin."
+            title="Ücretsiz başlayın, büyüyünce paket seçin."
             lead="Fiyatlar yıllık ve KDV hariçtir. Komisyon yok, sipariş başına ücret yok. Ücretli paketlerde reklam görünmez."
           />
           <div className="mt-12">
@@ -325,16 +355,16 @@ export default function HomePage() {
           </div>
           <div className="mt-8 text-center">
             <Link href="/fiyatlandirma" className="inline-flex items-center gap-1.5 text-sm font-semibold text-brand-neon hover:underline">
-              Paketleri karşılaştırın <ArrowRight className="size-4" />
+              Paketleri karşılaştırın <ArrowRight className="size-4" aria-hidden />
             </Link>
           </div>
         </Container>
       </Section>
 
-      {/* 8. SSS */}
+      {/* 7. SSS */}
       <Section>
         <Container>
-          <SectionHeading eyebrow="Sık sorulanlar" title="Aklınıza takılanlar" />
+          <SectionHeading title="Aklınıza takılanlar" />
           <dl className="mt-10 divide-y divide-brand-line border-y border-brand-line">
             {FAQ.map((f) => (
               <div key={f.q} className="grid gap-3 py-6 md:grid-cols-[1fr_1.6fr] md:gap-10">
@@ -344,12 +374,12 @@ export default function HomePage() {
             ))}
           </dl>
           <Link href="/sss" className="mt-8 inline-flex items-center gap-1.5 text-sm font-semibold text-brand-green hover:underline">
-            Tüm sorular <ArrowRight className="size-4" />
+            Tüm sorular <ArrowRight className="size-4" aria-hidden />
           </Link>
         </Container>
       </Section>
 
-      {/* 9. Son çağrı */}
+      {/* 8. Son çağrı — kayıt + WhatsApp */}
       <Section tone="navy" glow>
         <Container className="grid items-center gap-10 lg:grid-cols-[1.4fr_1fr]">
           <div>
@@ -357,16 +387,17 @@ export default function HomePage() {
               Kataloğunuzu bugün yayınlayın. Ücretsiz.
             </h2>
             <p className="mt-4 max-w-xl text-lg leading-relaxed text-white/75">
-              {`Kayıt ${SITE.setupMinutes} dakika sürer, kataloğunuz o an açılır. İlk yükleme için Excel ya da PDF'inizi gönderin, biz yükleyelim.`}
+              {`Kayıt ${SITE.setupMinutes} dakika sürer, kataloğunuz o an açılır. Sorunuz varsa WhatsApp'tan yazın, Excel ya da PDF'inizi gönderin, ilk yüklemeyi biz yapalım.`}
             </p>
           </div>
-          <div className="flex flex-col gap-4 lg:items-end">
+          <div className="flex flex-col gap-3 sm:flex-row lg:flex-col lg:items-end">
             <ButtonLink href="/basvuru" size="lg">
               Ücretsiz kataloğumu kur
             </ButtonLink>
-            <a href={SITE.phoneHref} className="font-plex-mono text-lg text-white/85 hover:text-white">
-              {SITE.phone}
-            </a>
+            <ButtonLink href={MARKETING_WHATSAPP_HREF} tone="outline-dark" size="lg" external>
+              <WhatsAppGlyph className="size-5 text-[#25D366]" />
+              WhatsApp&apos;tan yazın
+            </ButtonLink>
           </div>
         </Container>
       </Section>

@@ -49,7 +49,7 @@ export function PlanCards({ compact = false, dark = false }: { compact?: boolean
             </div>
             <p className={cn("mt-1 min-h-[3rem] text-sm", dark ? "text-white/60" : "text-brand-muted")}>{plan.tagline}</p>
             <div className="mt-5 flex flex-wrap items-baseline gap-x-2">
-              <span className={cn("font-plex-mono text-3xl font-medium tabular-nums", dark ? "text-white" : "text-brand-navy")}>
+              <span className={cn("text-3xl font-bold tracking-[-0.02em] tabular-nums", dark ? "text-white" : "text-brand-navy")}>
                 {isFree ? "0 ₺" : formatTry(plan.yearlyPrice)}
               </span>
               <span className={cn("text-sm", dark ? "text-white/50" : "text-brand-muted")}>{isFree ? "süresiz" : "/ yıl"}</span>

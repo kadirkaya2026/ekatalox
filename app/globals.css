@@ -295,3 +295,15 @@ section[id] {
   }
 }
 
+
+/* Ana sayfa hero: WhatsApp sipariş kartı bir kez içeri kayar (24 Eyl 2026). */
+@keyframes order-drop {
+  from {
+    opacity: 0;
+    transform: translateY(18px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}

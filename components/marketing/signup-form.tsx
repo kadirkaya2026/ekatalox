@@ -16,6 +16,7 @@
 import Link from "next/link";
 import { ArrowLeft, Eye, EyeOff, Loader2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { trackMetaEvent } from "@/lib/marketing/meta-pixel";
 import {
   formatTry,
   getToptanPlan,
@@ -270,6 +271,7 @@ export function SignupForm({ initialPlan, initialSector }: { initialPlan?: strin
       const data = (await res.json().catch(() => null)) as (Partial<Success> & { error?: string; field?: string }) | null;
       if (res.status === 201 && data?.storeUrl && data.panelUrl && data.subdomain) {
         setSuccess({ storeUrl: data.storeUrl, panelUrl: data.panelUrl, subdomain: data.subdomain, requestedPlan: data.requestedPlan ?? plan });
+        trackMetaEvent("CompleteRegistration", { content_name: data.requestedPlan ?? plan });
         return;
       }
       // Hata: ilgili adıma dön, alanı işaretle.

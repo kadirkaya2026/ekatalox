@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { SiteFooter } from "@/components/marketing/site-footer";
 import { SiteHeader } from "@/components/marketing/site-header";
+import { ContactDock } from "@/components/marketing/contact-dock";
+import { MetaPixel } from "@/components/marketing/meta-pixel";
 
 // Pazarlama sitesi ortak kabuğu (20 Eyl 2026 toptancı/freemium konumlandırması).
 // Admin, panel ve vitrin bu layout'un dışında; kök layout yazı tiplerini yükler.
@@ -38,6 +40,8 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
       <SiteHeader />
       <main>{children}</main>
       <SiteFooter />
+      <ContactDock />
+      <MetaPixel />
     </div>
   );
 }

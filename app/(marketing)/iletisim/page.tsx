@@ -55,7 +55,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
                 <ButtonLink href={SITE.whatsappHref} external>
                   WhatsApp’tan yazın
                 </ButtonLink>
-                <ButtonLink href={SITE.demoUrl} tone="outline" external>
+                <ButtonLink href={SITE.demoEnterUrl} tone="outline" external>
                   Demo kataloğu açın
                 </ButtonLink>
               </div>

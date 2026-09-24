@@ -8,6 +8,8 @@ export const SITE = {
   url: "https://www.ekatalox.com",
   demoUrl: "https://demotoptan.ekatalox.com",
   demoPassword: "1111",
+  // Şifre ekranını atlayıp demo kataloğu doğrudan açar (api/storefront/demo-enter).
+  demoEnterUrl: "https://demotoptan.ekatalox.com/api/storefront/demo-enter",
   phone: "+90 535 417 25 10",
   phoneHref: "tel:+905354172510",
   whatsappHref: "https://wa.me/905354172510",
@@ -30,3 +32,8 @@ export const NAV_LINKS = [
 ] as const;
 
 export const SIGNUP_CTA = "Ücretsiz kur";
+
+// Ana sayfadaki "siparişlerini eKatalox'tan alan firmalar" şeridi. YALNIZ
+// gerçek, izin alınmış müşteriler (uydurma isim yok). Liste boşsa şerit
+// gösterilmez.
+export const CUSTOMER_NAMES: readonly string[] = ["Lucatech", "Genax"];

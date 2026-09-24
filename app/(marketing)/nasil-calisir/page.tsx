@@ -119,7 +119,7 @@ export default function NasilCalisirPage() {
             ))}
           </div>
           <div className="mt-10">
-            <ButtonLink href={SITE.demoUrl} tone="outline" external>
+            <ButtonLink href={SITE.demoEnterUrl} tone="outline" external>
               Demo kataloğu telefonunuzda açın (şifre {SITE.demoPassword})
             </ButtonLink>
           </div>
