@@ -25,7 +25,7 @@ const GROUPS: FaqGroup[] = [
     items: [
       {
         q: "Ücretsiz plan gerçekten ücretsiz mi, süresi var mı?",
-        a: "Evet, süresiz. Kart bilgisi istemeyiz, hesap kapanmaz. 200 ürün, 1 fiyat listesi ve aylık 1.000 ziyaretçiyle kataloğunuzu yayınlar, WhatsApp'tan sipariş alırsınız. Karşılığında kataloğunuzda küçük eKatalox tanıtımları görünür.",
+        a: "Evet, süresiz. Kart bilgisi istemeyiz, hesap kapanmaz. 250 ürün, 2 fiyat listesi ve aylık 1.000 ziyaretçiyle kataloğunuzu yayınlar, WhatsApp'tan sipariş alırsınız. Karşılığında kataloğunuzda küçük eKatalox tanıtımları görünür.",
       },
       {
         q: "Reklam derken ne görünüyor, bayimi rahatsız eder mi?",

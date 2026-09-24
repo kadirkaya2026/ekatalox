@@ -18,7 +18,7 @@ export type TenantPlan =
   | "professional"
   | "corporate";
 
-export type MaxProductLimit = 200 | 500 | 1000 | 2000 | 2500 | 5000;
+export type MaxProductLimit = 200 | 250 | 500 | 1000 | 2000 | 2500 | 5000 | 20000;
 
 export type PlanFeature =
   | "reports"
@@ -58,10 +58,11 @@ export const PLAN_OPTIONS: PlanOption[] = [
   { id: "enterprise", name: "Enterprise", maxProductLimit: 2000 },
   { id: "vip", name: "VIP Custom", maxProductLimit: 5000 },
   // Toptancı freemium merdiveni — yıllık ₺0 / 5.000 / 10.000 / 15.000.
-  { id: "free", name: "Ücretsiz", maxProductLimit: 200 },
-  { id: "starter", name: "Başlangıç", maxProductLimit: 1000 },
-  { id: "professional", name: "Profesyonel", maxProductLimit: 2500 },
-  { id: "corporate", name: "Kurumsal", maxProductLimit: 5000 },
+  // 24 Eyl 2026 limitleri: 250 / 2.500 / 5.000 / 20.000 ürün (0131).
+  { id: "free", name: "Ücretsiz", maxProductLimit: 250 },
+  { id: "starter", name: "Başlangıç", maxProductLimit: 2500 },
+  { id: "professional", name: "Profesyonel", maxProductLimit: 5000 },
+  { id: "corporate", name: "Kurumsal", maxProductLimit: 20000 },
 ];
 
 export interface PlanMarketingMeta {
@@ -159,8 +160,8 @@ export const PLAN_MARKETING_META: Record<TenantPlan, PlanMarketingMeta> = {
     name: "Ücretsiz",
     tagline: "Hemen başla, eKatalox reklamlarıyla ücretsiz kullan",
     bullets: [
-      "200 ürüne kadar",
-      "1 fiyat listesi, aylık 1.000 ziyaretçi",
+      "250 ürüne kadar",
+      "2 fiyat listesi, aylık 1.000 ziyaretçi",
       "WhatsApp sipariş, şifreli katalog, tema ve banner",
       "Vitrinde eKatalox reklamları gösterilir",
     ],
@@ -170,7 +171,7 @@ export const PLAN_MARKETING_META: Record<TenantPlan, PlanMarketingMeta> = {
   starter: {
     name: "Başlangıç",
     tagline: "Reklamsız vitrin ve raporlar",
-    bullets: ["1.000 ürüne kadar", "3 fiyat listesi, aylık 5.000 ziyaretçi", "Raporlar", "Reklamsız"],
+    bullets: ["2.500 ürüne kadar", "3 fiyat listesi, aylık 5.000 ziyaretçi", "Raporlar", "Reklamsız"],
     featured: false,
     hidden: true,
   },
@@ -178,8 +179,8 @@ export const PLAN_MARKETING_META: Record<TenantPlan, PlanMarketingMeta> = {
     name: "Profesyonel",
     tagline: "Müşterilere bildirim ve ödeme ayarları",
     bullets: [
-      "2.500 ürüne kadar",
-      "Sınırsız fiyat listesi, aylık 20.000 ziyaretçi",
+      "5.000 ürüne kadar",
+      "15 fiyat listesi, aylık 20.000 ziyaretçi",
       "Müşterilere bildirim, ödeme ve vade ayarları",
     ],
     featured: true,
@@ -189,7 +190,7 @@ export const PLAN_MARKETING_META: Record<TenantPlan, PlanMarketingMeta> = {
     name: "Kurumsal",
     tagline: "Özel alan adı, satış & kârlılık ve öncelikli destek",
     bullets: [
-      "5.000 ürüne kadar",
+      "20.000 ürüne kadar",
       "Sınırsız fiyat listesi, aylık 50.000 ziyaretçi",
       "Özel alan adı, satış & kârlılık raporu, öncelikli destek",
     ],
@@ -305,9 +306,9 @@ export const PLAN_PRICE_LIST_LIMITS: Record<TenantPlan, number | null> = {
   business: 10,
   enterprise: 20,
   vip: null,
-  free: 1,
+  free: 2,
   starter: 3,
-  professional: null,
+  professional: 15,
   corporate: null,
 };
 

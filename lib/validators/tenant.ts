@@ -30,11 +30,13 @@ const tenantPlanSchema = z.enum(TENANT_PLAN_IDS, {
 
 const maxProductLimitSchema = z.union([
   z.literal(200),
+  z.literal(250),
   z.literal(500),
   z.literal(1000),
   z.literal(2000),
   z.literal(2500),
   z.literal(5000),
+  z.literal(20000),
 ]);
 
 const businessTypeSchema = z.enum(["general", "market"]);

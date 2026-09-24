@@ -77,8 +77,9 @@ function isEmailExistsError(error: { message?: string; code?: string } | null) {
   );
 }
 
-/** Varsayılan fiyat listeleri. Ücretsiz planda 1 fiyatlı liste hakkı var
- *  (PLAN_PRICE_LIST_LIMITS.free), o yüzden fiyatsız katalog + tek liste. */
+/** Varsayılan fiyat listeleri: fiyatsız katalog + tek fiyatlı liste. Ücretsiz
+ *  planda 2 fiyatlı liste hakkı var (PLAN_PRICE_LIST_LIMITS.free); ikincisini
+ *  bayi panelden ekler. */
 async function createDefaultPriceLists(supabase: SupabaseClient, tenantId: string) {
   const { data, error } = await supabase
     .from("price_lists")

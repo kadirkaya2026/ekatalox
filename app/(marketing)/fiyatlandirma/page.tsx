@@ -42,7 +42,7 @@ const COMPARISON: Row[] = [
 const FAQ = [
   {
     q: "Ücretsiz planın süresi var mı?",
-    a: "Yok. Deneme değildir; kart bilgisi istemeyiz, hesap kapanmaz. 200 ürün ve 1 fiyat listesiyle istediğiniz kadar kullanırsınız. Karşılığında kataloğunuzda küçük eKatalox tanıtımları görünür.",
+    a: "Yok. Deneme değildir; kart bilgisi istemeyiz, hesap kapanmaz. 250 ürün ve 2 fiyat listesiyle istediğiniz kadar kullanırsınız. Karşılığında kataloğunuzda küçük eKatalox tanıtımları görünür.",
   },
   {
     q: "Reklamlar tam olarak nerede görünür?",

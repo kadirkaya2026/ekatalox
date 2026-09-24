@@ -131,7 +131,7 @@ const FEATURES = [
 const FAQ = [
   {
     q: "Ücretsiz plan gerçekten ücretsiz mi?",
-    a: "Evet. Kart bilgisi istemeyiz, süre sınırı yoktur. 200 ürüne kadar kataloğunuzu yayınlar, WhatsApp'tan sipariş alırsınız. Karşılığında kataloğunuzda küçük eKatalox reklamları görünür.",
+    a: "Evet. Kart bilgisi istemeyiz, süre sınırı yoktur. 250 ürüne kadar kataloğunuzu yayınlar, WhatsApp'tan sipariş alırsınız. Karşılığında kataloğunuzda küçük eKatalox reklamları görünür.",
   },
   {
     q: "Reklamlar nerede görünür, bayimi rahatsız eder mi?",
