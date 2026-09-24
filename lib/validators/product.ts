@@ -175,7 +175,7 @@ export const productImportRowSchema = z.object({
   image_url: imageUrlSchema,
   package_quantity: optionalPositiveIntegerSchema,
   carton_quantity: optionalPositiveIntegerSchema,
-  purchase_price: optionalDiscountPriceSchema,
+  purchase_price: optionalDiscountPriceSchema.optional(),
 });
 
 export const productImportRowsSchema = z.array(productImportRowSchema);
