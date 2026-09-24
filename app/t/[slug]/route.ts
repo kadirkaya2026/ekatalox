@@ -40,6 +40,26 @@ export async function GET(request: Request, ctx: { params: Promise<{ slug: strin
     return redirectTo(code.disabledRedirectUrl || "https://google.com");
   }
 
+  // Devredilen parti: paketin kodları başka bir kurulumdaki bayiye
+  // yönlendiriliyor (bkz. 0130_magnet_partner_redirect.sql). tenant_id'ye
+  // bakılmıyor — devredilen partide bu kurulumdaki bir bayiye atanmış
+  // kartlar da var ve onların da yeni adrese gitmesi gerekiyor. Adres
+  // boşaltılınca aşağıdaki eski davranış aynen geri gelir.
+  //
+  // Okutma burada da sayılıyor: kart devredilse de "hangi magnet kaç kez
+  // okutuldu" bilgisi bizde kalmalı. Karşı kurulum kendi tarafında vitrine
+  // varışı ayrıca sayar; iki sayaç aynı şeyi ölçmüyor (biri QR açılışı,
+  // diğeri vitrine ulaşan ziyaretçi) ve bilerek ayrı tutuluyor.
+  if (code?.partnerRedirectUrl) {
+    const hedef = buildPartnerUrl(code.partnerRedirectUrl, normalized);
+    if (hedef) {
+      void recordScan(code.tenantId, normalized, request, code.id);
+      return redirectTo(hedef);
+    }
+    // Adres bozuksa yönlendirme yapılmaz; müşteri aşağıdaki normal akışa
+    // düşer, magnet ölü kalmaz.
+  }
+
   if (code && !code.tenantId) {
     // Kod üretilmiş ama henüz bir bayiye atanmamış. Okutmayı yine de
     // sayıyoruz: magnet sahada mı, kaç kişi denedi?
@@ -115,11 +135,33 @@ async function recordScan(
  * lower() ile arıyoruz: magnetteki metni elle yazan müşteri K7M2XQ da
  * yazabilir, benzersiz indeks de lower(code) üzerinde.
  */
+/**
+ * Devredilen partinin hedef adresine magnet kodunu ekler.
+ *
+ * Kod `?m=` ile taşınmazsa karşı kurulum magneti tanıyamaz: orada ne sipariş
+ * magnete bağlanır ne de okutma sayılır, bayi panelinde magnet ölü görünür.
+ * Adres zaten sorgu içeriyor olabileceği için elle string birleştirme yerine
+ * URL nesnesi kullanılıyor.
+ *
+ * Adres bozuksa null döner — çağıran taraf normal akışa devam eder.
+ */
+function buildPartnerUrl(baseUrl: string, code: string) {
+  try {
+    const url = new URL(baseUrl);
+    if (url.protocol !== "https:" && url.protocol !== "http:") return null;
+    url.searchParams.set(MAGNET_QUERY_PARAM, code);
+    return url.toString();
+  } catch {
+    return null;
+  }
+}
+
 async function lookupMagnetCode(code: string): Promise<{
   id: string;
   tenantId: string | null;
   isDisabled: boolean;
   disabledRedirectUrl: string | null;
+  partnerRedirectUrl: string | null;
 } | null> {
   try {
     const supabase = createSupabaseAdminClient();
@@ -127,7 +169,7 @@ async function lookupMagnetCode(code: string): Promise<{
 
     const { data } = await supabase
       .from("magnet_codes")
-      .select("id, tenant_id, is_disabled, disabled_redirect_url")
+      .select("id, tenant_id, is_disabled, disabled_redirect_url, partner_redirect_url")
       .ilike("code", code)
       .maybeSingle();
 
@@ -137,6 +179,7 @@ async function lookupMagnetCode(code: string): Promise<{
           tenantId: data.tenant_id ?? null,
           isDisabled: data.is_disabled ?? false,
           disabledRedirectUrl: data.disabled_redirect_url ?? null,
+          partnerRedirectUrl: data.partner_redirect_url ?? null,
         }
       : null;
   } catch {

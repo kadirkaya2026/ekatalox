@@ -64,6 +64,9 @@ export interface PackageSummary {
   free: number;
   assigned: number;
   disabled: number;
+  /** Dışarı yönlendirilmiş kod sayısı ve hedef adres (0130, devredilen parti). */
+  partner?: number;
+  partner_url?: string | null;
 }
 
 export interface TenantOption {
@@ -122,6 +125,12 @@ export function QrCodeManager({
   const [packTenant, setPackTenant] = useState("");
   const [packPending, setPackPending] = useState(false);
   const [packResult, setPackResult] = useState<string | null>(null);
+
+  // Devredilen parti: paketi bir bayiye değil, başka bir kurulumdaki adrese
+  // yönlendirme (0130). Bayi listesi burada işe yaramıyor — hedef bayi bu
+  // kurulumda yok.
+  const [partnerUrl, setPartnerUrl] = useState("");
+  const [partnerPending, setPartnerPending] = useState(false);
 
   // Kod sorgula sonucundaki tekil kodu bayiye atama.
   const [searchAssignTenant, setSearchAssignTenant] = useState("");
@@ -392,6 +401,57 @@ export function QrCodeManager({
       router.refresh();
     }
     setPackPending(false);
+  }
+
+  /**
+   * Seçili paketleri dış bir adrese yönlendirir ya da (adres boşsa)
+   * yönlendirmeyi kaldırır.
+   *
+   * Atamadan farklı olarak paketteki TÜM kodlara uygulanır — devredilen
+   * partide zaten bir bayiye atanmış kartlar da var. Atamalar silinmiyor,
+   * üzerine bir geçiş yazılıyor: adres kaldırılınca eski davranış döner.
+   */
+  async function setSelectedPacksPartner(kaldir: boolean) {
+    if (!selectedPacks.length) return;
+
+    const hedef = kaldir ? "" : partnerUrl.trim();
+    const etkilenen = packages
+      .filter((p) => selectedPacks.includes(p.package_code))
+      .reduce((t, p) => t + p.total, 0);
+
+    const onay = kaldir
+      ? `${selectedPacks.join(", ")} paketlerindeki yönlendirme kaldırılacak; ` +
+        `kodlar yeniden bu kurulumdaki bayilerine gidecek.\n\nDevam edilsin mi?`
+      : `${selectedPacks.join(", ")} paketlerindeki ${etkilenen} kodun tamamı\n${hedef}\n` +
+        `adresine yönlendirilecek. Bu kurulumdaki atamalar silinmez, ` +
+        `adresi boşaltınca eski hâline döner.\n\nDevam edilsin mi?`;
+
+    if (!window.confirm(onay)) return;
+
+    setPartnerPending(true);
+    setPackResult(null);
+
+    const response = await fetch("/api/admin/qr-codes/partner-redirect", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ package_codes: selectedPacks, url: hedef }),
+    });
+    const result = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      setPackResult(result.error ?? "Yönlendirme yazılamadı.");
+    } else {
+      setPackResult(
+        kaldir
+          ? `${selectedPacks.join(", ")} → ${result.updated} kodun yönlendirmesi kaldırıldı.`
+          : `${selectedPacks.join(", ")} → ${result.updated} kod ${hedef} adresine yönlendirildi.`,
+      );
+      setPartnerUrl("");
+      setSelectedPacks([]);
+      await refresh();
+      router.refresh();
+    }
+    setPartnerPending(false);
   }
 
   // Kod sorgula sonucundaki tekil kodu bir bayiye ata / atamayı kaldır.
@@ -734,8 +794,12 @@ export function QrCodeManager({
           <div className="mt-4 grid grid-cols-5 gap-1.5 sm:grid-cols-10">
             {packages.map((pack) => {
               const secili = selectedPacks.includes(pack.package_code);
-              const renk =
-                pack.free === 0
+              const devredilen = (pack.partner ?? 0) > 0;
+              // Devredilen kutu kendi rengini alır: atama durumu artık o
+              // kutu için anlamsız, kodlar nereye gittiğini adresten alıyor.
+              const renk = devredilen
+                ? "border-violet-300 bg-violet-50 text-violet-800"
+                : pack.free === 0
                   ? "border-slate-200 bg-slate-100 text-slate-400"
                   : pack.free < pack.total
                     ? "border-amber-300 bg-amber-50 text-amber-800"
@@ -748,11 +812,15 @@ export function QrCodeManager({
                   className={`rounded-lg border px-1 py-1.5 text-center font-mono text-xs font-bold ${renk} ${
                     secili ? "ring-2 ring-foreground" : ""
                   }`}
-                  title={`${pack.package_code}: ${pack.free} boşta / ${pack.total} kod`}
+                  title={
+                    devredilen
+                      ? `${pack.package_code}: ${pack.partner} kod dışarı yönlendirilmiş → ${pack.partner_url}`
+                      : `${pack.package_code}: ${pack.free} boşta / ${pack.total} kod`
+                  }
                 >
                   {pack.package_code}
                   <span className="block text-[10px] font-medium">
-                    {pack.free === 0 ? "dolu" : `${pack.free} boşta`}
+                    {devredilen ? "devredildi" : pack.free === 0 ? "dolu" : `${pack.free} boşta`}
                   </span>
                 </button>
               );
@@ -811,6 +879,60 @@ export function QrCodeManager({
                       seçimi temizle
                     </button>
                   </div>
+
+                  {/* Devredilen parti: hedef bu kurulumda bir bayi değil, başka
+                      bir kurulumdaki vitrin. Bu yüzden yukarıdaki bayi listesi
+                      değil, adres alanı kullanılıyor. */}
+                  <div className="space-y-2 rounded-lg border border-violet-200 bg-violet-50/60 p-3">
+                    <p className="text-sm font-medium text-violet-900">
+                      Ya da: seçili paketleri dış adrese yönlendir
+                    </p>
+                    <p className="text-xs text-violet-800">
+                      Devredilen kartlar için. Paketteki <strong>tüm</strong> kodlar bu adrese
+                      gider; magnet kodu <code>?m=</code> ile taşınır, karşı taraf magneti
+                      tanır. Buradaki atamalar silinmez — adresi kaldırınca eski hâline döner.
+                      {secilenler.some((p) => (p.partner ?? 0) > 0) ? (
+                        <>
+                          {" "}
+                          Şu an:{" "}
+                          <span className="font-mono">
+                            {secilenler.find((p) => p.partner_url)?.partner_url}
+                          </span>
+                        </>
+                      ) : null}
+                    </p>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Input
+                        value={partnerUrl}
+                        onChange={(event) => setPartnerUrl(event.target.value)}
+                        placeholder="https://bayi.ornek.net"
+                        className="min-w-56 flex-1"
+                      />
+                      <Button
+                        variant="secondary"
+                        onClick={() => void setSelectedPacksPartner(false)}
+                        disabled={partnerPending || !partnerUrl.trim()}
+                      >
+                        {partnerPending ? (
+                          <Loader2 className="size-4 animate-spin" />
+                        ) : (
+                          <Check className="size-4" />
+                        )}
+                        Yönlendir
+                      </Button>
+                      {secilenler.some((p) => (p.partner ?? 0) > 0) ? (
+                        <button
+                          type="button"
+                          onClick={() => void setSelectedPacksPartner(true)}
+                          disabled={partnerPending}
+                          className="text-xs font-semibold text-violet-900 underline"
+                        >
+                          yönlendirmeyi kaldır
+                        </button>
+                      ) : null}
+                    </div>
+                  </div>
+
                   {packResult ? (
                     <p className="whitespace-pre-line text-sm font-medium text-emerald-700">
                       {packResult}

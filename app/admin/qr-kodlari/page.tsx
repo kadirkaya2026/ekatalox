@@ -17,6 +17,14 @@ import { appEnv } from "@/lib/env";
 
 export const dynamic = "force-dynamic";
 
+// magnet_package_partner_summary() satırı (0130): kutunun kaç kodu dışarı
+// yönlendirilmiş ve hangi adrese.
+interface PartnerSummaryRow {
+  package_code: string;
+  partner: number;
+  partner_url: string | null;
+}
+
 export default async function Page({
   searchParams,
 }: {
@@ -63,7 +71,8 @@ export default async function Page({
   }
 
   // Rozetlerdeki sayilar tum tabloyu anlatmali; head:true satir tasimaz.
-  const [{ data: codeRows, count }, toplamSonuc, bostaSonuc, paketSonuc] = await Promise.all([
+  const [{ data: codeRows, count }, toplamSonuc, bostaSonuc, paketSonuc, partnerSonuc] =
+    await Promise.all([
     fetchCodes(),
     supabase
       ? supabase.from("magnet_codes").select("id", { count: "exact", head: true })
@@ -78,11 +87,31 @@ export default async function Page({
     supabase
       ? supabase.rpc("magnet_package_summary")
       : Promise.resolve({ data: [] as PackageSummary[] }),
-  ]);
+    // Devredilen partiler: hangi kutu dışarı yönlendirilmiş (0130).
+    supabase
+      ? supabase.rpc("magnet_package_partner_summary")
+      : Promise.resolve({ data: [] as PartnerSummaryRow[] }),
+    ]);
 
   const toplamKod = toplamSonuc.count ?? 0;
   const bostaKod = bostaSonuc.count ?? 0;
-  const packages: PackageSummary[] = (paketSonuc.data as PackageSummary[] | null) ?? [];
+
+  const partnerByPack = new Map(
+    ((partnerSonuc.data as PartnerSummaryRow[] | null) ?? []).map((row) => [
+      row.package_code,
+      row,
+    ]),
+  );
+  const packages: PackageSummary[] = ((paketSonuc.data as PackageSummary[] | null) ?? []).map(
+    (pack) => {
+      const partner = partnerByPack.get(pack.package_code);
+      return {
+        ...pack,
+        partner: partner?.partner ?? 0,
+        partner_url: partner?.partner_url ?? null,
+      };
+    },
+  );
 
   // Okutma sayisi artik magnet_codes.scan_count sutununda (0087 trigger'i).
   // Eskiden TUM magnet_scans satirlari belege cekilip JS'te sayiliyordu ve
