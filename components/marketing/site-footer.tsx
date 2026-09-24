@@ -7,7 +7,7 @@ const PRODUCT_LINKS = [
   { href: "/ozellikler", label: "Özellikler" },
   { href: "/fiyatlandirma", label: "Fiyatlandırma" },
   { href: "/sss", label: "Sık sorulan sorular" },
-  { href: SITE.demoEnterUrl, label: "Demo katalog" },
+  { href: SITE.demoUrl, label: "Demo katalog" },
 ];
 
 const COMPANY_LINKS = [

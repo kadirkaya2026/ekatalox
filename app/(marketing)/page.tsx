@@ -218,7 +218,7 @@ export default function HomePage() {
               <ButtonLink href="/basvuru" size="lg">
                 Ücretsiz kataloğumu kur
               </ButtonLink>
-              <ButtonLink href={SITE.demoEnterUrl} tone="outline-dark" size="lg" external>
+              <ButtonLink href={SITE.demoUrl} tone="outline-dark" size="lg" external>
                 Demo kataloğu aç
               </ButtonLink>
             </div>
@@ -306,7 +306,7 @@ export default function HomePage() {
               <h3 className="text-lg font-semibold text-white">Bayi gibi girip kendiniz deneyin</h3>
               <p className="mt-1 text-white/65">Ürünleri gezin, sepete koyun, sipariş fişinin nasıl geldiğine bakın.</p>
             </div>
-            <ButtonLink href={SITE.demoEnterUrl} tone="outline-dark" external className="shrink-0">
+            <ButtonLink href={SITE.demoUrl} tone="outline-dark" external className="shrink-0">
               Demo kataloğu aç
             </ButtonLink>
           </div>

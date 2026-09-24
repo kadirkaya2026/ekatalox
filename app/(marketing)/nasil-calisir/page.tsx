@@ -85,7 +85,7 @@ export default function NasilCalisirPage() {
             <ButtonLink href="/basvuru" size="lg">
               Ücretsiz kataloğumu kur
             </ButtonLink>
-            <ButtonLink href={SITE.demoEnterUrl} tone="outline-dark" size="lg" external>
+            <ButtonLink href={SITE.demoUrl} tone="outline-dark" size="lg" external>
               Demo kataloğu aç
             </ButtonLink>
           </div>
@@ -130,7 +130,7 @@ export default function NasilCalisirPage() {
             ))}
           </div>
           <div className="mt-12 text-center">
-            <ButtonLink href={SITE.demoEnterUrl} tone="outline" external>
+            <ButtonLink href={SITE.demoUrl} tone="outline" external>
               Demo kataloğu açıp kendiniz deneyin
             </ButtonLink>
           </div>

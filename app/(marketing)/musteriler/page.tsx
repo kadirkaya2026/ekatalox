@@ -19,7 +19,7 @@ export default function CustomersPage() {
           <div>
             <SectionHeading eyebrow="Canlı örnek" title="Bayinizin göreceği ekran tam olarak bu." lead={`Demo kataloğu telefonunuzda açın, ürünlere bakın, sepete atın. Sizin kataloğunuz kendi logonuz ve ürünlerinizle aynı şekilde kurulur.`} />
             <div className="mt-8 flex flex-wrap gap-3">
-              <ButtonLink href={SITE.demoEnterUrl} external>Demo kataloğu aç</ButtonLink>
+              <ButtonLink href={SITE.demoUrl} external>Demo kataloğu aç</ButtonLink>
               <ButtonLink href="/basvuru" tone="outline">Ücretsiz kur</ButtonLink>
             </div>
           </div>
