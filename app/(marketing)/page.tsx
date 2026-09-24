@@ -239,10 +239,16 @@ export default function HomePage() {
           Yalnız gerçek müşteriler (lib/marketing/site.ts CUSTOMER_NAMES). Liste
           ekranı dolduracak kadar tekrarlanır, iki kopya yan yana -50% kayar. */}
       {CUSTOMER_NAMES.length > 0 ? (
-        <section className="border-b border-brand-line bg-white py-8">
-          <p className="px-5 text-center text-sm text-brand-muted">Siparişlerini eKatalox&apos;tan alan firmalar</p>
+        <section className="border-b border-brand-line bg-white py-9 sm:py-10">
+          <p className="flex items-center justify-center gap-3 px-5 text-center text-xl font-bold tracking-[-0.02em] text-brand-navy sm:text-[1.7rem]">
+            <span aria-hidden className="relative flex size-3 shrink-0">
+              <span className="absolute inline-flex size-full animate-ping rounded-full bg-brand-neon opacity-60 motion-reduce:animate-none" />
+              <span className="relative inline-flex size-3 rounded-full bg-brand-neon" />
+            </span>
+            Siparişlerini eKatalox&apos;tan alan firmalar
+          </p>
           <div
-            className="group relative mt-5 overflow-hidden [mask-image:linear-gradient(to_right,transparent,black_12%,black_88%,transparent)]"
+            className="group relative mt-6 overflow-hidden [mask-image:linear-gradient(to_right,transparent,black_12%,black_88%,transparent)]"
             aria-label={`Müşterilerimiz: ${CUSTOMER_NAMES.join(", ")}`}
           >
             <div className="flex w-max animate-[customer-marquee_28s_linear_infinite] group-hover:[animation-play-state:paused] motion-reduce:animate-none">
@@ -253,7 +259,7 @@ export default function HomePage() {
                     .map((name, i) => (
                       <li
                         key={`${copy}-${i}`}
-                        className="whitespace-nowrap px-8 text-2xl font-bold tracking-[-0.02em] text-brand-navy/75 sm:px-12"
+                        className="whitespace-nowrap px-8 text-xl font-semibold tracking-[-0.01em] text-brand-muted sm:px-12 sm:text-2xl"
                       >
                         {name}
                       </li>
