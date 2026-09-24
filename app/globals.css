@@ -307,3 +307,13 @@ section[id] {
     transform: none;
   }
 }
+
+/* Ana sayfa müşteri şeridi: iki özdeş kopya, -50% kayınca başa sarar (24 Eyl 2026). */
+@keyframes customer-marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}

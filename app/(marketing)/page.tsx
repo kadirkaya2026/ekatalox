@@ -235,19 +235,33 @@ export default function HomePage() {
         </Container>
       </Section>
 
-      {/* 2. Müşteri şeridi — yalnız gerçek müşteriler (lib/marketing/site.ts) */}
+      {/* 2. Müşteri şeridi — başlık altında sağdan sola sonsuz kayan firma adları.
+          Yalnız gerçek müşteriler (lib/marketing/site.ts CUSTOMER_NAMES). Liste
+          ekranı dolduracak kadar tekrarlanır, iki kopya yan yana -50% kayar. */}
       {CUSTOMER_NAMES.length > 0 ? (
-        <section className="border-b border-brand-line bg-white py-7">
-          <Container className="flex flex-col items-center gap-4 text-center sm:flex-row sm:justify-center sm:gap-10">
-            <p className="text-sm text-brand-muted">Siparişlerini eKatalox&apos;tan alan firmalar</p>
-            <ul className="flex flex-wrap items-center justify-center gap-x-10 gap-y-2">
-              {CUSTOMER_NAMES.map((name) => (
-                <li key={name} className="text-2xl font-bold tracking-[-0.02em] text-brand-navy/80">
-                  {name}
-                </li>
+        <section className="border-b border-brand-line bg-white py-8">
+          <p className="px-5 text-center text-sm text-brand-muted">Siparişlerini eKatalox&apos;tan alan firmalar</p>
+          <div
+            className="group relative mt-5 overflow-hidden [mask-image:linear-gradient(to_right,transparent,black_12%,black_88%,transparent)]"
+            aria-label={`Müşterilerimiz: ${CUSTOMER_NAMES.join(", ")}`}
+          >
+            <div className="flex w-max animate-[customer-marquee_28s_linear_infinite] group-hover:[animation-play-state:paused] motion-reduce:animate-none">
+              {[0, 1].map((copy) => (
+                <ul key={copy} aria-hidden className="flex shrink-0 items-center">
+                  {Array.from({ length: Math.ceil(8 / CUSTOMER_NAMES.length) }, () => CUSTOMER_NAMES)
+                    .flat()
+                    .map((name, i) => (
+                      <li
+                        key={`${copy}-${i}`}
+                        className="whitespace-nowrap px-8 text-2xl font-bold tracking-[-0.02em] text-brand-navy/75 sm:px-12"
+                      >
+                        {name}
+                      </li>
+                    ))}
+                </ul>
               ))}
-            </ul>
-          </Container>
+            </div>
+          </div>
         </section>
       ) : null}
 
