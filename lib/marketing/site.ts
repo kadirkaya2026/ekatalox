@@ -34,4 +34,12 @@ export const SIGNUP_CTA = "Ücretsiz kur";
 // Ana sayfadaki "siparişlerini eKatalox'tan alan firmalar" şeridi. YALNIZ
 // gerçek, izin alınmış müşteriler (uydurma isim yok). Liste boşsa şerit
 // gösterilmez.
-export const CUSTOMER_NAMES: readonly string[] = ["Lucatech", "Genax", "ACL GSM"];
+export const CUSTOMER_NAMES: readonly string[] = [
+  "Lucatech",
+  "Genax",
+  "ACL GSM",
+  "Calibre",
+  "Marmaraithalat",
+  "Onnumara Aksesuar",
+  "Aksesuarcım",
+];
