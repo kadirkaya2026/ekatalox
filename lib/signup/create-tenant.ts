@@ -387,6 +387,13 @@ export async function createSelfServiceTenant(
     requestedPlanName: requestedPlan.name,
     requestedPlanPrice: requestedPlan.yearlyPrice,
   });
+  // Alt alan adını Vercel'e ekle (yoksa Cloudflare 525). E-postalardan ÖNCE:
+  // eklenemezse satış bildirimine kırmızı uyarı düşer. Başarısızlık kaydı bozmaz.
+  const domainResult = await registerTenantSubdomain(input.subdomain);
+  if (!domainResult.ok) {
+    console.error("[signup] Vercel alan adı eklenemedi:", input.subdomain, domainResult.reason);
+  }
+
   const notification = buildSignupNotificationEmail({
     tenantId,
     businessName: input.businessName,
@@ -396,19 +403,12 @@ export async function createSelfServiceTenant(
     whatsappNumber: input.whatsappNumber,
     email: input.email,
     city: input.city,
-    district: input.district,
-    neighborhood: input.neighborhood,
-    address: input.address,
-    taxOffice: input.taxOffice,
-    taxNumber: input.taxNumber,
     subdomain: input.subdomain,
     storeUrl,
-    planName: `Ücretsiz (talep: ${requestedPlan.name})`,
-    billingPeriod,
-    listPrice,
-    finalPrice,
-    couponCode: null,
-    trialEndsAt,
+    requestedPlanName: requestedPlan.name,
+    requestedPlanPrice: requestedPlan.yearlyPrice,
+    domainOk: domainResult.ok,
+    domainError: domainResult.ok ? null : (domainResult.reason ?? null),
     ipAddress: meta.ipAddress ?? null,
   });
 
@@ -420,13 +420,6 @@ export async function createSelfServiceTenant(
       ...notification,
     }),
   ]);
-
-  // Alt alan adını Vercel'e ekle (yoksa Cloudflare 525). Başarısızlık kaydı
-  // bozmaz; süper admin panelden elle ekleyebilir.
-  const domainResult = await registerTenantSubdomain(input.subdomain);
-  if (!domainResult.ok) {
-    console.error("[signup] Vercel alan adı eklenemedi:", input.subdomain, domainResult.reason);
-  }
 
   return {
     ok: true,
