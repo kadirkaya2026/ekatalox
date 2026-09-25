@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { getKurumsalPublishState, KURUMSAL_PUBLISH_STATE_LABELS } from "@/lib/kurumsal/domain";
-import type { DomainRequest } from "@/lib/kurumsal/domain-requests";
+import type { DomainRequest } from "@/lib/kurumsal/domain-requests-shared";
 import type { KurumsalContent, KurumsalSiteRecord } from "@/lib/kurumsal/schema";
 
 // Ayarlar → Kurumsal Site: durum kartı (Yayında / Taslak / Kurulmadı),

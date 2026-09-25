@@ -41,7 +41,7 @@ import {
   renderTemplates,
   type KurumsalTemplateVars,
 } from "@/lib/kurumsal/presets";
-import type { DomainRequest } from "@/lib/kurumsal/domain-requests";
+import type { DomainRequest } from "@/lib/kurumsal/domain-requests-shared";
 import { getKurumsalPublishState, KURUMSAL_PUBLISH_STATE_LABELS } from "@/lib/kurumsal/domain";
 import {
   KURUMSAL_LIMITS,

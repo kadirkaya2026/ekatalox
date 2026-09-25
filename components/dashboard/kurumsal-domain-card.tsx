@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import type { DomainRequest } from "@/lib/kurumsal/domain-requests";
+import type { DomainRequest } from "@/lib/kurumsal/domain-requests-shared";
 import type { KurumsalDomainStatus, VercelDnsRecord } from "@/lib/vercel/domains";
 
 // Ayarlar → Kurumsal Site → Alan adı. Tenant kendi alan adını bağlar:

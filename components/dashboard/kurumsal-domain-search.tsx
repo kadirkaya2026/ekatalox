@@ -4,7 +4,7 @@ import { useState, type FormEvent } from "react";
 import { CheckCircle2, Clock, Loader2, Search, XCircle, HelpCircle, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import type { DomainRequest } from "@/lib/kurumsal/domain-requests";
+import type { DomainRequest } from "@/lib/kurumsal/domain-requests-shared";
 import { formatUsd, type DomainSearchResult } from "@/lib/kurumsal/domain-search";
 import { cn } from "@/lib/utils";
 

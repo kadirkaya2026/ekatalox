@@ -11,7 +11,7 @@ import {
   DOMAIN_REQUEST_STATUS_LABELS,
   type AdminDomainRequest,
   type DomainRequestStatus,
-} from "@/lib/kurumsal/domain-requests";
+} from "@/lib/kurumsal/domain-requests-shared";
 
 // Süper admin → Başvurular → "Alan adı talepleri" (0135). Durum değişikliği
 // anında kaydedilir; hata olursa eski değere döner. Satın alma Vercel
