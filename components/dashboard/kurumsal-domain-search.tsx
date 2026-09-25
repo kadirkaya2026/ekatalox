@@ -5,7 +5,7 @@ import { CheckCircle2, Clock, Loader2, Search, XCircle, HelpCircle, MessageCircl
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type { DomainRequest } from "@/lib/kurumsal/domain-requests-shared";
-import { formatUsd, type DomainSearchResult } from "@/lib/kurumsal/domain-search";
+import type { DomainSearchResult } from "@/lib/kurumsal/domain-search";
 import { cn } from "@/lib/utils";
 
 // "Yeni alan adı seç": arama kutusu → sonuç satırları (Boşta / Dolu /
@@ -125,7 +125,7 @@ export function KurumsalDomainSearch({
             </p>
             <p className="mt-1 text-sm leading-6 text-emerald-900/80 dark:text-emerald-100/80">
               Satın alma ve bağlantı eKatalox ekibince yapılacak; tamamlanınca burada &quot;Bağlandı&quot; görünür.
-              {request.price_usd !== null ? ` Talep anındaki fiyat: yıllık ~${formatUsd(request.price_usd)}.` : ""}
+              
             </p>
             {emailNote ? <p className="mt-1 text-xs text-amber-700">{emailNote}</p> : null}
             <div className="mt-3">
@@ -148,7 +148,7 @@ export function KurumsalDomainSearch({
     <div className="rounded-xl border border-slate-200 p-5 dark:border-slate-700">
       <p className="text-sm font-semibold">Yeni alan adı seç</p>
       <p className="mt-1 text-sm leading-6 text-muted-foreground">
-        Firmanızın adını yazın; hangi uzantıların boşta olduğunu ve yıllık fiyatını gösterelim. Seçtiğiniz alan adını ekibimiz
+        Firmanızın adını yazın; hangi uzantıların boşta olduğunu gösterelim. Seçtiğiniz alan adını ekibimiz
         sizin adınıza alır ve kurumsal sitenize bağlar.
       </p>
       <form onSubmit={search} className="mt-3 flex flex-col gap-2 sm:flex-row">
@@ -212,11 +212,6 @@ export function KurumsalDomainSearch({
         <div className="mt-4 flex flex-col gap-2 rounded-lg bg-muted px-4 py-3 text-sm sm:flex-row sm:items-center sm:justify-between">
           <span>
             <span className="font-mono font-semibold">{selected.domain}</span>
-            {selected.available === true && selected.price !== undefined
-              ? ` · yıllık ~${formatUsd(selected.price)}`
-              : selected.available === null
-                ? " · müsaitliği ekibimiz kontrol edecek"
-                : ""}
           </span>
           <Button onClick={submitRequest} disabled={pending !== null} className="shrink-0">
             {pending === "request" ? <Loader2 className="size-4 animate-spin" /> : <CheckCircle2 className="size-4" />} Bu alan adını talep et
@@ -225,7 +220,7 @@ export function KurumsalDomainSearch({
       ) : null}
 
       <p className="mt-4 text-xs text-muted-foreground">
-        Fiyatlar Vercel alan adı servisinin o anki USD fiyatıdır; kesin tutar ekibimiz tarafından teyit edilir.{" "}
+        Alan adı ücreti ve satın alma ekibimizce sizinle görüşülür.{" "}
         <a href={domainRequestHref} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 font-semibold text-emerald-700 dark:text-emerald-400">
           <MessageCircle className="size-3" /> WhatsApp&apos;tan da yazabilirsiniz
         </a>
@@ -239,7 +234,6 @@ function AvailabilityBadge({ row }: { row: DomainSearchResult }) {
     return (
       <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-semibold text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-300">
         <CheckCircle2 className="size-3" /> Boşta
-        {row.price !== undefined ? ` · yıllık ~${formatUsd(row.price)}` : ""}
         {row.premium ? " · premium" : ""}
       </span>
     );

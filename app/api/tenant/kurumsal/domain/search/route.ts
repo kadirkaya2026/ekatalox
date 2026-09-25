@@ -5,7 +5,6 @@ import {
   buildSearchCandidates,
   isCheckableTld,
   mapSearchResults,
-  uncheckableResults,
   type DomainSearchResult,
 } from "@/lib/kurumsal/domain-search";
 import { ensureTenantPlanFeatureResponse } from "@/lib/tenancy/guards";
@@ -46,17 +45,22 @@ export async function POST(request: Request) {
   // Desteklenmeyen uzantıları Vercel'e hiç sormayız (null kalır).
   const toQuery = candidates.domains.filter((domain) => isCheckableTld(domain, supportedTlds));
 
+  // Kontrol edilemeyen sonuçlar (desteklenmeyen uzantı / Vercel'e ulaşılamadı)
+  // listeye HİÇ girmez; müşteri yalnız kesin boş/dolu bilgisini görür.
   if (!toQuery.length) {
-    value = { results: mapSearchResults(candidates.domains, [], supportedTlds) };
+    value = {
+      results: [],
+      warning: "Bu uzantı için müsaitlik kontrolü yapamıyoruz. .com, .net, .org veya .co deneyin ya da WhatsApp'tan yazın.",
+    };
   } else {
     const outcome = await searchRegistrarDomains(toQuery);
     value = outcome.ok
-      ? { results: mapSearchResults(candidates.domains, outcome.rows, supportedTlds) }
+      ? { results: mapSearchResults(toQuery, outcome.rows, supportedTlds).filter((row) => row.available !== null) }
       : {
-          results: uncheckableResults(candidates.domains),
+          results: [],
           warning: outcome.configured
             ? outcome.message
-            : "Müsaitlik şu an kontrol edilemiyor; istediğiniz adı yine de talep edebilirsiniz, ekibimiz kontrol eder.",
+            : "Müsaitlik şu an kontrol edilemiyor; WhatsApp'tan yazın, ekibimiz sizin için baksın.",
         };
   }
 

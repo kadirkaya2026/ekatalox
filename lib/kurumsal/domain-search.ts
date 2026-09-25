@@ -10,7 +10,9 @@ const HOSTNAME_RE =
 const LABEL_RE = /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/;
 
 /** Uzantısız aramada denenen uzantılar (sırayla gösterilir). */
-export const SEARCH_TLDS = ["com", "com.tr", "net", "org", "co"] as const;
+// Yalnız Vercel'de kontrol edilebilen uzantılar; .com.tr gibi bakamadıklarımız
+// listeye hiç girmez (kullanıcı kararı, 25 Eyl 2026).
+export const SEARCH_TLDS = ["com", "net", "org", "co"] as const;
 
 export const UNCHECKABLE_NOTE = "Bu uzantı için müsaitlik kontrolü yapılamıyor";
 
