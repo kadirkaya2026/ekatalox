@@ -1,6 +1,7 @@
 import type { MaxProductLimit, TenantPlan } from "@/lib/billing/plans";
 import type { CurrencyCode } from "@/lib/products/constants";
 import type { StorefrontLocale } from "@/lib/storefront/i18n/dictionary";
+import type { BrandPalette } from "@/lib/storefront/brand-palette";
 
 export type { MaxProductLimit, TenantPlan };
 
@@ -554,6 +555,10 @@ export interface TenantStorefrontSettings {
   is_hero_visible: boolean;
   brand_primary_color: string | null;
   brand_accent_color: string | null;
+  /** Buton / bölüm bazlı marka renkleri (migration 0136, 25 Eyl 2026).
+   *  Anahtarlar lib/storefront/brand-palette.ts BRAND_COLOR_ROLE_KEYS;
+   *  kolon yokken okuma {} olarak normalize edilir. */
+  brand_palette: BrandPalette;
   font_key: StorefrontFontKey;
   product_card_style: StorefrontProductCardStyle;
   product_image_background: ProductImageBackgroundKey;

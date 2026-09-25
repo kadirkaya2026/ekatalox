@@ -40,6 +40,7 @@ export function StorefrontNoticeScreen({
       themeKey={appearance?.theme_key ?? "minimal"}
       brandPrimaryColor={appearance?.brand_primary_color}
       brandAccentColor={appearance?.brand_accent_color}
+      brandPalette={appearance?.brand_palette}
     >
       <StorefrontNoticeCard title={title} body={body} />
     </StorefrontThemeProvider>

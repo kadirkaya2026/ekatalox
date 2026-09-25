@@ -69,6 +69,7 @@ export function StorefrontPageShell({
     | "theme_key"
     | "brand_primary_color"
     | "brand_accent_color"
+    | "brand_palette"
     | "font_key"
     | "default_locale"
     | "is_theme_toggle_visible"
@@ -90,15 +91,15 @@ export function StorefrontPageShell({
   const resolvedThemeKey = storefrontSettings?.theme_key ?? themeKey ?? "minimal";
   const brandPrimaryColor = storefrontSettings?.brand_primary_color ?? null;
   const brandAccentColor = storefrontSettings?.brand_accent_color ?? null;
+  const brandPalette = storefrontSettings?.brand_palette ?? null;
   const fontOption = getStorefrontFontOption(storefrontSettings?.font_key);
-  const brandStyle = hasBrandColors({
+  const brandColors = {
     brand_primary_color: brandPrimaryColor,
     brand_accent_color: brandAccentColor,
-  })
-    ? buildBrandCssVariables({
-        brand_primary_color: brandPrimaryColor,
-        brand_accent_color: brandAccentColor,
-      })
+    brand_palette: brandPalette,
+  };
+  const brandStyle = hasBrandColors(brandColors)
+    ? buildBrandCssVariables(brandColors)
     : undefined;
 
   return (
@@ -111,6 +112,7 @@ export function StorefrontPageShell({
         themeKey={resolvedThemeKey}
         brandPrimaryColor={brandPrimaryColor}
         brandAccentColor={brandAccentColor}
+        brandPalette={brandPalette}
         productImageBackground={storefrontSettings?.product_image_background}
       >
         <StorefrontPageShellInner

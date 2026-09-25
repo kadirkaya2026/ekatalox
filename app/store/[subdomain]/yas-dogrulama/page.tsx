@@ -98,6 +98,7 @@ export default async function StorefrontAgeGatePage(
         companyName={tenant.company_name}
         themeKey={settings.theme_key}
         isThemeToggleVisible={settings.is_theme_toggle_visible}
+        appearance={getAppearanceFromSettings(settings)}
       />
     </StorefrontPageShell>
   );

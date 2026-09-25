@@ -341,6 +341,7 @@ export function OrderTrackingView(props: {
       themeKey={props.appearance?.theme_key ?? "minimal"}
       brandPrimaryColor={props.appearance?.brand_primary_color}
       brandAccentColor={props.appearance?.brand_accent_color}
+      brandPalette={props.appearance?.brand_palette}
     >
       <TrackingCard {...props} />
     </StorefrontThemeProvider>

@@ -97,6 +97,7 @@ export const DEFAULT_STOREFRONT_APPEARANCE = {
   layout_key: "classic-grid",
   brand_primary_color: null,
   brand_accent_color: null,
+  brand_palette: {},
   font_key: "inter",
   product_card_style: "standard",
   product_image_background: "theme",
@@ -109,6 +110,7 @@ export const DEFAULT_STOREFRONT_APPEARANCE = {
   | "layout_key"
   | "brand_primary_color"
   | "brand_accent_color"
+  | "brand_palette"
   | "font_key"
   | "product_card_style"
   | "product_image_background"

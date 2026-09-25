@@ -3,6 +3,11 @@ import { CART_FORM_LABEL_MAX_LENGTH } from "@/lib/storefront/cart-form-config";
 import { DEFAULT_INSTALLMENT_OPTIONS } from "@/lib/storefront/cart";
 import { DEFAULT_HOMEPAGE_BLOCKS, HOMEPAGE_BLOCK_IDS } from "@/lib/storefront/homepage-blocks";
 import { DEFAULT_BUSINESS_HOURS, WEEKDAY_ORDER } from "@/lib/storefront/business-hours";
+import {
+  BRAND_COLOR_ROLE_KEYS,
+  normalizeHexColor,
+  type BrandPalette,
+} from "@/lib/storefront/brand-palette";
 
 const timeOfDaySchema = z
   .string()
@@ -116,6 +121,29 @@ const optionalColorSchema = z
       message: "Renk değeri HEX formatında olmalıdır.",
     },
   );
+
+// Buton / bölüm bazlı marka renkleri (25 Eyl 2026). Her rol isteğe bağlı
+// HEX ya da null/"" (= temanın rengi); bilinmeyen anahtarlar atılır.
+// Çıktı yalnız ayarlanmış rolleri içerir.
+export const brandPaletteSchema = z
+  .union([
+    z.object(
+      Object.fromEntries(
+        BRAND_COLOR_ROLE_KEYS.map((key) => [key, optionalColorSchema.optional()]),
+      ) as Record<(typeof BRAND_COLOR_ROLE_KEYS)[number], z.ZodOptional<typeof optionalColorSchema>>,
+    ),
+    z.null(),
+    z.undefined(),
+  ])
+  .transform((value): BrandPalette => {
+    const result: BrandPalette = {};
+    if (!value) return result;
+    for (const key of BRAND_COLOR_ROLE_KEYS) {
+      const color = value[key];
+      if (color) result[key] = normalizeHexColor(color);
+    }
+    return result;
+  });
 
 const optionalAnnouncementTextSchema = (maxLength: number, message: string) =>
   z
@@ -237,6 +265,7 @@ export const storefrontSettingsSchema = z
     is_hero_visible: z.boolean().default(false),
     brand_primary_color: optionalColorSchema,
     brand_accent_color: optionalColorSchema,
+    brand_palette: brandPaletteSchema,
     font_key: storefrontFontKeySchema.default("inter"),
     product_card_style: storefrontProductCardStyleSchema.default("standard"),
     product_image_background: productImageBackgroundSchema.default("theme"),

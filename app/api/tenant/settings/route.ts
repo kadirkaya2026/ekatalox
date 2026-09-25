@@ -16,6 +16,7 @@ import {
 } from "@/lib/billing/plans";
 import { ensureTenantAdminResponse, ensureTenantPlanFeatureResponse } from "@/lib/tenancy/guards";
 import { storefrontSettingsSchema } from "@/lib/validators/storefront-settings";
+import { hasBrandPaletteColors, normalizeBrandPalette } from "@/lib/storefront/brand-palette";
 import { isHeroOnlyVisibilityChange, isHomepageBlockVisible } from "@/lib/storefront/homepage-blocks";
 
 function hasAnnouncementChanged(
@@ -68,6 +69,7 @@ export async function PATCH(request: Request) {
   const body = await request.json();
 
   const supabase = createSupabaseAdminClient();
+  let paletteColumnAvailable = true;
 
   let existingSettings = getDefaultTenantStorefrontSettings(
     session.tenant!.id,
@@ -89,6 +91,19 @@ export async function PATCH(request: Request) {
         ...data,
       };
     }
+
+    // brand_palette ayrı okunur (25 Eyl 2026): migration 0136 uygulanmadan
+    // kolon yoksa yukarıdaki toplu select tamamen düşer ve kayıt tüm
+    // ayarları varsayılanla ezerdi. Hata = kolon yok → palet yazılmaz.
+    const { data: paletteRow, error: paletteError } = await supabase
+      .from("tenant_storefront_settings")
+      .select("brand_palette")
+      .eq("tenant_id", session.tenant!.id)
+      .maybeSingle();
+    paletteColumnAvailable = !paletteError;
+    existingSettings.brand_palette = normalizeBrandPalette(
+      (paletteRow as { brand_palette?: unknown } | null)?.brand_palette,
+    );
   }
 
   if (requestTouchesPaymentSettings(body)) {
@@ -145,6 +160,8 @@ export async function PATCH(request: Request) {
       "brand_accent_color" in body
         ? body.brand_accent_color
         : existingSettings.brand_accent_color,
+    brand_palette:
+      "brand_palette" in body ? body.brand_palette : existingSettings.brand_palette,
     font_key: body.font_key ?? existingSettings.font_key,
     product_card_style: body.product_card_style ?? existingSettings.product_card_style,
     product_image_background:
@@ -305,6 +322,7 @@ export async function PATCH(request: Request) {
         is_hero_visible: derivedIsHeroVisible,
         brand_primary_color: parsed.data.brand_primary_color,
         brand_accent_color: parsed.data.brand_accent_color,
+        brand_palette: parsed.data.brand_palette,
         font_key: parsed.data.font_key,
         product_card_style: parsed.data.product_card_style,
         product_image_background: parsed.data.product_image_background,
@@ -399,6 +417,13 @@ export async function PATCH(request: Request) {
       .filter((path) => path.startsWith(`${session.tenant!.id}/`)),
   );
 
+  if (!paletteColumnAvailable && hasBrandPaletteColors(parsed.data.brand_palette)) {
+    return NextResponse.json(
+      { error: "Buton renkleri henüz kaydedilemiyor (veritabanı güncellemesi bekleniyor). Ana renk ve rozet rengi kaydedilebilir." },
+      { status: 409 },
+    );
+  }
+
   const storefrontPayload = {
     tenant_id: session.tenant!.id,
     theme_key: parsed.data.theme_key,
@@ -412,6 +437,8 @@ export async function PATCH(request: Request) {
     is_hero_visible: derivedIsHeroVisible,
     brand_primary_color: parsed.data.brand_primary_color,
     brand_accent_color: parsed.data.brand_accent_color,
+    // Kolon yoksa (migration 0136 bekliyor) palet payload'a hiç girmez.
+    ...(paletteColumnAvailable ? { brand_palette: parsed.data.brand_palette } : {}),
     font_key: parsed.data.font_key,
     product_card_style: parsed.data.product_card_style,
     product_image_background: parsed.data.product_image_background,

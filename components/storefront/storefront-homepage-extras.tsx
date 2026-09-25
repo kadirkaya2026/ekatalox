@@ -250,7 +250,7 @@ function PromoTileCard({
       {/* İndirim etiketi solda, + butonu sağda — ikisi de kartın
           İÇİNDE. Buton kart kenarından taşırsa yatay kaydırma kabı
           (overflow-x-auto) üstünü kırpıyor. */}
-      <span className="absolute left-2 top-2 z-10 inline-flex items-center gap-1 rounded-full bg-rose-600 px-2 py-0.5 text-[10px] font-bold text-white">
+      <span className={cn("absolute left-2 top-2 z-10 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold", theme.discountBadgeStrong)}>
         <Tag className="size-2.5" />%{Math.round(product.discount_percentage ?? 0)}
       </span>
       <BorderTrace

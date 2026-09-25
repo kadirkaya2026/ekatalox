@@ -19,6 +19,8 @@ const MARKET_DESIGN_FIELDS = [
   "hero_style_key",
   "brand_primary_color",
   "brand_accent_color",
+  // Buton / bölüm bazlı renkler (migration 0136, 25 Eyl 2026).
+  "brand_palette",
   "font_key",
   "product_card_style",
   "product_image_background",

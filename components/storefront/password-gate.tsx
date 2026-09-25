@@ -4,7 +4,11 @@ import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type { StorefrontThemeKey } from "@/lib/types";
-import { StorefrontThemeProvider, useStorefrontTheme } from "@/lib/storefront/theme-context";
+import {
+  StorefrontThemeProvider,
+  useStorefrontTheme,
+  type StorefrontAppearanceSettings,
+} from "@/lib/storefront/theme-context";
 import { useStorefrontLocale } from "@/lib/storefront/locale-context";
 import { StorefrontThemeToggle } from "@/components/storefront/storefront-theme-toggle";
 import { StorefrontLanguageSwitcher } from "@/components/storefront/storefront-language-switcher";
@@ -76,7 +80,7 @@ function PasswordGateForm({
         />
         <Button
           type="submit"
-          className={cn("w-full", theme.primaryButton, branding && "border-0 text-white hover:brightness-110")}
+          className={cn("w-full", theme.gateButton, branding && "border-0 text-white hover:brightness-110")}
           // Markalı kapıda buton tema rengi yerine markanın vurgu rengini alır
           style={branding ? { backgroundColor: branding.accentColor } : undefined}
           disabled={pending}
@@ -193,6 +197,7 @@ export function PasswordGate({
   isThemeToggleVisible = true,
   ads,
   branding,
+  appearance,
 }: {
   subdomain: string;
   companyName: string;
@@ -200,9 +205,20 @@ export function PasswordGate({
   isThemeToggleVisible?: boolean;
   ads?: StorefrontAdsConfig | null;
   branding?: GateBranding | null;
+  /** Marka renkleri: kapı kendi tema sağlayıcısını kurduğu için dışarıdaki
+   *  StorefrontPageShell'in renkleri buraya ulaşmıyordu ("Mağaza'ya Gir"
+   *  hep tema renginde kalıyordu; düzeltme 25 Eyl 2026). Markalı kapıda
+   *  (gate-branding) branding.accentColor yine önceliklidir. */
+  appearance?: StorefrontAppearanceSettings | null;
 }) {
   return (
-    <StorefrontThemeProvider themeKey={themeKey}>
+    <StorefrontThemeProvider
+      themeKey={appearance?.theme_key ?? themeKey}
+      brandPrimaryColor={appearance?.brand_primary_color}
+      brandAccentColor={appearance?.brand_accent_color}
+      brandPalette={appearance?.brand_palette}
+      productImageBackground={appearance?.product_image_background}
+    >
       <div data-storefront className="relative flex flex-1 flex-col">
         <div className="absolute right-4 top-4 z-10 flex items-center gap-2 sm:right-6 sm:top-6">
           <StorefrontLanguageSwitcher />

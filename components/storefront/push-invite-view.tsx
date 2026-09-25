@@ -270,6 +270,7 @@ export function PushInviteView(props: {
       themeKey={props.appearance?.theme_key ?? "minimal"}
       brandPrimaryColor={props.appearance?.brand_primary_color}
       brandAccentColor={props.appearance?.brand_accent_color}
+      brandPalette={props.appearance?.brand_palette}
     >
       <StorefrontSubpageShell logoUrl={props.logoUrl} title={props.tenantName} maxWidthClassName="max-w-md" hideThemeToggle>
         <PushInviteCard subdomain={props.subdomain} tenantName={props.tenantName} vapidPublicKey={props.vapidPublicKey} token={props.token} invite={props.invite} />

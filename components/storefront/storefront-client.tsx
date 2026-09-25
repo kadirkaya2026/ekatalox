@@ -1549,6 +1549,7 @@ export function StorefrontClient({
     {
       brand_primary_color: storefrontSettings.brand_primary_color,
       brand_accent_color: storefrontSettings.brand_accent_color,
+      brand_palette: storefrontSettings.brand_palette,
     },
     storefrontSettings.product_image_background,
   );
@@ -3986,6 +3987,7 @@ export function StorefrontClient({
       themeKey={storefrontSettings.theme_key}
       brandPrimaryColor={storefrontSettings.brand_primary_color}
       brandAccentColor={storefrontSettings.brand_accent_color}
+      brandPalette={storefrontSettings.brand_palette}
       productImageBackground={storefrontSettings.product_image_background}
     >
     <StorefrontLayoutProvider layoutKey={storefrontSettings.layout_key ?? "classic-grid"}>
@@ -4711,7 +4713,9 @@ export function StorefrontClient({
         whatsappHandoff={whatsappHandoff}
         onClearWhatsappHandoff={clearWhatsappHandoff}
         cartStorageKey={cartStorageKey}
-        stickyCartButtonClassName={theme.stickyCartButton}
+        // Sepet penceresindeki sipariş butonları ayrı renklenebilir
+        // ("WhatsApp ile Siparişi Tamamla" rolü, 25 Eyl 2026).
+        stickyCartButtonClassName={theme.checkoutButton}
         isCashCampaignDismissedOnCart={isCampaignDismissedOnSurface("cash", "cart")}
         isCardCampaignDismissedOnCart={isCampaignDismissedOnSurface("card", "cart")}
         onDismissCashCampaignOnCart={() => dismissCampaignOnSurface("cash", "cart")}

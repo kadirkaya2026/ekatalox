@@ -1,6 +1,7 @@
 import { Search, ShoppingCart, Store } from "lucide-react";
 import type { StorefrontLayoutKey, StorefrontThemeKey } from "@/lib/types";
-import { applyBrandColorOverrides } from "@/lib/storefront/brand-colors";
+import { applyBrandColorOverrides, buildBrandCssVariables } from "@/lib/storefront/brand-colors";
+import type { BrandPalette } from "@/lib/storefront/brand-palette";
 import { getStorefrontLayout } from "@/lib/storefront/layouts";
 import { getStorefrontTheme } from "@/lib/storefront/themes";
 import { cn, formatCurrency } from "@/lib/utils";
@@ -144,6 +145,7 @@ export function StorefrontThemePreview({
   logoUrl,
   brandPrimaryColor,
   brandAccentColor,
+  brandPalette,
 }: {
   themeKey: StorefrontThemeKey;
   layoutKey?: StorefrontLayoutKey;
@@ -151,11 +153,18 @@ export function StorefrontThemePreview({
   logoUrl?: string | null;
   brandPrimaryColor?: string | null;
   brandAccentColor?: string | null;
+  brandPalette?: BrandPalette | null;
 }) {
-  const theme = applyBrandColorOverrides(getStorefrontTheme(themeKey), {
+  const brandColors = {
     brand_primary_color: brandPrimaryColor ?? null,
     brand_accent_color: brandAccentColor ?? null,
-  });
+    brand_palette: brandPalette ?? null,
+  };
+  const theme = applyBrandColorOverrides(getStorefrontTheme(themeKey), brandColors);
+  // Tema sınıfları var(--brand-*) / var(--ek-*) okur; değişkenler vitrinde
+  // StorefrontPageShell'de basılıyor, burada da basılmazsa marka renkleri
+  // küçük önizlemelerde hiç görünmüyordu (düzeltme 25 Eyl 2026).
+  const brandStyle = buildBrandCssVariables(brandColors);
   const layout = getStorefrontLayout(layoutKey);
   const title = storefrontTitle?.trim() || "Mağaza Adı";
 
@@ -166,6 +175,7 @@ export function StorefrontThemePreview({
         theme.border,
         theme.surface,
       )}
+      style={brandStyle}
       aria-hidden="true"
     >
       <div className={cn("border-b px-3 py-2", theme.headerBorder, theme.surface)}>

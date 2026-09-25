@@ -82,6 +82,7 @@ export default async function PushInvitePage(props: PushInvitePageProps) {
             companyName={tenant.company_name}
             themeKey={settings.theme_key}
             isThemeToggleVisible={settings.is_theme_toggle_visible}
+            appearance={getAppearanceFromSettings(settings)}
             ads={ads}
           />
         </StorefrontPageShell>

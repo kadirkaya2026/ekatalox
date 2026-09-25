@@ -10,6 +10,7 @@ import {
   getStorefrontTheme,
   type StorefrontTheme,
 } from "@/lib/storefront/themes";
+import type { BrandPalette } from "@/lib/storefront/brand-palette";
 import { useResolvedStorefrontTheme } from "@/lib/storefront/use-resolved-storefront-theme";
 
 const StorefrontThemeContext = createContext<StorefrontTheme>(
@@ -23,12 +24,15 @@ export function StorefrontThemeProvider({
   themeKey,
   brandPrimaryColor,
   brandAccentColor,
+  brandPalette,
   productImageBackground,
   children,
 }: {
   themeKey: StorefrontThemeKey | string;
   brandPrimaryColor?: string | null;
   brandAccentColor?: string | null;
+  /** Buton / bölüm bazlı renkler (tenant_storefront_settings.brand_palette). */
+  brandPalette?: BrandPalette | null;
   productImageBackground?: ProductImageBackgroundKey | null;
   children: React.ReactNode;
 }) {
@@ -37,6 +41,7 @@ export function StorefrontThemeProvider({
     {
       brand_primary_color: brandPrimaryColor ?? null,
       brand_accent_color: brandAccentColor ?? null,
+      brand_palette: brandPalette ?? null,
     },
     productImageBackground,
   );

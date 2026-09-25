@@ -94,6 +94,7 @@ export function ProductPrice({
 
 export function DiscountSticker({ product }: { product: StorefrontProduct }) {
   const { t } = useStorefrontLocale();
+  const theme = useStorefrontTheme();
 
   if (
     product.price === null ||
@@ -104,7 +105,7 @@ export function DiscountSticker({ product }: { product: StorefrontProduct }) {
   }
 
   return (
-    <span className="absolute left-2 top-2 z-10 rounded-full bg-rose-500 px-2 py-0.5 text-[10px] font-bold text-white shadow-sm">
+    <span className={cn("absolute left-2 top-2 z-10 rounded-full px-2 py-0.5 text-[10px] font-bold shadow-sm", theme.discountBadge)}>
       {t("product.discountBadge", { percentage: product.discount_percentage })}
     </span>
   );

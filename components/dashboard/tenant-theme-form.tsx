@@ -6,9 +6,9 @@ import { ExternalLink, LayoutGrid, Palette, RotateCcw, Sparkles, Type } from "lu
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { SettingsTabs } from "@/components/dashboard/settings-tabs";
-import { Input } from "@/components/ui/input";
 import { PlanFeatureGate } from "@/components/dashboard/plan-feature-gate";
 import { StorefrontThemePreview } from "@/components/dashboard/storefront-theme-preview";
+import { BrandPaletteEditor, type BrandPaletteDraft } from "@/components/dashboard/brand-palette-editor";
 import type {
   ProductImageBackgroundKey,
   RecommendationMode,
@@ -25,7 +25,6 @@ import { LAYOUT_OPTIONS } from "@/lib/storefront/layout-catalog";
 import { FONT_OPTIONS } from "@/lib/storefront/font-catalog";
 import { STOREFRONT_THEME_PRESETS, type StorefrontThemePreset } from "@/lib/storefront/theme-presets";
 import {
-  BRAND_COLOR_PRESETS,
   DEFAULT_STOREFRONT_APPEARANCE,
   FOOTER_STYLE_OPTIONS,
   HEADER_STYLE_OPTIONS,
@@ -33,6 +32,12 @@ import {
   PRODUCT_IMAGE_BACKGROUND_OPTIONS,
 } from "@/lib/storefront/appearance-catalog";
 import { hasPlanFeature } from "@/lib/billing/plans";
+import {
+  decodeBrandPaletteParam,
+  EMPTY_BRAND_PALETTE_PARAM,
+  encodeBrandPaletteParam,
+  normalizeBrandPalette,
+} from "@/lib/storefront/brand-palette";
 import { cn } from "@/lib/utils";
 
 interface ThemeFormState {
@@ -40,6 +45,8 @@ interface ThemeFormState {
   layout_key: StorefrontLayoutKey;
   brand_primary_color: string;
   brand_accent_color: string;
+  /** Buton / bölüm bazlı renkler (ham; yazılırken geçersiz olabilir). */
+  brand_palette: BrandPaletteDraft;
   font_key: TenantStorefrontSettings["font_key"];
   product_card_style: StorefrontProductCardStyle;
   product_image_background: ProductImageBackgroundKey;
@@ -68,6 +75,7 @@ function toThemeFormState(settings: TenantStorefrontSettings): ThemeFormState {
     layout_key: settings.layout_key ?? "classic-grid",
     brand_primary_color: settings.brand_primary_color ?? "",
     brand_accent_color: settings.brand_accent_color ?? "",
+    brand_palette: { ...normalizeBrandPalette(settings.brand_palette) },
     font_key: settings.font_key ?? "inter",
     product_card_style: settings.product_card_style ?? "standard",
     product_image_background: settings.product_image_background ?? "theme",
@@ -88,6 +96,7 @@ function buildAppearancePayload(
     layout_key: form.layout_key,
     brand_primary_color: form.brand_primary_color || null,
     brand_accent_color: form.brand_accent_color || null,
+    brand_palette: cleanPaletteDraft(form.brand_palette),
     recommendation_mode: form.recommendation_mode,
     ...(options.canUseAdvancedAppearance
       ? {
@@ -101,12 +110,23 @@ function buildAppearancePayload(
   };
 }
 
+// Boş (temizlenmiş) rolleri at; geçersiz hex'ler olduğu gibi gider ki
+// sunucu "HEX formatında olmalıdır" hatasını göstersin.
+function cleanPaletteDraft(draft: BrandPaletteDraft): BrandPaletteDraft {
+  return Object.fromEntries(
+    Object.entries(draft)
+      .map(([key, value]) => [key, (value ?? "").trim()])
+      .filter(([, value]) => value !== ""),
+  ) as BrandPaletteDraft;
+}
+
 function toDefaultThemeFormState(): ThemeFormState {
   return {
     theme_key: DEFAULT_STOREFRONT_APPEARANCE.theme_key,
     layout_key: DEFAULT_STOREFRONT_APPEARANCE.layout_key,
     brand_primary_color: "",
     brand_accent_color: "",
+    brand_palette: {},
     font_key: DEFAULT_STOREFRONT_APPEARANCE.font_key,
     product_card_style: DEFAULT_STOREFRONT_APPEARANCE.product_card_style,
     product_image_background: DEFAULT_STOREFRONT_APPEARANCE.product_image_background,
@@ -129,7 +149,7 @@ export function TenantThemeForm({
   previewUrl?: string;
   autoApply?: {
     preset?: string; theme?: string; layout?: string; header?: string;
-    footer?: string; hero?: string; bp?: string; ba?: string;
+    footer?: string; hero?: string; bp?: string; ba?: string; pal?: string;
   } | null;
 }) {
   const [form, setForm] = useState<ThemeFormState>(
@@ -148,7 +168,7 @@ export function TenantThemeForm({
   const previewLogoUrl = initialStorefrontSettings.logo_url;
   // "Önizle": yeni sekmede gerçek mağaza, seçili (kaydedilmemiş) temayla.
   const themePreviewHref = previewUrl
-    ? `${previewUrl}&theme=${encodeURIComponent(form.theme_key)}&layout=${encodeURIComponent(form.layout_key)}&header=${encodeURIComponent(form.header_style_key)}&footer=${encodeURIComponent(form.footer_style_key)}${form.brand_primary_color ? `&bp=${encodeURIComponent(form.brand_primary_color)}` : ""}${form.brand_accent_color ? `&ba=${encodeURIComponent(form.brand_accent_color)}` : ""}`
+    ? `${previewUrl}&theme=${encodeURIComponent(form.theme_key)}&layout=${encodeURIComponent(form.layout_key)}&header=${encodeURIComponent(form.header_style_key)}&footer=${encodeURIComponent(form.footer_style_key)}${form.brand_primary_color ? `&bp=${encodeURIComponent(form.brand_primary_color)}` : ""}${form.brand_accent_color ? `&ba=${encodeURIComponent(form.brand_accent_color)}` : ""}&pal=${encodeBrandPaletteParam(normalizeBrandPalette(form.brand_palette)) ?? EMPTY_BRAND_PALETTE_PARAM}`
     : null;
   const presetPreviewHref = (key: string) => (previewUrl ? `${previewUrl}&preset=${encodeURIComponent(key)}` : null);
 
@@ -229,11 +249,12 @@ export function TenantThemeForm({
     setSaveMessage(null);
 
     startApplyTransition(async () => {
+      // Paket tenant'ın marka / buton renklerini SIFIRLAMAZ (kullanıcı
+      // isteği, 25 Eyl 2026); renkler yalnız "Ayarları sıfırla" ya da
+      // "Tümünü varsayılana döndür" ile temizlenir.
       const payload = {
         theme_key: preset.settings.theme_key,
         layout_key: preset.settings.layout_key,
-        brand_primary_color: null,
-        brand_accent_color: null,
         recommendation_mode: form.recommendation_mode,
         ...(canUseAdvancedAppearance
           ? {
@@ -285,6 +306,7 @@ export function TenantThemeForm({
       if (autoApply.layout) payload.layout_key = autoApply.layout;
       if (autoApply.bp !== undefined) payload.brand_primary_color = autoApply.bp || null;
       if (autoApply.ba !== undefined) payload.brand_accent_color = autoApply.ba || null;
+      if (autoApply.pal !== undefined) payload.brand_palette = decodeBrandPaletteParam(autoApply.pal) ?? {};
       if (canUseAdvancedAppearance) {
         if (autoApply.header) payload.header_style_key = autoApply.header;
         if (autoApply.footer) payload.footer_style_key = autoApply.footer;
@@ -401,78 +423,33 @@ export function TenantThemeForm({
                   <Palette className="size-5 text-emerald-700" />
                   <h2 className="text-lg font-semibold text-slate-900">Marka renkleri</h2>
                 </div>
-                <p className="mt-1 mb-4 text-sm text-slate-600">
-                  Logonuza uygun renkleri seçin veya hazır paletlerden birini kullanın.
+                <p className="mt-1 mb-5 text-sm text-slate-600">
+                  Önce ana rengi seçin; isterseniz her butona ve bölüme ayrı renk verin. Sağdaki
+                  önizleme kaydetmeden önce nasıl görüneceğini ve rengin nerede kullanıldığını gösterir.
                 </p>
-                <div className="grid gap-4 md:grid-cols-2">
-                  <div>
-                    <label className="mb-2 block text-sm font-medium text-slate-700">
-                      Birincil renk
-                    </label>
-                    <div className="flex items-center gap-3">
-                      <Input
-                        type="color"
-                        value={form.brand_primary_color || "#059669"}
-                        onChange={(event) => updateField("brand_primary_color", event.target.value)}
-                        className="h-11 w-16 cursor-pointer p-1"
-                      />
-                      <Input
-                        value={form.brand_primary_color}
-                        onChange={(event) => updateField("brand_primary_color", event.target.value)}
-                        placeholder="#059669"
-                      />
-                    </div>
-                    <p className="mt-2 text-xs leading-5 text-slate-500">
-                      Nerede kullanılır: <strong>Sepete ekle</strong> butonları, ürün{" "}
-                      <strong>fiyatları</strong>, aktif <strong>kategori</strong> vurguları ve
-                      sepet ikonu üzerindeki sayı rozeti.
-                    </p>
-                  </div>
-                  <div>
-                    <label className="mb-2 block text-sm font-medium text-slate-700">
-                      Vurgu rengi
-                    </label>
-                    <div className="flex items-center gap-3">
-                      <Input
-                        type="color"
-                        value={form.brand_accent_color || "#10b981"}
-                        onChange={(event) => updateField("brand_accent_color", event.target.value)}
-                        className="h-11 w-16 cursor-pointer p-1"
-                      />
-                      <Input
-                        value={form.brand_accent_color}
-                        onChange={(event) => updateField("brand_accent_color", event.target.value)}
-                        placeholder="#10b981"
-                      />
-                    </div>
-                    <p className="mt-2 text-xs leading-5 text-slate-500">
-                      Nerede kullanılır: ürün kartlarındaki{" "}
-                      <strong>varyant/model rozetleri</strong> (ör. &quot;3 Model&quot;, sepete
-                      eklenen varyant sayısı).
-                    </p>
-                  </div>
-                </div>
-
-                <BrandColorPreview
-                  primary={form.brand_primary_color || "#059669"}
-                  accent={form.brand_accent_color || "#10b981"}
+                <BrandPaletteEditor
+                  themeKey={form.theme_key}
+                  primaryColor={form.brand_primary_color}
+                  accentColor={form.brand_accent_color}
+                  palette={form.brand_palette}
+                  storefrontTitle={previewTitle}
+                  logoUrl={previewLogoUrl}
+                  onPrimaryChange={(value) => updateField("brand_primary_color", value)}
+                  onAccentChange={(value) => updateField("brand_accent_color", value)}
+                  onRoleChange={(key, value) =>
+                    updateField("brand_palette", { ...form.brand_palette, [key]: value })
+                  }
+                  onResetAll={() => {
+                    setForm((current) => ({
+                      ...current,
+                      brand_primary_color: "",
+                      brand_accent_color: "",
+                      brand_palette: {},
+                    }));
+                    setSaveMessage(null);
+                  }}
+                  previewHref={themePreviewHref}
                 />
-
-                <div className="mt-4 flex flex-wrap gap-2">
-                  {BRAND_COLOR_PRESETS.map((preset) => (
-                    <button
-                      key={preset.label}
-                      type="button"
-                      onClick={() => {
-                        updateField("brand_primary_color", preset.primary);
-                        updateField("brand_accent_color", preset.accent);
-                      }}
-                      className="rounded-full border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-700 hover:border-emerald-300 hover:bg-emerald-50"
-                    >
-                      {preset.label}
-                    </button>
-                  ))}
-                </div>
               </div>
             ) : null}
 
@@ -507,6 +484,7 @@ export function TenantThemeForm({
                           logoUrl={previewLogoUrl}
                           brandPrimaryColor={form.brand_primary_color || null}
                           brandAccentColor={form.brand_accent_color || null}
+                          brandPalette={normalizeBrandPalette(form.brand_palette)}
                         />
                         <p className="mt-4 text-sm font-semibold text-slate-900">{theme.title}</p>
                         <p className="mt-1 text-sm leading-6 text-slate-500">{theme.description}</p>
@@ -588,6 +566,7 @@ export function TenantThemeForm({
                           logoUrl={previewLogoUrl}
                           brandPrimaryColor={form.brand_primary_color || null}
                           brandAccentColor={form.brand_accent_color || null}
+                          brandPalette={normalizeBrandPalette(form.brand_palette)}
                         />
                         <p className="mt-4 text-sm font-semibold text-slate-900">{layout.title}</p>
                         <p className="mt-1 text-sm leading-6 text-slate-500">{layout.description}</p>
@@ -688,31 +667,6 @@ export function TenantThemeForm({
         </div>
       </div>
     </form>
-  );
-}
-
-// Müşterinin seçtiği renklerin mağazada gerçekte nasıl göründüğünü canlı
-// gösteren küçük önizleme; renklerin "nerede kullanılacağını" metinden çok
-// daha net anlatır.
-function BrandColorPreview({ primary, accent }: { primary: string; accent: string }) {
-  return (
-    <div className="mt-4 flex flex-wrap items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4">
-      <span
-        className="inline-flex items-center rounded-full px-4 py-2 text-sm font-semibold text-white shadow-sm"
-        style={{ backgroundColor: primary }}
-      >
-        Sepete Ekle
-      </span>
-      <span className="text-base font-extrabold" style={{ color: primary }}>
-        ₺1.250
-      </span>
-      <span
-        className="inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-semibold"
-        style={{ backgroundColor: `${accent}26`, color: accent }}
-      >
-        3 Model
-      </span>
-    </div>
   );
 }
 

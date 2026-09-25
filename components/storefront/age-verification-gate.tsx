@@ -3,7 +3,11 @@
 import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import type { StorefrontThemeKey } from "@/lib/types";
-import { StorefrontThemeProvider, useStorefrontTheme } from "@/lib/storefront/theme-context";
+import {
+  StorefrontThemeProvider,
+  useStorefrontTheme,
+  type StorefrontAppearanceSettings,
+} from "@/lib/storefront/theme-context";
 import { useStorefrontLocale } from "@/lib/storefront/locale-context";
 import { StorefrontThemeToggle } from "@/components/storefront/storefront-theme-toggle";
 import { StorefrontLanguageSwitcher } from "@/components/storefront/storefront-language-switcher";
@@ -63,7 +67,7 @@ function AgeVerificationForm({
         <div className="mt-6 space-y-3">
           <Button
             type="button"
-            className={`w-full ${theme.primaryButton}`}
+            className={`w-full ${theme.gateButton}`}
             disabled={pending}
             onClick={confirmAdult}
           >
@@ -90,14 +94,23 @@ export function AgeVerificationGate({
   companyName,
   themeKey = "minimal",
   isThemeToggleVisible = true,
+  appearance,
 }: {
   subdomain: string;
   companyName: string;
   themeKey?: StorefrontThemeKey | string;
   isThemeToggleVisible?: boolean;
+  /** Marka renkleri (bkz. PasswordGate; düzeltme 25 Eyl 2026). */
+  appearance?: StorefrontAppearanceSettings | null;
 }) {
   return (
-    <StorefrontThemeProvider themeKey={themeKey}>
+    <StorefrontThemeProvider
+      themeKey={appearance?.theme_key ?? themeKey}
+      brandPrimaryColor={appearance?.brand_primary_color}
+      brandAccentColor={appearance?.brand_accent_color}
+      brandPalette={appearance?.brand_palette}
+      productImageBackground={appearance?.product_image_background}
+    >
       <div data-storefront className="relative min-h-screen">
         <div className="absolute right-4 top-4 z-10 flex items-center gap-2 sm:right-6 sm:top-6">
           <StorefrontLanguageSwitcher />

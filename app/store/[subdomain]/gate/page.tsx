@@ -105,6 +105,7 @@ export default async function StorefrontGatePage(
         companyName={tenant.company_name}
         themeKey={settings.theme_key}
         isThemeToggleVisible={settings.is_theme_toggle_visible}
+        appearance={getAppearanceFromSettings(settings)}
         ads={ads}
         branding={getGateBranding(subdomain)}
       />

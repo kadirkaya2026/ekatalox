@@ -3,6 +3,7 @@ import type {
   StorefrontThemeKey,
   TenantStorefrontSettings,
 } from "@/lib/types";
+import type { BrandPalette } from "@/lib/storefront/brand-palette";
 
 /**
  * Vitrin görünüm ayarları.
@@ -17,6 +18,7 @@ export interface StorefrontAppearanceSettings {
   theme_key: StorefrontThemeKey | string;
   brand_primary_color?: string | null;
   brand_accent_color?: string | null;
+  brand_palette?: BrandPalette | null;
   product_image_background?: ProductImageBackgroundKey | null;
 }
 
@@ -24,12 +26,13 @@ export function getAppearanceFromSettings(
   settings: Pick<
     TenantStorefrontSettings,
     "theme_key" | "brand_primary_color" | "brand_accent_color" | "product_image_background"
-  >,
+  > & { brand_palette?: BrandPalette | null },
 ): StorefrontAppearanceSettings {
   return {
     theme_key: settings.theme_key,
     brand_primary_color: settings.brand_primary_color,
     brand_accent_color: settings.brand_accent_color,
+    brand_palette: settings.brand_palette ?? null,
     product_image_background: settings.product_image_background,
   };
 }

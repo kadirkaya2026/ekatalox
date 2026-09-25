@@ -60,6 +60,21 @@ export interface StorefrontTheme {
   stickyCart: string;
   stickyCartText: string;
   stickyCartButton: string;
+  /** Sepet penceresindeki sipariş butonları ("WhatsApp ile Siparişi
+   *  Tamamla", Devam, Siparişi takip et). Varsayılan stickyCartButton ile
+   *  aynı; marka paletinde ayrı renklenebilsin diye ayrı token (25 Eyl 2026). */
+  checkoutButton: string;
+  /** Şifre ekranı "Mağaza'ya Gir" + yaş doğrulama onayı. Varsayılan
+   *  primaryButton ile aynı (25 Eyl 2026). */
+  gateButton: string;
+  /** Ürün kartı indirim etiketi (%15). Eskiden bg-rose-500 sabitti. */
+  discountBadge: string;
+  /** İndirimli ürünler şeridindeki etiket (eskiden bg-rose-600 sabitti). */
+  discountBadgeStrong: string;
+  /** Tema koyu zeminli mi (gece modu ya da Noir). Marka paletindeki
+   *  bölüm zeminleri (üst bar / alt bilgi / sayfa) yalnız açık temada
+   *  uygulanır. */
+  isDark: boolean;
   cartDrawerOverlay: string;
   cartDrawerPanel: string;
   cartDrawerHandle: string;
@@ -539,6 +554,18 @@ function buildTheme(
     ? "border-0 bg-blue-900/70 text-blue-300"
     : "border-blue-500 bg-blue-50 text-blue-700";
   const modalHandle = drawerHandle;
+  const primaryButton = cn(
+    "rounded-xl shadow-sm transition font-bold",
+    accent.primary,
+    accent.primaryHover,
+    accent.primaryActive,
+    accent.primaryForeground,
+  );
+  const stickyCartButton = cn(
+    "rounded-xl transition px-5 py-3 font-bold",
+    accent.stickyButton,
+    accent.stickyButtonHover,
+  );
 
   return {
     page: cn(
@@ -692,13 +719,7 @@ function buildTheme(
     stockBadgeOut,
     variantBadge,
     addedVariantBadge: cn("px-2 py-1 text-[10px]", accent.soft, accent.softText),
-    primaryButton: cn(
-      "rounded-xl shadow-sm transition font-bold",
-      accent.primary,
-      accent.primaryHover,
-      accent.primaryActive,
-      accent.primaryForeground,
-    ),
+    primaryButton,
     stickyCart: cn(
       "fixed bottom-4 inset-x-4 z-40 rounded-2xl p-4 shadow-[0_16px_40px_rgba(15,23,42,0.16)] md:bottom-6 max-w-lg mx-auto",
       isDark ? "border-0" : "border",
@@ -706,11 +727,12 @@ function buildTheme(
       stickyBarBorder,
     ),
     stickyCartText: "text-white font-bold",
-    stickyCartButton: cn(
-      "rounded-xl transition px-5 py-3 font-bold",
-      accent.stickyButton,
-      accent.stickyButtonHover,
-    ),
+    stickyCartButton,
+    checkoutButton: stickyCartButton,
+    gateButton: primaryButton,
+    discountBadge: "bg-rose-500 text-white",
+    discountBadgeStrong: "bg-rose-600 text-white",
+    isDark,
     cartDrawerOverlay: "fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-md",
     cartDrawerPanel: cn(
       // Mobilde tam ekran (ekranın tepesine kadar); masaüstünde sağda 460px panel.

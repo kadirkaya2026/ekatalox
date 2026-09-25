@@ -19,6 +19,7 @@ import { StorefrontClient } from "@/components/storefront/storefront-client";
 import { StorefrontFooter } from "@/components/storefront/storefront-footer";
 import { StorefrontLocaleProvider } from "@/lib/storefront/locale-context";
 import { getAppearanceFromSettings } from "@/lib/storefront/appearance";
+import { decodeBrandPaletteParam } from "@/lib/storefront/brand-palette";
 import { isTrialExpired } from "@/lib/billing/trial";
 import {
   getStorefrontBestSellerProducts,
@@ -109,6 +110,10 @@ function applyPreviewOverrides<T extends object>(
   if (str("hero")) o.hero_style_key = str("hero")!;
   if (str("bp")) o.brand_primary_color = str("bp")!;
   if (str("ba")) o.brand_accent_color = str("ba")!;
+  // Buton / bölüm renkleri (?pal= base64url JSON, 25 Eyl 2026). Parametre
+  // varsa kayıtlı paletin yerine geçer (panelde temizlenen roller de boş görünsün).
+  const palette = decodeBrandPaletteParam(str("pal"));
+  if (palette) return { ...settings, ...o, brand_palette: palette } as T;
   return { ...settings, ...o } as T;
 }
 
@@ -184,6 +189,7 @@ export default async function StorefrontPage(props: PageProps<"/store/[subdomain
           companyName={tenant.company_name}
           themeKey={settings.theme_key}
           isThemeToggleVisible={settings.is_theme_toggle_visible}
+          appearance={getAppearanceFromSettings(settings)}
           ads={ads}
         />
       </StorefrontPageShell>
@@ -300,7 +306,7 @@ export default async function StorefrontPage(props: PageProps<"/store/[subdomain
     : null;
   const previewLabel = previewPreset ? previewPreset.title : String(viewSettings.theme_key);
   const applyQuery = new URLSearchParams({ apply: "1" });
-  for (const k of ["preset", "theme", "layout", "header", "footer", "hero", "bp", "ba"]) {
+  for (const k of ["preset", "theme", "layout", "header", "footer", "hero", "bp", "ba", "pal"]) {
     const v = searchParams[k];
     if (typeof v === "string" && v) applyQuery.set(k, v);
   }

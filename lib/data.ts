@@ -27,6 +27,7 @@ import { getSmartDefaultAppearance } from "@/lib/storefront/smart-defaults";
 import { buildProductNameSearchClause, buildProductSearchOrFilter, expandSearchTerms } from "@/lib/search/turkish-search-aliases";
 import { getDescendantCategoryIds } from "@/lib/categories/tree";
 import { DEFAULT_BUSINESS_HOURS, WEEKDAY_ORDER } from "@/lib/storefront/business-hours";
+import { normalizeBrandPalette } from "@/lib/storefront/brand-palette";
 import type {
   AccessCode,
   AdminLoginLogEntry,
@@ -121,6 +122,7 @@ export function getDefaultTenantStorefrontSettings(
     is_hero_visible: false,
     brand_primary_color: null,
     brand_accent_color: null,
+    brand_palette: {},
     font_key: smartDefaults?.font_key ?? "inter",
     product_card_style: "standard",
     product_image_background: "theme",
@@ -213,6 +215,8 @@ function normalizeStorefrontSettings(
   return {
     ...merged,
     homepage_blocks: normalizeHomepageBlocks(merged.homepage_blocks),
+    // Migration 0136 uygulanmadan kolon gelmez → {} (25 Eyl 2026).
+    brand_palette: normalizeBrandPalette(merged.brand_palette),
     business_hours: normalizeBusinessHours(merged.business_hours),
   };
 }

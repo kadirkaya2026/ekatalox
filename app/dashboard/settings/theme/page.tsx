@@ -14,7 +14,7 @@ export default async function TenantThemeSettingsPage(props: ThemePageProps) {
   // Önizleme sekmesindeki "Bu temayı uygula" buraya ?apply=1&... ile döner;
   // form açılınca aynı PATCH yoluyla kaydeder (yetki/plan kontrolü panelde).
   const autoApply = pick("apply") === "1"
-    ? { preset: pick("preset"), theme: pick("theme"), layout: pick("layout"), header: pick("header"), footer: pick("footer"), hero: pick("hero"), bp: pick("bp"), ba: pick("ba") }
+    ? { preset: pick("preset"), theme: pick("theme"), layout: pick("layout"), header: pick("header"), footer: pick("footer"), hero: pick("hero"), bp: pick("bp"), ba: pick("ba"), pal: pick("pal") }
     : null;
   const session = await requireTenantAdminPage();
   const tenant = session.tenant!;
