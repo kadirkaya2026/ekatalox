@@ -3,7 +3,8 @@ import { z } from "zod";
 import { DOMAIN_REQUEST_STATUSES, updateDomainRequestStatus } from "@/lib/kurumsal/domain-requests";
 import { ensureSuperAdminResponse } from "@/lib/tenancy/guards";
 
-// Süper admin: alan adı talebinin durumu (new → purchased / cancelled).
+// Süper admin: alan adı talebinin durumu (new → purchasing → purchased / cancelled;
+// tenant kartı seçilen durumu gösterir, cancelled listeden düşer).
 const schema = z.object({ status: z.enum(DOMAIN_REQUEST_STATUSES, "Geçersiz durum.") });
 
 export async function PATCH(request: Request, ctx: RouteContext<"/api/admin/domain-requests/[id]">) {

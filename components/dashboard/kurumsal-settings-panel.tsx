@@ -233,8 +233,12 @@ function EntitledPanel({
         </div>
         {!domain && domainRequest ? (
           <p className="mt-3 text-xs text-muted-foreground">
-            Alan adı talebiniz bekliyor: <span className="font-semibold text-foreground">{domainRequest.domain}</span>. Bağlanınca site
-            otomatik oraya taşınır.
+            {domainRequest.status === "purchasing"
+              ? "Alan adınız satın alınıyor"
+              : domainRequest.status === "purchased"
+                ? "Alan adınız satın alındı, bağlanıyor"
+                : "Alan adı talebiniz alındı"}
+            : <span className="font-semibold text-foreground">{domainRequest.domain}</span>. Bağlanınca site otomatik oraya taşınır.
           </p>
         ) : !domain ? (
           <p className="mt-3 text-xs text-muted-foreground">

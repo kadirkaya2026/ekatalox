@@ -32,7 +32,7 @@ function toRequest(row: Record<string, unknown>): DomainRequest {
   };
 }
 
-/** Tenant'ın bekleyen (new) talebi; yoksa null. */
+/** Tenant'ın açık talebi (iptal edilmemiş: new/purchasing/purchased); yoksa null. */
 export async function getPendingDomainRequest(tenantId: string): Promise<DomainRequest | null> {
   const supabase = createSupabaseAdminClient();
   if (!supabase) return null;
@@ -40,7 +40,7 @@ export async function getPendingDomainRequest(tenantId: string): Promise<DomainR
     .from("domain_requests")
     .select(SELECT)
     .eq("tenant_id", tenantId)
-    .eq("status", "new")
+    .neq("status", "cancelled")
     .order("created_at", { ascending: false })
     .limit(1)
     .maybeSingle();
@@ -75,13 +75,14 @@ export async function createDomainRequest(params: {
   return { ok: true, request: toRequest(data as Record<string, unknown>) };
 }
 
-/** Süper admin listesi: en yeni en üstte, tenant adıyla. */
+/** Süper admin listesi: iptal edilenler hariç, en yeni en üstte, tenant adıyla. */
 export async function listDomainRequestsForAdmin(limit = 200): Promise<AdminDomainRequest[]> {
   const supabase = createSupabaseAdminClient();
   if (!supabase) return [];
   const { data, error } = await supabase
     .from("domain_requests")
     .select(`${SELECT}, tenants(company_name, subdomain, plan)`)
+    .neq("status", "cancelled")
     .order("created_at", { ascending: false })
     .limit(limit);
   if (error || !data) {

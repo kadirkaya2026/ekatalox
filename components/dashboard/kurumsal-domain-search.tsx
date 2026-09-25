@@ -4,13 +4,14 @@ import { useState, type FormEvent } from "react";
 import { CheckCircle2, Clock, Loader2, Search, XCircle, HelpCircle, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import type { DomainRequest } from "@/lib/kurumsal/domain-requests-shared";
+import { DOMAIN_REQUEST_TENANT_TEXT, type DomainRequest } from "@/lib/kurumsal/domain-requests-shared";
 import type { DomainSearchResult } from "@/lib/kurumsal/domain-search";
 import { cn } from "@/lib/utils";
 
 // "Yeni alan adı seç": arama kutusu → sonuç satırları (Boşta / Dolu /
 // Kontrol edilemiyor) → seçim → talep (POST /api/tenant/kurumsal/domain/request).
-// Talep varken bekleyen kart gösterilir. Tenant talebi İPTAL EDEMEZ (biz
+// Talep varken bekleyen kart gösterilir; başlık süper adminin seçtiği duruma
+// göre (DOMAIN_REQUEST_TENANT_TEXT). Tenant talebi İPTAL EDEMEZ (biz
 // satın almış olabiliriz; kullanıcı kuralı 25 Eyl): iptal yalnız süper
 // adminden (Başvurular → Alan adı talepleri), müşteri arayıp isterse.
 // Admin iptal edince status=cancelled olur, getPendingDomainRequest yalnız
@@ -97,19 +98,17 @@ export function KurumsalDomainSearch({
     }
   }
 
-  if (request) {
+  if (request && request.status !== "cancelled") {
+    const text = DOMAIN_REQUEST_TENANT_TEXT[request.status];
     return (
       <div className="rounded-xl border border-emerald-200 bg-emerald-50/60 p-5 dark:border-emerald-900 dark:bg-emerald-950/30">
         <div className="flex items-start gap-3">
           <Clock className="mt-0.5 size-5 shrink-0 text-emerald-700 dark:text-emerald-400" />
           <div className="min-w-0 flex-1">
             <p className="text-sm font-semibold text-emerald-900 dark:text-emerald-100">
-              Talebiniz alındı: <span className="font-mono">{request.domain}</span>
+              {text.title}: <span className="font-mono">{request.domain}</span>
             </p>
-            <p className="mt-1 text-sm leading-6 text-emerald-900/80 dark:text-emerald-100/80">
-              Satın alma ve bağlantı eKatalox ekibince yapılacak; tamamlanınca burada &quot;Bağlandı&quot; görünür.
-              
-            </p>
+            <p className="mt-1 text-sm leading-6 text-emerald-900/80 dark:text-emerald-100/80">{text.body}</p>
             {emailNote ? <p className="mt-1 text-xs text-amber-700">{emailNote}</p> : null}
             <p className="mt-2 text-xs text-emerald-900/70 dark:text-emerald-100/70">
               Alan adını değiştirmek isterseniz{" "}

@@ -45,7 +45,7 @@ export default async function AdminSignupsPage({
       <Header
         eyebrow="Başvurular"
         title="Alan adı talepleri"
-        description="Kurumsal site sihirbazından gelen 'Yeni alan adı seç' talepleri. Alan adını Vercel'den satın alıp tenant'ın kurumsal_domain'ine yazdıktan sonra durumu 'Satın alındı' yapın."
+        description="Kurumsal site sihirbazından gelen 'Yeni alan adı seç' talepleri. Durumu seçip Kaydet'e basın; seçtiğiniz durum tenant panelinde de görünür (Bekliyor → Satın alınıyor → Satın alındı). Müşteri vazgeçerse 'İptal' ile listeden düşer ve tenantta seçim ekranı yeniden açılır. Alan adını Vercel'den satın alıp tenant'ın kurumsal_domain'ine yazmayı unutmayın."
       />
       <AdminDomainRequestsPanel initial={domainRequests} />
     </div>
