@@ -1,5 +1,6 @@
 import { DealerApplicationForm } from "@/components/kurumsal/dealer-application-form";
 import { KurumsalProductCard, KurumsalShell, kurumsalHref } from "@/components/kurumsal/kurumsal-shell";
+import { kurumsalPath } from "@/lib/kurumsal/domain";
 import { telHref, titleCaseTr, whatsappLink } from "@/lib/kurumsal/format";
 import type { KurumsalContent } from "@/lib/kurumsal/schema";
 import type { KurumsalData } from "@/lib/storefront/kurumsal-data";
@@ -30,6 +31,8 @@ export interface KurumsalViewProps {
   isWhiteLabel: boolean;
   /** Katalog/sipariş ekranının mutlak adresi ("Bayi Girişi", "Tüm kataloğu gör") */
   catalogUrl: string;
+  /** "" alan adı modu, "/kurumsal" platform adresi (önizlemede önemsiz) */
+  basePath?: "" | "/kurumsal";
   preview?: boolean;
 }
 
@@ -47,6 +50,7 @@ export function KurumsalView({
   data,
   isWhiteLabel,
   catalogUrl,
+  basePath = "",
   preview = false,
 }: KurumsalViewProps) {
   const sections = content.sections;
@@ -90,7 +94,8 @@ export function KurumsalView({
       isWhiteLabel={isWhiteLabel}
       applyHref={applyHref}
       catalogUrl={catalogUrl}
-      navBase=""
+      basePath={basePath}
+      isHome
       showAbout={about.length > 0}
       preview={preview}
     >
@@ -164,7 +169,7 @@ export function KurumsalView({
             {data.categories.map((category) => (
               <a
                 key={category.id}
-                href={href(`/kategori/${category.id}`)}
+                href={href(kurumsalPath(basePath, `/kategori/${category.id}`))}
                 className="group overflow-hidden rounded-2xl border border-slate-200 bg-white transition hover:-translate-y-0.5 hover:shadow-lg"
               >
                 <div className="flex aspect-square items-center justify-center bg-slate-50 p-5">
@@ -202,7 +207,7 @@ export function KurumsalView({
             <h2 className="mt-2 text-3xl font-extrabold tracking-tight">Raflarımızdan seçmeler</h2>
             <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
               {data.featured.map((product) => (
-                <KurumsalProductCard key={product.id} product={product} preview={preview} />
+                <KurumsalProductCard key={product.id} product={product} basePath={basePath} preview={preview} />
               ))}
             </div>
           </div>

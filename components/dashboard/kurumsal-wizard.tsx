@@ -16,7 +16,6 @@ import {
   ExternalLink,
   Globe,
   Loader2,
-  MessageCircle,
   Search,
   Plus,
   RefreshCw,
@@ -25,6 +24,7 @@ import {
   Wand2,
 } from "lucide-react";
 import { KurumsalDomainCard } from "@/components/dashboard/kurumsal-domain-card";
+import { KurumsalDomainSearch } from "@/components/dashboard/kurumsal-domain-search";
 import { KurumsalView, type KurumsalContact } from "@/components/kurumsal/kurumsal-view";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -41,7 +41,14 @@ import {
   renderTemplates,
   type KurumsalTemplateVars,
 } from "@/lib/kurumsal/presets";
-import { kurumsalContentSchema, type KurumsalContent, type KurumsalSiteRecord } from "@/lib/kurumsal/schema";
+import type { DomainRequest } from "@/lib/kurumsal/domain-requests";
+import { getKurumsalPublishState, KURUMSAL_PUBLISH_STATE_LABELS } from "@/lib/kurumsal/domain";
+import {
+  KURUMSAL_LIMITS,
+  kurumsalContentSchema,
+  type KurumsalContent,
+  type KurumsalSiteRecord,
+} from "@/lib/kurumsal/schema";
 import type { KurumsalData } from "@/lib/storefront/kurumsal-data";
 import { cn } from "@/lib/utils";
 
@@ -60,8 +67,8 @@ export interface KurumsalWizardContext {
   contact: KurumsalContact;
   data: KurumsalData;
   isWhiteLabel: boolean;
-  /** https://{kurumsal_domain}; alan adı bağlı değilse null */
-  publicUrl: string | null;
+  /** https://{kurumsal_domain} ya da {katalog}/kurumsal */
+  publicUrl: string;
   /** Katalog/sipariş ekranı ("Bayi Girişi" — önizlemede tıklanmaz) */
   catalogUrl: string;
 }
@@ -107,6 +114,8 @@ export function KurumsalWizard({
   initialDomain,
   domainRequestHref,
   onDomainChange,
+  initialRequest,
+  onRequestChange,
 }: {
   open: boolean;
   onClose: () => void;
@@ -117,6 +126,9 @@ export function KurumsalWizard({
   initialDomain: string | null;
   domainRequestHref: string;
   onDomainChange: (domain: string | null) => void;
+  /** Bekleyen "yeni alan adı" talebi (domain_requests) */
+  initialRequest: DomainRequest | null;
+  onRequestChange: (request: DomainRequest | null) => void;
 }) {
   const [draft, setDraft] = useState<KurumsalContent>(initialContent);
   const [published, setPublished] = useState(initialPublished);
@@ -197,6 +209,7 @@ export function KurumsalWizard({
   }
 
   const isLast = index === STEPS.length - 1;
+  const publishState = getKurumsalPublishState(published, ctx.publicUrl.endsWith("/kurumsal") ? null : ctx.publicUrl);
 
   return (
     <Modal
@@ -250,7 +263,9 @@ export function KurumsalWizard({
               Adım {index + 1}/{STEPS.length} · {STEPS[index]}
             </span>
             <span className={published ? "font-semibold text-emerald-700 dark:text-emerald-400" : "text-muted-foreground"}>
-              {published ? "Yayında — kaydettiğiniz değişiklik hemen yansır" : "Taslak"}
+              {published
+                ? `${KURUMSAL_PUBLISH_STATE_LABELS[publishState]} — kaydettiğiniz değişiklik hemen yansır`
+                : KURUMSAL_PUBLISH_STATE_LABELS[publishState]}
             </span>
           </div>
         </div>
@@ -262,6 +277,8 @@ export function KurumsalWizard({
               initialDomain={initialDomain}
               domainRequestHref={domainRequestHref}
               onDomainChange={onDomainChange}
+              initialRequest={initialRequest}
+              onRequestChange={onRequestChange}
             />
           ) : null}
           {index === 1 ? <CompanyStep draft={draft} patch={patch} /> : null}
@@ -287,18 +304,14 @@ export function KurumsalWizard({
                   {pending === "save" ? <Loader2 className="size-4 animate-spin" /> : null}
                   {published ? "Kaydet" : "Taslak kaydet"}
                 </Button>
-                <Button
-                  onClick={publish}
-                  disabled={pending !== null || !ctx.publicUrl}
-                  title={ctx.publicUrl ? undefined : "Yayınlamak için önce alan adı bağlayın (1. adım)."}
-                >
+                <Button onClick={publish} disabled={pending !== null}>
                   {pending === "publish" ? <Loader2 className="size-4 animate-spin" /> : <Sparkles className="size-4" />}
                   {published ? "Kaydet ve yayında tut" : "Yayınla"}
                 </Button>
               </>
             ) : index === 0 ? (
               <Button onClick={() => go(1)}>
-                {ctx.publicUrl ? "Devam et" : "Şimdilik atla"} <ArrowRight className="size-4" />
+                {ctx.publicUrl.endsWith("/kurumsal") ? "Şimdilik atla" : "Devam et"} <ArrowRight className="size-4" />
               </Button>
             ) : (
               <Button onClick={saveAndNext} disabled={pending !== null}>
@@ -355,17 +368,24 @@ function Field({
   hint,
   children,
   counter,
+  action,
 }: {
   label: string;
   hint?: string;
   children: React.ReactNode;
+  /** "123/260" — sınır her zaman şemadaki gerçek sınır (KURUMSAL_LIMITS) */
   counter?: string;
+  /** Sayaçla aynı satırda, sağda (ör. "Sil"); sayaçla çakışmaz */
+  action?: React.ReactNode;
 }) {
   return (
     <label className="block">
-      <span className="flex items-baseline justify-between gap-2">
+      <span className="flex items-baseline justify-between gap-3">
         <span className="text-sm font-semibold">{label}</span>
-        {counter ? <span className="text-xs text-muted-foreground">{counter}</span> : null}
+        <span className="flex shrink-0 items-baseline gap-3">
+          {counter ? <span className="text-xs tabular-nums text-muted-foreground">{counter}</span> : null}
+          {action}
+        </span>
       </span>
       <span className="mt-1.5 block">{children}</span>
       {hint ? <span className="mt-1 block text-xs text-muted-foreground">{hint}</span> : null}
@@ -410,28 +430,33 @@ function SuggestionChips({
 
 /* 0 — Alan adı (atlanabilir) */
 // İki yol: "Kendi alan adım var" → self-servis bağlama (Vercel + DNS kayıtları +
-// Kontrol et, KurumsalDomainCard). "Yeni alan adı seç" → şimdilik yer tutucu;
-// alan adı arama/satın alma ayrı iş olarak DomainPurchasePanel yerine takılacak.
+// Kontrol et, KurumsalDomainCard). "Yeni alan adı seç" → müsaitlik araması +
+// talep (KurumsalDomainSearch); satın alma/bağlama ekipçe yapılır. Bekleyen
+// talep varsa adım o kartla açılır, kullanıcı içerik adımlarına geçebilir.
 function DomainStep({
   initialDomain,
   domainRequestHref,
   onDomainChange,
+  initialRequest,
+  onRequestChange,
 }: {
   initialDomain: string | null;
   domainRequestHref: string;
   onDomainChange: (domain: string | null) => void;
+  initialRequest: DomainRequest | null;
+  onRequestChange: (request: DomainRequest | null) => void;
 }) {
-  const [mode, setMode] = useState<"own" | "new" | null>(initialDomain ? "own" : null);
+  const [mode, setMode] = useState<"own" | "new" | null>(initialDomain ? "own" : initialRequest ? "new" : null);
   const options = [
     { key: "own" as const, icon: Globe, title: "Kendi alan adım var", body: "firmaniz.com gibi bir alan adınız varsa bağlayın; DNS kayıtlarını size gösteririz." },
-    { key: "new" as const, icon: Search, title: "Yeni alan adı seç", body: "Henüz alan adınız yoksa sizin için uygun bir tane bulalım." },
+    { key: "new" as const, icon: Search, title: "Yeni alan adı seç", body: "Boşta olan uzantıları ve fiyatı görün; seçtiğinizi sizin için alıp bağlayalım." },
   ];
 
   return (
     <div>
       <StepIntro title="Siteniz hangi adreste açılsın?">
-        Kurumsal siteniz kendi alan adınızın kökünde yayınlanır (ör. firmaniz.com). Bu adımı atlayabilirsiniz; siteniz taslak olarak
-        hazırlanır, alan adı bağlanınca yayınlayabilirsiniz.
+        Kendi alan adınız varsa (ör. firmaniz.com) site onun kökünde açılır. Bu adım isteğe bağlı: atlarsanız siteniz eKatalox
+        adresinizde (/kurumsal) yayınlanır, alan adı bağlayınca otomatik oraya taşınır.
       </StepIntro>
       <div className="grid gap-3 sm:grid-cols-2">
         {options.map((option) => {
@@ -441,6 +466,7 @@ function DomainStep({
             <button
               key={option.key}
               type="button"
+              aria-pressed={active}
               onClick={() => setMode(option.key)}
               className={cn(
                 "flex gap-3 rounded-xl border-2 bg-card p-4 text-left transition",
@@ -466,29 +492,14 @@ function DomainStep({
             onDomainChange={onDomainChange}
           />
         ) : null}
-        {mode === "new" ? <DomainPurchasePanel domainRequestHref={domainRequestHref} /> : null}
+        {mode === "new" ? (
+          <KurumsalDomainSearch
+            initialRequest={initialRequest}
+            domainRequestHref={domainRequestHref}
+            onRequestChange={onRequestChange}
+          />
+        ) : null}
       </div>
-    </div>
-  );
-}
-
-// Alan adı arama + satın alma buraya gelecek (ayrı iş). Şimdilik destek talebi.
-function DomainPurchasePanel({ domainRequestHref }: { domainRequestHref: string }) {
-  return (
-    <div className="rounded-xl border border-dashed border-slate-300 p-5 dark:border-slate-700">
-      <p className="text-sm font-semibold">Yakında: alan adı arama ve satın alma</p>
-      <p className="mt-1 text-sm leading-6 text-muted-foreground">
-        Çok yakında uygun alan adını buradan arayıp tek tıkla alabileceksiniz. Şimdilik bize yazın; sizin için alan adını alıp
-        bağlayalım.
-      </p>
-      <a
-        href={domainRequestHref}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="mt-4 inline-flex items-center gap-2 rounded-lg bg-[#25D366] px-4 py-2 text-sm font-semibold text-white"
-      >
-        <MessageCircle className="size-4" /> WhatsApp&apos;tan talep et
-      </a>
     </div>
   );
 }
@@ -508,7 +519,7 @@ function CompanyStep({ draft, patch }: { draft: KurumsalContent; patch: PatchFn 
             <Input
               value={draft.legal_name ?? ""}
               onChange={(e) => patch({ legal_name: e.target.value })}
-              maxLength={160}
+              maxLength={KURUMSAL_LIMITS.legalName}
               placeholder="Firma unvanı (isteğe bağlı)"
             />
           </Field>
@@ -657,23 +668,23 @@ function HeadlineStep({ draft, patch, vars }: { draft: KurumsalContent; patch: P
       </div>
       <div className="space-y-5">
         <div>
-          <Field label="Üst etiket" counter={`${draft.eyebrow.length}/60`} hint="Başlığın üstündeki küçük, renkli yazı.">
-            <Input value={draft.eyebrow} onChange={(e) => patch({ eyebrow: e.target.value })} maxLength={60} />
+          <Field label="Üst etiket" counter={`${draft.eyebrow.length}/${KURUMSAL_LIMITS.eyebrow}`} hint="Başlığın üstündeki küçük, renkli yazı.">
+            <Input value={draft.eyebrow} onChange={(e) => patch({ eyebrow: e.target.value })} maxLength={KURUMSAL_LIMITS.eyebrow} />
           </Field>
           <SuggestionChips options={preset.eyebrows} value={draft.eyebrow} onPick={(value) => patch({ eyebrow: value })} />
         </div>
         <div>
-          <Field label="Ana başlık" counter={`${draft.headline.length}/90`}>
-            <Input value={draft.headline} onChange={(e) => patch({ headline: e.target.value })} maxLength={90} />
+          <Field label="Ana başlık" counter={`${draft.headline.length}/${KURUMSAL_LIMITS.headline}`}>
+            <Input value={draft.headline} onChange={(e) => patch({ headline: e.target.value })} maxLength={KURUMSAL_LIMITS.headline} />
           </Field>
           <SuggestionChips options={preset.headlines} value={draft.headline} onPick={(value) => patch({ headline: value })} />
         </div>
         <div>
-          <Field label="Slogan" counter={`${draft.tagline.length}/260`} hint="Başlığın altındaki bir-iki cümlelik tanıtım.">
+          <Field label="Slogan" counter={`${draft.tagline.length}/${KURUMSAL_LIMITS.tagline}`} hint="Başlığın altındaki bir-iki cümlelik tanıtım.">
             <Textarea
               value={draft.tagline}
               onChange={(e) => patch({ tagline: e.target.value })}
-              maxLength={260}
+              maxLength={KURUMSAL_LIMITS.tagline}
               className="min-h-20"
             />
           </Field>
@@ -715,26 +726,30 @@ function AboutStep({ draft, patch, vars }: { draft: KurumsalContent; patch: Patc
       </div>
       <div className="space-y-4">
         {paragraphs.map((paragraph, i) => (
-          <div key={i} className="relative">
-            <Field label={`${i + 1}. paragraf`} counter={`${paragraph.length}/1200`}>
-              <Textarea
-                value={paragraph}
-                onChange={(e) => setParagraph(i, e.target.value)}
-                maxLength={1200}
-                className="min-h-28"
-                placeholder="Örn. Firmamız 2010 yılından bu yana..."
-              />
-            </Field>
-            {paragraphs.length > 1 ? (
-              <button
-                type="button"
-                onClick={() => patch({ about: paragraphs.filter((_, j) => j !== i) })}
-                className="absolute right-0 top-0 inline-flex items-center gap-1 text-xs font-medium text-rose-600 hover:text-rose-700"
-              >
-                <Trash2 className="size-3.5" /> Sil
-              </button>
-            ) : null}
-          </div>
+          <Field
+            key={i}
+            label={`${i + 1}. paragraf`}
+            counter={`${paragraph.length}/${KURUMSAL_LIMITS.aboutParagraph}`}
+            action={
+              paragraphs.length > 1 ? (
+                <button
+                  type="button"
+                  onClick={() => patch({ about: paragraphs.filter((_, j) => j !== i) })}
+                  className="inline-flex items-center gap-1 text-xs font-medium text-rose-600 hover:text-rose-700"
+                >
+                  <Trash2 className="size-3.5" /> Sil
+                </button>
+              ) : null
+            }
+          >
+            <Textarea
+              value={paragraph}
+              onChange={(e) => setParagraph(i, e.target.value)}
+              maxLength={KURUMSAL_LIMITS.aboutParagraph}
+              className="min-h-28"
+              placeholder="Örn. Firmamız 2010 yılından bu yana..."
+            />
+          </Field>
         ))}
       </div>
       {paragraphs.length < 4 ? (
@@ -818,14 +833,14 @@ function HighlightsStep({ draft, patch, vars }: { draft: KurumsalContent; patch:
                   <Input
                     value={highlight.title}
                     onChange={(e) => edit(i, { title: e.target.value })}
-                    maxLength={60}
+                    maxLength={KURUMSAL_LIMITS.highlightTitle}
                     placeholder="Başlık"
                     className="py-2"
                   />
                   <Textarea
                     value={highlight.body}
                     onChange={(e) => edit(i, { body: e.target.value })}
-                    maxLength={240}
+                    maxLength={KURUMSAL_LIMITS.highlightBody}
                     placeholder="Kısa açıklama"
                     className="min-h-16 py-2"
                   />
@@ -1056,13 +1071,7 @@ function PreviewStep({
         siteniz Google&apos;a açık olur ve şifre sormaz. Fiyatlarınız yine yalnızca bayi girişinde görünür.
       </StepIntro>
 
-      {!ctx.publicUrl ? (
-        <div className="mb-4 rounded-lg bg-amber-50 px-4 py-3 text-sm font-medium text-amber-800 dark:bg-amber-950 dark:text-amber-200">
-          Yayınlamak için önce alan adı bağlayın (1. adım: &quot;Alan adı&quot;). O zamana kadar siteniz taslak olarak kaydedilir ve
-          kimseye görünmez.
-        </div>
-      ) : null}
-      {(justPublished || published) && ctx.publicUrl ? (
+      {(justPublished || published) ? (
         <div className="mb-4 flex flex-col gap-2 rounded-lg bg-emerald-50 px-4 py-3 text-sm text-emerald-800 sm:flex-row sm:items-center sm:justify-between dark:bg-emerald-950 dark:text-emerald-200">
           <span className="font-semibold">{justPublished ? "Siteniz yayında!" : "Siteniz şu an yayında."}</span>
           <a
@@ -1074,6 +1083,11 @@ function PreviewStep({
             {ctx.publicUrl} <ExternalLink className="size-3.5 shrink-0" />
           </a>
         </div>
+      ) : null}
+      {ctx.publicUrl.endsWith("/kurumsal") ? (
+        <p className="mb-4 text-xs text-muted-foreground">
+          Siteniz eKatalox adresinizde yayınlanır. Kendi alan adınızı bağlayınca (1. adım) site otomatik oraya taşınır.
+        </p>
       ) : null}
 
       <ScaledPreview>

@@ -1,7 +1,8 @@
 import { getKurumsalPageContext } from "@/lib/kurumsal/page-context";
 import { getKurumsalSitemapCached } from "@/lib/storefront/kurumsal-data";
 
-// Kurumsal alan adının /sitemap.xml'i (proxy.ts bu yola yeniden yazar):
+// Kurumsal sitenin sitemap'i: alan adı modunda /sitemap.xml, platform
+// adresinde /kurumsal/sitemap.xml (proxy.ts bu yola yeniden yazar):
 // ana sayfa + kategori sayfaları + ürün sayfaları. Pazarlama sitemap'i
 // (app/sitemap.ts) ayrı ve değişmedi.
 
@@ -17,7 +18,7 @@ export async function GET(_request: Request, ctx: RouteContext<"/store/[subdomai
   const { categoryIds, productIds } = await getKurumsalSitemapCached(page.tenant.id);
   const origin = page.kurumsalOrigin;
   const entries: Array<{ loc: string; priority: string; changefreq: string }> = [
-    { loc: `${origin}/`, priority: "1.0", changefreq: "weekly" },
+    { loc: page.homeUrl, priority: "1.0", changefreq: "weekly" },
     ...categoryIds.map((id) => ({ loc: `${origin}/kategori/${id}`, priority: "0.8", changefreq: "weekly" })),
     ...productIds.map((id) => ({ loc: `${origin}/urun/${id}`, priority: "0.6", changefreq: "monthly" })),
   ];

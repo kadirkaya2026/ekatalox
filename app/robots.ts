@@ -13,13 +13,18 @@ export default async function robots(): Promise<MetadataRoute.Robots> {
 
   // Yalnızca pazarlama sitesi indexlenebilir. Tenant vitrinleri, özel alan
   // adları (kind: "unknown" döner), admin ve app panelleri dahil geri kalan
-  // her host için tarayıcılara tamamen kapalıyız.
+  // her host için tarayıcılara tamamen kapalıyız — TEK istisna kurumsal site:
+  // katalog adresindeki /kurumsal (bilerek herkese açık, fiyatsız tanıtım
+  // sayfası; yayında olmayan tenant'ta 404 döner, zararsız). Kendi alan
+  // adındaki kurumsal siteyi proxy.ts ayrı bir robots ile karşılar.
   if (kind !== "marketing") {
     return {
       rules: {
         userAgent: "*",
+        allow: ["/kurumsal", "/kurumsal/"],
         disallow: "/",
       },
+      sitemap: `https://${host.replace(/:\d+$/, "")}/kurumsal/sitemap.xml`,
     };
   }
 

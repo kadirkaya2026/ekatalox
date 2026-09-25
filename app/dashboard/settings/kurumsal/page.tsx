@@ -4,7 +4,8 @@ import { requireTenantAdminPage } from "@/lib/auth/session";
 import { getTenantStorefrontSettings } from "@/lib/data";
 import { appEnv } from "@/lib/env";
 import { buildPackageUpgradeHref, getPlanLabel, PACKAGE_UPGRADE_PHONE } from "@/lib/billing/plans";
-import { buildCatalogOrigin, buildKurumsalOrigin, hasKurumsalSiteAccess } from "@/lib/kurumsal/domain";
+import { buildCatalogOrigin, buildKurumsalHomeUrl, hasKurumsalSiteAccess } from "@/lib/kurumsal/domain";
+import { getPendingDomainRequest } from "@/lib/kurumsal/domain-requests";
 import { resolveKurumsalAccent, resolveKurumsalHero } from "@/lib/kurumsal/format";
 import { buildKurumsalContact } from "@/lib/kurumsal/page-context";
 import { defaultKurumsalContent } from "@/lib/kurumsal/schema";
@@ -27,10 +28,11 @@ export default async function KurumsalSettingsPage({
   const domainRequestHref = `https://wa.me/${PACKAGE_UPGRADE_PHONE}?text=${encodeURIComponent(
     `Merhaba, kurumsal sitem için alan adı almak istiyorum. Firma: ${tenant.company_name}`,
   )}`;
-  const [settings, site, data] = await Promise.all([
+  const [settings, site, data, pendingRequest] = await Promise.all([
     getTenantStorefrontSettings(tenant.id),
     getKurumsalSite(tenant.id),
     getKurumsalDataCached(tenant.id),
+    entitled ? getPendingDomainRequest(tenant.id) : null,
   ]);
   const branding = getGateBranding(tenant.subdomain);
 
@@ -63,12 +65,13 @@ export default async function KurumsalSettingsPage({
         upgradeHref={buildPackageUpgradeHref(tenant.company_name, "kurumsal_site")}
         planName={getPlanLabel(tenant.plan ?? "baslangic")}
         initialDomain={tenant.kurumsal_domain ?? null}
+        initialRequest={pendingRequest}
         domainRequestHref={domainRequestHref}
         initialSite={site}
         defaults={defaultKurumsalContent(tenant, settings)}
         ctx={{
           tenantName: tenant.company_name,
-          firma: settings.storefront_title?.trim() || tenant.company_name,
+          firma: tenant.company_name?.trim() || settings.storefront_title?.trim() || "",
           subdomain: tenant.subdomain,
           logoUrl: settings.logo_url,
           wordmark: branding?.wordmark ?? null,
@@ -85,7 +88,7 @@ export default async function KurumsalSettingsPage({
           contact: buildKurumsalContact(tenant, settings),
           data,
           isWhiteLabel: isWhiteLabelStorefront(tenant),
-          publicUrl: buildKurumsalOrigin(tenant.kurumsal_domain),
+          publicUrl: buildKurumsalHomeUrl(tenant, appEnv.rootDomain),
           catalogUrl: buildCatalogOrigin(tenant, appEnv.rootDomain),
         }}
       />

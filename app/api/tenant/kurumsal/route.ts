@@ -61,21 +61,6 @@ export async function PUT(request: Request) {
     return NextResponse.json({ error: "Supabase production yapılandırması eksik." }, { status: 500 });
   }
 
-  // Yayına almak için kendi alan adı bağlı olmalı (site yalnız orada açılır).
-  if (parsed.data.is_published === true) {
-    const { data: domainRow } = await supabase
-      .from("tenants")
-      .select("kurumsal_domain")
-      .eq("id", tenant.id)
-      .maybeSingle();
-    if (!(domainRow as { kurumsal_domain?: string | null } | null)?.kurumsal_domain) {
-      return NextResponse.json(
-        { error: "Yayınlamak için önce alan adınızı bağlayın (Ayarlar → Kurumsal Site → Alan adı)." },
-        { status: 400 },
-      );
-    }
-  }
-
   const existing = await getKurumsalSiteRow(tenant.id);
   const isPublished = parsed.data.is_published ?? existing?.is_published ?? false;
   const now = new Date().toISOString();

@@ -1,17 +1,20 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { CheckCircle2, Clock, ExternalLink, Globe, Loader2, MessageCircle, RefreshCw, Trash2 } from "lucide-react";
+import { CheckCircle2, Clock, ExternalLink, Globe, Loader2, RefreshCw, Trash2 } from "lucide-react";
+import { KurumsalDomainSearch } from "@/components/dashboard/kurumsal-domain-search";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import type { DomainRequest } from "@/lib/kurumsal/domain-requests";
 import type { KurumsalDomainStatus, VercelDnsRecord } from "@/lib/vercel/domains";
 
 // Ayarlar → Kurumsal Site → Alan adı. Tenant kendi alan adını bağlar:
 // kaydedince Vercel projesine kök + www eklenir (PUT /api/tenant/kurumsal/domain),
 // "Kontrol et" Vercel'den doğrulama/DNS durumunu sorar ve eksik kaydı gösterir.
 // Vercel API yapılandırılmamışsa alan adı yine kaydedilir, bağlantıyı ekip tamamlar.
+// Alan adı bağlı değilken altta "Yeni alan adı seç" araması (KurumsalDomainSearch).
 
 type ApiResult = { domain?: string | null; status?: KurumsalDomainStatus | null; warning?: string; error?: string };
 
@@ -19,11 +22,16 @@ export function KurumsalDomainCard({
   initialDomain,
   domainRequestHref,
   onDomainChange,
+  initialRequest = null,
+  onRequestChange,
 }: {
   initialDomain: string | null;
-  /** "Alan adınız yok mu? Sizin için alalım" — destek WhatsApp bağlantısı */
+  /** Destek WhatsApp bağlantısı (arama çalışmazsa alternatif) */
   domainRequestHref: string;
   onDomainChange: (domain: string | null) => void;
+  /** Bekleyen "yeni alan adı" talebi */
+  initialRequest?: DomainRequest | null;
+  onRequestChange?: (request: DomainRequest | null) => void;
 }) {
   const [domain, setDomain] = useState(initialDomain);
   const [draft, setDraft] = useState(initialDomain ?? "");
@@ -180,17 +188,15 @@ export function KurumsalDomainCard({
 
       {domain ? <DomainStatusDetails domain={domain} status={status} loading={pending === "check"} /> : null}
 
-      <div className="mt-5 flex flex-col gap-2 rounded-xl border border-dashed border-slate-300 p-4 text-sm sm:flex-row sm:items-center sm:justify-between dark:border-slate-700">
-        <span className="text-muted-foreground">Alan adınız yok mu? Sizin için alalım ve bağlayalım.</span>
-        <a
-          href={domainRequestHref}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex shrink-0 items-center gap-2 rounded-lg bg-[#25D366] px-4 py-2 font-semibold text-white"
-        >
-          <MessageCircle className="size-4" /> Bize yazın
-        </a>
-      </div>
+      {!domain ? (
+        <div className="mt-5">
+          <KurumsalDomainSearch
+            initialRequest={initialRequest}
+            domainRequestHref={domainRequestHref}
+            onRequestChange={onRequestChange}
+          />
+        </div>
+      ) : null}
     </Card>
   );
 }

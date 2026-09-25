@@ -9,6 +9,8 @@ import { KurumsalWizard, type KurumsalWizardContext } from "@/components/dashboa
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { getKurumsalPublishState, KURUMSAL_PUBLISH_STATE_LABELS } from "@/lib/kurumsal/domain";
+import type { DomainRequest } from "@/lib/kurumsal/domain-requests";
 import type { KurumsalContent, KurumsalSiteRecord } from "@/lib/kurumsal/schema";
 
 // Ayarlar → Kurumsal Site: durum kartı (Yayında / Taslak / Kurulmadı),
@@ -31,6 +33,7 @@ export function KurumsalSettingsPanel(props: {
   planName: string;
   initialSite: KurumsalSiteRecord | null;
   initialDomain: string | null;
+  initialRequest: DomainRequest | null;
   domainRequestHref: string;
   defaults: KurumsalContent;
   ctx: KurumsalWizardContext;
@@ -70,6 +73,7 @@ function KurumsalUpsell({ upgradeHref, planName }: { upgradeHref: string; planNa
 function EntitledPanel({
   initialSite,
   initialDomain,
+  initialRequest,
   domainRequestHref,
   defaults,
   autoOpen = false,
@@ -78,13 +82,19 @@ function EntitledPanel({
   autoOpen?: boolean;
   initialSite: KurumsalSiteRecord | null;
   initialDomain: string | null;
+  initialRequest: DomainRequest | null;
   domainRequestHref: string;
   defaults: KurumsalContent;
   ctx: KurumsalWizardContext;
 }) {
   const router = useRouter();
   const [domain, setDomain] = useState(initialDomain);
-  const ctx: KurumsalWizardContext = { ...baseCtx, publicUrl: domain ? `https://${domain}` : null };
+  const [domainRequest, setDomainRequest] = useState(initialRequest);
+  // Alan adı yoksa site katalog adresinde /kurumsal'da yayınlanır.
+  const ctx: KurumsalWizardContext = {
+    ...baseCtx,
+    publicUrl: domain ? `https://${domain}` : `${baseCtx.catalogUrl}/kurumsal`,
+  };
   const [site, setSite] = useState(initialSite);
   const [wizardOpen, setWizardOpen] = useState(autoOpen);
   // Her açılışta sihirbaz son kayıtlı içerikle sıfırdan kurulsun.
@@ -94,6 +104,7 @@ function EntitledPanel({
   const [copied, setCopied] = useState(false);
 
   const published = Boolean(site?.is_published);
+  const publishState = getKurumsalPublishState(published, domain);
 
   function openWizard() {
     setWizardSession((n) => n + 1);
@@ -159,10 +170,10 @@ function EntitledPanel({
                 <h2 className="text-lg font-semibold">Kurumsal Site</h2>
                 {!site ? (
                   <Badge variant="neutral">Kurulmadı</Badge>
-                ) : published ? (
-                  <Badge variant="success">Yayında</Badge>
                 ) : (
-                  <Badge variant="warning">Taslak</Badge>
+                  <Badge variant={publishState === "draft" ? "warning" : "success"}>
+                    {KURUMSAL_PUBLISH_STATE_LABELS[publishState]}
+                  </Badge>
                 )}
               </div>
               <p className="mt-1 max-w-xl text-sm leading-6 text-muted-foreground">
@@ -186,12 +197,7 @@ function EntitledPanel({
                 <Button variant="secondary" onClick={openWizard}>
                   <Pencil className="size-4" /> Düzenle
                 </Button>
-                <Button
-                  variant={published ? "secondary" : "primary"}
-                  onClick={togglePublish}
-                  disabled={toggling || (!published && !ctx.publicUrl)}
-                  title={!published && !ctx.publicUrl ? "Yayınlamak için önce alan adı bağlayın." : undefined}
-                >
+                <Button variant={published ? "secondary" : "primary"} onClick={togglePublish} disabled={toggling}>
                   {toggling ? <Loader2 className="size-4 animate-spin" /> : null}
                   {published ? "Yayından kaldır" : "Yayınla"}
                 </Button>
@@ -207,9 +213,8 @@ function EntitledPanel({
         <div className="mt-5 flex flex-col gap-2 rounded-xl bg-muted px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="min-w-0">
             <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Sitenizin adresi</p>
-            <p className="mt-0.5 break-all text-sm font-semibold">{ctx.publicUrl ?? "Alan adı bağlanmadı"}</p>
+            <p className="mt-0.5 break-all text-sm font-semibold">{ctx.publicUrl}</p>
           </div>
-          {ctx.publicUrl ? (
           <div className="flex shrink-0 gap-2">
             <Button variant="ghost" onClick={copyUrl} className="py-2">
               {copied ? <Check className="size-4" /> : <Copy className="size-4" />} {copied ? "Kopyalandı" : "Kopyala"}
@@ -225,11 +230,15 @@ function EntitledPanel({
               </a>
             ) : null}
           </div>
-          ) : null}
         </div>
-        {!ctx.publicUrl ? (
-          <p className="mt-3 text-xs font-medium text-amber-700 dark:text-amber-400">
-            Yayında olması için alan adı bağlayın (aşağıdaki &quot;Alan adı&quot; bölümü). Bağlanana kadar site kimseye görünmez.
+        {!domain && domainRequest ? (
+          <p className="mt-3 text-xs text-muted-foreground">
+            Alan adı talebiniz bekliyor: <span className="font-semibold text-foreground">{domainRequest.domain}</span>. Bağlanınca site
+            otomatik oraya taşınır.
+          </p>
+        ) : !domain ? (
+          <p className="mt-3 text-xs text-muted-foreground">
+            Kendi alan adınızı bağlayınca site otomatik oraya taşınır (aşağıdaki &quot;Alan adı&quot; bölümü).
           </p>
         ) : !published ? (
           <p className="mt-3 text-xs text-muted-foreground">
@@ -245,10 +254,12 @@ function EntitledPanel({
       </Card>
 
       <KurumsalDomainCard
-        key={domain ?? "yok"}
+        key={`${domain ?? "yok"}-${domainRequest?.id ?? "talep-yok"}`}
         initialDomain={domain}
         domainRequestHref={domainRequestHref}
         onDomainChange={handleDomainChange}
+        initialRequest={domainRequest}
+        onRequestChange={setDomainRequest}
       />
 
       <Card className="flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between">
@@ -279,6 +290,8 @@ function EntitledPanel({
           initialDomain={domain}
           domainRequestHref={domainRequestHref}
           onDomainChange={handleDomainChange}
+          initialRequest={domainRequest}
+          onRequestChange={setDomainRequest}
         />
       ) : null}
     </div>

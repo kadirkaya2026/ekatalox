@@ -1,9 +1,11 @@
 // Self-servis kayıt başvuruları — her açılışta güncel liste.
 export const dynamic = "force-dynamic";
 
+import { AdminDomainRequestsPanel } from "@/components/admin/admin-domain-requests-panel";
 import { AdminSignupsPanel } from "@/components/admin/admin-signups-panel";
 import { Header } from "@/components/dashboard/header";
 import { listSignupRequests, SIGNUP_PAGE_SIZE, SIGNUP_STATUSES } from "@/lib/admin/self-service";
+import { listDomainRequestsForAdmin } from "@/lib/kurumsal/domain-requests";
 import type { SignupRequestStatus } from "@/lib/types";
 
 export default async function AdminSignupsPage({
@@ -27,6 +29,8 @@ export default async function AdminSignupsPage({
   } catch (error) {
     loadError = error instanceof Error ? error.message : "Başvurular okunamadı.";
   }
+  // Kurumsal site "Yeni alan adı seç" talepleri (0135); tablo yoksa boş liste.
+  const domainRequests = await listDomainRequestsForAdmin();
 
   return (
     <div className="space-y-6">
@@ -37,6 +41,13 @@ export default async function AdminSignupsPage({
       />
 
       <AdminSignupsPanel initial={initial} loadError={loadError} />
+
+      <Header
+        eyebrow="Başvurular"
+        title="Alan adı talepleri"
+        description="Kurumsal site sihirbazından gelen 'Yeni alan adı seç' talepleri. Alan adını Vercel'den satın alıp tenant'ın kurumsal_domain'ine yazdıktan sonra durumu 'Satın alındı' yapın."
+      />
+      <AdminDomainRequestsPanel initial={domainRequests} />
     </div>
   );
 }

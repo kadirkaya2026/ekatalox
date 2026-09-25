@@ -43,9 +43,8 @@ export async function POST(request: Request) {
     !tenant ||
     tenant.status !== "active" ||
     isTrialExpired(tenant) ||
-    // Kurumsal site yalnız üst pakette ve kendi alan adı bağlıyken var.
-    !hasKurumsalSiteAccess(tenant) ||
-    !tenant.kurumsal_domain
+    // Kurumsal site yalnız üst pakette var.
+    !hasKurumsalSiteAccess(tenant)
   ) {
     return NextResponse.json({ error: "Firma bulunamadı." }, { status: 404 });
   }

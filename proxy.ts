@@ -341,6 +341,9 @@ async function maybeServeLegacyBrowserNotice({
   );
 }
 
+// Katalog adresindeki kurumsal site (path modu) dosya yolları.
+const KURUMSAL_PATH_FILES = new Set(["/kurumsal/robots.txt", "/kurumsal/sitemap.xml"]);
+
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
@@ -359,7 +362,9 @@ export async function proxy(request: NextRequest) {
     // istemiyor. Muaf tutulmazsa istek kapıya yönlenip 307 ile geri döner.
     pathname.startsWith("/f/") ||
     pathname === "/favicon.ico" ||
-    /\.[a-zA-Z0-9]+$/.test(pathname)
+    // Platform adresindeki kurumsal robots/sitemap (/kurumsal/robots.txt)
+    // uzantılı olsa da aşağıdaki /kurumsal dalına düşmeli.
+    (/\.[a-zA-Z0-9]+$/.test(pathname) && !KURUMSAL_PATH_FILES.has(pathname))
   ) {
     return NextResponse.next();
   }
@@ -401,10 +406,18 @@ export async function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Katalog adresindeki (alt alan adı / özel alan adı) eski /kurumsal yolları:
-  // kurumsal site artık yalnız tenant'ın kendi kök alan adında. Alan adı
-  // bağlı, paket kapsıyor ve site yayındaysa oradaki karşılığına 301; yoksa
-  // 404. Kanonik custom_domain yönlendirmesinden ÖNCE (çift 301 olmasın).
+  // Katalog adresindeki (alt alan adı / özel alan adı) /kurumsal yolları.
+  // Paket kapsamıyor ya da site yayında değilse 404. Kendi alan adı bağlıysa
+  // oradaki karşılığına 301 (kanonik custom_domain yönlendirmesinden ÖNCE,
+  // çift 301 olmasın). Alan adı yoksa PATH MODU: site burada, /kurumsal
+  // altında servis edilir — şifre/yaş/kota kapısı yok, noindex yok, bilerek
+  // Google'a açık:
+  //   /kurumsal              → /store/{sub}/kurumsal
+  //   /kurumsal/kategori/*   → /store/{sub}/kurumsal/kategori/*
+  //   /kurumsal/urun/*       → /store/{sub}/kurumsal/urun/*
+  //   /kurumsal/robots.txt   → /store/{sub}/kurumsal/robots
+  //   /kurumsal/sitemap.xml  → /store/{sub}/kurumsal/sitemap
+  //   diğer /kurumsal/*      → 404
   if (
     hostResolution.kind === "storefront" &&
     hostResolution.subdomain &&
@@ -415,16 +428,40 @@ export async function proxy(request: NextRequest) {
       getStorefrontTenant(subdomain),
     );
     const kurumsalDomain = kurumsalTenant?.kurumsal_domain?.trim().toLowerCase();
-
-    if (
-      kurumsalTenant &&
-      kurumsalDomain &&
+    const kurumsalLive =
+      Boolean(kurumsalTenant) &&
       hasKurumsalSiteAccess(kurumsalTenant) &&
-      (await cachedKurumsalPublished(kurumsalTenant.id))
-    ) {
+      (await cachedKurumsalPublished(kurumsalTenant!.id));
+
+    if (kurumsalLive && kurumsalDomain) {
       const rest = pathname.slice("/kurumsal".length) || "/";
       const target = new URL(rest, `https://${kurumsalDomain}`);
       return NextResponse.redirect(target, 301);
+    }
+
+    let kurumsalInternalPath: string | null = null;
+    if (kurumsalLive) {
+      if (pathname === "/kurumsal") kurumsalInternalPath = `/store/${subdomain}/kurumsal`;
+      else if (/^\/kurumsal\/(kategori|urun)\/[^/]+\/?$/.test(pathname)) {
+        kurumsalInternalPath = `/store/${subdomain}${pathname.replace(/\/$/, "")}`;
+      } else if (pathname === "/kurumsal/robots.txt") kurumsalInternalPath = `/store/${subdomain}/kurumsal/robots`;
+      else if (pathname === "/kurumsal/sitemap.xml") kurumsalInternalPath = `/store/${subdomain}/kurumsal/sitemap`;
+    }
+
+    if (kurumsalInternalPath) {
+      // Kanonik adres (custom_domain) varsa önce oraya; kurumsal site orada da aynı yolda.
+      const canonicalRedirect = await maybeRedirectStorefrontRequest({
+        request,
+        hostResolution,
+        normalizedHost,
+        pathname,
+      });
+      if (canonicalRedirect) {
+        return canonicalRedirect;
+      }
+      const kurumsalUrl = request.nextUrl.clone();
+      kurumsalUrl.pathname = kurumsalInternalPath;
+      return NextResponse.rewrite(kurumsalUrl);
     }
 
     const notFoundUrl = request.nextUrl.clone();

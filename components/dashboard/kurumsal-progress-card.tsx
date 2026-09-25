@@ -1,25 +1,26 @@
 import Link from "next/link";
 import { ArrowRight, Building2, CheckCircle2, Circle, Lock } from "lucide-react";
 import { Card } from "@/components/ui/card";
+import { getKurumsalPublishState, KURUMSAL_PUBLISH_STATE_LABELS } from "@/lib/kurumsal/domain";
 import type { KurumsalSiteRecord } from "@/lib/kurumsal/schema";
 import { cn } from "@/lib/utils";
 
 // Genel Bakış → "Kurumsal sitenizi kurun" kartı. Katalog kurulum kartının
 // altında, ondan daha sade (ikincil) durur. İlerleme gerçek veriden:
-// alan adı bağlı, unvan, başlık+slogan, hakkımızda, en az 1 özellik, yayında.
+// unvan, başlık+slogan, hakkımızda, en az 1 özellik, yayında. Kendi alan adı
+// İSTEĞE BAĞLI (site eKatalox adresinde de yayınlanır), yüzdeye girmez.
 // Paket kapsamıyorsa kilitli küçük kart (Ayarlar → Kurumsal Site'deki
 // yükseltme kartına gider). Market tenant'larda hiç gösterilmez (çağıran
 // taraf); %100 ve yayındaysa kaybolur.
 
-export function getKurumsalProgress(site: KurumsalSiteRecord | null, kurumsalDomain: string | null | undefined) {
+export function getKurumsalProgress(site: KurumsalSiteRecord | null) {
   const content = site?.content;
   const steps = [
-    { id: "domain", title: "Alan adını bağla", done: Boolean(kurumsalDomain) },
     { id: "company", title: "Firma bilgileri", done: Boolean(content?.legal_name?.trim()) },
     { id: "headline", title: "Başlık ve slogan", done: Boolean(content?.headline.trim() && content?.tagline.trim()) },
     { id: "about", title: "Hakkımızda", done: Boolean(content?.about.some((p) => p.trim())) },
     { id: "highlights", title: "Neden biz", done: Boolean(content?.highlights.length) },
-    { id: "publish", title: "Yayınla", done: Boolean(site?.is_published && kurumsalDomain) },
+    { id: "publish", title: "Yayınla", done: Boolean(site?.is_published) },
   ];
   const completed = steps.filter((step) => step.done).length;
   return { steps, completed, percent: Math.round((completed / steps.length) * 100) };
@@ -50,9 +51,10 @@ export function KurumsalProgressCard({
     );
   }
 
-  const { steps, completed, percent } = getKurumsalProgress(site, kurumsalDomain);
+  const { steps, completed, percent } = getKurumsalProgress(site);
   if (completed === steps.length) return null;
   const next = steps.find((step) => !step.done);
+  const publishState = getKurumsalPublishState(Boolean(site?.is_published), kurumsalDomain);
 
   return (
     <Card className="p-5">
@@ -67,6 +69,18 @@ export function KurumsalProgressCard({
             <span className="text-xs text-muted-foreground">
               {completed}/{steps.length} adım
             </span>
+            {site ? (
+              <span
+                className={cn(
+                  "rounded-full px-2 py-0.5 text-[11px] font-semibold",
+                  publishState === "draft"
+                    ? "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300"
+                    : "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-200",
+                )}
+              >
+                {KURUMSAL_PUBLISH_STATE_LABELS[publishState]}
+              </span>
+            ) : null}
           </div>
           <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
             <div className="h-full rounded-full bg-emerald-600" style={{ width: `${percent}%` }} />

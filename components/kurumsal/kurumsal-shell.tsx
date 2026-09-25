@@ -1,12 +1,13 @@
+import { kurumsalPath } from "@/lib/kurumsal/domain";
 import { cn } from "@/lib/utils";
 
 // Kurumsal sitenin ortak iskeleti: üst çubuk + alt bilgi. Ana sayfa
 // (/kurumsal), kategori ve ürün sayfaları ile paneldeki sihirbaz önizlemesi
 // aynı bileşeni kullanır. Sunucu bileşeni uyumlu (hook/olay yok).
 //
-// Site tenant'ın kendi kök alan adında yayınlanır (bkz. proxy.ts
-// maybeServeKurumsalHost): bağlantılar köke göre ("/", "/kategori/..",
-// "/urun/..", "/#basvuru"). "Bayi Girişi" MUTLAK adresle katalog/sipariş
+// Site ya tenant'ın kendi kök alan adında (basePath "") ya da katalog
+// adresinde /kurumsal altında (basePath "/kurumsal") yayınlanır (bkz.
+// proxy.ts); bağlantılar kurumsalPath ile tabana göre kurulur. "Bayi Girişi" MUTLAK adresle katalog/sipariş
 // ekranına (custom_domain ya da {sub}.ekatalox.com) gider — orada şifre
 // kapısı karşılar. preview=true iken tüm bağlantılar "#" olur.
 
@@ -21,8 +22,10 @@ export interface KurumsalShellProps {
   applyHref: string | null;
   /** Katalog/sipariş ekranının mutlak adresi ("Bayi Girişi") */
   catalogUrl: string;
-  /** Ana sayfada "" (çapa bağlantıları), alt sayfalarda "/" */
-  navBase: "" | "/";
+  /** "" alan adı modu, "/kurumsal" platform adresi */
+  basePath: "" | "/kurumsal";
+  /** true: ana sayfa (çapa bağlantıları sayfa içi), false: alt sayfa (ana sayfaya döner) */
+  isHome: boolean;
   showAbout?: boolean;
   preview?: boolean;
   children: React.ReactNode;
@@ -45,18 +48,20 @@ export function KurumsalShell({
   isWhiteLabel,
   applyHref,
   catalogUrl,
-  navBase,
+  basePath,
+  isHome,
   showAbout = true,
   preview = false,
   children,
 }: KurumsalShellProps) {
+  const anchor = (id: string) => (isHome ? `#${id}` : kurumsalPath(basePath, `#${id}`));
   const nav = [
-    { href: `${navBase}#urunler`, label: "Ürünler" },
-    { href: `${navBase}#neden-biz`, label: "Neden Biz" },
-    ...(showAbout ? [{ href: `${navBase}#hakkimizda`, label: "Hakkımızda" }] : []),
-    { href: `${navBase}#iletisim`, label: "İletişim" },
+    { href: anchor("urunler"), label: "Ürünler" },
+    { href: anchor("neden-biz"), label: "Neden Biz" },
+    ...(showAbout ? [{ href: anchor("hakkimizda"), label: "Hakkımızda" }] : []),
+    { href: anchor("iletisim"), label: "İletişim" },
   ];
-  const homeHref = navBase ? "/" : "#";
+  const homeHref = isHome ? "#" : kurumsalPath(basePath, "/");
 
   return (
     <div
@@ -150,14 +155,16 @@ export function KurumsalBreadcrumb({ items }: { items: Array<{ label: string; hr
 /** Fiyatsız ürün kartı (ana sayfa öne çıkanlar + kategori sayfası). */
 export function KurumsalProductCard({
   product,
+  basePath,
   preview,
 }: {
   product: { id: string; name: string; sku: string; imageUrl: string | null };
+  basePath: "" | "/kurumsal";
   preview?: boolean;
 }) {
   return (
     <a
-      href={kurumsalHref(`/urun/${product.id}`, preview)}
+      href={kurumsalHref(kurumsalPath(basePath, `/urun/${product.id}`), preview)}
       className="group flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white transition hover:-translate-y-0.5 hover:shadow-lg"
     >
       <div className="flex aspect-square items-center justify-center p-4">

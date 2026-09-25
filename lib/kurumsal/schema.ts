@@ -16,6 +16,17 @@ import {
 
 const HEX_COLOR_RE = /^#[0-9a-fA-F]{6}$/;
 
+/** Karakter sınırları — şema ve sihirbaz sayaçları/maxLength aynı kaynaktan. */
+export const KURUMSAL_LIMITS = {
+  eyebrow: 60,
+  headline: 90,
+  tagline: 260,
+  aboutParagraph: 1200,
+  highlightTitle: 60,
+  highlightBody: 240,
+  legalName: 160,
+} as const;
+
 function trimmed(max: number, label: string) {
   return z
     .string()
@@ -43,8 +54,12 @@ const imageUrlSchema = z
   );
 
 export const kurumsalHighlightSchema = z.object({
-  title: z.string().trim().min(1, "Başlık boş olamaz.").max(60, "Başlık en fazla 60 karakter olabilir."),
-  body: trimmed(240, "Açıklama"),
+  title: z
+    .string()
+    .trim()
+    .min(1, "Başlık boş olamaz.")
+    .max(KURUMSAL_LIMITS.highlightTitle, `Başlık en fazla ${KURUMSAL_LIMITS.highlightTitle} karakter olabilir.`),
+  body: trimmed(KURUMSAL_LIMITS.highlightBody, "Açıklama"),
 });
 
 export const kurumsalBadgeSchema = z.object({
@@ -61,13 +76,23 @@ export const kurumsalSectionsSchema = z.object({
 
 export const kurumsalContentSchema = z.object({
   sector: z.string().trim().min(1).max(40),
-  eyebrow: trimmed(60, "Üst etiket"),
-  headline: z.string().trim().min(1, "Ana başlık boş olamaz.").max(90, "Ana başlık en fazla 90 karakter olabilir."),
-  tagline: trimmed(260, "Slogan"),
+  eyebrow: trimmed(KURUMSAL_LIMITS.eyebrow, "Üst etiket"),
+  headline: z
+    .string()
+    .trim()
+    .min(1, "Ana başlık boş olamaz.")
+    .max(KURUMSAL_LIMITS.headline, `Ana başlık en fazla ${KURUMSAL_LIMITS.headline} karakter olabilir.`),
+  tagline: trimmed(KURUMSAL_LIMITS.tagline, "Slogan"),
   about: z
-    .array(z.string().trim().min(1).max(1200, "Bir paragraf en fazla 1200 karakter olabilir."))
+    .array(
+      z
+        .string()
+        .trim()
+        .min(1)
+        .max(KURUMSAL_LIMITS.aboutParagraph, `Bir paragraf en fazla ${KURUMSAL_LIMITS.aboutParagraph} karakter olabilir.`),
+    )
     .max(4, "Hakkımızda en fazla 4 paragraf olabilir."),
-  legal_name: optionalText(160, "Unvan"),
+  legal_name: optionalText(KURUMSAL_LIMITS.legalName, "Unvan"),
   phone: optionalText(40, "Telefon"),
   founded_year: z.preprocess(
     (value) => (value === "" || value === null ? undefined : value),
@@ -124,7 +149,8 @@ export function defaultKurumsalContent(
 ): KurumsalContent {
   const sector = resolveSectorKey(tenant.sector);
   const preset = getKurumsalPreset(sector);
-  const firma = settings.storefront_title?.trim() || tenant.company_name;
+  // {firma}: resmi firma adı; mağaza başlığı slogan içerebilir ("X - Kaliteyi Keşfet!").
+  const firma = tenant.company_name?.trim() || settings.storefront_title?.trim() || "";
   const vars = { firma, musteri: DEFAULT_CUSTOMER_TYPE.dative };
   const description = settings.storefront_description?.trim() ?? "";
   const presetAbout = renderTemplate(preset.about[0], vars);

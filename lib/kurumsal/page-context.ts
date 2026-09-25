@@ -1,7 +1,12 @@
 import { getStorefrontTenantCached, getTenantStorefrontSettings } from "@/lib/data";
 import { isTrialExpired } from "@/lib/billing/trial";
 import { appEnv } from "@/lib/env";
-import { buildCatalogOrigin, buildKurumsalOrigin, hasKurumsalSiteAccess } from "@/lib/kurumsal/domain";
+import {
+  buildCatalogOrigin,
+  buildKurumsalOrigin,
+  getKurumsalBasePath,
+  hasKurumsalSiteAccess,
+} from "@/lib/kurumsal/domain";
 import { resolveKurumsalAccent, resolveKurumsalHero } from "@/lib/kurumsal/format";
 import type { KurumsalContent } from "@/lib/kurumsal/schema";
 import { getGateBranding } from "@/lib/storefront/gate-branding";
@@ -15,7 +20,9 @@ import type { KurumsalContact } from "@/components/kurumsal/kurumsal-view";
 // Tüm okumalar önbellekli (getStorefrontTenantCached, getTenantStorefrontSettings,
 // getKurumsalSiteCached) — ISR sayfaları dinamiğe düşmez.
 // null: tenant yok / askıda / deneme bitmiş / paket kapsamıyor / kurumsal
-// alan adı bağlı değil / kurumsal site yok ya da yayında değil.
+// site yok ya da yayında değil. İki mod (sayfalar header okumaz, tenant
+// verisinden türetilir): kurumsal_domain varsa alan adı kökü (basePath ""),
+// yoksa katalog adresinde /kurumsal (basePath "/kurumsal").
 
 export interface KurumsalPageContext {
   tenant: Tenant;
@@ -26,8 +33,12 @@ export interface KurumsalPageContext {
   wordmark: string | null;
   contact: KurumsalContact;
   isWhiteLabel: boolean;
-  /** https://{kurumsal_domain} — canonical/OG/sitemap adresleri */
+  /** Site tabanı: https://{kurumsal_domain} ya da https://{katalog}/kurumsal — alt sayfa adresleri buna eklenir */
   kurumsalOrigin: string;
+  /** Ana sayfanın mutlak adresi (canonical) */
+  homeUrl: string;
+  /** "" (alan adı modu) ya da "/kurumsal" (platform adresi) */
+  basePath: "" | "/kurumsal";
   /** Katalog/sipariş ekranı ("Bayi Girişi") */
   catalogUrl: string;
 }
@@ -35,9 +46,8 @@ export interface KurumsalPageContext {
 export async function getKurumsalPageContext(subdomain: string): Promise<KurumsalPageContext | null> {
   const tenant = await getStorefrontTenantCached(subdomain);
   if (!tenant || tenant.status === "suspended" || isTrialExpired(tenant)) return null;
-  // Yalnız en üst paket + kendi alan adı bağlı tenant'larda kurumsal site var.
-  const kurumsalOrigin = buildKurumsalOrigin(tenant.kurumsal_domain);
-  if (!hasKurumsalSiteAccess(tenant) || !kurumsalOrigin) return null;
+  // Yalnız en üst pakette kurumsal site var.
+  if (!hasKurumsalSiteAccess(tenant)) return null;
 
   const [settings, site] = await Promise.all([
     getTenantStorefrontSettings(tenant.id),
@@ -47,6 +57,9 @@ export async function getKurumsalPageContext(subdomain: string): Promise<Kurumsa
 
   const branding = getGateBranding(subdomain);
   const content = site.content;
+  const catalogUrl = buildCatalogOrigin(tenant, appEnv.rootDomain);
+  const domainOrigin = buildKurumsalOrigin(tenant.kurumsal_domain);
+  const kurumsalOrigin = domainOrigin ?? `${catalogUrl}/kurumsal`;
 
   return {
     tenant,
@@ -67,7 +80,9 @@ export async function getKurumsalPageContext(subdomain: string): Promise<Kurumsa
     contact: buildKurumsalContact(tenant, settings),
     isWhiteLabel: isWhiteLabelStorefront(tenant),
     kurumsalOrigin,
-    catalogUrl: buildCatalogOrigin(tenant, appEnv.rootDomain),
+    homeUrl: domainOrigin ? `${domainOrigin}/` : kurumsalOrigin,
+    basePath: getKurumsalBasePath(tenant.kurumsal_domain),
+    catalogUrl,
   };
 }
 

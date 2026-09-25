@@ -87,8 +87,7 @@ export function DealerApplicationsManager({
         </div>
         <h2 className="text-lg font-semibold">Henüz başvuru yok</h2>
         <p className="max-w-lg text-sm leading-6 text-muted-foreground">
-          Kurumsal sitenizin (<span className="font-medium text-foreground">/kurumsal</span>) altındaki &quot;Bayimiz olun&quot;
-          formunu dolduran firmalar burada listelenir. Firma adı, yetkili, telefon ve il bilgisiyle gelir; arayıp durumunu
+          Kurumsal sitenizdeki &quot;Bayimiz olun&quot; formunu dolduran firmalar burada listelenir. Firma adı, yetkili, telefon ve il bilgisiyle gelir; arayıp durumunu
           buradan işaretlersiniz.
         </p>
         {!formLive ? (

@@ -237,3 +237,66 @@ export async function getKurumsalDomainStatus(apex: string): Promise<KurumsalDom
     records: records.length ? records : connected ? [] : fallbackRecords,
   };
 }
+
+/* ───────────── Alan adı arama (registrar) ───────────── */
+// "Yeni alan adı seç": müsaitlik + fiyat tek çağrıda.
+//   POST /v1/registrar/domains/search  { domains: [...] } → results[{domain, available, years?, price?, premium?}]
+//   GET  /v1/registrar/tlds/supported                    → ["com", "net", ...]
+// (Eski /v4/domains/status ve /v4/domains/price uçları artık spec'te yok.)
+// Satın alma bilerek YOK: ekip Vercel panelinden alır, sonra bağlar.
+
+export type RegistrarSearchRow = {
+  domain: string;
+  available: boolean;
+  years?: number;
+  price?: number;
+  renewalPrice?: number;
+  premium?: boolean;
+};
+
+export type RegistrarSearchOutcome =
+  | { ok: true; rows: RegistrarSearchRow[] }
+  | { ok: false; configured: boolean; message: string };
+
+const SUPPORTED_TLDS_TTL_MS = 60 * 60_000;
+let supportedTldsCache: { value: Set<string> | null; expires: number } | null = null;
+
+/** Vercel'in satabildiği uzantılar (1 saat bellekte). Alınamazsa null. */
+export async function getRegistrarSupportedTlds(): Promise<Set<string> | null> {
+  if (!isVercelDomainApiConfigured()) return null;
+  if (supportedTldsCache && supportedTldsCache.expires > Date.now()) return supportedTldsCache.value;
+  const result = await vercelRequest<string[]>("GET", "/v1/registrar/tlds/supported");
+  const value =
+    result.ok && Array.isArray(result.data)
+      ? new Set(result.data.map((tld) => String(tld).toLowerCase().replace(/^\./, "")))
+      : null;
+  supportedTldsCache = { value, expires: Date.now() + (value ? SUPPORTED_TLDS_TTL_MS : 60_000) };
+  return value;
+}
+
+function friendlyRegistrarError(status: number, code?: string, message?: string): string {
+  if (status === 401 || status === 403) return "Alan adı servisine erişim yetkisi yok; eKatalox ekibine bildirin.";
+  if (status === 429) return "Alan adı servisi yoğun; biraz sonra tekrar deneyin.";
+  if (status === 400) return "Alan adı servisi bu adı kabul etmedi; farklı bir ad deneyin.";
+  if (status === 0) return "Alan adı servisine ulaşılamadı; biraz sonra tekrar deneyin.";
+  return message ? `Alan adı servisi hata verdi (${code ?? status}).` : "Alan adı servisi yanıt vermedi.";
+}
+
+/** Müsaitlik + fiyat. Env yoksa configured:false ile döner (panel "kontrol edilemiyor" gösterir). */
+export async function searchRegistrarDomains(domains: string[]): Promise<RegistrarSearchOutcome> {
+  if (!isVercelDomainApiConfigured()) {
+    return { ok: false, configured: false, message: "Alan adı arama servisi bu ortamda yapılandırılmamış." };
+  }
+  const result = await vercelRequest<{ results?: RegistrarSearchRow[] }>("POST", "/v1/registrar/domains/search", {
+    body: { domains },
+  });
+  if (!result.ok || !Array.isArray(result.data?.results)) {
+    console.error("[vercel-domains] registrar search hatası:", result.status, result.data?.error?.message);
+    return {
+      ok: false,
+      configured: true,
+      message: friendlyRegistrarError(result.status, result.data?.error?.code, result.data?.error?.message),
+    };
+  }
+  return { ok: true, rows: result.data.results };
+}

@@ -1,7 +1,7 @@
-// Kurumsal site ana sayfası: tenant'ın KENDİ kök alan adında (ör.
-// lucatech.com.tr, tenants.kurumsal_domain) proxy.ts'in "/" isteğini buraya
-// yeniden yazmasıyla açılır; şifre kapısı yok, bilerek Google'a açık. Yalnız
-// "kurumsal_site" paketinde ve alan adı bağlıyken yayınlanır. Fiyat
+// Kurumsal site ana sayfası. İki adres (proxy.ts yeniden yazar): tenant'ın
+// KENDİ kök alan adı (kurumsal_domain, ör. lucatech.com.tr → "/") ya da alan
+// adı yoksa katalog adresinde /kurumsal. Şifre kapısı yok, bilerek Google'a
+// açık. Yalnız "kurumsal_site" paketinde ve yayındaysa. Fiyat
 // göstermez; ürünleri fiyatsız katalogdan listeler, "Bayi Girişi" ile
 // şifreli vitrine, "Bayimiz Olun" ile başvuru formuna (#basvuru) ya da
 // WhatsApp'a yönlendirir. İçerik panelde "Ayarlar → Kurumsal Site"
@@ -41,10 +41,10 @@ export async function generateMetadata(
     title: { absolute: `${tenant.company_name} | ${content.eyebrow || "Kurumsal"}` },
     description,
     icons: buildStorefrontIcons(settings.site_favicon_url, tenant),
-    alternates: { canonical: `${ctx.kurumsalOrigin}/` },
+    alternates: { canonical: ctx.homeUrl },
     openGraph: {
       type: "website",
-      url: `${ctx.kurumsalOrigin}/`,
+      url: ctx.homeUrl,
       siteName: tenant.company_name,
       title: tenant.company_name,
       description,
@@ -73,6 +73,7 @@ export default async function KurumsalPage(props: PageProps<"/store/[subdomain]/
       data={data}
       isWhiteLabel={ctx.isWhiteLabel}
       catalogUrl={ctx.catalogUrl}
+      basePath={ctx.basePath}
     />
   );
 }

@@ -1,4 +1,4 @@
-// Kurumsal site ürün sayfası (kurumsal alan adında /urun/[id]): tek ürünün görselleri,
+// Kurumsal site ürün sayfası (/urun/[id]; platform adresinde /kurumsal/urun/[id]): tek ürünün görselleri,
 // kodu, açıklaması ve stok durumu — FİYATSIZ. Herkese açık ve Google'a açık
 // (JSON-LD Product, fiyat/offer içermez). Gizli kategorideki ya da başka
 // bayinin ürünü 404. ISR: okumalar unstable_cache içinde.
@@ -7,6 +7,7 @@ export const revalidate = 300;
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { KurumsalBreadcrumb, KurumsalShell } from "@/components/kurumsal/kurumsal-shell";
+import { kurumsalPath } from "@/lib/kurumsal/domain";
 import { titleCaseTr, whatsappLink } from "@/lib/kurumsal/format";
 import { getKurumsalPageContext } from "@/lib/kurumsal/page-context";
 import {
@@ -88,7 +89,7 @@ export default async function KurumsalProductPage(props: PageProps<"/store/[subd
 
   const { content, tenant } = ctx;
   const applyHref = content.sections.form
-    ? "/#basvuru"
+    ? kurumsalPath(ctx.basePath, "#basvuru")
     : whatsappLink(ctx.contact.whatsapp, `Merhaba, ${tenant.company_name} bayisi olmak istiyorum.`);
   const askWa = whatsappLink(
     ctx.contact.whatsapp,
@@ -121,7 +122,8 @@ export default async function KurumsalProductPage(props: PageProps<"/store/[subd
       isWhiteLabel={ctx.isWhiteLabel}
       applyHref={applyHref}
       catalogUrl={ctx.catalogUrl}
-      navBase="/"
+      basePath={ctx.basePath}
+      isHome={false}
       showAbout={content.about.length > 0}
     >
       <script
@@ -132,9 +134,9 @@ export default async function KurumsalProductPage(props: PageProps<"/store/[subd
       <div className="mx-auto max-w-6xl px-4 py-8 sm:py-12">
         <KurumsalBreadcrumb
           items={[
-            { label: "Ana sayfa", href: "/" },
+            { label: "Ana sayfa", href: kurumsalPath(ctx.basePath, "/") },
             ...(product.category && categoryName
-              ? [{ label: categoryName, href: `/kategori/${product.category.id}` }]
+              ? [{ label: categoryName, href: kurumsalPath(ctx.basePath, `/kategori/${product.category.id}`) }]
               : []),
             { label: product.name },
           ]}
