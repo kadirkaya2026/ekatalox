@@ -8,7 +8,7 @@ import {
   getPendingDomainRequest,
   sendDomainRequestEmail,
 } from "@/lib/kurumsal/domain-requests";
-import { buildSearchCandidates } from "@/lib/kurumsal/domain-search";
+import { buildSearchCandidates, isAffordableResult, isCheckableTld, mapSearchResults } from "@/lib/kurumsal/domain-search";
 import { ensureTenantPlanFeatureResponse } from "@/lib/tenancy/guards";
 
 // Alan adı talebi (domain_requests, 0135).
@@ -49,6 +49,26 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Uzantısıyla birlikte tam bir alan adı seçin. Örn: firmaniz.com" }, { status: 400 });
   }
   const domain = candidates.domains[0];
+
+  // Sunucu tarafı fiyat/müsaitlik teyidi: eski veya önbellekli bir sonuçla
+  // pahalı ya da dolu bir alan adı talep edilemesin. Vercel'e ulaşılamazsa
+  // (anahtar yok) talep yine alınır, ekip elle kontrol eder.
+  const supportedTlds = await getRegistrarSupportedTlds();
+  if (isCheckableTld(domain, supportedTlds)) {
+    const outcome = await searchRegistrarDomains([domain]);
+    if (outcome.ok) {
+      const row = mapSearchResults([domain], outcome.rows, supportedTlds)[0];
+      if (row?.available === false) {
+        return NextResponse.json({ error: "Bu alan adı dolu görünüyor; başka bir ad deneyin." }, { status: 400 });
+      }
+      if (row?.available === true && !isAffordableResult(row)) {
+        return NextResponse.json(
+          { error: "Bu alan adı fiyat sınırımızın üzerinde; listedeki başka bir uzantıyı seçin." },
+          { status: 400 },
+        );
+      }
+    }
+  }
 
   const existing = await getPendingDomainRequest(tenant.id);
   if (existing) {

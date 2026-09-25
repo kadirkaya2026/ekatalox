@@ -3,6 +3,7 @@ import { isRateLimited } from "@/lib/api/rate-limit";
 import { getSessionContext } from "@/lib/auth/session";
 import {
   buildSearchCandidates,
+  isAffordableResult,
   isCheckableTld,
   mapSearchResults,
   type DomainSearchResult,
@@ -55,7 +56,13 @@ export async function POST(request: Request) {
   } else {
     const outcome = await searchRegistrarDomains(toQuery);
     value = outcome.ok
-      ? { results: mapSearchResults(toQuery, outcome.rows, supportedTlds).filter((row) => row.available !== null) }
+      ? {
+          // Dolu olanlar bilgi için kalır; boşta olanlardan yalnız fiyat sınırı
+          // altındakiler listelenir (pahalı/premium olan hiç görünmez).
+          results: mapSearchResults(toQuery, outcome.rows, supportedTlds).filter(
+            (row) => row.available === false || isAffordableResult(row),
+          ),
+        }
       : {
           results: [],
           warning: outcome.configured

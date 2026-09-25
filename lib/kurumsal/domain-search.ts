@@ -16,6 +16,18 @@ export const SEARCH_TLDS = ["com", "net", "org", "co"] as const;
 
 export const UNCHECKABLE_NOTE = "Bu uzantı için müsaitlik kontrolü yapılamıyor";
 
+/**
+ * Listelenecek en yüksek alan adı fiyatı (USD/yıl). Müşterinin seçtiğini
+ * ekip satın almak zorunda kaldığı için pahalı/premium alan adları hiç
+ * gösterilmez (kullanıcı kararı, 25 Eyl 2026).
+ */
+export const MAX_DOMAIN_PRICE_USD = 13.5;
+
+/** Boşta VE fiyatı sınırın altında VE premium değil → listelenebilir. */
+export function isAffordableResult(row: Pick<DomainSearchResult, "available" | "price" | "premium">): boolean {
+  return row.available === true && typeof row.price === "number" && row.price <= MAX_DOMAIN_PRICE_USD && !row.premium;
+}
+
 export interface DomainSearchResult {
   domain: string;
   /** true boşta, false dolu, null kontrol edilemedi */
