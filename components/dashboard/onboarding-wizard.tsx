@@ -588,8 +588,8 @@ function ThemeStep({ data, presets, isDone, onDone, onNext }: StepProps) {
       const payload = {
         theme_key: preset.settings.theme_key,
         layout_key: preset.settings.layout_key,
-        brand_primary_color: null,
-        brand_accent_color: null,
+        // Marka renkleri (brand_primary/accent_color, brand_palette) gönderilmez:
+        // tema seçmek tenant'ın renklerini sıfırlamamalı (25 Eyl 2026).
         ...(data.canUseAdvancedAppearance
           ? {
               font_key: preset.settings.font_key,
