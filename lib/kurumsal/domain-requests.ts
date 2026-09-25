@@ -75,21 +75,6 @@ export async function createDomainRequest(params: {
   return { ok: true, request: toRequest(data as Record<string, unknown>) };
 }
 
-/** Tenant kendi bekleyen talebini iptal eder (yalnız status=new). */
-export async function cancelDomainRequest(tenantId: string, requestId: string): Promise<boolean> {
-  const supabase = createSupabaseAdminClient();
-  if (!supabase) return false;
-  const { data, error } = await supabase
-    .from("domain_requests")
-    .update({ status: "cancelled", updated_at: new Date().toISOString() })
-    .eq("tenant_id", tenantId)
-    .eq("id", requestId)
-    .eq("status", "new")
-    .select("id")
-    .maybeSingle();
-  return !error && Boolean(data);
-}
-
 /** Süper admin listesi: en yeni en üstte, tenant adıyla. */
 export async function listDomainRequestsForAdmin(limit = 200): Promise<AdminDomainRequest[]> {
   const supabase = createSupabaseAdminClient();

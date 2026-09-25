@@ -10,8 +10,12 @@ import { cn } from "@/lib/utils";
 
 // "Yeni alan adı seç": arama kutusu → sonuç satırları (Boşta / Dolu /
 // Kontrol edilemiyor) → seçim → talep (POST /api/tenant/kurumsal/domain/request).
-// Talep varken bekleyen kart gösterilir (iptal edilebilir). Satın alma ve
-// bağlama ekipçe yapılır; kurumsal_domain burada yazılmaz.
+// Talep varken bekleyen kart gösterilir. Tenant talebi İPTAL EDEMEZ (biz
+// satın almış olabiliriz; kullanıcı kuralı 25 Eyl): iptal yalnız süper
+// adminden (Başvurular → Alan adı talepleri), müşteri arayıp isterse.
+// Admin iptal edince status=cancelled olur, getPendingDomainRequest yalnız
+// status=new döndürdüğü için burada arama ekranı yeniden açılır. Satın alma
+// ve bağlama ekipçe yapılır; kurumsal_domain burada yazılmaz.
 
 type SearchResponse = { results?: DomainSearchResult[]; warning?: string; error?: string };
 type RequestResponse = { request?: DomainRequest | null; emailSent?: boolean; error?: string };
@@ -31,7 +35,7 @@ export function KurumsalDomainSearch({
   const [results, setResults] = useState<DomainSearchResult[] | null>(null);
   const [warning, setWarning] = useState<string | null>(null);
   const [selected, setSelected] = useState<DomainSearchResult | null>(null);
-  const [pending, setPending] = useState<null | "search" | "request" | "cancel">(null);
+  const [pending, setPending] = useState<null | "search" | "request">(null);
   const [error, setError] = useState<string | null>(null);
   const [emailNote, setEmailNote] = useState<string | null>(null);
 
@@ -93,27 +97,6 @@ export function KurumsalDomainSearch({
     }
   }
 
-  async function cancel() {
-    if (!request || !window.confirm(`${request.domain} talebi iptal edilsin mi?`)) return;
-    setError(null);
-    setPending("cancel");
-    try {
-      const res = await fetch("/api/tenant/kurumsal/domain/request", { method: "DELETE" });
-      const data = (await res.json().catch(() => null)) as RequestResponse | null;
-      if (!res.ok) {
-        setError(data?.error ?? "Talep iptal edilemedi.");
-        return;
-      }
-      setRequest(null);
-      setSelected(null);
-      onRequestChange?.(null);
-    } catch {
-      setError("Bağlantı kurulamadı.");
-    } finally {
-      setPending(null);
-    }
-  }
-
   if (request) {
     return (
       <div className="rounded-xl border border-emerald-200 bg-emerald-50/60 p-5 dark:border-emerald-900 dark:bg-emerald-950/30">
@@ -128,11 +111,13 @@ export function KurumsalDomainSearch({
               
             </p>
             {emailNote ? <p className="mt-1 text-xs text-amber-700">{emailNote}</p> : null}
-            <div className="mt-3">
-              <Button variant="ghost" onClick={cancel} disabled={pending !== null} className="px-3 py-2 text-rose-600 hover:text-rose-700">
-                {pending === "cancel" ? <Loader2 className="size-4 animate-spin" /> : <XCircle className="size-4" />} Talebi iptal et
-              </Button>
-            </div>
+            <p className="mt-2 text-xs text-emerald-900/70 dark:text-emerald-100/70">
+              Alan adını değiştirmek isterseniz{" "}
+              <a href={domainRequestHref} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 font-semibold text-emerald-700 dark:text-emerald-400">
+                <MessageCircle className="size-3" /> WhatsApp&apos;tan bize yazın
+              </a>
+              .
+            </p>
           </div>
         </div>
         {error ? (
@@ -220,7 +205,7 @@ export function KurumsalDomainSearch({
       ) : null}
 
       <p className="mt-4 text-xs text-muted-foreground">
-        Alan adı ücreti ve satın alma ekibimizce sizinle görüşülür.{" "}
+        Alan adı ücreti paketinize dahildir; satın alma ve bağlantı ekibimizce yapılır, ek ödeme istenmez.{" "}
         <a href={domainRequestHref} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 font-semibold text-emerald-700 dark:text-emerald-400">
           <MessageCircle className="size-3" /> WhatsApp&apos;tan da yazabilirsiniz
         </a>

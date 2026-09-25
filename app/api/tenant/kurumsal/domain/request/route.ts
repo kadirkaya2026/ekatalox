@@ -3,19 +3,19 @@ import { z } from "zod";
 import { getSessionContext } from "@/lib/auth/session";
 import { getTenantStorefrontSettings } from "@/lib/data";
 import {
-  cancelDomainRequest,
   createDomainRequest,
   getPendingDomainRequest,
   sendDomainRequestEmail,
 } from "@/lib/kurumsal/domain-requests";
 import { buildSearchCandidates, isAffordableResult, isCheckableTld, mapSearchResults } from "@/lib/kurumsal/domain-search";
 import { ensureTenantPlanFeatureResponse } from "@/lib/tenancy/guards";
+import { getRegistrarSupportedTlds, searchRegistrarDomains } from "@/lib/vercel/domains";
 
 // Alan adı talebi (domain_requests, 0135).
 // GET    : bekleyen talep (varsa)
 // POST   : { domain, price?, period?, available? } → kaydet + ekibe e-posta.
 //          kurumsal_domain'e DOKUNMAZ: önce ekip alır, sonra bağlar.
-// DELETE : bekleyen talebi iptal et.
+// DELETE yok (bkz. dosya sonu): iptal yalnız süper adminden.
 
 const postSchema = z.object({
   domain: z.string().trim().min(3).max(253),
@@ -106,14 +106,6 @@ export async function POST(request: Request) {
   return NextResponse.json({ request: created.request, emailSent: email.sent }, { status: 201 });
 }
 
-export async function DELETE() {
-  const guard = await ensureTenantPlanFeatureResponse("kurumsal_site", { blockDemoWrite: true });
-  if (guard) return guard;
-  const session = await getSessionContext();
-  const tenant = session.tenant!;
-  const existing = await getPendingDomainRequest(tenant.id);
-  if (!existing) return NextResponse.json({ request: null });
-  const ok = await cancelDomainRequest(tenant.id, existing.id);
-  if (!ok) return NextResponse.json({ error: "Talep iptal edilemedi." }, { status: 500 });
-  return NextResponse.json({ request: null });
-}
+// DELETE yok: tenant talebini iptal edemez (biz alan adını satın almış
+// olabiliriz). İptal yalnız süper adminden: /api/admin/domain-requests/[id]
+// status=cancelled → tenant panelinde seçim ekranı yeniden açılır.

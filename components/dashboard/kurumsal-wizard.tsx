@@ -449,7 +449,7 @@ function DomainStep({
   const [mode, setMode] = useState<"own" | "new" | null>(initialDomain ? "own" : initialRequest ? "new" : null);
   const options = [
     { key: "own" as const, icon: Globe, title: "Kendi alan adım var", body: "firmaniz.com gibi bir alan adınız varsa bağlayın; DNS kayıtlarını size gösteririz." },
-    { key: "new" as const, icon: Search, title: "Yeni alan adı seç", body: "Boşta olan uzantıları ve fiyatı görün; seçtiğinizi sizin için alıp bağlayalım." },
+    { key: "new" as const, icon: Search, title: "Yeni alan adı seç", body: "Boşta olan uzantıları görün; seçtiğinizi paketiniz dahilinde sizin için alıp bağlayalım." },
   ];
 
   return (
