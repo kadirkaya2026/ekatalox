@@ -314,6 +314,27 @@ const TILE_GRADIENTS = [
   "linear-gradient(135deg, #0f172a 0%, #334155 100%)",
 ];
 
+/**
+ * Ana kategori için temsil görseli: özel kutucuk görseli → banner → standart
+ * ikon → kategorideki (alt kategoriler dahil) bir ürünün fotoğrafı →
+ * sunucudan gelen temsilci görsel. Kategori kutucukları ve masaüstü kategori
+ * seçicisi (storefront-header-category-picker) aynı sırayı kullanır.
+ */
+export function resolveCategoryImage(
+  category: CategoryNode,
+  flatCategories: Category[],
+  products: StorefrontProduct[],
+  categoryRepresentativeImages: Record<string, string> = {},
+): string | null {
+  const customImage = category.tile_image_url ?? category.banner_item?.image_url ?? null;
+  if (customImage) return customImage;
+  const standardIcon = DEFAULT_CATEGORY_ICONS[category.name] ?? null;
+  if (standardIcon) return standardIcon;
+  const ids = new Set(getDescendantCategoryIds(flatCategories, category.id));
+  const representative = products.find((product) => product.image_url && ids.has(product.category_id));
+  return representative?.image_url ?? categoryRepresentativeImages[category.id] ?? null;
+}
+
 export function StorefrontCategoryTiles({
   categories,
   flatCategories,

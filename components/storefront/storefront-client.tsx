@@ -128,6 +128,7 @@ import {
   StorefrontCategoryTiles,
   StorefrontHeroCluster,
   StorefrontPromoTiles,
+  resolveCategoryImage,
 } from "@/components/storefront/storefront-homepage-extras";
 import { getStorefrontLayout } from "@/lib/storefront/layouts";
 import { getNextOpening, isStoreOpenNow, type NextOpening } from "@/lib/storefront/business-hours";
@@ -1616,6 +1617,17 @@ export function StorefrontClient({
     [categories],
   );
   const topCategories = categoryTree;
+  // Masaüstü kategori seçicideki görseller (arama kutusunun solu).
+  const headerCategoryImages = useMemo(
+    () =>
+      Object.fromEntries(
+        topCategories.map((category) => [
+          category.id,
+          resolveCategoryImage(category, categories, products, categoryRepresentativeImages),
+        ]),
+      ),
+    [topCategories, categories, products, categoryRepresentativeImages],
+  );
   const selectedCategoryIds = useMemo(() => {
     if (selectedCategoryId === "all") {
       return null;
@@ -4013,6 +4025,7 @@ export function StorefrontClient({
         onOpenCart={openCartDrawer}
         usesSidebarNav={usesSidebarNav}
         topCategories={topCategories}
+        categoryImages={headerCategoryImages}
         categories={categories}
         selectedCategoryId={selectedCategoryId}
         selectedTopCategoryId={selectedTopCategoryId}
