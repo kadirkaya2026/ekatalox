@@ -63,7 +63,8 @@ import {
   STOREFRONT_LOGO_SIZES,
   STOREFRONT_MODAL_PRODUCT_SIZES,
 } from "@/lib/storefront/image-sizes";
-import { getStorefrontSectionPath } from "@/lib/storefront/paths";
+import { getStorefrontProductPath, getStorefrontSectionPath } from "@/lib/storefront/paths";
+import { StorefrontProductDetailView } from "@/components/storefront/storefront-product-detail-view";
 import {
   getRequestedUnitQuantity,
   type SalesUnit,
@@ -959,6 +960,7 @@ export function StorefrontClient({
   isCatalogOnly = false,
   sectionMode = false,
   ads = null,
+  initialDetailProduct = null,
 }: {
   tenant: Tenant;
   categories: Category[];
@@ -990,6 +992,9 @@ export function StorefrontClient({
   // Ücretsiz plan: eKatalox reklam yerleşimleri (ürün kartı, pop-up, ürün
   // detayı, WhatsApp mesajı). null = reklam yok. Bkz. lib/ads/server.ts.
   ads?: StorefrontAdsConfig | null;
+  // Ürün sayfası (/urun/<slug>) doğrudan açıldığında sunucudan gelen ürün;
+  // liste yerine ürün görünümü çizilir (bkz. storefront-home-page.tsx).
+  initialDetailProduct?: StorefrontProduct | null;
 }) {
   const [cart, setCart] = useState<CartItem[]>(() => {
     if (typeof window === "undefined") {
@@ -1185,7 +1190,13 @@ export function StorefrontClient({
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>("all");
   const [selectedProduct, setSelectedProduct] = useState<StorefrontProduct | null>(null);
   const [previewProduct, setPreviewProduct] = useState<StorefrontProduct | null>(null);
-  const [deepLinkProducts, setDeepLinkProducts] = useState<StorefrontProduct[]>([]);
+  const [deepLinkProducts, setDeepLinkProducts] = useState<StorefrontProduct[]>(
+    initialDetailProduct ? [initialDetailProduct] : [],
+  );
+  // Ürün sayfası görünümü (27 Eyl 2026): açıkken liste gizlenir (DOM'da kalır,
+  // geri dönünce kaydırma yeri korunur), adres /urun/<slug> olur.
+  const [detailProduct, setDetailProduct] = useState<StorefrontProduct | null>(initialDetailProduct);
+  const listScrollYRef = useRef(0);
   // Bildirimle gelen duyuru metni (?bildirim=base64url json) Kampanyalar
   // panelinin üstünde kart olarak gösterilir; yoksa panel boş görünüyordu.
   const [announcement, setAnnouncement] = useState<{ title: string; body: string } | null>(null);
@@ -1924,9 +1935,15 @@ export function StorefrontClient({
     for (const product of deepLinkProducts) {
       map.set(product.id, product);
     }
+    for (const product of relatedPreviewProducts) {
+      if (!map.has(product.id)) map.set(product.id, product);
+    }
+    if (detailProduct && !map.has(detailProduct.id)) map.set(detailProduct.id, detailProduct);
     return map;
   }, [
     deepLinkProducts,
+    relatedPreviewProducts,
+    detailProduct,
     products,
     sections,
     promoProducts,
@@ -2055,9 +2072,10 @@ export function StorefrontClient({
     const known = productsById.get(urun);
     const open = (product: StorefrontProduct) => {
       if (cancelled) return;
-      setPreviewProduct(product);
-      setActivePreviewTab(null);
-      setActivePreviewImageIndex(0);
+      // Bildirim linki (?urun=id) artık ürün sayfasını açar (27 Eyl 2026).
+      setDetailProduct(product);
+      window.history.replaceState({ ekUrun: product.id }, "", getStorefrontProductPath(product));
+      window.scrollTo({ top: 0 });
     };
     if (known) { open(known); return; }
     void fetch(`/api/storefront/products-by-ids?${new URLSearchParams({ subdomain: analyticsSubdomain, ids: urun })}`)
@@ -2081,16 +2099,73 @@ export function StorefrontClient({
         return;
       }
 
-      setPreviewProduct(product);
-      setActivePreviewTab(null);
-      setActivePreviewImageIndex(0);
+      // Açılır pencere yerine ürün sayfası (27 Eyl 2026): adres değişir,
+      // liste gizlenip DOM'da kalır; geri tuşu popstate ile listeye döner.
+      if (!detailProduct) listScrollYRef.current = window.scrollY;
+      setPreviewProduct(null);
+      setDetailProduct(product);
+      window.history.pushState({ ekUrun: product.id, ekFromList: true }, "", getStorefrontProductPath(product));
+      window.scrollTo({ top: 0 });
 
       if (analyticsSubdomain) {
         trackStorefrontProductView(tenant.id, analyticsSubdomain, product.id);
       }
     },
-    [analyticsSubdomain, productsById, tenant.id],
+    [analyticsSubdomain, productsById, tenant.id, detailProduct],
   );
+
+  // Geri/ileri tuşu: history.state.ekUrun varsa o ürün, yoksa liste.
+  useEffect(() => {
+    if (initialDetailProduct) {
+      window.history.replaceState({ ...(window.history.state ?? {}), ekUrun: initialDetailProduct.id }, "");
+    }
+    const onPop = (event: PopStateEvent) => {
+      const id = (event.state as { ekUrun?: string } | null)?.ekUrun;
+      if (id) {
+        const product = productsByIdRef.current.get(id);
+        if (product) {
+          setDetailProduct(product);
+          window.scrollTo({ top: 0 });
+          return;
+        }
+        window.location.reload();
+        return;
+      }
+      setDetailProduct(null);
+      const y = listScrollYRef.current;
+      window.requestAnimationFrame(() => window.requestAnimationFrame(() => window.scrollTo({ top: y })));
+    };
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const productsByIdRef = useRef(productsById);
+  productsByIdRef.current = productsById;
+
+  function closeDetailToList(pushHome: boolean) {
+    if (!detailProduct) return;
+    const fromList = Boolean((window.history.state as { ekFromList?: boolean } | null)?.ekFromList);
+    if (!pushHome && fromList) {
+      window.history.back();
+      return;
+    }
+    setDetailProduct(null);
+    window.history.pushState({}, "", homeHref ?? "/");
+    window.scrollTo({ top: pushHome ? 0 : listScrollYRef.current });
+  }
+
+  function addDetailQuantity(product: StorefrontProduct, quantity: number) {
+    if (quantity <= 0) return;
+    setCart((current) => {
+      const existing = current.find((item) => item.id === product.id);
+      return existing
+        ? updateCartLineQuantity(current, product.id, existing.quantity + quantity)
+        : addToCart(current, product, quantity);
+    });
+    runCartFlight(product.id);
+    if (analyticsSubdomain) trackStorefrontCartAdd(analyticsSubdomain, product.id);
+  }
 
   /* Sepete ekleme geri bildirimi ----------------------------------------
      Uçuş animasyonu kaldırıldı (kullanıcı kararı, 1 Eyl 2026): geri
@@ -2311,18 +2386,19 @@ export function StorefrontClient({
   // kategorilerine genişletilir. Aynı kategori için sonuç oturum
   // boyunca önbelleğe alınır.
   useEffect(() => {
-    if (!previewProduct || !subdomain) {
+    const relatedTarget = previewProduct ?? detailProduct;
+    if (!relatedTarget || !subdomain) {
       setRelatedPreviewProducts([]);
       return;
     }
 
-    const lineage = getCategoryLineage(categories, previewProduct.category_id);
+    const lineage = getCategoryLineage(categories, relatedTarget.category_id);
     const parent = lineage.length >= 2 ? lineage[lineage.length - 2] : null;
     const matchCategoryIds = parent
       ? getDescendantCategoryIds(categories, parent.id)
-      : [previewProduct.category_id];
+      : [relatedTarget.category_id];
     const cacheKey = matchCategoryIds.slice().sort().join(",");
-    const productId = previewProduct.id;
+    const productId = relatedTarget.id;
 
     const applyResult = (list: StorefrontProduct[]) => {
       const filtered = list.filter((product) => product.id !== productId && product.is_in_stock);
@@ -2372,7 +2448,7 @@ export function StorefrontClient({
     return () => {
       abortController.abort();
     };
-  }, [previewProduct, subdomain, categories, recommendationSeed]);
+  }, [previewProduct, detailProduct, subdomain, categories, recommendationSeed]);
   const buildWhatsAppOrderMessage = useCallback(
     (pdfUrl?: string | null, trackingUrl?: string | null, locationUrl?: string | null) => {
       return buildWhatsAppMessage({
@@ -3035,6 +3111,7 @@ export function StorefrontClient({
   }, [fetchProductsPage, productPage, sectionMode]);
 
   function handleCategoryChange(categoryId: string) {
+    if (detailProduct) closeDetailToList(true);
     setSelectedCategoryId(categoryId);
     setHoveredCategoryId(null);
   }
@@ -3087,6 +3164,7 @@ export function StorefrontClient({
   }
 
   function handleSearchSubmit() {
+    if (detailProduct) closeDetailToList(true);
     setCommittedSearch(searchInput.trim());
   }
 
@@ -3116,11 +3194,12 @@ export function StorefrontClient({
   }
 
   useEffect(() => {
-    if (!previewProduct) {
+    const descriptionTarget = previewProduct ?? detailProduct;
+    if (!descriptionTarget) {
       return;
     }
 
-    const cachedDescription = descriptionCacheRef.current.get(previewProduct.id);
+    const cachedDescription = descriptionCacheRef.current.get(descriptionTarget.id);
 
     if (cachedDescription !== undefined) {
       setPreviewDescription(cachedDescription);
@@ -3151,7 +3230,7 @@ export function StorefrontClient({
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             subdomain,
-            productId: previewProduct.id,
+            productId: descriptionTarget.id,
           }),
           signal: abortController.signal,
         });
@@ -3180,7 +3259,7 @@ export function StorefrontClient({
         const description =
           typeof result.description === "string" ? result.description : null;
 
-        descriptionCacheRef.current.set(previewProduct.id, description);
+        descriptionCacheRef.current.set(descriptionTarget.id, description);
 
         if (!abortController.signal.aborted) {
           setPreviewDescription(description);
@@ -3202,7 +3281,7 @@ export function StorefrontClient({
     return () => {
       abortController.abort();
     };
-  }, [previewProduct, subdomain, t]);
+  }, [previewProduct, detailProduct, subdomain, t]);
 
   function openCartDrawer() {
     setIsCartOpen(true);
@@ -4070,7 +4149,38 @@ export function StorefrontClient({
               : "sticky-safe-bottom",
         )}
       >
-        <div className={layout.catalogShellClass}>
+        {detailProduct ? (
+          <StorefrontProductDetailView
+            key={detailProduct.id}
+            product={detailProduct}
+            categoryName={categories.find((category) => category.id === detailProduct.category_id)?.name ?? null}
+            cartQuantity={cart
+              .filter((item) => (item.product_id ?? item.id) === detailProduct.id || item.id === detailProduct.id)
+              .reduce((sum, item) => sum + item.quantity, 0)}
+            isMarketTenant={isMarketTenant}
+            description={previewProduct ? undefined : previewDescription}
+            descriptionLoading={previewDescriptionLoading}
+            onBack={() => closeDetailToList(false)}
+            onAdd={(quantity) => addDetailQuantity(detailProduct, quantity)}
+            onIncrease={() => handleIncreaseCartItem(detailProduct.id)}
+            onDecrease={() => handleDecreaseCartItem(detailProduct.id)}
+            onChooseVariants={() => handleOpenAddToCartModal(detailProduct.id)}
+            onOpenCart={openCartDrawer}
+            related={
+              relatedPreviewProducts.length ? (
+                <div>
+                  <h2 className={cn("mb-3 text-lg font-bold tracking-tight", theme.text)}>Aynı kategoriden</h2>
+                  <div className="scrollbar-hide -mx-1 -mt-2 flex gap-3 overflow-x-auto px-1 pb-1 pt-2">
+                    {relatedPreviewProducts.map((product) =>
+                      renderCrossSellCard(product, false, handleOpenProductDetail),
+                    )}
+                  </div>
+                </div>
+              ) : null
+            }
+          />
+        ) : null}
+        <div className={cn(layout.catalogShellClass, detailProduct && "hidden")}>
           {usesSidebarNav ? (
             <StorefrontCategorySidebarSlot>
               <StorefrontCategorySidebar
@@ -4532,7 +4642,7 @@ export function StorefrontClient({
       </AnimatePresence>
 
       <AnimatePresence>
-        {isMounted && !usesBottomNav && cart.length && !isStickyCartBarDismissed && !isCartOpen ? (
+        {isMounted && !usesBottomNav && cart.length && !isStickyCartBarDismissed && !isCartOpen && !detailProduct ? (
           <motion.div
             initial={{ opacity: 0, y: 18, scale: 0.96 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}

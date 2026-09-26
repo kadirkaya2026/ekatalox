@@ -1750,6 +1750,47 @@ export async function getStorefrontProductsByIds(params: {
   return rows.map((product) => toStorefrontProduct(product, params.priceListId, params.isCatalogOnly));
 }
 
+// Vitrin ürün sayfası (/urun/<slug>, 27 Eyl 2026): slug model kodu
+// (sku_code, büyük/küçük harf duyarsız) ya da ürün id'si. Model kodu URL'e
+// uygun değilse (boşluk, "|", nokta…) sayfa id ile açılır — bkz.
+// lib/storefront/paths.ts getStorefrontProductPath.
+const PRODUCT_UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+export async function getStorefrontProductBySlug(params: {
+  tenantId: string;
+  priceListId: string;
+  isCatalogOnly: boolean;
+  slug: string;
+}): Promise<StorefrontProduct | null> {
+  const slug = decodeURIComponent(params.slug).trim();
+  if (!slug) return null;
+  const base = { tenantId: params.tenantId, priceListId: params.priceListId, isCatalogOnly: params.isCatalogOnly };
+
+  if (PRODUCT_UUID_RE.test(slug)) {
+    return (await getStorefrontProductsByIds({ ...base, ids: [slug] }))[0] ?? null;
+  }
+  if (!/^[a-z0-9_-]+$/i.test(slug)) return null;
+
+  const supabaseAdmin = createSupabaseAdminClient();
+  if (!supabaseAdmin) {
+    const demo = demoProducts.find(
+      (product) => product.tenant_id === params.tenantId && product.sku_code.trim().toLowerCase() === slug.toLowerCase(),
+    );
+    return demo ? ((await getStorefrontProductsByIds({ ...base, ids: [demo.id] }))[0] ?? null) : null;
+  }
+
+  // ilike: "_" joker karakteri — kaçırılır; tam eşleşme aranır.
+  const { data } = await supabaseAdmin
+    .from("products")
+    .select("id, sku_code")
+    .eq("tenant_id", params.tenantId)
+    .ilike("sku_code", slug.replace(/_/g, "\\_"))
+    .limit(5);
+  const match = (data ?? []).find((row) => String(row.sku_code ?? "").trim().toLowerCase() === slug.toLowerCase());
+  if (!match) return null;
+  return (await getStorefrontProductsByIds({ ...base, ids: [String(match.id)] }))[0] ?? null;
+}
+
 // Anasayfadaki kategori kutucukları (StorefrontCategoryTiles) manuel bir
 // tile_image_url/banner yoksa "kategorideki bir ürünün fotoğrafı"na
 // düşüyor — ama eskiden bu, sadece anasayfanın YÜKLEDİĞİ ilk sayfa (60
