@@ -141,6 +141,12 @@ export function StorefrontProductDetailView({
   const inCart = cartQuantity > 0;
   const hasVariants = product.has_variants;
 
+  // Paket/koli bilgisi (adet + tutar) yalnız tıklanan butonlarda yazılır
+  // (27 Eyl 2026: ayrı bilgi kutuları buton sanılıyordu).
+  function unitInfo(count: number) {
+    return unitPrice !== null ? `${count} adet · ${formatCurrency(unitPrice * count, product.currency)}` : `${count} adet`;
+  }
+
   function quickPick(kind: "adet" | "paket" | "koli") {
     setPieces(kind === "adet" ? "1" : "");
     setPackages(kind === "paket" ? "1" : "");
@@ -334,27 +340,6 @@ export function StorefrontProductDetailView({
             {unitPrice !== null ? <span className={cn("text-sm", theme.textMuted)}>/ adet</span> : null}
           </div>
 
-          {(packageQty || cartonQty) ? (
-            <div className="mt-4 grid grid-cols-2 gap-2.5">
-              {packageQty ? (
-                <div className={cn("rounded-xl border px-3 py-2.5 text-xs", theme.border, theme.textMuted)}>
-                  Paket
-                  <b className={cn("block text-sm", theme.text)}>
-                    {packageQty} adet{unitPrice !== null ? ` · ${formatCurrency(unitPrice * packageQty, product.currency)}` : ""}
-                  </b>
-                </div>
-              ) : null}
-              {cartonQty ? (
-                <div className={cn("rounded-xl border px-3 py-2.5 text-xs", theme.border, theme.textMuted)}>
-                  Koli
-                  <b className={cn("block text-sm", theme.text)}>
-                    {cartonQty} adet{unitPrice !== null ? ` · ${formatCurrency(unitPrice * cartonQty, product.currency)}` : ""}
-                  </b>
-                </div>
-              ) : null}
-            </div>
-          ) : null}
-
           {product.is_in_stock && !hasVariants && !inCart ? (
             <>
               {(packageQty || cartonQty) ? (
@@ -376,7 +361,7 @@ export function StorefrontProductDetailView({
                         )}
                       >
                         {label}
-                        {count ? <span className="ml-1 text-xs font-medium opacity-75">({count})</span> : null}
+                        {count ? <span className="ml-1 text-xs font-medium opacity-75">· {unitInfo(count)}</span> : null}
                       </button>
                     ))}
                   </div>
@@ -404,7 +389,7 @@ export function StorefrontProductDetailView({
                   {flash?.key === "paket" ? (
                     <span className="inline-flex items-center gap-1"><Check className="size-4" /> +{packageQty} eklendi</span>
                   ) : (
-                    <>+ 1 Paket <span className="text-xs opacity-75">({packageQty})</span></>
+                    <>+ 1 Paket <span className="text-xs font-medium opacity-75">· {unitInfo(packageQty)}</span></>
                   )}
                 </button>
               ) : null}
@@ -420,7 +405,7 @@ export function StorefrontProductDetailView({
                   {flash?.key === "koli" ? (
                     <span className="inline-flex items-center gap-1"><Check className="size-4" /> +{cartonQty} eklendi</span>
                   ) : (
-                    <>+ 1 Koli <span className="text-xs opacity-75">({cartonQty})</span></>
+                    <>+ 1 Koli <span className="text-xs font-medium opacity-75">· {unitInfo(cartonQty)}</span></>
                   )}
                 </button>
               ) : null}
