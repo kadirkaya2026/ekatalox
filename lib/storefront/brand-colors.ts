@@ -237,6 +237,9 @@ export function applyBrandColorOverrides(
 
   if (has("stickyCart")) {
     next.stickyCartButton = cn(c.stickyCart.bg, c.stickyCart.fg, c.stickyCart.hoverBg, solidButtonHover);
+    // Sepet çekmecesindeki "Genel Toplam" ve Sepete Ekle penceresindeki
+    // "Toplam" kutusu temanın laciverti yerine sepet rengini alır (27 Eyl 2026).
+    next.cartDrawerSummary = cn(theme.cartDrawerSummary, c.stickyCart.bg, c.stickyCart.fg);
   }
 
   if (has("whatsappCheckout")) {
@@ -279,7 +282,10 @@ export function applyBrandColorOverrides(
     );
     next.quantityStepper = cn(
       theme.quantityStepper,
-      "border-slate-200 bg-white shadow-sm dark:border-0 dark:bg-neutral-800",
+      // dark: varyantı KULLANMA (27 Eyl 2026): Tailwind bu projede karanlık
+      // modu işletim sisteminden okuyor; açık temalı vitrinde bile kutu
+      // koyulaşıp koyu rakamlar okunmuyordu. Vitrinin kendi temasına göre seç.
+      colorScheme === "dark" ? "border-0 bg-neutral-800" : "border-slate-200 bg-white shadow-sm",
     );
   }
 
