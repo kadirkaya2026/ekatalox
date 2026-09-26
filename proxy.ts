@@ -104,6 +104,7 @@ async function cachedKurumsalPublished(tenantId: string): Promise<boolean> {
  *   /urun/*      → /store/{sub}/kurumsal/urun/*
  *   /robots.txt  → /store/{sub}/kurumsal/robots
  *   /sitemap.xml → /store/{sub}/kurumsal/sitemap
+ *   /llms.txt    → /store/{sub}/kurumsal/llms (yapay zekâ özeti)
  *   diğer        → kurumsal 404 (vitrin kapısına ASLA düşmez)
  * www.alanadi → alanadi 301. Paket/yayın kontrolü sayfaların kendisinde
  * (yoksa 404). Platform ve özel katalog alan adlarında null döner.
@@ -135,6 +136,8 @@ async function maybeServeKurumsalHost(request: NextRequest, pathname: string): P
     internalPath = `${base}/robots`;
   } else if (pathname === "/sitemap.xml") {
     internalPath = `${base}/sitemap`;
+  } else if (pathname === "/llms.txt") {
+    internalPath = `${base}/llms`;
   } else {
     // Bilinmeyen yol: kurumsal kapsamında olmayan bir rota → Next 404 sayfası.
     internalPath = `${base}/bulunamadi/yok`;
@@ -342,14 +345,16 @@ async function maybeServeLegacyBrowserNotice({
 }
 
 // Katalog adresindeki kurumsal site (path modu) dosya yolları.
-const KURUMSAL_PATH_FILES = new Set(["/kurumsal/robots.txt", "/kurumsal/sitemap.xml"]);
+const KURUMSAL_PATH_FILES = new Set(["/kurumsal/robots.txt", "/kurumsal/sitemap.xml", "/kurumsal/llms.txt"]);
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Kurumsal alan adında robots/sitemap tenant'a özel; diğer tüm hostlarda
   // eskisi gibi app/robots.ts ve app/sitemap.ts'e gider.
-  if (pathname === "/robots.txt" || pathname === "/sitemap.xml") {
+  // /llms.txt: kurumsal alan adında tenant'ın özeti; diğer hostlarda
+  // app/llms.txt/route.ts (yalnız pazarlama sitesinde içerik, gerisi 404).
+  if (pathname === "/robots.txt" || pathname === "/sitemap.xml" || pathname === "/llms.txt") {
     return (await maybeServeKurumsalHost(request, pathname)) ?? NextResponse.next();
   }
 
@@ -446,6 +451,7 @@ export async function proxy(request: NextRequest) {
         kurumsalInternalPath = `/store/${subdomain}${pathname.replace(/\/$/, "")}`;
       } else if (pathname === "/kurumsal/robots.txt") kurumsalInternalPath = `/store/${subdomain}/kurumsal/robots`;
       else if (pathname === "/kurumsal/sitemap.xml") kurumsalInternalPath = `/store/${subdomain}/kurumsal/sitemap`;
+      else if (pathname === "/kurumsal/llms.txt") kurumsalInternalPath = `/store/${subdomain}/kurumsal/llms`;
     }
 
     if (kurumsalInternalPath) {

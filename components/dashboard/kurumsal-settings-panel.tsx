@@ -250,6 +250,22 @@ function EntitledPanel({
           </p>
         ) : null}
 
+        {published && ctx.publicUrl ? (
+          <p className="mt-3 rounded-lg bg-emerald-50 px-3 py-2 text-xs leading-5 text-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-200">
+            Siteniz yapay zekâ aramalarına hazır: firma kartınız (schema.org) ve{" "}
+            <a
+              href={`${ctx.publicUrl.replace(/\/$/, "")}/llms.txt`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-semibold underline"
+            >
+              llms.txt
+            </a>{" "}
+            otomatik üretilir; ChatGPT, Gemini gibi asistanlar firmanızı, ürün gruplarınızı ve iletişim bilgilerinizi buradan
+            okur. Bilgileriniz değişince kendiliğinden güncellenir.
+          </p>
+        ) : null}
+
         {error ? (
           <p className="mt-3 text-sm text-rose-600" role="alert">
             {error}

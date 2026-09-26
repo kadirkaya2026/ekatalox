@@ -16,6 +16,7 @@ import { KurumsalView } from "@/components/kurumsal/kurumsal-view";
 import { getKurumsalPageContext } from "@/lib/kurumsal/page-context";
 import { getKurumsalDataCached } from "@/lib/storefront/kurumsal-data";
 import { buildStorefrontIcons } from "@/lib/storefront/white-label";
+import { buildKurumsalJsonLd } from "@/lib/kurumsal/ai-discovery";
 
 export function generateStaticParams() {
   return [];
@@ -60,7 +61,16 @@ export default async function KurumsalPage(props: PageProps<"/store/[subdomain]/
 
   const data = await getKurumsalDataCached(ctx.tenant.id);
 
+  // İşletme kartı (schema.org): Google ve yapay zekâ asistanları firmayı,
+  // iletişimi ve ürün gruplarını buradan okur (bkz. lib/kurumsal/ai-discovery.ts).
+  const jsonLd = buildKurumsalJsonLd(ctx, data);
+
   return (
+    <>
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }}
+    />
     <KurumsalView
       tenantName={ctx.tenant.company_name}
       subdomain={subdomain}
@@ -75,5 +85,6 @@ export default async function KurumsalPage(props: PageProps<"/store/[subdomain]/
       catalogUrl={ctx.catalogUrl}
       basePath={ctx.basePath}
     />
+    </>
   );
 }

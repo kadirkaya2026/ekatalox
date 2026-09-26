@@ -91,6 +91,7 @@ export const TOPTAN_PLANS: ToptanPlan[] = [
       "Profesyonel paketinin tamamı",
       "20.000 ürün, sınırsız fiyat listesi",
       "Kendi alan adınız (katalog.firmaniz.com)",
+      "Kurumsal tanıtım sitesi: Google ve yapay zekâ (ChatGPT, Gemini) aramalarında görünür",
       "Satış ve kârlılık raporu",
       "Öncelikli destek hattı",
       "Aylık 50.000 ziyaretçi",
