@@ -45,11 +45,14 @@ export function OrdersManager({
   initialPage,
   tenantName,
   isTekel,
+  isWholesale = false,
   storefrontOrigin = null,
 }: {
   initialPage: OrdersPage;
   tenantName: string;
   isTekel: boolean;
+  /** Toptancı/genel tenant: veresiye (market açık hesabı) gizlenir. */
+  isWholesale?: boolean;
   storefrontOrigin?: string | null;
 }) {
   const router = useRouter();
@@ -240,7 +243,7 @@ export function OrdersManager({
     };
     const payment = formatPaymentMethod(order.payment_method);
     // Telefonsuz siparişte (toptancı/genel tenant, 0127) WhatsApp düğmesi yok.
-    const waHref = buildOrderStatusWhatsAppHref({ order, status: order.status, tenantName, isTekel, trackingUrl });
+    const waHref = buildOrderStatusWhatsAppHref({ order, status: order.status, tenantName, isTekel, isWholesale, trackingUrl });
     return (
       <Card className="overflow-hidden p-0">
         {/* Üst şerit: geri + araçlar */}
@@ -353,7 +356,7 @@ export function OrdersManager({
           </div>
 
           {/* Veresiye: tekel/market açık hesabı */}
-          {order.credit_marked_at && !order.credit_paid_at ? (
+          {isWholesale ? null : order.credit_marked_at && !order.credit_paid_at ? (
             <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm">
               <div className="flex flex-wrap items-center gap-2">
                 <p className="inline-flex items-center gap-1.5 font-semibold text-red-800">
@@ -490,6 +493,7 @@ export function OrdersManager({
             {key === "all" ? "Tümü" : getStatusLabel(key, { isTekel })} ({page.counts[key] ?? 0})
           </button>
         ))}
+        {isWholesale ? null : (
         <button
           type="button"
           onClick={() => {
@@ -505,6 +509,7 @@ export function OrdersManager({
           <NotebookText className="size-4 shrink-0" />
           Veresiye ({page.creditOpenCount ?? 0})
         </button>
+        )}
       </div>
 
       <div className="flex flex-wrap items-end gap-2">

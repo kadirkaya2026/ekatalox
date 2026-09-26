@@ -35,6 +35,7 @@ export async function sendOrderStatusPush(params: {
   iconUrl: string | null;
   tenantName: string;
   isTekel: boolean;
+  isWholesale?: boolean;
   trackingUrl: string | null;
 }) {
   if (!hasWebPushEnv()) return;
@@ -56,7 +57,7 @@ export async function sendOrderStatusPush(params: {
   // adını tekrar etmiyoruz. Başlık = olay, gövde = numara + kısa açıklama.
   const payload = JSON.stringify({
     title: getPushTitle(params.status, params.isTekel),
-    body: `Sipariş ${params.orderNo} · ${getStatusDescription(params.status, { isTekel: params.isTekel })}`,
+    body: `Sipariş ${params.orderNo} · ${getStatusDescription(params.status, { isTekel: params.isTekel, isWholesale: params.isWholesale })}`,
     icon: params.iconUrl ?? undefined,
     url: params.trackingUrl ?? "/",
     tag: `order-${params.orderId}`,

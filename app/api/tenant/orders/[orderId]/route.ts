@@ -29,10 +29,6 @@ export async function PATCH(request: Request, ctx: { params: Promise<{ orderId: 
 
   const session = await getSessionContext();
   const tenant = session.tenant!;
-  if (tenant.business_type !== "market") {
-    return NextResponse.json({ error: "Bu özellik sadece market tipi hesaplar için kullanılabilir." }, { status: 403 });
-  }
-
   const { orderId } = await ctx.params;
   const body = await request.json().catch(() => null);
   const parsed = orderStatusPatchSchema.safeParse(body);
@@ -89,6 +85,7 @@ export async function PATCH(request: Request, ctx: { params: Promise<{ orderId: 
         status: order.status,
         tenantName: settings?.storefront_title?.trim() || tenant.company_name,
         isTekel: Boolean(tenant.is_tekel),
+        isWholesale: tenant.business_type !== "market",
         iconUrl: settings?.logo_url || settings?.site_favicon_url || null,
         trackingUrl: order.tracking_token ? `${origin}/siparis/${order.tracking_token}` : null,
       }).catch((err) => console.error("[push] gönderim hatası:", err));

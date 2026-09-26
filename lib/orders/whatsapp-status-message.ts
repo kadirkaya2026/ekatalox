@@ -10,6 +10,7 @@ export function buildOrderStatusWhatsAppHref(params: {
   status: OrderStatus;
   tenantName: string;
   isTekel: boolean;
+  isWholesale?: boolean;
   trackingUrl: string | null;
 }): string | null {
   // Telefonsuz sipariş (0127): gönderilecek numara yok.
@@ -21,7 +22,7 @@ export function buildOrderStatusWhatsAppHref(params: {
   const lines = [
     `Merhaba ${ad}, ${params.tenantName} — ${formatOrderNo(params.order)} numaralı siparişiniz:`,
     `✅ Durum: ${getStatusLabel(params.status, { isTekel: params.isTekel })}`,
-    getStatusDescription(params.status, { isTekel: params.isTekel }),
+    getStatusDescription(params.status, { isTekel: params.isTekel, isWholesale: params.isWholesale }),
   ];
   if (params.status === "cancelled" && params.order.cancel_reason) {
     lines.push(`Sebep: ${params.order.cancel_reason}`);

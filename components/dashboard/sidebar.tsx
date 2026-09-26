@@ -144,7 +144,6 @@ const tenantLinks: SidebarLink[] = [
     href: "/siparisler",
     label: "Siparişler",
     icon: ClipboardList,
-    requiredBusinessType: "market",
   },
   {
     href: "/reports",

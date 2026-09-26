@@ -10,10 +10,6 @@ export async function GET(request: Request) {
 
   const session = await getSessionContext();
   const tenant = session.tenant!;
-  if (tenant.business_type !== "market") {
-    return NextResponse.json({ error: "Bu özellik sadece market tipi hesaplar için kullanılabilir." }, { status: 403 });
-  }
-
   const url = new URL(request.url);
   const parsed = orderListQuerySchema.safeParse(Object.fromEntries(url.searchParams.entries()));
   if (!parsed.success) {

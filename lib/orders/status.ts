@@ -29,7 +29,28 @@ export function getStatusLabel(status: OrderStatus, options?: { isTekel?: boolea
 }
 
 /** Müşteriye giden açıklama cümlesi (takip sayfası, push, WhatsApp). */
-export function getStatusDescription(status: OrderStatus, options?: { isTekel?: boolean }) {
+// isWholesale: toptancı/genel tenant (27 Eyl 2026'dan beri onlarda da sipariş
+// yönetimi var) — kurye/"afiyet olsun" gibi market cümleleri yerine sade metin.
+export function getStatusDescription(
+  status: OrderStatus,
+  options?: { isTekel?: boolean; isWholesale?: boolean },
+) {
+  if (options?.isWholesale) {
+    switch (status) {
+      case "new":
+        return "Siparişiniz alındı, en kısa sürede onaylanacak.";
+      case "confirmed":
+        return "Siparişiniz onaylandı, hazırlığa alınıyor.";
+      case "preparing":
+        return "Siparişiniz hazırlanıyor.";
+      case "shipped":
+        return "Siparişiniz yola çıktı.";
+      case "delivered":
+        return "Siparişiniz teslim edildi. Teşekkür ederiz.";
+      case "cancelled":
+        return "Siparişiniz iptal edildi. Sorunuz için bizimle iletişime geçebilirsiniz.";
+    }
+  }
   switch (status) {
     case "new":
       return "Mağaza en kısa sürede onaylayacak.";

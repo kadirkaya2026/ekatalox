@@ -53,7 +53,7 @@ export default async function DashboardLayout({
     ? await Promise.all([
         getCurrentMonthVisitorCount(tenant.id),
         getTenantSuggestionNoticeCount(tenant.id),
-        tenant.business_type === "market" ? getTenantNewOrderCount(tenant.id) : Promise.resolve(0),
+        getTenantNewOrderCount(tenant.id),
       ])
     : [0, 0, 0];
 
@@ -106,7 +106,7 @@ export default async function DashboardLayout({
           />
         ) : null}
         {children}
-        {tenant?.business_type === "market" ? <NewOrderWatcher initialNewCount={newOrderCount} /> : null}
+        {tenant ? <NewOrderWatcher initialNewCount={newOrderCount} /> : null}
       </main>
       {trialExpired && tenant ? (
         <TrialExpiredModal
