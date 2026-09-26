@@ -448,9 +448,10 @@ function parseUnitCount(value: string) {
 // smooth olduğu için animasyon görünüm değişirken yarıda kesiliyordu;
 // çizimden sonra anında kaydırılır (27 Eyl 2026).
 function scrollWindowAfterRender(top: number) {
-  window.requestAnimationFrame(() =>
-    window.requestAnimationFrame(() => window.scrollTo({ top, behavior: "instant" })),
-  );
+  const go = () => window.scrollTo({ top, behavior: "instant" });
+  window.requestAnimationFrame(() => window.requestAnimationFrame(go));
+  // Arka plandaki sekmede rAF durur; zaman aşımı yedeği.
+  window.setTimeout(go, 60);
 }
 
 function QuantityStepper({
