@@ -163,6 +163,7 @@ const roleClasses = {
   activeCategory: {
     bg: "bg-[var(--ek-active-category)]",
     groupHoverText: "group-hover:text-[var(--ek-active-category)]",
+    focusRing: "focus:ring-[var(--ek-active-category-border)] focus:border-[var(--ek-active-category)]",
     fg: "text-[var(--ek-active-category-fg)]",
     text: "text-[var(--ek-active-category)]",
     border: "border-[var(--ek-active-category)]",
@@ -331,6 +332,7 @@ export function applyBrandColorOverrides(
     next.productTitle = cn(theme.productTitle, c.activeCategory.groupHoverText);
     next.categoryDropdownItemIcon = cn(theme.categoryDropdownItemIcon, c.activeCategory.groupHoverText);
     next.stockBadgeIn = cn(theme.stockBadgeIn, c.activeCategory.soft, c.activeCategory.text);
+    next.searchInput = cn(theme.searchInput, c.activeCategory.focusRing);
     next.cartInstallmentActive =
       colorScheme === "dark"
         ? cn("border-0", c.activeCategory.bg, c.activeCategory.fg)
