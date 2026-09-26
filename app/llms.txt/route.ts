@@ -19,7 +19,7 @@ export async function GET() {
 
   const site = `https://www.${appEnv.rootDomain}`;
   const plans = TOPTAN_PLANS.map((plan) => {
-    const price = plan.yearlyPrice ? `${formatTry(plan.yearlyPrice)} / yıl (KDV hariç)` : "Ücretsiz";
+    const price = plan.yearlyPrice ? `${formatTry(plan.yearlyPrice)} / yıl (KDV hariç)` : "0 ₺, süresiz";
     const limits = `${plan.productLimit.toLocaleString("tr-TR")} ürün, ${
       plan.priceListLimit === null ? "sınırsız" : plan.priceListLimit
     } fiyat listesi`;

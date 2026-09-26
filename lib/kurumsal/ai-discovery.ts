@@ -46,7 +46,7 @@ export function buildKurumsalJsonLd(ctx: KurumsalPageContext, data: KurumsalData
             itemListElement: data.categories.map((category) => ({
               "@type": "OfferCatalog",
               name: category.name,
-              url: `${ctx.kurumsalOrigin}${ctx.basePath}/kategori/${category.id}`,
+              url: `${ctx.kurumsalOrigin}/kategori/${category.id}`,
             })),
           },
         }
@@ -70,7 +70,8 @@ export function buildKurumsalJsonLd(ctx: KurumsalPageContext, data: KurumsalData
 
 export function buildKurumsalLlmsTxt(ctx: KurumsalPageContext, data: KurumsalData) {
   const { tenant, content, contact } = ctx;
-  const base = `${ctx.kurumsalOrigin}${ctx.basePath}`;
+  // kurumsalOrigin platform adresinde zaten /kurumsal içerir.
+  const base = ctx.kurumsalOrigin;
   const lines: string[] = [];
   lines.push(`# ${tenant.company_name}`);
   lines.push("");
