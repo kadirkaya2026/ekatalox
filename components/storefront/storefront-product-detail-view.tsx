@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { ArrowLeft, Check, Minus, Plus, Share2, ShoppingCart } from "lucide-react";
 import type { StorefrontProduct } from "@/lib/types";
 import { useStorefrontTheme } from "@/lib/storefront/theme-context";
@@ -117,6 +117,21 @@ export function StorefrontProductDetailView({
   const [packages, setPackages] = useState("");
   const [cartons, setCartons] = useState("");
   const [copied, setCopied] = useState(false);
+  // Sepete ekleme geri bildirimi (27 Eyl 2026: "+1 Paket" tıklanınca eklendiği
+  // anlaşılmıyordu): tıklanan buton ~1.5 sn "✓ +N eklendi", sayı vurgulanır,
+  // altta kısa bildirim çıkar.
+  const [flash, setFlash] = useState<{ key: string; amount: number; seq: number } | null>(null);
+  const flashTimer = useRef<number | null>(null);
+  useEffect(() => () => {
+    if (flashTimer.current) window.clearTimeout(flashTimer.current);
+  }, []);
+  function addWithFeedback(key: string, amount: number) {
+    if (amount <= 0) return;
+    onAdd(amount);
+    setFlash((prev) => ({ key, amount, seq: (prev?.seq ?? 0) + 1 }));
+    if (flashTimer.current) window.clearTimeout(flashTimer.current);
+    flashTimer.current = window.setTimeout(() => setFlash(null), 1600);
+  }
 
   const packageQty = !isMarketTenant && product.package_quantity ? product.package_quantity : null;
   const cartonQty = !isMarketTenant && product.carton_quantity ? product.carton_quantity : null;
@@ -195,7 +210,12 @@ export function StorefrontProductDetailView({
                 <button type="button" onClick={onDecrease} className="flex h-full w-10 items-center justify-center" aria-label="Azalt">
                   <Minus className="size-4" />
                 </button>
-                <span className="w-9 text-center text-base tabular-nums">{cartQuantity}</span>
+                <span
+                  key={flash?.seq ?? 0}
+                  className={cn("w-9 text-center text-base tabular-nums", flash && "animate-[ek-pop_0.45s_ease-out]")}
+                >
+                  {cartQuantity}
+                </span>
                 <button type="button" onClick={onIncrease} className="flex h-full w-10 items-center justify-center" aria-label="Artır">
                   <Plus className="size-4" />
                 </button>
@@ -220,7 +240,7 @@ export function StorefrontProductDetailView({
       <button
         type="button"
         disabled={!hasVariants && total <= 0}
-        onClick={() => (hasVariants ? onChooseVariants() : onAdd(total))}
+        onClick={() => (hasVariants ? onChooseVariants() : addWithFeedback("ekle", total))}
         className={cn(
           "flex h-14 w-full items-center justify-center gap-2 rounded-2xl px-4 text-base font-extrabold shadow-lg disabled:opacity-50",
           theme.primaryButton,
@@ -373,13 +393,35 @@ export function StorefrontProductDetailView({
           {inCart && !hasVariants && (packageQty || cartonQty) ? (
             <div className="mt-5 flex flex-wrap gap-2">
               {packageQty ? (
-                <button type="button" onClick={() => onAdd(packageQty)} className={cn("rounded-xl border px-3.5 py-2 text-sm font-semibold", theme.border, theme.text)}>
-                  + 1 Paket <span className="text-xs opacity-75">({packageQty})</span>
+                <button
+                  type="button"
+                  onClick={() => addWithFeedback("paket", packageQty)}
+                  className={cn(
+                    "rounded-xl px-3.5 py-2 text-sm font-semibold transition-colors",
+                    flash?.key === "paket" ? theme.primaryButton : cn("border", theme.border, theme.text),
+                  )}
+                >
+                  {flash?.key === "paket" ? (
+                    <span className="inline-flex items-center gap-1"><Check className="size-4" /> +{packageQty} eklendi</span>
+                  ) : (
+                    <>+ 1 Paket <span className="text-xs opacity-75">({packageQty})</span></>
+                  )}
                 </button>
               ) : null}
               {cartonQty ? (
-                <button type="button" onClick={() => onAdd(cartonQty)} className={cn("rounded-xl border px-3.5 py-2 text-sm font-semibold", theme.border, theme.text)}>
-                  + 1 Koli <span className="text-xs opacity-75">({cartonQty})</span>
+                <button
+                  type="button"
+                  onClick={() => addWithFeedback("koli", cartonQty)}
+                  className={cn(
+                    "rounded-xl px-3.5 py-2 text-sm font-semibold transition-colors",
+                    flash?.key === "koli" ? theme.primaryButton : cn("border", theme.border, theme.text),
+                  )}
+                >
+                  {flash?.key === "koli" ? (
+                    <span className="inline-flex items-center gap-1"><Check className="size-4" /> +{cartonQty} eklendi</span>
+                  ) : (
+                    <>+ 1 Koli <span className="text-xs opacity-75">({cartonQty})</span></>
+                  )}
                 </button>
               ) : null}
             </div>
@@ -399,6 +441,19 @@ export function StorefrontProductDetailView({
       </div>
 
       {related ? <div className="mt-6">{related}</div> : null}
+
+      {flash ? (
+        <div
+          key={flash.seq}
+          role="status"
+          className="pointer-events-none fixed inset-x-0 bottom-28 z-50 flex justify-center px-4 lg:bottom-8"
+        >
+          <div className={cn("flex items-center gap-2 rounded-2xl px-4 py-3 text-sm font-semibold shadow-2xl animate-[ek-toast_0.25s_ease-out]", theme.stickyCartButton)}>
+            <Check className="size-4 shrink-0" />
+            +{flash.amount} adet sepete eklendi · sepette {cartQuantity}
+          </div>
+        </div>
+      ) : null}
 
       {/* Mobil: altta sabit sepete ekle */}
       <div className={cn("fixed inset-x-0 bottom-0 z-40 border-t px-3.5 pb-[calc(env(safe-area-inset-bottom)+12px)] pt-3 lg:hidden", theme.surface, theme.border)}>
