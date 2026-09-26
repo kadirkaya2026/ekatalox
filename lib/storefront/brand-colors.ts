@@ -25,7 +25,10 @@ function getReadableForeground(hex: string): string {
   const g = Number.parseInt(normalized.slice(2, 4), 16);
   const b = Number.parseInt(normalized.slice(4, 6), 16);
   const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-  return luminance > 0.62 ? "#0f172a" : "#ffffff";
+  // Eşik 0.70: kutu turuncusu gibi (#F58F1E, ~0.63) sıcak renklerde beyaz
+  // yazı daha iyi durur (kullanıcı isteği, 26 Eyl 2026); sarı/açık tonlar
+  // yine koyu yazı alır.
+  return luminance > 0.7 ? "#0f172a" : "#ffffff";
 }
 
 export function hasBrandColors(settings: BrandColorSettings): boolean {
@@ -289,14 +292,11 @@ export function applyBrandColorOverrides(
     next.discountBadgeStrong = cn(c.discountBadge.bg, c.discountBadge.fg);
   }
 
-  // Koyu temada yarı saydam "soft" chip, temanın kendi koyu yeşil zemininin
-  // üstüne biniyor ve mavi yazıyla okunmuyordu (kullanıcı isteği, 17 Eyl
-  // 2026): koyu temada aktif kategori chip'i dolu marka rengi + ön renk.
+  // Aktif kategori chip'i her iki temada da DOLU marka rengi + okunur ön
+  // renk (26 Eyl 2026: açık temadaki yarı saydam zemin + koyu yazı
+  // beğenilmedi, "yazısı beyaz, kutu turuncusu standart olsun").
   const categoryColored = has("activeCategory");
-  const activeChip =
-    colorScheme === "dark"
-      ? cn(c.activeCategory.bg, c.activeCategory.fg, "border border-transparent")
-      : cn(c.activeCategory.soft, c.activeCategory.text, c.activeCategory.softBorder, "border");
+  const activeChip = cn(c.activeCategory.bg, c.activeCategory.fg, "border border-transparent");
 
   // Bölüm zeminleri yalnız açık temada (gece modu / Noir'de temanın koyu
   // renkleri korunur). Üst bar zemini değişince içindeki yazılar da
