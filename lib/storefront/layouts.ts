@@ -20,8 +20,8 @@ export const storefrontLayouts: Record<StorefrontLayoutKey, StorefrontLayout> = 
     categoryNav: "top-chips",
     // Mobilde 2 sütun: 3'lüde görsel küçük, ürün adı okunmuyordu
     // (kullanıcı isteği, 1 Eyl 2026). sm ve üzeri eski düzeninde.
-    productGridClass: "grid grid-cols-2 gap-2.5 sm:grid-cols-3 sm:gap-3 lg:grid-cols-4 xl:grid-cols-5",
-    sectionProductGridClass: "grid grid-cols-2 gap-2.5 sm:grid-cols-3 sm:gap-3 lg:grid-cols-4 xl:grid-cols-5",
+    productGridClass: "grid grid-cols-2 gap-2.5 sm:grid-cols-3 sm:gap-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6",
+    sectionProductGridClass: "grid grid-cols-2 gap-2.5 sm:grid-cols-3 sm:gap-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6",
     listContainerClass: "",
     catalogShellClass: "min-w-0",
   },
@@ -30,9 +30,9 @@ export const storefrontLayouts: Record<StorefrontLayoutKey, StorefrontLayout> = 
     productView: "grid-card",
     categoryNav: "top-chips",
     productGridClass:
-      "grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-2 lg:grid-cols-5 xl:grid-cols-6",
+      "grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-2 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7",
     sectionProductGridClass:
-      "grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-2 lg:grid-cols-5 xl:grid-cols-6",
+      "grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-2 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7",
     listContainerClass: "",
     catalogShellClass: "min-w-0",
   },
@@ -49,8 +49,8 @@ export const storefrontLayouts: Record<StorefrontLayoutKey, StorefrontLayout> = 
     key: "sidebar-pro",
     productView: "grid-card",
     categoryNav: "sidebar",
-    productGridClass: "grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3 lg:grid-cols-3 xl:grid-cols-4",
-    sectionProductGridClass: "grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3 lg:grid-cols-3 xl:grid-cols-4",
+    productGridClass: "grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5",
+    sectionProductGridClass: "grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5",
     listContainerClass: "",
     catalogShellClass:
       "min-w-0 lg:grid lg:grid-cols-[minmax(220px,260px)_minmax(0,1fr)] lg:items-start lg:gap-8",

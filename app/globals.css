@@ -132,6 +132,14 @@ button:focus-visible {
   @apply mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8;
 }
 
+/* Vitrin (mağaza) sayfaları: panel/pazarlama sitesinden daha geniş
+   (26 Eyl 2026: 1280px'te ürünler dar alanda kalıyordu). 1600px'e kadar
+   yayılır; geniş ekranda ürün ızgarası bir sütun fazla gösterir
+   (lib/storefront/layouts.ts 2xl:). */
+.container-store {
+  @apply mx-auto w-full max-w-[1600px] px-4 sm:px-6 lg:px-8 2xl:px-10;
+}
+
 .panel-card {
   @apply rounded-xl border border-slate-100 bg-card text-card-foreground shadow-sm dark:border-slate-800;
 }

@@ -187,7 +187,7 @@ export function StorefrontFooter({
     <footer
       className={cn("mt-auto", theme.footerShell, hasBottomNav && "bottom-nav-footer-inset")}
     >
-      <div className="mx-auto max-w-7xl px-4 pt-5 pb-0 md:py-7">
+      <div className="container-store pt-5 pb-0 md:py-7">
         {showMainColumns ? (
           <div className={gridClassName}>
             {hasQuickLinksColumn ? (

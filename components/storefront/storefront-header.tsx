@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { ChevronDown, ChevronRight, PackageSearch, Search, ShoppingCart, Store, Ticket } from "lucide-react";
 import type { CategoryNode } from "@/lib/categories/tree";
@@ -243,7 +244,7 @@ function HeaderBrand({
       <div
         className={cn(
           theme.logoWrap,
-          compact ? "h-12 w-12 sm:h-14 sm:w-14" : "h-14 w-14 sm:h-16 sm:w-16 lg:h-20 lg:w-20",
+          compact ? "h-12 w-12 sm:h-14 sm:w-14" : "h-14 w-14 sm:h-16 sm:w-16",
         )}
       >
         {props.storefrontSettings.logo_url ? (
@@ -260,8 +261,11 @@ function HeaderBrand({
       <div className={cn("min-w-0", centered && "text-center")}>
         <h1
           className={cn(
-            theme.headerTitle,
-            compact ? "text-base sm:text-lg" : "text-lg sm:text-xl lg:text-[1.65rem]",
+            // Mağaza adı kesilmesin (26 Eyl 2026: "Lucatech - Kaliteyi Ke…"):
+            // temanın truncate'i atılır, en fazla 2 satır.
+            theme.headerTitle.replace(/\btruncate\b/, ""),
+            "line-clamp-2 break-words",
+            compact ? "text-base sm:text-lg" : "text-lg sm:text-xl lg:text-2xl",
           )}
         >
           {props.storefrontTitle}
@@ -278,41 +282,110 @@ function HeaderBrand({
   );
 }
 
+// SSR'da useLayoutEffect uyarısı olmasın diye.
+const useIsomorphicLayoutEffect = typeof window === "undefined" ? useEffect : useLayoutEffect;
+
+// Masaüstü kategori menüsü TEK SATIR (26 Eyl 2026, tüm tenantlar): sığmayan
+// kategoriler sağdaki "Diğer ▾" menüsüne taşınır. Önceden flex-wrap ile
+// 3 satıra kadar çıkıp yapışkan üst barı ekranın üçte biri yapıyordu.
 function StorefrontHeaderCategoryNav({ props }: { props: StorefrontHeaderProps }) {
   const theme = useStorefrontTheme();
   const { t } = useStorefrontLocale();
+  const navRef = useRef<HTMLElement>(null);
+  const measureRef = useRef<HTMLDivElement>(null);
+  const [visibleCount, setVisibleCount] = useState(props.topCategories.length);
+  const [moreOpen, setMoreOpen] = useState(false);
+
+  useIsomorphicLayoutEffect(() => {
+    const nav = navRef.current;
+    const measure = measureRef.current;
+    if (!nav || !measure) return;
+
+    const compute = () => {
+      // Aktif chip'in hafif büyümesi (scale) için pay bırakılır.
+      const available = nav.clientWidth - 12;
+      if (available <= 0) return;
+      const items = Array.from(measure.children) as HTMLElement[];
+      if (items.length < 2) return;
+      const gap = Number.parseFloat(getComputedStyle(measure).columnGap) || 0;
+      const allWidth = items[0].offsetWidth;
+      const moreWidth = items[items.length - 1].offsetWidth;
+      const widths = items.slice(1, -1).map((item) => item.offsetWidth);
+      const total = widths.reduce((sum, width) => sum + gap + width, allWidth);
+      if (total <= available) {
+        setVisibleCount(widths.length);
+        return;
+      }
+      let used = allWidth + gap + moreWidth;
+      let count = 0;
+      for (const width of widths) {
+        if (used + gap + width > available) break;
+        used += gap + width;
+        count += 1;
+      }
+      setVisibleCount(count);
+    };
+
+    compute();
+    const observer = new ResizeObserver(compute);
+    observer.observe(nav);
+    void document.fonts?.ready.then(compute);
+    return () => observer.disconnect();
+  }, [props.topCategories, theme]);
+
+  const isCategoryActive = (categoryId: string) =>
+    props.selectedCategoryId === categoryId ||
+    getDescendantCategoryIds(props.categories, categoryId).includes(props.selectedCategoryId);
+  const visibleCategories = props.topCategories.slice(0, visibleCount);
+  const overflowCategories = props.topCategories.slice(visibleCount);
 
   return (
     <div className={cn(theme.categoryRailBorder, props.usesSidebarNav && "lg:hidden")}>
-      <div className="container-shell">
+      <div className="container-store">
         <nav
+          ref={navRef}
           className={cn(
-            "relative hidden md:flex md:flex-wrap md:items-center md:justify-center md:py-3",
+            "relative hidden md:flex md:flex-nowrap md:items-center md:justify-center md:py-2",
             theme.categoryNavGap,
             props.usesSidebarNav && "md:hidden",
           )}
           aria-label={t("header.mainCategoriesAria")}
         >
+          {/* Ölçüm satırı: tüm chip'ler görünmez biçimde çizilir, kaç
+              tanesinin tek satıra sığdığı buradan hesaplanır. */}
+          <div
+            ref={measureRef}
+            aria-hidden
+            className={cn("pointer-events-none invisible absolute left-0 top-0 flex flex-nowrap", theme.categoryNavGap)}
+          >
+            <span className={theme.categoryNavChip(true)}>{t("header.allProducts")}</span>
+            {props.topCategories.map((category) => (
+              <span key={category.id} className={theme.categoryNavChip(true)}>
+                <span>{category.name}</span>
+                {category.children.length ? <ChevronDown className="size-4" /> : null}
+              </span>
+            ))}
+            <span className={theme.categoryNavChip(true)}>
+              {t("header.moreCategories")} <ChevronDown className="size-4" />
+            </span>
+          </div>
+
           {props.homeHref ? (
-            <a href={props.homeHref} className={theme.categoryNavChip(false)}>
+            <a href={props.homeHref} className={cn(theme.categoryNavChip(false), "shrink-0")}>
               {t("header.allProducts")}
             </a>
           ) : (
             <button
               type="button"
               onClick={() => props.onCategoryChange("all")}
-              className={theme.categoryNavChip(props.selectedCategoryId === "all")}
+              className={cn(theme.categoryNavChip(props.selectedCategoryId === "all"), "shrink-0")}
             >
               {t("header.allProducts")}
             </button>
           )}
 
-          {props.topCategories.map((category) => {
-            const isActive =
-              props.selectedCategoryId === category.id ||
-              getDescendantCategoryIds(props.categories, category.id).includes(
-                props.selectedCategoryId,
-              );
+          {visibleCategories.map((category) => {
+            const isActive = isCategoryActive(category.id);
             const isOpen = props.hoveredCategoryId === category.id;
 
             return (
@@ -325,7 +398,7 @@ function StorefrontHeaderCategoryNav({ props }: { props: StorefrontHeaderProps }
                 <button
                   type="button"
                   onClick={() => props.onCategoryChange(category.id)}
-                  className={theme.categoryNavChip(isActive)}
+                  className={cn(theme.categoryNavChip(isActive), "whitespace-nowrap")}
                 >
                   <span>{category.name}</span>
                   {category.children.length ? <ChevronDown className="size-4" /> : null}
@@ -363,6 +436,57 @@ function StorefrontHeaderCategoryNav({ props }: { props: StorefrontHeaderProps }
               </div>
             );
           })}
+
+          {overflowCategories.length ? (
+            <div
+              className="relative shrink-0"
+              onMouseEnter={() => setMoreOpen(true)}
+              onMouseLeave={() => setMoreOpen(false)}
+            >
+              <button
+                type="button"
+                onClick={() => setMoreOpen((open) => !open)}
+                aria-expanded={moreOpen}
+                className={cn(
+                  theme.categoryNavChip(overflowCategories.some((category) => isCategoryActive(category.id))),
+                  "whitespace-nowrap",
+                )}
+              >
+                {t("header.moreCategories")}
+                <ChevronDown className="size-4" />
+              </button>
+              {moreOpen ? (
+                <div className="absolute right-0 top-full z-30 pt-1.5">
+                  <div className={theme.categoryDropdown}>
+                    <div className="grid grid-flow-col grid-rows-[repeat(10,minmax(0,auto))] gap-x-1 gap-y-0.5">
+                      {overflowCategories.map((category) => (
+                        <button
+                          key={category.id}
+                          type="button"
+                          onClick={() => {
+                            props.onCategoryChange(category.id);
+                            setMoreOpen(false);
+                          }}
+                          className={cn(
+                            theme.categoryDropdownItem,
+                            isCategoryActive(category.id) && "font-bold",
+                          )}
+                        >
+                          <span className="truncate">{category.name}</span>
+                          <ChevronRight
+                            className={cn(
+                              "size-3.5 shrink-0 -translate-x-1 text-current opacity-0 transition-all duration-150 group-hover:translate-x-0 group-hover:opacity-100",
+                              theme.categoryDropdownItemIcon,
+                            )}
+                          />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              ) : null}
+            </div>
+          ) : null}
         </nav>
 
         {props.usesSidebarNav ? (
@@ -469,7 +593,7 @@ function StorefrontHeaderTopBar({ props }: { props: StorefrontHeaderProps }) {
   // logo + dil/tema/çıkış. Kategori sekmeleri altta, ayrı bileşende.
   if (props.hideSearchAndCart) {
     return (
-      <div className="container-shell py-3">
+      <div className="container-store py-3">
         <div className="flex items-center justify-between gap-3">
           <HeaderBrand props={props} compact />
           <HeaderActions props={props} compact />
@@ -480,7 +604,7 @@ function StorefrontHeaderTopBar({ props }: { props: StorefrontHeaderProps }) {
 
   if (props.headerStyleKey === "centered") {
     return (
-      <div className="container-shell space-y-4 py-4">
+      <div className="container-store space-y-4 py-4">
         <div className="flex items-start justify-between gap-3">
           <div className="flex-1 lg:hidden">
             {props.subdomain && props.storefrontSettings.is_logout_button_visible !== false ? (
@@ -507,7 +631,7 @@ function StorefrontHeaderTopBar({ props }: { props: StorefrontHeaderProps }) {
 
   if (props.headerStyleKey === "minimal") {
     return (
-      <div className="container-shell space-y-3 py-3">
+      <div className="container-store space-y-3 py-3">
         <div className="flex items-center justify-between gap-3">
           <HeaderBrand props={props} compact />
           <HeaderActions props={props} compact />
@@ -519,7 +643,7 @@ function StorefrontHeaderTopBar({ props }: { props: StorefrontHeaderProps }) {
 
   if (props.headerStyleKey === "split") {
     return (
-      <div className="container-shell py-3">
+      <div className="container-store py-3">
         <div className="flex flex-wrap items-center gap-3 lg:flex-nowrap lg:gap-6">
           <div className="flex min-w-0 shrink-0 items-center gap-2">
             <HeaderBrand props={props} compact />
@@ -534,7 +658,7 @@ function StorefrontHeaderTopBar({ props }: { props: StorefrontHeaderProps }) {
   }
 
   return (
-    <div className="container-shell py-4">
+    <div className="container-store py-3">
       <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(260px,420px)_auto] lg:items-center">
         <div className="col-span-2 flex min-w-0 items-start gap-2 sm:gap-3 lg:col-span-1 lg:items-center lg:gap-4">
           <HeaderBrand props={props} />

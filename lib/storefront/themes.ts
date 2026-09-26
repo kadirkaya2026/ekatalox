@@ -606,10 +606,10 @@ function buildTheme(
     cartTotalValue: cn("text-sm font-bold", neutrals.text),
     cartTotalEmpty: cn("text-sm font-bold", neutrals.textMuted),
     categoryRailBorder: neutrals.headerRailBorder,
-    categoryNavGap: "md:gap-2",
+    categoryNavGap: "md:gap-1.5",
     categoryNavChip: (active) =>
       cn(
-        "inline-flex items-center gap-2 rounded-full px-4 py-2.5 text-[13px] font-semibold transition duration-200",
+        "inline-flex items-center gap-1.5 rounded-full px-3.5 py-2 text-[13px] font-semibold transition duration-200",
         active
           ? cn("scale-[1.03] font-bold shadow-sm", chipActiveBg, chipActiveText)
           : neutrals.chipInactive,

@@ -4044,7 +4044,7 @@ export function StorefrontClient({
 
       <main
         className={cn(
-          "container-shell py-5 sm:py-6",
+          "container-store py-5 sm:py-6",
           // Alt navigasyon barı sayfanın üstünde durduğu için son ürünün
           // altında daha fazla boşluk gerekiyor (bkz. globals.css). Ama
           // altbilgi varsa boşluk ona ait (bottom-nav-footer-inset);

@@ -34,7 +34,7 @@ export function StorefrontSubpageShell({
   return (
     <div data-storefront className={cn(theme.page, "flex min-h-svh flex-col")}>
       <header className={cn(theme.header, theme.headerBorder)}>
-        <div className="container-shell flex items-center justify-between gap-3 py-3">
+        <div className="container-store flex items-center justify-between gap-3 py-3">
           <a href="/" className="flex min-w-0 items-center gap-3">
             <div className={cn(theme.logoWrap, "h-12 w-12 sm:h-14 sm:w-14")}>
               {logoUrl ? (
@@ -58,7 +58,7 @@ export function StorefrontSubpageShell({
           </div>
         </div>
       </header>
-      <main className={cn("container-shell w-full flex-1 py-8 sm:py-12", maxWidthClassName)}>{children}</main>
+      <main className={cn("container-store w-full flex-1 py-8 sm:py-12", maxWidthClassName)}>{children}</main>
     </div>
   );
 }

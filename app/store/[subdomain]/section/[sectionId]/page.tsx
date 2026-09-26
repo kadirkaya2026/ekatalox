@@ -192,7 +192,7 @@ export default async function SectionDetailPage(props: {
       className={footerVisible ? "pb-0" : undefined}
       ads={ads}
     >
-      <div className="container-shell py-4">
+      <div className="container-store py-4">
         <StorefrontSectionBreadcrumb
           homeHref={getStorefrontHomePath()}
           sectionTitle={section.title}

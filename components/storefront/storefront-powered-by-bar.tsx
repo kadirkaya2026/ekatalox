@@ -14,7 +14,7 @@ export function StorefrontPoweredByBar() {
 
   return (
     <div className="bg-black py-1.5">
-      <div className="container-shell flex items-center justify-center">
+      <div className="container-store flex items-center justify-center">
         <a
           href="https://ekatalox.com"
           target="_blank"

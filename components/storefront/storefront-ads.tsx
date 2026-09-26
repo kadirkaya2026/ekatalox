@@ -40,7 +40,7 @@ export function StorefrontAdBottomBar({ ads, subdomain }: AdProps) {
     // Mobilde tek satır (21 Eyl 2026): metin kısalır, sahip satırı yalnız
     // geniş ekranda; bant Safari alt çubuğuyla birlikte fazla yer kaplıyordu.
     <div className="sticky bottom-0 z-30 border-t border-slate-800 bg-black py-1.5 text-slate-200">
-      <div className="container-shell flex items-center justify-between gap-3">
+      <div className="container-store flex items-center justify-between gap-3">
         <div className="flex min-w-0 items-center gap-2 text-[11px]">
           <span className="shrink-0 rounded bg-slate-800 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-slate-400">
             Reklam
