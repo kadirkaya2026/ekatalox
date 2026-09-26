@@ -356,7 +356,10 @@ function StorefrontHeaderCategoryNav({ props }: { props: StorefrontHeaderProps }
           <div
             ref={measureRef}
             aria-hidden
-            className={cn("pointer-events-none invisible absolute left-0 top-0 flex flex-nowrap", theme.categoryNavGap)}
+            className={cn(
+              "pointer-events-none invisible absolute left-0 top-0 flex w-max flex-nowrap [&>*]:shrink-0 [&>*]:whitespace-nowrap",
+              theme.categoryNavGap,
+            )}
           >
             <span className={theme.categoryNavChip(true)}>{t("header.allProducts")}</span>
             {props.topCategories.map((category) => (
@@ -371,14 +374,14 @@ function StorefrontHeaderCategoryNav({ props }: { props: StorefrontHeaderProps }
           </div>
 
           {props.homeHref ? (
-            <a href={props.homeHref} className={cn(theme.categoryNavChip(false), "shrink-0")}>
+            <a href={props.homeHref} className={cn(theme.categoryNavChip(false), "shrink-0 whitespace-nowrap")}>
               {t("header.allProducts")}
             </a>
           ) : (
             <button
               type="button"
               onClick={() => props.onCategoryChange("all")}
-              className={cn(theme.categoryNavChip(props.selectedCategoryId === "all"), "shrink-0")}
+              className={cn(theme.categoryNavChip(props.selectedCategoryId === "all"), "shrink-0 whitespace-nowrap")}
             >
               {t("header.allProducts")}
             </button>
