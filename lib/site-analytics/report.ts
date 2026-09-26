@@ -50,6 +50,8 @@ function emptyReport(range: SiteAnalyticsRange): SiteAnalyticsReport {
   return {
     range,
     summary: EMPTY_SUMMARY,
+    funnel: [],
+    funnelAvailable: false,
     series: enumerateBuckets(range.from, range.to, range.bucket).map((bucketStart) => ({
       bucketStart,
       visitors: 0,
@@ -137,7 +139,7 @@ export async function getSiteAnalyticsReport(range: SiteAnalyticsRange): Promise
   const rpc = supabase.rpc.bind(supabase);
   const base = { p_from: fromTs, p_to: toTs };
 
-  const [summaryRes, seriesRows, pageRows, referrerRows, clickRows, devices, countries, cities, browsers, visitors] =
+  const [summaryRes, seriesRows, pageRows, referrerRows, clickRows, devices, countries, cities, browsers, visitors, funnelRes] =
     await Promise.all([
       rpc("site_analytics_summary", base),
       rpcRows<{ bucket_start: string; visitors: number; sessions: number; pageviews: number; avg_duration_ms: number }>(
@@ -166,6 +168,7 @@ export async function getSiteAnalyticsReport(range: SiteAnalyticsRange): Promise
       rpcRows<{ label: string; sessions: number; visitors: number }>(rpc, "site_analytics_breakdown", { ...base, p_dimension: "city" }),
       rpcRows<{ label: string; sessions: number; visitors: number }>(rpc, "site_analytics_breakdown", { ...base, p_dimension: "browser" }),
       getSiteAnalyticsVisitors(range, 50, 0),
+      rpc("site_analytics_funnel", base),
     ]);
 
   const summaryData = (summaryRes.data ?? null) as Partial<SiteAnalyticsSummary> | null;
@@ -224,6 +227,8 @@ export async function getSiteAnalyticsReport(range: SiteAnalyticsRange): Promise
   return {
     range,
     summary,
+    funnel: (funnelRes.data ?? []) as SiteAnalyticsReport["funnel"],
+    funnelAvailable: !funnelRes.error,
     series,
     pages,
     referrers,

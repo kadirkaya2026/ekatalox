@@ -70,9 +70,9 @@ export function ContactDock() {
           <Link
             href="/basvuru"
             tabIndex={showBar ? 0 : -1}
-            className="flex h-12 flex-1 items-center justify-center rounded-full bg-brand-neon text-[15px] font-semibold text-white"
+            className="flex h-12 flex-1 items-center justify-center rounded-full bg-brand-neon text-[15px] font-semibold text-brand-dark"
           >
-            Ücretsiz kataloğumu kur
+            Ücretsiz başla
           </Link>
           <a
             href={MARKETING_WHATSAPP_HREF}

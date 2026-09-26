@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { ChevronDown, PackageSearch, Search, ShoppingCart, Store, Ticket } from "lucide-react";
 import type { CategoryNode } from "@/lib/categories/tree";
 import type { Category } from "@/lib/types";
+import type { CurrencyCode } from "@/lib/products/constants";
 import { STOREFRONT_LOGO_SIZES } from "@/lib/storefront/image-sizes";
 import { useStorefrontTheme } from "@/lib/storefront/theme-context";
 import { useStorefrontLocale } from "@/lib/storefront/locale-context";
@@ -38,9 +39,9 @@ export interface StorefrontHeaderProps {
   onSearchChange: (value: string) => void;
   onSearchSubmit: () => void;
   cartItemCount: number;
-  cartTotalEntries: Array<{ currency: string; total: number }>;
+  cartTotalEntries: Array<{ currency: CurrencyCode; total: number }>;
   cartTotal: number;
-  cartCurrency: string;
+  cartCurrency: CurrencyCode;
   cartLength: number;
   onOpenCart: () => void;
   usesSidebarNav: boolean;
@@ -406,7 +407,6 @@ function StorefrontHeaderCategoryNav({ props }: { props: StorefrontHeaderProps }
 }
 
 function StorefrontHeaderTopBar({ props }: { props: StorefrontHeaderProps }) {
-  const theme = useStorefrontTheme();
 
   // Arama ve sepet alt bara taşındığında dört başlık varyantının da
   // ortasında bir boşluk kalıyor (grid gözü boşalıyor, arama satırı

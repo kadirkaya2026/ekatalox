@@ -16,6 +16,9 @@ import { StorefrontAdInline } from "@/components/storefront/storefront-ads";
 import type { StorefrontAdsConfig } from "@/lib/ads/config";
 import { getGateBrandingCopy, type GateBranding } from "@/lib/storefront/gate-branding";
 import { cn } from "@/lib/utils";
+import { SITE } from "@/lib/marketing/site";
+
+const DEMO_SUBDOMAIN = new URL(SITE.demoUrl).hostname.split(".")[0];
 
 function PasswordGateForm({
   subdomain,
@@ -70,7 +73,13 @@ function PasswordGateForm({
       </p>
 
       <form onSubmit={submit} className={cn("mt-6 space-y-4", branding && "max-sm:mt-4 max-sm:space-y-3 [@media(max-height:700px)]:mt-4 [@media(max-height:700px)]:space-y-3")}>
+        {subdomain === DEMO_SUBDOMAIN ? (
+          <p id="demo-password-hint" className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-950">
+            Demo giriş şifresi: <strong className="font-mono">{SITE.demoPassword}</strong>
+          </p>
+        ) : null}
         <Input
+          aria-describedby={subdomain === DEMO_SUBDOMAIN ? "demo-password-hint" : undefined}
           inputMode="numeric"
           aria-label={t("gate.passwordPlaceholder")}
           placeholder={t("gate.passwordPlaceholder")}

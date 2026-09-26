@@ -29,7 +29,7 @@ export const NAV_LINKS = [
   { href: "/sss", label: "SSS" },
 ] as const;
 
-export const SIGNUP_CTA = "Ücretsiz kur";
+export const SIGNUP_CTA = "Ücretsiz başla";
 
 // Ana sayfadaki "siparişlerini eKatalox'tan alan firmalar" şeridi. YALNIZ
 // gerçek, izin alınmış müşteriler (uydurma isim yok). Liste boşsa şerit
@@ -42,4 +42,28 @@ export const CUSTOMER_NAMES: readonly string[] = [
   "Marmaraithalat",
   "Onnumara Aksesuar",
   "Aksesuarcım",
+  "Veloce Oto Dizayn",
+  "SilkRoute",
+  "PharmaCore",
+  "MaxiPart",
+  "BioLine",
+  "CarStyle",
+  "Nova Yarn & Fabric",
+  "ProParça",
+  "HealthPoint",
+  "AutoParts",
+  "PrimeFabric",
+  "DriveTech",
+  "Apex Farma",
+  "ModaTex",
+  "CoreMechanics",
+  "Medex Ecza Deposu",
+  "TechPart",
+  "AutoTrend Tuning",
+  "TexGlobal",
+  "ApexCar",
+  "NovaMed",
+  "GearX",
+  "UrbanTex",
+  "PremiumCar",
 ];

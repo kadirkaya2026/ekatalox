@@ -7,28 +7,28 @@ import { SITE } from "@/lib/marketing/site";
 export const metadata: Metadata = {
   title: "Nasıl çalışır",
   description:
-    "Kayıttan ilk siparişe dört adım: 5 dakikada kayıt, ürünleri Excel ile yükleme, bayilere şifre verme ve WhatsApp'a PDF olarak düşen ilk sipariş. Ücretsiz plan, kart istenmez.",
+    "Kayıttan ilk siparişe dört adım: hesabınızı açın, ürünleri yükleyin, bayilere şifre verin ve PDF sipariş fişini WhatsApp üzerinden alın. Ücretsiz plan, kart istenmez.",
   alternates: { canonical: "/nasil-calisir" },
 };
 
 const STEPS = [
   {
     no: "01",
-    duration: `${SITE.setupMinutes} dakika`,
+    duration: "Kart bilgisi gerekmez",
     title: "Kayıt",
-    body: "Firma adı, sektör, WhatsApp numaranız, e-posta ve şifre. Katalog adresiniz (firmaniz.ekatalox.com) o an açılır. Kart bilgisi istenmez, hesap Ücretsiz planla başlar.",
-    detail: ["Firma adı ve sektör", "Siparişlerin geleceği WhatsApp numarası", "Katalog adresiniz aynı dakika hazır"],
+    body: "Firma adı, sektör, WhatsApp numaranız, e-posta ve şifrenizle hesabınızı oluşturun. Süresiz ücretsiz planı seçin veya ücretli bir paketi 14 gün deneyin.",
+    detail: ["Firma adı ve sektör", "Siparişlerin geleceği WhatsApp numarası", "Firmanıza ait katalog adresi"],
   },
   {
     no: "02",
     duration: "Excel ile",
     title: "Ürün yükleme",
-    body: "Panelde Excel şablonunu indirin, ürün kodu, ad, koli içi adet ve fiyatları doldurup yükleyin. Fotoğrafları toplu ekleyin. Mevcut PDF ya da Excel kataloğunuzu bize gönderirseniz ilk yüklemeyi biz yaparız.",
+    body: "Panelde Excel şablonunu indirin, ürün kodu, ad, koli içi adet ve fiyatları doldurup yükleyin. Fotoğrafları ekleyin. Mevcut PDF veya Excel listenizin aktarımı için destek isterseniz bize ulaşın.",
     detail: ["Excel şablonu: kod, ad, birim, koli içi, fiyat", "Varyant: renk, beden, model", "Kategori ve alt kategori düzeni"],
   },
   {
     no: "03",
-    duration: "1 dakika",
+    duration: "Size özel fiyat listeleri",
     title: "Bayi şifresi",
     body: "Ayarlar > Şifreler'den bayi şifrenizi belirleyin; her şifre bir fiyat listesine bağlıdır. Adresi ve şifreyi bayilerinize WhatsApp'tan gönderin. Bayi tarayıcıda açar, şifreyi yazar, kendi fiyatıyla kataloğu görür.",
     detail: ["Şifresiz ziyaretçi isterseniz yalnız ürünleri görür", "Bayi / perakende / özel için ayrı şifre (paketinize göre)", "Şifreyi istediğiniz an değiştirin"],
@@ -37,7 +37,7 @@ const STEPS = [
     no: "04",
     duration: "Her sipariş",
     title: "Sipariş",
-    body: "Bayi sepetini doldurur, cari adını ve notunu yazar, gönderir. Sipariş fişi PDF olarak WhatsApp numaranıza düşer; panelde de görünür. Fiyatı değiştirdiğinizde bayi o an güncel fiyatı görür.",
+    body: "Bayi sepetini doldurur, cari adını ve notunu yazar, gönderir. Sipariş panelde görünür; bayi PDF fişinin bağlantısıyla WhatsApp'a geçip mesajı gönderir. Fiyatı değiştirdiğinizde bayi o an güncel fiyatı görür.",
     detail: ["PDF'de ürün kodu, adet, koli, tutar", "Cari adı, telefon, not", "Panelde bugünkü sipariş sayısı ve tutarı"],
   },
 ];
@@ -59,7 +59,7 @@ const SCREENS = [
     src: "/site/toptan-sepet-v2.png",
     alt: "Sepet ve sipariş özeti ekranı",
     title: "Sepet ve sipariş",
-    body: "Adet ve koli seçimi, cari adı, not. Tek dokunuşla WhatsApp'a PDF sipariş.",
+    body: "Adet ve koli seçimi, cari adı, not. PDF sipariş fişinin bağlantısını WhatsApp üzerinden paylaşma.",
   },
 ];
 
@@ -79,14 +79,14 @@ export default function NasilCalisirPage() {
             Kayıttan ilk siparişe dört adım
           </h1>
           <p className="mt-5 max-w-2xl text-lg leading-relaxed text-white/70">
-            {`Kayıt ${SITE.setupMinutes} dakika sürer, kataloğunuz o an açılır. Ürünleri Excel ile yüklersiniz ya da biz yükleriz. Ücretsiz plan, kart istenmez.`}
+            Hesabınızı açın, ürünlerinizi ekleyin ve katalog bağlantınızı bayilerinizle paylaşın. Ücretsiz planda kart bilgisi ve süre sınırı yoktur.
           </p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
             <ButtonLink href="/basvuru" size="lg">
-              Ücretsiz kataloğumu kur
+              Ücretsiz başla
             </ButtonLink>
             <ButtonLink href={SITE.demoUrl} tone="outline-dark" size="lg" external>
-              Demo kataloğu aç
+              Demoyu incele
             </ButtonLink>
           </div>
         </Container>
@@ -131,7 +131,7 @@ export default function NasilCalisirPage() {
           </div>
           <div className="mt-12 text-center">
             <ButtonLink href={SITE.demoUrl} tone="outline" external>
-              Demo kataloğu açıp kendiniz deneyin
+              Demoyu incele
             </ButtonLink>
           </div>
         </Container>
@@ -141,11 +141,10 @@ export default function NasilCalisirPage() {
         <Container className="grid gap-10 lg:grid-cols-2 lg:gap-16">
           <div>
             <h2 className="text-balance text-3xl font-bold leading-[1.1] tracking-[-0.02em] text-brand-navy sm:text-4xl">
-              İlk yükleme için dört şey yeter
+              Mevcut ürün listenizle başlayın
             </h2>
             <p className="mt-4 text-lg leading-relaxed text-brand-muted">
-              Bunları WhatsApp&apos;tan ya da e-postayla gönderin; ürünlerinizi fotoğraf ve fiyatlarıyla biz yükleriz.
-              Sonrasını panelden kendiniz yönetirsiniz.
+              Ürün aktarımı desteği için listenizi WhatsApp veya e-postayla paylaşın. Dosyanızı inceleyip kapsamı, süreyi ve varsa ücreti başlamadan önce netleştirelim. Kataloğunuzu sonrasında panelden yönetebilirsiniz.
             </p>
           </div>
           <CheckList items={WE_NEED} className="lg:pt-10" />
@@ -156,13 +155,13 @@ export default function NasilCalisirPage() {
         <Container className="grid items-center gap-8 lg:grid-cols-[1.4fr_1fr]">
           <div>
             <h2 className="text-balance text-3xl font-bold leading-[1.1] tracking-[-0.02em] sm:text-4xl">
-              Bugün kurun, bu hafta bayilerinize gönderin.
+              Kataloğunuzu kurun, bayilerinize paylaşın.
             </h2>
             <p className="mt-4 max-w-xl text-lg text-white/75">Sorunuz varsa WhatsApp&apos;tan yazın; ilk yüklemeyi birlikte planlarız.</p>
           </div>
           <div className="flex flex-col gap-3 sm:flex-row lg:flex-col lg:items-end">
             <ButtonLink href="/basvuru" size="lg">
-              Ücretsiz kataloğumu kur
+              Ücretsiz başla
             </ButtonLink>
             <ButtonLink href={MARKETING_WHATSAPP_HREF} tone="outline-dark" size="lg" external>
               <WhatsAppGlyph className="size-5 text-[#25D366]" />

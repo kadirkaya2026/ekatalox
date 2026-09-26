@@ -12,11 +12,14 @@
 //  plan, termsAccepted:true}
 // 201 → {storeUrl, panelUrl, subdomain, requestedPlan}; 400/409 → {error, field?}
 // Adres/vergi alanları sihirbazda sorulmaz (boş gider; fatura aşamasında
-// eklenir). Hesap her zaman Ücretsiz açılır; ücretli paket seçimi taleptir.
+// eklenir). Ücretli paket seçimi 14 günlük paket denemesi başlatır.
 import Link from "next/link";
 import { ArrowLeft, Eye, EyeOff, Loader2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { trackMetaEvent } from "@/lib/marketing/meta-pixel";
+import { trackFunnel } from "@/lib/site-analytics/funnel";
+import { normalizeTrMobile } from "@/lib/validators/signup";
+import { PAID_PLAN_TRIAL_DAYS } from "@/lib/billing/plan-trial";
 import {
   formatTry,
   getToptanPlan,
@@ -56,7 +59,6 @@ type SubdomainState =
 
 type Success = { storeUrl: string; panelUrl: string; subdomain: string; requestedPlan: string };
 
-const PHONE_RE = /^05\d{9}$/;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const SUBDOMAIN_RE = /^[a-z0-9](?:[a-z0-9-]{1,61}[a-z0-9])?$/;
 
@@ -71,10 +73,6 @@ export function toSubdomain(value: string) {
     .replace(/^-+|-+$/g, "")
     .replace(/-{2,}/g, "-")
     .slice(0, 63);
-}
-
-function normalizePhone(value: string) {
-  return value.replace(/[\s()-]/g, "");
 }
 
 /** Sunucudan dönen alan hatası hangi adımda gösterilecek. API'nin eski
@@ -100,7 +98,7 @@ const FIELD_STEP: Record<string, SignupStepIndex> = {
 
 const STEP_VISUAL: Record<0 | 1 | 2, { src: string; alt: string; caption: string }> = {
   0: { src: "/site/toptan-katalog-v2.png", alt: "Demo toptan kataloğunun ürün listesi", caption: "Bayileriniz kataloğu telefondan böyle görür" },
-  1: { src: "/site/toptan-sepet-v2.png", alt: "Demo katalogda dolu sepet ve WhatsApp ile gönder tuşu", caption: "Sepet WhatsApp'a sipariş fişi olarak düşer" },
+  1: { src: "/site/toptan-sepet-v2.png", alt: "Demo katalogda dolu sepet ve WhatsApp ile gönder tuşu", caption: "Bayi sipariş fişi bağlantısını WhatsApp üzerinden gönderir" },
   2: { src: "/site/toptan-giris-v2.png", alt: "Demo kataloğun bayi şifre giriş ekranı", caption: "Fiyatlar yalnız şifre verdiğiniz bayilere açılır" },
 };
 
@@ -128,11 +126,19 @@ export function SignupForm({ initialPlan, initialSector }: { initialPlan?: strin
   const [success, setSuccess] = useState<Success | null>(null);
   const formRef = useRef<HTMLFormElement>(null);
   const topRef = useRef<HTMLDivElement>(null);
+  const startedRef = useRef(false);
+  const completedSteps = useRef(new Set<number>());
+  const submittingRef = useRef(false);
 
   const selectedPlan = getToptanPlan(plan) ?? TOPTAN_PLANS[0];
   const paidRequested = selectedPlan.yearlyPrice > 0;
 
   function update<K extends keyof FormState>(key: K, value: FormState[K]) {
+    if (key === "subdomain") setSubdomainState({ status: "idle" });
+    if (!startedRef.current) {
+      startedRef.current = true;
+      trackFunnel("signup_start", plan);
+    }
     setForm((f) => ({ ...f, [key]: value }));
     setErrors((e) => (e[key] || e.form ? { ...e, [key]: undefined, form: undefined } : e));
   }
@@ -142,6 +148,8 @@ export function SignupForm({ initialPlan, initialSector }: { initialPlan?: strin
     update("businessName", value);
     if (!subdomainTouched) {
       const derived = toSubdomain(value);
+      setSubdomainState({ status: "idle" });
+      setErrors((e) => ({ ...e, subdomain: undefined }));
       setForm((f) => ({ ...f, businessName: value, subdomain: derived }));
     }
   }
@@ -190,11 +198,11 @@ export function SignupForm({ initialPlan, initialSector }: { initialPlan?: strin
         e.subdomain = "En az 3 karakter; yalnız küçük harf, rakam ve tire.";
       else if (subdomainState.status === "taken") e.subdomain = "Bu adres alınmış; başka bir ad deneyin.";
     } else if (s === 1) {
-      if (!PHONE_RE.test(normalizePhone(form.whatsappNumber)))
-        e.whatsappNumber = "05 ile başlayan 11 haneli numara yazın (örn. 0532 000 00 00).";
+      if (!normalizeTrMobile(form.whatsappNumber))
+        e.whatsappNumber = "Geçerli bir Türkiye cep numarası yazın (05xx veya +90 5xx).";
     } else if (s === 2) {
-      if (form.fullName.trim().length < 3) e.fullName = "Ad ve soyadınızı yazın.";
-      if (!form.city.trim()) e.city = "İl yazın.";
+      if (form.fullName.trim().length < 2) e.fullName = "Ad ve soyadınızı yazın.";
+      if (form.city.trim().length < 2) e.city = "İl yazın.";
       if (!EMAIL_RE.test(form.email.trim())) e.email = "Geçerli bir e-posta adresi yazın.";
       if (form.password.length < 8) e.password = "Şifre en az 8 karakter olmalı.";
       if (!form.termsAccepted) e.termsAccepted = "Devam etmek için şartları kabul etmelisiniz.";
@@ -227,11 +235,18 @@ export function SignupForm({ initialPlan, initialSector }: { initialPlan?: strin
       requestAnimationFrame(() => focusFirstError(e));
       return;
     }
-    if (step < 2) goTo((step + 1) as SignupStepIndex);
+    if (step < 2) {
+      if (!completedSteps.current.has(step)) {
+        completedSteps.current.add(step);
+        trackFunnel(step === 0 ? "signup_business_complete" : "signup_whatsapp_complete", plan);
+      }
+      goTo((step + 1) as SignupStepIndex);
+    }
   }
 
   async function submit(ev: React.FormEvent) {
     ev.preventDefault();
+    if (submittingRef.current || success) return;
     if (step < 2) {
       next();
       return;
@@ -242,9 +257,11 @@ export function SignupForm({ initialPlan, initialSector }: { initialPlan?: strin
       requestAnimationFrame(() => focusFirstError(e));
       return;
     }
+    submittingRef.current = true;
+    trackFunnel("signup_submit", plan);
     setSending(true);
     goTo(3);
-    const phone = normalizePhone(form.whatsappNumber);
+    const phone = normalizeTrMobile(form.whatsappNumber);
     try {
       const res = await fetch("/api/signup", {
         method: "POST",
@@ -272,10 +289,12 @@ export function SignupForm({ initialPlan, initialSector }: { initialPlan?: strin
       if (res.status === 201 && data?.storeUrl && data.panelUrl && data.subdomain) {
         setSuccess({ storeUrl: data.storeUrl, panelUrl: data.panelUrl, subdomain: data.subdomain, requestedPlan: data.requestedPlan ?? plan });
         trackMetaEvent("CompleteRegistration", { content_name: data.requestedPlan ?? plan });
+        trackFunnel("signup_complete", plan);
         return;
       }
       // Hata: ilgili adıma dön, alanı işaretle.
       const message = data?.error ?? "Başvuru gönderilemedi. Lütfen tekrar deneyin.";
+      trackFunnel("signup_error", plan);
       const serverField = data?.field ?? "";
       const targetStep = serverField in FIELD_STEP ? FIELD_STEP[serverField] : 2;
       const field: keyof Errors = serverField in form ? (serverField as keyof FormState) : serverField === "phone" ? "whatsappNumber" : "form";
@@ -287,10 +306,12 @@ export function SignupForm({ initialPlan, initialSector }: { initialPlan?: strin
         if (field !== "form") focusFirstError(nextErrors);
       });
     } catch {
+      trackFunnel("signup_error", plan);
       setStep(2);
       setErrors({ form: `Bağlantı kurulamadı. İnternetinizi kontrol edin ya da ${SITE.phone} numarasını arayın.` });
       scrollToTop();
     } finally {
+      submittingRef.current = false;
       setSending(false);
     }
   }
@@ -301,6 +322,15 @@ export function SignupForm({ initialPlan, initialSector }: { initialPlan?: strin
     <div ref={topRef} className="scroll-mt-24">
       <div className="mx-auto max-w-3xl">
         <SignupStepper current={step} onSelect={step < 3 && !sending ? goTo : undefined} />
+        {step < 3 ? (
+          <div className="mt-6 rounded-xl border border-brand-line bg-brand-paper p-4 text-sm" aria-live="polite">
+            <p className="font-semibold text-brand-navy">Seçtiğiniz paket: {selectedPlan.name}</p>
+            <p className="mt-1 text-brand-muted">{paidRequested
+              ? `${PAID_PLAN_TRIAL_DAYS} gün ücretsiz deneme. Devamında ${formatTry(selectedPlan.yearlyPrice)} / yıl + KDV. Ödeme yapılmazsa Ücretsiz plana geçer.`
+              : "Süresiz ücretsiz · 250 ürün · 2 fiyat listesi · eKatalox reklamlı"}</p>
+            <p className="mt-1 text-xs text-brand-muted">Paketinizi son adımda değiştirebilirsiniz. Kart bilgisi istenmez.</p>
+          </div>
+        ) : null}
       </div>
 
       <div className="mt-12 grid gap-10 lg:mt-16 lg:grid-cols-[1fr_1.4fr] lg:items-start lg:gap-16">
@@ -324,6 +354,7 @@ export function SignupForm({ initialPlan, initialSector }: { initialPlan?: strin
                   onChange={(e) => onBusinessName(e.target.value)}
                   placeholder="Örn. Yıldız Toptan"
                   autoComplete="organization"
+                  maxLength={80}
                   autoFocus
                   aria-invalid={Boolean(errors.businessName)}
                   className={fieldInputClass}
@@ -394,10 +425,10 @@ export function SignupForm({ initialPlan, initialSector }: { initialPlan?: strin
           {step === 1 ? (
             <StepPanel
               title="Siparişler nereye gelsin?"
-              description="Bayileriniz sepeti gönderince sipariş fişi bu WhatsApp numarasına düşer. Sizinle de bu numaradan iletişim kurarız."
+              description="Bayiniz sipariş fişinin bağlantısını WhatsApp üzerinden bu numaraya gönderir. Sizinle de bu numaradan iletişim kurarız."
             >
               {errors.form ? <FormAlert tone="error">{errors.form}</FormAlert> : null}
-              <Field id="whatsappNumber" label="WhatsApp sipariş numarası" error={errors.whatsappNumber} hint="05xx ile başlayan cep numarası.">
+              <Field id="whatsappNumber" label="WhatsApp sipariş numarası" error={errors.whatsappNumber} hint="05xx veya +90 5xx biçiminde yazabilirsiniz.">
                 <Input
                   id="whatsappNumber"
                   name="whatsappNumber"
@@ -427,6 +458,7 @@ export function SignupForm({ initialPlan, initialSector }: { initialPlan?: strin
                     value={form.fullName}
                     onChange={(e) => update("fullName", e.target.value)}
                     autoComplete="name"
+                    maxLength={80}
                     autoFocus
                     aria-invalid={Boolean(errors.fullName)}
                     className={fieldInputClass}
@@ -440,6 +472,7 @@ export function SignupForm({ initialPlan, initialSector }: { initialPlan?: strin
                     onChange={(e) => update("city", e.target.value)}
                     placeholder="İstanbul"
                     autoComplete="address-level1"
+                    maxLength={60}
                     aria-invalid={Boolean(errors.city)}
                     className={fieldInputClass}
                   />
@@ -467,6 +500,7 @@ export function SignupForm({ initialPlan, initialSector }: { initialPlan?: strin
                     value={form.password}
                     onChange={(e) => update("password", e.target.value)}
                     autoComplete="new-password"
+                    maxLength={128}
                     aria-invalid={Boolean(errors.password)}
                     className={cn(fieldInputClass, "pr-11")}
                   />
@@ -481,13 +515,13 @@ export function SignupForm({ initialPlan, initialSector }: { initialPlan?: strin
                 </div>
               </Field>
 
-              {/* Paket: hesap Ücretsiz açılır, ücretli seçim talep olarak gider */}
+              {/* Ücretli seçim aynı paketle 14 günlük deneme başlatır. */}
               <fieldset>
                 <legend className="text-sm font-semibold text-brand-ink">Paket</legend>
                 <p className="mt-1 text-sm text-brand-muted">
-                  Hesabınız hemen Ücretsiz açılır. Ücretli paket seçerseniz temsilcimiz arar; ödemeye kadar ücretsiz kullanırsınız.
+                  Ücretsiz plan süresizdir. Ücretli paket seçerseniz {PAID_PLAN_TRIAL_DAYS} günlük denemeniz başlar; ödeme yapılmazsa Ücretsiz plana geçersiniz.
                 </p>
-                <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                <div className="mt-4 grid gap-3 sm:grid-cols-2">
                   {TOPTAN_PLANS.map((p) => {
                     const checked = plan === p.slug;
                     const isFree = p.yearlyPrice === 0;
@@ -495,17 +529,18 @@ export function SignupForm({ initialPlan, initialSector }: { initialPlan?: strin
                       <label
                         key={p.slug}
                         className={cn(
-                          "flex cursor-pointer items-start gap-2.5 rounded-lg border bg-white px-3 py-2.5",
-                          checked ? "border-2 border-brand-green" : "border-brand-line",
+                          "relative flex cursor-pointer rounded-xl border-2 p-4 transition-colors focus-within:outline-2 focus-within:outline-offset-4 focus-within:outline-brand-green",
+                          checked ? "border-brand-green bg-brand-green-soft" : "border-brand-line bg-white hover:border-brand-green/40 hover:bg-brand-paper",
                         )}
                       >
-                        <input type="radio" name="plan" value={p.slug} checked={checked} onChange={() => setPlan(p.slug)} className="mt-1 size-4 accent-brand-green" />
+                        <input type="radio" name="plan" value={p.slug} checked={checked} onChange={() => setPlan(p.slug)} className="sr-only" />
                         <span className="min-w-0 flex-1">
-                          <span className="flex items-baseline justify-between gap-2">
+                          <span className="flex min-h-6 items-center justify-between gap-2">
                             <span className="text-sm font-bold text-brand-navy">{p.name}</span>
-                            <span className="font-plex-mono text-xs tabular-nums text-brand-navy">{isFree ? "0 ₺" : `${formatTry(p.yearlyPrice)}/yıl`}</span>
+                            {checked ? <span aria-hidden="true" className="rounded-md bg-brand-green px-2 py-1 text-[11px] font-semibold text-white">Seçili</span> : null}
                           </span>
-                          <span className="mt-0.5 block text-xs text-brand-muted">
+                          <span className="mt-3 block text-lg font-semibold tabular-nums text-brand-navy">{isFree ? "0 ₺" : formatTry(p.yearlyPrice)}<span className="ml-1 text-xs font-normal text-brand-muted">{isFree ? "süresiz" : "/ yıl"}</span></span>
+                          <span className="mt-1 block text-xs text-brand-muted">
                             {p.productLimit.toLocaleString("tr-TR")} ürün · {isFree ? "eKatalox reklamlı" : "reklamsız"}
                           </span>
                         </span>
@@ -548,7 +583,7 @@ export function SignupForm({ initialPlan, initialSector }: { initialPlan?: strin
                 ) : null}
               </div>
 
-              <StepActions primary="Kurulumu tamamla" onBack={() => goTo(1)} />
+              <StepActions primary={paidRequested ? "Ücretsiz denememi başlat" : "Ücretsiz hesabımı oluştur"} onBack={() => goTo(1)} />
             </StepPanel>
           ) : null}
 
@@ -670,16 +705,14 @@ function SuccessScreen({ data, email }: { data: Success; email: string }) {
       </dl>
       {paidRequested && requested ? (
         <div className="mt-6 rounded-md border border-brand-line bg-brand-paper px-4 py-3 text-sm leading-relaxed">
-          <strong className="text-brand-navy">{requested.name} paketi talebiniz alındı.</strong> Temsilcimiz arayıp ödeme
-          bilgisini iletecek; ödeme sonrası paketiniz açılır ve reklamlar kalkar. O zamana kadar Ücretsiz planı
-          kullanabilirsiniz.
+          <strong className="text-brand-navy">{requested.name} paketinde {PAID_PLAN_TRIAL_DAYS} günlük denemeniz başladı.</strong> Ödeme yapılmazsa deneme sonunda Ücretsiz plana geçersiniz. Devam etmek için temsilcimizle görüşebilirsiniz.
         </div>
       ) : null}
       <h3 className="mt-8 text-lg font-bold text-brand-navy">Sırada ne var</h3>
       <ol className="mt-3 list-decimal space-y-2 pl-5 text-base leading-relaxed">
-        <li>Panele girin, Ürünler bölümünden Excel ile yükleyin. İsterseniz PDF/Excel kataloğunuzu bize gönderin, biz yükleyelim.</li>
+        <li>Panele girin, Ürünler bölümünden ilk ürününüzü ekleyin veya Excel ile toplu yükleyin. Aktarım desteği için bize ulaşabilirsiniz.</li>
         <li>Ayarlar &gt; Şifreler&apos;den bayi şifrenizi belirleyin; adresi ve şifreyi bayilerinize WhatsApp&apos;tan gönderin.</li>
-        <li>Bayi sepetini doldurup gönderince sipariş fişi WhatsApp numaranıza PDF olarak düşer.</li>
+        <li>Kataloğu bayi gibi açıp ürün ve fiyatları kontrol edin. Bayiniz sipariş verdiğinde PDF fişinin bağlantısını WhatsApp üzerinden size gönderir; sipariş panelde de görünür.</li>
       </ol>
       <p className="mt-6 text-sm text-brand-muted">
         Yardım için:{" "}

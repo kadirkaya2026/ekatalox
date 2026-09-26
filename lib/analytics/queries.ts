@@ -194,9 +194,10 @@ async function fetchOrderSummary(
       continue;
     }
 
-    if (row.currency === "TRY" || row.currency === "USD" || row.currency === "EUR") {
+    const currency: unknown = row.currency;
+    if (currency === "TRY" || currency === "USD" || currency === "EUR") {
       summary.totalOrders += orderCount;
-      summary.totalsByCurrency[row.currency] += Number(row.total_amount ?? 0);
+      summary.totalsByCurrency[currency] += Number(row.total_amount ?? 0);
     }
   }
 

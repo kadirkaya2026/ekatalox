@@ -28,9 +28,13 @@ export const metadata: Metadata = {
     siteName: "eKatalox",
     locale: "tr_TR",
     url: "https://www.ekatalox.com",
-    title: "eKatalox — PDF kataloğunuz artık canlı bir sipariş sayfası",
+    title: "eKatalox — Toptancılar için katalog ve WhatsApp sipariş",
     description: "Toptancılar için ücretsiz online katalog. Bayi şifreyle girer, kendi fiyatını görür, WhatsApp'tan sipariş verir.",
-    images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "eKatalox" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "eKatalox — Toptancılar için katalog ve WhatsApp sipariş",
+    description: "Bayiniz ürününü seçsin. Siparişi WhatsApp’a gelsin. 250 ürünle ücretsiz başlayın.",
   },
 };
 

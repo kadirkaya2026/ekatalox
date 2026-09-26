@@ -405,8 +405,9 @@ export function TenantHomepageContentForm({
                   <div className="flex items-center gap-2">
                     <Button
                       type="button"
-                      variant="outline"
-                      size="icon"
+                      variant="secondary"
+                      className="size-10 p-0"
+                      aria-label="Bölümü yukarı taşı"
                       disabled={index === 0}
                       onClick={() => moveHomepageBlock(block.id, "up")}
                     >
@@ -414,8 +415,9 @@ export function TenantHomepageContentForm({
                     </Button>
                     <Button
                       type="button"
-                      variant="outline"
-                      size="icon"
+                      variant="secondary"
+                      className="size-10 p-0"
+                      aria-label="Bölümü aşağı taşı"
                       disabled={index === sortedBlocks.length - 1}
                       onClick={() => moveHomepageBlock(block.id, "down")}
                     >

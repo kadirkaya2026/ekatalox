@@ -70,6 +70,7 @@ export function SectionHeading({
   align = "left",
   dark = false,
   className,
+  as: Heading = "h2",
 }: {
   eyebrow?: string;
   title: string;
@@ -78,18 +79,19 @@ export function SectionHeading({
   /** Koyu (navy) bölümde eyebrow/lead renkleri buna göre uyarlanır. */
   dark?: boolean;
   className?: string;
+  as?: "h1" | "h2";
 }) {
   return (
     <div className={cn("max-w-3xl", align === "center" && "mx-auto text-center", className)}>
       {eyebrow ? <Eyebrow dark={dark}>{eyebrow}</Eyebrow> : null}
-      <h2
+      <Heading
         className={cn(
           "mt-3 text-balance text-3xl font-bold leading-[1.1] tracking-[-0.02em] sm:text-4xl",
           dark && "text-white",
         )}
       >
         {title}
-      </h2>
+      </Heading>
       {lead ? (
         <p className={cn("mt-4 text-lg leading-relaxed", dark ? "text-white/70" : "text-brand-muted")}>{lead}</p>
       ) : null}
@@ -101,7 +103,7 @@ type ButtonTone = "primary" | "navy" | "outline" | "outline-dark" | "ghost" | "w
 
 const buttonTones: Record<ButtonTone, string> = {
   primary:
-    "bg-brand-neon text-white shadow-[0_0_0_0_rgba(34,197,94,0)] hover:bg-[#1ea952] hover:shadow-[0_0_32px_-6px_rgba(34,197,94,0.6)]",
+    "bg-brand-neon text-brand-dark shadow-[0_0_0_0_rgba(34,197,94,0)] hover:bg-[#1ea952] hover:shadow-[0_0_32px_-6px_rgba(34,197,94,0.6)]",
   navy: "bg-brand-navy text-white hover:bg-[#0E2039]",
   outline: "border border-brand-line bg-white text-brand-ink hover:border-brand-navy",
   "outline-dark": "border border-white/20 bg-white/5 text-white backdrop-blur-sm hover:border-white/40 hover:bg-white/10",

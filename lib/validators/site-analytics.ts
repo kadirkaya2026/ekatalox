@@ -1,10 +1,13 @@
 import { z } from "zod";
+import { FUNNEL_EVENTS } from "@/lib/site-analytics/funnel";
 
 const shortText = (max: number) => z.string().trim().max(max).optional().nullable();
 
 export const siteAnalyticsEventSchema = z
   .object({
-    type: z.enum(["pageview", "click", "leave"]),
+    type: z.enum(["pageview", "click", "leave", "funnel"]),
+    funnelEvent: z.enum(FUNNEL_EVENTS).optional(),
+    plan: z.enum(["free", "starter", "professional", "corporate"]).optional(),
     path: z.string().trim().min(1).max(300),
     title: shortText(200),
     referrer: shortText(500),
@@ -18,6 +21,9 @@ export const siteAnalyticsEventSchema = z
     timeOnPageMs: z.number().int().min(0).max(7_200_000).optional().nullable(),
   })
   .superRefine((value, ctx) => {
+    if (value.type === "funnel" && !value.funnelEvent) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Olay adı gerekli.", path: ["funnelEvent"] });
+    }
     // Yalnız site içi yollar; tam URL veya garip değerler yazılmasın.
     if (!value.path.startsWith("/") || value.path.includes("//")) {
       ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Geçersiz yol.", path: ["path"] });

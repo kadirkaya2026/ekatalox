@@ -9,6 +9,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
+import { FUNNEL_EVENTS, FUNNEL_LABELS } from "@/lib/site-analytics/funnel";
 import { formatBucketLabel, getIstanbulToday, shiftIsoDate } from "@/lib/dates/istanbul";
 import { SALES_PRESET_LABELS, resolvePreset, type SalesPreset } from "@/lib/sales/presets";
 import type {
@@ -511,6 +512,18 @@ export function SiteAnalyticsPanel({
       </div>
 
       <TrendChart report={report} />
+      <Card className="p-5">
+        <h2 className="text-lg font-semibold">Demo ve kayıt adımları</h2>
+        <p className="mt-1 text-sm text-muted-foreground">Seçili dönemde her olayı gerçekleştiren tekil ziyaretçiler. Demo zorunlu bir kayıt adımı değildir; bu sayılar aynı başlangıç grubunun dönüşüm oranı değildir.</p>
+        {report.funnelAvailable ? (
+          <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            {FUNNEL_EVENTS.map((event) => {
+              const row = report.funnel.find((r) => r.event_name === event);
+              return <Kpi key={event} label={FUNNEL_LABELS[event]} value={num(row?.visitors ?? 0)} hint={`${num(row?.events ?? 0)} olay`} />;
+            })}
+          </div>
+        ) : <p className="mt-4 text-sm text-amber-700">Dönüşüm verisi şu anda alınamıyor. Ölçüm veritabanı kurulumu ve bağlantısı kontrol edilmeli.</p>}
+      </Card>
       <BucketTable report={report} />
       <PagesTable report={report} />
 

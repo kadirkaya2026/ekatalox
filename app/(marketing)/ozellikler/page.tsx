@@ -36,7 +36,7 @@ const GROUPS: FeatureGroup[] = [
     lead: "Ürünleri bir kez yüklersiniz; fiyat değişince bayi o an güncelini görür. Yeni PDF göndermek biter.",
     features: [
       { title: "Şifreli bayi girişi", body: "Fiyatlar herkese açık değil. Bayi şifresiyle girer; şifresiz ziyaretçi isterseniz yalnız ürünleri, fiyatsız görür." },
-      { title: "Fiyat listeleri", body: "Bayi, perakende, özel müşteri. Her şifre ayrı listeye açılır; kimse başkasının fiyatını görmez. Ücretsizde 1, Başlangıç'ta 3, üst paketlerde sınırsız liste." },
+      { title: "Fiyat listeleri", body: "Bayi, perakende, özel müşteri. Her şifre ayrı listeye açılır; kimse başkasının fiyatını görmez. Ücretsiz planda 2, Başlangıç'ta 3, Profesyonel'de 15; Kurumsal'da sınırsız fiyat listesi." },
       { title: "Koli, paket, adet ve varyant", body: "Ürün başına koli içi adet; renk, beden, model gibi varyantlar. Bayi koli seçer, tutar kendiliğinden hesaplanır." },
       { title: "Excel ile toplu yükleme", body: "Şablonu indirin, doldurun, yükleyin. Fiyat güncellemesini de Excel ile toplu yaparsınız. Fotoğraflar toplu eklenir." },
       { title: "Kategori düzeni ve arama", body: "Kategori ve alt kategori, ürün kodu ve ada göre arama, stokta olmayanı gizleme." },
@@ -47,9 +47,9 @@ const GROUPS: FeatureGroup[] = [
     id: "siparis",
     eyebrow: "Sipariş",
     title: "Sipariş yazılı, düzenli ve WhatsApp'ınızda",
-    lead: "Sesli mesajdan sipariş çözmek biter. Bayi sepetini doldurur, siz PDF alırsınız.",
+    lead: "Sesli mesajdan sipariş çözmek biter. Bayi sepetini doldurur, PDF sipariş fişinin bağlantısını WhatsApp üzerinden paylaşır.",
     features: [
-      { title: "WhatsApp'a PDF sipariş", body: "Ürün kodu, adet, koli, birim fiyat ve toplam tek sayfada. Cari adı, telefon ve not fişin üstünde." },
+      { title: "WhatsApp'a PDF sipariş", body: "Ürün kodu, adet, koli, birim fiyat ve toplam düzenli bir PDF fişinde. Cari adı, telefon ve not fişin üstünde." },
       { title: "Sipariş formu alanları", body: "Cari adı zorunlu; adres, telefon ve not alanlarını açıp kapatırsınız. Minimum sepet tutarı koyabilirsiniz." },
       { title: "Panelde sipariş listesi", body: "Bugün oluşan sipariş PDF'leri, tutarı ve kim oluşturdu; Genel Bakış'ta ilk bakışta." },
       { title: "Sepet önerileri", body: "Sepetteki ürünle birlikte alınanları önerir; bayi eksik kalemi hatırlar, sepet büyür." },
@@ -101,6 +101,7 @@ export default function OzelliklerPage() {
         <Container>
           <SectionHeading
             eyebrow="Özellikler"
+            as="h1"
             title="Toptan satışın gerektirdiği kadar, fazlası değil"
             lead="Her özellik toptancıların katalogla sipariş alırken yaşadığı bir dertten çıktı. Etiketsiz olanlar Ücretsiz planda da var."
           />

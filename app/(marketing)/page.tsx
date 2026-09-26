@@ -14,7 +14,7 @@ import {
   Tags,
 } from "lucide-react";
 import { MARKETING_WHATSAPP_HREF, WhatsAppGlyph } from "@/components/marketing/contact-dock";
-import { HeroOrderVisual } from "@/components/marketing/hero-order-visual";
+import { HeroOrderVisual, OrderFlowProof } from "@/components/marketing/hero-order-visual";
 import { PhoneFrame } from "@/components/marketing/phone-frame";
 import { PlanCards } from "@/components/marketing/plan-cards";
 import { ButtonLink, Container, Section, SectionHeading } from "@/components/marketing/ui";
@@ -32,7 +32,7 @@ import { CUSTOMER_NAMES, SITE } from "@/lib/marketing/site";
 export const metadata: Metadata = {
   title: { absolute: "eKatalox — Toptancılar için ücretsiz online katalog ve WhatsApp sipariş" },
   description:
-    "PDF kataloğunuzu canlı bir sipariş sayfasına çevirin. Bayileriniz şifreyle girsin, kendi fiyat listesini görsün, WhatsApp'tan sipariş versin. Ücretsiz plan, kart istenmez, 5 dakikada kurulum.",
+    "Toptan ürünlerinizi tek katalogda paylaşın. Bayileriniz kendi fiyatını görsün, sepetini hazırlayıp WhatsApp'tan sipariş versin. 250 ürünle ücretsiz başlayın; kart bilgisi istenmez.",
   alternates: { canonical: "/" },
 };
 
@@ -47,14 +47,14 @@ const BEFORE_AFTER = [
   },
   {
     before: "Siparişler sesli mesajla, ekran görüntüsüyle, “şundan 3 koli” diye geliyor.",
-    after: "Sipariş ürün kodu, adet, koli ve tutarla tek sayfa PDF olarak WhatsApp'ınıza düşer.",
+    after: "Ürün kodu, adet, koli ve tutarı içeren PDF sipariş fişinin bağlantısını bayi WhatsApp üzerinden paylaşır.",
   },
 ];
 
 const STEPS = [
   {
     title: "Ürünlerinizi yükleyin",
-    body: "Excel'den, fotoğraftan ya da tek tek. PDF'inizi gönderirseniz ilk yüklemeyi biz yaparız.",
+    body: "Ürünlerinizi panelden veya Excel şablonuyla ekleyin. Mevcut listenizi aktarmak için desteğe ihtiyacınız varsa bize yazın.",
     image: null,
     alt: "Ürün listesi Excel dosyası",
   },
@@ -66,7 +66,7 @@ const STEPS = [
   },
   {
     title: "Sipariş WhatsApp'a gelir",
-    body: "Bayi sepetini doldurup gönderir, sipariş fişi PDF olarak WhatsApp numaranıza düşer.",
+    body: "Bayi sepetini doldurur, PDF sipariş fişinin bağlantısıyla WhatsApp'a geçer ve mesajı gönderir.",
     image: "/site/toptan-sepet-v2.png",
     alt: "Bayinin sepeti ve WhatsApp ile sipariş düğmesi",
   },
@@ -118,20 +118,20 @@ function ExcelSheet({ label }: { label: string }) {
 }
 
 const FEATURES = [
-  { icon: Lock, title: "Şifreli katalog", body: "Fiyatlar herkese açık değil. Şifresiz ziyaretçi isterseniz yalnız ürünleri görür." },
-  { icon: Tags, title: "Ayrı fiyat listeleri", body: "Bayi, perakende, özel müşteri. Aynı katalog her şifrede kendi fiyatıyla açılır." },
-  { icon: Package, title: "Koli, paket, adet", body: "Koli içi adet ve varyant (renk, beden, model). Tutar kendiliğinden hesaplanır." },
-  { icon: FileText, title: "WhatsApp'a PDF sipariş", body: "Cari adı, telefon, not ve kalemler tek sayfada, doğrudan WhatsApp'ınızda." },
+  { icon: Lock, title: "Fiyatlarınız kontrollü paylaşılır", body: "Kataloğu şifreyle açın veya şifresiz ziyaretçiye yalnız ürünleri gösterin. Fiyatları kimlerin göreceğini siz belirleyin." },
+  { icon: Tags, title: "Her bayiye kendi fiyatı", body: "Ayrı PDF'ler hazırlamayın. Bayi, perakende ve özel müşteriler aynı kataloğu kendi fiyat listeleriyle açsın." },
+  { icon: Package, title: "Koli ve adet hesabı hazır", body: "Bayi renk, beden veya modelini seçsin; koli ve adet üzerinden sipariş tutarı otomatik hesaplansın." },
+  { icon: FileText, title: "Sipariş detayları tek fişte", body: "Ürünleri mesajlardan tek tek toparlamayın. Müşteri bilgilerini, ürünleri, adetleri ve tutarı PDF fişinde birlikte görün." },
   { icon: Megaphone, title: "Kampanya ve öne çıkanlar", body: "Banner, kampanya kartı, indirimli ürün. Yeni gelen ürünü ilk sırada gösterin." },
-  { icon: BellRing, title: "Bayilere bildirim", body: "Yeni ürün, stok geldi, kampanya başladı. Bildirim açan bayinin telefonuna düşer." },
-  { icon: BarChart3, title: "Raporlar", body: "Kim ne zaman girdi, hangi ürünlere baktı, hangi ilden. Bugün kaç sipariş geldi." },
+  { icon: BellRing, title: "Bayilere bildirim", plan: "Profesyonel ve üzeri", body: "Yeni ürün, stok geldi, kampanya başladı. Bildirim açan bayinin telefonuna düşer." },
+  { icon: BarChart3, title: "İlgi gören ürünleri görün", plan: "Başlangıç ve üzeri", body: "Katalog ziyaretlerini, görüntülenen ürünleri ve ziyaretlerin geldiği illeri takip edin." },
   { icon: Palette, title: "Kendi logonuz ve renkleriniz", body: "Hazır temalardan seçin, gerçek ürünlerinizle önizleyin." },
 ];
 
 const FAQ = [
   {
     q: "Ücretsiz plan gerçekten ücretsiz mi?",
-    a: "Evet. Kart bilgisi istemeyiz, süre sınırı yoktur. 250 ürüne kadar kataloğunuzu yayınlar, WhatsApp'tan sipariş alırsınız. Karşılığında kataloğunuzda küçük eKatalox reklamları görünür.",
+    a: "Evet. Kart bilgisi istemeyiz, süre sınırı yoktur. 250 ürün, 2 fiyat listesi ve aylık 1.000 ziyaretçi sınırıyla kataloğunuzu yayınlar, WhatsApp'tan sipariş alırsınız. Karşılığında kataloğunuzda küçük eKatalox reklamları görünür.",
   },
   {
     q: "Reklamlar nerede görünür, bayimi rahatsız eder mi?",
@@ -139,15 +139,23 @@ const FAQ = [
   },
   {
     q: "Ürünleri kim yükler?",
-    a: "Siz yükleyebilirsiniz: Excel şablonu, fotoğraf ve panel. Mevcut PDF kataloğunuzu ya da Excel listenizi bize gönderirseniz ilk yüklemeyi biz yaparız.",
+    a: "Ürünlerinizi panelden veya Excel şablonuyla kendiniz ekleyebilirsiniz. PDF ya da Excel listenizin aktarımı için destek isterseniz WhatsApp'tan bize ulaşın; listenizi inceleyip yapılacak işi ve kapsamını birlikte netleştirelim.",
   },
   {
     q: "Bayim nasıl girer, uygulama indirmesi gerekir mi?",
     a: "Hayır. firmaniz.ekatalox.com adresini ve şifreyi WhatsApp'tan gönderirsiniz; bayi tarayıcıda açar, şifreyi yazar, sipariş verir. İsterse ana ekranına ekler, uygulama gibi kullanır.",
   },
+  {
+    q: "Ücretsiz plan ile 14 günlük deneme arasındaki fark ne?",
+    a: "Ücretsiz plan süre sınırı olmadan, kendi limitleriyle kullanılır. Ücretli bir paket seçerseniz o paketi 14 gün deneyebilirsiniz. Ödeme yapılmazsa deneme sonunda hesabınız Ücretsiz plana geçer; ücretsiz planın limitleri ve reklamları uygulanır.",
+  },
+  {
+    q: "Sipariş için komisyon öder miyim?",
+    a: "Hayır. Sipariş başına ücret veya komisyon alınmaz. Bayiniz sepetini hazırlar, oluşan PDF fişinin bağlantısını WhatsApp üzerinden size gönderir. Ücretli paket seçerseniz yalnız yıllık paket bedeli ve KDV ödersiniz.",
+  },
 ];
 
-const HERO_POINTS = ["Ücretsiz plan, süre sınırı yok", "Kart bilgisi istenmez", `${SITE.setupMinutes} dakikada kurulum`];
+const HERO_POINTS = ["Ücretsiz plan, süre sınırı yok", "Kart bilgisi istenmez", "250 ürünle ücretsiz başlangıç"];
 
 const structuredData = {
   "@context": "https://schema.org",
@@ -175,7 +183,7 @@ const structuredData = {
       applicationCategory: "BusinessApplication",
       operatingSystem: "Web",
       description:
-        "Toptancılar, üreticiler ve distribütörler için şifreli online katalog ve WhatsApp sipariş sistemi. Ücretsiz plan; ürünler bir kez yüklenir, bayiler kendi fiyat listesiyle girer, sipariş PDF olarak WhatsApp'a gelir.",
+        "Toptancılar, üreticiler ve distribütörler için şifreli online katalog ve WhatsApp sipariş sistemi. Ücretsiz plan; ürünler bir kez yüklenir, bayiler kendi fiyat listesiyle girer, bayi PDF sipariş fişinin bağlantısını WhatsApp üzerinden paylaşır.",
       url: SITE.url,
       inLanguage: "tr",
       offers: TOPTAN_PLANS.map((p) => ({
@@ -204,22 +212,22 @@ export default function HomePage() {
 
       {/* 1. Hero — koyu zemin; görsel: katalog + WhatsApp'a düşen sipariş */}
       <Section tone="navy" glow className="pb-14 pt-12 sm:pb-20 sm:pt-20">
-        <Container className="grid items-center gap-10 lg:grid-cols-[1.1fr_1fr] lg:gap-10">
+        <Container className="grid items-center gap-8 lg:grid-cols-[1.15fr_0.85fr] lg:gap-12">
           <div>
             <p className="text-sm font-medium text-brand-neon">Toptancılar ve üreticiler için</p>
             <h1 className="mt-3 text-balance text-[2.35rem] font-bold leading-[1.05] tracking-[-0.025em] text-white sm:text-5xl lg:text-[3.4rem]">
-              PDF kataloğunuz artık canlı bir sipariş sayfası.
+              Bayiniz ürününü seçsin. Siparişi WhatsApp’a gelsin.
             </h1>
             <p className="mt-5 max-w-xl text-lg leading-relaxed text-white/70">
-              Ürünlerinizi bir kez yükleyin. Bayileriniz şifreyle girsin, kendi fiyatını görsün, sepetini doldurup
-              WhatsApp&apos;tan sipariş versin.
+              Ürünlerinizi ve güncel fiyatlarınızı tek katalogda paylaşın. Bayileriniz kendi fiyatıyla sepetini
+              hazırlasın; ürün, adet ve tutar bilgileri düzenli bir sipariş fişinde toplansın.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <ButtonLink href="/basvuru" size="lg">
-                Ücretsiz kataloğumu kur
+                Ücretsiz başla
               </ButtonLink>
               <ButtonLink href={SITE.demoUrl} tone="outline-dark" size="lg" external>
-                Demo kataloğu aç
+                Demoyu incele
               </ButtonLink>
             </div>
             <ul className="mt-7 flex flex-col gap-2 text-[15px] text-white/65 sm:flex-row sm:flex-wrap sm:gap-x-6">
@@ -251,7 +259,7 @@ export default function HomePage() {
             className="group relative mt-6 overflow-hidden [mask-image:linear-gradient(to_right,transparent,black_12%,black_88%,transparent)]"
             aria-label={`Müşterilerimiz: ${CUSTOMER_NAMES.join(", ")}`}
           >
-            <div className="flex w-max animate-[customer-marquee_28s_linear_infinite] group-hover:[animation-play-state:paused] motion-reduce:animate-none">
+            <div className="flex w-max animate-[customer-marquee_75s_linear_infinite] group-hover:[animation-play-state:paused] motion-reduce:animate-none">
               {[0, 1].map((copy) => (
                 <ul key={copy} aria-hidden className="flex shrink-0 items-center">
                   {Array.from({ length: Math.ceil(8 / CUSTOMER_NAMES.length) }, () => CUSTOMER_NAMES)
@@ -271,10 +279,20 @@ export default function HomePage() {
         </section>
       ) : null}
 
+      <Section tone="paper" className="py-12 sm:py-20">
+        <Container>
+          <div className="mb-9 grid gap-4 lg:grid-cols-2 lg:items-end">
+            <SectionHeading eyebrow="KATALOGDAN SİPARİŞE" title="Mesajı görün. Fişi açın. Siparişi hazırlayın." />
+            <p className="max-w-lg text-base leading-relaxed text-brand-muted lg:pb-1">WhatsApp mesajından ürün ve tutar detaylarına kadar gerçek sipariş akışını inceleyin.</p>
+          </div>
+          <OrderFlowProof />
+        </Container>
+      </Section>
+
       {/* 3. PDF'le önce / eKatalox'la sonra */}
       <Section tone="white">
         <Container>
-          <SectionHeading title="PDF katalogla sipariş almanın üç derdi, üçü de biter." />
+          <SectionHeading title="Fiyat paylaşımını ve sipariş toplamayı tek düzene taşıyın." />
           <div className="mt-10 overflow-hidden rounded-2xl border border-brand-line">
             <div className="hidden grid-cols-2 bg-brand-paper text-sm font-semibold text-brand-muted md:grid">
               <p className="px-6 py-3">PDF katalogla</p>
@@ -327,7 +345,7 @@ export default function HomePage() {
               <p className="mt-1 text-white/65">Ürünleri gezin, sepete koyun, sipariş fişinin nasıl geldiğine bakın.</p>
             </div>
             <ButtonLink href={SITE.demoUrl} tone="outline-dark" external className="shrink-0">
-              Demo kataloğu aç
+              Demoyu incele
             </ButtonLink>
           </div>
         </Container>
@@ -337,14 +355,15 @@ export default function HomePage() {
       <Section tone="white" id="ozellikler">
         <Container>
           <SectionHeading
-            title="Toptan satışın gerektirdiği her şey, ücretsiz planda da var."
-            lead="Ürün limiti ve fiyat listesi sayısı pakete göre değişir; işleyiş her pakette aynıdır."
+            title="Daha az yazışma. Daha düzenli sipariş."
+            lead="Şifreli katalog, farklı fiyat listeleri ve PDF sipariş fişi ücretsiz planda. Raporlar Başlangıç, bayi bildirimleri Profesyonel ve üzeri paketlerde."
           />
           <div className="mt-12 grid gap-x-10 gap-y-8 sm:grid-cols-2 lg:grid-cols-4">
             {FEATURES.map((f) => (
               <div key={f.title}>
                 <f.icon className="size-5 text-brand-green" aria-hidden />
                 <h3 className="mt-3 font-semibold text-brand-navy">{f.title}</h3>
+                {"plan" in f ? <p className="mt-1 text-xs font-semibold text-brand-green">{f.plan}</p> : null}
                 <p className="mt-1.5 text-[15px] leading-relaxed text-brand-muted">{f.body}</p>
               </div>
             ))}
@@ -367,8 +386,8 @@ export default function HomePage() {
             dark
             align="center"
             className="mx-auto"
-            title="Ücretsiz başlayın, büyüyünce paket seçin."
-            lead="Fiyatlar yıllık ve KDV hariçtir. Komisyon yok, sipariş başına ücret yok. Ücretli paketlerde reklam görünmez."
+            title="Ürün sayınıza ve bayi düzeninize uygun paketi seçin."
+            lead="250 ürünle süresiz ücretsiz başlayın veya ücretli paketleri 14 gün deneyin. Ücretli paketler yıllık, KDV hariç ve reklamsızdır. Sipariş komisyonu yoktur."
           />
           <div className="mt-12">
             <PlanCards compact dark />
@@ -404,19 +423,19 @@ export default function HomePage() {
         <Container className="grid items-center gap-10 lg:grid-cols-[1.4fr_1fr]">
           <div>
             <h2 className="text-balance text-3xl font-bold leading-[1.1] tracking-[-0.02em] sm:text-4xl">
-              Kataloğunuzu bugün yayınlayın. Ücretsiz.
+              İlk adım: ürünlerinize bir katalog açın.
             </h2>
             <p className="mt-4 max-w-xl text-lg leading-relaxed text-white/75">
-              {`Kayıt ${SITE.setupMinutes} dakika sürer, kataloğunuz o an açılır. Sorunuz varsa WhatsApp'tan yazın, Excel ya da PDF'inizi gönderin, ilk yüklemeyi biz yapalım.`}
+              250 ürün ve 2 fiyat listesiyle ücretsiz başlayın. Ürünlerinizi ekleyin, katalog bağlantınızı bayilerinizle paylaşın. Listenizi aktarmak için desteğe ihtiyacınız varsa birlikte bakalım.
             </p>
           </div>
           <div className="flex flex-col gap-3 sm:flex-row lg:flex-col lg:items-end">
             <ButtonLink href="/basvuru" size="lg">
-              Ücretsiz kataloğumu kur
+              Ücretsiz başla
             </ButtonLink>
             <ButtonLink href={MARKETING_WHATSAPP_HREF} tone="outline-dark" size="lg" external>
               <WhatsAppGlyph className="size-5 text-[#25D366]" />
-              WhatsApp&apos;tan yazın
+              Kurulum desteği al
             </ButtonLink>
           </div>
         </Container>

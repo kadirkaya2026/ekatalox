@@ -126,7 +126,7 @@ export function parseProductsCsv(csvText: string): ParsedCsvResult {
             price: sanitizePrice(row[header]),
           } satisfies ImportListPrice;
         })
-        .filter((entry): entry is ImportListPrice => Boolean(entry));
+        .filter((entry) => entry !== null);
 
       const legacyPrices = DEFAULT_PRICED_LIST_NAMES.map((listName, index) => ({
         list_name: listName,

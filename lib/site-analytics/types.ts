@@ -90,6 +90,8 @@ export interface SiteAnalyticsVisitorPage {
 }
 
 export interface SiteAnalyticsReport {
+  funnel: { event_name: string; visitors: number; events: number }[];
+  funnelAvailable: boolean;
   range: SiteAnalyticsRange;
   summary: SiteAnalyticsSummary;
   series: SiteAnalyticsSeriesPoint[];

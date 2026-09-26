@@ -12,6 +12,8 @@
 import { useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
 import { appEnv } from "@/lib/env";
+import { FUNNEL_EVENTS, FUNNEL_SIGNAL, type FunnelEvent } from "@/lib/site-analytics/funnel";
+import { isToptanPlanSlug } from "@/lib/billing/toptan-plans";
 
 const COLLECT_URL = "/api/site-analytics/collect";
 const VISITOR_KEY = "ekatalox_site_visitor";
@@ -20,7 +22,9 @@ const SESSION_IDLE_MS = 30 * 60_000;
 const EXCLUDED_PREFIXES = ["/admin", "/dashboard", "/store", "/api", "/t", "/f", "/yazdir"];
 
 type TrackerEvent = {
-  type: "pageview" | "click" | "leave";
+  type: "pageview" | "click" | "leave" | "funnel";
+  funnelEvent?: FunnelEvent;
+  plan?: string;
   path: string;
   title?: string | null;
   referrer?: string | null;
@@ -93,6 +97,7 @@ function touchSessionKey() {
 }
 
 function send(events: TrackerEvent[]) {
+  try {
   if (!events.length) return;
   const payload = {
     v: 1 as const,
@@ -113,6 +118,7 @@ function send(events: TrackerEvent[]) {
     body,
     keepalive: true,
   }).catch(() => undefined);
+  } catch { /* Storage veya beacon engellense bile form çalışmaya devam eder. */ }
 }
 
 function currentPath() {
@@ -228,9 +234,23 @@ export function SiteAnalyticsTracker() {
       const described = describeClickTarget(event.target);
       if (!described) return;
       send([{ type: "click", path: currentPath(), ...described }]);
+      if (described.targetHref) {
+        const url = new URL(described.targetHref, window.location.href);
+        const funnelEvent = url.hostname === "demotoptan.ekatalox.com" ? "demo_open"
+          : url.origin === window.location.origin && url.pathname === "/basvuru" ? "signup_cta" : null;
+        const plan = url.searchParams.get("plan");
+        if (funnelEvent) send([{ type: "funnel", path: currentPath(), funnelEvent, ...(isToptanPlanSlug(plan) ? { plan } : {}) }]);
+      }
+    };
+    const onFunnel = (event: Event) => {
+      const detail = (event as CustomEvent).detail;
+      if (!detail || !FUNNEL_EVENTS.includes(detail.event)) return;
+      send([{ type: "funnel", path: currentPath(), funnelEvent: detail.event,
+        ...(isToptanPlanSlug(detail.plan) ? { plan: detail.plan } : {}) }]);
     };
 
     measureScroll();
+    window.addEventListener(FUNNEL_SIGNAL, onFunnel);
     window.addEventListener("scroll", measureScroll, { passive: true });
     document.addEventListener("visibilitychange", onVisibility);
     window.addEventListener("pagehide", flushLeave);
@@ -239,6 +259,7 @@ export function SiteAnalyticsTracker() {
     return () => {
       // Rota değişimi: önceki sayfanın süresini kapat.
       flushLeave();
+      window.removeEventListener(FUNNEL_SIGNAL, onFunnel);
       window.removeEventListener("scroll", measureScroll);
       document.removeEventListener("visibilitychange", onVisibility);
       window.removeEventListener("pagehide", flushLeave);

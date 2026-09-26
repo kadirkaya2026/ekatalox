@@ -104,7 +104,7 @@ export function SiteHeader() {
             </Link>
             <Link
               href="/basvuru"
-              className="rounded-full bg-brand-neon px-4 py-2 text-sm font-semibold text-white transition-shadow hover:shadow-[0_0_24px_-4px_rgba(34,197,94,0.6)]"
+              className="rounded-full bg-brand-neon px-4 py-2 text-sm font-semibold text-brand-dark transition-shadow hover:shadow-[0_0_24px_-4px_rgba(34,197,94,0.6)]"
             >
               {SIGNUP_CTA}
             </Link>
@@ -153,7 +153,7 @@ export function SiteHeader() {
               </Link>
               <Link
                 href="/basvuru"
-                className="flex-1 rounded-full bg-brand-neon px-4 py-3 text-center text-sm font-semibold text-white"
+                className="flex-1 rounded-full bg-brand-neon px-4 py-3 text-center text-sm font-semibold text-brand-dark"
               >
                 {SIGNUP_CTA}
               </Link>

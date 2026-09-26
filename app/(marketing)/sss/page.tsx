@@ -46,7 +46,7 @@ const GROUPS: FaqGroup[] = [
       },
       {
         q: "Farklı bayilere farklı fiyat gösterebilir miyim?",
-        a: "Evet. Her fiyat listesinin kendi şifresi vardır: bayi şifresiyle giren bayi fiyatını, perakende şifresiyle giren perakende fiyatını görür. Ücretsiz planda 1, Başlangıç'ta 3, Profesyonel ve Kurumsal'da sınırsız liste.",
+        a: "Evet. Her fiyat listesinin kendi şifresi vardır: bayi şifresiyle giren bayi fiyatını, perakende şifresiyle giren perakende fiyatını görür. Ücretsiz planda 2, Başlangıç'ta 3, Profesyonel'de 15, Kurumsal'da sınırsız fiyat listesi bulunur.",
       },
       {
         q: "Şifresiz giren biri fiyatları görebilir mi?",
@@ -54,7 +54,7 @@ const GROUPS: FaqGroup[] = [
       },
       {
         q: "Sipariş bana nasıl ulaşır?",
-        a: "Bayi sepetini gönderince sipariş fişi PDF olarak WhatsApp numaranıza düşer; panelde de listelenir. Fişte ürün kodu, adet, koli, tutar, cari adı ve not vardır.",
+        a: "Bayi sepetini hazırlayınca PDF sipariş fişi oluşur ve sipariş panelde listelenir. Bayi, fişin bağlantısıyla WhatsApp'a geçer ve mesajı göndererek sizinle paylaşır. Fişte ürün kodu, adet, koli, tutar, cari adı ve not vardır.",
       },
     ],
   },
@@ -63,7 +63,7 @@ const GROUPS: FaqGroup[] = [
     items: [
       {
         q: "Ürünleri kim yükler?",
-        a: "Siz yükleyebilirsiniz: panelde Excel şablonunu doldurup yüklersiniz, fotoğrafları toplu eklersiniz. Mevcut PDF kataloğunuzu ya da Excel listenizi bize gönderirseniz ilk yüklemeyi biz yaparız.",
+        a: "Panelde Excel şablonunu doldurup ürünlerinizi yükleyebilir, fotoğrafları ekleyebilirsiniz. Mevcut PDF veya Excel listenizin aktarımı için destek isterseniz bize ulaşın; listenizi inceleyip işin kapsamını birlikte netleştirelim.",
       },
       {
         q: "Fiyatları nasıl güncellerim?",
@@ -86,6 +86,10 @@ const GROUPS: FaqGroup[] = [
   {
     title: "Ücret ve sözleşme",
     items: [
+      {
+        q: "Ücretli paketlerin denemesi bitince ne olur?",
+        a: "Ücretli paket seçerek kayıt olduğunuzda o paketi 14 gün deneyebilirsiniz. Ödeme yapılmazsa hesabınız Ücretsiz plana geçer; ücretsiz plan limitleri ve eKatalox reklamları uygulanır. Süresiz ücretsiz planı kullanmak için ücretli denemeye başlamanız gerekmez.",
+      },
       {
         q: "Komisyon var mı?",
         a: "Yok. Ücretli paketler yıllık sabit ücrettir: Başlangıç 5.000 ₺, Profesyonel 10.000 ₺, Kurumsal 15.000 ₺ (KDV hariç). Sipariş sayısı ne olursa olsun değişmez.",
@@ -127,8 +131,9 @@ export default function SssPage() {
         <Container>
           <SectionHeading
             eyebrow="Sık sorulan sorular"
+            as="h1"
             title="Karar vermeden önce merak edilenler"
-            lead="Yanıtını bulamadığınız soru için arayın ya da WhatsApp'tan yazın; aynı gün dönüş yaparız."
+            lead="Katalog kurma, bayi girişi ve paket seçimiyle ilgili yanıtlar. Sorunuz burada yoksa telefon veya WhatsApp üzerinden bize ulaşın."
           />
         </Container>
       </Section>
@@ -173,7 +178,7 @@ export default function SssPage() {
           </div>
           <div className="flex flex-col gap-4 lg:items-end">
             <ButtonLink href="/basvuru" tone="white" size="lg">
-              Ücretsiz kataloğumu kur
+              Ücretsiz başla
             </ButtonLink>
             <a href={SITE.phoneHref} className="font-plex-mono text-lg text-white/85 hover:text-white">
               {SITE.phone}

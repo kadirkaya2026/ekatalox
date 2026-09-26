@@ -6,9 +6,6 @@ const currentFilePath = fileURLToPath(import.meta.url);
 const currentDirectory = path.dirname(currentFilePath);
 
 const nextConfig: NextConfig = {
-  typescript: {
-    ignoreBuildErrors: true,
-  },
   // Client router cache: revisiting a page within this window serves instantly
   // from cache. Every dashboard mutation calls router.refresh(), which clears
   // this cache, so a saved change is always fetched fresh on the next view.

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { PlanCards } from "@/components/marketing/plan-cards";
 import { ButtonLink, Container, Section, SectionHeading } from "@/components/marketing/ui";
-import { TOPTAN_PLANS } from "@/lib/billing/toptan-plans";
+import { formatTry, TOPTAN_PLANS } from "@/lib/billing/toptan-plans";
 import { SITE } from "@/lib/marketing/site";
 import { cn } from "@/lib/utils";
 
@@ -18,16 +18,16 @@ export const metadata: Metadata = {
 };
 
 type Cell = string | boolean;
-type Row = { label: string; cells: [Cell, Cell, Cell, Cell] };
+type Row = { label: string; cells: Cell[] };
 
 const COMPARISON: Row[] = [
-  { label: "Yıllık ücret (KDV hariç)", cells: ["0 ₺", "5.000 ₺", "10.000 ₺", "15.000 ₺"] },
+  { label: "Yıllık ücret (KDV hariç)", cells: TOPTAN_PLANS.map((plan) => formatTry(plan.yearlyPrice)) },
   { label: "eKatalox reklamları", cells: ["Görünür", "Yok", "Yok", "Yok"] },
-  { label: "Ürün sayısı", cells: ["200", "1.000", "2.500", "5.000"] },
-  { label: "Fiyat listesi (bayi / perakende / özel)", cells: ["1", "3", "Sınırsız", "Sınırsız"] },
-  { label: "Aylık ziyaretçi", cells: ["1.000", "5.000", "20.000", "50.000"] },
+  { label: "Ürün sayısı", cells: TOPTAN_PLANS.map((plan) => plan.productLimit.toLocaleString("tr-TR")) },
+  { label: "Fiyat listesi (bayi / perakende / özel)", cells: TOPTAN_PLANS.map((plan) => plan.priceListLimit === null ? "Sınırsız" : String(plan.priceListLimit)) },
+  { label: "Aylık ziyaretçi", cells: TOPTAN_PLANS.map((plan) => plan.visitorLimit.toLocaleString("tr-TR")) },
   { label: "Şifreli bayi girişi", cells: [true, true, true, true] },
-  { label: "WhatsApp'a PDF sipariş", cells: [true, true, true, true] },
+  { label: "WhatsApp ile PDF sipariş fişi bağlantısı", cells: [true, true, true, true] },
   { label: "Koli / paket / varyant", cells: [true, true, true, true] },
   { label: "Banner, kampanya kartı, indirim, öne çıkanlar", cells: [true, true, true, true] },
   { label: "Tema, gelişmiş görünüm, ana sayfa düzenleyici", cells: [true, true, true, true] },
@@ -42,7 +42,11 @@ const COMPARISON: Row[] = [
 const FAQ = [
   {
     q: "Ücretsiz planın süresi var mı?",
-    a: "Yok. Deneme değildir; kart bilgisi istemeyiz, hesap kapanmaz. 250 ürün ve 2 fiyat listesiyle istediğiniz kadar kullanırsınız. Karşılığında kataloğunuzda küçük eKatalox tanıtımları görünür.",
+    a: "Süre sınırı yoktur. 250 ürün, 2 fiyat listesi ve aylık 1.000 ziyaretçi limitiyle kullanılır. Kart bilgisi istenmez; kataloğunuzda eKatalox tanıtımları görünür. Ücretli paketlerin 14 günlük denemesinden ayrıdır.",
+  },
+  {
+    q: "14 günlük deneme bitince ne olur?",
+    a: "Ücretli paket seçerek kayıt olduğunuzda o paketin özelliklerini 14 gün denersiniz. Ödeme yapılmazsa hesabınız Ücretsiz plana geçer; ücretsiz plan limitleri ve reklamları uygulanır. Devam etmek isterseniz ödeme süreci için temsilcimizle görüşebilirsiniz.",
   },
   {
     q: "Reklamlar tam olarak nerede görünür?",
@@ -66,7 +70,7 @@ const FAQ = [
   },
   {
     q: "Yıl bitince ne olur?",
-    a: "Yenilemezseniz hesabınız Ücretsiz plana düşer: kataloğunuz açık kalır, reklamlar geri gelir, limitler ücretsiz planın limitleri olur. Fazla ürünler silinmez, yalnız yayında ilk 200'ü görünür.",
+    a: "Yenilemezseniz hesabınız Ücretsiz plana geçer. eKatalox reklamları geri gelir; 250 ürün, 2 fiyat listesi ve aylık 1.000 ziyaretçi limiti uygulanır.",
   },
 ];
 
@@ -93,8 +97,9 @@ export default function Page() {
         <Container>
           <SectionHeading
             eyebrow="Fiyatlandırma"
-            title="Ücretsiz başlayın. Büyüyünce paket seçin."
-            lead="Komisyon yok, sipariş başına ücret yok. Ücretli paketler yıllık ve KDV hariçtir; hepsinde reklam görünmez."
+            as="h1"
+            title="Kataloğunuza ve bayi düzeninize uygun paketi seçin."
+            lead="İlk kataloğunuz için süresiz ücretsiz plan; daha fazla ürün, rapor ve bayi yönetimi için ücretli paketler. Ücretli paketleri 14 gün deneyin. Yıllık fiyatlar KDV hariçtir; sipariş komisyonu yoktur."
           />
           <div className="mt-10">
             <PlanCards />
@@ -159,12 +164,12 @@ export default function Page() {
               Hangi paket size uyar, emin değil misiniz?
             </h2>
             <p className="mt-4 max-w-xl text-lg text-white/75">
-              Ücretsiz kurun, kullanın; ürün sayınız ve bayi sayınız netleşince birlikte karar veririz.
+              Önce ürün sayınıza, ardından ihtiyaç duyduğunuz fiyat listelerine bakın. Ücretsiz başlayabilir veya paket seçimi için bize ulaşabilirsiniz.
             </p>
           </div>
           <div className="flex flex-col gap-4 lg:items-end">
             <ButtonLink href="/basvuru" tone="white" size="lg">
-              Ücretsiz kataloğumu kur
+              Ücretsiz başla
             </ButtonLink>
             <a href={SITE.phoneHref} className="font-plex-mono text-lg text-white/85 hover:text-white">
               {SITE.phone}

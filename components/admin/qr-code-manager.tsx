@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition, useEffect } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Ban, Check, Download, Loader2, Pencil, Plus, Power, Printer, QrCode, Trash2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -8,7 +8,7 @@ import { Card } from "@/components/ui/card";
 import { InlineAlert } from "@/components/ui/inline-alert";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
-import { formatMagnetCodeForPrint } from "@/lib/magnet/codes";
+import { formatMagnetCodeForPrint } from "@/lib/magnet/code-format";
 
 // Magnet QR kod havuzu.
 //
@@ -103,7 +103,11 @@ export function QrCodeManager({
   const router = useRouter();
   const [codes, setCodes] = useState(initialCodes);
   // Sunucudan gelen sayfa degisince yerel listeyi tazele.
-  useEffect(() => setCodes(initialCodes), [initialCodes]);
+  const [previousInitialCodes, setPreviousInitialCodes] = useState(initialCodes);
+  if (previousInitialCodes !== initialCodes) {
+    setPreviousInitialCodes(initialCodes);
+    setCodes(initialCodes);
+  }
   const pageCount = Math.max(1, Math.ceil(total / pageSize));
   const [count, setCount] = useState("25");
   const [label, setLabel] = useState("");
@@ -680,6 +684,7 @@ export function QrCodeManager({
           </a>
           <a
             href="/api/admin/qr-codes/export"
+            download
             className="inline-flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-semibold"
             title="Boştaki kodlar, üretim sırasıyla — sıralı baskı aracına yapıştırılır"
           >

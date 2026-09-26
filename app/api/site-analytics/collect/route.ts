@@ -95,6 +95,14 @@ export async function POST(request: Request) {
   // Sıra önemli (pageview → click → leave); art arda, hata olsa da devam.
   for (const event of events) {
     if (!isTrackablePath(event.path)) continue;
+    if (event.type === "funnel") {
+      const { error } = await supabase.from("site_funnel_events").insert({
+        visitor_key: visitorKey, session_key: sessionKey, event_name: event.funnelEvent,
+        path: event.path, plan: event.plan ?? null,
+      });
+      if (error) console.error("[site-analytics/collect] funnel:", error.message);
+      continue;
+    }
 
     const { error } = await supabase.rpc("record_site_event", {
       p_visitor_key: visitorKey,

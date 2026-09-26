@@ -26,7 +26,7 @@ export const TOPTAN_PLANS: ToptanPlan[] = [
   {
     slug: "free",
     name: "Ücretsiz",
-    tagline: "Kataloğunuzu bugün yayınlayın. Kart yok, süre yok.",
+    tagline: "İlk kataloğunu açıp bayilerinden sipariş toplamaya başlamak isteyenler için.",
     yearlyPrice: 0,
     featured: false,
     ads: true,
@@ -36,7 +36,7 @@ export const TOPTAN_PLANS: ToptanPlan[] = [
     features: [
       "250 ürün, 2 fiyat listesi",
       "Şifreli bayi girişi (firma.ekatalox.com)",
-      "WhatsApp'a PDF sipariş",
+      "WhatsApp ile PDF sipariş fişi bağlantısı",
       "Banner, kampanya kartı, indirim ve öne çıkanlar",
       "Tema, görünüm ve ana sayfa düzenleyici",
       "Kataloğunuzda küçük eKatalox reklamları görünür",
@@ -45,7 +45,7 @@ export const TOPTAN_PLANS: ToptanPlan[] = [
   {
     slug: "starter",
     name: "Başlangıç",
-    tagline: "Reklamsız katalog, üç fiyat listesi ve raporlar.",
+    tagline: "Ürün yelpazesi büyüyen, reklamsız katalog ve ziyaret raporları isteyenler için.",
     yearlyPrice: 5_000,
     featured: false,
     ads: false,
@@ -53,7 +53,7 @@ export const TOPTAN_PLANS: ToptanPlan[] = [
     priceListLimit: 3,
     visitorLimit: 5_000,
     features: [
-      "Ücretsiz planın tamamı, reklamsız",
+      "Ücretsiz planın özellikleri, reklamsız katalog",
       "2.500 ürün, 3 fiyat listesi (bayi / perakende / özel)",
       "Raporlar: kim girdi, ne baktı, hangi il",
       "Aylık 5.000 ziyaretçi",
@@ -62,7 +62,7 @@ export const TOPTAN_PLANS: ToptanPlan[] = [
   {
     slug: "professional",
     name: "Profesyonel",
-    tagline: "Bayilerinize anlık bildirim, ödeme ayarları, 15 fiyat listesi.",
+    tagline: "Farklı bayi gruplarıyla çalışan, kampanya bildirimi ve vade ayarları isteyenler için.",
     yearlyPrice: 10_000,
     featured: true,
     ads: false,
@@ -80,7 +80,7 @@ export const TOPTAN_PLANS: ToptanPlan[] = [
   {
     slug: "corporate",
     name: "Kurumsal",
-    tagline: "20.000 ürün, sınırsız fiyat listesi, kendi alan adınız.",
+    tagline: "Geniş ürün kataloğu, kendi alan adı ve satış-kârlılık takibi isteyenler için.",
     yearlyPrice: 15_000,
     featured: false,
     ads: false,

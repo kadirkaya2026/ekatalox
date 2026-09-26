@@ -10,7 +10,7 @@ export const metadata: Metadata = {
   alternates: { canonical: "/basvuru" },
   openGraph: {
     title: "Ücretsiz kayıt | eKatalox",
-    description: "Kataloğunuzu 5 dakikada kurun. Kart istenmez.",
+    description: "Ücretsiz hesabınızı oluşturun veya seçtiğiniz ücretli paketi 14 gün deneyin. Kart bilgisi istenmez.",
     url: `${SITE.url}/basvuru`,
   },
 };
