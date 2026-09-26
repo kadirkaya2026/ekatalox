@@ -100,21 +100,21 @@ export function StorefrontHeaderCategoryPicker({
                 return (
                   <div
                     key={category.id}
-                    className={cn(theme.categorySidebarItem(isActive), "items-start gap-3 p-2")}
+                    className={cn(theme.categorySidebarItem(isActive), "items-center gap-3 p-2")}
                   >
                     <button
                       type="button"
                       onClick={() => choose(category.id)}
-                      className="relative size-14 shrink-0 overflow-hidden rounded-lg bg-white ring-1 ring-black/5"
+                      className="relative size-16 shrink-0 overflow-hidden rounded-xl bg-white ring-1 ring-black/5"
                       aria-label={category.name}
                     >
                       {image ? (
-                        <StorefrontImage src={image} alt="" className="object-contain p-1" sizes="56px" />
+                        <StorefrontImage src={image} alt="" className="object-contain p-1" sizes="64px" />
                       ) : (
                         <Store className="absolute inset-0 m-auto size-6 text-slate-400" />
                       )}
                     </button>
-                    <div className="min-w-0 flex-1 py-0.5">
+                    <div className="min-w-0 flex-1">
                       <button
                         type="button"
                         onClick={() => choose(category.id)}
