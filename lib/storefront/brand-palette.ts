@@ -236,7 +236,7 @@ export function resolveBrandPalette(source: BrandPaletteSource): ResolvedBrandPa
 }
 
 /** CSS değişken adı: addToCart → --ek-add-to-cart */
-export function brandRoleCssVar(key: BrandColorRoleKey, suffix?: "fg" | "soft" | "border" | "muted" | "line"): string {
+export function brandRoleCssVar(key: BrandColorRoleKey, suffix?: "fg" | "soft" | "border" | "muted" | "line" | "hover"): string {
   const kebab = key.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`);
   return `--ek-${kebab}${suffix ? `-${suffix}` : ""}`;
 }

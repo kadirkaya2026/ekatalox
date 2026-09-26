@@ -40,6 +40,20 @@ export function hasBrandColors(settings: BrandColorSettings): boolean {
  *  değişkenleri de üretilir. */
 const SECTION_ROLES = new Set<BrandColorRoleKey>(["headerBg", "footerBg", "pageBg"]);
 
+/** Dolu buton rolleri: hover için rengin %12 koyusu (--ek-<rol>-hover).
+ *  Temanın kendi hover:bg-<renk> sınıfı (ör. pro-blue'da hover:bg-blue-400)
+ *  twMerge'de bg-* ile ayrı grup olduğundan marka rengini ezmiyordu; artık
+ *  aynı gruptan hover:bg-[var(--ek-…-hover)] verilir (26 Eyl 2026). */
+const SOLID_BUTTON_ROLES = new Set<BrandColorRoleKey>([
+  "addToCart",
+  "qtyStepper",
+  "stickyCart",
+  "whatsappCheckout",
+  "gateSubmit",
+  "headerCart",
+  "campaignButton",
+]);
+
 /**
  * Vitrin kabına (StorefrontPageShell) ve panel önizlemelerine inline style
  * olarak basılan CSS değişkenleri. Eski --brand-* değişkenleri aynen
@@ -90,6 +104,9 @@ export function buildBrandCssVariables(
     if (key === "activeCategory") {
       vars[brandRoleCssVar(key, "border")] = `color-mix(in srgb, ${color} 35%, transparent)`;
     }
+    if (SOLID_BUTTON_ROLES.has(key)) {
+      vars[brandRoleCssVar(key, "hover")] = `color-mix(in srgb, ${color} 88%, black)`;
+    }
     if (SECTION_ROLES.has(key)) {
       vars[brandRoleCssVar(key, "muted")] = `color-mix(in srgb, ${fg} 72%, transparent)`;
       vars[brandRoleCssVar(key, "line")] = `color-mix(in srgb, ${fg} 16%, transparent)`;
@@ -105,6 +122,7 @@ export function buildBrandCssVariables(
 const roleClasses = {
   addToCart: {
     bg: "bg-[var(--ek-add-to-cart)]",
+    hoverBg: "hover:bg-[var(--ek-add-to-cart-hover)] hover:border-transparent",
     fg: "text-[var(--ek-add-to-cart-fg)]",
     text: "text-[var(--ek-add-to-cart)]",
     border: "border-[var(--ek-add-to-cart)]",
@@ -115,26 +133,28 @@ const roleClasses = {
   },
   stickyCart: {
     bg: "bg-[var(--ek-sticky-cart)]",
+    hoverBg: "hover:bg-[var(--ek-sticky-cart-hover)]",
     fg: "text-[var(--ek-sticky-cart-fg)]",
   },
   whatsappCheckout: {
     bg: "bg-[var(--ek-whatsapp-checkout)]",
-    hoverBg: "hover:bg-[var(--ek-whatsapp-checkout)] disabled:bg-[var(--ek-whatsapp-checkout)]",
+    hoverBg: "hover:bg-[var(--ek-whatsapp-checkout-hover)] disabled:bg-[var(--ek-whatsapp-checkout)]",
     fg: "text-[var(--ek-whatsapp-checkout-fg)]",
   },
   gateSubmit: {
     bg: "bg-[var(--ek-gate-submit)]",
-    hoverBg: "hover:bg-[var(--ek-gate-submit)] disabled:bg-[var(--ek-gate-submit)]",
+    hoverBg: "hover:bg-[var(--ek-gate-submit-hover)] disabled:bg-[var(--ek-gate-submit)]",
     fg: "text-[var(--ek-gate-submit-fg)]",
     text: "text-[var(--ek-gate-submit)]",
   },
   headerCart: {
     bg: "bg-[var(--ek-header-cart)]",
+    hoverBg: "hover:bg-[var(--ek-header-cart-hover)] hover:border-transparent",
     fg: "text-[var(--ek-header-cart-fg)]",
   },
   campaignButton: {
     bg: "bg-[var(--ek-campaign-button)]",
-    hoverBg: "hover:bg-[var(--ek-campaign-button)] disabled:bg-[var(--ek-campaign-button)]",
+    hoverBg: "hover:bg-[var(--ek-campaign-button-hover)] disabled:bg-[var(--ek-campaign-button)]",
     fg: "text-[var(--ek-campaign-button-fg)]",
   },
   price: {
@@ -142,6 +162,7 @@ const roleClasses = {
   },
   activeCategory: {
     bg: "bg-[var(--ek-active-category)]",
+    groupHoverText: "group-hover:text-[var(--ek-active-category)]",
     fg: "text-[var(--ek-active-category-fg)]",
     text: "text-[var(--ek-active-category)]",
     border: "border-[var(--ek-active-category)]",
@@ -197,7 +218,7 @@ export function applyBrandColorOverrides(
 
   if (has("headerCart")) {
     next.cartBadge = c.headerCart.fg;
-    next.cartButtonActive = cn("border-transparent px-3", c.headerCart.bg, c.headerCart.fg);
+    next.cartButtonActive = cn("border-transparent px-3", c.headerCart.bg, c.headerCart.fg, c.headerCart.hoverBg);
   }
 
   if (has("variantBadge")) {
@@ -211,7 +232,7 @@ export function applyBrandColorOverrides(
   }
 
   if (has("stickyCart")) {
-    next.stickyCartButton = cn(c.stickyCart.bg, c.stickyCart.fg, solidButtonHover);
+    next.stickyCartButton = cn(c.stickyCart.bg, c.stickyCart.fg, c.stickyCart.hoverBg, solidButtonHover);
   }
 
   if (has("whatsappCheckout")) {
@@ -228,11 +249,15 @@ export function applyBrandColorOverrides(
   }
 
   if (has("addToCart")) {
+    // Tema sınıfındaki hover:bg-<tema rengi> (pro-blue'da mavi) burada
+    // aynı gruptan hover:bg-[var(--ek-add-to-cart-hover)] ile ezilir;
+    // koyu temanın hover:brightness-110'u da kapatılır.
     next.floatingCartAddButton = cn(
       theme.floatingCartAddButton,
       c.addToCart.bg,
       c.addToCart.fg,
-      "border-transparent hover:opacity-90 active:opacity-95",
+      c.addToCart.hoverBg,
+      "border-transparent hover:brightness-100 active:opacity-95",
     );
     // Sepetteki ürünün görsel çerçevesi + butonuyla AYNI renkte olsun
     // (kullanıcı isteği, 1 Eyl 2026); ekleme anındaki çevre çizgisi de.
@@ -300,6 +325,16 @@ export function applyBrandColorOverrides(
   }
 
   if (categoryColored) {
+    // Temanın accent'inden sızan diğer vurgular (pro-blue'da mavi kalıyordu,
+    // 26 Eyl 2026): ürün adı hover'ı, menü ikonu hover'ı, "Stokta" rozeti,
+    // sepetteki seçili taksit chip'i de aktif kategori rengini alır.
+    next.productTitle = cn(theme.productTitle, c.activeCategory.groupHoverText);
+    next.categoryDropdownItemIcon = cn(theme.categoryDropdownItemIcon, c.activeCategory.groupHoverText);
+    next.stockBadgeIn = cn(theme.stockBadgeIn, c.activeCategory.soft, c.activeCategory.text);
+    next.cartInstallmentActive =
+      colorScheme === "dark"
+        ? cn("border-0", c.activeCategory.bg, c.activeCategory.fg)
+        : cn("border", c.activeCategory.softBorder, c.activeCategory.soft, c.activeCategory.text);
     next.categorySubChip = (active) =>
       cn(theme.categorySubChip(active), active ? activeChip : undefined);
     next.categoryChip = (active) =>
@@ -310,7 +345,7 @@ export function applyBrandColorOverrides(
         active ? cn(c.activeCategory.soft, c.activeCategory.text) : undefined,
       );
     next.categorySidebarChildItem = (active) =>
-      cn(theme.categorySidebarChildItem(active), active ? c.activeCategory.text : undefined);
+      cn(theme.categorySidebarChildItem(active), active ? cn(c.activeCategory.soft, c.activeCategory.text) : undefined);
     next.modalTabChip = (active) =>
       cn(
         theme.modalTabChip(active),
