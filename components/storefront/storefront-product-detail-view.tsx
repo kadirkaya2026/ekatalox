@@ -248,10 +248,10 @@ export function StorefrontProductDetailView({
         {categoryName ? <span className={cn("truncate", theme.textMuted)}>{categoryName}</span> : null}
       </div>
 
-      <div className="grid gap-5 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)] lg:gap-8">
+      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:items-start lg:gap-8">
         {/* Galeri */}
         <div className={cn("rounded-3xl border p-4 sm:p-6", theme.surface, theme.border)}>
-          <div className="relative aspect-square w-full overflow-hidden rounded-2xl">
+          <div className="relative mx-auto aspect-square w-full max-w-[520px] overflow-hidden rounded-2xl">
             {images.length ? (
               <StorefrontImage
                 src={images[Math.min(imageIndex, images.length - 1)]}

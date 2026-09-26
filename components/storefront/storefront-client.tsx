@@ -444,6 +444,15 @@ function parseUnitCount(value: string) {
   return parsedValue;
 }
 
+// Ürün sayfası ↔ liste geçişinde kaydırma: vitrinde CSS scroll-behavior
+// smooth olduğu için animasyon görünüm değişirken yarıda kesiliyordu;
+// çizimden sonra anında kaydırılır (27 Eyl 2026).
+function scrollWindowAfterRender(top: number) {
+  window.requestAnimationFrame(() =>
+    window.requestAnimationFrame(() => window.scrollTo({ top, behavior: "instant" })),
+  );
+}
+
 function QuantityStepper({
   value,
   onChange,
@@ -2075,7 +2084,7 @@ export function StorefrontClient({
       // Bildirim linki (?urun=id) artık ürün sayfasını açar (27 Eyl 2026).
       setDetailProduct(product);
       window.history.replaceState({ ekUrun: product.id }, "", getStorefrontProductPath(product));
-      window.scrollTo({ top: 0 });
+      scrollWindowAfterRender(0);
     };
     if (known) { open(known); return; }
     void fetch(`/api/storefront/products-by-ids?${new URLSearchParams({ subdomain: analyticsSubdomain, ids: urun })}`)
@@ -2105,7 +2114,7 @@ export function StorefrontClient({
       setPreviewProduct(null);
       setDetailProduct(product);
       window.history.pushState({ ekUrun: product.id, ekFromList: true }, "", getStorefrontProductPath(product));
-      window.scrollTo({ top: 0 });
+      scrollWindowAfterRender(0);
 
       if (analyticsSubdomain) {
         trackStorefrontProductView(tenant.id, analyticsSubdomain, product.id);
@@ -2125,15 +2134,14 @@ export function StorefrontClient({
         const product = productsByIdRef.current.get(id);
         if (product) {
           setDetailProduct(product);
-          window.scrollTo({ top: 0 });
+          scrollWindowAfterRender(0);
           return;
         }
         window.location.reload();
         return;
       }
       setDetailProduct(null);
-      const y = listScrollYRef.current;
-      window.requestAnimationFrame(() => window.requestAnimationFrame(() => window.scrollTo({ top: y })));
+      scrollWindowAfterRender(listScrollYRef.current);
     };
     window.addEventListener("popstate", onPop);
     return () => window.removeEventListener("popstate", onPop);
@@ -2152,7 +2160,7 @@ export function StorefrontClient({
     }
     setDetailProduct(null);
     window.history.pushState({}, "", homeHref ?? "/");
-    window.scrollTo({ top: pushHome ? 0 : listScrollYRef.current });
+    scrollWindowAfterRender(pushHome ? 0 : listScrollYRef.current);
   }
 
   function addDetailQuantity(product: StorefrontProduct, quantity: number) {
