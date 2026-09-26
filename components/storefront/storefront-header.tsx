@@ -261,7 +261,7 @@ function HeaderBrand({
       <div
         className={cn(
           theme.logoWrap,
-          compact ? "h-12 w-12 sm:h-14 sm:w-14" : "h-14 w-14 sm:h-16 sm:w-16",
+          compact ? "h-12 w-12 sm:h-14 sm:w-14" : "h-14 w-14 sm:h-16 sm:w-16 lg:h-[72px] lg:w-[72px]",
         )}
       >
         {props.storefrontSettings.logo_url ? (
@@ -479,7 +479,7 @@ function StorefrontHeaderTopBar({ props }: { props: StorefrontHeaderProps }) {
   }
 
   return (
-    <div className="container-store py-3">
+    <div className="container-store py-3 lg:py-5">
       <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(320px,640px)_auto] lg:items-center">
         <div className="col-span-2 flex min-w-0 items-start gap-2 sm:gap-3 lg:col-span-1 lg:items-center lg:gap-4">
           <HeaderBrand props={props} />

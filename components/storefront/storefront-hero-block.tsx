@@ -33,10 +33,14 @@ function TextHero({ settings }: { settings: HeroSettings }) {
   const description = settings.storefront_description?.trim();
   const ctaLabel = settings.hero_cta_label?.trim();
 
+  // Yalnız açıklama varsa (başlık/buton yok) ince bir bilgi şeridi
+  // (26 Eyl 2026: tek cümle için koca kart masaüstü+mobilde çok yer kaplıyordu).
+  const slim = !heading && !ctaLabel;
+
   return (
     <div
       className={cn(
-        "rounded-[2rem] px-6 py-8 sm:px-10 sm:py-10",
+        slim ? "rounded-2xl px-4 py-2.5 sm:px-5 sm:py-3" : "rounded-[2rem] px-6 py-8 sm:px-10 sm:py-10",
         theme.border,
         theme.surface,
         theme.elevation1,
@@ -48,7 +52,12 @@ function TextHero({ settings }: { settings: HeroSettings }) {
         </h2>
       ) : null}
       {description ? (
-        <p className={cn("mt-3 max-w-3xl text-sm leading-7 sm:text-base", theme.textMuted)}>
+        <p
+          className={cn(
+            slim ? "text-xs leading-5 sm:text-sm" : "mt-3 max-w-3xl text-sm leading-7 sm:text-base",
+            theme.textMuted,
+          )}
+        >
           {description}
         </p>
       ) : null}
@@ -159,7 +168,7 @@ export function StorefrontHeroBlock({ settings }: { settings: HeroSettings }) {
   const effectiveStyle = heroStyle !== "text" && !hasImage ? "text" : heroStyle;
 
   return (
-    <section className="mb-5 sm:mb-8">
+    <section className={cn(!heading && !settings.hero_cta_label?.trim() && effectiveStyle === "text" ? "mb-4 sm:mb-5" : "mb-5 sm:mb-8")}>
       {effectiveStyle === "full-bleed" ? (
         <FullBleedHero settings={settings} />
       ) : effectiveStyle === "image-split" ? (
