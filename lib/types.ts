@@ -686,6 +686,8 @@ export interface StorefrontProduct {
   stock_quantity: number | null;
   has_variants: boolean;
   variants: StorefrontProductVariant[];
+  /** Kademeli adet fiyatı oranları (0142); yoksa null. */
+  volume_pricing?: import("@/lib/storefront/volume-pricing").VolumePricing | null;
 }
 
 export interface StorefrontProductVariant {
@@ -718,6 +720,8 @@ export interface CartItem
   is_gift?: boolean;
   gift_campaign_id?: string | null;
   gift_campaign_title?: string | null;
+  /** Kademeli fiyatta liste adet fiyatı (price miktara göre bundan hesaplanır). */
+  base_price?: number | null;
 }
 
 export interface StorefrontSection {

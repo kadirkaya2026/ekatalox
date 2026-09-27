@@ -11,6 +11,7 @@ import { StorefrontImage } from "@/components/storefront/storefront-image";
 import { DiscountSticker, ProductPrice } from "@/components/storefront/storefront-product-card";
 import { ProductDescriptionContent } from "@/components/storefront/product-description-content";
 import { ProductImageLightbox } from "@/components/storefront/product-image-lightbox";
+import { tierUnitPrice, volumeUnitPrice } from "@/lib/storefront/volume-pricing";
 
 // Vitrin ürün sayfası görünümü (/urun/<slug>, 27 Eyl 2026). StorefrontClient
 // içinde listenin yerine çizilir; sepet işlemleri geri çağırımlarla oraya
@@ -247,8 +248,18 @@ export function StorefrontProductDetailView({
     }
   }
 
+  // Kademeli fiyat (toptantr düzeni, 0142): toplam adede göre adet fiyatı.
+  const volumePricing = product.volume_pricing ?? null;
+  const effectiveUnitPrice =
+    volumeUnitPrice({
+      base: unitPrice,
+      volumePricing,
+      packageQuantity: packageQty,
+      cartonQuantity: cartonQty,
+      units: total,
+    }) ?? unitPrice;
   const addLabel = unitPrice !== null && total > 0
-    ? `${total} adet · ${formatCurrency(unitPrice * total, product.currency)}`
+    ? `${total} adet · ${formatCurrency((effectiveUnitPrice ?? unitPrice) * total, product.currency)}`
     : total > 0
       ? `${total} adet`
       : null;
@@ -569,7 +580,92 @@ export function StorefrontProductDetailView({
             </div>
           ) : null}
 
-          {product.is_in_stock && !hasVariants && !inCart ? (
+          {volumePricing && unitPrice !== null && product.is_in_stock && !hasVariants && !inCart ? (
+            <div className="mt-5">
+              <p className={cn("mb-2.5 text-sm font-bold", theme.text)}>Satın alma miktarını seçin</p>
+              {(() => {
+                const tiers = [
+                  { key: "adet" as const, label: "Adet", qty: 1, unit: unitPrice, value: pieces, set: setPieces },
+                  packageQty
+                    ? { key: "paket" as const, label: "Paket", qty: packageQty, unit: tierUnitPrice(unitPrice, volumePricing.package), value: packages, set: setPackages }
+                    : null,
+                  cartonQty
+                    ? { key: "koli" as const, label: "Koli", qty: cartonQty, unit: tierUnitPrice(unitPrice, volumePricing.carton), value: cartons, set: setCartons }
+                    : null,
+                ].filter(Boolean) as Array<{ key: "adet" | "paket" | "koli"; label: string; qty: number; unit: number; value: string; set: (v: string) => void }>;
+                const best = tiers.reduce((min, tier) => (tier.unit < min.unit ? tier : min), tiers[0]);
+                return (
+                  <div className={cn("grid gap-2.5", tiers.length === 3 ? "grid-cols-3" : tiers.length === 2 ? "grid-cols-2" : "grid-cols-1 max-w-[200px]")}>
+                    {tiers.map((tier) => {
+                      const count = parseCount(tier.value);
+                      const saving = unitPrice > 0 ? Math.round((1 - tier.unit / unitPrice) * 100) : 0;
+                      const isBest = tiers.length > 1 && tier.key === best.key && saving > 0;
+                      return (
+                        <div
+                          key={tier.key}
+                          className={cn(
+                            "relative flex flex-col rounded-2xl border text-center",
+                            count > 0 ? "border-[var(--ek-add-to-cart,#f59e0b)] ring-1 ring-[var(--ek-add-to-cart,#f59e0b)]" : theme.border,
+                          )}
+                        >
+                          {isBest ? (
+                            <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-emerald-600 px-2 py-0.5 text-[10px] font-bold text-white">
+                              En Avantajlı
+                            </span>
+                          ) : null}
+                          <p className={cn("border-b px-1 py-2 text-xs font-bold sm:text-sm", theme.border, theme.text)}>
+                            {tier.label} <span className={cn("font-normal", theme.textMuted)}>x({tier.qty} adet)</span>
+                          </p>
+                          <div className="flex flex-1 flex-col items-center justify-center px-1 py-2.5">
+                            <p className={cn("text-base font-extrabold tabular-nums sm:text-xl", isBest ? "text-emerald-600" : theme.text)}>
+                              {formatCurrency(tier.unit, product.currency)}
+                            </p>
+                            <p className={cn("text-[11px] sm:text-xs", theme.textMuted)}>/adet</p>
+                            {tier.qty > 1 ? (
+                              <p className={cn("mt-1.5 text-[11px] tabular-nums sm:text-xs", theme.textMuted)}>
+                                {tier.label}: {formatCurrency(tier.unit * tier.qty, product.currency)}
+                              </p>
+                            ) : null}
+                            {saving > 0 ? (
+                              <p className="mt-0.5 text-[10px] font-semibold text-emerald-700 sm:text-[11px]">adet fiyatına göre %{saving}</p>
+                            ) : null}
+                          </div>
+                          <div className={cn("flex items-center justify-between border-t", theme.border)}>
+                            <button
+                              type="button"
+                              onClick={() => tier.set(String(Math.max(0, count - 1)))}
+                              className={cn("flex h-10 w-9 items-center justify-center", theme.text)}
+                              aria-label={`${tier.label} azalt`}
+                            >
+                              <Minus className="size-4" />
+                            </button>
+                            <span className={cn("text-sm font-bold tabular-nums", count ? theme.text : theme.textMuted)}>
+                              {count || "Seç"}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => tier.set(String(count + 1))}
+                              className={cn("flex h-10 w-9 items-center justify-center", theme.text)}
+                              aria-label={`${tier.label} artır`}
+                            >
+                              <Plus className="size-4" />
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
+              {total > 0 && effectiveUnitPrice !== null && effectiveUnitPrice < unitPrice ? (
+                <p className={cn("mt-2 text-xs", theme.textMuted)}>
+                  {total} adet için adet fiyatı {formatCurrency(effectiveUnitPrice, product.currency)}
+                </p>
+              ) : null}
+            </div>
+          ) : null}
+
+          {!volumePricing && product.is_in_stock && !hasVariants && !inCart ? (
             <>
               {(packageQty || cartonQty) ? (
                 <div className="mt-5">

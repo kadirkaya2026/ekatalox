@@ -3,6 +3,7 @@ import { computeDiscountPercentage } from "@/lib/products/pricing-utils";
 import { getProductDisplayPriceForList } from "@/lib/products/variant-pricing";
 import { getProductPriceForList } from "@/lib/price-lists/records";
 import type { Product, StorefrontProduct } from "@/lib/types";
+import { normalizeVolumePricing } from "@/lib/storefront/volume-pricing";
 
 export { computeDiscountPercentage };
 
@@ -97,6 +98,7 @@ export function toStorefrontProduct(
     stock_quantity: null,
     has_variants: variants.length > 0,
     variants,
+    volume_pricing: normalizeVolumePricing((product as { volume_pricing?: unknown }).volume_pricing),
   };
 }
 

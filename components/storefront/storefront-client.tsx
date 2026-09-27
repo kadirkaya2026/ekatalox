@@ -1,5 +1,6 @@
 "use client";
 
+import { volumeUnitPrice } from "@/lib/storefront/volume-pricing";
 import { DealerPushPrompt } from "@/components/storefront/dealer-push-prompt";
 import { formatDealerDisplayName, type DealerProfile } from "@/lib/kurumsal/dealer-profile";
 import {
@@ -304,6 +305,26 @@ function readStoredCart(storageKey: string) {
   }
 }
 
+// Kademeli fiyat (0142): satır fiyatı toplam adede göre paket/koli adet
+// fiyatına çekilir. Kademesi olmayan satırlar aynen döner (referans korunur).
+function repriceVolumeCart(items: CartItem[]) {
+  let changed = false;
+  const next = items.map((item) => {
+    if (!item.volume_pricing || typeof item.base_price !== "number") return item;
+    const price = volumeUnitPrice({
+      base: item.base_price,
+      volumePricing: item.volume_pricing,
+      packageQuantity: item.package_quantity,
+      cartonQuantity: item.carton_quantity,
+      units: item.quantity,
+    });
+    if (price === item.price) return item;
+    changed = true;
+    return { ...item, price };
+  });
+  return changed ? next : items;
+}
+
 function addToCart(items: CartItem[], product: StorefrontProduct, quantity: number) {
   if (!product.is_in_stock || quantity <= 0) {
     return items;
@@ -327,7 +348,15 @@ function addToCart(items: CartItem[], product: StorefrontProduct, quantity: numb
         image_url_3: product.image_url_3,
         is_in_stock: product.is_in_stock,
         currency: product.currency,
-        price: product.price,
+        price: volumeUnitPrice({
+          base: product.price,
+          volumePricing: product.volume_pricing,
+          packageQuantity: product.package_quantity,
+          cartonQuantity: product.carton_quantity,
+          units: quantity,
+        }),
+        base_price: product.volume_pricing ? product.price : undefined,
+        volume_pricing: product.volume_pricing ?? undefined,
         package_quantity: product.package_quantity,
         carton_quantity: product.carton_quantity,
         stock_quantity: product.stock_quantity,
@@ -1011,13 +1040,17 @@ export function StorefrontClient({
   /** Kişiye özel bayi şifresiyle giren müşteri (0138). */
   dealerProfile?: DealerProfile | null;
 }) {
-  const [cart, setCart] = useState<CartItem[]>(() => {
+  const [cart, setCartState] = useState<CartItem[]>(() => {
     if (typeof window === "undefined") {
       return [];
     }
 
-    return readStoredCart(getCartStorageKey(tenant.id));
+    return repriceVolumeCart(readStoredCart(getCartStorageKey(tenant.id)));
   });
+  // Her sepet güncellemesinde kademeli fiyat (0142) yeniden hesaplanır.
+  const setCart = useCallback((update: React.SetStateAction<CartItem[]>) => {
+    setCartState((prev) => repriceVolumeCart(typeof update === "function" ? update(prev) : update));
+  }, []);
   const cartRef = useRef(cart);
   cartRef.current = cart;
   const [isCartOpen, setIsCartOpen] = useState(false);
