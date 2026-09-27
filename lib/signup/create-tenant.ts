@@ -79,15 +79,15 @@ function isEmailExistsError(error: { message?: string; code?: string } | null) {
   );
 }
 
-/** Varsayılan fiyat listeleri: fiyatsız katalog + tek fiyatlı liste. Ücretsiz
- *  planda 2 fiyatlı liste hakkı var (PLAN_PRICE_LIST_LIMITS.free); ikincisini
- *  bayi panelden ekler. */
+/** Varsayılan fiyat listeleri: fiyatsız katalog + 2 fiyatlı liste (Ücretsiz
+ *  plan hakkının tamamı, PLAN_PRICE_LIST_LIMITS.free; 28 Eyl 2026). */
 async function createDefaultPriceLists(supabase: SupabaseClient, tenantId: string) {
   const { data, error } = await supabase
     .from("price_lists")
     .insert([
       { tenant_id: tenantId, name: "Fiyatsız Katalog", is_catalog_only: true, sort_order: 0 },
       { tenant_id: tenantId, name: "1. Liste", is_catalog_only: false, sort_order: 1 },
+      { tenant_id: tenantId, name: "2. Liste", is_catalog_only: false, sort_order: 2 },
     ])
     .select("id, is_catalog_only, sort_order");
 
