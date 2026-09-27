@@ -9,7 +9,6 @@ import { requireTenantAdminPage } from "@/lib/auth/session";
 import { getTenantStorefrontSettings } from "@/lib/data";
 import { getTenantOrderWithEvents } from "@/lib/orders/data";
 import { formatOrderNo, formatPaymentMethod } from "@/lib/orders/format";
-import { getStatusLabel } from "@/lib/orders/status";
 import { formatCurrency } from "@/lib/utils";
 import type { CurrencyCode } from "@/lib/products/constants";
 import { ReceiptPrintControls } from "@/components/print/receipt-print-controls";
@@ -66,7 +65,6 @@ export default async function OrderReceiptPrintPage(props: Props) {
       <hr />
       <div className="c b xl">SİPARİŞ {formatOrderNo(order)}</div>
       <div className="row"><span>{fmt(order.created_at)}</span><span>{payment ?? ""}</span></div>
-      <div className="row"><span>Durum</span><span>{getStatusLabel(order.status, { isTekel: Boolean(tenant.is_tekel) })}</span></div>
       <hr />
       <div className="b">{order.customer_name}</div>
       {order.customer_phone ? <div>{order.customer_phone}</div> : null}
