@@ -101,6 +101,48 @@ const GATE_BRANDING: Record<string, GateBranding> = {
       },
     },
   },
+  // Moda/tekstil demo vitrini (VELIRA, 28 Eyl 2026). Arka plan gerçek ürün
+  // fotoğraflarından derlendi (~/setre-aktarim/velira).
+  "demo-giyim": {
+    backgroundImage: "/gate/demo-giyim/bg.jpg",
+    logoMark: "/gate/demo-giyim/logo-mark.png",
+    wordmark: "VELIRA",
+    accentColor: "#C8A27A",
+    copy: {
+      tr: {
+        eyebrow: "Bayi Portalı",
+        headline: "Yeni Sezon, Toptan Fiyatla.",
+        tagline:
+          "Elbiseden ceket ve takıma, dış giyimden pantolona; VELIRA kadın giyim koleksiyonunun güncel toptan fiyat listesi bayilerimize özel.",
+        chips: ["Elbise", "Ceket", "Takım", "Pantolon", "Dış Giyim", "3 Fiyat Kademesi"],
+        helpLine: "Şifreniz yok mu? WhatsApp'tan bize yazın.",
+      },
+      en: {
+        eyebrow: "Dealer Portal",
+        headline: "New Season, Wholesale Prices.",
+        tagline:
+          "From dresses to jackets and sets, outerwear to trousers; the current wholesale price list of the VELIRA women's collection, exclusively for our dealers.",
+        chips: ["Dresses", "Jackets", "Sets", "Trousers", "Outerwear", "3 Price Tiers"],
+        helpLine: "No password? Message us on WhatsApp.",
+      },
+      de: {
+        eyebrow: "Händlerportal",
+        headline: "Neue Saison, Großhandelspreise.",
+        tagline:
+          "Von Kleidern bis Jacken und Sets, von Oberbekleidung bis Hosen; die aktuelle Großhandelspreisliste der VELIRA Damenkollektion, exklusiv für unsere Händler.",
+        chips: ["Kleider", "Jacken", "Sets", "Hosen", "Oberbekleidung", "3 Preisstufen"],
+        helpLine: "Kein Passwort? Schreiben Sie uns über WhatsApp.",
+      },
+      ru: {
+        eyebrow: "Портал дилера",
+        headline: "Новый сезон по оптовым ценам.",
+        tagline:
+          "От платьев до жакетов и костюмов, от верхней одежды до брюк; актуальный оптовый прайс-лист женской коллекции VELIRA только для наших дилеров.",
+        chips: ["Платья", "Жакеты", "Костюмы", "Брюки", "Верхняя одежда", "3 уровня цен"],
+        helpLine: "Нет пароля? Напишите нам в WhatsApp.",
+      },
+    },
+  },
 };
 
 export function getGateBranding(subdomain: string): GateBranding | null {

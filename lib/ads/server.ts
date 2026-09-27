@@ -75,10 +75,15 @@ export async function saveStorefrontAdsConfig(
  * Bu vitrinde reklam gösterilecek mi? Ücretsiz plan + ana şalter açık ise
  * yapılandırmayı, aksi halde null döner. Sayfalar/route'lar bunu tek yerden alır.
  */
+// Ücretli pakette olsa da eKatalox reklamı gösterilen demo vitrinler
+// (ücretsiz plan görünümünü sergilemek için; 28 Eyl 2026).
+const ADS_DEMO_SUBDOMAINS = new Set(["demo-giyim"]);
+
 export async function resolveStorefrontAds(
-  tenant: Pick<Tenant, "plan">,
+  tenant: Pick<Tenant, "plan"> & { subdomain?: string | null },
 ): Promise<StorefrontAdsConfig | null> {
-  if (!planShowsStorefrontAds(tenant.plan)) return null;
+  const forced = Boolean(tenant.subdomain && ADS_DEMO_SUBDOMAINS.has(tenant.subdomain));
+  if (!forced && !planShowsStorefrontAds(tenant.plan)) return null;
   const config = await getStorefrontAdsConfig();
   return config.enabled ? config : null;
 }
