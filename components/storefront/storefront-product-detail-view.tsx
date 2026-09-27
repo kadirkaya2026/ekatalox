@@ -134,9 +134,12 @@ export function StorefrontProductDetailView({
     const track = trackRef.current;
     if (track) track.scrollTo({ left: index * track.clientWidth, behavior: "smooth" });
   }
-  const [pieces, setPieces] = useState("1");
-  const [packages, setPackages] = useState("");
-  const [cartons, setCartons] = useState("");
+  // Kademeli fiyatta adet satılmıyorsa en küçük birim (paket/koli) seçili açılır.
+  const startUnit =
+    product.volume_pricing?.adet === false ? (product.package_quantity ? "paket" : "koli") : "adet";
+  const [pieces, setPieces] = useState(startUnit === "adet" ? "1" : "");
+  const [packages, setPackages] = useState(startUnit === "paket" ? "1" : "");
+  const [cartons, setCartons] = useState(startUnit === "koli" ? "1" : "");
   const [copied, setCopied] = useState(false);
   const [variantQty, setVariantQty] = useState<Record<string, string>>({});
   const [variantBusy, setVariantBusy] = useState(false);
@@ -585,7 +588,9 @@ export function StorefrontProductDetailView({
               <p className={cn("mb-2.5 text-sm font-bold", theme.text)}>Satın alma miktarını seçin</p>
               {(() => {
                 const tiers = [
-                  { key: "adet" as const, label: "Adet", qty: 1, unit: unitPrice, value: pieces, set: setPieces },
+                  volumePricing.adet === false
+                    ? null
+                    : { key: "adet" as const, label: "Adet", qty: 1, unit: unitPrice, value: pieces, set: setPieces },
                   packageQty
                     ? { key: "paket" as const, label: "Paket", qty: packageQty, unit: tierUnitPrice(unitPrice, volumePricing.package), value: packages, set: setPackages }
                     : null,
