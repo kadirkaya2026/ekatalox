@@ -4207,23 +4207,47 @@ export function StorefrontClient({
             onIncrease={() => handleIncreaseCartItem(detailProduct.id)}
             onDecrease={() => handleDecreaseCartItem(detailProduct.id)}
             onChooseVariants={() => handleOpenAddToCartModal(detailProduct.id)}
-            onAddVariants={(picks) => addDetailVariants(detailProduct, picks)}
+            // Sayfada beden/model seçimi + renkler yalnız Moda (tekstil)
+            // vitrininde (28 Eyl 2026, kullanıcı: "sadece demo-giyim'de");
+            // diğer vitrinlerde "Model Seç" penceresi aynen.
+            onAddVariants={
+              productCardStyle.variant === "fashion"
+                ? (picks) => addDetailVariants(detailProduct, picks)
+                : undefined
+            }
             variantCartQuantities={Object.fromEntries(
               cart
                 .filter((item) => item.product_id === detailProduct.id && item.variant_id)
                 .map((item) => [item.variant_id as string, item.quantity]),
             )}
-            subdomain={analyticsSubdomain}
+            subdomain={productCardStyle.variant === "fashion" ? analyticsSubdomain : null}
             onOpenCart={openCartDrawer}
             related={
               relatedPreviewProducts.length ? (
                 <div>
                   <h2 className={cn("mb-3 text-lg font-bold tracking-tight", theme.text)}>Aynı kategoriden</h2>
+                  {productCardStyle.variant === "fashion" ? (
+                    // Moda: ana sayfadaki tam boy kartın küçük hali.
+                    <StorefrontProductListing
+                      products={relatedPreviewProducts}
+                      cartQuantityByProductId={cartQuantityByProductId}
+                      cartVariantCountByProductId={cartVariantCountByProductId}
+                      productCardClassName={resolvedProductCardClassName}
+                      productImageWrapClassName={resolvedProductImageWrapClassName}
+                      cardVariant="fashion"
+                      gridClassName="scrollbar-hide -mx-1 flex gap-3 overflow-x-auto px-1 pb-1 [&>*]:w-[140px] [&>*]:shrink-0 sm:[&>*]:w-[170px]"
+                      onOpenDetail={handleOpenProductDetail}
+                      onIncrease={handleIncreaseCartItem}
+                      onDecrease={handleDecreaseCartItem}
+                      onOpenAddToCart={handleQuickAddOrOpenModal}
+                    />
+                  ) : (
                   <div className="scrollbar-hide -mx-1 -mt-2 flex gap-3 overflow-x-auto px-1 pb-1 pt-2">
                     {relatedPreviewProducts.map((product) =>
                       renderCrossSellCard(product, false, handleOpenProductDetail),
                     )}
                   </div>
+                  )}
                 </div>
               ) : null
             }
