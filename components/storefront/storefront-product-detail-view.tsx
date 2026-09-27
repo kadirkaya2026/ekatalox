@@ -122,6 +122,15 @@ export function StorefrontProductDetailView({
     [product.image_url, product.image_url_2, product.image_url_3],
   );
   const [imageIndex, setImageIndex] = useState(0);
+  // Galeri kaydırılabilir şerit (28 Eyl 2026, tüm tenantlar): mobilde
+  // parmakla kaydırma, scroll-snap ile her görsel tam oturur; küçük
+  // resimler ve noktalar şeritle eşlenir.
+  const trackRef = useRef<HTMLDivElement>(null);
+  function goToImage(index: number) {
+    setImageIndex(index);
+    const track = trackRef.current;
+    if (track) track.scrollTo({ left: index * track.clientWidth, behavior: "smooth" });
+  }
   const [pieces, setPieces] = useState("1");
   const [packages, setPackages] = useState("");
   const [cartons, setCartons] = useState("");
@@ -365,19 +374,48 @@ export function StorefrontProductDetailView({
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:items-start lg:gap-8">
         {/* Galeri */}
         <div className={cn("rounded-3xl border p-4 sm:p-6", theme.surface, theme.border)}>
-          <div className="relative mx-auto aspect-square w-full max-w-[520px] overflow-hidden rounded-2xl">
+          <div className="relative mx-auto w-full max-w-[520px]">
             {images.length ? (
-              <StorefrontImage
-                src={images[Math.min(imageIndex, images.length - 1)]}
-                alt={product.product_name}
-                className="object-contain"
-                sizes={STOREFRONT_MODAL_PRODUCT_SIZES}
-                priority
-              />
+              <div
+                ref={trackRef}
+                onScroll={(event) => {
+                  const track = event.currentTarget;
+                  if (!track.clientWidth) return;
+                  const index = Math.round(track.scrollLeft / track.clientWidth);
+                  if (index !== imageIndex) setImageIndex(index);
+                }}
+                className="scrollbar-hide flex aspect-square w-full snap-x snap-mandatory overflow-x-auto overscroll-x-contain rounded-2xl"
+                style={{ scrollbarWidth: "none", touchAction: "pan-x pan-y" }}
+              >
+                {images.map((src, index) => (
+                  <div key={src} className="relative h-full w-full shrink-0 snap-center snap-always">
+                    <StorefrontImage
+                      src={src}
+                      alt={index === 0 ? product.product_name : `${product.product_name} ${index + 1}`}
+                      className="object-contain"
+                      sizes={STOREFRONT_MODAL_PRODUCT_SIZES}
+                      priority={index === 0}
+                    />
+                  </div>
+                ))}
+              </div>
             ) : (
-              <div className={cn("flex h-full items-center justify-center", theme.emptyImage)} />
+              <div className={cn("flex aspect-square items-center justify-center rounded-2xl", theme.emptyImage)} />
             )}
             <DiscountSticker product={product} />
+            {images.length > 1 ? (
+              <div className="pointer-events-none absolute inset-x-0 bottom-2 flex justify-center gap-1.5 sm:hidden">
+                {images.map((src, index) => (
+                  <span
+                    key={src}
+                    className={cn(
+                      "h-1.5 rounded-full transition-all",
+                      index === imageIndex ? "w-4 bg-black/70" : "w-1.5 bg-black/25",
+                    )}
+                  />
+                ))}
+              </div>
+            ) : null}
           </div>
           {images.length > 1 ? (
             <div className="mt-4 flex gap-2.5">
@@ -385,7 +423,7 @@ export function StorefrontProductDetailView({
                 <button
                   key={src}
                   type="button"
-                  onClick={() => setImageIndex(index)}
+                  onClick={() => goToImage(index)}
                   className={cn(
                     "relative size-16 overflow-hidden rounded-xl border-2 sm:size-20",
                     index === imageIndex ? "border-[var(--ek-add-to-cart,#10b981)]" : cn("border-transparent", theme.border),
