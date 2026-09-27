@@ -1,18 +1,92 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { BellRing, KeyRound, MessageCircle, Pencil, Phone, Plus, Search, Trash2, Users } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { BellRing, ChevronDown, KeyRound, Loader2, MessageCircle, Pencil, Phone, Plus, Search, Trash2, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Modal } from "@/components/ui/modal";
 import { DealerCustomerForm, type DealerCustomerFormValues } from "@/components/dashboard/dealer-customer-form";
+import Link from "next/link";
 import { normalizeTrPhoneDigits } from "@/lib/kurumsal/applications";
+import { formatOrderNo, formatOrderTotal } from "@/lib/orders/format";
+import { ORDER_STATUS_TONES, getStatusLabel } from "@/lib/orders/status";
+import type { OrderStatus } from "@/lib/types";
+import { cn, formatDateTime } from "@/lib/utils";
 import type { DealerCustomer } from "@/lib/kurumsal/dealer-customers";
 import type { PriceList } from "@/lib/types";
 
 // Panel → Müşteriler (toptancı, Kurumsal paket): kişiye özel şifreli bayi
 // müşterileri. Onaylı başvurular buraya düşer; elle de eklenebilir.
+
+type CustomerOrder = {
+  id: string;
+  order_no: number | null;
+  order_number: string;
+  status: OrderStatus;
+  created_at: string;
+  currency: string;
+  total_amount: number;
+  item_count: number;
+};
+
+// Karta tıklayınca açılan sipariş listesi; satır Siparişler'de o siparişi açar.
+function CustomerOrders({ customerId }: { customerId: string }) {
+  const [orders, setOrders] = useState<CustomerOrder[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    void fetch(`/api/tenant/bayi-musteriler/${customerId}/siparisler`)
+      .then(async (res) => {
+        const result = (await res.json().catch(() => null)) as { orders?: CustomerOrder[]; error?: string } | null;
+        if (cancelled) return;
+        if (!res.ok || !result?.orders) setError(result?.error ?? "Siparişler okunamadı.");
+        else setOrders(result.orders);
+      })
+      .catch(() => !cancelled && setError("Siparişler okunamadı."));
+    return () => {
+      cancelled = true;
+    };
+  }, [customerId]);
+
+  if (error) return <p className="text-sm text-rose-700">{error}</p>;
+  if (!orders) {
+    return (
+      <p className="flex items-center gap-2 text-sm text-muted-foreground">
+        <Loader2 className="size-4 animate-spin" /> Siparişler yükleniyor…
+      </p>
+    );
+  }
+  if (!orders.length) return <p className="text-sm text-muted-foreground">Bu müşteriden henüz sipariş gelmedi.</p>;
+  return (
+    <div className="divide-y divide-slate-100 overflow-hidden rounded-xl border border-slate-200">
+      {orders.map((order) => (
+        <Link
+          key={order.id}
+          href={`/siparisler?order=${order.id}`}
+          className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-3 gap-y-0.5 px-3 py-2.5 text-sm hover:bg-slate-50 sm:grid-cols-[90px_120px_minmax(0,1fr)_auto]"
+        >
+          <span className="font-semibold tabular-nums">{formatOrderNo(order)}</span>
+          <span
+            className={cn(
+              "w-fit whitespace-nowrap rounded-full px-2 py-0.5 text-[11px] font-semibold",
+              ORDER_STATUS_TONES[order.status],
+            )}
+          >
+            {getStatusLabel(order.status)}
+          </span>
+          <span className="col-span-3 text-slate-500 tabular-nums sm:col-span-1">
+            {formatDateTime(order.created_at)} · {order.item_count} kalem
+          </span>
+          <span className="col-start-3 row-start-1 text-right font-semibold tabular-nums sm:col-start-auto sm:row-start-auto">
+            {formatOrderTotal(order)}
+          </span>
+        </Link>
+      ))}
+    </div>
+  );
+}
 
 const dateFormatter = new Intl.DateTimeFormat("tr-TR", { day: "2-digit", month: "short", year: "numeric" });
 
@@ -51,6 +125,7 @@ export function DealerCustomersManager({
   const [query, setQuery] = useState("");
   const [editing, setEditing] = useState<DealerCustomer | "new" | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [openId, setOpenId] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -169,7 +244,12 @@ export function DealerCustomersManager({
             return (
               <Card key={customer.id} className="p-4 sm:p-5">
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                  <div className="min-w-0 space-y-1.5">
+                  <button
+                    type="button"
+                    onClick={() => setOpenId((current) => (current === customer.id ? null : customer.id))}
+                    aria-expanded={openId === customer.id}
+                    className="min-w-0 space-y-1.5 text-left"
+                  >
                     <h3 className="text-base font-semibold">
                       {customer.customer_company || customer.customer_name}
                       {customer.customer_company && customer.customer_name ? (
@@ -199,7 +279,11 @@ export function DealerCustomersManager({
                         {[customer.customer_address, customer.customer_city].filter(Boolean).join(" / ")}
                       </p>
                     ) : null}
-                  </div>
+                    <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700">
+                      <ChevronDown className={cn("size-4 transition", openId === customer.id && "rotate-180")} />
+                      {openId === customer.id ? "Siparişleri gizle" : "Siparişlerini gör"}
+                    </span>
+                  </button>
                   <div className="flex shrink-0 flex-wrap items-center gap-2">
                     {customer.customer_phone ? (
                       <a
@@ -244,6 +328,11 @@ export function DealerCustomersManager({
                     )}
                   </div>
                 </div>
+                {openId === customer.id ? (
+                  <div className="mt-4 border-t border-slate-100 pt-4">
+                    <CustomerOrders customerId={customer.id} />
+                  </div>
+                ) : null}
               </Card>
             );
           })}
