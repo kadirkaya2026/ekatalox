@@ -176,8 +176,9 @@ export function StorefrontProductDetailView({
     flashTimer.current = window.setTimeout(() => setFlash(null), 1600);
   }
 
-  const packageQty = !isMarketTenant && product.package_quantity ? product.package_quantity : null;
-  const cartonQty = !isMarketTenant && product.carton_quantity ? product.carton_quantity : null;
+  // 1 adetlik paket/koli anlamsız ("1 Koli = 1 adet", qoop 28 Eyl 2026): girilmemiş sayılır.
+  const packageQty = !isMarketTenant && (product.package_quantity ?? 0) > 1 ? product.package_quantity! : null;
+  const cartonQty = !isMarketTenant && (product.carton_quantity ?? 0) > 1 ? product.carton_quantity! : null;
   const total =
     parseCount(pieces) + parseCount(packages) * (packageQty ?? 0) + parseCount(cartons) * (cartonQty ?? 0);
   const unitPrice = typeof product.price === "number" ? product.price : null;
