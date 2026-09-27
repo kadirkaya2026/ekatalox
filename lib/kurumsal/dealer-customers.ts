@@ -164,3 +164,33 @@ export async function resolveStorefrontDealerProfile(
   if (!supabase) return null;
   return getDealerProfileByAccessCode(supabase, tenant.id, accessCodeId);
 }
+
+export interface DealerCustomerOrder {
+  id: string;
+  order_no: number | null;
+  order_number: string;
+  status: "new" | "confirmed" | "preparing" | "shipped" | "delivered" | "cancelled";
+  created_at: string;
+  currency: string;
+  total_amount: number;
+  item_count: number;
+}
+
+/** Müşteri sayfası (/customers/[id]): müşteri + siparişleri (orders.access_code_id). */
+export async function getDealerCustomerDetail(
+  supabase: SupabaseClient,
+  tenantId: string,
+  id: string,
+): Promise<{ customer: DealerCustomer; orders: DealerCustomerOrder[] } | null> {
+  const customers = await getTenantDealerCustomers(supabase, tenantId);
+  const customer = customers.find((entry) => entry.id === id);
+  if (!customer) return null;
+  const { data } = await supabase
+    .from("orders")
+    .select("id, order_no, order_number, status, created_at, currency, total_amount, item_count")
+    .eq("tenant_id", tenantId)
+    .eq("access_code_id", id)
+    .order("created_at", { ascending: false })
+    .limit(500);
+  return { customer, orders: (data ?? []) as DealerCustomerOrder[] };
+}
