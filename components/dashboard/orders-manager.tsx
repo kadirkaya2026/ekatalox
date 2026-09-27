@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ArrowLeft, Loader2, MessageCircle, NotebookText, Printer, Search } from "lucide-react";
+import { ArrowLeft, BellRing, Loader2, MessageCircle, NotebookText, Printer, Search } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -299,7 +299,14 @@ export function OrdersManager({
 
           {/* Müşteri */}
           <div className="rounded-xl bg-slate-50 px-4 py-3 text-sm">
-            <p className="font-semibold text-slate-900">{order.customer_name || "İsimsiz müşteri"}</p>
+            <p className="flex flex-wrap items-center gap-2 font-semibold text-slate-900">
+              {order.customer_name || "İsimsiz müşteri"}
+              {order.has_push ? (
+                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-semibold text-emerald-800">
+                  <BellRing className="size-3" /> Bildirim açık
+                </span>
+              ) : null}
+            </p>
             {order.customer_phone ? (
               <a href={`tel:${order.customer_phone}`} className="text-slate-700 hover:underline">{order.customer_phone}</a>
             ) : null}
@@ -630,6 +637,11 @@ export function OrdersManager({
                   </button>
                   <span className="text-right text-sm font-semibold tabular-nums text-slate-900 md:hidden">{formatOrderTotal(order)}</span>
                   <button type="button" onClick={() => void openOrder(order)} className="col-span-2 min-w-0 truncate text-left text-sm text-slate-700 hover:underline md:col-span-1">
+                    {order.has_push ? (
+                      <BellRing className="mr-1 inline size-3.5 -translate-y-px text-emerald-600" aria-label="Bildirim açık">
+                        <title>Bildirim açık</title>
+                      </BellRing>
+                    ) : null}
                     {order.customer_name || "İsimsiz müşteri"}
                     {order.customer_phone ? <span className="text-slate-400"> · {order.customer_phone}</span> : null}
                     {order.magnet_mismatch ? (

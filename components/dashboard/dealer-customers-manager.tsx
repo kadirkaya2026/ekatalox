@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { KeyRound, MessageCircle, Pencil, Phone, Plus, Search, Trash2, Users } from "lucide-react";
+import { BellRing, KeyRound, MessageCircle, Pencil, Phone, Plus, Search, Trash2, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -94,6 +94,7 @@ export function DealerCustomersManager({
           created_at: new Date().toISOString(),
           order_count: 0,
           last_order_at: null,
+          has_push: false,
           ...fields,
         },
         ...list,
@@ -173,6 +174,14 @@ export function DealerCustomersManager({
                       {customer.customer_company || customer.customer_name}
                       {customer.customer_company && customer.customer_name ? (
                         <span className="font-normal text-muted-foreground"> · {customer.customer_name}</span>
+                      ) : null}
+                      {customer.has_push ? (
+                        <span
+                          className="ml-2 inline-flex translate-y-[-1px] items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 align-middle text-[11px] font-semibold text-emerald-800"
+                          title="Bu müşteriye panelden bildirim gönderebilirsiniz"
+                        >
+                          <BellRing className="size-3" /> Bildirim açık
+                        </span>
                       ) : null}
                     </h3>
                     <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">

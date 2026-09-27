@@ -1,10 +1,20 @@
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { getPushReach, hasPushReach, type PushReach } from "@/lib/push/reach";
 import type { OrderStatus, OrderStatusEvent, StorefrontOrder } from "@/lib/types";
 import { ORDER_STATUSES } from "@/lib/orders/status";
 import { getIstanbulToday } from "@/lib/dates/istanbul";
 
 // Sipariş listesi/detayı — bayi paneli. Tüm sorgular tenant_id ile sınırlı;
 // tarih aralığı Europe/Istanbul takvim günü olarak yorumlanır.
+
+function orderHasPush(reach: PushReach, order: StorefrontOrder) {
+  return hasPushReach(reach, {
+    customerId: order.customer_id,
+    orderId: order.id,
+    accessCodeId: order.access_code_id ?? null,
+    phone: order.customer_phone,
+  });
+}
 
 const ORDER_SELECT = "*";
 
@@ -115,8 +125,12 @@ export async function getTenantOrdersPage(
   counts.all = ORDER_STATUSES.reduce((t, s) => t + counts[s], 0);
   const creditOpenCount = creditCountResult?.count ?? 0;
 
+  const [withMagnets, reach] = await Promise.all([
+    attachMagnetInfo(supabase, tenantId, (listResult.data ?? []) as StorefrontOrder[]),
+    getPushReach(supabase, tenantId),
+  ]);
   return {
-    orders: await attachMagnetInfo(supabase, tenantId, (listResult.data ?? []) as StorefrontOrder[]),
+    orders: withMagnets.map((order) => ({ ...order, has_push: orderHasPush(reach, order) })),
     total: listResult.count ?? 0,
     page,
     pageSize,
@@ -138,8 +152,11 @@ export async function getTenantOrderWithEvents(tenantId: string, orderId: string
       .order("created_at", { ascending: true }),
   ]);
   if (!order) return null;
-  const [enriched] = await attachMagnetInfo(supabase, tenantId, [order as StorefrontOrder]);
-  return { order: enriched, events: (events ?? []) as OrderStatusEvent[] };
+  const [[enriched], reach] = await Promise.all([
+    attachMagnetInfo(supabase, tenantId, [order as StorefrontOrder]),
+    getPushReach(supabase, tenantId),
+  ]);
+  return { order: { ...enriched, has_push: orderHasPush(reach, enriched) }, events: (events ?? []) as OrderStatusEvent[] };
 }
 
 /** Kenar çubuğu rozeti: bayinin henüz bakmadığı ("Yeni") siparişler. */

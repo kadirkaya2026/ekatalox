@@ -3,6 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { hasPlanFeature, type TenantPlan } from "@/lib/billing/plans";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import type { DealerProfile } from "@/lib/kurumsal/dealer-profile";
+import { getPushReach, hasPushReach } from "@/lib/push/reach";
 
 export { formatDealerAddress, formatDealerDisplayName, type DealerProfile } from "@/lib/kurumsal/dealer-profile";
 
@@ -26,6 +27,8 @@ export interface DealerCustomer {
   created_at: string;
   order_count: number;
   last_order_at: string | null;
+  /** Bildirim ulaşabilir mi (lib/push/reach.ts). */
+  has_push: boolean;
 }
 
 function optionalText(max: number) {
@@ -112,6 +115,7 @@ export async function getTenantDealerCustomers(
   const rows = data ?? [];
   const ids = rows.map((row) => row.id);
   const stats = new Map<string, { count: number; last: string | null }>();
+  const reach = await getPushReach(supabase, tenantId);
   if (ids.length) {
     const { data: orders } = await supabase
       .from("orders")
@@ -145,6 +149,7 @@ export async function getTenantDealerCustomers(
       created_at: row.created_at,
       order_count: stat?.count ?? 0,
       last_order_at: stat?.last ?? null,
+      has_push: hasPushReach(reach, { accessCodeId: row.id, phone: row.customer_phone }),
     };
   });
 }

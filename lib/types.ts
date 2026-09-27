@@ -234,6 +234,10 @@ export interface StorefrontOrderItemSnapshot {
 
 export interface StorefrontOrder {
   id: string;
+  /** 0138: siparişin verildiği şifre. */
+  access_code_id?: string | null;
+  /** Panel: müşteriye bildirim ulaşabilir mi (lib/push/reach.ts; DB kolonu değil). */
+  has_push?: boolean;
   tenant_id: string;
   customer_id: string | null;
   order_number: string;
