@@ -263,7 +263,11 @@ export function TenantThemeForm({
         ...(canUseAdvancedAppearance
           ? {
               font_key: preset.settings.font_key,
-              product_card_style: preset.settings.product_card_style,
+              // Tekstil: moda kartı açıksa hazır tema onu ezmez (qoop vakası, 28 Eyl 2026).
+              product_card_style:
+                isFashionSector(tenantSector) && form.product_card_style === "fashion"
+                  ? "fashion"
+                  : preset.settings.product_card_style,
               header_style_key: preset.settings.header_style_key,
               footer_style_key: preset.settings.footer_style_key,
               hero_style_key: preset.settings.hero_style_key,
