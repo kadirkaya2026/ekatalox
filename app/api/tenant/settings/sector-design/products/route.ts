@@ -2,12 +2,12 @@ import { NextResponse } from "next/server";
 import { getSessionContext } from "@/lib/auth/session";
 import { ensureTenantAdminResponse } from "@/lib/tenancy/guards";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
-import { ELECTRONICS_SECTOR } from "@/lib/storefront/sector-design/config";
+import { hasSectorDesign } from "@/lib/storefront/sector-design/config";
 export async function GET(request: Request) {
   const guard = await ensureTenantAdminResponse();
   if (guard) return guard;
   const { tenant } = await getSessionContext();
-  if (tenant?.sector !== ELECTRONICS_SECTOR) return NextResponse.json({ error: "Bu sektör için kullanılamaz." }, { status: 403 });
+  if (!hasSectorDesign(tenant?.sector)) return NextResponse.json({ error: "Bu sektör için kullanılamaz." }, { status: 403 });
   const db = createSupabaseAdminClient();
   if (!db) return NextResponse.json({ error: "Ürünler okunamadı." }, { status: 503 });
   const q = (new URL(request.url).searchParams.get("q") ?? "").slice(0, 100).replace(/[%_\\]/g, "");

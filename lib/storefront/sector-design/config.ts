@@ -1,7 +1,11 @@
 import { z } from "zod";
 
 export const ELECTRONICS_SECTOR = "telefon-aksesuar";
-export const DESIGN_IDS = ["electronics-forma", "electronics-akim", "electronics-modul"] as const;
+export const FOOD_SECTOR = "gida";
+export const DESIGN_IDS = ["electronics-forma", "electronics-akim", "electronics-modul", "food-hasat", "food-mahalle", "food-kiler"] as const;
+export function designSector(id: DesignId) { return id.startsWith("food-") ? FOOD_SECTOR : ELECTRONICS_SECTOR; }
+export function hasSectorDesign(sector: string | null | undefined) { return sector === ELECTRONICS_SECTOR || sector === FOOD_SECTOR; }
+export function designsForSector(sector: string | null | undefined) { return DESIGNS.filter(d => designSector(d.id) === sector); }
 export type DesignId = typeof DESIGN_IDS[number];
 export type SalesMode = "retail" | "wholesale";
 const text = (max: number) => z.string().trim().max(max);
@@ -20,10 +24,19 @@ export const DESIGNS = [
   { id: "electronics-forma", name: "Forma", description: "Ferah ürün vitrini. Asimetrik tanıtım, görselli koleksiyon ve geniş ürün kartları.", color: "#c94824", overlayTheme: "minimal", font: "dm-sans" },
   { id: "electronics-akim", name: "Akım", description: "Koyu bir teknoloji sahnesi. Büyük tipografi, ürün odak noktası ve yatay keşif alanları.", color: "#d7ff5f", overlayTheme: "noir", font: "plus-jakarta" },
   { id: "electronics-modul", name: "Modül", description: "Kategorileri öne çıkaran mağaza. Çift kampanya alanı, raf görünümü ve hızlı sipariş satırları.", color: "#146354", overlayTheme: "neutral", font: "source-sans" },
+  { id: "food-hasat", name: "Hasat", description: "Doğal tonlar, büyük gıda vitrini ve görselli kategori rafları. Seçkilerini öne çıkaran mağazalar için.", color: "#416439", overlayTheme: "minimal", font: "dm-sans" },
+  { id: "food-mahalle", name: "Mahalle", description: "Canlı market vitrini. Kategori kısayolları, iki kampanya alanı ve kolay ulaşılır sepet.", color: "#a52d3d", overlayTheme: "neutral", font: "plus-jakarta" },
+  { id: "food-kiler", name: "Kiler", description: "Düzenli tedarik kataloğu. Solda kategoriler, paket ve koli bilgileri, hızlı sipariş listesi.", color: "#285861", overlayTheme: "neutral", font: "source-sans" },
 ] as const;
 export function isDesignId(value: unknown): value is DesignId { return DESIGN_IDS.includes(value as DesignId); }
-export function schemaFor(id: DesignId) { return id === "electronics-forma" ? formaSchema : id === "electronics-akim" ? akimSchema : modulSchema; }
+export function schemaFor(id: DesignId) { return (id === "electronics-forma" || id === "food-hasat") ? formaSchema : (id === "electronics-akim" || id === "food-kiler") ? akimSchema : modulSchema; }
 export function defaultContent(id: DesignId): DesignContent {
+  if (id.startsWith("food-")) {
+    const food = { announcement: "", catalogTitle: "Raflarımızdan seçin", heroVisible: true, heroTitle: "Sofranıza iyi gelen seçimler.", heroBody: "Kahvaltıdan akşam yemeğine, mutfağınızın ihtiyaçlarını tek bir yerde keşfedin.", heroImage: "", buttonLabel: "Alışverişe başla", heroCategoryId: "all" };
+    if (id === "food-hasat") return { ...food, collectionVisible: true, collectionTitle: "Sofranın etrafında buluşalım.", collectionBody: "Birlikte güzel giden lezzetleri seçin, sofranızı kendi zevkinize göre tamamlayın.", collectionImage: "", collectionCategoryId: "all" };
+    if (id === "food-mahalle") return { ...food, heroTitle: "Mahallenizin marketi, elinizin altında.", heroBody: "Günlük ihtiyaçlarınızı bulun, sepetinizi hazırlayın ve siparişinizi iletin.", promoVisible: true, promoTitle: "Kahvaltıya ne alalım?", promoBody: "Güne eşlik eden lezzetleri keşfedin.", promoCategoryId: "all", secondTitle: "Mutfakta eksik kalmasın.", secondBody: "Temel gıda ürünlerine göz atın.", secondCategoryId: "all" };
+    return { ...food, heroTitle: "Rafınızın ihtiyacı. Tek bir katalog.", heroBody: "Ürünleri inceleyin, paket ve koli seçenekleriyle siparişinizi hazırlayın.", buttonLabel: "Kataloğu incele", featureVisible: true, featureTitle: "Rafın öne çıkanı.", featureBody: "Ürün bilgilerini ve sipariş seçeneklerini yakından inceleyin.", featureProductId: "", featureImage: "" };
+  }
   const base = { announcement: "", catalogTitle: "Ürünleri keşfedin", heroVisible: true, heroTitle: "Günlük hayatın yeni favorileri.", heroBody: "İşinize, masanıza ve hayatınıza eşlik edecek teknoloji ve aksesuarları keşfedin.", heroImage: "", buttonLabel: "Ürünleri keşfet", heroCategoryId: "all" };
   if (id === "electronics-forma") return { ...base, collectionVisible: true, collectionTitle: "Küçük detaylar. Büyük fark.", collectionBody: "Tarzınıza ve ihtiyaçlarınıza uyan aksesuarlarla tanışın.", collectionImage: "", collectionCategoryId: "all" };
   if (id === "electronics-akim") return { ...base, heroTitle: "Teknoloji. Kendi ritminde.", heroBody: "Bağlantıda kalmak, üretmek ve keyif almak için seçiminizi yapın.", featureVisible: true, featureTitle: "Yakından tanışın.", featureBody: "Bir sonraki favorinizin detaylarını keşfedin.", featureProductId: "", featureImage: "" };
@@ -31,18 +44,19 @@ export function defaultContent(id: DesignId): DesignContent {
 }
 export function newDesignDocument(themeId: DesignId = "electronics-forma", mode: SalesMode = "retail"): DesignDocument { return { version: 1, themeId, mode, content: { [themeId]: defaultContent(themeId) } }; }
 export function readDesignDocument(raw: unknown, sector: string | null | undefined): DesignDocument | null {
-  if (sector !== ELECTRONICS_SECTOR || !raw || typeof raw !== "object") return null;
+  if (!hasSectorDesign(sector) || !raw || typeof raw !== "object") return null;
   const doc = raw as DesignDocument;
-  if (doc.version !== 1 || !isDesignId(doc.themeId) || !["retail", "wholesale"].includes(doc.mode)) return null;
+  if (doc.version !== 1 || !isDesignId(doc.themeId) || designSector(doc.themeId) !== sector || !["retail", "wholesale"].includes(doc.mode)) return null;
   const content: DesignDocument["content"] = {};
-  for (const id of DESIGN_IDS) { const parsed = schemaFor(id).safeParse(doc.content?.[id]); if (parsed.success) content[id] = parsed.data; }
+  for (const id of DESIGN_IDS.filter(id => designSector(id) === sector)) { const parsed = schemaFor(id).safeParse(doc.content?.[id]); if (parsed.success) content[id] = parsed.data; }
   return { version: 1, themeId: doc.themeId, mode: doc.mode, content };
 }
 export function getDesignContent(doc: DesignDocument) { return doc.content[doc.themeId] ?? defaultContent(doc.themeId); }
 export function prepareDesignUpdate(sector: string | null | undefined, raw: unknown, previous: unknown) {
-  if (sector !== ELECTRONICS_SECTOR) return { error: "Bu temaları yalnız telefon aksesuarı ve elektronik sektöründeki mağazalar kullanabilir." } as const;
+  if (!hasSectorDesign(sector)) return { error: "Bu sektör için tema koleksiyonu bulunmuyor." } as const;
   const request = z.object({ themeId: z.enum(DESIGN_IDS), mode: z.enum(["retail", "wholesale"]), content: z.unknown() }).strict().safeParse(raw);
   if (!request.success) return { error: "Tema seçimi veya satış biçimi geçersiz." } as const;
+  if (designSector(request.data.themeId) !== sector) return { error: "Yalnız kayıtlı sektörünüze ait temaları kullanabilirsiniz." } as const;
   const content = schemaFor(request.data.themeId).safeParse(request.data.content);
   if (!content.success) return { error: content.error.issues.map(i => `${i.path.join(".")}: ${i.message}`).join(" ") } as const;
   const old = readDesignDocument(previous, sector);

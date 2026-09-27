@@ -3,11 +3,11 @@ import { getSessionContext } from "@/lib/auth/session";
 import { ensureTenantAdminResponse } from "@/lib/tenancy/guards";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { STOREFRONT_BANNERS_BUCKET } from "@/lib/storage/banners";
-import { ELECTRONICS_SECTOR } from "@/lib/storefront/sector-design/config";
+import { hasSectorDesign } from "@/lib/storefront/sector-design/config";
 export async function POST(request: Request) {
   const guard = await ensureTenantAdminResponse({ blockDemoWrite: true }); if (guard) return guard;
   const { tenant } = await getSessionContext();
-  if (tenant!.sector !== ELECTRONICS_SECTOR) return NextResponse.json({ error: "Bu sektöre ait tema yükleme yetkiniz yok." }, { status: 403 });
+  if (!hasSectorDesign(tenant!.sector)) return NextResponse.json({ error: "Bu sektöre ait tema yükleme yetkiniz yok." }, { status: 403 });
   const form = await request.formData().catch(() => null); const file = form?.get("image");
   if (!(file instanceof File) || file.size < 12 || file.size > 5 * 1024 * 1024) return NextResponse.json({ error: "En fazla 5 MB görsel yükleyin." }, { status: 400 });
   const bytes = Buffer.from(await file.arrayBuffer());

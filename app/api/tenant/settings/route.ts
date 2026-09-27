@@ -1,4 +1,4 @@
-import { ELECTRONICS_SECTOR } from "@/lib/storefront/sector-design/config";
+import { hasSectorDesign } from "@/lib/storefront/sector-design/config";
 import { validateSectorThemeChange } from "@/lib/storefront/sector-theme-policy";
 import { PRESET_SETTING_KEYS } from "@/lib/storefront/theme-presets";
 import { NextResponse } from "next/server";
@@ -112,7 +112,7 @@ export async function PATCH(request: Request) {
     );
   }
 
-  if (session.tenant!.sector === ELECTRONICS_SECTOR && (
+  if (hasSectorDesign(session.tenant!.sector) && (
     "theme_preset_key" in body || PRESET_SETTING_KEYS.some(key => key in body && body[key] !== existingSettings[key])
   )) return NextResponse.json({ error: "Temanızı ve temaya ait alanları Sektör Teması ekranından düzenleyin." }, { status: 403 });
   const themeChange = validateSectorThemeChange(session.tenant!.sector, existingSettings, body);

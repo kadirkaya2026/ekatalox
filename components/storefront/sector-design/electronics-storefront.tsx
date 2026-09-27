@@ -12,7 +12,7 @@ import { StorefrontImage } from "@/components/storefront/storefront-image";
 import { StorefrontLogoutButton } from "@/components/storefront/storefront-logout-button";
 import styles from "./electronics.module.css";
 
-type Props = {
+export type SectorStorefrontProps = {
   tenantId: string; subdomain?: string;
   design: DesignDocument; settings: TenantStorefrontSettings; title: string; products: StorefrontProduct[];
   initialProducts: StorefrontProduct[]; categories: Category[]; selectedCategory: string; search: string; total: number; loading: boolean; detailOpen: boolean;
@@ -20,7 +20,7 @@ type Props = {
   onCategory: (id: string) => void; onCart: () => void; onCampaigns: () => void; onDetail: (id: string) => void;
   onAdd: (id: string) => void; onDecrease: (id: string) => void; onMore: () => void; onHome: () => void;
 };
-const ui = {
+export const sectorUi = {
   tr: { all: "Tüm ürünler", categories: "Kategoriler", discover: "Keşfet", search: "Ürün veya model ara", cart: "Sepetim", campaigns: "Kampanyalar", retail: "Ürün kataloğu", wholesale: "Toptan sipariş", products: "ürün", add: "Sepete ekle", remove: "Adedi azalt", detail: "Ürünü incele", catalog: "Kataloğa dön", more: "Daha fazla ürün", empty: "Aradığınız ürün bulunamadı.", emptyBody: "Başka bir arama yapın veya tüm ürünlere göz atın.", stock: "Stokta yok", package: "Paket", carton: "Koli", units: "adet", grid: "Izgara görünümü", list: "Liste görünümü", loading: "Ürünler yükleniyor", close: "Kapat" },
   en: { all: "All products", categories: "Categories", discover: "Explore", search: "Search product or model", cart: "My cart", campaigns: "Campaigns", retail: "Product catalog", wholesale: "Wholesale orders", products: "products", add: "Add to cart", remove: "Decrease quantity", detail: "View product", catalog: "Back to catalog", more: "More products", empty: "No products found.", emptyBody: "Try another search or browse all products.", stock: "Out of stock", package: "Pack", carton: "Carton", units: "units", grid: "Grid view", list: "List view", loading: "Loading products", close: "Close" },
   de: { all: "Alle Produkte", categories: "Kategorien", discover: "Entdecken", search: "Produkt oder Modell suchen", cart: "Warenkorb", campaigns: "Aktionen", retail: "Produktkatalog", wholesale: "Großhandel", products: "Produkte", add: "In den Warenkorb", remove: "Menge verringern", detail: "Produkt ansehen", catalog: "Zum Katalog", more: "Weitere Produkte", empty: "Keine Produkte gefunden.", emptyBody: "Suchen Sie erneut oder sehen Sie alle Produkte an.", stock: "Nicht verfügbar", package: "Packung", carton: "Karton", units: "Stück", grid: "Rasteransicht", list: "Listenansicht", loading: "Produkte werden geladen", close: "Schließen" },
@@ -34,9 +34,9 @@ function ProductPhoto({ src, alt, priority = false }: { src: string | null; alt:
   return src ? <StorefrontImage src={src} alt={alt} sizes="(max-width: 640px) 48vw, 400px" className={styles.productPhoto} priority={priority} /> : <Package size={48} aria-hidden="true" />;
 }
 
-export function ElectronicsStorefront(p: Props) {
+export function ElectronicsStorefront(p: SectorStorefrontProps) {
   const { locale, setLocale } = useStorefrontLocale();
-  const labels = ui[locale];
+  const labels = sectorUi[locale];
   const theme = useStorefrontTheme();
   const [menuOpen, setMenuOpen] = useState(false);
   const [view, setView] = useState<"grid" | "list" | null>(null);

@@ -1,7 +1,7 @@
 "use client";
 
 import { electronicsCommerceTheme, commerceRootClass } from "@/components/storefront/sector-design/commerce-theme";
-import { ElectronicsStorefront } from "@/components/storefront/sector-design/electronics-storefront";
+import { SectorStorefront } from "@/components/storefront/sector-design/sector-storefront";
 import { readDesignDocument } from "@/lib/storefront/sector-design/config";
 
 import { volumeUnitPrice } from "@/lib/storefront/volume-pricing";
@@ -4170,7 +4170,7 @@ export function StorefrontClient({
     <StorefrontLayoutProvider layoutKey={storefrontSettings.layout_key ?? "classic-grid"}>
     <div className={electronicsDesign ? commerceRootClass(electronicsDesign.themeId, theme.isDark) : "contents"} data-commerce-design={electronicsDesign?.themeId}>
       {isClosedNow ? <StoreClosedOverlay nextOpening={closedNowNextOpening} /> : null}
-      {electronicsDesign ? <ElectronicsStorefront key={electronicsDesign.themeId}
+      {electronicsDesign ? <SectorStorefront key={electronicsDesign.themeId}
         design={electronicsDesign} settings={storefrontSettings} title={storefrontTitle}
         products={products} initialProducts={[...initialProducts, ...recommendationPool]} categories={categories}
         tenantId={tenant.id} subdomain={subdomain}
@@ -4773,7 +4773,7 @@ export function StorefrontClient({
       </AnimatePresence>
 
       <AnimatePresence>
-        {isMounted && !usesBottomNav && cart.length && !isStickyCartBarDismissed && !isCartOpen && !detailProduct ? (
+        {isMounted && !electronicsDesign?.themeId.startsWith("food-") && !usesBottomNav && cart.length && !isStickyCartBarDismissed && !isCartOpen && !detailProduct ? (
           <motion.div
             initial={{ opacity: 0, y: 18, scale: 0.96 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}

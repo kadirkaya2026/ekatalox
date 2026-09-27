@@ -1,4 +1,4 @@
-import { newDesignDocument, ELECTRONICS_SECTOR } from "@/lib/storefront/sector-design/config";
+import { newDesignDocument, hasSectorDesign, designsForSector } from "@/lib/storefront/sector-design/config";
 // Self-servis tenant açılışı (8 Eyl 2026). app/api/signup buradan çağırır.
 // Süper admin akışındaki (app/api/admin/tenants) tenant → auth user →
 // profil → üyelik zinciriyle aynı mantık; ek olarak tema, yer tutucu logo,
@@ -142,7 +142,7 @@ async function applyStorefrontTheme(
   const { error } = await supabase.from("tenant_storefront_settings").upsert(
     {
       tenant_id: tenantId,
-      ...(input.sector === ELECTRONICS_SECTOR ? { sector_design: newDesignDocument(), theme_key: "minimal", font_key: "dm-sans" } : {}),
+      ...(hasSectorDesign(input.sector) ? { sector_design: newDesignDocument(designsForSector(input.sector)[0].id), theme_key: "minimal", font_key: "dm-sans" } : {}),
       storefront_title: input.businessName,
       site_tab_title: input.businessName,
       ...(logoUrl ? { logo_url: logoUrl, site_favicon_url: logoUrl } : {}),

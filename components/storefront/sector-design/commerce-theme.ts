@@ -35,5 +35,5 @@ export function electronicsCommerceTheme(base: StorefrontTheme, designId?: Desig
   };
 }
 export function commerceRootClass(id: DesignId, dark: boolean) {
-  return [s.root, s[id.replace("electronics-", "")], dark && s.night].filter(Boolean).join(" ");
+  return [s.root, s[id.replace(/^(electronics|food)-/, "")], dark && s.night].filter(Boolean).join(" ");
 }
