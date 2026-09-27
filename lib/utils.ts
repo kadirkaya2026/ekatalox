@@ -29,6 +29,15 @@ export function formatDate(value: string) {
   }).format(new Date(value));
 }
 
+/** "27 Eyl 2026 14:32" — İstanbul saatiyle (sunucu UTC'de çalışsa da). */
+export function formatDateTime(value: string) {
+  return new Intl.DateTimeFormat("tr-TR", {
+    dateStyle: "medium",
+    timeStyle: "short",
+    timeZone: "Europe/Istanbul",
+  }).format(new Date(value));
+}
+
 export function formatDateSlashTr(value: string) {
   const [year, month, day] = value.split("-");
 

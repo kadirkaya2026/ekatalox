@@ -9,7 +9,7 @@ import { Card } from "@/components/ui/card";
 import { InlineAlert } from "@/components/ui/inline-alert";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { cn, formatCurrency, formatDate } from "@/lib/utils";
+import { cn, formatCurrency, formatDate, formatDateTime } from "@/lib/utils";
 import type { CurrencyCode } from "@/lib/products/constants";
 import type { OrderStatus, OrderStatusEvent, StorefrontOrder } from "@/lib/types";
 import type { OrdersPage } from "@/lib/orders/data";
@@ -289,7 +289,7 @@ export function OrdersManager({
                 <h3 className="text-2xl font-semibold tracking-tight text-slate-900">{formatOrderNo(order)}</h3>
                 <StatusBadge status={order.status} isTekel={isTekel} />
               </div>
-              <p className="mt-1 text-sm text-slate-500">{formatDate(order.created_at)}</p>
+              <p className="mt-1 text-sm text-slate-500">{formatDateTime(order.created_at)}</p>
             </div>
             <div className="text-right">
               <p className="text-2xl font-semibold tabular-nums text-slate-900">{formatOrderTotal(order)}</p>
@@ -415,7 +415,7 @@ export function OrdersManager({
             </div>
           ) : order.status === "delivered" ? (
             <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800">
-              ✓ Teslim edildi · {order.delivered_at ? formatDate(order.delivered_at) : ""}
+              ✓ Teslim edildi · {order.delivered_at ? formatDateTime(order.delivered_at) : ""}
             </div>
           ) : (
             <div className="rounded-xl border border-slate-200 p-4">
@@ -606,7 +606,7 @@ export function OrdersManager({
           <p className="p-6 text-sm text-slate-600">Bu süzgeçte sipariş yok.</p>
         ) : (
           <div className="divide-y divide-slate-100">
-            <div className="hidden grid-cols-[200px_minmax(0,1fr)_120px_110px_170px_44px] items-center gap-3 bg-slate-50 px-4 py-2 text-[11px] font-semibold uppercase tracking-wide text-slate-500 md:grid">
+            <div className="hidden grid-cols-[200px_minmax(0,1fr)_150px_110px_170px_44px] items-center gap-3 bg-slate-50 px-4 py-2 text-[11px] font-semibold uppercase tracking-wide text-slate-500 md:grid">
               <span>Sipariş</span><span>Müşteri</span><span>Tarih</span><span className="text-right">Tutar</span><span>İşlem</span><span />
             </div>
             {page.orders.map((order) => {
@@ -620,7 +620,7 @@ export function OrdersManager({
               return (
                 <div
                   key={order.id}
-                  className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1 px-4 py-3 md:grid-cols-[200px_minmax(0,1fr)_120px_110px_170px_44px]"
+                  className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1 px-4 py-3 md:grid-cols-[200px_minmax(0,1fr)_150px_110px_170px_44px]"
                 >
                   <button type="button" onClick={() => void openOrder(order)} className="flex items-center gap-2 text-left">
                     <span className="text-sm font-semibold text-slate-900">{formatOrderNo(order)}</span>
@@ -653,7 +653,7 @@ export function OrdersManager({
                       </span>
                     ) : null}
                   </button>
-                  <span className="hidden text-sm text-slate-500 md:block">{formatDate(order.created_at)}</span>
+                  <span className="hidden text-sm tabular-nums text-slate-500 md:block">{formatDateTime(order.created_at)}</span>
                   <span className="hidden text-right text-sm font-semibold tabular-nums text-slate-900 md:block">{formatOrderTotal(order)}</span>
                   <div className="col-span-2 flex items-center gap-2 md:col-span-1">
                     {next && nextLabel ? (
