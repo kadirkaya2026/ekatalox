@@ -465,10 +465,22 @@ export function StorefrontProductDetailView({
                   const inCartCount = variantCartQuantities[variant.id] ?? 0;
                   const priceDiffers = variant.price !== null && unitPrice !== null && variant.price !== unitPrice;
                   if (!variant.is_purchasable) {
+                    // Stepper ile aynı iskelet (etiket + h-11 kutu): ızgarada
+                    // tükenen beden diğerlerinden büyük/farklı durmasın.
                     return (
-                      <div key={variant.id} className={cn("rounded-xl border px-3 py-2.5 opacity-50", theme.border)}>
-                        <p className={cn("text-sm font-bold line-through", theme.text)}>{variant.model_name}</p>
-                        <p className={cn("text-[11px]", theme.textMuted)}>Tükendi</p>
+                      <div key={variant.id} className="min-w-0 opacity-50">
+                        <p className={cn("mb-1.5 text-xs font-bold uppercase tracking-wide line-through", theme.text)}>
+                          {variant.model_name}
+                        </p>
+                        <div
+                          className={cn(
+                            theme.quantityStepper,
+                            "flex h-11 items-center justify-center text-xs font-semibold",
+                            theme.textMuted,
+                          )}
+                        >
+                          Tükendi
+                        </div>
                       </div>
                     );
                   }
