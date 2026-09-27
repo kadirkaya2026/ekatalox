@@ -81,6 +81,8 @@ export async function PATCH(request: Request, ctx: { params: Promise<{ orderId: 
         tenantId: tenant.id,
         orderId: order.id,
         customerId: order.customer_id,
+        accessCodeId: order.access_code_id ?? null,
+        customerPhone: order.customer_phone,
         orderNo: formatOrderNo(order),
         status: order.status,
         tenantName: settings?.storefront_title?.trim() || tenant.company_name,

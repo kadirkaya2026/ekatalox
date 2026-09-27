@@ -214,7 +214,7 @@ function TrackingCard({
                     </span>
                     <div className={done || current ? "" : "opacity-40"}>
                       <p className={cn("text-sm font-semibold", text)}>{getStatusLabel(step, { isTekel })}</p>
-                      {current ? <p className={cn("text-sm", muted)}>{getStatusDescription(step, { isTekel })}</p> : null}
+                      {current ? <p className={cn("text-sm", muted)}>{getStatusDescription(step, { isTekel, isWholesale: !isMarketTenant })}</p> : null}
                       {at && (done || current) ? <p className={cn("text-xs", muted)}>{fmtTime(at)}</p> : null}
                     </div>
                   </li>
