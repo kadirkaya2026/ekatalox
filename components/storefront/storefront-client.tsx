@@ -2178,6 +2178,25 @@ export function StorefrontClient({
     scrollWindowAfterRender(pushHome ? 0 : listScrollYRef.current);
   }
 
+  // Ürün sayfasında bedenler/modeller doğrudan seçilir (28 Eyl 2026): pencere
+  // açılmaz; stok doğrulaması modal ile aynı uçtan, sepete EKLENİR (mevcut
+  // satırların üstüne).
+  async function addDetailVariants(
+    product: StorefrontProduct,
+    picks: Array<{ variantId: string; quantity: number }>,
+  ): Promise<string | null> {
+    const selections: VariantSelectionState[] = picks
+      .filter((pick) => pick.quantity > 0)
+      .map((pick) => ({ variantId: pick.variantId, unit: "adet" as SalesUnit, quantity: pick.quantity }));
+    if (!selections.length) return t("errors.selectAtLeastOneModel");
+    const validation = await validateVariantSelections(product, selections);
+    if (!validation.ok) return validation.error;
+    setCart((current) => addVariantSelectionsToCart(current, product, selections));
+    if (analyticsSubdomain) trackStorefrontCartAdd(analyticsSubdomain, product.id);
+    runCartFlight(product.id, true);
+    return null;
+  }
+
   function addDetailQuantity(product: StorefrontProduct, quantity: number) {
     if (quantity <= 0) return;
     setCart((current) => {
@@ -4188,6 +4207,13 @@ export function StorefrontClient({
             onIncrease={() => handleIncreaseCartItem(detailProduct.id)}
             onDecrease={() => handleDecreaseCartItem(detailProduct.id)}
             onChooseVariants={() => handleOpenAddToCartModal(detailProduct.id)}
+            onAddVariants={(picks) => addDetailVariants(detailProduct, picks)}
+            variantCartQuantities={Object.fromEntries(
+              cart
+                .filter((item) => item.product_id === detailProduct.id && item.variant_id)
+                .map((item) => [item.variant_id as string, item.quantity]),
+            )}
+            subdomain={analyticsSubdomain}
             onOpenCart={openCartDrawer}
             related={
               relatedPreviewProducts.length ? (

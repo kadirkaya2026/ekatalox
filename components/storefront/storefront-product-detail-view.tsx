@@ -89,6 +89,9 @@ export function StorefrontProductDetailView({
   onIncrease,
   onDecrease,
   onChooseVariants,
+  onAddVariants,
+  variantCartQuantities = {},
+  subdomain = null,
   onOpenCart,
 }: {
   product: StorefrontProduct;
@@ -104,6 +107,12 @@ export function StorefrontProductDetailView({
   onIncrease: () => void;
   onDecrease: () => void;
   onChooseVariants: () => void;
+  /** Bedenler/modeller sayfada (28 Eyl 2026): seçilenleri sepete ekler; hata metni ya da null. */
+  onAddVariants?: (selections: Array<{ variantId: string; quantity: number }>) => Promise<string | null>;
+  /** variant_id → sepetteki adet */
+  variantCartQuantities?: Record<string, number>;
+  /** Renkler için (Moda vitrinlerinde /api/storefront/product-colors). */
+  subdomain?: string | null;
   onOpenCart: () => void;
 }) {
   const theme = useStorefrontTheme();
@@ -117,6 +126,25 @@ export function StorefrontProductDetailView({
   const [packages, setPackages] = useState("");
   const [cartons, setCartons] = useState("");
   const [copied, setCopied] = useState(false);
+  const [variantQty, setVariantQty] = useState<Record<string, string>>({});
+  const [variantBusy, setVariantBusy] = useState(false);
+  const [variantError, setVariantError] = useState<string | null>(null);
+  const [colors, setColors] = useState<
+    Array<{ id: string; name: string; image_url: string | null; is_in_stock: boolean; href: string; current: boolean }>
+  >([]);
+  useEffect(() => {
+    if (!subdomain) return;
+    let cancelled = false;
+    void fetch(`/api/storefront/product-colors?subdomain=${encodeURIComponent(subdomain)}&productId=${product.id}`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data: { colors?: typeof colors } | null) => {
+        if (!cancelled && data?.colors) setColors(data.colors);
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, [subdomain, product.id]);
   // Sepete ekleme geri bildirimi (27 Eyl 2026: "+1 Paket" tıklanınca eklendiği
   // anlaşılmıyordu): tıklanan buton ~1.5 sn "✓ +N eklendi", sayı vurgulanır,
   // altta kısa bildirim çıkar.
@@ -140,6 +168,35 @@ export function StorefrontProductDetailView({
   const unitPrice = typeof product.price === "number" ? product.price : null;
   const inCart = cartQuantity > 0;
   const hasVariants = product.has_variants;
+  const sortedVariants = useMemo(
+    () => [...(product.variants ?? [])].sort((a, b) => a.display_order - b.display_order),
+    [product.variants],
+  );
+  const variantSelections = sortedVariants
+    .map((variant) => ({ variant, quantity: parseCount(variantQty[variant.id] ?? "") }))
+    .filter((entry) => entry.quantity > 0 && entry.variant.is_purchasable);
+  const variantTotal = variantSelections.reduce((sum, entry) => sum + entry.quantity, 0);
+  const variantAmount = variantSelections.reduce(
+    (sum, entry) => sum + entry.quantity * (entry.variant.price ?? unitPrice ?? 0),
+    0,
+  );
+  async function addVariants() {
+    if (!onAddVariants || !variantTotal || variantBusy) return;
+    setVariantBusy(true);
+    setVariantError(null);
+    const error = await onAddVariants(
+      variantSelections.map((entry) => ({ variantId: entry.variant.id, quantity: entry.quantity })),
+    );
+    setVariantBusy(false);
+    if (error) {
+      setVariantError(error);
+      return;
+    }
+    setVariantQty({});
+    setFlash((prev) => ({ key: "beden", amount: variantTotal, seq: (prev?.seq ?? 0) + 1 }));
+    if (flashTimer.current) window.clearTimeout(flashTimer.current);
+    flashTimer.current = window.setTimeout(() => setFlash(null), 1600);
+  }
 
   // Paket/koli bilgisi (adet + tutar) yalnız tıklanan butonlarda yazılır
   // (27 Eyl 2026: ayrı bilgi kutuları buton sanılıyordu).
@@ -188,6 +245,37 @@ export function StorefrontProductDetailView({
       return (
         <div className={cn("flex h-14 w-full items-center justify-center rounded-2xl text-base font-bold opacity-60", theme.surfaceMuted, theme.text)}>
           {t("product.soon")}
+        </div>
+      );
+    }
+    if (hasVariants && onAddVariants) {
+      return (
+        <div className="flex w-full items-center gap-2">
+          <button
+            type="button"
+            disabled={!variantTotal || variantBusy}
+            onClick={() => void addVariants()}
+            className={cn(
+              "flex h-14 min-w-0 flex-1 items-center justify-center gap-2 rounded-2xl px-4 text-base font-extrabold shadow-lg disabled:opacity-50",
+              theme.primaryButton,
+            )}
+          >
+            <ShoppingCart className="size-5 shrink-0" />
+            <span className="truncate">
+              {variantTotal
+                ? `Sepete Ekle · ${variantTotal} adet${variantAmount ? ` · ${formatCurrency(variantAmount, product.currency)}` : ""}`
+                : "Beden / model seçin"}
+            </span>
+          </button>
+          {inCart ? (
+            <button
+              type="button"
+              onClick={onOpenCart}
+              className={cn("flex h-14 shrink-0 items-center justify-center rounded-2xl px-4 text-sm font-bold", theme.stickyCartButton)}
+            >
+              Sepet ({cartQuantity}) →
+            </button>
+          ) : null}
         </div>
       );
     }
@@ -339,6 +427,76 @@ export function StorefrontProductDetailView({
             <ProductPrice product={product} size="modal" />
             {unitPrice !== null ? <span className={cn("text-sm", theme.textMuted)}>/ adet</span> : null}
           </div>
+
+          {colors.length ? (
+            <div className="mt-5">
+              <p className={cn("mb-2 text-[11px] font-bold uppercase tracking-[0.12em]", theme.textMuted)}>
+                Renkler ({colors.length})
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {colors.map((color) => (
+                  <a
+                    key={color.id}
+                    href={color.href}
+                    title={color.name}
+                    aria-current={color.current ? "true" : undefined}
+                    className={cn(
+                      "relative block h-[84px] w-14 overflow-hidden rounded-lg border-2 transition",
+                      color.current ? "border-[var(--ek-add-to-cart,#111)]" : cn("border-transparent opacity-80 hover:opacity-100", theme.border),
+                      !color.is_in_stock && "opacity-40",
+                    )}
+                  >
+                    {color.image_url ? (
+                      <StorefrontImage src={color.image_url} alt={color.name} className="object-cover" sizes="56px" />
+                    ) : null}
+                  </a>
+                ))}
+              </div>
+            </div>
+          ) : null}
+
+          {hasVariants && onAddVariants && product.is_in_stock ? (
+            <div className="mt-5">
+              <p className={cn("mb-2 text-[11px] font-bold uppercase tracking-[0.12em]", theme.textMuted)}>
+                Beden / Model — adet seçin
+              </p>
+              <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
+                {sortedVariants.map((variant) => {
+                  const inCartCount = variantCartQuantities[variant.id] ?? 0;
+                  const priceDiffers = variant.price !== null && unitPrice !== null && variant.price !== unitPrice;
+                  if (!variant.is_purchasable) {
+                    return (
+                      <div key={variant.id} className={cn("rounded-xl border px-3 py-2.5 opacity-50", theme.border)}>
+                        <p className={cn("text-sm font-bold line-through", theme.text)}>{variant.model_name}</p>
+                        <p className={cn("text-[11px]", theme.textMuted)}>Tükendi</p>
+                      </div>
+                    );
+                  }
+                  return (
+                    <div key={variant.id} className="min-w-0">
+                      <Stepper
+                        label={variant.model_name}
+                        value={variantQty[variant.id] ?? ""}
+                        onChange={(value) => {
+                          setVariantError(null);
+                          setVariantQty((current) => ({ ...current, [variant.id]: value }));
+                        }}
+                        hint={
+                          [
+                            priceDiffers && variant.price !== null ? formatCurrency(variant.price, product.currency) : null,
+                            inCartCount ? `Sepette ${inCartCount}` : null,
+                          ]
+                            .filter(Boolean)
+                            .join(" · ") || null
+                        }
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+              {variantError ? <p className={cn("mt-2 text-sm font-medium", theme.dangerText)}>{variantError}</p> : null}
+            </div>
+          ) : null}
 
           {product.is_in_stock && !hasVariants && !inCart ? (
             <>
