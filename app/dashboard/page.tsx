@@ -279,7 +279,7 @@ export default async function DashboardHomePage({
           kaldıkça "%X tamamlandı" kartı burada durur. */}
       <OnboardingWizard
         status={onboarding}
-        presets={getOnboardingThemePresets()}
+        presets={getOnboardingThemePresets(tenant.sector)}
         tenantId={tenant.id}
         forceOpen={forceWizard}
       />

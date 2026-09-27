@@ -1,5 +1,7 @@
 "use client";
 
+import { useRef } from "react";
+import { useCommerceDialogFocus } from "@/lib/hooks/use-commerce-dialog-focus";
 import { AnimatePresence, motion } from "framer-motion";
 import { X } from "lucide-react";
 import { useBodyScrollLock } from "@/lib/hooks/use-body-scroll-lock";
@@ -7,6 +9,7 @@ import { cn } from "@/lib/utils";
 
 export function Modal({
   open,
+  trapFocus = false,
   onClose,
   title,
   children,
@@ -24,6 +27,7 @@ export function Modal({
   closeButtonPosition = "right",
 }: {
   open: boolean;
+  trapFocus?: boolean;
   onClose: () => void;
   title: string;
   children: React.ReactNode;
@@ -41,6 +45,8 @@ export function Modal({
   closeButtonPosition?: "left" | "right";
 }) {
   useBodyScrollLock(open);
+  const panelRef = useRef<HTMLDivElement>(null);
+  useCommerceDialogFocus(open, trapFocus, panelRef, onClose);
 
   return (
     <AnimatePresence>
@@ -64,6 +70,8 @@ export function Modal({
           />
 
           <motion.div
+            ref={panelRef}
+            tabIndex={-1}
             role="dialog"
             aria-modal="true"
             aria-labelledby="modal-title"

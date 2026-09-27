@@ -1,3 +1,4 @@
+import { newDesignDocument, ELECTRONICS_SECTOR } from "@/lib/storefront/sector-design/config";
 // Self-servis tenant açılışı (8 Eyl 2026). app/api/signup buradan çağırır.
 // Süper admin akışındaki (app/api/admin/tenants) tenant → auth user →
 // profil → üyelik zinciriyle aynı mantık; ek olarak tema, yer tutucu logo,
@@ -136,11 +137,12 @@ async function applyStorefrontTheme(
   input: SignupInput,
   logoUrl: string | null,
 ) {
-  // Toptancı vitrini: sistem varsayılan temasıyla açılır (bayi panelden
-  // "Hazır Tema" seçer); yalnız ad, sekme başlığı ve yer tutucu logo yazılır.
+  // Tamamlanan sektör koleksiyonlarında ilk tema uygulanır; diğer sektörler
+  // mevcut varsayılan görünümünü korur.
   const { error } = await supabase.from("tenant_storefront_settings").upsert(
     {
       tenant_id: tenantId,
+      ...(input.sector === ELECTRONICS_SECTOR ? { sector_design: newDesignDocument(), theme_key: "minimal", font_key: "dm-sans" } : {}),
       storefront_title: input.businessName,
       site_tab_title: input.businessName,
       ...(logoUrl ? { logo_url: logoUrl, site_favicon_url: logoUrl } : {}),

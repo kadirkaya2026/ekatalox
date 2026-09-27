@@ -2,6 +2,7 @@
 
 import { Fragment, useEffect, useRef, useState, type Dispatch, ReactNode, SetStateAction } from "react";
 import { LOCATION_ERROR_STATUSES, type StorefrontLocationStatus } from "@/components/storefront/storefront-client";
+import { useCommerceDialogFocus } from "@/lib/hooks/use-commerce-dialog-focus";
 import { useBodyScrollLock } from "@/lib/hooks/use-body-scroll-lock";
 import { AnimatePresence, motion } from "framer-motion";
 import {
@@ -215,6 +216,8 @@ export function StorefrontCartDrawer({
 }: StorefrontCartDrawerProps) {
   const suggestedList = recommendedOverride?.length ? recommendedOverride : recommendedProducts;
   const theme = useStorefrontTheme();
+  const commercePanelRef = useRef<HTMLDivElement>(null);
+  useCommerceDialogFocus(isOpen, Boolean(theme.commerceDesign), commercePanelRef, onClose);
   const { t } = useStorefrontLocale();
   const [copyFeedback, setCopyFeedback] = useState<string | null>(null);
   // "WhatsApp'tan gönder"e basıldı: sepet temizlendi, boş sepet yerine
@@ -1445,6 +1448,11 @@ cartFormConfig.customer_address.is_visible ? (
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 28 }}
             transition={{ duration: 0.24, ease: [0.16, 1, 0.3, 1] }}
+            ref={commercePanelRef}
+            tabIndex={-1}
+            role="dialog"
+            aria-modal="true"
+            aria-label={stepHeaderTitle}
             className={theme.cartDrawerPanel}
           >
             <div className="flex h-full flex-col pt-[env(safe-area-inset-top)] lg:pt-0">
@@ -1525,7 +1533,10 @@ cartFormConfig.customer_address.is_visible ? (
                       </div>
                     )
                   ) : (
-                    <div className="space-y-4">
+                    theme.commerceDesign ? <div data-commerce-slot="cart-content">
+                      <div data-commerce-slot="cart-lines">{renderCampaignBars()}{renderItemsList()}{renderInlineSuggestions()}</div>
+                      <div data-commerce-slot="cart-fields">{renderPaymentPanel()}{renderOrderNotePanel()}</div>
+                    </div> : <div className="space-y-4">
                       {renderCampaignBars()}
                       {renderItemsList()}
                       {renderPaymentPanel()}
@@ -1636,7 +1647,7 @@ cartFormConfig.customer_address.is_visible ? (
                   ) : (
                     <>
                       {renderFreeDeliveryHint()}
-                      {renderSummaryBox()}
+                      <div data-commerce-slot="cart-summary">{renderSummaryBox()}</div>
                       {renderFooterNotices()}
 
                       {useStepFlow &&

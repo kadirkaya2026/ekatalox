@@ -1,3 +1,6 @@
+import { ELECTRONICS_SECTOR } from "@/lib/storefront/sector-design/config";
+import { validateSectorThemeChange } from "@/lib/storefront/sector-theme-policy";
+import { PRESET_SETTING_KEYS } from "@/lib/storefront/theme-presets";
 import { NextResponse } from "next/server";
 import { getSessionContext } from "@/lib/auth/session";
 import { shouldAllowDemoFallback } from "@/lib/env";
@@ -66,7 +69,10 @@ export async function PATCH(request: Request) {
   }
 
   const session = await getSessionContext();
-  const body = await request.json();
+  let body = await request.json();
+  if (!body || typeof body !== "object" || Array.isArray(body)) {
+    return NextResponse.json({ error: "Geçersiz ayarlar." }, { status: 400 });
+  }
 
   const supabase = createSupabaseAdminClient();
   let paletteColumnAvailable = true;
@@ -106,6 +112,16 @@ export async function PATCH(request: Request) {
     );
   }
 
+  if (session.tenant!.sector === ELECTRONICS_SECTOR && (
+    "theme_preset_key" in body || PRESET_SETTING_KEYS.some(key => key in body && body[key] !== existingSettings[key])
+  )) return NextResponse.json({ error: "Temanızı ve temaya ait alanları Sektör Teması ekranından düzenleyin." }, { status: 403 });
+  const themeChange = validateSectorThemeChange(session.tenant!.sector, existingSettings, body);
+  if ("error" in themeChange) return NextResponse.json({ error: themeChange.error }, { status: 403 });
+  body = themeChange.body;
+  // Hazır sektör teması tüm paketlerde bütün olarak uygulanır. Serbest stil düzenleme plan kontrolünde kalır.
+  const appearanceBody = { ...body };
+  if (themeChange.curated) for (const key of PRESET_SETTING_KEYS) delete appearanceBody[key];
+
   if (requestTouchesPaymentSettings(body)) {
     const paymentGuard = await ensureTenantPlanFeatureResponse("payment_settings");
     if (paymentGuard) {
@@ -120,7 +136,7 @@ export async function PATCH(request: Request) {
     }
   }
 
-  if (requestTouchesAdvancedAppearance(body)) {
+  if (requestTouchesAdvancedAppearance(appearanceBody)) {
     const appearanceGuard = await ensureTenantPlanFeatureResponse("advanced_appearance");
     if (appearanceGuard) {
       return appearanceGuard;

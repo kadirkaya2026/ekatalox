@@ -1,8 +1,11 @@
+import { ElectronicsEditor } from "@/components/dashboard/sector-design/electronics-editor";
+import { readDesignDocument, ELECTRONICS_SECTOR } from "@/lib/storefront/sector-design/config";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { EsnafThemePicker } from "@/components/dashboard/esnaf-theme-picker";
 import { Header } from "@/components/dashboard/header";
 import { TenantThemeForm } from "@/components/dashboard/tenant-theme-form";
 import { requireTenantAdminPage } from "@/lib/auth/session";
-import { getTenantStorefrontSettings } from "@/lib/data";
+import { getTenantStorefrontSettings, getTenantCategories } from "@/lib/data";
 import type { EsnafThemeKey } from "@/lib/storefront/esnaf-themes";
 import { appEnv } from "@/lib/env";
 
@@ -19,6 +22,14 @@ export default async function TenantThemeSettingsPage(props: ThemePageProps) {
   const session = await requireTenantAdminPage();
   const tenant = session.tenant!;
   const storefrontSettings = await getTenantStorefrontSettings(tenant.id);
+  if (tenant.sector === ELECTRONICS_SECTOR) {
+    const categories = await getTenantCategories(tenant.id);
+    const db = createSupabaseAdminClient();
+    const result = db ? await db.from("products").select("id, product_name").eq("tenant_id", tenant.id).order("product_name").limit(100) : { data: [] };
+    return <div className="space-y-6"><Header eyebrow="Ayarlar / Sektör teması" title="Tema ve vitrin alanları" description="Elektronik sektörünüze özel üç tasarımdan birini seçin ve o tasarımın alanlarını düzenleyin." />
+      <ElectronicsEditor initial={readDesignDocument(storefrontSettings.sector_design, tenant.sector)} categories={categories} products={(result.data ?? []).map(p => ({ id: p.id, name: p.product_name }))} previewUrl={`https://${tenant.subdomain}.${appEnv.rootDomain}`} />
+    </div>;
+  }
   const isEsnaf = tenant.business_type === "market";
 
   if (!isEsnaf) {

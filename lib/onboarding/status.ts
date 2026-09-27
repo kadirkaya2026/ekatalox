@@ -12,7 +12,7 @@ import {
   getTenantProductCount,
   getTenantStorefrontSettings,
 } from "@/lib/data";
-import { STOREFRONT_THEME_PRESETS } from "@/lib/storefront/theme-presets";
+import { getSectorThemePresets } from "@/lib/storefront/theme-presets";
 import type { PriceList, Tenant, TenantStorefrontSettings } from "@/lib/types";
 
 export type OnboardingStepId =
@@ -109,14 +109,14 @@ export function buildOnboardingSteps(input: {
       title: "Tema",
       summary: "Sektörünüze uygun hazır bir görünüm seçin.",
       href: "/settings/theme",
-      completed: isThemeCustomized(settings),
+      completed: Boolean(settings.sector_design) || isThemeCustomized(settings),
     },
     {
       id: "banner",
       title: "Banner",
       summary: "Kampanya ya da marka görseliyle vitrini renklendirin.",
       href: "/settings/banner",
-      completed: (settings.banner_items ?? []).length > 0,
+      completed: Boolean(settings.sector_design) || (settings.banner_items ?? []).length > 0,
     },
     {
       id: "categories",
@@ -208,8 +208,9 @@ export async function getTenantOnboardingStatus(tenant: Tenant, storeUrl: string
 
 /** Sihirbazın tema adımında gösterilen hazır paketler (sunucu → istemci). */
 export type OnboardingThemePreset = ReturnType<typeof getOnboardingThemePresets>[number];
-export function getOnboardingThemePresets() {
-  return STOREFRONT_THEME_PRESETS.map((p) => ({
+export function getOnboardingThemePresets(sector?: string | null) {
+  if (sector === "telefon-aksesuar") return [];
+  return getSectorThemePresets(sector).map((p) => ({
     key: p.key,
     title: p.title,
     description: p.description,

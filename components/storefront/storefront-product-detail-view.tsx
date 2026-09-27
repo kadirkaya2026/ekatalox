@@ -371,7 +371,7 @@ export function StorefrontProductDetailView({
   }
 
   return (
-    <div className={inlineVariantMode ? "pb-4" : "pb-28 lg:pb-4"}>
+    <div data-commerce="detail" className={inlineVariantMode ? "pb-4" : "pb-28 lg:pb-4"}>
       <div className="mb-4 flex flex-wrap items-center gap-2 text-sm">
         <button
           type="button"
@@ -383,9 +383,9 @@ export function StorefrontProductDetailView({
         {categoryName ? <span className={cn("truncate", theme.textMuted)}>{categoryName}</span> : null}
       </div>
 
-      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:items-start lg:gap-8">
+      <div data-commerce-slot="detail-grid" className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:items-start lg:gap-8">
         {/* Galeri */}
-        <div className={cn("rounded-3xl border p-4 sm:p-6", theme.surface, theme.border)}>
+        <div data-commerce-slot="detail-gallery" className={cn("rounded-3xl border p-4 sm:p-6", theme.surface, theme.border)}>
           <div className="relative mx-auto w-full max-w-[520px]">
             {images.length ? (
               <div
@@ -474,7 +474,7 @@ export function StorefrontProductDetailView({
         </div>
 
         {/* Bilgi + sepete ekle */}
-        <div className={cn("rounded-3xl border p-5 sm:p-7", theme.surface, theme.border)}>
+        <div data-commerce-slot="detail-info" className={cn("rounded-3xl border p-5 sm:p-7", theme.surface, theme.border)}>
           <div className="flex items-start justify-between gap-3">
             <div className="flex flex-wrap items-center gap-2">
               {product.sku_code ? (
@@ -497,7 +497,7 @@ export function StorefrontProductDetailView({
             {product.product_name}
           </h1>
 
-          <div className="mt-2 flex items-baseline gap-2">
+          <div data-commerce-slot="detail-price" className="mt-2 flex items-baseline gap-2">
             <ProductPrice product={product} size="modal" />
             {unitPrice !== null ? <span className={cn("text-sm", theme.textMuted)}>/ adet</span> : null}
           </div>
@@ -743,11 +743,11 @@ export function StorefrontProductDetailView({
             </div>
           ) : null}
 
-          <div className={cn("mt-6", inlineVariantMode ? "block" : "hidden lg:block")}>{actionArea(false)}</div>
+          <div data-commerce-slot="detail-action" className={cn("mt-6", inlineVariantMode ? "block" : "hidden lg:block")}>{actionArea(false)}</div>
         </div>
       </div>
 
-      <div className={cn("mt-5 rounded-3xl border p-5 sm:p-7", theme.surface, theme.border)}>
+      <div data-commerce-slot="detail-description" className={cn("mt-5 rounded-3xl border p-5 sm:p-7", theme.surface, theme.border)}>
         <h2 className={cn("mb-2 text-base font-bold sm:text-lg", theme.text)}>Ürün Açıklaması</h2>
         {descriptionLoading && description === undefined ? (
           <div className={cn("h-16 animate-pulse rounded-xl", theme.surfaceMuted)} />
@@ -773,7 +773,7 @@ export function StorefrontProductDetailView({
 
       {/* Mobil: altta sabit sepete ekle (sayfa içi beden seçiminde yok) */}
       {inlineVariantMode ? null : (
-        <div className={cn("fixed inset-x-0 bottom-0 z-40 border-t px-3.5 pb-[calc(env(safe-area-inset-bottom)+12px)] pt-3 lg:hidden", theme.surface, theme.border)}>
+        <div data-commerce-slot="detail-mobile-action" className={cn("fixed inset-x-0 bottom-0 z-40 border-t px-3.5 pb-[calc(env(safe-area-inset-bottom)+12px)] pt-3 lg:hidden", theme.surface, theme.border)}>
           {actionArea(true)}
         </div>
       )}

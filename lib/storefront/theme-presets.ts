@@ -12,6 +12,7 @@ export interface StorefrontThemePreset {
   key: string;
   title: string;
   sector: string;
+  sectorCode: string;
   description: string;
   demoSubdomain: string;
   thumbnailDesktop: string;
@@ -30,6 +31,7 @@ export interface StorefrontThemePreset {
 export const STOREFRONT_THEME_PRESETS: StorefrontThemePreset[] = [
   {
     key: "elektronik",
+    sectorCode: "telefon-aksesuar",
     title: "Elektronik & Aksesuar",
     sector: "Elektronik & Aksesuar",
     description:
@@ -49,6 +51,7 @@ export const STOREFRONT_THEME_PRESETS: StorefrontThemePreset[] = [
   },
   {
     key: "yapimarket",
+    sectorCode: "hirdavat",
     title: "Yapı Market & Hırdavat",
     sector: "Yapı Market & Hırdavat",
     description:
@@ -68,6 +71,7 @@ export const STOREFRONT_THEME_PRESETS: StorefrontThemePreset[] = [
   },
   {
     key: "gida",
+    sectorCode: "gida",
     title: "Gıda & Market Toptan",
     sector: "Gıda & Market Toptan",
     description:
@@ -87,6 +91,7 @@ export const STOREFRONT_THEME_PRESETS: StorefrontThemePreset[] = [
   },
   {
     key: "giyim",
+    sectorCode: "tekstil",
     title: "Giyim & Tekstil",
     sector: "Giyim & Tekstil",
     description:
@@ -108,6 +113,7 @@ export const STOREFRONT_THEME_PRESETS: StorefrontThemePreset[] = [
   },
   {
     key: "kozmetik",
+    sectorCode: "kozmetik",
     title: "Kozmetik & Kişisel Bakım",
     sector: "Kozmetik & Kişisel Bakım",
     description:
@@ -127,6 +133,7 @@ export const STOREFRONT_THEME_PRESETS: StorefrontThemePreset[] = [
   },
   {
     key: "evyasam",
+    sectorCode: "ev-mutfak",
     title: "Ev & Yaşam & Mobilya",
     sector: "Ev & Yaşam & Mobilya",
     description:
@@ -153,3 +160,20 @@ export function getStorefrontThemePreset(key: string): StorefrontThemePreset | u
 export const STOREFRONT_THEME_PRESET_SECTORS = STOREFRONT_THEME_PRESETS.map(
   (preset) => preset.sector,
 );
+
+/** Sektörler kullanıcı onayıyla sırayla üç temaya geçirilir. */
+export function hasSectorThemeCollection(_sector: string | null | undefined) {
+  void _sector;
+  return false; // Özgün tasarımlar ayrı sektör editöründen yönetilir.
+}
+
+export function getSectorThemePresets(sector: string | null | undefined) {
+  return STOREFRONT_THEME_PRESETS.filter((preset) => preset.sectorCode === sector);
+}
+
+export const PRESET_SETTING_KEYS = ["theme_key", "layout_key", "header_style_key", "footer_style_key", "product_card_style", "font_key", "hero_style_key"] as const;
+
+export function matchesThemePreset(settings: object, preset: StorefrontThemePreset) {
+  const values = settings as Record<string, unknown>;
+  return PRESET_SETTING_KEYS.every((key) => values[key] === preset.settings[key]);
+}

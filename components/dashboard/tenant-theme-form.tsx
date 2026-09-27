@@ -23,7 +23,7 @@ import type {
 import { THEME_OPTIONS } from "@/lib/storefront/theme-catalog";
 import { LAYOUT_OPTIONS } from "@/lib/storefront/layout-catalog";
 import { FONT_OPTIONS } from "@/lib/storefront/font-catalog";
-import { STOREFRONT_THEME_PRESETS, type StorefrontThemePreset } from "@/lib/storefront/theme-presets";
+import { getSectorThemePresets, hasSectorThemeCollection, matchesThemePreset, type StorefrontThemePreset } from "@/lib/storefront/theme-presets";
 import {
   DEFAULT_STOREFRONT_APPEARANCE,
   FOOTER_STYLE_OPTIONS,
@@ -166,6 +166,8 @@ export function TenantThemeForm({
   const [applyPending, startApplyTransition] = useTransition();
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
   const router = useRouter();
+  const sectorPresets = getSectorThemePresets(tenantSector);
+  const sectorLocked = hasSectorThemeCollection(tenantSector);
   const canUseAdvancedAppearance = hasPlanFeature(tenantPlan, "advanced_appearance");
 
   const previewTitle = initialStorefrontSettings.storefront_title ?? "";
@@ -185,6 +187,7 @@ export function TenantThemeForm({
     nextForm: ThemeFormState,
     successMessage: string,
     transition: typeof startSaveTransition,
+    presetKey?: string,
   ) {
     setSaveMessage(null);
 
@@ -193,9 +196,9 @@ export function TenantThemeForm({
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(
-          buildAppearancePayload(nextForm, {
-            canUseAdvancedAppearance,
-          }),
+          { ...buildAppearancePayload(nextForm, {
+            canUseAdvancedAppearance: canUseAdvancedAppearance && !sectorLocked,
+          }), ...(presetKey ? { theme_preset_key: presetKey } : {}) },
         ),
       });
 
@@ -232,13 +235,18 @@ export function TenantThemeForm({
     }
 
     saveAppearancePayload(
-      toDefaultThemeFormState(),
+      sectorLocked ? { ...toDefaultThemeFormState(), ...sectorPresets[0].settings } : toDefaultThemeFormState(),
       "Görünüm ayarları varsayılana sıfırlandı.",
       startResetTransition,
+      sectorLocked ? sectorPresets[0].key : undefined,
     );
   }
 
   function applyPreset(preset: StorefrontThemePreset, opts?: { skipConfirm?: boolean }) {
+    if (!sectorPresets.some((item) => item.key === preset.key)) {
+      setSaveMessage("Yalnız kayıtlı sektörünüze ait temaları uygulayabilirsiniz.");
+      return;
+    }
     const confirmed =
       opts?.skipConfirm ||
       window.confirm(
@@ -257,6 +265,7 @@ export function TenantThemeForm({
       // isteği, 25 Eyl 2026); renkler yalnız "Ayarları sıfırla" ya da
       // "Tümünü varsayılana döndür" ile temizlenir.
       const payload = {
+        theme_preset_key: preset.key,
         theme_key: preset.settings.theme_key,
         layout_key: preset.settings.layout_key,
         recommendation_mode: form.recommendation_mode,
@@ -305,7 +314,7 @@ export function TenantThemeForm({
     if (!autoApply) return;
     // Bir mikro görev sonra: effect içinde doğrudan setState kuralına takılmasın.
     const timer = setTimeout(() => {
-    const preset = autoApply.preset ? STOREFRONT_THEME_PRESETS.find((x) => x.key === autoApply.preset) : null;
+    const preset = autoApply.preset ? sectorPresets.find((x) => x.key === autoApply.preset) : null;
     if (preset) {
       applyPreset(preset, { skipConfirm: true });
     } else {
@@ -345,7 +354,7 @@ export function TenantThemeForm({
       <div className="space-y-6">
         <Card className="overflow-hidden p-0">
           <SettingsTabs
-            tabs={THEME_FORM_TABS}
+            tabs={sectorLocked ? THEME_FORM_TABS.filter((tab) => tab.key === "presets" || tab.key === "brand") : THEME_FORM_TABS}
             activeTab={activeTab}
             onChange={setActiveTab}
             layoutId="theme-form-tab-indicator"
@@ -359,16 +368,13 @@ export function TenantThemeForm({
                   <h2 className="text-lg font-semibold text-slate-900">Hazır paketler</h2>
                 </div>
                 <p className="mt-1 mb-4 text-sm text-slate-600">
-                  Sektörünüze uygun paketi seçin. <strong>Önizle</strong> ile mağazanız yeni sekmede
+                  Kayıtlı sektörünüze ait temalardan birini seçin. <strong>Önizle</strong> ile mağazanız yeni sekmede
                   o temayla, kendi ürünlerinizle açılır; beğenirseniz oradan ya da buradan uygulayın.
                 </p>
-                <div className="grid gap-4 sm:grid-cols-2">
-                  {STOREFRONT_THEME_PRESETS.map((preset) => {
-                    const isSelected =
-                      form.theme_key === preset.settings.theme_key &&
-                      form.layout_key === preset.settings.layout_key &&
-                      form.header_style_key === preset.settings.header_style_key &&
-                      form.footer_style_key === preset.settings.footer_style_key;
+                {sectorPresets.length === 0 ? <p className="rounded-xl bg-slate-50 p-4 text-sm text-slate-600">Bu sektör için hazır tema koleksiyonu henüz tanımlanmadı. Mevcut görünüm ayarlarınızı diğer sekmelerden yönetebilirsiniz.</p> : null}
+                <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                  {sectorPresets.map((preset) => {
+                    const isSelected = matchesThemePreset({ ...form, hero_style_key: initialStorefrontSettings.hero_style_key }, preset);
                     const isApplying = applyPending && applyingPresetKey === preset.key;
                     const href = presetPreviewHref(preset.key);
 

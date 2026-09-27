@@ -1,3 +1,4 @@
+import { readDesignDocument, getDesignContent, type AkimContent } from "@/lib/storefront/sector-design/config";
 // Sunucu bileşeni: vitrin ana sayfası + ürün sayfası ortak çizimi.
 import { resolveStorefrontDealerProfile } from "@/lib/kurumsal/dealer-customers";
 import type { Metadata } from "next";
@@ -26,6 +27,7 @@ import {
   getStorefrontCategoryRepresentativeImages,
   getStorefrontProductBySlug,
   getStorefrontProductsPage,
+  getStorefrontProductsByIds,
   getStorefrontPromoProductCount,
   getStorefrontPromoProducts,
   getStorefrontRecommendationPool,
@@ -338,6 +340,10 @@ export async function renderStorefrontHome({
     if (typeof v === "string" && v) applyQuery.set(k, v);
   }
   const previewApplyHref = `https://app.${appEnv.rootDomain}/settings/theme?${applyQuery.toString()}`;
+  const sectorDesign = readDesignDocument(viewSettings.sector_design, tenant.sector);
+  const featuredId = sectorDesign?.themeId === "electronics-akim" ? (getDesignContent(sectorDesign) as AkimContent).featureProductId : "";
+  const designProducts = featuredId && /^[0-9a-f-]{36}$/i.test(featuredId)
+    ? (await getStorefrontProductsByIds({ ...pricingParams, ids: [featuredId] })).filter(p => !p.category_id || !hiddenCategoryIds.includes(p.category_id)) : [];
   const footerVisible = viewSettings.is_footer_visible;
   const ads = await resolveStorefrontAds(tenant);
   const headersList = await headers();
@@ -372,7 +378,7 @@ export async function renderStorefrontHome({
         promoProducts={promoProducts}
         promoProductCount={promoProductCount}
         bestSellerProducts={bestSellerProducts}
-        recommendationPool={recommendationPool}
+        recommendationPool={[...recommendationPool, ...designProducts]}
         categoryRepresentativeImages={categoryRepresentativeImages}
         storefrontSettings={viewSettings}
         sections={sections}

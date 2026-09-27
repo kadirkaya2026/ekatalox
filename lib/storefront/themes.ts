@@ -2,6 +2,7 @@ import type { StorefrontThemeKey } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 export interface StorefrontTheme {
+  commerceDesign?: import("@/lib/storefront/sector-design/config").DesignId;
   page: string;
   header: string;
   headerBorder: string;

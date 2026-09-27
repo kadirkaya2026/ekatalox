@@ -586,6 +586,7 @@ function ThemeStep({ data, presets, isDone, onDone, onNext }: StepProps) {
     setApplyingKey(preset.key);
     try {
       const payload = {
+        theme_preset_key: preset.key,
         theme_key: preset.settings.theme_key,
         layout_key: preset.settings.layout_key,
         // Marka renkleri (brand_primary/accent_color, brand_palette) gönderilmez:
@@ -619,9 +620,10 @@ function ThemeStep({ data, presets, isDone, onDone, onNext }: StepProps) {
   return (
     <div>
       <StepIntro title="Bir tema seçin" done={isDone || Boolean(appliedKey)}>
-        Tema; renkleri, ürün kartlarını ve ana sayfa düzenini belirler. Sektörünüze en yakın paketi seçin, tek tıkla uygulanır.
-        Renkleri ve ayrıntıları sonra Ayarlar &gt; Tema&apos;dan değiştirebilirsiniz.
+        Tema; renkleri, ürün kartlarını ve ana sayfa düzenini belirler. Kayıtlı sektörünüze ait temayı seçin, tek tıkla uygulanır.
+        Marka renklerinizi sonra Ayarlar &gt; Tema&apos;dan değiştirebilirsiniz.
       </StepIntro>
+      {!presets.length && <a href="/settings/theme" className="mt-4 inline-flex rounded-xl bg-emerald-800 px-5 py-3 text-sm font-semibold text-white">Sektör temalarını ve alanlarını düzenle</a>}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         {presets.map((p) => {
           const active = selected === p.key;

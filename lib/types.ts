@@ -548,6 +548,7 @@ export interface BusinessDayHours {
 export type BusinessHours = Record<WeekdayKey, BusinessDayHours>;
 
 export interface TenantStorefrontSettings {
+  sector_design?: import("@/lib/storefront/sector-design/config").DesignDocument | null;
   id: string;
   tenant_id: string;
   theme_key: StorefrontThemeKey;

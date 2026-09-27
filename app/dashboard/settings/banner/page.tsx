@@ -1,3 +1,5 @@
+import { redirect } from "next/navigation";
+import { readDesignDocument } from "@/lib/storefront/sector-design/config";
 import { Header } from "@/components/dashboard/header";
 import { HeroClusterBannerForm } from "@/components/dashboard/hero-cluster-banner-form";
 import { PlanFeatureGate } from "@/components/dashboard/plan-feature-gate";
@@ -9,6 +11,7 @@ export default async function TenantBannerSettingsPage() {
   const session = await requireTenantAdminPage();
   const tenant = session.tenant!;
   const storefrontSettings = await getTenantStorefrontSettings(tenant.id);
+  if (readDesignDocument(storefrontSettings.sector_design, session.tenant!.sector)) redirect("/dashboard/settings/theme");
 
   return (
     <div className="space-y-6">

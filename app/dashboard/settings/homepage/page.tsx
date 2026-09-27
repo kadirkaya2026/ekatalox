@@ -1,3 +1,5 @@
+import { redirect } from "next/navigation";
+import { readDesignDocument } from "@/lib/storefront/sector-design/config";
 import { Header } from "@/components/dashboard/header";
 import { TenantHomepageContentForm } from "@/components/dashboard/tenant-homepage-content-form";
 import { requireTenantAdminPage } from "@/lib/auth/session";
@@ -6,6 +8,7 @@ import { getTenantStorefrontSettings } from "@/lib/data";
 export default async function TenantHomepageSettingsPage() {
   const session = await requireTenantAdminPage();
   const storefrontSettings = await getTenantStorefrontSettings(session.tenant!.id);
+  if (readDesignDocument(storefrontSettings.sector_design, session.tenant!.sector)) redirect("/dashboard/settings/theme");
 
   return (
     <div className="space-y-6">

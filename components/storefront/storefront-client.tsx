@@ -1,5 +1,9 @@
 "use client";
 
+import { electronicsCommerceTheme, commerceRootClass } from "@/components/storefront/sector-design/commerce-theme";
+import { ElectronicsStorefront } from "@/components/storefront/sector-design/electronics-storefront";
+import { readDesignDocument } from "@/lib/storefront/sector-design/config";
+
 import { volumeUnitPrice } from "@/lib/storefront/volume-pricing";
 import { DealerPushPrompt } from "@/components/storefront/dealer-push-prompt";
 import { formatDealerDisplayName, type DealerProfile } from "@/lib/kurumsal/dealer-profile";
@@ -1000,6 +1004,7 @@ export function StorefrontClient({
   hasPageFooter = false,
   isCatalogOnly = false,
   sectionMode = false,
+  inlineProductNavigation = false,
   ads = null,
   initialDetailProduct = null,
   dealerProfile = null,
@@ -1031,6 +1036,8 @@ export function StorefrontClient({
   // kategori filtresi /api/storefront/products'a (tüm katalog) gitmemeli,
   // sadece initialProducts üzerinde istemci taraflı filtrelenmeli.
   sectionMode?: boolean;
+  /** Local design previews keep their own URL rather than opening live product routes. */
+  inlineProductNavigation?: boolean;
   // Ücretsiz plan: eKatalox reklam yerleşimleri (ürün kartı, pop-up, ürün
   // detayı, WhatsApp mesajı). null = reklam yok. Bkz. lib/ads/server.ts.
   ads?: StorefrontAdsConfig | null;
@@ -1613,7 +1620,8 @@ export function StorefrontClient({
     return () => { cancelled = true; };
   }, [previewProduct, getPairingTargets, fetchPairProducts]);
 
-  const theme = useResolvedStorefrontTheme(
+  const electronicsDesign = readDesignDocument(storefrontSettings.sector_design, tenant.sector);
+  const baseTheme = useResolvedStorefrontTheme(
     storefrontSettings.theme_key,
     {
       brand_primary_color: storefrontSettings.brand_primary_color,
@@ -1622,6 +1630,7 @@ export function StorefrontClient({
     },
     storefrontSettings.product_image_background,
   );
+  const theme = electronicsCommerceTheme(baseTheme, electronicsDesign?.themeId);
   const layout = getStorefrontLayout(storefrontSettings.layout_key ?? "classic-grid");
   const productCardStyle = getProductCardStyleClasses(storefrontSettings.product_card_style);
   // Market/tekel bayilerde MOBİLDE düzen: banner -> indirimli ürün şeridi ->
@@ -2161,14 +2170,14 @@ export function StorefrontClient({
       if (!detailProduct) listScrollYRef.current = window.scrollY;
       setPreviewProduct(null);
       setDetailProduct(product);
-      window.history.pushState({ ekUrun: product.id, ekFromList: true }, "", getStorefrontProductPath(product));
+      if (!inlineProductNavigation) window.history.pushState({ ekUrun: product.id, ekFromList: true }, "", getStorefrontProductPath(product));
       scrollWindowAfterRender(0);
 
       if (analyticsSubdomain) {
         trackStorefrontProductView(tenant.id, analyticsSubdomain, product.id);
       }
     },
-    [analyticsSubdomain, productsById, tenant.id, detailProduct],
+    [analyticsSubdomain, productsById, tenant.id, detailProduct, inlineProductNavigation],
   );
 
   // Geri/ileri tuşu: history.state.ekUrun varsa o ürün, yoksa liste.
@@ -2201,6 +2210,7 @@ export function StorefrontClient({
 
   function closeDetailToList(pushHome: boolean) {
     if (!detailProduct) return;
+    if (inlineProductNavigation) { setDetailProduct(null); scrollWindowAfterRender(pushHome ? 0 : listScrollYRef.current); return; }
     const fromList = Boolean((window.history.state as { ekFromList?: boolean } | null)?.ekFromList);
     if (!pushHome && fromList) {
       window.history.back();
@@ -4150,6 +4160,7 @@ export function StorefrontClient({
 
   return (
     <StorefrontThemeProvider
+      commerceDesign={electronicsDesign?.themeId}
       themeKey={storefrontSettings.theme_key}
       brandPrimaryColor={storefrontSettings.brand_primary_color}
       brandAccentColor={storefrontSettings.brand_accent_color}
@@ -4157,9 +4168,19 @@ export function StorefrontClient({
       productImageBackground={storefrontSettings.product_image_background}
     >
     <StorefrontLayoutProvider layoutKey={storefrontSettings.layout_key ?? "classic-grid"}>
-    <div className="contents">
+    <div className={electronicsDesign ? commerceRootClass(electronicsDesign.themeId, theme.isDark) : "contents"} data-commerce-design={electronicsDesign?.themeId}>
       {isClosedNow ? <StoreClosedOverlay nextOpening={closedNowNextOpening} /> : null}
-      <StorefrontHeader
+      {electronicsDesign ? <ElectronicsStorefront key={electronicsDesign.themeId}
+        design={electronicsDesign} settings={storefrontSettings} title={storefrontTitle}
+        products={products} initialProducts={[...initialProducts, ...recommendationPool]} categories={categories}
+        tenantId={tenant.id} subdomain={subdomain}
+        selectedCategory={selectedCategoryId} search={searchInput} total={productTotal}
+        loading={isLoadingProducts} detailOpen={Boolean(detailProduct)} cartCount={badgeCartCount}
+        quantities={isMounted ? cartQuantityByProductId : new Map()} variantCounts={isMounted ? cartVariantCountByProductId : new Map()} onSearch={handleSearchChange} onSearchSubmit={handleSearchSubmit}
+        onCategory={handleCategoryChange} onCart={openCartDrawer} onCampaigns={() => setIsCampaignsSheetOpen(true)}
+        onDetail={handleOpenProductDetail} onAdd={handleQuickAddOrOpenModal} onDecrease={handleDecreaseCartItem}
+        onMore={handleLoadMoreProducts} onHome={() => { handleCategoryChange("all"); handleSearchChange(""); }}
+      /> : <StorefrontHeader
         orderTrackingHref={isMarketOrTekelTenant(tenant) ? "/siparislerim" : undefined}
         headerStyleKey={storefrontSettings.header_style_key ?? "standard"}
         storefrontSettings={storefrontSettings}
@@ -4196,7 +4217,7 @@ export function StorefrontClient({
           setIsSearchSheetOpen(false);
           setIsCampaignsSheetOpen(true);
         }}
-      />
+      />}
 
       {customerCoupon || campaigns.length ? (
         <StorefrontCouponBanner
@@ -4212,6 +4233,7 @@ export function StorefrontClient({
       <main
         className={cn(
           "container-store py-5 sm:py-6",
+          electronicsDesign && !detailProduct && "hidden",
           // Alt navigasyon barı sayfanın üstünde durduğu için son ürünün
           // altında daha fazla boşluk gerekiyor (bkz. globals.css). Ama
           // altbilgi varsa boşluk ona ait (bottom-nav-footer-inset);
@@ -4286,7 +4308,7 @@ export function StorefrontClient({
             }
           />
         ) : null}
-        <div className={cn(layout.catalogShellClass, detailProduct && "hidden")}>
+        {!electronicsDesign && <div className={cn(layout.catalogShellClass, detailProduct && "hidden")}>
           {usesSidebarNav ? (
             <StorefrontCategorySidebarSlot>
               <StorefrontCategorySidebar
@@ -4726,7 +4748,7 @@ export function StorefrontClient({
             return null;
           })}
           </StorefrontCatalogContent>
-        </div>
+        </div>}
       </main>
 
       <AnimatePresence>
@@ -5026,6 +5048,7 @@ export function StorefrontClient({
 
       <Modal
         open={Boolean(selectedProduct)}
+        trapFocus={Boolean(electronicsDesign)}
         onClose={closeAddToCartModal}
         title={
           selectedProduct?.has_variants
@@ -5034,6 +5057,7 @@ export function StorefrontClient({
         }
         contentScroll={!selectedProduct?.has_variants}
         sheet={Boolean(selectedProduct?.has_variants)}
+        overlayClassName={electronicsDesign ? theme.modalOverlay : undefined}
         panelClassName={theme.modalPanel}
         headerClassName={theme.modalHeaderBorder}
         titleClassName={theme.modalTitle}
@@ -5091,6 +5115,7 @@ export function StorefrontClient({
             )}
           >
             <div
+              data-commerce-slot="purchase-overview"
               className={cn(
                 "w-full min-w-0 max-w-full shrink-0 rounded-xl px-3",
                 theme.border,
@@ -5098,9 +5123,11 @@ export function StorefrontClient({
                 selectedProduct.has_variants ? "py-2" : "py-2.5",
               )}
             >
-              <div className="flex w-full min-w-0 items-start justify-between gap-3">
+              {electronicsDesign && selectedProduct.image_url && <div data-commerce-slot="purchase-photo"><StorefrontImage src={selectedProduct.image_url} alt={selectedProduct.product_name} sizes="160px" className="object-contain" /></div>}
+              <div data-commerce-slot="purchase-meta" className="flex w-full min-w-0 items-start justify-between gap-3">
                 <div className="min-w-0 flex-1">
                   <p
+                    data-commerce-slot="purchase-name"
                     className={cn(
                       "break-words text-pretty font-semibold",
                       theme.text,
@@ -5269,7 +5296,7 @@ export function StorefrontClient({
                 </div>
               </div>
             ) : (
-              <div className="grid w-full min-w-0 max-w-full gap-3 sm:grid-cols-3">
+              <div data-commerce-slot="purchase-units" className="grid w-full min-w-0 max-w-full gap-3 sm:grid-cols-3">
                 <div className="min-w-0 space-y-2">
                   <label className={cn("text-sm font-semibold", theme.text)}>{t("addToCart.quantityLabel")}</label>
                   <QuantityStepper
@@ -5334,7 +5361,7 @@ export function StorefrontClient({
             ) : null}
 
             {!selectedProduct.has_variants ? (
-              <div className={cn("w-full min-w-0 max-w-full shrink-0 rounded-xl p-3", theme.cartDrawerSummary)}>
+              <div data-commerce-slot="purchase-total" className={cn("w-full min-w-0 max-w-full shrink-0 rounded-xl p-3", theme.cartDrawerSummary)}>
                 <p className={cn("text-xs", theme.cartDrawerMuted)}>{t("cart.total")}</p>
                 <p className={cn("mt-0.5 text-xs", theme.cartDrawerMuted)}>{t("crossSell.unitCount", { count: selectedTotalQuantity })}</p>
                 <p className="mt-1 break-words text-xl font-bold">

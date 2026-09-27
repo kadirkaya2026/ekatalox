@@ -1,5 +1,7 @@
 "use client";
 
+import { electronicsCommerceTheme } from "@/components/storefront/sector-design/commerce-theme";
+import type { DesignId } from "@/lib/storefront/sector-design/config";
 import { createContext, useContext } from "react";
 import type {
   ProductImageBackgroundKey,
@@ -22,6 +24,7 @@ export { getAppearanceFromSettings } from "@/lib/storefront/appearance";
 
 export function StorefrontThemeProvider({
   themeKey,
+  commerceDesign,
   brandPrimaryColor,
   brandAccentColor,
   brandPalette,
@@ -29,6 +32,7 @@ export function StorefrontThemeProvider({
   children,
 }: {
   themeKey: StorefrontThemeKey | string;
+  commerceDesign?: DesignId;
   brandPrimaryColor?: string | null;
   brandAccentColor?: string | null;
   /** Buton / bölüm bazlı renkler (tenant_storefront_settings.brand_palette). */
@@ -47,7 +51,7 @@ export function StorefrontThemeProvider({
   );
 
   return (
-    <StorefrontThemeContext.Provider value={theme}>
+    <StorefrontThemeContext.Provider value={electronicsCommerceTheme(theme, commerceDesign)}>
       {children}
     </StorefrontThemeContext.Provider>
   );
