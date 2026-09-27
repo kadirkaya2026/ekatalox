@@ -15,6 +15,7 @@ const config: Config = {
         "plus-jakarta": ["var(--font-plus-jakarta)", "sans-serif"],
         "source-sans": ["var(--font-source-sans)", "sans-serif"],
         playfair: ["var(--font-playfair)", "serif"],
+        montserrat: ["var(--font-montserrat)", "sans-serif"],
       },
       boxShadow: {
         soft: "0 10px 30px rgba(15, 23, 42, 0.08)",

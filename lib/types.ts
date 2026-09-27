@@ -27,7 +27,8 @@ export type StorefrontFontKey =
   | "dm-sans"
   | "plus-jakarta"
   | "source-sans"
-  | "playfair";
+  | "playfair"
+  | "montserrat";
 export type StorefrontProductCardStyle = "standard" | "compact" | "image-forward";
 export type ProductImageBackgroundKey = "theme" | "white" | "transparent";
 export type StorefrontHeaderStyleKey = "standard" | "centered" | "minimal" | "split";

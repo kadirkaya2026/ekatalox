@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { ChevronDown, PackageSearch, Search, ShoppingCart, Store, Ticket } from "lucide-react";
 import type { CategoryNode } from "@/lib/categories/tree";
@@ -231,6 +232,43 @@ function HeaderSearch({
   );
 }
 
+// Yazı logosu (ör. "SETRE", en/boy > 2,4): kare kutuya sığdırılınca
+// küçülüyor ve mağaza adı ikinci kez yazılıyordu (28 Eyl 2026). Geniş logo
+// kutusuz, geniş çizilir; ad yazısı yalnız ekran okuyucuya kalır. Oran
+// görsel yüklenince ölçülür ve cihazda saklanır (sonraki açılışta anında).
+const WIDE_LOGO_RATIO = 2.4;
+
+function useIsWideLogo(url: string | null | undefined) {
+  const [wide, setWide] = useState(false);
+  useEffect(() => {
+    if (!url) return;
+    const key = `ek_logo_ratio:${url}`;
+    let cached: string | null = null;
+    try {
+      cached = window.localStorage.getItem(key);
+    } catch {
+      /* depolama kapalı */
+    }
+    if (cached) {
+      const frame = window.requestAnimationFrame(() => setWide(Number(cached) > WIDE_LOGO_RATIO));
+      return () => window.cancelAnimationFrame(frame);
+    }
+    const probe = new window.Image();
+    probe.onload = () => {
+      if (!probe.naturalHeight) return;
+      const ratio = probe.naturalWidth / probe.naturalHeight;
+      try {
+        window.localStorage.setItem(key, String(ratio));
+      } catch {
+        /* depolama kapalı */
+      }
+      setWide(ratio > WIDE_LOGO_RATIO);
+    };
+    probe.src = url;
+  }, [url]);
+  return wide;
+}
+
 function HeaderBrand({
   props,
   centered = false,
@@ -242,6 +280,40 @@ function HeaderBrand({
 }) {
   const theme = useStorefrontTheme();
   const { t } = useStorefrontLocale();
+  const wideLogo = useIsWideLogo(props.storefrontSettings.logo_url);
+
+  if (wideLogo && props.storefrontSettings.logo_url) {
+    return (
+      <a
+        href={props.homeHref ?? "#"}
+        onClick={
+          props.homeHref
+            ? undefined
+            : (event) => {
+                event.preventDefault();
+                props.onCategoryChange("all");
+              }
+        }
+        className={cn("flex min-w-0 shrink-0 flex-col justify-center", centered && "mx-auto items-center")}
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element -- oran doğal genişlikte korunur */}
+        <img
+          src={props.storefrontSettings.logo_url}
+          alt={`${props.storefrontTitle} logo`}
+          className={cn(
+            "block w-auto max-w-[46vw] object-contain sm:max-w-[240px]",
+            compact ? "h-6 sm:h-7" : "h-7 sm:h-8 lg:h-9",
+          )}
+        />
+        <h1 className="sr-only">{props.storefrontTitle}</h1>
+        {props.storefrontSettings.is_price_update_date_visible && props.storefrontSettings.price_update_date ? (
+          <p className={cn("mt-1 truncate text-[10px] leading-4 sm:text-[11px]", theme.headerMuted)}>
+            {t("header.priceUpdateDate")} {formatDateSlashTr(props.storefrontSettings.price_update_date)}
+          </p>
+        ) : null}
+      </a>
+    );
+  }
 
   return (
     <a

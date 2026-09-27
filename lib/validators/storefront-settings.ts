@@ -54,6 +54,7 @@ export const storefrontFontKeySchema = z.enum([
   "plus-jakarta",
   "source-sans",
   "playfair",
+  "montserrat",
 ]);
 
 export const storefrontProductCardStyleSchema = z.enum([

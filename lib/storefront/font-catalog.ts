@@ -44,6 +44,13 @@ export const FONT_OPTIONS: StorefrontFontOption[] = [
     className: "font-playfair",
     cssVariable: "var(--font-playfair)",
   },
+  {
+    key: "montserrat",
+    title: "Montserrat",
+    description: "Moda ve butik vitrinleri için zarif geometrik font.",
+    className: "font-montserrat",
+    cssVariable: "var(--font-montserrat)",
+  },
 ];
 
 const fontByKey = new Map(FONT_OPTIONS.map((option) => [option.key, option]));

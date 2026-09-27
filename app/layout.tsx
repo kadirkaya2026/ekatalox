@@ -4,6 +4,7 @@ import {
   IBM_Plex_Mono,
   IBM_Plex_Sans,
   Inter,
+  Montserrat,
   Playfair_Display,
   Plus_Jakarta_Sans,
   Source_Sans_3,
@@ -37,6 +38,14 @@ const playfair = Playfair_Display({
   subsets: ["latin"],
 });
 
+// Moda vitrinleri (setre tarzı, 28 Eyl 2026). Yalnız seçen vitrin kullanır:
+// preload kapalı, diğer sayfalara ek indirme yükü yok.
+const montserrat = Montserrat({
+  variable: "--font-montserrat",
+  subsets: ["latin", "latin-ext"],
+  preload: false,
+});
+
 // Pazarlama sitesi yazı tipleri (8 Eyl 2026): kurumsal, Türkçe karakterleri
 // eksiksiz. Panel ve vitrin Inter ve tema yazı tiplerini kullanmaya devam eder.
 const plexSans = IBM_Plex_Sans({
@@ -59,6 +68,7 @@ const fontVariables = [
   plusJakarta.variable,
   sourceSans.variable,
   playfair.variable,
+  montserrat.variable,
 ].join(" ");
 
 // viewport-fit=cover olmadan iPhone'da env(safe-area-inset-*) hep 0
