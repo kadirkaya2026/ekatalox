@@ -53,14 +53,16 @@ export default async function OrderReceiptPrintPage(props: Props) {
         .receipt hr { border: 0; border-top: 1px dashed #000; margin: 6px 0; }
         .receipt .row { display: flex; justify-content: space-between; gap: 6px; }
         .receipt .row span:last-child { white-space: nowrap; }
-        .receipt .item { margin: 3px 0; }
-        .receipt .sub { opacity: .8; font-size: .92em; }
+        .receipt .item { margin: 4px 0; font-weight: 700; }
+        .receipt .item .no { flex: none; min-width: 2.2em; }
+        .receipt .item .name { flex: 1; min-width: 0; }
+        .receipt .item .sub { padding-left: 2.2em; font-weight: 700; }
+        .receipt .sub { font-size: .92em; }
         @media print { .no-print { display: none !important; } .receipt { margin: 0 auto; } }
       `}</style>
       <ReceiptPrintControls width={width} autoPrint={search.preview !== "1"} />
 
       <div className="c b lg">{storeName}</div>
-      {tenant.whatsapp_number ? <div className="c sub">{tenant.whatsapp_number}</div> : null}
       <hr />
       <div className="c b xl">SİPARİŞ {formatOrderNo(order)}</div>
       <div className="row"><span>{fmt(order.created_at)}</span><span>{payment ?? ""}</span></div>
@@ -76,14 +78,15 @@ export default async function OrderReceiptPrintPage(props: Props) {
         return (
           <div className="item" key={i}>
             <div className="row">
-              <span>
+              <span className="no">{i + 1}.</span>
+              <span className="name">
                 {item.quantity} x {item.product_name}
                 {item.variant_name ? ` (${item.variant_name})` : ""}
                 {item.sales_unit && item.sales_unit !== "adet" ? ` · ${item.sales_unit}` : ""}
               </span>
               <span>{line !== null ? money(line) : ""}</span>
             </div>
-            {item.price !== null && item.quantity > 1 ? <div className="sub">  {money(item.price)} / birim</div> : null}
+            {item.price !== null && item.quantity > 1 ? <div className="sub">{money(item.price)} / birim</div> : null}
           </div>
         );
       })}
