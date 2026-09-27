@@ -179,6 +179,9 @@ export function StorefrontProductDetailView({
   const unitPrice = typeof product.price === "number" ? product.price : null;
   const inCart = cartQuantity > 0;
   const hasVariants = product.has_variants;
+  // Sayfa içi beden seçimi (Moda vitrini): sepete ekle bedenlerin altında,
+  // sayfayla birlikte kayar; mobilde altta sabit çubuk yok (28 Eyl 2026).
+  const inlineVariantMode = hasVariants && Boolean(onAddVariants);
   const sortedVariants = useMemo(
     () => [...(product.variants ?? [])].sort((a, b) => a.display_order - b.display_order),
     [product.variants],
@@ -361,7 +364,7 @@ export function StorefrontProductDetailView({
   }
 
   return (
-    <div className="pb-28 lg:pb-4">
+    <div className={inlineVariantMode ? "pb-4" : "pb-28 lg:pb-4"}>
       <div className="mb-4 flex flex-wrap items-center gap-2 text-sm">
         <button
           type="button"
@@ -646,7 +649,7 @@ export function StorefrontProductDetailView({
             </div>
           ) : null}
 
-          <div className="mt-6 hidden lg:block">{actionArea(false)}</div>
+          <div className={cn("mt-6", inlineVariantMode ? "block" : "hidden lg:block")}>{actionArea(false)}</div>
         </div>
       </div>
 
@@ -674,10 +677,12 @@ export function StorefrontProductDetailView({
         </div>
       ) : null}
 
-      {/* Mobil: altta sabit sepete ekle */}
-      <div className={cn("fixed inset-x-0 bottom-0 z-40 border-t px-3.5 pb-[calc(env(safe-area-inset-bottom)+12px)] pt-3 lg:hidden", theme.surface, theme.border)}>
-        {actionArea(true)}
-      </div>
+      {/* Mobil: altta sabit sepete ekle (sayfa içi beden seçiminde yok) */}
+      {inlineVariantMode ? null : (
+        <div className={cn("fixed inset-x-0 bottom-0 z-40 border-t px-3.5 pb-[calc(env(safe-area-inset-bottom)+12px)] pt-3 lg:hidden", theme.surface, theme.border)}>
+          {actionArea(true)}
+        </div>
+      )}
     </div>
   );
 }
