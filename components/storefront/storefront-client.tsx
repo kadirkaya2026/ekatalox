@@ -1,5 +1,6 @@
 "use client";
 
+import { DealerPushPrompt } from "@/components/storefront/dealer-push-prompt";
 import { formatDealerDisplayName, type DealerProfile } from "@/lib/kurumsal/dealer-profile";
 import {
   Fragment,
@@ -4784,6 +4785,14 @@ export function StorefrontClient({
         pushVapidPublicKey={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? ""}
         announcement={announcement}
       />
+
+      {dealerProfile && !sectionMode ? (
+        <DealerPushPrompt
+          subdomain={analyticsSubdomain}
+          vapidPublicKey={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? ""}
+          profile={dealerProfile}
+        />
+      ) : null}
 
       {usesSidebarNav ? (
         <StorefrontCategoryDrawer
