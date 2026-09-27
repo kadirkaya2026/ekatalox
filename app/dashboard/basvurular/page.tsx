@@ -66,7 +66,8 @@ export default async function DealerApplicationsPage() {
       />
       <DealerApplicationsManager
         initialApplications={applications}
-        formLive={Boolean(site?.is_published && site.content.sections.form && tenant.kurumsal_domain)}
+        // Alan adı şart değil: site katalog adresinin /kurumsal yolunda da yayında.
+        formLive={Boolean(site?.is_published && site.content.sections.form)}
       />
     </div>
   );
