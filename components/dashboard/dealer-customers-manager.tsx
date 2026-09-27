@@ -145,7 +145,7 @@ export function DealerCustomersManager({
       </div>
 
       {error ? (
-        <p className="rounded-lg bg-rose-50 px-4 py-3 text-sm text-rose-700 dark:bg-rose-950 dark:text-rose-300" role="alert">
+        <p className="rounded-lg bg-rose-50 px-4 py-3 text-sm text-rose-700" role="alert">
           {error}
         </p>
       ) : null}
@@ -176,7 +176,7 @@ export function DealerCustomersManager({
                       ) : null}
                     </h3>
                     <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
-                      <span className="inline-flex items-center gap-1 rounded-md bg-emerald-50 px-2 py-0.5 font-mono font-semibold text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
+                      <span className="inline-flex items-center gap-1 rounded-md bg-emerald-50 px-2 py-0.5 font-mono font-semibold text-emerald-800">
                         <KeyRound className="size-3.5" /> {customer.password_code}
                       </span>
                       <span className="font-medium">{customer.price_list_name ?? listName(customer.price_list_id)}</span>
@@ -195,7 +195,7 @@ export function DealerCustomersManager({
                     {customer.customer_phone ? (
                       <a
                         href={`tel:+${normalizeTrPhoneDigits(customer.customer_phone)}`}
-                        className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold hover:bg-muted dark:border-slate-700"
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold hover:bg-muted"
                       >
                         <Phone className="size-4" /> {customer.customer_phone}
                       </a>

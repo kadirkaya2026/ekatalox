@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { Check, Inbox, MessageCircle, Phone, PhoneCall, X } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Modal } from "@/components/ui/modal";
@@ -21,11 +20,13 @@ import { cn } from "@/lib/utils";
 // "Onayla" kişiye özel şifre verip müşteriyi Müşteriler sayfasına taşır,
 // "Reddet" başvuruyu listeden düşürür (27 Eyl 2026, Kurumsal paket).
 
-const STATUS_VARIANT: Record<DealerApplicationStatus, "info" | "warning" | "success" | "danger"> = {
-  new: "info",
-  contacted: "warning",
-  approved: "success",
-  rejected: "danger",
+// Badge bileşeni dark: sınıfları taşıyor (işletim sistemi karanlık modunda
+// açık panelde okunmuyor) — burada sabit tonlar.
+const STATUS_TONE: Record<DealerApplicationStatus, string> = {
+  new: "bg-blue-100 text-blue-800",
+  contacted: "bg-amber-100 text-amber-800",
+  approved: "bg-emerald-100 text-emerald-800",
+  rejected: "bg-rose-100 text-rose-800",
 };
 
 const dateFormatter = new Intl.DateTimeFormat("tr-TR", {
@@ -120,7 +121,7 @@ export function DealerApplicationsManager({
     : null;
 
   const approvedCard = approved ? (
-    <Card className="flex flex-col gap-3 border-emerald-200 bg-emerald-50 p-4 sm:flex-row sm:items-center sm:justify-between dark:border-emerald-900 dark:bg-emerald-950/40">
+    <Card className="flex flex-col gap-3 border-emerald-200 bg-emerald-50 p-4 sm:flex-row sm:items-center sm:justify-between">
       <p className="text-sm leading-6">
         <Check className="mr-1 inline size-4 text-emerald-600" />
         <b>{approved.name}</b> onaylandı ve <Link href="/customers" className="font-semibold underline underline-offset-4">Müşteriler</Link>{" "}
@@ -173,7 +174,7 @@ export function DealerApplicationsManager({
       <div className="space-y-4">
         {approvedCard}
       <Card className="flex flex-col items-center gap-3 p-10 text-center">
-        <div className="flex size-12 items-center justify-center rounded-full bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">
+        <div className="flex size-12 items-center justify-center rounded-full bg-emerald-50 text-emerald-700">
           <Inbox className="size-6" />
         </div>
         <h2 className="text-lg font-semibold">Henüz başvuru yok</h2>
@@ -184,7 +185,7 @@ export function DealerApplicationsManager({
         {!formLive ? (
           <p className="text-sm text-muted-foreground">
             Başvuru formu şu an yayında değil.{" "}
-            <Link href="/settings/kurumsal" className="font-semibold text-emerald-700 underline underline-offset-4 dark:text-emerald-400">
+            <Link href="/settings/kurumsal" className="font-semibold text-emerald-700 underline underline-offset-4">
               Kurumsal siteyi kurun
             </Link>
           </p>
@@ -208,7 +209,7 @@ export function DealerApplicationsManager({
               "rounded-full border px-3.5 py-1.5 text-sm font-medium transition",
               filter === key
                 ? "border-emerald-600 bg-emerald-600 text-white"
-                : "border-slate-200 bg-card text-muted-foreground hover:text-foreground dark:border-slate-700",
+                : "border-slate-200 bg-card text-muted-foreground hover:text-foreground",
             )}
           >
             {key === "all" ? "Tümü" : DEALER_APPLICATION_STATUS_LABELS[key]} ({counts[key]})
@@ -217,7 +218,7 @@ export function DealerApplicationsManager({
       </div>
 
       {error ? (
-        <p className="rounded-lg bg-rose-50 px-4 py-3 text-sm text-rose-700 dark:bg-rose-950 dark:text-rose-300" role="alert">
+        <p className="rounded-lg bg-rose-50 px-4 py-3 text-sm text-rose-700" role="alert">
           {error}
         </p>
       ) : null}
@@ -232,7 +233,9 @@ export function DealerApplicationsManager({
                 <div className="min-w-0 space-y-1.5">
                   <div className="flex flex-wrap items-center gap-2">
                     <h3 className="text-base font-semibold">{item.company_name}</h3>
-                    <Badge variant={STATUS_VARIANT[item.status]}>{DEALER_APPLICATION_STATUS_LABELS[item.status]}</Badge>
+                    <span className={cn("inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold", STATUS_TONE[item.status])}>
+                      {DEALER_APPLICATION_STATUS_LABELS[item.status]}
+                    </span>
                   </div>
                   <p className="text-sm text-muted-foreground">
                     {item.contact_name}
@@ -246,7 +249,7 @@ export function DealerApplicationsManager({
                 <div className="flex shrink-0 flex-wrap items-center gap-2">
                   <a
                     href={`tel:+${digits}`}
-                    className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold hover:bg-muted dark:border-slate-700"
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold hover:bg-muted"
                   >
                     <Phone className="size-4" /> {item.phone}
                   </a>

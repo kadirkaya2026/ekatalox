@@ -87,7 +87,7 @@ export function DealerCustomerForm({
         </label>
       </div>
 
-      <div className="grid gap-3 rounded-xl border border-emerald-200 bg-emerald-50/60 p-3 sm:grid-cols-2 dark:border-emerald-900 dark:bg-emerald-950/30">
+      <div className="grid gap-3 rounded-xl border border-emerald-200 bg-emerald-50/60 p-3 sm:grid-cols-2">
         <label className={label}>
           <span>Göreceği fiyat listesi *</span>
           <Select value={values.price_list_id} onChange={set("price_list_id")} required>
@@ -127,7 +127,7 @@ export function DealerCustomerForm({
       </div>
 
       {error ? (
-        <p className="rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700 dark:bg-rose-950 dark:text-rose-300" role="alert">
+        <p className="rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700" role="alert">
           {error}
         </p>
       ) : null}
