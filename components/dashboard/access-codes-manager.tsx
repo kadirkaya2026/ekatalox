@@ -1,31 +1,46 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Badge } from "@/components/ui/badge";
+import { AlertTriangle, CheckCircle2, KeyRound, Plus, Trash2, UserRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { formatPriceListLimit, getPriceListLimit } from "@/lib/billing/plans";
-import { getPriceListDisplayName, normalizePriceListName } from "@/lib/price-lists/constants";
+import { getPriceListDisplayName } from "@/lib/price-lists/constants";
+import { cn } from "@/lib/utils";
 import type { AccessCode, PriceList, Tenant } from "@/lib/types";
 
+/** Fiyatlı listede fiyatı girilmemiş ürünler (0139, price_list_missing_prices). */
+export type MissingPrices = Record<string, { count: number; sample: Array<{ id: string; name: string; sku: string | null }> }>;
+
+/** Kişiye özel müşteri şifreleri (0138) — listede adla gösterilir, burada silinmez. */
+export type PersonalCodeSummary = { id: string; price_list_id: string; label: string };
+
+// Fiyat Listeleri sayfası (28 Eyl 2026): her liste bir kart; altında ortak
+// şifreleri, müşteri şifreleri, o listeye şifre ekleme ve fiyatı girilmemiş
+// ürün uyarısı. Fiyatsız katalog listesi en sonda, fiyat uyarısı yok.
 export function AccessCodesManager({
   tenant,
   initialCodes,
   priceLists: initialPriceLists,
+  missingPrices = {},
+  personalCodes = [],
 }: {
   tenant: Tenant;
   initialCodes: AccessCode[];
   priceLists: PriceList[];
+  missingPrices?: MissingPrices;
+  personalCodes?: PersonalCodeSummary[];
 }) {
   const [codes, setCodes] = useState(initialCodes);
   const [priceLists, setPriceLists] = useState(initialPriceLists);
-  const [passwordCode, setPasswordCode] = useState("");
-  const [priceListId, setPriceListId] = useState(initialPriceLists[0]?.id ?? "");
+  const [newCodeByList, setNewCodeByList] = useState<Record<string, string>>({});
+  const [codeMessage, setCodeMessage] = useState<{ listId: string; text: string; ok: boolean } | null>(null);
+  const [openMissing, setOpenMissing] = useState<string | null>(null);
   const [newPriceListName, setNewPriceListName] = useState("");
-  const [message, setMessage] = useState<string | null>(null);
   const [priceListMessage, setPriceListMessage] = useState<string | null>(null);
   const [isPasswordProtected, setIsPasswordProtected] = useState(tenant.is_password_protected);
   const [passwordModeMessage, setPasswordModeMessage] = useState<string | null>(null);
@@ -166,9 +181,7 @@ export function AccessCodesManager({
     (code) => !catalogOnlyPriceListIds.has(code.price_list_id),
   ).length;
   const codeLimit = getPriceListLimit(tenant.plan);
-  const selectedIsCatalogOnly = catalogOnlyPriceListIds.has(priceListId);
-  const atCodeLimit =
-    codeLimit !== null && !selectedIsCatalogOnly && pricedCodeCount >= codeLimit;
+  const atCodeLimit = codeLimit !== null && pricedCodeCount >= codeLimit;
   const atPriceListLimit = codeLimit !== null && pricedListCount >= codeLimit;
 
   function addPriceList(event: React.FormEvent<HTMLFormElement>) {
@@ -191,16 +204,18 @@ export function AccessCodesManager({
 
       const created = result.priceList as PriceList;
       setPriceLists((current) => [...current, created]);
-      setPriceListId(created.id);
       setNewPriceListName("");
-      setPriceListMessage("Yeni fiyat listesi eklendi. Şimdi bu listeye bir şifre bağlayın.");
+      setPriceListMessage(
+        `"${created.name}" eklendi. Şimdi ürünlerin bu listedeki fiyatlarını girin ve listeye bir şifre bağlayın.`,
+      );
       router.refresh();
     });
   }
 
-  function addCode(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setMessage(null);
+  function addCode(listId: string) {
+    const passwordCode = (newCodeByList[listId] ?? "").trim();
+    if (!passwordCode) return;
+    setCodeMessage(null);
 
     startTransition(async () => {
       const response = await fetch("/api/tenant/access-codes", {
@@ -209,14 +224,14 @@ export function AccessCodesManager({
         body: JSON.stringify({
           tenant_id: tenant.id,
           password_code: passwordCode,
-          price_list_id: priceListId,
+          price_list_id: listId,
         }),
       });
 
       const result = await response.json();
 
       if (!response.ok) {
-        setMessage(result.error ?? "Şifre eklenemedi.");
+        setCodeMessage({ listId, text: result.error ?? "Şifre eklenemedi.", ok: false });
         return;
       }
 
@@ -229,14 +244,14 @@ export function AccessCodesManager({
         },
         ...current,
       ]);
-      setPasswordCode("");
-      setMessage("Yeni erişim şifresi eklendi.");
+      setNewCodeByList((current) => ({ ...current, [listId]: "" }));
+      setCodeMessage({ listId, text: `"${created.password_code}" şifresi eklendi.`, ok: true });
       router.refresh();
     });
   }
 
-  function deleteCode(id: string) {
-    setMessage(null);
+  function deleteCode(id: string, listId: string) {
+    setCodeMessage(null);
 
     startTransition(async () => {
       const response = await fetch("/api/tenant/access-codes", {
@@ -248,12 +263,12 @@ export function AccessCodesManager({
       const result = await response.json();
 
       if (!response.ok) {
-        setMessage(result.error ?? "Şifre silinemedi.");
+        setCodeMessage({ listId, text: result.error ?? "Şifre silinemedi.", ok: false });
         return;
       }
 
       setCodes((current) => current.filter((code) => code.id !== id));
-      setMessage("Şifre kaldırıldı.");
+      setCodeMessage({ listId, text: "Şifre kaldırıldı.", ok: true });
       router.refresh();
     });
   }
@@ -391,146 +406,168 @@ export function AccessCodesManager({
 
       <div
         aria-disabled={!isPasswordProtected}
-        className={
-          !isPasswordProtected ? "pointer-events-none opacity-50" : undefined
-        }
+        className={cn("space-y-4", !isPasswordProtected && "pointer-events-none opacity-50")}
       >
-        <div className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
-          <div className="space-y-6">
-          <Card className="p-5">
-            <h2 className="text-lg font-semibold text-slate-900">Fiyat listeleri</h2>
-        <p className="mt-1 text-sm text-slate-600">
-          Yeni bir fiyatlı seviye (ör. &quot;4.Liste&quot;, &quot;VIP Bayi&quot;) oluşturun,
-          ardından aşağıdan bu listeye bağlı bir şifre ekleyin.
-        </p>
-
-        <div className="mt-4 flex flex-wrap gap-2">
-          {priceLists
-            .filter((list) => !list.is_catalog_only)
-            .map((list) => (
-              <span
-                key={list.id}
-                className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-medium text-slate-700"
-              >
-                {getPriceListDisplayName(list)}
-              </span>
-            ))}
-        </div>
-
-        {atPriceListLimit ? (
-          <div className="mt-4 rounded-xl border border-amber-100 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-            Paketinizde en fazla {formatPriceListLimit(tenant.plan)} fiyatlı seviye
-            oluşturabilirsiniz. Daha fazlası için paketinizi yükseltin.
-          </div>
-        ) : (
-          <form onSubmit={addPriceList} className="mt-4 flex flex-col gap-3 sm:flex-row">
-            <Input
-              placeholder="Örn. 4.Liste"
-              value={newPriceListName}
-              onChange={(event) => setNewPriceListName(event.target.value)}
-              className="sm:flex-1"
-            />
-            <Button
-              type="submit"
-              variant="secondary"
-              disabled={priceListPending || !newPriceListName.trim()}
-            >
-              {priceListPending ? "Ekleniyor..." : "Liste ekle"}
-            </Button>
-          </form>
-        )}
-
-        {priceListMessage ? (
-          <p className="mt-3 text-sm text-emerald-700">{priceListMessage}</p>
-        ) : null}
-      </Card>
-
-      <Card className="p-5">
-        <h2 className="text-lg font-semibold text-slate-900">Yeni erişim kodu</h2>
-        <p className="mt-1 text-sm text-slate-600">
-          Müşteri vitrini için yeni şifre kodu buradan oluşturabilirsiniz. Seçilen fiyat
-          listesine göre vitrin davranışı belirlenir.
-        </p>
-
-        {atCodeLimit ? (
-          <div className="mt-4 rounded-xl border border-amber-100 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-            Paketinizde en fazla {formatPriceListLimit(tenant.plan)} fiyatlı seviye
-            oluşturabilirsiniz (fiyatsız katalog şifreleri bu sayıma dahil değildir).
-            Daha fazla fiyat seviyesi için paketinizi yükseltin.
-          </div>
-        ) : null}
-
-        <form onSubmit={addCode} className="mt-5 grid gap-3">
-          <Input
-            placeholder="Örn. 1111"
-            value={passwordCode}
-            onChange={(event) => setPasswordCode(event.target.value)}
-          />
-          <Select
-            value={priceListId}
-            onChange={(event) => setPriceListId(event.target.value)}
-          >
-            {priceLists.map((list) => (
-              <option key={list.id} value={list.id}>
-                {getPriceListDisplayName(list)}
-              </option>
-            ))}
-          </Select>
-          <Button type="submit" disabled={pending || !priceListId || atCodeLimit}>
-            {pending ? "Kaydediliyor..." : "Kodu ekle"}
-          </Button>
-        </form>
-      </Card>
-      </div>
-
-      <Card className="p-5">
-        <div className="flex items-center justify-between gap-3">
-          <div>
-            <h2 className="text-lg font-semibold text-slate-900">Aktif erişim kodları</h2>
-            <p className="mt-1 text-sm text-slate-600">
-              {tenant.company_name} • {tenant.subdomain}.ekatalox.com
-            </p>
-          </div>
-          <Badge className="bg-slate-100 text-slate-700">
-            {pricedCodeCount} / {formatPriceListLimit(tenant.plan)} fiyat seviyesi
-          </Badge>
-        </div>
-
-        {message ? (
-          <div className="mt-4 rounded-xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
-            {message}
-          </div>
-        ) : null}
-
-        <div className="mt-5 space-y-3">
-          {codes.map((code) => {
-            const linkedList = priceLists.find((entry) => entry.id === code.price_list_id);
-            const listLabel = linkedList
-              ? getPriceListDisplayName(linkedList)
-              : normalizePriceListName(code.price_list_name ?? "Fiyat listesi");
-
-            return (
-            <div
-              key={code.id}
-              className="flex flex-col gap-3 rounded-xl border border-slate-100 bg-slate-50 p-4 md:flex-row md:items-center md:justify-between"
-            >
-              <div>
-                <p className="text-base font-semibold text-slate-900">{code.password_code}</p>
-                <p className="mt-1 text-sm text-slate-500">{listLabel}</p>
-              </div>
-              <Button
-                variant="secondary"
-                onClick={() => deleteCode(code.id)}
-                disabled={pending}
-              >
-                Kaldır
-              </Button>
+        <Card className="p-5">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <h2 className="text-lg font-semibold text-slate-900">Yeni fiyat listesi</h2>
+              <p className="mt-1 max-w-xl text-sm text-slate-600">
+                Yeni bir fiyat seviyesi (ör. &quot;4.Liste&quot;, &quot;VIP Bayi&quot;) oluşturun. Sonra ürünlerin bu listedeki
+                fiyatlarını girin; fiyatı eksik ürün kalırsa liste kartında uyarı görürsünüz.
+              </p>
             </div>
+            <span className="shrink-0 rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
+              {pricedCodeCount} / {formatPriceListLimit(tenant.plan)} fiyatlı şifre
+            </span>
+          </div>
+          {atPriceListLimit ? (
+            <div className="mt-4 rounded-xl border border-amber-100 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+              Paketinizde en fazla {formatPriceListLimit(tenant.plan)} fiyatlı seviye oluşturabilirsiniz. Daha fazlası için
+              paketinizi yükseltin.
+            </div>
+          ) : (
+            <form onSubmit={addPriceList} className="mt-4 flex flex-col gap-3 sm:flex-row">
+              <Input
+                placeholder="Örn. 4.Liste"
+                value={newPriceListName}
+                onChange={(event) => setNewPriceListName(event.target.value)}
+                className="sm:max-w-sm"
+              />
+              <Button type="submit" variant="secondary" disabled={priceListPending || !newPriceListName.trim()}>
+                <Plus className="size-4" />
+                {priceListPending ? "Ekleniyor..." : "Liste ekle"}
+              </Button>
+            </form>
+          )}
+          {priceListMessage ? <p className="mt-3 text-sm text-emerald-700">{priceListMessage}</p> : null}
+        </Card>
+
+        {[...priceLists]
+          .sort((a, b) => Number(a.is_catalog_only) - Number(b.is_catalog_only) || a.sort_order - b.sort_order)
+          .map((list) => {
+            const listCodes = codes.filter((code) => code.price_list_id === list.id);
+            const listCustomers = personalCodes.filter((code) => code.price_list_id === list.id);
+            const missing = list.is_catalog_only ? null : missingPrices[list.id];
+            const missingCount = missing?.count ?? 0;
+            const limitReached = !list.is_catalog_only && atCodeLimit;
+            const message = codeMessage?.listId === list.id ? codeMessage : null;
+            return (
+              <Card key={list.id} className="p-5">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <h3 className="text-lg font-semibold text-slate-900">{getPriceListDisplayName(list)}</h3>
+                  <div className="flex flex-wrap gap-1.5 text-xs font-semibold">
+                    <span className="rounded-full bg-slate-100 px-2.5 py-1 text-slate-700">{listCodes.length} şifre</span>
+                    {listCustomers.length ? (
+                      <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-emerald-800">{listCustomers.length} müşteri</span>
+                    ) : null}
+                  </div>
+                </div>
+
+                {list.is_catalog_only ? (
+                  <p className="mt-2 text-sm text-slate-500">Bu şifreyle girenler ürünleri fiyatsız görür.</p>
+                ) : missingCount > 0 ? (
+                  <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                    <button
+                      type="button"
+                      onClick={() => setOpenMissing((current) => (current === list.id ? null : list.id))}
+                      className="flex w-full items-center gap-2 text-left font-semibold"
+                    >
+                      <AlertTriangle className="size-4 shrink-0 text-amber-600" />
+                      Bu listede fiyatı girilmemiş {missingCount} ürün var
+                      <span className="ml-auto text-xs font-semibold underline underline-offset-2">
+                        {openMissing === list.id ? "Gizle" : "Ürünleri gör"}
+                      </span>
+                    </button>
+                    {openMissing === list.id && missing ? (
+                      <ul className="mt-2 space-y-1 border-t border-amber-200 pt-2">
+                        {missing.sample.map((product) => (
+                          <li key={product.id}>
+                            <Link
+                              href={`/products?q=${encodeURIComponent(product.sku || product.name)}&focus=${product.id}`}
+                              className="hover:underline"
+                            >
+                              {product.sku ? <span className="font-mono font-semibold">{product.sku}</span> : null}
+                              {product.sku ? " · " : ""}
+                              {product.name}
+                            </Link>
+                          </li>
+                        ))}
+                        {missingCount > missing.sample.length ? (
+                          <li className="text-xs text-amber-700">…ve {missingCount - missing.sample.length} ürün daha</li>
+                        ) : null}
+                      </ul>
+                    ) : null}
+                  </div>
+                ) : (
+                  <p className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-emerald-700">
+                    <CheckCircle2 className="size-4" /> Tüm ürünlerin fiyatı girilmiş
+                  </p>
+                )}
+
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {listCodes.map((code) => (
+                    <span
+                      key={code.id}
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 py-1 pl-2.5 pr-1 font-mono text-sm font-semibold text-slate-900"
+                    >
+                      <KeyRound className="size-3.5 text-slate-500" />
+                      {code.password_code}
+                      <button
+                        type="button"
+                        onClick={() => deleteCode(code.id, list.id)}
+                        disabled={pending}
+                        title="Şifreyi kaldır"
+                        className="rounded-md p-1 text-slate-400 hover:bg-rose-50 hover:text-rose-600"
+                      >
+                        <Trash2 className="size-3.5" />
+                      </button>
+                    </span>
+                  ))}
+                  {listCustomers.map((code) => (
+                    <Link
+                      key={code.id}
+                      href={`/customers/${code.id}`}
+                      title="Kişiye özel müşteri şifresi — Müşteriler sayfasından yönetilir"
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-sm font-medium text-emerald-900 hover:border-emerald-300"
+                    >
+                      <UserRound className="size-3.5" /> {code.label}
+                    </Link>
+                  ))}
+                  {!listCodes.length && !listCustomers.length ? (
+                    <p className="text-sm text-slate-500">Bu listeye bağlı şifre yok.</p>
+                  ) : null}
+                </div>
+
+                <form
+                  onSubmit={(event) => {
+                    event.preventDefault();
+                    addCode(list.id);
+                  }}
+                  className="mt-4 flex flex-col gap-2 sm:flex-row"
+                >
+                  <Input
+                    placeholder="Yeni şifre, örn. 1111"
+                    value={newCodeByList[list.id] ?? ""}
+                    onChange={(event) => setNewCodeByList((current) => ({ ...current, [list.id]: event.target.value }))}
+                    className="sm:max-w-xs"
+                    disabled={limitReached}
+                  />
+                  <Button type="submit" variant="secondary" disabled={pending || limitReached || !(newCodeByList[list.id] ?? "").trim()}>
+                    <Plus className="size-4" /> Bu listeye şifre ekle
+                  </Button>
+                </form>
+                {limitReached ? (
+                  <p className="mt-2 text-xs text-amber-700">
+                    Paketinizdeki fiyatlı şifre sınırına ulaştınız ({formatPriceListLimit(tenant.plan)}).
+                  </p>
+                ) : null}
+                {message ? (
+                  <p className={cn("mt-2 text-sm", message.ok ? "text-emerald-700" : "text-rose-700")}>{message.text}</p>
+                ) : null}
+              </Card>
             );
           })}
-        </div>
-      </Card>
-        </div>
       </div>
     </div>
   );

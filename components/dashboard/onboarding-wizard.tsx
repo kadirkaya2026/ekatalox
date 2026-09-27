@@ -927,7 +927,7 @@ function AccessCodeStep({ data, isDone, onDone, onNext }: StepProps) {
   async function add() {
     setError(null);
     if (code.trim().length < 3) return setError("Şifre en az 3 karakter olmalı.");
-    if (!priceListId) return setError("Fiyat listesi bulunamadı; Şifreler sayfasından ekleyin.");
+    if (!priceListId) return setError("Fiyat listesi bulunamadı; Fiyat Listeleri sayfasından ekleyin.");
     setPending(true);
     try {
       const res = await fetch("/api/tenant/access-codes", {

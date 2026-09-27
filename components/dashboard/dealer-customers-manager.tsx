@@ -116,7 +116,7 @@ export function DealerCustomersManager({
           <h2 className="text-lg font-semibold">Henüz müşteri yok</h2>
           <p className="max-w-lg text-sm leading-6 text-muted-foreground">
             Bayi Başvuruları&apos;nda bir başvuruyu onaylayıp şifre verdiğinizde müşteri buraya gelir. &quot;Müşteri ekle&quot; ile başvurusuz da
-            ekleyebilirsiniz. Ortak liste şifreleriniz (Şifreler sayfası) aynen çalışmaya devam eder.
+            ekleyebilirsiniz. Ortak liste şifreleriniz (Fiyat Listeleri sayfası) aynen çalışmaya devam eder.
           </p>
         </Card>
       ) : (

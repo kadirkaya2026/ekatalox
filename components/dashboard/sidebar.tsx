@@ -125,7 +125,7 @@ const tenantLinks: SidebarLink[] = [
       },
     ],
   },
-  { href: "/access-codes", label: "Şifreler", icon: KeyRound },
+  { href: "/access-codes", label: "Fiyat Listeleri", icon: KeyRound },
   // Kurumsal sitedeki (/kurumsal) başvuru formundan gelen bayilik talepleri.
   {
     href: "/basvurular",

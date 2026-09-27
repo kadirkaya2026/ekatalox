@@ -287,7 +287,7 @@ function EntitledPanel({
           <Inbox className="mt-0.5 size-5 shrink-0 text-emerald-700 dark:text-emerald-400" />
           <p className="text-sm leading-6 text-muted-foreground">
             Başvuru formunu dolduran firmalar <span className="font-semibold text-foreground">Bayi Başvuruları</span> sayfasında
-            listelenir; arayıp durumunu işaretleyin, onayladıklarınıza Şifreler&apos;den portal şifresi verin.
+            listelenir; arayıp durumunu işaretleyin, onayladığınıza Bayi Başvuruları&apos;ndan kişiye özel şifre verin.
           </p>
         </div>
         <Link

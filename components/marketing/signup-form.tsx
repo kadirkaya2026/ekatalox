@@ -711,7 +711,7 @@ function SuccessScreen({ data, email }: { data: Success; email: string }) {
       <h3 className="mt-8 text-lg font-bold text-brand-navy">Sırada ne var</h3>
       <ol className="mt-3 list-decimal space-y-2 pl-5 text-base leading-relaxed">
         <li>Panele girin, Ürünler bölümünden ilk ürününüzü ekleyin veya Excel ile toplu yükleyin. Aktarım desteği için bize ulaşabilirsiniz.</li>
-        <li>Ayarlar &gt; Şifreler&apos;den bayi şifrenizi belirleyin; adresi ve şifreyi bayilerinize WhatsApp&apos;tan gönderin.</li>
+        <li>Fiyat Listeleri sayfasından bayi şifrenizi belirleyin; adresi ve şifreyi bayilerinize WhatsApp&apos;tan gönderin.</li>
         <li>Kataloğu bayi gibi açıp ürün ve fiyatları kontrol edin. Bayiniz sipariş verdiğinde PDF fişinin bağlantısını WhatsApp üzerinden size gönderir; sipariş panelde de görünür.</li>
       </ol>
       <p className="mt-6 text-sm text-brand-muted">
