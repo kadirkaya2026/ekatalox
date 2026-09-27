@@ -141,6 +141,15 @@ const tenantLinks: SidebarLink[] = [
     requiredBusinessType: "market",
   },
   {
+    // Toptancı: onaylı bayi başvurularının kişiye özel şifreli müşterileri
+    // (0138, yalnız Kurumsal paket). Market'in telefon defterinden ayrı.
+    href: "/customers",
+    label: "Müşteriler",
+    icon: Contact,
+    requiredFeature: "kurumsal_site",
+    requiredBusinessType: "general",
+  },
+  {
     href: "/siparisler",
     label: "Siparişler",
     icon: ClipboardList,

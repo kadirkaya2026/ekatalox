@@ -6,6 +6,7 @@ import { getSessionContext } from "@/lib/auth/session";
 import { ensureAccessCodeLimitResponse, ensureTenantAdminResponse } from "@/lib/tenancy/guards";
 import { revalidateStorefrontCache } from "@/lib/storefront/cache";
 import { accessCodeSchema } from "@/lib/validators/access-code";
+import { DUPLICATE_PASSWORD_MESSAGE, isDuplicatePasswordError } from "@/lib/kurumsal/dealer-customers";
 
 export async function PATCH(request: Request) {
   const guard = await ensureTenantAdminResponse({ blockDemoWrite: true });
@@ -192,6 +193,9 @@ export async function POST(request: Request) {
     .single();
 
   if (error) {
+    if (isDuplicatePasswordError(error)) {
+      return NextResponse.json({ error: DUPLICATE_PASSWORD_MESSAGE }, { status: 409 });
+    }
     return NextResponse.json({ error: "Şifre eklenemedi." }, { status: 400 });
   }
 

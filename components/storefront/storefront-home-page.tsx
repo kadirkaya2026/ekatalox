@@ -1,4 +1,5 @@
 // Sunucu bileşeni: vitrin ana sayfası + ürün sayfası ortak çizimi.
+import { resolveStorefrontDealerProfile } from "@/lib/kurumsal/dealer-customers";
 import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { notFound, redirect } from "next/navigation";
@@ -350,6 +351,9 @@ export async function renderStorefrontHome({
       ? (tenant.company_name ?? viewSettings.storefront_title ?? null)
       : null;
 
+  // Kişiye özel bayi şifresiyle girdiyse sepet bilgileri sorulmaz (0138).
+  const dealerProfile = await resolveStorefrontDealerProfile(tenant, priceListState.accessCodeId);
+
   return (
     <StorefrontPageShell
       storefrontSettings={viewSettings}
@@ -376,6 +380,7 @@ export async function renderStorefrontHome({
         campaigns={campaigns}
         hasPageFooter={footerVisible}
         isCatalogOnly={priceListState.isCatalogOnly}
+        dealerProfile={dealerProfile}
         initialDetailProduct={detailProduct}
       />
       {footerVisible ? (

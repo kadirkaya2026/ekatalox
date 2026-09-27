@@ -1,5 +1,6 @@
 "use client";
 
+import { formatDealerDisplayName, type DealerProfile } from "@/lib/kurumsal/dealer-profile";
 import {
   Fragment,
   useCallback,
@@ -971,6 +972,7 @@ export function StorefrontClient({
   sectionMode = false,
   ads = null,
   initialDetailProduct = null,
+  dealerProfile = null,
 }: {
   tenant: Tenant;
   categories: Category[];
@@ -1005,6 +1007,8 @@ export function StorefrontClient({
   // Ürün sayfası (/urun/<slug>) doğrudan açıldığında sunucudan gelen ürün;
   // liste yerine ürün görünümü çizilir (bkz. storefront-home-page.tsx).
   initialDetailProduct?: StorefrontProduct | null;
+  /** Kişiye özel bayi şifresiyle giren müşteri (0138). */
+  dealerProfile?: DealerProfile | null;
 }) {
   const [cart, setCart] = useState<CartItem[]>(() => {
     if (typeof window === "undefined") {
@@ -1181,10 +1185,19 @@ export function StorefrontClient({
   const isMarketTenant = tenant.business_type === "market";
   // Sepet formu alan ayarları (0118): hangi alan görünür/zorunlu, etiketi ne.
   // Ayar yoksa tür bazlı eski davranış (market: telefon+adres zorunlu).
-  const cartFormConfig = useMemo(
-    () => resolveCartFormConfig(storefrontSettings.cart_form_config, tenant.business_type),
-    [storefrontSettings.cart_form_config, tenant.business_type],
-  );
+  // Kişiye özel bayi şifresiyle girende (0138) ad/telefon/adres sorulmaz —
+  // bayi alanları görünür/zorunlu işaretlese bile; fişe sunucu yazar.
+  const cartFormConfig = useMemo(() => {
+    const config = resolveCartFormConfig(storefrontSettings.cart_form_config, tenant.business_type);
+    if (!dealerProfile) return config;
+    const hidden = { is_visible: false, is_required: false };
+    return {
+      ...config,
+      customer_name: { ...config.customer_name, ...hidden },
+      customer_phone: { ...config.customer_phone, ...hidden },
+      customer_address: { ...config.customer_address, ...hidden },
+    };
+  }, [storefrontSettings.cart_form_config, tenant.business_type, dealerProfile]);
   // Alkol/sigara bayii (tekel) — yasal olarak dağıtım/teslimat yapamaz.
   // true iken adres toplanmaz, sepet/checkout metinleri "sipariş listesi
   // hazırlama" diline döner (kullanıcı isteği, 20 Ağu 2026).
@@ -4826,6 +4839,7 @@ export function StorefrontClient({
         setCustomerPhoneError={setCustomerPhoneError}
         isMarketTenant={isMarketTenant}
         cartFormConfig={cartFormConfig}
+        dealerLabel={dealerProfile ? formatDealerDisplayName(dealerProfile) : null}
         orderNoteError={orderNoteError}
         setOrderNoteError={setOrderNoteError}
         isTekel={isTekel}

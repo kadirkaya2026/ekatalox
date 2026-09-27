@@ -1,3 +1,4 @@
+import { hasPlanFeature } from "@/lib/billing/plans";
 import { cache } from "react";
 import { unstable_cache } from "next/cache";
 import { isTrialExpired } from "@/lib/billing/trial";
@@ -1032,6 +1033,8 @@ export async function getTenantAccessCodes(
     .from("access_codes")
     .select("*, price_list:price_lists(name, is_catalog_only)")
     .eq("tenant_id", tenantId)
+    // Kişiye özel bayi şifreleri Müşteriler sayfasında (0138).
+    .eq("is_personal", false)
     .order("created_at", { ascending: false });
 
   return ((data as Array<Record<string, unknown>> | null) ?? []).map((row) => {
@@ -1203,7 +1206,7 @@ export async function validateAccessCode(params: {
 
   const { data } = await supabaseAdmin
     .from("access_codes")
-    .select("id, price_list_id, price_list:price_lists(id, name, is_catalog_only)")
+    .select("id, price_list_id, is_personal, price_list:price_lists(id, name, is_catalog_only)")
     .eq("tenant_id", tenant.id)
     .eq("password_code", params.code.trim())
     .maybeSingle();
@@ -1211,10 +1214,16 @@ export async function validateAccessCode(params: {
   const matched = data as {
     id: string;
     price_list_id: string;
+    is_personal: boolean | null;
     price_list: { id: string; name: string; is_catalog_only: boolean } | null;
   } | null;
 
   if (!matched?.price_list) {
+    return null;
+  }
+
+  // Kişiye özel bayi şifresi (0138) yalnız Kurumsal pakette çalışır.
+  if (matched.is_personal && !hasPlanFeature(tenant.plan ?? "baslangic", "kurumsal_site")) {
     return null;
   }
 

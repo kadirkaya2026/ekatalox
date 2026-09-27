@@ -19,6 +19,7 @@ export interface DealerApplication {
   contact_name: string;
   phone: string;
   city: string | null;
+  address: string | null;
   note: string | null;
   status: DealerApplicationStatus;
   created_at: string;
@@ -52,13 +53,16 @@ export const dealerApplicationInputSchema = z.object({
       return digits.length >= 10 && digits.length <= 13;
     }, "Telefon numarasını 05XX XXX XX XX biçiminde yazın."),
   city: optionalText(40),
+  address: optionalText(400),
   note: optionalText(1000),
   // Bot tuzağı: doluysa sahte başarı döner, kayıt yapılmaz.
   website: z.string().max(500).optional(),
 });
 
+// "Onaylandı" buradan verilemez: onay şifre oluşturmayla birlikte
+// /basvurular/[id]/onayla ucundan yapılır.
 export const dealerApplicationStatusSchema = z.object({
-  status: z.enum(DEALER_APPLICATION_STATUSES, "Geçersiz durum."),
+  status: z.enum(["new", "contacted", "rejected"], "Geçersiz durum."),
 });
 
 /** Panelde tel:/WhatsApp bağlantısı için TR numarasını 90XXXXXXXXXX biçimine çevirir. */

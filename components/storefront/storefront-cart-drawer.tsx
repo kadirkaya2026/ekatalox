@@ -86,6 +86,8 @@ export type StorefrontCartDrawerProps = {
   setCustomerPhoneError: Dispatch<SetStateAction<string | null>>;
   isMarketTenant: boolean;
   cartFormConfig: CartFormConfig;
+  /** Kişiye özel bayi şifresiyle girenin adı (0138): ad/telefon/adres sorulmaz, fişe otomatik yazılır. */
+  dealerLabel?: string | null;
   orderNoteError: string | null;
   setOrderNoteError: (value: string | null) => void;
   // Alkol/sigara bayii (tekel) — yasal olarak dağıtım/teslimat yapamaz.
@@ -175,6 +177,7 @@ export function StorefrontCartDrawer({
   setCustomerPhoneError,
   isMarketTenant,
   cartFormConfig,
+  dealerLabel = null,
   orderNoteError,
   setOrderNoteError,
   isTekel,
@@ -850,6 +853,12 @@ cartFormConfig.customer_address.is_visible ? (
           <p className={cn("mt-2 text-xs font-medium", theme.dangerText)}>{paymentMethodError}</p>
         ) : null}
       </>
+      {dealerLabel ? (
+        <p className={cn("mt-3 rounded-xl p-3 text-sm", theme.surfaceMuted)}>
+          <span className="font-semibold">{dealerLabel}</span> adına sipariş veriliyor. Adres ve iletişim bilgileriniz fişe otomatik
+          yazılır.
+        </p>
+      ) : null}
       {getOrderedCartFormFieldKeys(cartFormConfig).map((key) => (
         <Fragment key={key}>{contactFieldRenderers[key]()}</Fragment>
       ))}

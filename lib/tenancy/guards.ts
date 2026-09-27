@@ -87,6 +87,7 @@ export async function ensureAccessCodeLimitResponse() {
     .from("access_codes")
     .select("id, price_lists!inner(is_catalog_only)", { count: "exact", head: true })
     .eq("tenant_id", session.tenant.id)
+    .eq("is_personal", false)
     .eq("price_lists.is_catalog_only", false);
 
   if ((count ?? 0) >= limit) {

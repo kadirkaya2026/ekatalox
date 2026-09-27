@@ -1,6 +1,7 @@
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
+import { resolveStorefrontDealerProfile } from "@/lib/kurumsal/dealer-customers";
 import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { notFound, redirect } from "next/navigation";
@@ -183,6 +184,9 @@ export default async function SectionDetailPage(props: {
 
   const ads = await resolveStorefrontAds(tenant);
 
+  // Kişiye özel bayi şifresiyle girdiyse sepet bilgileri sorulmaz (0138).
+  const dealerProfile = await resolveStorefrontDealerProfile(tenant, priceListState.accessCodeId);
+
   return (
     <StorefrontPageShell
       storefrontSettings={storefrontSettings}
@@ -216,6 +220,7 @@ export default async function SectionDetailPage(props: {
         campaigns={campaigns}
         hasPageFooter={footerVisible}
         isCatalogOnly={priceListState.isCatalogOnly}
+        dealerProfile={dealerProfile}
         sectionMode
       />
       {footerVisible ? (

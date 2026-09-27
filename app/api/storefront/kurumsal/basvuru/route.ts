@@ -66,6 +66,7 @@ export async function POST(request: Request) {
     contact_name: input.contact_name,
     phone: input.phone,
     city: input.city ?? null,
+    address: input.address ?? null,
     note: input.note ?? null,
     source: "kurumsal",
     user_agent: request.headers.get("user-agent")?.slice(0, 300) ?? null,

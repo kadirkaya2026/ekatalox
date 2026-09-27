@@ -19,6 +19,12 @@ import {
 } from "@/lib/storage/order-receipts";
 import { recordStorefrontOrderStat } from "@/lib/analytics/record-stats";
 import { recordStorefrontOrder } from "@/lib/storefront/orders";
+import { readStorefrontPriceList } from "@/lib/storefront/session";
+import {
+  formatDealerAddress,
+  formatDealerDisplayName,
+  resolveStorefrontDealerProfile,
+} from "@/lib/kurumsal/dealer-customers";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { getStorefrontMagnetCookieName } from "@/lib/storefront/magnet-cookie";
 import { getClientIp } from "@/lib/storefront/client-ip";
@@ -158,6 +164,19 @@ export async function POST(request: Request) {
     });
   }
 
+  // Kişiye özel bayi şifresiyle giren müşteri (0138, Kurumsal paket): sepette
+  // ad/telefon/adres sorulmadı; fişe ve sipariş kaydına şifredeki bilgiler
+  // SUNUCUDA yazılır (istemciden gelene güvenilmez).
+  const priceListCookie = await readStorefrontPriceList(parsed.data.subdomain);
+  const accessCodeId =
+    priceListCookie && priceListCookie.tenantId === tenant.id ? (priceListCookie.accessCodeId ?? null) : null;
+  const dealerProfile = await resolveStorefrontDealerProfile(tenant, accessCodeId);
+  if (dealerProfile) {
+    parsed.data.customer_reference_name = formatDealerDisplayName(dealerProfile);
+    parsed.data.customer_phone = dealerProfile.phone ?? "";
+    parsed.data.customer_address = formatDealerAddress(dealerProfile);
+  }
+
   // Bayinin sepet ayarında zorunlu işaretlediği alanlar boş gelemez —
   // istemci doğrulaması atlanmış/kurcalanmış olsa bile sipariş kaydedilmez.
   const cartFormConfig = resolveCartFormConfig(
@@ -169,7 +188,7 @@ export async function POST(request: Request) {
     customer_phone: parsed.data.customer_phone,
     customer_address: parsed.data.customer_address,
     order_note: parsed.data.note,
-  });
+  }).filter((key) => !dealerProfile || key === "order_note");
   if (missingCartFields.length) {
     const labels: Record<(typeof missingCartFields)[number], string> = {
       customer_name: "müşteri adı",
@@ -280,6 +299,12 @@ export async function POST(request: Request) {
       note: parsed.data.note,
       magnetCodeId,
     });
+    if (recorded && accessCodeId) {
+      const orderId = recorded.orderId;
+      after(async () => {
+        await supabase.from("orders").update({ access_code_id: accessCodeId }).eq("id", orderId);
+      });
+    }
     if (recorded) {
       const rec = recorded;
       after(() =>
@@ -460,6 +485,12 @@ export async function POST(request: Request) {
       p_coupon_id: paymentSummary.appliedCoupon.id,
       p_order_id: recorded.orderId,
       p_discount: paymentSummary.couponDiscountAmount,
+    });
+  }
+  if (recorded && accessCodeId) {
+    const orderId = recorded.orderId;
+    after(async () => {
+      await supabase.from("orders").update({ access_code_id: accessCodeId }).eq("id", orderId);
     });
   }
   if (recorded) {

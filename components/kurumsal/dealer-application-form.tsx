@@ -36,6 +36,7 @@ export function DealerApplicationForm({
       contact_name: String(form.get("contact_name") ?? "").trim(),
       phone: String(form.get("phone") ?? "").trim(),
       city: String(form.get("city") ?? "").trim(),
+      address: String(form.get("address") ?? "").trim(),
       note: String(form.get("note") ?? "").trim(),
       website: String(form.get("website") ?? ""),
     };
@@ -108,6 +109,16 @@ export function DealerApplicationForm({
         <label className="block text-sm font-semibold text-slate-700">
           İl
           <input name="city" maxLength={40} autoComplete="address-level1" className={FIELD} placeholder="Örn. Ankara" />
+        </label>
+        <label className="block text-sm font-semibold text-slate-700 sm:col-span-2">
+          Adres
+          <input
+            name="address"
+            maxLength={400}
+            autoComplete="street-address"
+            className={FIELD}
+            placeholder="Mahalle, cadde/sokak, no, ilçe"
+          />
         </label>
         <label className="block text-sm font-semibold text-slate-700 sm:col-span-2">
           Not
