@@ -29,7 +29,7 @@ export type StorefrontFontKey =
   | "source-sans"
   | "playfair"
   | "montserrat";
-export type StorefrontProductCardStyle = "standard" | "compact" | "image-forward";
+export type StorefrontProductCardStyle = "standard" | "compact" | "image-forward" | "fashion";
 export type ProductImageBackgroundKey = "theme" | "white" | "transparent";
 export type StorefrontHeaderStyleKey = "standard" | "centered" | "minimal" | "split";
 export type StorefrontFooterStyleKey = "standard" | "minimal" | "columns";

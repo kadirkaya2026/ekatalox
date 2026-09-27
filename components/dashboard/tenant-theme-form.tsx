@@ -29,6 +29,7 @@ import {
   FOOTER_STYLE_OPTIONS,
   HEADER_STYLE_OPTIONS,
   PRODUCT_CARD_STYLE_OPTIONS,
+  isFashionSector,
   PRODUCT_IMAGE_BACKGROUND_OPTIONS,
 } from "@/lib/storefront/appearance-catalog";
 import { hasPlanFeature } from "@/lib/billing/plans";
@@ -142,10 +143,13 @@ export function TenantThemeForm({
   companyName,
   previewUrl,
   autoApply,
+  tenantSector = null,
 }: {
   initialStorefrontSettings: TenantStorefrontSettings;
   tenantPlan: TenantPlan;
   companyName: string;
+  /** "Moda (tam boy)" kart stili yalnız tekstil sektörüne gösterilir. */
+  tenantSector?: string | null;
   previewUrl?: string;
   autoApply?: {
     preset?: string; theme?: string; layout?: string; header?: string;
@@ -604,7 +608,12 @@ export function TenantThemeForm({
                     />
                     <OptionPicker
                       label="Ürün kart stili"
-                      options={PRODUCT_CARD_STYLE_OPTIONS}
+                      options={PRODUCT_CARD_STYLE_OPTIONS.filter(
+                        (option) =>
+                          option.key !== "fashion" ||
+                          isFashionSector(tenantSector) ||
+                          form.product_card_style === "fashion",
+                      )}
                       value={form.product_card_style}
                       onChange={(value) =>
                         updateField("product_card_style", value as StorefrontProductCardStyle)

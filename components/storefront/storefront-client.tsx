@@ -4464,6 +4464,7 @@ export function StorefrontClient({
                           cartVariantCountByProductId={cartVariantCountByProductId}
                           productCardClassName={resolvedProductCardClassName}
                           productImageWrapClassName={resolvedProductImageWrapClassName}
+                        cardVariant={productCardStyle.variant}
                           gridClassName={layout.sectionProductGridClass}
                           onOpenDetail={handleOpenProductDetail}
                           onIncrease={handleIncreaseCartItem}
@@ -4504,6 +4505,7 @@ export function StorefrontClient({
                         cartVariantCountByProductId={cartVariantCountByProductId}
                         productCardClassName={resolvedProductCardClassName}
                         productImageWrapClassName={resolvedProductImageWrapClassName}
+                        cardVariant={productCardStyle.variant}
                         gridClassName={layout.sectionProductGridClass}
                         onOpenDetail={handleOpenProductDetail}
                         onIncrease={handleIncreaseCartItem}
@@ -4592,6 +4594,7 @@ export function StorefrontClient({
                       cartVariantCountByProductId={cartVariantCountByProductId}
                       productCardClassName={resolvedProductCardClassName}
                       productImageWrapClassName={resolvedProductImageWrapClassName}
+                        cardVariant={productCardStyle.variant}
                       gridClassName={layout.productGridClass}
                       onOpenDetail={handleOpenProductDetail}
                       onIncrease={handleIncreaseCartItem}

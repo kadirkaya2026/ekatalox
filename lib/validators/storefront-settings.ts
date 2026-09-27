@@ -61,6 +61,7 @@ export const storefrontProductCardStyleSchema = z.enum([
   "standard",
   "compact",
   "image-forward",
+  "fashion",
 ]);
 
 export const productImageBackgroundSchema = z.enum(["theme", "white", "transparent"]);

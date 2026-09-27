@@ -31,7 +31,18 @@ export const PRODUCT_CARD_STYLE_OPTIONS: AppearanceOption<StorefrontProductCardS
     title: "Görsel Odaklı",
     description: "Büyük ürün görseli, minimal metin.",
   },
+  {
+    key: "fashion",
+    title: "Moda (tam boy)",
+    description: "Tekstil için: çerçevesiz, dikey tam boy ürün fotoğrafı.",
+  },
 ];
+
+/** Moda kart stili yalnız tekstil sektöründeki vitrinlere sunulur. */
+export const FASHION_SECTORS = ["tekstil"] as const;
+export function isFashionSector(sector: string | null | undefined) {
+  return Boolean(sector && (FASHION_SECTORS as readonly string[]).includes(sector));
+}
 
 export const PRODUCT_IMAGE_BACKGROUND_OPTIONS: AppearanceOption<ProductImageBackgroundKey>[] = [
   {

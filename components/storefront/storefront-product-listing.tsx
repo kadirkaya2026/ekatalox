@@ -18,6 +18,7 @@ export function StorefrontProductListing({
   cartVariantCountByProductId,
   productCardClassName,
   productImageWrapClassName,
+  cardVariant = "boxed",
   gridClassName,
   onOpenDetail,
   onIncrease,
@@ -31,6 +32,7 @@ export function StorefrontProductListing({
   cartVariantCountByProductId: Map<string, number>;
   productCardClassName: string;
   productImageWrapClassName: string;
+  cardVariant?: "boxed" | "fashion";
   gridClassName?: string;
   onOpenDetail: (productId: string) => void;
   onIncrease: (productId: string) => void;
@@ -82,6 +84,7 @@ export function StorefrontProductListing({
           addedVariantCount={cartVariantCountByProductId.get(product.id) ?? 0}
           productCardClassName={productCardClassName}
           productImageWrapClassName={productImageWrapClassName}
+          variant={cardVariant}
           onOpenDetail={onOpenDetail}
           onIncrease={onIncrease}
           onDecrease={onDecrease}

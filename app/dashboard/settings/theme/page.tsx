@@ -34,6 +34,7 @@ export default async function TenantThemeSettingsPage(props: ThemePageProps) {
           initialStorefrontSettings={storefrontSettings}
           tenantPlan={tenant.plan ?? "baslangic"}
           companyName={tenant.company_name}
+          tenantSector={tenant.sector ?? null}
           previewUrl={`https://${tenant.subdomain}.${appEnv.rootDomain}/?preview=1`}
           autoApply={autoApply}
         />
@@ -58,6 +59,7 @@ export default async function TenantThemeSettingsPage(props: ThemePageProps) {
             initialStorefrontSettings={storefrontSettings}
             tenantPlan={tenant.plan ?? "baslangic"}
             companyName={tenant.company_name}
+            tenantSector={tenant.sector ?? null}
           />
         </div>
       </details>

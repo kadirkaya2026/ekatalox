@@ -257,6 +257,7 @@ export const StorefrontProductCard = memo(function StorefrontProductCard({
   addedVariantCount,
   productCardClassName,
   productImageWrapClassName,
+  variant = "boxed",
   onOpenDetail,
   onIncrease,
   onDecrease,
@@ -267,6 +268,8 @@ export const StorefrontProductCard = memo(function StorefrontProductCard({
   addedVariantCount: number;
   productCardClassName: string;
   productImageWrapClassName: string;
+  /** "fashion": tekstil vitrini — çerçevesiz, 2:3 tam boy görsel (product-card-styles). */
+  variant?: "boxed" | "fashion";
   onOpenDetail: (productId: string) => void;
   onIncrease: (productId: string) => void;
   onDecrease: (productId: string) => void;
@@ -275,6 +278,7 @@ export const StorefrontProductCard = memo(function StorefrontProductCard({
   const theme = useStorefrontTheme();
   const { t } = useStorefrontLocale();
   const handleOpenDetail = () => onOpenDetail(product.id);
+  const fashion = variant === "fashion";
 
   // Getir tarzı sepete ekleme geri bildirimi (ortak mantık: border-trace.tsx
   // useCartAddFeedback) — indirimli ürün şeridiyle birebir aynı davranış.
@@ -294,10 +298,10 @@ export const StorefrontProductCard = memo(function StorefrontProductCard({
       }}
       className={cn(
         productCardClassName,
-        "relative overflow-visible cursor-pointer rounded-[1.2rem] outline-none focus-visible:ring-2 focus-visible:ring-current/50",
-        theme.border,
-        theme.elevation1,
-        theme.surfaceRing,
+        "relative overflow-visible cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-current/50",
+        fashion
+          ? "group !border-0 !bg-transparent !shadow-none"
+          : cn("rounded-[1.2rem]", theme.border, theme.elevation1, theme.surfaceRing),
         !product.is_in_stock && "opacity-60 saturate-50",
       )}
     >
@@ -307,12 +311,13 @@ export const StorefrontProductCard = memo(function StorefrontProductCard({
         ref={borderTraceRef}
         defaultVisible={initiallyInCart}
         className={theme.productImageSparkle}
-        radius={19}
+        radius={fashion ? 0 : 19}
       />
       <StorefrontFloatingCartAction
         product={product}
         cartQuantity={cartQuantity}
         compact
+        positionClassName={fashion ? "right-2 top-2" : undefined}
         onIncrease={onIncrease}
         onDecrease={onDecrease}
         onOpenAddToCart={onOpenAddToCart}
@@ -321,7 +326,7 @@ export const StorefrontProductCard = memo(function StorefrontProductCard({
         animate={imagePulse}
         className={cn(
           productImageWrapClassName,
-          "overflow-hidden rounded-[1.2rem] p-2.5 sm:p-4",
+          fashion ? "relative overflow-hidden !rounded-none !bg-transparent !p-0" : "overflow-hidden rounded-[1.2rem] p-2.5 sm:p-4",
         )}
       >
         <DiscountSticker product={product} />
@@ -329,7 +334,11 @@ export const StorefrontProductCard = memo(function StorefrontProductCard({
           <StorefrontImage
             src={product.image_url}
             alt={product.product_name}
-            className="object-contain p-3 transition duration-500 group-hover:scale-[1.04] sm:p-5"
+            className={
+              fashion
+                ? "object-cover transition duration-700 group-hover:scale-[1.03]"
+                : "object-contain p-3 transition duration-500 group-hover:scale-[1.04] sm:p-5"
+            }
             sizes={STOREFRONT_PRODUCT_GRID_SIZES}
           />
         ) : (
@@ -350,6 +359,15 @@ export const StorefrontProductCard = memo(function StorefrontProductCard({
         ) : null}
       </motion.div>
 
+      {fashion ? (
+        // Moda: önce ad (ince), altında fiyat — setre.com düzeni.
+        <div className="flex flex-col gap-1 px-0.5 pb-1 pt-2.5">
+          <p className={cn("line-clamp-1 text-[13px] font-normal leading-5 sm:text-[15px]", theme.productTitle)}>
+            {product.product_name}
+          </p>
+          <ProductPrice product={product} size="card" />
+        </div>
+      ) : (
       <div className="flex flex-1 flex-col gap-1 p-2.5 sm:p-3.5">
         <ProductPrice product={product} size="card" />
         {/* Mobilde 3 satır: dar kartta ürün adı anlaşılmaz kalmasın. */}
@@ -374,6 +392,7 @@ export const StorefrontProductCard = memo(function StorefrontProductCard({
           </div>
         ) : null}
       </div>
+      )}
     </article>
   );
 });

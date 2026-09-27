@@ -4,6 +4,7 @@
 // varsayılan fiyat listeleri, kupon ve e-postalar. Her adım başarısız
 // olursa o ana kadar yaratılanlar elle geri alınır ve signup_requests'e
 // 'failed' satırı düşer ki satış ekibi düşen kayıtları görebilsin.
+import { isFashionSector } from "@/lib/storefront/appearance-catalog";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getPlanTrialEndDate } from "@/lib/billing/plan-trial";
 import { getLimitForPlan } from "@/lib/billing/plans";
@@ -143,6 +144,8 @@ async function applyStorefrontTheme(
       storefront_title: input.businessName,
       site_tab_title: input.businessName,
       ...(logoUrl ? { logo_url: logoUrl, site_favicon_url: logoUrl } : {}),
+      // Tekstil: ürün kartları moda düzeninde (2:3 tam boy) açılır.
+      ...(isFashionSector(input.sector) ? { product_card_style: "fashion" } : {}),
     },
     { onConflict: "tenant_id" },
   );
