@@ -90,16 +90,18 @@ export const STOREFRONT_THEME_PRESETS: StorefrontThemePreset[] = [
     title: "Giyim & Tekstil",
     sector: "Giyim & Tekstil",
     description:
-      "Tekstil ve konfeksiyon toptancıları için zarif premium tema, ortalanmış başlık ve büyük vitrin görseli.",
+      "Tekstil ve konfeksiyon toptancıları için zarif premium tema, tam boy moda ürün kartları ve büyük vitrin görseli.",
     demoSubdomain: "demo-giyim",
     thumbnailDesktop: "/temalar/giyim-desktop.jpg",
     thumbnailMobile: "/temalar/giyim-mobile.jpg",
+    // 28 Eyl 2026 (qoop/kayasoft): logo solda (standart başlık) ve moda kartı —
+    // ortalı başlık müşteriye "logo kaymış" gibi görünüyordu.
     settings: {
       theme_key: "premium",
       layout_key: "classic-grid",
-      header_style_key: "centered",
+      header_style_key: "standard",
       footer_style_key: "columns",
-      product_card_style: "image-forward",
+      product_card_style: "fashion",
       font_key: "playfair",
       hero_style_key: "full-bleed",
     },
