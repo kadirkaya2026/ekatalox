@@ -499,7 +499,9 @@ function StorefrontHeaderTopBar({ props }: { props: StorefrontHeaderProps }) {
     return (
       <div className="container-store space-y-4 py-4">
         <div className="flex items-start justify-between gap-3">
-          <div className="flex-1 lg:hidden">
+          {/* Sol sütun masaüstünde de kalır: gizlenince logo sayfanın değil
+              sol yarının ortasına kayıyordu (qoop, 28 Eyl 2026). */}
+          <div className="flex-1">
             {props.subdomain && props.storefrontSettings.is_logout_button_visible !== false ? (
               <StorefrontLogoutButton
                 subdomain={props.subdomain}
