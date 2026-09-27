@@ -10,6 +10,7 @@ import { cn, formatCurrency } from "@/lib/utils";
 import { StorefrontImage } from "@/components/storefront/storefront-image";
 import { DiscountSticker, ProductPrice } from "@/components/storefront/storefront-product-card";
 import { ProductDescriptionContent } from "@/components/storefront/product-description-content";
+import { ProductImageLightbox } from "@/components/storefront/product-image-lightbox";
 
 // Vitrin ürün sayfası görünümü (/urun/<slug>, 27 Eyl 2026). StorefrontClient
 // içinde listenin yerine çizilir; sepet işlemleri geri çağırımlarla oraya
@@ -126,6 +127,7 @@ export function StorefrontProductDetailView({
   // parmakla kaydırma, scroll-snap ile her görsel tam oturur; küçük
   // resimler ve noktalar şeritle eşlenir.
   const trackRef = useRef<HTMLDivElement>(null);
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   function goToImage(index: number) {
     setImageIndex(index);
     const track = trackRef.current;
@@ -388,7 +390,20 @@ export function StorefrontProductDetailView({
                 style={{ scrollbarWidth: "none", touchAction: "pan-x pan-y" }}
               >
                 {images.map((src, index) => (
-                  <div key={src} className="relative h-full w-full shrink-0 snap-center snap-always">
+                  <div
+                    key={src}
+                    role="button"
+                    tabIndex={0}
+                    aria-label="Görseli tam ekran aç"
+                    onClick={() => setLightboxIndex(index)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        setLightboxIndex(index);
+                      }
+                    }}
+                    className="relative h-full w-full shrink-0 cursor-zoom-in snap-center snap-always"
+                  >
                     <StorefrontImage
                       src={src}
                       alt={index === 0 ? product.product_name : `${product.product_name} ${index + 1}`}
@@ -403,6 +418,17 @@ export function StorefrontProductDetailView({
               <div className={cn("flex aspect-square items-center justify-center rounded-2xl", theme.emptyImage)} />
             )}
             <DiscountSticker product={product} />
+            {lightboxIndex !== null ? (
+              <ProductImageLightbox
+                images={images}
+                startIndex={lightboxIndex}
+                alt={product.product_name}
+                onClose={(last) => {
+                  setLightboxIndex(null);
+                  goToImage(last);
+                }}
+              />
+            ) : null}
             {images.length > 1 ? (
               <div className="pointer-events-none absolute inset-x-0 bottom-2 flex justify-center gap-1.5 sm:hidden">
                 {images.map((src, index) => (
