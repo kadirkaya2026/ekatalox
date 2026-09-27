@@ -55,7 +55,7 @@ export default async function OrderReceiptPrintPage(props: Props) {
         .receipt .item { margin: 4px 0; font-weight: 700; }
         .receipt .item .no { flex: none; min-width: 2.2em; }
         .receipt .item .name { flex: 1; min-width: 0; }
-        .receipt .item .sub { padding-left: 2.2em; font-weight: 700; }
+        .receipt .item .sub { padding-left: calc(2.2em + 6px); font-weight: 700; }
         .receipt .sub { font-size: .92em; }
         @media print { .no-print { display: none !important; } .receipt { margin: 0 auto; } }
       `}</style>
@@ -65,11 +65,16 @@ export default async function OrderReceiptPrintPage(props: Props) {
       <hr />
       <div className="c b xl">SİPARİŞ {formatOrderNo(order)}</div>
       <div className="row"><span>{fmt(order.created_at)}</span><span>{payment ?? ""}</span></div>
-      <hr />
-      <div className="b">{order.customer_name}</div>
-      {order.customer_phone ? <div>{order.customer_phone}</div> : null}
-      {order.customer_address && !tenant.is_tekel ? <div>{order.customer_address}</div> : null}
-      {tenant.is_tekel ? <div className="sub">Mağazadan elden teslim</div> : null}
+      {/* Toptancı siparişinde cari adı boş olabilir: boş blok + çift çizgi olmasın. */}
+      {order.customer_name?.trim() || order.customer_phone || (order.customer_address && !tenant.is_tekel) || tenant.is_tekel ? (
+        <>
+          <hr />
+          {order.customer_name?.trim() ? <div className="b">{order.customer_name}</div> : null}
+          {order.customer_phone ? <div>{order.customer_phone}</div> : null}
+          {order.customer_address && !tenant.is_tekel ? <div>{order.customer_address}</div> : null}
+          {tenant.is_tekel ? <div className="sub">Mağazadan elden teslim</div> : null}
+        </>
+      ) : null}
       <hr />
       {order.items.map((item, i) => {
         const line = item.price !== null ? item.price * item.quantity : null;
