@@ -350,7 +350,8 @@ export function AccessCodesManager({
           </div>
         ) : null}
 
-        {isPasswordProtected ? (
+        {/* Magnet QR (Magnet CRM) yalnız market tenantlarında (28 Eyl 2026). */}
+        {isPasswordProtected && tenant.business_type === "market" ? (
           <div className="mt-4 rounded-xl border border-violet-200 bg-white px-4 py-4">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>

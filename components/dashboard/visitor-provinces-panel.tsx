@@ -133,8 +133,8 @@ function AccessBreakdownTable({ rows }: { rows: VisitorAccessRow[] }) {
     <Card className="p-5">
       <h2 className="text-lg font-semibold text-foreground">Şifre ve listeye göre ziyaretçi</h2>
       <p className="mt-1 text-sm text-slate-500">
-        Girenler hangi şifreyle hangi fiyat listesine girdi. Şifresiz giriş, şifre kapısı kapalı
-        veya magnetle giren ziyaretçilerdir.
+        Girenler hangi şifreyle hangi fiyat listesine girdi. Şifresiz giriş, şifre kapısı kapalıyken
+        giren ziyaretçilerdir.
       </p>
 
       {rows.length === 0 ? (
