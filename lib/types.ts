@@ -396,6 +396,8 @@ export interface Product {
   carton_quantity: number | null;
   created_at: string;
   variants?: ProductVariant[];
+  /** Kademeli adet fiyatı ham verisi (0142). */
+  volume_pricing?: unknown;
 }
 
 export interface ProductVariant {

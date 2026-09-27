@@ -98,7 +98,7 @@ export function toStorefrontProduct(
     stock_quantity: null,
     has_variants: variants.length > 0,
     variants,
-    volume_pricing: normalizeVolumePricing((product as { volume_pricing?: unknown }).volume_pricing),
+    volume_pricing: normalizeVolumePricing(product.volume_pricing),
   };
 }
 

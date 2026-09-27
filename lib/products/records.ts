@@ -114,6 +114,8 @@ export function normalizeProductRecord(record: RawProductRecord): Product {
       typeof record.package_quantity === "number" ? record.package_quantity : null,
     carton_quantity:
       typeof record.carton_quantity === "number" ? record.carton_quantity : null,
+    // Kademeli adet fiyatı (0142); toStorefrontProduct normalize eder.
+    volume_pricing: record.volume_pricing ?? null,
     created_at: String(record.created_at ?? ""),
     variants: getVariantsFromRecord(record),
   };
