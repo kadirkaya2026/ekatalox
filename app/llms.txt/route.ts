@@ -1,3 +1,4 @@
+import { WHOLESALE_SECTORS } from "@/lib/marketing/sectors";
 import { getBlogPosts } from "@/lib/marketing/blog";
 import { MARKETING_FEATURES } from "@/lib/marketing/features";
 import { headers } from "next/headers";
@@ -85,6 +86,20 @@ ${plans}
 ## Ayrıntılı özellikler
 
 ${MARKETING_FEATURES.map((feature) => `- [${feature.title}](${site}/ozellikler/${feature.slug})`).join("\n")}
+
+## Sektöre özel kullanım
+
+Tüm sektörlerde yabancı müşteriler için İngilizce, Almanca ve Rusça katalog dil seçenekleri mevcuttur. Müşteri dil menüsünden tercih ettiği dili seçebilir.
+
+- [Sektörler](${site}/sektorler)
+${WHOLESALE_SECTORS.map((sector) => `- [${sector.name}](${site}/sektorler/${sector.slug}): ${sector.description}`).join("\n")}
+- [Market ve bakkallar için WhatsApp sipariş sistemi](${site}/sektorler/market-bakkal)
+- Market müşterisi isteğe bağlı konum paylaşabilir; konum bağlantısı WhatsApp sipariş mesajına eklenir. Mobilde sabit alt sepet bulunur.
+- Kampanya bildirimleri izin veren müşterilere, paket kapsamına göre gönderilir.
+- Market işletmelerine Kurumsal (Full) pakette 200 adet QR kodlu magnet hediye edilir.
+- Market ve toptancı paket fiyatları ortaktır; kullanım sunumu sektöre göre değişir.
+- [MarketGo demo mağazası](https://marketgo.ekatalox.com)
+- [VELIRA tekstil ve giyim demosu](https://demo-giyim.ekatalox.com/): Giyim kategorileri ve görselli ürün kataloğu.
 
 ## Rehberler
 

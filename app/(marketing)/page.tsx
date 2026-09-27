@@ -390,7 +390,7 @@ export default function HomePage() {
             dark
             align="center"
             className="mx-auto"
-            title="Ürün sayınıza ve bayi düzeninize uygun paketi seçin."
+            title="İşletmenize ve ürün sayınıza uygun paketi seçin."
             lead="250 ürünle süresiz ücretsiz başlayın veya ücretli paketleri 14 gün deneyin. Ücretli paketler yıllık, KDV hariç ve reklamsızdır. Sipariş komisyonu yoktur."
           />
           <div className="mt-12">

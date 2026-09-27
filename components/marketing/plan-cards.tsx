@@ -1,3 +1,7 @@
+"use client";
+
+import { useState } from "react";
+import { PlanAudienceSelector, type PlanAudience } from "@/components/marketing/plan-audience";
 import { CheckList } from "@/components/marketing/ui";
 import { formatTry, TOPTAN_PLANS } from "@/lib/billing/toptan-plans";
 import Link from "next/link";
@@ -6,10 +10,22 @@ import { PAID_PLAN_TRIAL_DAYS } from "@/lib/billing/plan-trial";
 
 // Toptancı paket kartları: ana sayfa (compact, dark) ve /fiyatlandirma (açık).
 // Ücretsiz plan ilk sırada; her kartın CTA'sı /basvuru?plan=<slug>.
-export function PlanCards({ compact = false, dark = false }: { compact?: boolean; dark?: boolean }) {
+export function PlanCards({ compact = false, dark = false, audience }: { compact?: boolean; dark?: boolean; audience?: PlanAudience }) {
+  const [selectedAudience, setSelectedAudience] = useState<PlanAudience>("toptanci");
+  const currentAudience = audience ?? selectedAudience;
+  const market = currentAudience === "market";
   return (
+    <div>
+      {!audience && <PlanAudienceSelector value={selectedAudience} onChange={setSelectedAudience} dark={dark} />}
     <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
       {TOPTAN_PLANS.map((plan) => {
+        const marketCopy = {
+          free: { tagline: "Marketinizin dijital kataloğunu açıp müşterilerinizden sipariş almaya başlayın.", features: plan.features.map(item => item.startsWith("Şifreli bayi") ? "Marketinize özel katalog adresi (marketiniz.ekatalox.com)" : item) },
+          starter: { tagline: "Ürün çeşidi büyüyen, reklamsız katalog ve müşteri ilgisini gösteren raporlar isteyen marketler için.", features: plan.features },
+          professional: { tagline: "İzin veren müşterilerine kampanya bildirimleri göndermek isteyen marketler için.", features: plan.features.map(item => item.startsWith("Bayilere anlık") ? "İzin veren müşterilere ürün ve kampanya bildirimleri" : item) },
+          corporate: { tagline: "Kendi alan adı, kurumsal site ve katalogdan ödeme ile marketini büyütmek isteyenler için.", features: plan.features.map(item => item.includes("Bayimiz ol") ? "Pakete dahil SEO uyumlu kurumsal site" : item) },
+        }[plan.slug];
+        const copy = market ? marketCopy : plan;
         const isFree = plan.yearlyPrice === 0;
         const highlight = isFree || plan.featured;
         return (
@@ -48,7 +64,7 @@ export function PlanCards({ compact = false, dark = false }: { compact?: boolean
                 </span>
               ) : null}
             </div>
-            <p className={cn("mt-2 min-h-[4.5rem] text-sm leading-relaxed", dark ? "text-white/70" : "text-brand-muted")}>{plan.tagline}</p>
+            <p className={cn("mt-2 min-h-[4.5rem] text-sm leading-relaxed", dark ? "text-white/70" : "text-brand-muted")}>{copy.tagline}</p>
             <div className="mt-5 flex flex-wrap items-baseline gap-x-2">
               <span className={cn("text-3xl font-bold tracking-[-0.02em] tabular-nums", dark ? "text-white" : "text-brand-navy")}>
                 {isFree ? "0 ₺" : formatTry(plan.yearlyPrice)}
@@ -58,10 +74,14 @@ export function PlanCards({ compact = false, dark = false }: { compact?: boolean
             <p className={cn("mt-1 text-xs", dark ? "text-white/45" : "text-brand-muted")}>
               {isFree ? "Kart bilgisi gerekmez · eKatalox reklamlı" : "Yıllık peşin ödeme · KDV hariç · reklamsız"}
             </p>
-            <CheckList items={(compact ? plan.features.slice(0, 4) : plan.features).filter((feature) => !/^Aylık .* ziyaretçi$/.test(feature))} className="mt-5 text-sm" dark={dark} />
+            <CheckList items={(compact ? copy.features.slice(0, 4) : copy.features).filter((feature) => !/^Aylık .* ziyaretçi$/.test(feature))} className="mt-5 text-sm" dark={dark} />
             <p className={cn("mt-3 text-xs", dark ? "text-white/70" : "text-brand-muted")}>
               Aylık {plan.visitorLimit.toLocaleString("tr-TR")} ziyaretçi
             </p>
+            {market && plan.slug === "corporate" && <div className={cn("mt-5 rounded-xl border p-4", dark ? "border-brand-neon/30 bg-brand-neon/10 text-white" : "border-brand-green/25 bg-brand-green-soft text-brand-navy")}>
+              <p className="font-semibold">200 adet QR kodlu magnet hediye</p>
+              <p className="mt-1 text-xs leading-relaxed">Kurumsal (Full) pakette market işletmelerine özel. Müşteriniz magneti okutsun, kataloğunuzdan sipariş oluştursun.</p>
+            </div>}
             <div className="mt-auto pt-6">
               <Link
                 href={`/basvuru?plan=${plan.slug}`}
@@ -87,6 +107,7 @@ export function PlanCards({ compact = false, dark = false }: { compact?: boolean
           </div>
         );
       })}
+    </div>
     </div>
   );
 }

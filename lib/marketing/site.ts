@@ -23,6 +23,7 @@ export const SITE = {
 } as const;
 
 export const NAV_LINKS = [
+  { href: "/sektorler", label: "Sektörler" },
   { href: "/nasil-calisir", label: "Nasıl çalışır" },
   { href: "/ozellikler", label: "Özellikler" },
   { href: "/fiyatlandirma", label: "Fiyatlandırma" },

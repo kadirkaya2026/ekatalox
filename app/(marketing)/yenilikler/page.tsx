@@ -1,121 +1,45 @@
+import Link from "next/link";
 import { marketingMetadata } from "@/lib/marketing/metadata";
-
-import Link from 'next/link'
-import { Container, Section, SectionHeading } from '@/components/marketing/ui'
+import { Container, Section, SectionHeading } from "@/components/marketing/ui";
 
 export const metadata = marketingMetadata(
-  "/yenilikler",
-  "Yenilikler ve Güncellemeler",
-  "eKatalox sürüm notlarını, özellik güncellemelerini ve iyileştirmeleri inceleyin.",
+  "/yenilikler", "Yenilikler ve Güncellemeler",
+  "eKatalox tanıtım sayfalarındaki güncellemeleri ve dijital katalog rehberlerini inceleyin.",
 );
 
-const releases = [
+const updates = [
   {
-    version: 'v3.4', date: '12 Haziran 2025', badge: 'major',
-    title: 'AI Akıllı Eşleştirme 2.0',
-    summary: 'Excel sütun başlıklarını otomatik tanıma sistemini tamamen yeniledik. Artık Türkçe, İngilizce ve karışık dosyaları aynı doğrulukla işliyor.',
-    items: [
-      ['feature', 'Kolon başlıkları için %94 doğruluk oranı (önceki: %78)'],
-      ['feature', '3 derinliğe kadar otomatik kategori ağacı oluşturma'],
-      ['feature', 'Çoklu para birimi tek dosyadan otomatik standardizasyon'],
-      ['improvement', 'İşlem süresi %40 hızlandı, ortalama 2.9 saniye'],
-    ],
+    title: "Dijital katalog ve sipariş rehberleri",
+    description: "Blog bölümünde dijital katalog, ücretsiz başlangıç, PDF hazırlama, bayi fiyatları, Excel aktarımı ve WhatsApp sipariş konularını adım adım anlatan sekiz rehber yer alıyor.",
+    href: "/blog", link: "Rehberleri okuyun",
   },
   {
-    version: 'v3.3', date: '28 Mayıs 2025', badge: 'feature',
-    title: 'Drag & Drop Sıralama Paneli',
-    summary: 'Yönetim panelinde ürünleri sürükle-bırak ile sıralayabilirsiniz. Vitrindeki görünüm sırası anında güncellenir.',
-    items: [
-      ['feature', 'Sürükle-bırak ile gerçek zamanlı sıralama'],
-      ['feature', 'Toplu seçim ile yığın taşıma (Shift + Click)'],
-      ['improvement', 'Vitrin önbelleği akıllı invalidation'],
-    ],
+    title: "Özelliklerin kapsamını ayrıntılarıyla inceleyin",
+    description: "Minimum sepet, zorunlu müşteri bilgileri, Siparişlerim, alıcı seçimi, raporlar, toplu yükleme, kampanyalar, kurumsal site ve online ödeme için kullanım açıklamaları eklendi.",
+    href: "/ozellikler", link: "Özellikleri inceleyin",
   },
   {
-    version: 'v3.2', date: '10 Mayıs 2025', badge: 'feature',
-    title: '3:1 Akıllı Banner Kilidi',
-    summary: 'Banner yüklemelerinde tasarım disiplini garantisi. Hiçbir layout bir daha kırılmayacak.',
-    items: [
-      ['feature', '1200x400 oranına otomatik akıllı crop'],
-      ['feature', 'Edge case algılama (yüz, logo, metin alanı korunur)'],
-      ['feature', 'CDN üzerinde WebP/AVIF optimize'],
-    ],
+    title: "Paket karşılaştırması güncellendi",
+    description: "Raporlar, bildirimler, kurumsal site ve Bayimiz ol formu dahil özelliklerin hangi paketlerde bulunduğunu karşılaştırma tablosunda görebilirsiniz.",
+    href: "/fiyatlandirma", link: "Paketleri karşılaştırın",
   },
-  {
-    version: 'v3.1', date: '22 Nisan 2025', badge: 'improvement',
-    title: 'B2B Sipariş Akışı İyileştirmeleri',
-    summary: 'MOQ (minimum sipariş), KDV ve bayi onay süreçleri tek panelde toplandı.',
-    items: [
-      ['feature', 'MOQ kuralları ürün/kategori/müşteri bazlı'],
-      ['feature', 'Otomatik KDV hesaplaması (8%, 18%, 20%)'],
-      ['improvement', 'Sipariş özet PDF\'i yeniden tasarlandı'],
-      ['fix', 'Bayi panelinde stok yenileme gecikmesi giderildi'],
-    ],
-  },
-  {
-    version: 'v3.0', date: '5 Nisan 2025', badge: 'major',
-    title: 'eKatalox 3.0 — Yeni Nesil Vitrin',
-    summary: 'Apple tarzı tamamen yeniden tasarlanmış vitrin teması, 4x daha hızlı render ve mobil first deneyim.',
-    items: [
-      ['feature', 'Yeni vitrin teması (Studio Dark + Studio Light)'],
-      ['feature', 'Mobil sipariş akışı, tek el ile kullanım'],
-      ['feature', 'Lazy image loading ve edge caching'],
-      ['improvement', 'Sayfa açılış süresi 1.2sn → 0.3sn'],
-    ],
-  },
-  {
-    version: 'v2.8', date: '18 Mart 2025', badge: 'fix',
-    title: 'Stabilite & Performans',
-    summary: '12 farklı hata düzeltildi, yapay zeka eşleştirme performansı %22 artırıldı.',
-    items: [
-      ['fix', 'Türkçe karakter içeren Excel kolonlarındaki hata'],
-      ['fix', 'Banner yüklemede nadir görülen 504 hatası'],
-      ['improvement', 'Sunucu yanıt süresi %22 azaltıldı'],
-    ],
-  },
-]
+];
 
-const badgeLabel: Record<string, string> = { major: 'Büyük sürüm', feature: 'Yeni özellik', improvement: 'İyileştirme', fix: 'Düzeltme' }
-const itemLabel: Record<string, string> = { feature: 'Yeni', improvement: 'İyileştirme', fix: 'Düzeltme' }
-
-const Page = () => {
-  return (
-    <>
-      <Section tone="white" className="pb-8 sm:pb-10">
-        <Container>
-          <SectionHeading as="h1" eyebrow="Yenilikler" title="Sürüm notları" lead="Yeni özellikler, iyileştirmeler ve düzeltmeler. Geri bildiriminizle şekilleniyor." />
-        </Container>
-      </Section>
-      <Section className="pt-0">
-        <Container className="max-w-3xl">
-          <div className="space-y-8">
-            {releases.map((r) => (
-              <article key={r.version} className="rounded-lg border border-brand-line bg-white p-6">
-                <div className="flex flex-wrap items-center gap-3 text-sm">
-                  <span className="font-plex-mono font-medium text-brand-navy">{r.version}</span>
-                  <span className="text-brand-muted">{r.date}</span>
-                  <span className="rounded-full bg-brand-navy-soft px-2.5 py-0.5 text-xs font-semibold text-brand-navy">{badgeLabel[r.badge] ?? r.badge}</span>
-                </div>
-                <h2 className="mt-3 text-xl font-semibold">{r.title}</h2>
-                <p className="mt-2 text-brand-muted">{r.summary}</p>
-                <ul className="mt-4 space-y-2 text-sm">
-                  {r.items.map(([type, text], j) => (
-                    <li key={j} className="flex gap-3">
-                      <span className="w-20 shrink-0 text-xs font-semibold uppercase tracking-wide text-brand-green">{itemLabel[type] ?? type}</span>
-                      <span>{text}</span>
-                    </li>
-                  ))}
-                </ul>
-              </article>
-            ))}
-          </div>
-          <p className="mt-10 text-sm text-brand-muted">
-            Bir özellik önermek ister misiniz? <Link href="/iletisim" className="font-semibold text-brand-green">Bize yazın.</Link>
-          </p>
-        </Container>
-      </Section>
-    </>
-  )
+export default function UpdatesPage() {
+  return <>
+    <Section tone="white" className="pb-10 sm:pb-14">
+      <Container><SectionHeading as="h1" eyebrow="Yenilikler" title="eKatalox’ta neler değişti?" lead="Tanıtım sayfalarındaki güncellemeler ve kataloğunuzu kullanmanıza yardımcı olacak yeni içerikler." /></Container>
+    </Section>
+    <Section>
+      <Container className="max-w-4xl">
+        <p className="mb-8 text-sm text-brand-muted">İçerik güncellemesi · <time dateTime="2026-09-27">27 Eylül 2026</time></p>
+        <div className="space-y-6">{updates.map((update) => <article key={update.href} className="rounded-2xl border border-brand-line bg-white p-6 sm:p-8">
+          <h2 className="text-2xl font-semibold text-brand-navy">{update.title}</h2>
+          <p className="mt-4 leading-relaxed text-brand-muted">{update.description}</p>
+          <Link href={update.href} className="mt-5 inline-block font-semibold text-brand-green hover:underline">{update.link} →</Link>
+        </article>)}</div>
+        <p className="mt-8 text-brand-muted">Bir öneriniz mi var? <Link href="/iletisim" className="font-semibold text-brand-green hover:underline">Bize yazın.</Link></p>
+      </Container>
+    </Section>
+  </>;
 }
-
-export default Page

@@ -3,6 +3,8 @@ import { EkataloxLogo } from "@/components/brand/ekatalox-logo";
 import { SITE } from "@/lib/marketing/site";
 
 const PRODUCT_LINKS = [
+  { href: "/sektorler", label: "Sektörel çözümler" },
+  { href: "/sektorler/market-bakkal", label: "Market & Bakkallar" },
   { href: "/nasil-calisir", label: "Nasıl çalışır" },
   { href: "/ozellikler", label: "Özellikler" },
   { href: "/fiyatlandirma", label: "Fiyatlandırma" },
@@ -34,7 +36,7 @@ export function SiteFooter() {
         <div>
           <EkataloxLogo variant="dark" alt="eKatalox" className="h-8 w-[132px]" />
           <p className="mt-4 max-w-xs text-sm leading-relaxed text-white/60">
-            Toptancılar için ücretsiz online katalog ve WhatsApp sipariş sistemi. Bayiniz şifreyle girer, kendi fiyatını görür, sipariş verir.
+            Toptancılar, üreticiler ve marketler için online katalog ve WhatsApp sipariş sistemi. İşletmenize uygun katalog ve sipariş akışını keşfedin.
           </p>
           <div className="mt-5 space-y-1 text-sm">
             <a href={SITE.phoneHref} className="block font-plex-mono font-medium text-white">{SITE.phone}</a>
