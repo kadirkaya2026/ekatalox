@@ -281,15 +281,7 @@ export function StorefrontProductDetailView({
                 : "Beden / model seçin"}
             </span>
           </button>
-          {inCart ? (
-            <button
-              type="button"
-              onClick={onOpenCart}
-              className={cn("flex h-14 shrink-0 items-center justify-center rounded-2xl px-4 text-sm font-bold", theme.stickyCartButton)}
-            >
-              Sepet ({cartQuantity}) →
-            </button>
-          ) : null}
+          {/* Sepete git düğmesi yok (28 Eyl 2026, kullanıcı): sepet üst bardan açılır. */}
         </div>
       );
     }
