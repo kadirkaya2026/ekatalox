@@ -1,15 +1,16 @@
-import type { Metadata } from "next";
+import { marketingMetadata } from "@/lib/marketing/metadata";
+
 import Link from "next/link";
+import { MARKETING_FEATURES } from "@/lib/marketing/features";
 import { ArrowRight } from "lucide-react";
 import { ButtonLink, Container, Section, SectionHeading } from "@/components/marketing/ui";
 import { SITE } from "@/lib/marketing/site";
 
-export const metadata: Metadata = {
-  title: "Özellikler",
-  description:
-    "Şifreli katalog, çoklu fiyat listesi, koli/paket/varyant, WhatsApp'a PDF sipariş, kampanya ve banner, bayilere bildirim, raporlar, kendi alan adı ve tema.",
-  alternates: { canonical: "/ozellikler" },
-};
+export const metadata = marketingMetadata(
+  "/ozellikler",
+  "Dijital Katalog ve B2B Sipariş Özellikleri",
+  "Şifreli bayi kataloğu, farklı fiyat listeleri, toplu ürün yükleme, WhatsApp sipariş, kampanya bildirimleri ve raporlama özelliklerini inceleyin.",
+);
 
 type PlanTag = "Başlangıç" | "Profesyonel" | "Kurumsal";
 
@@ -36,9 +37,9 @@ const GROUPS: FeatureGroup[] = [
     lead: "Ürünleri bir kez yüklersiniz; fiyat değişince bayi o an güncelini görür. Yeni PDF göndermek biter.",
     features: [
       { title: "Şifreli bayi girişi", body: "Fiyatlar herkese açık değil. Bayi şifresiyle girer; şifresiz ziyaretçi isterseniz yalnız ürünleri, fiyatsız görür." },
-      { title: "Fiyat listeleri", body: "Bayi, perakende, özel müşteri. Her şifre ayrı listeye açılır; kimse başkasının fiyatını görmez. Ücretsiz planda 2, Başlangıç'ta 3, Profesyonel'de 15; Kurumsal'da sınırsız fiyat listesi." },
+      { title: "Fiyat listeleri", body: "Bayi, perakende, özel müşteri. Her şifre ayrı listeye açılır; bayi, giriş yaptığı listeye ait fiyatları görür. Ücretsiz planda 2, Başlangıç'ta 3, Profesyonel'de 15; Kurumsal'da sınırsız fiyat listesi." },
       { title: "Koli, paket, adet ve varyant", body: "Ürün başına koli içi adet; renk, beden, model gibi varyantlar. Bayi koli seçer, tutar kendiliğinden hesaplanır." },
-      { title: "Excel ile toplu yükleme", body: "Şablonu indirin, doldurun, yükleyin. Fiyat güncellemesini de Excel ile toplu yaparsınız. Fotoğraflar toplu eklenir." },
+      { title: "Excel ile toplu yükleme", body: "Şablonu indirin, doldurun, yükleyin. Fiyat güncellemesini de Excel ile toplu yaparsınız. Görselleri model/SKU koduyla eşleştirerek toplu yükleyin; ZIP dosyalarını kullanın." },
       { title: "Kategori düzeni ve arama", body: "Kategori ve alt kategori, ürün kodu ve ada göre arama, stokta olmayanı gizleme." },
       { title: "Fiyatsız katalog modu", body: "Sadece ürünleri göstermek istediğiniz müşteriler için fiyatsız görünüm; sipariş yerine ürün listesi gönderir." },
     ],
@@ -50,8 +51,11 @@ const GROUPS: FeatureGroup[] = [
     lead: "Sesli mesajdan sipariş çözmek biter. Bayi sepetini doldurur, PDF sipariş fişinin bağlantısını WhatsApp üzerinden paylaşır.",
     features: [
       { title: "WhatsApp'a PDF sipariş", body: "Ürün kodu, adet, koli, birim fiyat ve toplam düzenli bir PDF fişinde. Cari adı, telefon ve not fişin üstünde." },
-      { title: "Sipariş formu alanları", body: "Cari adı zorunlu; adres, telefon ve not alanlarını açıp kapatırsınız. Minimum sepet tutarı koyabilirsiniz." },
-      { title: "Panelde sipariş listesi", body: "Bugün oluşan sipariş PDF'leri, tutarı ve kim oluşturdu; Genel Bakış'ta ilk bakışta." },
+      { title: "Sipariş formu alanları", body: "Ad, telefon, adres ve not alanlarının görünürlüğünü ve zorunluluğunu siz seçin. İhtiyacınız olan bilgileri isteyin; sipariş formunu sade tutun." },
+      { title: "Siparişlerim ve yeni sipariş bildirimi", body: "Siparişlerinizi Siparişlerim sayfasından takip edin. Bildirimleri açtıysanız yeni sipariş geldiğinde haberdar olun." },
+      { title: "Minimum sepet tutarı", body: "Minimum sepet tutarı belirleyin; müşteri siparişini belirlediğiniz tutara tamamlasın. Tek para birimli sepetlerde uygulanır." },
+      { title: "WhatsApp alıcısını seçme", body: "Siparişi kayıtlı numaranıza yönlendirin veya bu seçeneği kapatıp müşterinizin kendi toptancısı dahil istediği kişiye göndermesine izin verin. Mesajı müşteri WhatsApp’ta gönderir." },
+      { title: "İyzico/Paytr ile ödeme", body: "İyzico/Paytr entegrasyonuyla kataloğunuzdan ödeme alın.", from: "Kurumsal" },
       { title: "Sepet önerileri", body: "Sepetteki ürünle birlikte alınanları önerir; bayi eksik kalemi hatırlar, sepet büyür." },
       { title: "Ödeme ve vade ayarları", body: "Peşin indirimi, kart taksit seçenekleri, vadeye göre fiyat notu. Bayi sipariş verirken görür.", from: "Profesyonel" },
     ],
@@ -64,7 +68,8 @@ const GROUPS: FeatureGroup[] = [
     features: [
       { title: "Banner ve kampanya kartları", body: "Üstte banner, altında kampanya kartları. Tarih aralığı ve fiyat listesine göre kampanya tanımlayın." },
       { title: "İndirimli ürün ve öne çıkanlar", body: "İndirim etiketi, indirimli ürünler bölümü, öne çıkan ürünler ve çok satanlar." },
-      { title: "Bayilere anlık bildirim", body: "Bildirim açan bayilerin telefonuna 'yeni ürün geldi', 'stok yenilendi', 'kampanya başladı'. Kişi, ürün ya da kategori hedefli.", from: "Profesyonel" },
+      { title: "Bayilere anlık bildirim", body: "Bildirim açan bayilerin telefonuna 'yeni ürün geldi', 'stok yenilendi', 'kampanya başladı'. Bildirim izni ve cihaz desteğine bağlıdır.", from: "Profesyonel" },
+      { title: "Açılış duyurusu", body: "Duyuru penceresine kendi başlığınızı ve metninizi yazın. Teslimat takvimi, kampanya koşulları ve önemli haberleri katalog açılışında gösterin." },
       { title: "Tek link ile bildirim aboneliği", body: "firmaniz.ekatalox.com/bildirim linkini gönderin; bayi adını ve numarasını yazıp bildirimleri açar.", from: "Profesyonel" },
     ],
   },
@@ -74,10 +79,11 @@ const GROUPS: FeatureGroup[] = [
     title: "Panel telefondan yönetilir",
     lead: "Bilgisayar gerekmez. Fiyat, stok, şifre, kampanya; hepsi telefondan bir dakikada.",
     features: [
-      { title: "Raporlar", body: "Kim ne zaman girdi, hangi ürünlere baktı, hangi ilden. Bugün sitede kaç kişi var.", from: "Başlangıç" },
+      { title: "Raporlar", body: "En çok aranan kelimeleri, sonuçsuz aramaları, görüntülenen ve sepete eklenen ürünleri görün. Ürün bilgisi, sıralama ve kampanyalarınızı buna göre düzenleyin.", from: "Başlangıç" },
+      { title: "İl ve fiyat listesi raporu", body: "Hangi illerden hangi fiyat listelerine giriş yapıldığını inceleyin. Bölgesel ilgiye ve bayi gruplarınıza göre aksiyon alın.", from: "Başlangıç" },
       { title: "Satış ve kârlılık", body: "Alış fiyatı girin; ciro, kâr ve marj raporunu görün.", from: "Kurumsal" },
-      { title: "Çalışma saatleri ve kapalı modu", body: "Kapalı saatlerde sipariş alınmaz ya da notla alınır. Tatilde kataloğu tek tuşla kapatın." },
-      { title: "IP engelleme ve şifre yönetimi", body: "Şifreyi paylaşan bayiyi görün, şifreyi değiştirin; şüpheli IP'yi engelleyin." },
+      { title: "Çalışma saatleri ve kapalı modu", body: "Çalışma gün ve saatlerinizi belirleyin. Gerektiğinde mağazayı manuel kapatın; “Mağazamız şu an kapalıdır” mesajıyla müşterilerinizi bilgilendirin." },
+      { title: "IP engelleme ve şifre yönetimi", body: "Giriş şifrelerinizi ve erişimleri yönetin; gerektiğinde şifreyi değiştirin veya şüpheli IP’yi engelleyin." },
     ],
   },
   {
@@ -88,6 +94,9 @@ const GROUPS: FeatureGroup[] = [
     features: [
       { title: "Hazır temalar ve gerçek önizleme", body: "Temayı kendi ürünlerinizle gerçek katalogda önizleyin, beğenirseniz uygulayın." },
       { title: "Gelişmiş görünüm", body: "Yazı tipi, kart stili, üst bölüm ve alt bilgi düzeni, ana sayfa blokları." },
+      { title: "Pakete dahil kurumsal site", body: "Kurumsal pakette firmanızı ve ürünlerinizi tanıtan sitenizi ayrıca kurumsal site paket ücreti ödemeden oluşturun.", from: "Kurumsal" },
+      { title: "Bayimiz ol formu", body: "Kurumsal sitenizden bayi başvuruları alın; gelen talepleri panelden inceleyin.", from: "Kurumsal" },
+      { title: "Aramalara uygun açık tanıtım", body: "Firmanızı ve ürünlerinizi Google ve yapay zekâ destekli aramaların erişebileceği SEO uyumlu açık sayfalarda tanıtın. Bayi fiyatları açık kurumsal sayfalarda yayınlanmaz.", from: "Kurumsal" },
       { title: "Kendi alan adınız", body: "katalog.firmaniz.com ya da firmaniz.com. DNS ayarını biz anlatırız, bağlantıyı biz yaparız.", from: "Kurumsal" },
       { title: "Ana ekrana ekleme", body: "Bayi kataloğu telefonuna uygulama gibi ekler; sizin logonuzla açılır, bildirim alır." },
     ],
@@ -103,7 +112,7 @@ export default function OzelliklerPage() {
             eyebrow="Özellikler"
             as="h1"
             title="Toptan satışın gerektirdiği kadar, fazlası değil"
-            lead="Her özellik toptancıların katalogla sipariş alırken yaşadığı bir dertten çıktı. Etiketsiz olanlar Ücretsiz planda da var."
+            lead="Bayi fiyatlarından sipariş kurallarına, raporlardan kurumsal sitenize kadar işletmenizin günlük işlerini tek yerden yönetin. Etiketsiz özellikler Ücretsiz planda da var."
           />
           <nav aria-label="Özellik grupları" className="mt-8 flex flex-wrap gap-2">
             {GROUPS.map((g) => (
@@ -139,6 +148,18 @@ export default function OzelliklerPage() {
           </Container>
         </Section>
       ))}
+
+      <Section tone="white">
+        <Container>
+          <SectionHeading title="İşinize nasıl uyduğunu ayrıntılarıyla görün" lead="Kullanım örnekleri, paket kapsamı ve kurulum bilgileri." />
+          <div className="mt-8 grid gap-5 sm:grid-cols-2">
+            {MARKETING_FEATURES.map((feature) => <Link key={feature.slug} href={`/ozellikler/${feature.slug}`} className="rounded-2xl border border-brand-line p-6 hover:border-brand-green">
+              <h3 className="font-semibold text-brand-navy">{feature.title} →</h3>
+              <p className="mt-2 text-sm leading-relaxed text-brand-muted">{feature.lead}</p>
+            </Link>)}
+          </div>
+        </Container>
+      </Section>
 
       <Section tone="navy">
         <Container className="grid items-center gap-8 lg:grid-cols-[1.4fr_1fr]">

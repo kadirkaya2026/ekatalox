@@ -1,19 +1,14 @@
-import type { Metadata } from "next";
+import { marketingMetadata } from "@/lib/marketing/metadata";
+
 import { SITE } from "@/lib/marketing/site";
 import { ContactForm } from "@/components/marketing/contact-form";
 import { ButtonLink, Container, Eyebrow, Section } from "@/components/marketing/ui";
 
-export const metadata: Metadata = {
-  title: "İletişim ve demo talebi",
-  description:
-    "Demo, fiyat teklifi ya da destek için eKatalox ekibine ulaşın. Telefon, WhatsApp ve e-posta; iletişim formuna bir iş günü içinde dönüş.",
-  alternates: { canonical: "/iletisim" },
-  openGraph: {
-    title: "İletişim | eKatalox",
-    description: "Demo, teklif ve destek için bize ulaşın.",
-    url: `${SITE.url}/iletisim`,
-  },
-};
+export const metadata = marketingMetadata(
+  "/iletisim",
+  "İletişim ve Demo Talebi",
+  "Dijital katalog, paket seçimi, demo ve destek için eKatalox ekibine telefon, WhatsApp, e-posta veya iletişim formuyla ulaşın.",
+);
 
 const DEPARTMENTS = [
   { name: "Satış", email: SITE.salesEmail, desc: "Demo, paket seçimi, ürün yükleme desteği" },

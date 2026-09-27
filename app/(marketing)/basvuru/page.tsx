@@ -1,19 +1,13 @@
-import type { Metadata } from "next";
-import { SITE } from "@/lib/marketing/site";
+import { marketingMetadata } from "@/lib/marketing/metadata";
+
 import { SignupForm } from "@/components/marketing/signup-form";
 import { Container, Section } from "@/components/marketing/ui";
 
-export const metadata: Metadata = {
-  title: "Ücretsiz kayıt — Kataloğunuzu kurun",
-  description:
-    "Toptancılar için ücretsiz online katalog: formu doldurun, kataloğunuz o an açılsın. Kart bilgisi istenmez, süre sınırı yok, komisyon yok.",
-  alternates: { canonical: "/basvuru" },
-  openGraph: {
-    title: "Ücretsiz kayıt | eKatalox",
-    description: "Ücretsiz hesabınızı oluşturun veya seçtiğiniz ücretli paketi 14 gün deneyin. Kart bilgisi istenmez.",
-    url: `${SITE.url}/basvuru`,
-  },
-};
+export const metadata = marketingMetadata(
+  "/basvuru",
+  "Ücretsiz Dijital Katalog Oluşturun",
+  "Ücretsiz hesabınızı oluşturun, ürünlerinizi ekleyip kataloğunuzu bayilerinizle paylaşın. Ücretsiz planda 250 ürün; kart bilgisi istenmez.",
+);
 
 type Params = { plan?: string | string[]; sektor?: string | string[] };
 

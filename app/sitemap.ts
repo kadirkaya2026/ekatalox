@@ -1,10 +1,13 @@
 import type { MetadataRoute } from "next";
+import { getBlogPosts } from "@/lib/marketing/blog";
+import { MARKETING_FEATURES } from "@/lib/marketing/features";
 
 const BASE_URL = "https://www.ekatalox.com";
 
 // /musteriler gerçek referans gelene kadar noindex; sitemap'te yok.
 const STATIC: Array<[string, MetadataRoute.Sitemap[number]["changeFrequency"], number]> = [
   ["/", "weekly", 1],
+  ["/blog", "weekly", 0.8],
   ["/basvuru", "monthly", 0.9],
   ["/fiyatlandirma", "monthly", 0.9],
   ["/nasil-calisir", "monthly", 0.8],
@@ -19,6 +22,10 @@ const STATIC: Array<[string, MetadataRoute.Sitemap[number]["changeFrequency"], n
 ];
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const lastModified = new Date();
-  return STATIC.map(([path, changeFrequency, priority]) => ({ url: `${BASE_URL}${path}`, lastModified, changeFrequency, priority }));
+  // Omit lastModified until actual content revision dates are tracked.
+  return [
+    ...STATIC.map(([path, changeFrequency, priority]) => ({ url: `${BASE_URL}${path}`, changeFrequency, priority })),
+    ...getBlogPosts().map((post) => ({ url: `${BASE_URL}/blog/${post.slug}`, lastModified: post.updatedAt ?? post.publishedAt, changeFrequency: "monthly" as const, priority: 0.7 })),
+    ...MARKETING_FEATURES.map(({ slug }) => ({ url: `${BASE_URL}/ozellikler/${slug}`, changeFrequency: "monthly" as const, priority: 0.7 })),
+  ];
 }

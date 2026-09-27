@@ -1,15 +1,15 @@
-import type { Metadata } from "next";
+import { marketingMetadata } from "@/lib/marketing/metadata";
+
 import { MARKETING_WHATSAPP_HREF, WhatsAppGlyph } from "@/components/marketing/contact-dock";
 import { PhoneFrame } from "@/components/marketing/phone-frame";
 import { ButtonLink, CheckList, Container, Section, SectionHeading } from "@/components/marketing/ui";
 import { SITE } from "@/lib/marketing/site";
 
-export const metadata: Metadata = {
-  title: "Nasıl çalışır",
-  description:
-    "Kayıttan ilk siparişe dört adım: hesabınızı açın, ürünleri yükleyin, bayilere şifre verin ve PDF sipariş fişini WhatsApp üzerinden alın. Ücretsiz plan, kart istenmez.",
-  alternates: { canonical: "/nasil-calisir" },
-};
+export const metadata = marketingMetadata(
+  "/nasil-calisir",
+  "Dijital Katalog Nasıl Oluşturulur?",
+  "Hesabınızı açın, ürünlerinizi yükleyin, bayi fiyat listelerini tanımlayın. Bayileriniz PDF sipariş fişi bağlantısını WhatsApp üzerinden paylaşsın.",
+);
 
 const STEPS = [
   {
@@ -23,7 +23,7 @@ const STEPS = [
     no: "02",
     duration: "Excel ile",
     title: "Ürün yükleme",
-    body: "Panelde Excel şablonunu indirin, ürün kodu, ad, koli içi adet ve fiyatları doldurup yükleyin. Fotoğrafları ekleyin. Mevcut PDF veya Excel listenizin aktarımı için destek isterseniz bize ulaşın.",
+    body: "Panelde Excel şablonunu indirin, ürün kodu, ad, koli içi adet ve fiyatları doldurup yükleyin. Fotoğrafları model/SKU kodlarıyla eşleştirerek toplu yükleyin. Mevcut PDF veya Excel listenizin aktarımı için destek isterseniz bize ulaşın.",
     detail: ["Excel şablonu: kod, ad, birim, koli içi, fiyat", "Varyant: renk, beden, model", "Kategori ve alt kategori düzeni"],
   },
   {
@@ -37,8 +37,8 @@ const STEPS = [
     no: "04",
     duration: "Her sipariş",
     title: "Sipariş",
-    body: "Bayi sepetini doldurur, cari adını ve notunu yazar, gönderir. Sipariş panelde görünür; bayi PDF fişinin bağlantısıyla WhatsApp'a geçip mesajı gönderir. Fiyatı değiştirdiğinizde bayi o an güncel fiyatı görür.",
-    detail: ["PDF'de ürün kodu, adet, koli, tutar", "Cari adı, telefon, not", "Panelde bugünkü sipariş sayısı ve tutarı"],
+    body: "Minimum sepet tutarını ve siparişte istenecek zorunlu bilgileri belirleyin. Bayi sepetini hazırlar; oluşan siparişi Siparişlerim sayfasından takip edersiniz. Bayi PDF fişinin bağlantısını WhatsApp üzerinden paylaşır.",
+    detail: ["PDF’de ürün kodu, adet, koli ve tutar", "Sabit WhatsApp numarası veya müşterinin alıcı seçimi", "Bildirimler açıksa yeni sipariş bildirimi"],
   },
 ];
 
@@ -112,6 +112,15 @@ export default function NasilCalisirPage() {
         </Container>
       </Section>
 
+      <Section tone="white">
+        <Container>
+          <SectionHeading title="İlk siparişten sonra kataloğunuzu geliştirin" lead="En çok aranan ve sepete eklenen ürünleri, il ve fiyat listesi girişlerini inceleyin. İlgi gören ürünleri öne çıkarın; kampanya ve duyurularınızı güncelleyin." />
+          <div className="mt-6 flex flex-wrap gap-3">
+            <ButtonLink href="/ozellikler/raporlar" tone="outline">Raporlarla aksiyon alın</ButtonLink>
+            <ButtonLink href="/ozellikler/kurumsal-site" tone="outline">Kurumsal siteyle bayi başvurusu alın</ButtonLink>
+          </div>
+        </Container>
+      </Section>
       <Section tone="white">
         <Container>
           <SectionHeading

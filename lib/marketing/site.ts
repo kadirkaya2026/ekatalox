@@ -27,6 +27,7 @@ export const NAV_LINKS = [
   { href: "/ozellikler", label: "Özellikler" },
   { href: "/fiyatlandirma", label: "Fiyatlandırma" },
   { href: "/sss", label: "SSS" },
+  { href: "/blog", label: "Blog" },
 ] as const;
 
 export const SIGNUP_CTA = "Ücretsiz başla";

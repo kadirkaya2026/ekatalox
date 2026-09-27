@@ -1,9 +1,16 @@
+import { marketingMetadata } from "@/lib/marketing/metadata";
 
 import { Container, Section, SectionHeading } from '@/components/marketing/ui'
 // Veri sorumlusunun tanıtıcı bilgileri (6563 m.3 / TTK m.39). Doldurulmadıysa
 // boş dizi döner ve bölüm gösterilmez — bkz. lib/legal/company.ts
 import { getCompanyIdentityLines } from '@/lib/legal/company'
 import { TERMS_VERSION_LABEL } from '@/lib/legal/terms'
+
+export const metadata = marketingMetadata(
+  "/gizlilik-ve-kvkk",
+  "Gizlilik ve KVKK Aydınlatma Metni",
+  "eKatalox üzerinde kişisel verilerin işlenmesi, gizlilik, veri güvenliği ve ilgili kişi hakları hakkında bilgi edinin.",
+);
 
 const identityLines = getCompanyIdentityLines()
 
@@ -122,7 +129,7 @@ const Page = () => {
     <>
       <Section tone="white" className="pb-8 sm:pb-10">
         <Container>
-          <SectionHeading eyebrow="Yasal" title="Gizlilik Politikası ve KVKK" lead={`Kişisel verilerinizin güvenliğine önem veriyoruz. Son güncelleme: ${TERMS_VERSION_LABEL}.`} />
+          <SectionHeading as="h1" eyebrow="Yasal" title="Gizlilik Politikası ve KVKK" lead={`Kişisel verilerinizin güvenliğine önem veriyoruz. Son güncelleme: ${TERMS_VERSION_LABEL}.`} />
         </Container>
       </Section>
       <Section className="pt-0">

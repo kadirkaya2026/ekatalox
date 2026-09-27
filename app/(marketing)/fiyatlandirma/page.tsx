@@ -1,21 +1,16 @@
-import type { Metadata } from "next";
+import { marketingMetadata } from "@/lib/marketing/metadata";
+
 import { PlanCards } from "@/components/marketing/plan-cards";
 import { ButtonLink, Container, Section, SectionHeading } from "@/components/marketing/ui";
 import { formatTry, TOPTAN_PLANS } from "@/lib/billing/toptan-plans";
 import { SITE } from "@/lib/marketing/site";
 import { cn } from "@/lib/utils";
 
-export const metadata: Metadata = {
-  title: "Fiyatlandırma — Ücretsiz plan ve yıllık paketler",
-  description:
-    "Toptancılar için online katalog: Ücretsiz plan süresiz, kart istenmez. Başlangıç 5.000 ₺, Profesyonel 10.000 ₺, Kurumsal 15.000 ₺ / yıl. Komisyon yok, KDV hariç.",
-  alternates: { canonical: "/fiyatlandirma" },
-  openGraph: {
-    title: "Fiyatlandırma | eKatalox",
-    description: "Ücretsiz başlayın; Başlangıç, Profesyonel ve Kurumsal paketler yıllık, komisyonsuz.",
-    url: `${SITE.url}/fiyatlandirma`,
-  },
-};
+export const metadata = marketingMetadata(
+  "/fiyatlandirma",
+  "Dijital Katalog Fiyatları ve Ücretsiz Paket",
+  "250 ürünle ücretsiz başlayın. Başlangıç, Profesyonel ve Kurumsal paketlerin yıllık fiyatlarını, ürün sınırlarını ve özelliklerini karşılaştırın.",
+);
 
 type Cell = string | boolean;
 type Row = { label: string; cells: Cell[] };
@@ -28,10 +23,17 @@ const COMPARISON: Row[] = [
   { label: "Aylık ziyaretçi", cells: TOPTAN_PLANS.map((plan) => plan.visitorLimit.toLocaleString("tr-TR")) },
   { label: "Şifreli bayi girişi", cells: [true, true, true, true] },
   { label: "WhatsApp ile PDF sipariş fişi bağlantısı", cells: [true, true, true, true] },
+  { label: "Siparişlerim ve yeni sipariş bildirimi (izinle)", cells: [true, true, true, true] },
+  { label: "Minimum sepet ve zorunlu müşteri alanları", cells: [true, true, true, true] },
+  { label: "WhatsApp sabit numara / alıcı seçimi", cells: [true, true, true, true] },
+  { label: "Excel/CSV ürün ve toplu görsel yükleme", cells: [true, true, true, true] },
+  { label: "Duyuru penceresi, çalışma saatleri, kapalı modu", cells: [true, true, true, true] },
   { label: "Koli / paket / varyant", cells: [true, true, true, true] },
   { label: "Banner, kampanya kartı, indirim, öne çıkanlar", cells: [true, true, true, true] },
   { label: "Tema, gelişmiş görünüm, ana sayfa düzenleyici", cells: [true, true, true, true] },
-  { label: "Raporlar (ziyaret, ürün, il)", cells: [false, true, true, true] },
+  { label: "Raporlar (arama, sepete ekleme, il–fiyat listesi)", cells: [false, true, true, true] },
+  { label: "Kurumsal site ve Bayimiz ol formu", cells: [false, false, false, "Pakete dahil"] },
+  { label: "İyzico/Paytr ile online ödeme", cells: [false, false, false, true] },
   { label: "Kendi alan adınız", cells: [false, false, false, true] },
   { label: "Bayilere bildirim gönderme", cells: [false, false, true, true] },
   { label: "Ödeme ve vade ayarları", cells: [false, false, true, true] },
@@ -40,6 +42,8 @@ const COMPARISON: Row[] = [
 ];
 
 const FAQ = [
+  { q: "Kurumsal site için ayrıca ücret öder miyim?", a: "Kurumsal tanıtım sitesi ve Bayimiz ol formu Kurumsal pakete dahildir; ayrıca kurumsal site paket ücreti yoktur. Alan adı satın alma/yenileme giderleri ve varsa özel hizmet kapsamı ayrıca netleştirilir." },
+  { q: "Katalogdan ödeme alabilir miyim?", a: "İyzico/Paytr entegrasyonuyla kataloğunuzdan ödeme alın. Kurumsal pakette sağlayıcı başvurusu, entegrasyon kapsamı ve varsa ek kurulum hizmeti birlikte netleştirilir; sağlayıcı işlem ücretleri paket bedeline dahil değildir." },
   {
     q: "Ücretsiz planın süresi var mı?",
     a: "Süre sınırı yoktur. 250 ürün, 2 fiyat listesi ve aylık 1.000 ziyaretçi limitiyle kullanılır. Kart bilgisi istenmez; kataloğunuzda eKatalox tanıtımları görünür. Ücretli paketlerin 14 günlük denemesinden ayrıdır.",
@@ -62,7 +66,7 @@ const FAQ = [
   },
   {
     q: "Komisyon ya da sipariş başına ücret var mı?",
-    a: "Yok. Ne kadar sipariş alırsanız alın yalnız paket bedelini ödersiniz. Sipariş doğrudan sizin WhatsApp numaranıza gelir; aracı yok.",
+    a: "eKatalox sipariş başına komisyon almaz. Online ödeme kullanırsanız İyzico/Paytr gibi sağlayıcıların işlem ücretleri kendi sözleşmenize göre ayrıca uygulanır.",
   },
   {
     q: "Ürün limitim dolarsa?",

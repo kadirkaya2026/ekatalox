@@ -1,5 +1,13 @@
+import { marketingMetadata } from "@/lib/marketing/metadata";
+
 import Link from 'next/link'
 import { Container, Section, SectionHeading } from '@/components/marketing/ui'
+
+export const metadata = marketingMetadata(
+  "/yenilikler",
+  "Yenilikler ve Güncellemeler",
+  "eKatalox sürüm notlarını, özellik güncellemelerini ve iyileştirmeleri inceleyin.",
+);
 
 const releases = [
   {
@@ -70,14 +78,12 @@ const releases = [
 const badgeLabel: Record<string, string> = { major: 'Büyük sürüm', feature: 'Yeni özellik', improvement: 'İyileştirme', fix: 'Düzeltme' }
 const itemLabel: Record<string, string> = { feature: 'Yeni', improvement: 'İyileştirme', fix: 'Düzeltme' }
 
-export const metadata = { title: 'Yenilikler', description: 'eKatalox sürüm notları: yeni özellikler, iyileştirmeler ve düzeltmeler.' }
-
 const Page = () => {
   return (
     <>
       <Section tone="white" className="pb-8 sm:pb-10">
         <Container>
-          <SectionHeading eyebrow="Yenilikler" title="Sürüm notları" lead="Yeni özellikler, iyileştirmeler ve düzeltmeler. Geri bildiriminizle şekilleniyor." />
+          <SectionHeading as="h1" eyebrow="Yenilikler" title="Sürüm notları" lead="Yeni özellikler, iyileştirmeler ve düzeltmeler. Geri bildiriminizle şekilleniyor." />
         </Container>
       </Section>
       <Section className="pt-0">

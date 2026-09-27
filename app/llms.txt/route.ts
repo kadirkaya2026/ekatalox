@@ -1,3 +1,5 @@
+import { getBlogPosts } from "@/lib/marketing/blog";
+import { MARKETING_FEATURES } from "@/lib/marketing/features";
 import { headers } from "next/headers";
 import { TOPTAN_PLANS, TOPTAN_SECTOR_OPTIONS, formatTry } from "@/lib/billing/toptan-plans";
 import { appEnv } from "@/lib/env";
@@ -36,7 +38,7 @@ export async function GET() {
 
   const body = `# eKatalox
 
-> Toptancılar, üreticiler ve distribütörler için şifreli online bayi kataloğu ve WhatsApp sipariş sistemi. Ürünler bir kez yüklenir; her bayi kendi fiyat listesiyle şifreli girer, sepetini doldurur, sipariş PDF fişi olarak toptancının WhatsApp'ına gelir. Türkiye'de geliştirilen bir SaaS; ücretsiz planla başlanır, kredi kartı istenmez.
+> Toptancılar, üreticiler ve distribütörler için şifreli online bayi kataloğu ve WhatsApp sipariş sistemi. Ürünler bir kez yüklenir; her bayi kendi fiyat listesiyle şifreli girer, sepetini doldurur, oluşan PDF sipariş fişi bağlantısını WhatsApp üzerinden paylaşır. Türkiye'de geliştirilen bir SaaS; ücretsiz planla başlanır, kredi kartı istenmez.
 
 ## Kimler için
 
@@ -48,12 +50,17 @@ export async function GET() {
 
 - Şifreli bayi girişi: her bayi grubuna ayrı fiyat listesi (bayi, perakende, özel)
 - Mobil uyumlu katalog: kategori, arama, ürün sayfası, paket/koli ile sipariş
-- Sipariş WhatsApp'a PDF fiş olarak gelir; panelde sipariş geçmişi
+- Bayi PDF sipariş fişi bağlantısını WhatsApp üzerinden gönderir; kayıtlar panelde Siparişlerim sayfasından takip edilir. Bildirimleri açan yöneticilere yeni sipariş bildirimi gelir.
+- WhatsApp alıcısı: işletmenin kayıtlı numarası veya müşterinin seçtiği kişi
+- Sipariş kuralları: minimum sepet tutarı (tek para birimli sepet), müşteri alanlarının görünürlük ve zorunluluk seçimi
+- Mağaza iletişimi: açılış duyurusu, çalışma saatleri ve mağaza kapalı mesajı
+- Kurumsal pakete dahil kurumsal site ve Bayimiz ol formu; başvuruları panelden inceleme
+- İyzico/Paytr entegrasyonuyla kataloğunuzdan ödeme alın. Sağlayıcı sözleşmesi ve işlem ücretleri ayrıca değerlendirilir.
 - Ürün yükleme: Excel/CSV içe aktarma, toplu görsel, stok ve fiyat güncelleme
 - Kampanya, indirim, banner, anlık bildirim (yeni ürün, kampanya, stok)
-- Raporlar: hangi bayi girdi, neye baktı, hangi ilden
+- Raporlar: ürün aramaları, görüntülenmeler, sepete eklemeler ve il–fiyat listesi girişleri
 - Kendi alan adı (katalog.firmaniz.com) ve kurumsal tanıtım sitesi (üst pakette)
-- Kurumsal site yapay zekâ ve Google aramalarında görünür: işletme kartı (schema.org) ve llms.txt otomatik (Kurumsal paket)
+- Kurumsal sitenin herkese açık tanıtım sayfaları arama motorlarının taramasına uygundur; yapılandırılmış veri ve llms.txt içerir. Aramalarda yer alma ve sıralama garantisi verilmez. Fiyat erişimi katalog şifreleriyle yönetilir.
 
 ## Paketler
 
@@ -62,7 +69,7 @@ ${plans}
 
 1. ${site}/basvuru adresinden ücretsiz hesap açılır (kart istenmez).
 2. Ürünler Excel ile ya da tek tek yüklenir, fiyat listeleri tanımlanır.
-3. Bayilere firma.ekatalox.com linki ve şifreleri gönderilir; siparişler WhatsApp'a gelir.
+3. Bayilere firma.ekatalox.com linki ve şifreleri gönderilir; bayiler PDF sipariş fişi bağlantısını WhatsApp üzerinden paylaşır.
 
 ## Sayfalar
 
@@ -74,6 +81,15 @@ ${plans}
 - [Ücretsiz başvuru](${site}/basvuru)
 - [Hakkımızda](${site}/hakkimizda)
 - [İletişim](${site}/iletisim)
+
+## Ayrıntılı özellikler
+
+${MARKETING_FEATURES.map((feature) => `- [${feature.title}](${site}/ozellikler/${feature.slug})`).join("\n")}
+
+## Rehberler
+
+- [Blog](${site}/blog)
+${getBlogPosts().map((post) => `- [${post.title}](${site}/blog/${post.slug})`).join("\n")}
 
 ## İletişim
 

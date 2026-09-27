@@ -1,13 +1,13 @@
-import type { Metadata } from "next";
+import { marketingMetadata } from "@/lib/marketing/metadata";
+
 import { ButtonLink, Container, Section, SectionHeading } from "@/components/marketing/ui";
 import { SITE } from "@/lib/marketing/site";
 
-export const metadata: Metadata = {
-  title: "Sık sorulan sorular",
-  description:
-    "Ücretsiz plan gerçekten ücretsiz mi? Reklam nerede görünür? Bayi nasıl girer, ürünleri kim yükler, fiyat listeleri nasıl çalışır? Ödeme, iptal ve limitlerle ilgili yanıtlar.",
-  alternates: { canonical: "/sss" },
-};
+export const metadata = marketingMetadata(
+  "/sss",
+  "Dijital Katalog Hakkında Sık Sorulan Sorular",
+  "Ücretsiz plan, bayi şifreleri, fiyat listeleri, ürün yükleme, WhatsApp sipariş ve paket limitleri hakkındaki sorularınıza yanıt bulun.",
+);
 
 interface Faq {
   q: string;
@@ -20,6 +20,75 @@ interface FaqGroup {
 }
 
 const GROUPS: FaqGroup[] = [
+{
+  "title": "Sipariş kuralları ve takip",
+  "items": [
+    {
+      "q": "Minimum sepet tutarı belirleyebilir miyim?",
+      "a": "Evet. Minimum sepet tutarını panelden belirleyebilirsiniz. Bu kontrol tek para birimli sepetlerde uygulanır; birden fazla para birimi içeren sepetlerde uygulanmaz."
+    },
+    {
+      "q": "Müşteri bilgilerinin zorunluluğunu seçebilir miyim?",
+      "a": "Evet. Sipariş formunda ad, telefon, adres ve not alanlarının görünürlük ve zorunluluk ayarlarını seçebilirsiniz. İşletmenize gerekli alanları zorunlu tutup gerekmeyenleri kapatabilirsiniz."
+    },
+    {
+      "q": "Siparişleri panelde takip edebilir miyim?",
+      "a": "Evet. Siparişler Siparişlerim sayfasında takip edilir. Bildirimleri açtıysanız yeni sipariş geldiğinde bildirim alırsınız."
+    },
+    {
+      "q": "Sipariş her zaman kayıtlı WhatsApp numarama mı gider?",
+      "a": "Sabit alıcı seçeneğini kullanırsanız WhatsApp paylaşımı kayıtlı numaranıza yönlenir. Bu seçeneği kapatırsanız müşteriniz göndereceği kişiyi, örneğin kendi toptancısını, WhatsApp üzerinden seçebilir. Paylaşımı tamamlamak için mesajı müşteriniz gönderir."
+    },
+    {
+      "q": "Katalogdan online ödeme alabilir miyim?",
+      "a": "İyzico/Paytr entegrasyonuyla kataloğunuzdan ödeme alın. Kurumsal paket kapsamındaki entegrasyon için sağlayıcı hesabınız ve kurulum ihtiyacınız birlikte değerlendirilir. Sağlayıcının işlem ücretleri ve sözleşme koşulları ayrıca geçerlidir."
+    }
+  ]
+},{
+  "title": "Raporlar ve müşteri iletişimi",
+  "items": [
+    {
+      "q": "En çok aranan ve sepete eklenen ürünleri görebilir miyim?",
+      "a": "Başlangıç ve üzeri paketlerde arama terimlerini, sonuçsuz aramaları, ürün görüntülenmelerini ve sepete eklemeleri inceleyebilirsiniz. Ürün adlarını, görsellerini, sıralamasını ve kampanyaları buna göre düzenleyebilirsiniz. Sepete ekleme sayısı tamamlanmış satış sayısı değildir."
+    },
+    {
+      "q": "Hangi illerden hangi fiyat listesine giriş olduğunu görebilir miyim?",
+      "a": "Evet. Başlangıç ve üzeri paketlerde il ve fiyat listesi girişlerini inceleyebilirsiniz. Konum bilgisi yaklaşık bir göstergedir; müşterinin kesin adresi değildir."
+    },
+    {
+      "q": "Müşterilerime kampanya bildirimi gönderebilir miyim?",
+      "a": "Profesyonel ve Kurumsal paketlerde bildirim izni veren müşterilerinize kampanya, ürün ve stok duyuruları gönderebilirsiniz. Bunlar tarayıcı/cihaz bildirimleridir; otomatik WhatsApp veya SMS mesajı değildir."
+    },
+    {
+      "q": "Duyuru penceresinin metnini kendim yazabilir miyim?",
+      "a": "Evet. Panelden açılış duyurusunun başlığını ve içeriğini düzenleyebilirsiniz. Kampanya koşullarını, teslimat tarihlerini veya işletmenizle ilgili önemli haberleri paylaşabilirsiniz."
+    },
+    {
+      "q": "Çalışma saatlerini ve mağaza kapalı mesajını ayarlayabilir miyim?",
+      "a": "Evet. Çalışma gün ve saatlerinizi belirleyebilir, gerektiğinde mağazanızı manuel kapatabilirsiniz. Kapalı durumda müşterileriniz mağazanın kapalı olduğunu belirten mesajla bilgilendirilir."
+    }
+  ]
+},{
+  "title": "Kurumsal site ve fiyat gizliliği",
+  "items": [
+    {
+      "q": "Kurumsal site ve Bayimiz ol formu pakete dahil mi?",
+      "a": "Evet. Kurumsal pakette ayrıca kurumsal site paket ücreti ödemeden firma ve ürün tanıtım sitenizi oluşturabilir, Bayimiz ol formundan başvuru alabilirsiniz. Başvurular panelden incelenir. Alan adı satın alma ve yenileme giderleri ayrıca değerlendirilir."
+    },
+    {
+      "q": "Kurumsal sitem Google ve yapay zekâ aramalarına uygun mu?",
+      "a": "Açık tanıtım sayfaları SEO uyumlu başlıklar, taranabilir içerik, site haritası ve yapılandırılmış verilerle sunulur. Bu altyapı Google ve yapay zekâ destekli arama sistemlerinin içeriğe erişmesini kolaylaştırır. Hangi aramada gösterileceği ilgili sistemin değerlendirmesine bağlıdır."
+    },
+    {
+      "q": "Bayi fiyatlarım Google’da yayınlanır mı?",
+      "a": "Açık kurumsal ürün sayfalarında bayi fiyatları yayınlanmaz. Katalog fiyatları, geçerli fiyat listesi erişimiyle görüntülenir. Herkese açık ürün açıklamalarına veya görsellere sizin yazdığınız fiyatlar bu korumadan bağımsızdır."
+    },
+    {
+      "q": "Ürünleri ve fotoğrafları toplu yükleyebilir miyim?",
+      "a": "Evet. Excel/XLSX veya CSV dosyalarıyla ürünlerinizi aktarabilir; görselleri model/SKU kodlarıyla eşleştirerek toplu yükleyebilirsiniz. Toplu görsel aracında ZIP dosyaları da kullanılabilir. Paketinizin ürün limiti geçerlidir."
+    }
+  ]
+},
   {
     title: "Ücretsiz plan",
     items: [
@@ -50,7 +119,7 @@ const GROUPS: FaqGroup[] = [
       },
       {
         q: "Şifresiz giren biri fiyatları görebilir mi?",
-        a: "Hayır. Kataloğu tamamen şifreli yapabilir ya da şifresiz ziyaretçiye yalnız ürünleri fiyatsız gösterebilirsiniz. Şifreyi paylaşan bayiyi panelde görür, şifreyi bir dakikada değiştirirsiniz.",
+        a: "Hayır. Kataloğu tamamen şifreli yapabilir ya da şifresiz ziyaretçiye yalnız ürünleri fiyatsız gösterebilirsiniz. Fiyat listelerini ve giriş şifrelerini panelden yönetirsiniz.",
       },
       {
         q: "Sipariş bana nasıl ulaşır?",
@@ -92,7 +161,7 @@ const GROUPS: FaqGroup[] = [
       },
       {
         q: "Komisyon var mı?",
-        a: "Yok. Ücretli paketler yıllık sabit ücrettir: Başlangıç 5.000 ₺, Profesyonel 10.000 ₺, Kurumsal 15.000 ₺ (KDV hariç). Sipariş sayısı ne olursa olsun değişmez.",
+        a: "Yok. Ücretli paketler yıllık sabit ücrettir: Başlangıç 5.000 ₺, Profesyonel 10.000 ₺, Kurumsal 15.000 ₺ (KDV hariç). eKatalox sipariş başına komisyon almaz. Online ödeme sağlayıcısının işlem ücretleri ayrıca geçerlidir.",
       },
       {
         q: "Ödemeyi nasıl yaparım?",
@@ -125,7 +194,7 @@ const faqJsonLd = {
 export default function SssPage() {
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd).replace(/</g, "\\u003c") }} />
 
       <Section tone="white" className="pb-10 sm:pb-14">
         <Container>

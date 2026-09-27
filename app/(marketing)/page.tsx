@@ -1,10 +1,12 @@
-import type { Metadata } from "next";
+import { marketingMetadata } from "@/lib/marketing/metadata";
+
 import Link from "next/link";
 import {
   ArrowRight,
   BarChart3,
   BellRing,
   Check,
+  CreditCard,
   FileSpreadsheet,
   FileText,
   Lock,
@@ -21,6 +23,12 @@ import { ButtonLink, Container, Section, SectionHeading } from "@/components/mar
 import { TOPTAN_PLANS } from "@/lib/billing/toptan-plans";
 import { CUSTOMER_NAMES, SITE } from "@/lib/marketing/site";
 
+export const metadata = marketingMetadata(
+  "/",
+  "Toptancılar İçin Dijital Katalog ve Sipariş",
+  "Ürünlerinizi online katalogda paylaşın, bayilerinize farklı fiyatlar gösterin ve WhatsApp üzerinden sipariş toplayın. 250 ürünle ücretsiz başlayın.",
+);
+
 // Ana sayfa (24 Eyl 2026 reklam öncesi yeniden düzen; tema 21 Eyl koyu/yeşil).
 // Hedef: Instagram/Meta reklamından gelen toptancı ilk ekranda ne olduğunu
 // anlasın ve "Ücretsiz kataloğumu kur"a ya da WhatsApp'a geçsin.
@@ -28,13 +36,6 @@ import { CUSTOMER_NAMES, SITE } from "@/lib/marketing/site";
 // önce/sonra → 3 adım (gerçek ekran görüntüleri) → özellikler → paketler →
 // SSS → son çağrı. Eski "Ücretsiz plan" ve "Kimler için" bölümleri kaldırıldı
 // (bilgisi hero, paketler ve SSS'de). Sunucu bileşeni.
-
-export const metadata: Metadata = {
-  title: { absolute: "eKatalox — Toptancılar için ücretsiz online katalog ve WhatsApp sipariş" },
-  description:
-    "Toptan ürünlerinizi tek katalogda paylaşın. Bayileriniz kendi fiyatını görsün, sepetini hazırlayıp WhatsApp'tan sipariş versin. 250 ürünle ücretsiz başlayın; kart bilgisi istenmez.",
-  alternates: { canonical: "/" },
-};
 
 const BEFORE_AFTER = [
   {
@@ -118,14 +119,16 @@ function ExcelSheet({ label }: { label: string }) {
 }
 
 const FEATURES = [
-  { icon: Lock, title: "Fiyatlarınız kontrollü paylaşılır", body: "Kataloğu şifreyle açın veya şifresiz ziyaretçiye yalnız ürünleri gösterin. Fiyatları kimlerin göreceğini siz belirleyin." },
-  { icon: Tags, title: "Her bayiye kendi fiyatı", body: "Ayrı PDF'ler hazırlamayın. Bayi, perakende ve özel müşteriler aynı kataloğu kendi fiyat listeleriyle açsın." },
-  { icon: Package, title: "Koli ve adet hesabı hazır", body: "Bayi renk, beden veya modelini seçsin; koli ve adet üzerinden sipariş tutarı otomatik hesaplansın." },
-  { icon: FileText, title: "Sipariş detayları tek fişte", body: "Ürünleri mesajlardan tek tek toparlamayın. Müşteri bilgilerini, ürünleri, adetleri ve tutarı PDF fişinde birlikte görün." },
-  { icon: Megaphone, title: "Kampanya ve öne çıkanlar", body: "Banner, kampanya kartı, indirimli ürün. Yeni gelen ürünü ilk sırada gösterin." },
-  { icon: BellRing, title: "Bayilere bildirim", plan: "Profesyonel ve üzeri", body: "Yeni ürün, stok geldi, kampanya başladı. Bildirim açan bayinin telefonuna düşer." },
-  { icon: BarChart3, title: "İlgi gören ürünleri görün", plan: "Başlangıç ve üzeri", body: "Katalog ziyaretlerini, görüntülenen ürünleri ve ziyaretlerin geldiği illeri takip edin." },
-  { icon: Palette, title: "Kendi logonuz ve renkleriniz", body: "Hazır temalardan seçin, gerçek ürünlerinizle önizleyin." },
+  { icon: Lock, title: "Fiyatlarınız kontrollü paylaşılır", body: "Ürünlerinizi herkese tanıtın; bayi fiyatlarını şifreli listelerle paylaşın. Açık kurumsal sayfalarda fiyat yayınlanmaz.", href: "/ozellikler/bayi-fiyat-listeleri" },
+  { icon: Tags, title: "Her bayiye kendi fiyatı", body: "Bayi, perakende ve özel müşteriler aynı kataloğu kendi fiyat listeleriyle açsın. Ayrı PDF’lerle uğraşmayın.", href: "/ozellikler/bayi-fiyat-listeleri" },
+  { icon: Package, title: "Sipariş kuralları size ait", body: "Adet ve koliyle sipariş alın, minimum sepet tutarını belirleyin. Müşteri formunda hangi bilgilerin zorunlu olacağını seçin.", href: "/ozellikler/whatsapp-siparis" },
+  { icon: FileText, title: "Siparişlerim’de takip edin", body: "Siparişleri panelde görün. Bildirimleri açtıysanız yeni siparişten haberdar olun; WhatsApp için sabit alıcıyı veya müşteri seçimini kullanın.", href: "/ozellikler/whatsapp-siparis" },
+  { icon: FileSpreadsheet, title: "Ürün ve fotoğrafları toplu yükleyin", body: "Excel/CSV listenizi aktarın. Görselleri ürün kodlarıyla eşleştirerek toplu yükleyin, ürünleri tek tek eklemekle zaman kaybetmeyin.", href: "/ozellikler/toplu-urun-yukleme" },
+  { icon: Megaphone, title: "Duyurun, çalışma saatlerini belirleyin", body: "Kampanya kartları ve açılış duyurusu hazırlayın. Çalışma saatlerinizi ayarlayın; kapalı olduğunuzda müşteriyi bilgilendirin.", href: "/ozellikler/kampanya-bildirimleri" },
+  { icon: BellRing, title: "Kampanyayı müşterinize ulaştırın", body: "Bildirim izni veren müşterilerinize yeni ürün, kampanya ve stok duyuruları gönderin.", href: "/ozellikler/kampanya-bildirimleri", plan: "Profesyonel ve üzeri" },
+  { icon: BarChart3, title: "Aramalardan aksiyon alın", body: "En çok aranan ve sepete eklenen ürünleri, il–fiyat listesi girişlerini görün. Ürün sıralaması ve kampanyalarınızı buna göre düzenleyin.", href: "/ozellikler/raporlar", plan: "Başlangıç ve üzeri" },
+  { icon: Palette, title: "Kurumsal siteniz pakete dahil", body: "Firmanızı SEO uyumlu açık sayfalarda tanıtın. Bayimiz ol formuyla başvuru alın; ayrıca kurumsal site paket ücreti ödemeyin.", href: "/ozellikler/kurumsal-site", plan: "Kurumsal" },
+  { icon: CreditCard, title: "Kataloğunuzdan ödeme alın", body: "İyzico/Paytr entegrasyonuyla kataloğunuzdan ödeme alın.", href: "/ozellikler/online-odeme", plan: "Kurumsal" },
 ];
 
 const FAQ = [
@@ -151,7 +154,7 @@ const FAQ = [
   },
   {
     q: "Sipariş için komisyon öder miyim?",
-    a: "Hayır. Sipariş başına ücret veya komisyon alınmaz. Bayiniz sepetini hazırlar, oluşan PDF fişinin bağlantısını WhatsApp üzerinden size gönderir. Ücretli paket seçerseniz yalnız yıllık paket bedeli ve KDV ödersiniz.",
+    a: "Hayır. Sipariş başına ücret veya komisyon alınmaz. Bayiniz sepetini hazırlar, oluşan PDF fişinin bağlantısını WhatsApp üzerinden size gönderir. Ücretli paketlerde yıllık paket bedeli ve KDV uygulanır. Online ödeme kullanırsanız ödeme sağlayıcısının işlem ücretleri ayrıca geçerlidir.",
   },
 ];
 
@@ -208,7 +211,7 @@ const structuredData = {
 export default function HomePage() {
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData).replace(/</g, "\\u003c") }} />
 
       {/* 1. Hero — koyu zemin; görsel: katalog + WhatsApp'a düşen sipariş */}
       <Section tone="navy" glow className="pb-14 pt-12 sm:pb-20 sm:pt-20">
@@ -358,13 +361,14 @@ export default function HomePage() {
             title="Daha az yazışma. Daha düzenli sipariş."
             lead="Şifreli katalog, farklı fiyat listeleri ve PDF sipariş fişi ücretsiz planda. Raporlar Başlangıç, bayi bildirimleri Profesyonel ve üzeri paketlerde."
           />
-          <div className="mt-12 grid gap-x-10 gap-y-8 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="mt-12 grid gap-x-10 gap-y-8 sm:grid-cols-2 lg:grid-cols-3">
             {FEATURES.map((f) => (
               <div key={f.title}>
                 <f.icon className="size-5 text-brand-green" aria-hidden />
                 <h3 className="mt-3 font-semibold text-brand-navy">{f.title}</h3>
                 {"plan" in f ? <p className="mt-1 text-xs font-semibold text-brand-green">{f.plan}</p> : null}
                 <p className="mt-1.5 text-[15px] leading-relaxed text-brand-muted">{f.body}</p>
+                <Link href={f.href} className="mt-3 inline-block text-sm font-semibold text-brand-green hover:underline">Ayrıntıları inceleyin →</Link>
               </div>
             ))}
           </div>

@@ -1,12 +1,14 @@
-import type { Metadata } from "next";
+import { marketingMetadata } from "@/lib/marketing/metadata";
+
 import Link from "next/link";
 import { ButtonLink, Container, Section, SectionHeading } from "@/components/marketing/ui";
 import { SITE } from "@/lib/marketing/site";
 
-export const metadata: Metadata = {
-  title: "Yardım merkezi",
-  description: "Kurulum, ürün yükleme, bayi şifreleri, sipariş alma, paket ve hesap konularında yardım.",
-};
+export const metadata = marketingMetadata(
+  "/yardim",
+  "Dijital Katalog Yardım Merkezi",
+  "Katalog kurulumu, Excel ile ürün yükleme, bayi şifreleri, WhatsApp sipariş, paket ve hesap işlemleri için yardım alın.",
+);
 
 const TOPICS = [
   { title: "Başlarken", desc: "Kayıt, Excel ile ürün yükleme ve ilk siparişe kadar olan yol.", href: "/nasil-calisir" },
@@ -22,7 +24,7 @@ export default function HelpPage() {
     <>
       <Section tone="white" className="pb-8 sm:pb-10">
         <Container>
-          <SectionHeading eyebrow="Destek" title="Yardım merkezi" lead="Aradığınızı bulamazsanız telefonla ya da e-postayla ulaşın; sorunuzu genelde aynı gün çözeriz." />
+          <SectionHeading as="h1" eyebrow="Destek" title="Yardım merkezi" lead="Aradığınızı bulamazsanız telefonla ya da e-postayla ulaşın; sorunuzu genelde aynı gün çözeriz." />
         </Container>
       </Section>
       <Section className="pt-0">

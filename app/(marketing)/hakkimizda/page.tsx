@@ -1,20 +1,16 @@
-import type { Metadata } from "next";
+import { marketingMetadata } from "@/lib/marketing/metadata";
+
 import { SITE } from "@/lib/marketing/site";
 import { ButtonLink, CheckList, Container, Eyebrow, Section, SectionHeading } from "@/components/marketing/ui";
 
+export const metadata = marketingMetadata(
+  "/hakkimizda",
+  "Hakkımızda",
+  "eKatalox, toptancı ve üreticiler için şifreli online katalog ve WhatsApp sipariş sistemi sunar. Ürünler, bayi fiyat listeleri ve siparişler tek yerde.",
+);
+
 // Şirket künyesi (unvan, adres) lib/marketing/site.ts'de dolunca alt bilgide
 // çıkar; burada uydurma tarih, sayı ya da isim yazılmaz.
-export const metadata: Metadata = {
-  title: "Hakkımızda",
-  description:
-    "eKatalox, toptancı ve üreticilerin PDF kataloğunu şifreli online kataloğa çevirir. Bayi kendi fiyatını görür, sipariş WhatsApp'a PDF olarak gelir. Ücretsiz plan, komisyon yok.",
-  alternates: { canonical: "/hakkimizda" },
-  openGraph: {
-    title: "Hakkımızda | eKatalox",
-    description: "Toptancılar için ücretsiz online katalog ve WhatsApp sipariş sistemi kuran ekip.",
-    url: `${SITE.url}/hakkimizda`,
-  },
-};
 
 export default function Page() {
   return (
