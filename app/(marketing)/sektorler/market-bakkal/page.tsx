@@ -5,7 +5,7 @@ import { ButtonLink, Container, Section, SectionHeading } from "@/components/mar
 import { marketingMetadata } from "@/lib/marketing/metadata";
 import { SITE } from "@/lib/marketing/site";
 
-export const metadata = marketingMetadata("/sektorler/market-bakkal", "Market ve Bakkallar için WhatsApp Sipariş Sistemi", "Marketiniz için online katalog, konumlu WhatsApp siparişi, mobil sepet ve kampanya bildirimleri. Kurumsal (Full) pakette marketlere 200 QR magnet hediye.");
+export const metadata = marketingMetadata("/sektorler/market-bakkal", "Market ve Bakkallar için WhatsApp Sipariş Sistemi", "Marketiniz için online katalog, konumlu WhatsApp siparişi, mobil sepet ve kampanya bildirimleri. Kurumsal pakette marketlere 200 QR magnet hediye.");
 const features = [
   { icon: Languages, title: "Yabancı müşterileriniz için İngilizce, Almanca ve Rusça", body: "Kataloğunuzda yabancı müşterileriniz için İngilizce, Almanca ve Rusça dil seçenekleri mevcuttur. Müşterileriniz dil menüsünden tercih ettikleri dili seçerek kataloğunuzu kullanabilir." },
   { icon: MapPin, title: "Siparişin yanında müşterinizin konumu", body: "Müşteriniz isterse cihazından konum paylaşımına izin verir. Konum bağlantısı WhatsApp sipariş mesajına eklenir; yazılı adresle birlikte teslimat için kullanabilirsiniz." },
@@ -19,8 +19,8 @@ const faq = [
   { q: "Müşterim uygulama indirmek zorunda mı?", a: "Hayır. Katalog bağlantısı veya QR magnet üzerinden tarayıcıda açılır. Müşteriniz ürünleri seçip sepetini oluşturabilir." },
   { q: "Konum paylaşmak zorunlu mu?", a: "Hayır. Müşteriniz konum eklemeyi seçer ve cihazındaki konum iznini onaylarsa konum bağlantısı sipariş mesajına eklenir. Yazılı adres ve sipariş notu alanları da kullanılabilir." },
   { q: "Sipariş WhatsApp üzerinden nasıl gönderilir?", a: "Müşteri sepetini ve bilgilerini tamamladığında sipariş mesajı hazırlanır. WhatsApp üzerinden gönderimi müşteri tamamlar. Konum paylaşmışsa bağlantısı da mesajda yer alır; sipariş kayıtları panelden takip edilebilir." },
-  { q: "200 adet QR magnet hangi pakette hediye?", a: "Market işletmelerine Kurumsal (Full) pakette 200 adet QR kodlu magnet hediye edilir. Müşteriniz magneti okutarak marketinizin kataloğuna ulaşır. Bu hediye market işletmelerine özeldir." },
-  { q: "Marketler ve toptancılar için fiyatlar farklı mı?", a: "Hayır. Aynı paketlerin fiyatları ve limitleri ortaktır. Sektöre göre kullanım örnekleri değişir; marketlere özel 200 magnet hediyesi Kurumsal (Full) pakette sunulur." },
+  { q: "200 adet QR magnet hangi pakette hediye?", a: "Market işletmelerine Kurumsal pakette 200 adet QR kodlu magnet hediye edilir. Müşteriniz magneti okutarak marketinizin kataloğuna ulaşır. Bu hediye market işletmelerine özeldir." },
+  { q: "Marketler ve toptancılar için fiyatlar farklı mı?", a: "Hayır. Aynı paketlerin fiyatları ve limitleri ortaktır. Sektöre göre kullanım örnekleri değişir; marketlere özel 200 magnet hediyesi Kurumsal pakette sunulur." },
   { q: "Her müşteriye bildirim gönderebilir miyim?", a: "Kampanya bildirimleri bildirim izni veren müşterilere gönderilir. Bildirimlerin ulaşması müşterinin cihazına, tarayıcısına ve izin ayarlarına bağlıdır. Kampanya bildirimi gönderme Profesyonel ve Kurumsal paketlerde bulunur." },
 ];
 export default function MarketPage() {
@@ -44,7 +44,7 @@ export default function MarketPage() {
             <p className="mt-6 max-w-xl text-lg leading-relaxed text-white/75">Ürünlerinizi online kataloğunuzda sunun. Müşteriniz sepetini oluştursun, adresini ve isterse konumunu ekleyip siparişini size iletsin.</p>
             <div className="mt-8 flex flex-wrap gap-3"><ButtonLink href="https://marketgo.ekatalox.com">MarketGo demosunu incele <ArrowUpRight className="ml-2 size-4" aria-hidden /></ButtonLink><ButtonLink href="/fiyatlandirma?gorunum=market" tone="outline-dark">Market paketlerini gör</ButtonLink></div>
             <p className="mt-5 text-sm text-white/60">Uygulama indirmeden katalog erişimi · Sipariş başına eKatalox komisyonu yok</p>
-            <div className="mt-8 inline-flex items-center gap-3 rounded-2xl border border-brand-neon/25 bg-brand-neon/10 p-4"><QrCode className="size-6 shrink-0 text-brand-neon" aria-hidden /><p className="text-sm"><strong className="block text-white">Kurumsal (Full) pakette 200 QR magnet hediye</strong><span className="text-white/65">Market işletmelerine özel.</span></p></div>
+            <div className="mt-8 inline-flex items-center gap-3 rounded-2xl border border-brand-neon/25 bg-brand-neon/10 p-4"><QrCode className="size-6 shrink-0 text-brand-neon" aria-hidden /><p className="text-sm"><strong className="block text-white">Kurumsal pakette 200 QR magnet hediye</strong><span className="text-white/65">Market işletmelerine özel.</span></p></div>
           </div>
           <figure className="mx-auto w-full max-w-[250px] sm:max-w-[270px]">
             <div className="overflow-hidden rounded-[2rem] border-[5px] border-white/15 shadow-2xl"><Image src="/site/demo-market-iphone.png" alt="MarketGo mobil kataloğu: görselli kategoriler ve altta sabit Ara, Sepet, Kampanyalar menüsü" width={1206} height={2622} priority sizes="270px" className="h-auto w-full" /></div>
@@ -71,7 +71,7 @@ export default function MarketPage() {
         <div className="mt-7 rounded-2xl border border-brand-neon/25 bg-brand-neon/10 p-6">
           <p className="text-4xl font-bold text-white">200 adet <span className="text-xl font-semibold text-brand-neon">hediye</span></p>
           <h3 className="mt-3 text-xl font-semibold">6 × 9 cm QR kodlu buzdolabı magneti</h3>
-          <p className="mt-3 leading-relaxed text-white/70">Kurumsal (Full) paketi seçen market işletmelerine özel.</p>
+          <p className="mt-3 leading-relaxed text-white/70">Kurumsal paketi seçen market işletmelerine özel.</p>
           <div className="mt-5"><ButtonLink href="/fiyatlandirma?gorunum=market">Paket kapsamını incele</ButtonLink></div>
         </div>
       </div>

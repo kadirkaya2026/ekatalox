@@ -20,7 +20,7 @@ export default function SectorsPage() {
         </Link>;
       })}</div>
       <Link href="/sektorler/market-bakkal" className="mt-6 flex flex-col gap-6 rounded-3xl border border-brand-green/25 bg-brand-green-soft p-7 sm:flex-row sm:items-center sm:p-9">
-        <Store className="size-10 shrink-0 text-brand-green" aria-hidden /><div className="flex-1"><h2 className="text-2xl font-semibold text-brand-navy">Market & Bakkallar</h2><p className="mt-3 max-w-2xl leading-relaxed text-brand-muted">Konumlu WhatsApp siparişi, mobil alt sepet ve müşteri bildirimleri. Kurumsal (Full) pakette 200 adet QR magnet hediyesi.</p></div><span className="inline-flex shrink-0 items-center gap-2 font-semibold text-brand-green">MarketGo ile keşfet <ArrowRight className="size-4" aria-hidden /></span>
+        <Store className="size-10 shrink-0 text-brand-green" aria-hidden /><div className="flex-1"><h2 className="text-2xl font-semibold text-brand-navy">Market & Bakkallar</h2><p className="mt-3 max-w-2xl leading-relaxed text-brand-muted">Konumlu WhatsApp siparişi, mobil alt sepet ve müşteri bildirimleri. Kurumsal pakette 200 adet QR magnet hediyesi.</p></div><span className="inline-flex shrink-0 items-center gap-2 font-semibold text-brand-green">MarketGo ile keşfet <ArrowRight className="size-4" aria-hidden /></span>
       </Link>
     </Container></Section>
   </>;

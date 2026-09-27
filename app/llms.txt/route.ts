@@ -96,7 +96,7 @@ ${WHOLESALE_SECTORS.map((sector) => `- [${sector.name}](${site}/sektorler/${sect
 - [Market ve bakkallar için WhatsApp sipariş sistemi](${site}/sektorler/market-bakkal)
 - Market müşterisi isteğe bağlı konum paylaşabilir; konum bağlantısı WhatsApp sipariş mesajına eklenir. Mobilde sabit alt sepet bulunur.
 - Kampanya bildirimleri izin veren müşterilere, paket kapsamına göre gönderilir.
-- Market işletmelerine Kurumsal (Full) pakette 200 adet QR kodlu magnet hediye edilir.
+- Market işletmelerine Kurumsal pakette 200 adet QR kodlu magnet hediye edilir.
 - Market ve toptancı paket fiyatları ortaktır; kullanım sunumu sektöre göre değişir.
 - [MarketGo demo mağazası](https://marketgo.ekatalox.com)
 - [VELIRA tekstil ve giyim demosu](https://demo-giyim.ekatalox.com/): Giyim kategorileri ve görselli ürün kataloğu.

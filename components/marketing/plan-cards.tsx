@@ -80,7 +80,7 @@ export function PlanCards({ compact = false, dark = false, audience }: { compact
             </p>
             {market && plan.slug === "corporate" && <div className={cn("mt-5 rounded-xl border p-4", dark ? "border-brand-neon/30 bg-brand-neon/10 text-white" : "border-brand-green/25 bg-brand-green-soft text-brand-navy")}>
               <p className="font-semibold">200 adet QR kodlu magnet hediye</p>
-              <p className="mt-1 text-xs leading-relaxed">Kurumsal (Full) pakette market işletmelerine özel. Müşteriniz magneti okutsun, kataloğunuzdan sipariş oluştursun.</p>
+              <p className="mt-1 text-xs leading-relaxed">Kurumsal pakette market işletmelerine özel. Müşteriniz magneti okutsun, kataloğunuzdan sipariş oluştursun.</p>
             </div>}
             <div className="mt-auto pt-6">
               <Link
