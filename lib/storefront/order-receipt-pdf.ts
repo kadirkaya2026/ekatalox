@@ -35,12 +35,17 @@ export interface GenerateOrderReceiptPdfParams {
   // Ücretsiz plan: fişin en altında eKatalox reklam satırı ("#" kullanma,
   // alt kümelenmiş fontta glif yok). Bkz. lib/ads/config.ts order_footer.
   footerLine?: string | null;
+  /** Satır indeksine göre küçük ürün görseli (JPEG data URL), bkz. receipt-images.ts. */
+  itemImages?: Array<string | null>;
 }
 
 const PDF_FONT = "Roboto";
 const SOFT_BORDER = [229, 231, 235] as [number, number, number];
 const PRODUCT_COLUMN_WIDTH_MM = 82;
 const PRODUCT_CELL_HORIZONTAL_PADDING_MM = 5;
+// Ürün hücresinin solunda kare görsel (28 Eyl 2026); metin görselin sağına kayar.
+const ITEM_IMAGE_MM = 14;
+const ITEM_IMAGE_GAP_MM = 3;
 const PDF_FONT_SIZE = {
   tenantTitle: 19,
   headerMeta: 12,
@@ -61,10 +66,16 @@ const PDF_SPACING = {
 } as const;
 const RECEIPT_TIMEZONE = "Europe/Istanbul";
 
-function wrapReceiptProductCellText(doc: jsPDF, rawText: string, fontSize: number) {
+function wrapReceiptProductCellText(
+  doc: jsPDF,
+  rawText: string,
+  fontSize: number,
+  columnWidth: number,
+  imageOffset: number,
+) {
   doc.setFont(PDF_FONT, "normal");
   doc.setFontSize(fontSize);
-  const textWidth = PRODUCT_COLUMN_WIDTH_MM - PRODUCT_CELL_HORIZONTAL_PADDING_MM;
+  const textWidth = columnWidth - PRODUCT_CELL_HORIZONTAL_PADDING_MM - imageOffset;
 
   return rawText.split("\n").flatMap((segment) => doc.splitTextToSize(segment, textWidth));
 }
@@ -163,6 +174,10 @@ export async function generateOrderReceiptPdf(
   cursorY += 8;
 
   const catalogMode = params.catalogMode ?? false;
+  const itemImages = params.itemImages ?? [];
+  const hasImages = itemImages.some(Boolean);
+  const productColumnWidth = catalogMode ? PRODUCT_COLUMN_WIDTH_MM + 40 : PRODUCT_COLUMN_WIDTH_MM;
+  const imageOffset = hasImages ? ITEM_IMAGE_MM + ITEM_IMAGE_GAP_MM : 0;
 
   autoTable(doc, {
     startY: cursorY,
@@ -226,7 +241,32 @@ export async function generateOrderReceiptPdf(
         doc,
         rawText,
         data.cell.styles.fontSize ?? PDF_FONT_SIZE.tableBody,
+        productColumnWidth,
+        imageOffset,
       );
+
+      if (hasImages) {
+        // Görselsiz satırlar da aynı hizada kalsın diye boşluk her satırda.
+        data.cell.styles.cellPadding = {
+          top: PDF_SPACING.tableCellPaddingVertical,
+          right: 2.5,
+          bottom: PDF_SPACING.tableCellPaddingVertical,
+          left: 2.5 + imageOffset,
+        };
+        data.cell.styles.minCellHeight = ITEM_IMAGE_MM + 4;
+      }
+    },
+    didDrawCell: (data) => {
+      if (!hasImages || data.section !== "body" || data.column.index !== 0) {
+        return;
+      }
+      const image = itemImages[data.row.index];
+      if (!image) return;
+      try {
+        doc.addImage(image, "JPEG", data.cell.x + 2.5, data.cell.y + 2, ITEM_IMAGE_MM, ITEM_IMAGE_MM);
+      } catch {
+        // Bozuk görsel fişi düşürmesin.
+      }
     },
   });
 

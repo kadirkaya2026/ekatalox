@@ -11,6 +11,7 @@ import {
   serializeOrderPdfError,
 } from "@/lib/storefront/order-pdf-log";
 import { generateOrderReceiptPdf } from "@/lib/storefront/order-receipt-pdf";
+import { loadReceiptItemImages } from "@/lib/storefront/receipt-images";
 import {
   buildOrderReceiptOrderNumber,
   buildSecureOrderReceiptUrl,
@@ -246,6 +247,10 @@ export async function POST(request: Request) {
   const magnetCodeId = await resolveMagnetCodeId(supabase, tenant.id, tenant.subdomain);
 
   const items = parsed.data.items as CartItem[];
+  // Fiş görselleri kontrollerle paralel indirilir (28 Eyl 2026); hata fişi düşürmez.
+  const itemImagesPromise = loadReceiptItemImages(supabase, tenant.id, items).catch(
+    () => [] as Array<string | null>,
+  );
   const catalogMode = parsed.data.catalog_mode;
 
   // Tekel bayisi: alkollü ürün online sipariş edilemez (yasal). Vitrin zaten
@@ -339,6 +344,7 @@ export async function POST(request: Request) {
         note: parsed.data.note,
         catalogMode: true,
         footerLine: adFooterLine,
+        itemImages: await itemImagesPromise,
       });
 
       const securePdfId = crypto.randomUUID();
@@ -546,6 +552,7 @@ export async function POST(request: Request) {
         : null,
       note: parsed.data.note,
       footerLine: adFooterLine,
+        itemImages: await itemImagesPromise,
     });
 
     logOrderPdfServerEvent("info", "pdf_generated", {
