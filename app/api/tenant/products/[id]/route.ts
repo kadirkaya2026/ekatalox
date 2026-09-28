@@ -10,7 +10,7 @@ import {
   ProductImageValidationError,
   uploadProductImage,
 } from "@/lib/storage/product-images";
-import { getStorageObjectPathFromPublicUrl } from "@/lib/storage/storage-helpers";
+import { filterRemovableProductImagePaths } from "@/lib/storage/safe-product-image-removal";
 import { getSessionContext } from "@/lib/auth/session";
 import { hasPlanFeature } from "@/lib/billing/plans";
 import { compactProductDisplayOrder } from "@/lib/products/reorder";
@@ -152,19 +152,20 @@ export async function PATCH(
       .eq("tenant_id", tenant.id)
       .maybeSingle();
 
-    for (const [shouldRemove, url] of [
+    const removedUrls = ([
       [removeImage, currentProduct?.image_url],
       [removeImage2, currentProduct?.image_url_2],
       [removeImage3, currentProduct?.image_url_3],
-    ] as const) {
-      if (!shouldRemove || !url) {
-        continue;
-      }
-      const path = getStorageObjectPathFromPublicUrl(url, PRODUCT_IMAGES_BUCKET);
-      if (path) {
-        removedImagePaths.push(path);
-      }
-    }
+    ] as const)
+      .filter(([shouldRemove, url]) => shouldRemove && url)
+      .map(([, url]) => url);
+    removedImagePaths.push(
+      ...(await filterRemovableProductImagePaths(supabase, {
+        tenantId: tenant.id,
+        urls: removedUrls,
+        excludeProductIds: [id],
+      })),
+    );
 
     if (removedImagePaths.length) {
       await supabase.storage.from(PRODUCT_IMAGES_BUCKET).remove(removedImagePaths);
@@ -264,17 +265,18 @@ export async function DELETE(
     return NextResponse.json({ error: "Ürün bulunamadı." }, { status: 404 });
   }
 
-  const imagePaths = [product.image_url, product.image_url_2, product.image_url_3]
-    .map((url) => getStorageObjectPathFromPublicUrl(url, PRODUCT_IMAGES_BUCKET))
-    .filter((path): path is string => Boolean(path));
+  const imagePaths = await filterRemovableProductImagePaths(supabase, {
+    tenantId: tenant.id,
+    urls: [product.image_url, product.image_url_2, product.image_url_3],
+    excludeProductIds: [product.id],
+  });
 
   if (imagePaths.length) {
     const { error: storageError } = await supabase.storage
       .from(PRODUCT_IMAGES_BUCKET)
       .remove(imagePaths);
-
     if (storageError) {
-      return NextResponse.json({ error: storageError.message }, { status: 400 });
+      console.error("[product-delete] görsel dosyaları silinemedi:", storageError.message);
     }
   }
 

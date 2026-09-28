@@ -35,14 +35,19 @@ export async function POST(request: Request) {
     );
   }
 
-  const safeFileName = sanitizeFileName(`${skuCode}.jpg`);
+  // Her yüklemede yeni adres: aynı adrese yazınca tarayıcı/CDN önbelleği eski
+  // görseli 7 güne kadar gösteriyordu (28 Eyl 2026 denetimi).
+  const slot = formData.get("slot");
+  const slotSuffix = slot === "2" || slot === "3" ? `-${slot}` : "";
+  const safeFileName = sanitizeFileName(`${skuCode}${slotSuffix}-${Date.now().toString(36)}.jpg`);
   const storagePath = `${tenant.id}/products/${safeFileName}`;
 
   const { error: uploadError } = await supabase.storage
     .from(STORE_ASSETS_BUCKET)
     .upload(storagePath, file, {
-      upsert: true,
+      upsert: false,
       contentType: "image/jpeg",
+      cacheControl: "31536000",
     });
 
   if (uploadError) {

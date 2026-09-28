@@ -31,7 +31,9 @@ export function buildProductImagePath(params: {
   slot?: 1 | 2 | 3;
 }) {
   const slotSuffix = params.slot && params.slot > 1 ? `-${params.slot}` : "";
-  return `${params.tenantId}/products/${params.productId}${slotSuffix}-${sanitizeFileName(
+  // Zaman damgası: aynı adla yeniden yüklenen görsel yeni adres alsın, tarayıcı/CDN
+  // önbelleği eskisini göstermesin (28 Eyl 2026 denetimi).
+  return `${params.tenantId}/products/${params.productId}${slotSuffix}-${Date.now().toString(36)}-${sanitizeFileName(
     params.fileName,
   )}`;
 }

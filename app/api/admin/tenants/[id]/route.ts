@@ -3,7 +3,7 @@ import { extendPlanExpiry } from "@/lib/billing/membership";
 import { shouldAllowDemoFallback } from "@/lib/env";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { PRODUCT_IMAGES_BUCKET } from "@/lib/storage/product-images";
-import { getStorageObjectPathFromPublicUrl } from "@/lib/storage/storage-helpers";
+import { filterRemovableProductImagePaths } from "@/lib/storage/safe-product-image-removal";
 import { ensureSuperAdminResponse } from "@/lib/tenancy/guards";
 import { tenantUpdateSchema } from "@/lib/validators/tenant";
 
@@ -153,7 +153,7 @@ export async function DELETE(
 
   const [{ data: productRows, error: productsError }, { data: membershipRows, error: membershipsError }] =
     await Promise.all([
-      supabase.from("products").select("image_url").eq("tenant_id", id),
+      supabase.from("products").select("image_url, image_url_2, image_url_3").eq("tenant_id", id),
       supabase.from("tenant_memberships").select("user_id").eq("tenant_id", id),
     ]);
 
@@ -164,15 +164,15 @@ export async function DELETE(
     );
   }
 
-  const imagePaths = Array.from(
-    new Set(
-      ((productRows as Array<{ image_url: string | null }> | null) ?? [])
-        .map((product) =>
-          getStorageObjectPathFromPublicUrl(product.image_url, PRODUCT_IMAGES_BUCKET),
-        )
-        .filter((path): path is string => Boolean(path)),
-    ),
-  );
+  // Yalnız bu tenant'ın klasöründeki ve başka tenant/katalogda kullanılmayan
+  // dosyalar silinir (28 Eyl 2026 denetimi).
+  const imagePaths = await filterRemovableProductImagePaths(supabase, {
+    tenantId: id,
+    urls: (
+      (productRows as Array<{ image_url: string | null; image_url_2: string | null; image_url_3: string | null }> | null) ?? []
+    ).flatMap((product) => [product.image_url, product.image_url_2, product.image_url_3]),
+    ignoreOwnTenantReferences: true,
+  });
 
   if (imagePaths.length) {
     const { error: storageError } = await supabase.storage

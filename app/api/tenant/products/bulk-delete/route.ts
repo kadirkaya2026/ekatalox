@@ -4,7 +4,7 @@ import { getSessionContext } from "@/lib/auth/session";
 import {
   PRODUCT_IMAGES_BUCKET,
 } from "@/lib/storage/product-images";
-import { getStorageObjectPathFromPublicUrl } from "@/lib/storage/storage-helpers";
+import { filterRemovableProductImagePaths } from "@/lib/storage/safe-product-image-removal";
 import { compactProductDisplayOrder } from "@/lib/products/reorder";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { ensureTenantAdminResponse } from "@/lib/tenancy/guards";
@@ -67,26 +67,25 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Silinecek ürün bulunamadı." }, { status: 404 });
   }
 
-  const imagePaths = Array.from(
-    new Set(
-      products
-        .flatMap((product) => [product.image_url, product.image_url_2, product.image_url_3])
-        .map((url) => getStorageObjectPathFromPublicUrl(url, PRODUCT_IMAGES_BUCKET))
-        .filter((path): path is string => Boolean(path)),
-    ),
-  );
+  const deletableIds = products.map((product) => product.id);
+
+  // Yalnız bu tenant'ın klasöründeki ve başka yerde kullanılmayan dosyalar
+  // silinir (katalogdan gelen / paylaşılan görseller korunur). Dosya silme
+  // hatası ürün silmeyi engellemez; en kötü ihtimalle sahipsiz dosya kalır.
+  const imagePaths = await filterRemovableProductImagePaths(supabase, {
+    tenantId: tenant.id,
+    urls: products.flatMap((product) => [product.image_url, product.image_url_2, product.image_url_3]),
+    excludeProductIds: deletableIds,
+  });
 
   if (imagePaths.length > 0) {
     const { error: storageError } = await supabase.storage
       .from(PRODUCT_IMAGES_BUCKET)
       .remove(imagePaths);
-
     if (storageError) {
-      return NextResponse.json({ error: storageError.message }, { status: 400 });
+      console.error("[bulk-delete] görsel dosyaları silinemedi:", storageError.message);
     }
   }
-
-  const deletableIds = products.map((product) => product.id);
 
   for (const idsChunk of chunkArray(deletableIds, ID_CHUNK_SIZE)) {
     const { error: deleteError } = await supabase

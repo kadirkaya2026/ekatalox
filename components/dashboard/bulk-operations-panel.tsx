@@ -23,6 +23,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { SettingsTabs } from "@/components/dashboard/settings-tabs";
 import { parseSpreadsheetFile } from "@/lib/csv/parse-spreadsheet";
+import { buildSkuMatcher, decodeZipFileName, type ImageSlot } from "@/lib/products/image-file-matching";
 import { buildPackageUpgradeHref } from "@/lib/billing/plans";
 import type { ParsedCsvResult } from "@/lib/csv/parse-products";
 import type { Category, Product, Tenant } from "@/lib/types";
@@ -194,6 +195,7 @@ function getZipImageEntryInfo(entryName: string) {
 async function uploadCompressedImage(params: {
   skuCode: string;
   file: File;
+  slot?: ImageSlot;
 }): Promise<string> {
   const imageCompression = (await import("browser-image-compression")).default;
   const compressed = await imageCompression(params.file, COMPRESSION_OPTIONS);
@@ -203,6 +205,7 @@ async function uploadCompressedImage(params: {
   const formData = new FormData();
   formData.append("file", compressed, `${params.skuCode}.jpg`);
   formData.append("sku_code", params.skuCode);
+  if (params.slot && params.slot > 1) formData.append("slot", String(params.slot));
 
   const response = await fetch("/api/tenant/products/bulk-image-upload", {
     method: "POST",
@@ -702,7 +705,7 @@ function ImageImportTab() {
   const handleFile = useCallback(
     async (file: File) => {
       // 1) Validate extension
-      if (!file.name.endsWith(".zip")) {
+      if (!file.name.toLowerCase().endsWith(".zip")) {
         setState({
           status: "error",
           file: null,
@@ -731,40 +734,71 @@ function ImageImportTab() {
       });
 
       try {
-        // 3) Extract ZIP client-side
+        // 3) Extract ZIP client-side (Windows CP857 dosya adları da okunur)
         const JSZip = (await import("jszip")).default;
-        const zip = await JSZip.loadAsync(file);
+        const zip = await JSZip.loadAsync(file, { decodeFileName: decodeZipFileName });
 
-        // 4) Filter image files
-        const imageEntries: Array<{
-          name: string;
-          baseName: string;
-          skuCode: string;
-          entry: import("jszip").JSZipObject;
-        }> = [];
+        // 4) Filter image files; desteklenmeyen biçimler (iPhone HEIC) raporlanır
+        const rawEntries: Array<{ name: string; baseName: string; fileKey: string; entry: import("jszip").JSZipObject }> = [];
+        const unsupportedFiles: string[] = [];
         zip.forEach((relativePath, entry) => {
           if (entry.dir) return;
           const imageInfo = getZipImageEntryInfo(relativePath);
-          if (!imageInfo) return;
-          imageEntries.push({
-            name: relativePath,
-            baseName: imageInfo.baseName,
-            skuCode: imageInfo.skuCode,
-            entry,
-          });
+          if (!imageInfo) {
+            const base = getZipEntryBaseName(relativePath);
+            if (!shouldIgnoreZipEntry(relativePath) && /\.(heic|heif|tif|tiff|pdf|psd)$/i.test(base)) {
+              unsupportedFiles.push(base);
+            }
+            return;
+          }
+          rawEntries.push({ name: relativePath, baseName: imageInfo.baseName, fileKey: imageInfo.skuCode, entry });
         });
 
-        if (imageEntries.length === 0) {
+        if (rawEntries.length === 0) {
           setState({
             status: "error",
             file: null,
-            message: "Zip içinde desteklenen resim dosyası bulunamadı (.jpg, .jpeg, .jfif, .png, .webp, .gif).",
+            message: unsupportedFiles.length
+              ? `Zip içindeki ${unsupportedFiles.length} dosya desteklenmeyen biçimde (ör. iPhone HEIC). Lütfen JPG veya PNG olarak kaydedin.`
+              : "Zip içinde desteklenen resim dosyası bulunamadı (.jpg, .jpeg, .jfif, .png, .webp, .gif).",
             progress: null,
           });
           return;
         }
 
-        // 5) Start processing
+        // 5) Yüklemeden ÖNCE dosya adlarını Model No'larla eşleştir; yalnız
+        //    eşleşenler yüklenir (28 Eyl 2026 denetimi).
+        const skuResponse = await fetch("/api/tenant/products/sku-codes");
+        const skuResult = (await skuResponse.json().catch(() => null)) as { skuCodes?: string[] } | null;
+        const matchFile = buildSkuMatcher(skuResult?.skuCodes ?? []);
+        const imageEntries: Array<{ baseName: string; skuCode: string; slot: ImageSlot; entry: import("jszip").JSZipObject }> = [];
+        const unmatchedFiles: string[] = [];
+        const seenTargets = new Set<string>();
+        for (const item of rawEntries) {
+          const match = matchFile(item.fileKey);
+          if (!match) {
+            unmatchedFiles.push(item.baseName);
+            continue;
+          }
+          // Aynı ürün/slot'a iki dosya (X.jpg + X.png) → ilki kullanılır.
+          const target = `${match.skuCode}#${match.slot}`;
+          if (seenTargets.has(target)) continue;
+          seenTargets.add(target);
+          imageEntries.push({ baseName: item.baseName, skuCode: match.skuCode, slot: match.slot, entry: item.entry });
+        }
+
+        if (imageEntries.length === 0) {
+          setState({
+            status: "error",
+            file: null,
+            message: `Zip içindeki ${unmatchedFiles.length} resmin hiçbiri bir ürünün Model No'suyla eşleşmedi. Dosya adı Model No ile aynı olmalı (ör. ${unmatchedFiles.slice(0, 3).join(", ")}).`,
+            progress: null,
+          });
+          return;
+        }
+
+        // 6) Start processing — her parti yüklenince hemen ürüne bağlanır;
+        //    sekme kapansa bile yapılan iş kaybolmaz.
         setState({
           status: "processing",
           file,
@@ -777,114 +811,114 @@ function ImageImportTab() {
           },
         });
 
-        const allUpdates: Array<{ sku_code: string; image_url: string }> = [];
+        const warnOnLeave = (event: BeforeUnloadEvent) => {
+          event.preventDefault();
+        };
+        window.addEventListener("beforeunload", warnOnLeave);
+
+        let successCount = 0;
         const uploadFailedSkus: string[] = [];
+        const dbFailedSkus: string[] = [];
         const failureReasons = new Map<string, string>();
 
-        // Process in batches of BATCH_SIZE
-        for (let i = 0; i < imageEntries.length; i += BATCH_SIZE) {
-          const batch = imageEntries.slice(i, i + BATCH_SIZE);
+        try {
+          for (let i = 0; i < imageEntries.length; i += BATCH_SIZE) {
+            const batch = imageEntries.slice(i, i + BATCH_SIZE);
 
-          const batchResults = await Promise.allSettled(
-            batch.map(async ({ baseName, skuCode, entry }) => {
-              setState((s) => ({
-                ...s,
-                progress: s.progress
-                  ? { ...s.progress, currentName: baseName }
-                  : null,
-              }));
+            const batchResults = await Promise.allSettled(
+              batch.map(async ({ baseName, skuCode, slot, entry }) => {
+                setState((s) => ({
+                  ...s,
+                  progress: s.progress ? { ...s.progress, currentName: baseName } : null,
+                }));
+                const blob = await entry.async("blob");
+                const imageFile = new File([blob], baseName, { type: blob.type || "image/jpeg" });
+                const imageUrl = await uploadCompressedImage({ skuCode, file: imageFile, slot });
+                return { sku_code: skuCode, image_url: imageUrl, slot };
+              }),
+            );
 
-              // Get file blob from zip
-              const blob = await entry.async("blob");
-              const imageFile = new File([blob], baseName, {
-                type: blob.type || "image/jpeg",
+            const batchUpdates: Array<{ sku_code: string; image_url: string; slot: ImageSlot }> = [];
+            batchResults.forEach((result, idx) => {
+              if (result.status === "fulfilled") {
+                batchUpdates.push(result.value);
+              } else {
+                const label = batch[idx].baseName;
+                uploadFailedSkus.push(label);
+                failureReasons.set(
+                  label,
+                  result.reason instanceof Error ? result.reason.message : String(result.reason),
+                );
+              }
+            });
+
+            if (batchUpdates.length) {
+              const response = await fetch("/api/tenant/products/bulk-image-update", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ updates: batchUpdates }),
               });
-
-              // Compress + upload
-              const imageUrl = await uploadCompressedImage({
-                skuCode,
-                file: imageFile,
-              });
-
-              return { sku_code: skuCode, image_url: imageUrl };
-            }),
-          );
-
-          batchResults.forEach((result, idx) => {
-            if (result.status === "fulfilled") {
-              allUpdates.push(result.value);
-            } else {
-              const skuCode = batch[idx].skuCode;
-              uploadFailedSkus.push(skuCode);
-              const reason =
-                result.reason instanceof Error
-                  ? result.reason.message
-                  : String(result.reason);
-              failureReasons.set(skuCode, reason);
-              console.error(`Resim yüklenemedi (${skuCode}):`, result.reason);
-            }
-          });
-
-          setState((s) => ({
-            ...s,
-            progress: s.progress
-              ? {
-                  ...s.progress,
-                  completed: Math.min(i + batch.length, imageEntries.length),
-                  failedSkus: [...uploadFailedSkus],
+              const result = (await response.json().catch(() => null)) as
+                | { count?: number; failedSkus?: string[]; error?: string }
+                | null;
+              if (!response.ok) {
+                for (const update of batchUpdates) {
+                  dbFailedSkus.push(update.sku_code);
+                  failureReasons.set(update.sku_code, result?.error ?? "ürüne bağlanamadı");
                 }
-              : null,
-          }));
-        }
-
-        let successCount = allUpdates.length;
-        const dbFailedSkus: string[] = [];
-
-        // 6) Bulk-update DB
-        if (allUpdates.length > 0) {
-          const response = await fetch("/api/tenant/products/bulk-image-update", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ updates: allUpdates }),
-          });
-
-          const result = (await response.json().catch(() => null)) as
-            | { count?: number; failedSkus?: string[]; error?: string }
-            | null;
-
-          if (!response.ok) {
-            throw new Error(result?.error ?? "Ürün resimleri eşleştirilemedi.");
-          }
-
-          if (typeof result?.count === "number") {
-            successCount = result.count;
-          }
-
-          if (Array.isArray(result?.failedSkus)) {
-            for (const sku of result.failedSkus) {
-              if (typeof sku === "string" && sku.trim().length > 0) {
-                dbFailedSkus.push(sku);
-                if (!failureReasons.has(sku)) {
-                  failureReasons.set(sku, "bu Model No ile eşleşen ürün bulunamadı");
+              } else {
+                successCount += result?.count ?? batchUpdates.length;
+                for (const sku of result?.failedSkus ?? []) {
+                  dbFailedSkus.push(sku);
+                  if (!failureReasons.has(sku)) failureReasons.set(sku, "ürüne bağlanamadı");
                 }
               }
             }
+
+            setState((s) => ({
+              ...s,
+              progress: s.progress
+                ? {
+                    ...s.progress,
+                    completed: Math.min(i + batch.length, imageEntries.length),
+                    failedSkus: [...uploadFailedSkus, ...dbFailedSkus],
+                  }
+                : null,
+            }));
           }
+        } finally {
+          window.removeEventListener("beforeunload", warnOnLeave);
         }
 
         const failedSkus = Array.from(
           new Set([...uploadFailedSkus, ...dbFailedSkus]),
         );
 
+        const notes: string[] = [];
+        if (failedSkus.length) {
+          notes.push(
+            `${failedSkus.length} resim yüklenemedi: ${failedSkus
+              .slice(0, 15)
+              .map((sku) => `${sku} (${failureReasons.get(sku) ?? "bilinmeyen hata"})`)
+              .join(", ")}${failedSkus.length > 15 ? "…" : ""}.`,
+          );
+        }
+        if (unmatchedFiles.length) {
+          notes.push(
+            `${unmatchedFiles.length} dosya hiçbir Model No ile eşleşmedi ve yüklenmedi: ${unmatchedFiles
+              .slice(0, 15)
+              .join(", ")}${unmatchedFiles.length > 15 ? "…" : ""}.`,
+          );
+        }
+        if (unsupportedFiles.length) {
+          notes.push(
+            `${unsupportedFiles.length} dosya desteklenmeyen biçimde (ör. iPhone HEIC); JPG/PNG olarak kaydedip tekrar yükleyin.`,
+          );
+        }
         setState({
           status: "done",
           file: null,
-          message:
-            failedSkus.length > 0
-              ? `${successCount} resim yüklendi. ${failedSkus.length} resim yüklenemedi: ${failedSkus
-                  .map((sku) => `${sku} (${failureReasons.get(sku) ?? "bilinmeyen hata"})`)
-                  .join(", ")}.`
-              : `${successCount} resim başarıyla yüklendi ve ürünlerle eşleştirildi.`,
+          message: [`${successCount} resim yüklendi ve ürünlerle eşleştirildi.`, ...notes].join(" "),
           progress: null,
         });
         router.refresh();

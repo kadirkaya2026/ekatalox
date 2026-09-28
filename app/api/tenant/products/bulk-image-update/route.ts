@@ -9,6 +9,8 @@ const bulkImageUpdateSchema = z.array(
   z.object({
     sku_code: z.string().min(1),
     image_url: z.string().url(),
+    // 1: ana görsel, 2/3: ek görseller ("KOD (2).jpg"). 28 Eyl 2026.
+    slot: z.union([z.literal(1), z.literal(2), z.literal(3)]).optional(),
   }),
 );
 
@@ -42,7 +44,13 @@ export async function POST(request: Request) {
   for (const update of parsed.data) {
     const { data, error } = await supabase
       .from("products")
-      .update({ image_url: update.image_url })
+      .update(
+        update.slot === 2
+          ? { image_url_2: update.image_url }
+          : update.slot === 3
+            ? { image_url_3: update.image_url }
+            : { image_url: update.image_url },
+      )
       .eq("tenant_id", tenant.id)
       .eq("sku_code", update.sku_code)
       .select("id");
