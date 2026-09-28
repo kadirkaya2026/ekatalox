@@ -171,6 +171,14 @@ const structuredData = {
       logo: `${SITE.url}/ekatalox-logo-rgb-v2.png`,
       telephone: SITE.phone,
       email: SITE.salesEmail,
+      areaServed: { "@type": "Country", name: "Türkiye" },
+      contactPoint: {
+        "@type": "ContactPoint",
+        contactType: "sales",
+        telephone: SITE.phone,
+        email: SITE.salesEmail,
+        availableLanguage: ["Turkish"],
+      },
     },
     {
       "@type": "WebSite",
@@ -182,9 +190,34 @@ const structuredData = {
     },
     {
       "@type": "SoftwareApplication",
+      "@id": `${SITE.url}/#software`,
       name: SITE.name,
+      alternateName: "eKatalox B2B Katalog ve WhatsApp Sipariş Programı",
       applicationCategory: "BusinessApplication",
+      applicationSubCategory: "B2B toptan sipariş ve bayi kataloğu yazılımı",
       operatingSystem: "Web",
+      publisher: { "@id": `${SITE.url}/#organization` },
+      areaServed: { "@type": "Country", name: "Türkiye" },
+      availableLanguage: ["tr", "en", "de", "ru"],
+      isAccessibleForFree: true,
+      audience: {
+        "@type": "BusinessAudience",
+        audienceType: "Toptancılar, üreticiler, distribütörler, ithalatçılar ve marketler",
+      },
+      featureList: [
+        "Bayilere şifreli online katalog",
+        "Bayiye özel fiyat listeleri (bayi, perakende, özel müşteri)",
+        "WhatsApp üzerinden PDF sipariş fişi",
+        "Excel/CSV ile toplu ürün ve görsel yükleme",
+        "Adet, paket ve koli ile sipariş",
+        "Minimum sepet tutarı ve sipariş kuralları",
+        "Bayilere kampanya ve stok bildirimi",
+        "Sipariş takibi ve raporlar",
+        "Kendi alan adı ve kurumsal tanıtım sitesi",
+        "Sektöre özel katalog temaları",
+      ],
+      keywords:
+        "toptancı sipariş programı, bayi kataloğu, B2B sipariş yazılımı, WhatsApp sipariş sistemi, dijital katalog, online katalog, bayi fiyat listesi, toptan satış programı",
       description:
         "Toptancılar, üreticiler ve distribütörler için şifreli online katalog ve WhatsApp sipariş sistemi. Ücretsiz plan; ürünler bir kez yüklenir, bayiler kendi fiyat listesiyle girer, bayi PDF sipariş fişinin bağlantısını WhatsApp üzerinden paylaşır.",
       url: SITE.url,
@@ -217,8 +250,13 @@ export default function HomePage() {
       <Section tone="navy" glow className="pb-14 pt-12 sm:pb-20 sm:pt-20">
         <Container className="grid items-center gap-8 lg:grid-cols-[1.15fr_0.85fr] lg:gap-12">
           <div>
-            <p className="text-sm font-medium text-brand-neon">Toptancılar ve üreticiler için</p>
-            <h1 className="mt-3 text-balance text-[2.35rem] font-bold leading-[1.05] tracking-[-0.025em] text-white sm:text-5xl lg:text-[3.4rem]">
+            {/* Başlık hem net tanımı hem sloganı içerir (29 Eyl 2026): arama motorları ve
+                yapay zekâ asistanları sayfayı "toptancılar için WhatsApp sipariş ve bayi
+                kataloğu programı" olarak eşleştirebilsin; görünüm eskisiyle aynı. */}
+            <h1 className="text-balance text-[2.35rem] font-bold leading-[1.05] tracking-[-0.025em] text-white sm:text-5xl lg:text-[3.4rem]">
+              <span className="mb-3 block text-sm font-medium leading-normal tracking-normal text-brand-neon">
+                Toptancılar için WhatsApp sipariş ve bayi kataloğu programı
+              </span>
               Bayiniz ürününü seçsin. Siparişi WhatsApp’a gelsin.
             </h1>
             <p className="mt-5 max-w-xl text-lg leading-relaxed text-white/70">
