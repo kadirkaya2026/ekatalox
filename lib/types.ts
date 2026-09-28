@@ -606,6 +606,8 @@ export interface TenantStorefrontSettings {
   transfer_discount_note?: string | null;
   transfer_discount_tiers?: CashDiscountTier[];
   online_payment_settings?: OnlinePaymentSettings | null;
+  // 0147: mağazaya özel teslimat bölgesi (il/ilçe sabit, mahalle listesi)
+  delivery_area?: unknown;
   price_update_date: string | null;
   is_price_update_date_visible: boolean;
   is_theme_toggle_visible: boolean;

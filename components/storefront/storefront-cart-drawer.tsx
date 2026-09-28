@@ -36,6 +36,7 @@ import type {
   TenantStorefrontSettings,
 } from "@/lib/types";
 import { formatProductModelNo, type CurrencyCode } from "@/lib/products/constants";
+import { composeAreaAddress, parseAreaAddress, resolveDeliveryArea } from "@/lib/storefront/delivery-area";
 import {
   getBankTransferInfo,
   getCheckoutPaymentMethods,
@@ -226,6 +227,22 @@ export function StorefrontCartDrawer({
   useCommerceDialogFocus(isOpen, Boolean(theme.commerceDesign), commercePanelRef, onClose);
   const { t } = useStorefrontLocale();
   const [copyFeedback, setCopyFeedback] = useState<string | null>(null);
+  // Mağazaya özel teslimat bölgesi (0147): il/ilçe sabit, mahalle listeden,
+  // kalan adres elle. Mahalle seçilmezse adres boş kalır → zorunlu adres
+  // kontrolü siparişi durdurur.
+  const deliveryArea = resolveDeliveryArea(storefrontSettings.delivery_area);
+  const [areaNeighborhood, setAreaNeighborhood] = useState(() =>
+    deliveryArea ? parseAreaAddress(deliveryArea, customerAddress).neighborhood : "",
+  );
+  const [areaDetail, setAreaDetail] = useState(() =>
+    deliveryArea ? parseAreaAddress(deliveryArea, customerAddress).detail : "",
+  );
+  function updateAreaAddress(neighborhood: string, detail: string) {
+    setAreaNeighborhood(neighborhood);
+    setAreaDetail(detail);
+    if (deliveryArea) setCustomerAddress(composeAreaAddress(deliveryArea, neighborhood, detail));
+    setCustomerAddressError(null);
+  }
   // "WhatsApp'tan gönder"e basıldı: sepet temizlendi, boş sepet yerine
   // "gönderildi" ekranı ve takip linki gösterilir (kullanıcı isteği, 29 Ağu 2026).
   // Sepete yeni ürün eklenince kendiliğinden kaybolur.
@@ -694,19 +711,56 @@ cartFormConfig.customer_address.is_visible ? (
               {cartFormConfig.customer_address.is_required ? t("cart.required") : t("cart.optional")}
             </span>
           </div>
-          <Textarea
-            value={customerAddress}
-            onChange={(event) => {
-              setCustomerAddress(event.target.value);
-              setCustomerAddressError(null);
-            }}
-            placeholder={t(
-              isTekel ? "cart.customerAddressPickupPlaceholder" : "cart.customerAddressPlaceholder",
-            )}
-            className={cn("rounded-[1.1rem] text-[16px]", theme.formField, theme.text)}
-          />
+          {deliveryArea ? (
+            <div className="space-y-2">
+              {deliveryArea.city || deliveryArea.district ? (
+                <p className={cn("flex items-center gap-1.5 text-sm font-medium", theme.text)}>
+                  <MapPin className="size-4 shrink-0" />
+                  {[deliveryArea.city, deliveryArea.district].filter(Boolean).join(" / ")}
+                </p>
+              ) : null}
+              <select
+                value={areaNeighborhood}
+                onChange={(event) => updateAreaAddress(event.target.value, areaDetail)}
+                aria-label={t("cart.areaNeighborhoodPlaceholder")}
+                className={cn(
+                  "h-12 w-full rounded-[1.1rem] border px-3 text-[16px]",
+                  theme.formField,
+                  areaNeighborhood ? theme.text : theme.textMuted,
+                )}
+              >
+                <option value="">{t("cart.areaNeighborhoodPlaceholder")}</option>
+                {deliveryArea.neighborhoods.map((name) => (
+                  <option key={name} value={name}>
+                    {name}
+                  </option>
+                ))}
+              </select>
+              <Textarea
+                value={areaDetail}
+                onChange={(event) => updateAreaAddress(areaNeighborhood, event.target.value)}
+                placeholder={t("cart.areaDetailPlaceholder")}
+                className={cn("rounded-[1.1rem] text-[16px]", theme.formField, theme.text)}
+              />
+              <p className={cn("text-xs", theme.textMuted)}>{t("cart.areaOnlyTheseNeighborhoods")}</p>
+            </div>
+          ) : (
+            <Textarea
+              value={customerAddress}
+              onChange={(event) => {
+                setCustomerAddress(event.target.value);
+                setCustomerAddressError(null);
+              }}
+              placeholder={t(
+                isTekel ? "cart.customerAddressPickupPlaceholder" : "cart.customerAddressPlaceholder",
+              )}
+              className={cn("rounded-[1.1rem] text-[16px]", theme.formField, theme.text)}
+            />
+          )}
           {customerAddressError ? (
-            <p className={cn("mt-2 text-xs font-medium", theme.dangerText)}>{customerAddressError}</p>
+            <p className={cn("mt-2 text-xs font-medium", theme.dangerText)}>
+              {deliveryArea && !areaNeighborhood ? t("cart.areaNeighborhoodRequired") : customerAddressError}
+            </p>
           ) : null}
 
           {/* Tekel teslimat yapmadığı için konum yalnızca teslimatlı
