@@ -15,7 +15,8 @@ deny={status:401};assert.equal((await call(form)).status,401);deny=null;
 assert.equal((await call(form)).status,428);
 let response=await call({...form,baseRevision:pub.publicationRevision(null)});assert.equal(response.status,200);const first=response.body.revision;assert.equal(cache,1);
 assert.equal((await call({...form,baseRevision:pub.publicationRevision(null)})).status,409);
-assert.equal((await call({...form,themeId:'food-hasat',baseRevision:first})).status,400);
+// 29 Eyl 2026: başka sektörün teması serbest; geçersiz tema kimliği hâlâ reddedilir.
+assert.equal((await call({...form,themeId:'__proto__',baseRevision:first})).status,400);
 const second={...form,content:{...form.content,heroTitle:'Yeni başlık'}};
 response=await call({...second,baseRevision:first});assert.equal(response.status,200);assert.equal(response.body.previous.content['electronics-forma'].heroTitle,form.content.heroTitle);
 response=await call({restore:true,baseRevision:response.body.revision});assert.equal(response.status,200);assert.equal(response.body.design.content['electronics-forma'].heroTitle,form.content.heroTitle);

@@ -15,7 +15,7 @@ export function InlineThemeStudio(props: Props) {
   const [saved,setSaved] = useState<DesignDocument|null>(()=>readDesignDocument(props.settings.sector_design,sector));
   const [draft,setDraft] = useState<DesignDocument>(()=>{
     const stored=readDesignDocument(props.settings.sector_design,sector);
-    const id=designsForSector(sector).find(d=>d.id===props.initialTheme)?.id ?? stored?.themeId ?? designsForSector(sector)[0].id;
+    const id=DESIGNS.find(d=>d.id===props.initialTheme)?.id ?? stored?.themeId ?? designsForSector(sector)[0].id;
     return {...(stored??newDesignDocument(id)),themeId:id,content:{...stored?.content,[id]:stored?.content[id]??defaultContent(id)}};
   });
   const [baseline,setBaseline] = useState(draft);

@@ -16,7 +16,9 @@ for (const sector of sectors) {
   for (const {id: themeId} of designs) {
     const content = {...defaultContent(themeId), heroTitle: `Özel ${themeId}`};
     const request = {themeId, mode:'wholesale', content};
-    for (const other of [...sectors.filter(s => s !== sector), 'bilinmeyen-sektor', null, undefined]) assert.ok(update(other, request, saved).error);
+    for (const other of ['bilinmeyen-sektor', null, undefined]) assert.ok(update(other, request, saved).error);
+    // 29 Eyl 2026: başka sektörün mağazası da bu temayı seçebilir.
+    for (const other of sectors.filter(s => s !== sector)) assert.ok(update(other, request, null).document);
     assert.ok(update(sector, {...request, sector}, saved).error);
     assert.ok(update(sector, {...request, themeId:'__proto__'}, saved).error);
     assert.ok(update(sector, {...request, content:{...content, otherThemeField:'x'}}, saved).error);
@@ -27,10 +29,10 @@ for (const sector of sectors) {
   }
   for (const {id} of designs) assert.equal(saved.content[id].heroTitle, `Özel ${id}`);
   const otherSector = sector === 'gida' ? 'telefon-aksesuar' : 'gida';
-  assert.equal(readDesignDocument(saved, otherSector), null);
+  assert.equal(readDesignDocument(saved, otherSector)?.themeId, saved.themeId);
   const foreignId = designsForSector(otherSector)[0].id;
   const clean = readDesignDocument({...saved, content:{...saved.content,[foreignId]:defaultContent(foreignId)}},sector);
-  assert.equal(clean.content[foreignId],undefined);
+  assert.deepEqual(clean.content[foreignId],defaultContent(foreignId));
   assert.equal(readDesignDocument({...saved,version:2}, sector),null);
   const malformed = readDesignDocument({...newDesignDocument(designs[0].id), content:{[designs[0].id]:{heroTitle:34}}},sector);
   assert.deepEqual(getDesignContent(malformed),defaultContent(designs[0].id));
@@ -38,7 +40,7 @@ for (const sector of sectors) {
 }
 assert.equal(readDesignDocument(null,'telefon-aksesuar'),null);
 for (const id of DESIGN_IDS) assert.ok(sectors.includes(designSector(id)));
-console.log('PASS: On bir sektörde üçer tema; çapraz sektör reddi, ayrı alanlar, içerik koruma, URL ve bozuk veri kontrolleri.');
+console.log('PASS: On bir sektörde üçer tema; başka sektör teması seçilebilir, bilinmeyen sektör reddi, ayrı alanlar, içerik koruma, URL ve bozuk veri kontrolleri.');
 
 for (const {id: themeId} of [...designsForSector('tekstil'), ...designsForSector('hirdavat'), ...designsForSector('kozmetik'), ...designsForSector('kirtasiye-oyuncak'), ...designsForSector('ambalaj'), ...designsForSector('elektrik'), ...designsForSector('ev-mutfak'), ...designsForSector('yedek-parca'), ...designsForSector('diger')]) {
   const content = {...defaultContent(themeId), accentColor:'#2458a0', backgroundColor:'#fafafa', surfaceColor:'#e1e9ef'};

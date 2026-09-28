@@ -138,9 +138,11 @@ export function newDesignDocument(themeId: DesignId = "electronics-forma", mode:
 export function readDesignDocument(raw: unknown, sector: string | null | undefined): DesignDocument | null {
   if (!hasSectorDesign(sector) || !raw || typeof raw !== "object") return null;
   const doc = raw as DesignDocument;
-  if (doc.version !== 1 || !isDesignId(doc.themeId) || designSector(doc.themeId) !== sector || !["retail", "wholesale"].includes(doc.mode)) return null;
+  // 29 Eyl 2026 (kullanıcı kararı): mağaza başka sektörün temasını da seçebilir;
+  // sektör yalnız hangi temaların "size uygun" diye önce listeleneceğini belirler.
+  if (doc.version !== 1 || !isDesignId(doc.themeId) || !["retail", "wholesale"].includes(doc.mode)) return null;
   const content: DesignDocument["content"] = {};
-  for (const id of DESIGN_IDS.filter(id => designSector(id) === sector)) { const parsed = schemaFor(id).safeParse(doc.content?.[id]); if (parsed.success) content[id] = parsed.data; }
+  for (const id of DESIGN_IDS) { const parsed = schemaFor(id).safeParse(doc.content?.[id]); if (parsed.success) content[id] = parsed.data; }
   return { version: 1, themeId: doc.themeId, mode: doc.mode, content };
 }
 export function getDesignContent(doc: DesignDocument) { return doc.content[doc.themeId] ?? defaultContent(doc.themeId); }
@@ -148,7 +150,6 @@ export function prepareDesignUpdate(sector: string | null | undefined, raw: unkn
   if (!hasSectorDesign(sector)) return { error: "Bu sektör için tema koleksiyonu bulunmuyor." } as const;
   const request = z.object({ themeId: z.enum(DESIGN_IDS), mode: z.enum(["retail", "wholesale"]), content: z.unknown() }).strict().safeParse(raw);
   if (!request.success) return { error: "Tema seçimi veya satış biçimi geçersiz." } as const;
-  if (designSector(request.data.themeId) !== sector) return { error: "Yalnız kayıtlı sektörünüze ait temaları kullanabilirsiniz." } as const;
   const content = schemaFor(request.data.themeId).safeParse(request.data.content);
   if (!content.success) return { error: content.error.issues.map(i => `${i.path.join(".")}: ${i.message}`).join(" ") } as const;
   const old = readDesignDocument(previous, sector);
