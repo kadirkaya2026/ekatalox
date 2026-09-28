@@ -268,7 +268,9 @@ export async function POST(request: Request) {
       category_id: categoryCache.get(normalizeCategoryName(row.category_name))!,
       sku_code: row.sku_code,
       product_name: row.product_name,
-      image_url: row.image_url,
+      // Excel'de görsel adresi yoksa mevcut görseli EZME (28 Eyl 2026: fiyatları
+      // düzeltmek için aynı dosyayı yeniden yükleyen bayinin görselleri siliniyordu).
+      ...(row.image_url ? { image_url: row.image_url } : {}),
       currency: row.currency,
       is_in_stock: row.is_in_stock,
       ...(hasPackageQuantityColumn ? { package_quantity: row.package_quantity } : {}),
@@ -282,9 +284,18 @@ export async function POST(request: Request) {
     };
   });
 
-  const { error: upsertError } = await supabase
-    .from("products")
-    .upsert(payload, { onConflict: "tenant_id,sku_code" });
+  // Toplu upsert'te satırlar farklı kolon taşırsa eksik kolon NULL yazılır;
+  // görseli olan ve olmayan satırlar ayrı gönderilir ki mevcut görsel silinmesin.
+  const withImage = payload.filter((row) => "image_url" in row);
+  const withoutImage = payload.filter((row) => !("image_url" in row));
+  let upsertError: { message: string } | null = null;
+  for (const group of [withImage, withoutImage]) {
+    if (!group.length || upsertError) continue;
+    const { error } = await supabase
+      .from("products")
+      .upsert(group, { onConflict: "tenant_id,sku_code" });
+    upsertError = error;
+  }
 
   if (upsertError) {
     return NextResponse.json({ error: upsertError.message }, { status: 400 });

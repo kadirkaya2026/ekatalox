@@ -28,6 +28,13 @@ export function buildImportPricesFromLegacyTiers(row: {
   }));
 }
 
+// "1. Liste" (kayıtta açılan ad) ile "1.Liste" (Excel şablonu) aynı listedir:
+// boşluk ve büyük/küçük harf farkı eşleşmeyi bozmasın. 28 Eyl 2026 (qoop):
+// eşleşmeyen fiyatlar sessizce atlanıyor, 195 ürün fiyatsız kalmıştı.
+function compactListKey(name: string) {
+  return name.replace(/\s+/g, "").toLocaleLowerCase("tr-TR");
+}
+
 function buildPriceListImportLookup(priceLists: PriceList[]) {
   const pricedLists = getPricedLists(priceLists);
   const listNameMap = new Map<string, string>();
@@ -52,6 +59,8 @@ function buildPriceListImportLookup(priceLists: PriceList[]) {
 
     for (const key of keys) {
       listNameMap.set(key.toLocaleLowerCase("tr-TR"), list.id);
+      const compact = compactListKey(key);
+      if (!listNameMap.has(compact)) listNameMap.set(compact, list.id);
     }
   }
 
@@ -72,7 +81,9 @@ export function resolveImportPricesForTenant(
     const normalizedName = normalizePriceListName(entry.list_name);
     const priceListId =
       listNameMap.get(normalizedName.toLocaleLowerCase("tr-TR")) ??
-      listNameMap.get(entry.list_name.toLocaleLowerCase("tr-TR"));
+      listNameMap.get(entry.list_name.toLocaleLowerCase("tr-TR")) ??
+      listNameMap.get(compactListKey(normalizedName)) ??
+      listNameMap.get(compactListKey(entry.list_name));
 
     if (!priceListId) {
       continue;
