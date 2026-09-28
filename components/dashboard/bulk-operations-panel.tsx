@@ -22,7 +22,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { SettingsTabs } from "@/components/dashboard/settings-tabs";
-import { parseProductsCsv } from "@/lib/csv/parse-products";
+import { parseSpreadsheetFile } from "@/lib/csv/parse-spreadsheet";
 import { buildPackageUpgradeHref } from "@/lib/billing/plans";
 import type { ParsedCsvResult } from "@/lib/csv/parse-products";
 import type { Category, Product, Tenant } from "@/lib/types";
@@ -40,21 +40,6 @@ const COMPRESSION_OPTIONS = {
   useWebWorker: true,
   fileType: "image/jpeg" as const,
   initialQuality: 0.75,
-};
-
-// Türkçe kolon başlıkları → teknik alan adı eşlemesi
-const TURKISH_COLUMN_MAP: Record<string, string> = {
-  "Kategori Adı": "category_name",
-  "Model No": "sku_code",
-  "Stok Kodu (SKU)": "sku_code",
-  "Ürün Adı": "product_name",
-  "Para Birimi": "currency",
-  "1. Liste Fiyatı": "price_tier_1",
-  "2. Liste Fiyatı": "price_tier_2",
-  "3. Liste Fiyatı": "price_tier_3",
-  "Stok Durumu": "is_in_stock",
-  "Paket Adedi": "package_quantity",
-  "Koli Adedi": "carton_quantity",
 };
 
 const TURKISH_TEMPLATE_HEADERS = [
@@ -153,49 +138,6 @@ function PackageLimitAlert({
 // ---------------------------------------------------------------------------
 // Helper: parse xlsx/csv → ParsedCsvResult (Türkçe ve İngilizce başlık destekli)
 // ---------------------------------------------------------------------------
-async function parseSpreadsheetFile(file: File): Promise<ParsedCsvResult> {
-  const XLSX = await import("xlsx");
-  const Papa = (await import("papaparse")).default;
-  const buffer = await file.arrayBuffer();
-  const workbook = XLSX.read(buffer, { type: "array" });
-  const firstSheetName = workbook.SheetNames[0];
-  const sheet = workbook.Sheets[firstSheetName];
-
-  // Ham satırları dizi olarak al
-  const rawRows = XLSX.utils.sheet_to_json<unknown[]>(sheet, {
-    header: 1,
-    defval: "",
-  });
-
-  if (!rawRows.length) {
-    return { parsedHeaders: [], rows: [], errors: ["Dosya boş."] };
-  }
-
-  const headers = (rawRows[0] as string[]).map((h) => String(h ?? "").trim());
-  const isTurkish = headers.some((h) => h in TURKISH_COLUMN_MAP);
-  const englishHeaders = isTurkish
-    ? headers.map((h) => TURKISH_COLUMN_MAP[h] ?? h)
-    : headers;
-
-  // image_url şablonda yok; parse fonksiyonu için boş sütun olarak ekle
-  const hasImageUrl = englishHeaders.includes("image_url");
-  if (!hasImageUrl) englishHeaders.push("image_url");
-
-  // Barkod/Model No gibi büyük sayısal hücreler XLSX.utils.sheet_to_csv'nin
-  // "General" sayı biçimiyle bilimsel gösterime (8.68183E+12) yuvarlanıyor
-  // ve farklı Model No'lar aynı metne çöküp içe aktarmada kayboluyordu.
-  // Ham sayıyı doğrudan String() ile yazarak tam hassasiyeti koruyoruz.
-  const dataRows = rawRows.slice(1).map((row) => {
-    const stringified = (row as unknown[]).map((cell) =>
-      typeof cell === "number" ? String(cell) : cell,
-    );
-    return hasImageUrl ? stringified : [...stringified, ""];
-  });
-
-  const csvString = Papa.unparse([englishHeaders, ...dataRows]);
-  return parseProductsCsv(csvString);
-}
-
 // ---------------------------------------------------------------------------
 // Helpers: ZIP image filtering and SKU extraction
 // ---------------------------------------------------------------------------
@@ -447,21 +389,14 @@ function ProductImportTab({
   });
   const router = useRouter();
 
+  // Limit kontrolü sunucuda (yalnız YENİ Model No'lar sayılır); limiti dolu
+  // mağaza da fiyat/stok güncellemesi için dosya yükleyebilmeli (28 Eyl 2026).
   const handleFile = useCallback(async (file: File) => {
-    if (usage.remaining <= 0) {
-      setState({
-        status: "error",
-        file: null,
-        parsed: null,
-        message: "Ürün limitiniz dolu. Yeni ürün eklemek için paketinizi yükseltin veya ürün silin.",
-      });
-      return;
-    }
-
+    const lowerName = file.name.toLowerCase();
     const isValid =
-      file.name.endsWith(".csv") ||
-      file.name.endsWith(".xlsx") ||
-      file.name.endsWith(".xls");
+      lowerName.endsWith(".csv") ||
+      lowerName.endsWith(".xlsx") ||
+      lowerName.endsWith(".xls");
 
     if (!isValid) {
       setState((s) => ({
@@ -490,18 +425,10 @@ function ProductImportTab({
         message: "Dosya okunamadı. Lütfen şablona uygun bir dosya yükleyin.",
       });
     }
-  }, [usage.remaining]);
+  }, []);
 
   const handleImport = useCallback(async () => {
     if (!state.parsed?.rows.length) return;
-    if (usage.remaining <= 0) {
-      setState((s) => ({
-        ...s,
-        status: "error",
-        message: "Ürün limitiniz dolu. Yeni ürün eklemek için paketinizi yükseltin veya ürün silin.",
-      }));
-      return;
-    }
 
     setState((s) => ({ ...s, status: "importing", message: null }));
 
@@ -515,7 +442,12 @@ function ProductImportTab({
         }),
       });
 
-      const result = await response.json();
+      const result = await response.json().catch(() => ({
+        error:
+          response.status === 413
+            ? "Dosya çok büyük. Lütfen ürünleri 3.000'erli dosyalara bölüp sırayla yükleyin."
+            : "Sunucu yanıt vermedi. Lütfen tekrar deneyin.",
+      }));
 
       if (!response.ok) {
         setState((s) => ({
@@ -538,7 +470,12 @@ function ProductImportTab({
         status: "done",
         file: null,
         parsed: null,
-        message: `${result.count ?? 0} ürün başarıyla aktarıldı.`,
+        message: [
+          typeof result.created === "number"
+            ? `${result.count ?? 0} ürün aktarıldı (${result.created} yeni, ${result.updated ?? 0} güncellendi).`
+            : `${result.count ?? 0} ürün başarıyla aktarıldı.`,
+          ...((result.warnings as string[] | undefined) ?? []).map((warning) => `⚠️ ${warning}`),
+        ].join(" "),
       });
       router.refresh();
     } catch {
@@ -548,7 +485,7 @@ function ProductImportTab({
         message: "Sunucuya bağlanılamadı. Lütfen tekrar deneyin.",
       }));
     }
-  }, [state.parsed, onCategoriesUpdated, onProductsUpdated, usage.remaining, router]);
+  }, [state.parsed, onCategoriesUpdated, onProductsUpdated, router]);
 
   const reset = useCallback(() => {
     setState({ status: "idle", file: null, parsed: null, message: null });
@@ -632,7 +569,6 @@ function ProductImportTab({
         <Dropzone
           accept=".csv,.xlsx,.xls,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
           onFile={handleFile}
-          disabled={usage.remaining <= 0}
           label="Excel veya CSV dosyasını buraya sürükleyin ya da tıklayın"
           hint=".xlsx veya .csv — maks. boyut sınırı yok"
         />
@@ -695,7 +631,7 @@ function ProductImportTab({
 
           {state.parsed.errors.length === 0 ? (
             <div className="border-t border-slate-100 px-4 py-3">
-              <Button onClick={handleImport} disabled={isLoading || usage.remaining <= 0}>
+              <Button onClick={handleImport} disabled={isLoading}>
                 {isLoading ? (
                   <>
                     <Loader2 className="size-4 animate-spin" />

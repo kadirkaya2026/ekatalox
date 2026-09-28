@@ -1,6 +1,5 @@
 import {
   DEFAULT_PRICED_LIST_NAMES,
-  LEGACY_PRICE_LIST_NAME_ALIASES,
   normalizePriceListName,
 } from "@/lib/price-lists/constants";
 import { getPricedLists } from "@/lib/price-lists/records";
@@ -28,69 +27,76 @@ export function buildImportPricesFromLegacyTiers(row: {
   }));
 }
 
-// "1. Liste" (kayıtta açılan ad) ile "1.Liste" (Excel şablonu) aynı listedir:
-// boşluk ve büyük/küçük harf farkı eşleşmeyi bozmasın. 28 Eyl 2026 (qoop):
-// eşleşmeyen fiyatlar sessizce atlanıyor, 195 ürün fiyatsız kalmıştı.
+// İçe aktarmadaki liste adını mağazanın fiyat listesine çözer (28 Eyl 2026
+// denetimi). Sıra: (1) birebir ad, (2) boşluk/harf duyarsız ad ("1. Liste" ↔
+// "1.Liste", "1.LİSTE"), (3) şablon adı "N.Liste" → mağazanın N'inci fiyatlı
+// listesi (sort_order). Eşleşmeyen girdiler sessizce atlanmaz; raporlanır.
 function compactListKey(name: string) {
-  return name.replace(/\s+/g, "").toLocaleLowerCase("tr-TR");
+  return name.normalize("NFC").replace(/\s+/g, "").toLocaleLowerCase("tr-TR").replace(/ı/g, "i");
 }
 
-function buildPriceListImportLookup(priceLists: PriceList[]) {
-  const pricedLists = getPricedLists(priceLists);
-  const listNameMap = new Map<string, string>();
-
+function buildPriceListResolver(priceLists: PriceList[]) {
+  const pricedLists = [...getPricedLists(priceLists)].sort(
+    (a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0),
+  );
+  const exact = new Map<string, string>();
+  const compact = new Map<string, string>();
   for (const list of pricedLists) {
-    const canonical = normalizePriceListName(list.name);
-
-    // Her liste yalnızca KENDİSİNE çözülen anahtarları sahiplenmeli:
-    // kendi adı, normalize adı ve hedefi bu listenin normalize adı olan
-    // eski (legacy) alias'lar. Aksi halde tüm default adlar son listeye
-    // çöker ve içe aktarmada aynı price_list_id birden çok kez üretilir
-    // (upsert'te "ON CONFLICT ... cannot affect row a second time").
-    const keys = new Set<string>([list.name, canonical]);
-
-    for (const [aliasName, canonicalTarget] of Object.entries(
-      LEGACY_PRICE_LIST_NAME_ALIASES,
-    )) {
-      if (canonicalTarget === canonical) {
-        keys.add(aliasName);
-      }
-    }
-
-    for (const key of keys) {
-      listNameMap.set(key.toLocaleLowerCase("tr-TR"), list.id);
-      const compact = compactListKey(key);
-      if (!listNameMap.has(compact)) listNameMap.set(compact, list.id);
-    }
+    if (!exact.has(list.name)) exact.set(list.name, list.id);
+    const key = compactListKey(list.name);
+    // Aynı anahtara iki liste düşerse ilk (sort_order küçük) kazanır.
+    if (!compact.has(key)) compact.set(key, list.id);
   }
 
-  return listNameMap;
+  return (rawName: string): string | null => {
+    const name = rawName.trim();
+    const byExact = exact.get(name) ?? compact.get(compactListKey(name));
+    if (byExact) return byExact;
+    const canonical = normalizePriceListName(name);
+    const byCanonical = exact.get(canonical) ?? compact.get(compactListKey(canonical));
+    if (byCanonical) return byCanonical;
+    const position = /^(\d+)\.?liste$/.exec(compactListKey(canonical));
+    if (position) {
+      return pricedLists[Number(position[1]) - 1]?.id ?? null;
+    }
+    return null;
+  };
+}
+
+export interface ResolvedImportPrices {
+  prices: Array<{ price_list_id: string; price: number }>;
+  unmatched: string[];
+}
+
+export function resolveImportPricesWithReport(
+  prices: ImportListPrice[],
+  priceLists: PriceList[],
+  resolver = buildPriceListResolver(priceLists),
+): ResolvedImportPrices {
+  // price_list_id bazında tekilleştir: aynı listeye çözülen birden çok girdi
+  // upsert'i tek satıra indirir, son değer kazanır.
+  const byPriceListId = new Map<string, { price_list_id: string; price: number }>();
+  const unmatched: string[] = [];
+
+  for (const entry of prices) {
+    const priceListId = resolver(entry.list_name);
+    if (!priceListId) {
+      unmatched.push(entry.list_name);
+      continue;
+    }
+    byPriceListId.set(priceListId, { price_list_id: priceListId, price: entry.price });
+  }
+
+  return { prices: [...byPriceListId.values()], unmatched };
+}
+
+export function createPriceListResolver(priceLists: PriceList[]) {
+  return buildPriceListResolver(priceLists);
 }
 
 export function resolveImportPricesForTenant(
   prices: ImportListPrice[],
   priceLists: PriceList[],
 ) {
-  const listNameMap = buildPriceListImportLookup(priceLists);
-
-  // price_list_id bazında tekilleştir: aynı listeye çözülen birden çok girdi
-  // (ör. yinelenen fiyat sütunu) upsert'i tek satıra indirir, son değer kazanır.
-  const byPriceListId = new Map<string, { price_list_id: string; price: number }>();
-
-  for (const entry of prices) {
-    const normalizedName = normalizePriceListName(entry.list_name);
-    const priceListId =
-      listNameMap.get(normalizedName.toLocaleLowerCase("tr-TR")) ??
-      listNameMap.get(entry.list_name.toLocaleLowerCase("tr-TR")) ??
-      listNameMap.get(compactListKey(normalizedName)) ??
-      listNameMap.get(compactListKey(entry.list_name));
-
-    if (!priceListId) {
-      continue;
-    }
-
-    byPriceListId.set(priceListId, { price_list_id: priceListId, price: entry.price });
-  }
-
-  return [...byPriceListId.values()];
+  return resolveImportPricesWithReport(prices, priceLists).prices;
 }

@@ -171,7 +171,8 @@ export const productImportRowSchema = z.object({
   product_name: z.string().min(2, "Ürün adı zorunludur."),
   currency: currencyCodeSchema,
   prices: importListPriceSchema,
-  is_in_stock: booleanSchema,
+  // Boş stok hücresi gönderilmez → mevcut ürünün stok durumuna dokunulmaz.
+  is_in_stock: booleanSchema.optional(),
   image_url: imageUrlSchema,
   package_quantity: optionalPositiveIntegerSchema,
   carton_quantity: optionalPositiveIntegerSchema,

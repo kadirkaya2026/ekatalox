@@ -30,10 +30,20 @@ export const requiredProductCsvHeaders = [
   "is_in_stock",
 ] as const;
 
+// Excel'de yazılan yaygın biçimler (28 Eyl 2026 denetimi): "TL", "₺", "$",
+// "€", "Euro"… boş hücre TRY sayılır; bilinmeyen değer olduğu gibi döner.
+const CURRENCY_ALIASES: Record<string, string> = {
+  TL: "TRY", "₺": "TRY", TRL: "TRY", YTL: "TRY", "TÜRK LİRASI": "TRY", "LİRA": "TRY",
+  $: "USD", DOLAR: "USD", DOLLAR: "USD", "US$": "USD",
+  "€": "EUR", EURO: "EUR", AVRO: "EUR",
+};
+
 export function normalizeCurrencyCode(value: unknown) {
-  return String(value ?? "")
+  const code = String(value ?? "")
     .trim()
-    .toUpperCase();
+    .toLocaleUpperCase("tr-TR");
+  if (!code) return "TRY";
+  return CURRENCY_ALIASES[code] ?? code;
 }
 
 export function isCurrencyCode(value: string): value is CurrencyCode {

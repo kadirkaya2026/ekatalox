@@ -5,11 +5,12 @@ import { shouldAllowDemoFallback } from "@/lib/env";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { getSessionContext } from "@/lib/auth/session";
 import { getTenantCategories, getTenantProducts, getTenantPriceLists } from "@/lib/data";
-import { resolveImportPricesForTenant } from "@/lib/price-lists/import";
 import {
-  ensureDefaultPriceListsForTenant,
-  upsertProductPrices,
-} from "@/lib/price-lists/data";
+  createPriceListResolver,
+  resolveImportPricesForTenant,
+  resolveImportPricesWithReport,
+} from "@/lib/price-lists/import";
+import { ensureDefaultPriceListsForTenant } from "@/lib/price-lists/data";
 import { ensureTenantAdminResponse } from "@/lib/tenancy/guards";
 import { productImportRowsSchema } from "@/lib/validators/product";
 import { getEffectiveProductLimit } from "@/lib/billing/plans";
@@ -19,8 +20,21 @@ import { getEffectiveProductLimit } from "@/lib/billing/plans";
 // Uses tr-TR locale so "İ" and "ı" are handled correctly.
 // ---------------------------------------------------------------------------
 function normalizeCategoryName(name: string) {
-  return name.trim().toLocaleLowerCase("tr-TR");
+  // "ELEKTRONIK" (ASCII I) ile "Elektronik" aynı kategori; çift boşluk tek sayılır.
+  return name
+    .normalize("NFC")
+    .trim()
+    .replace(/\s+/g, " ")
+    .toLocaleLowerCase("tr-TR")
+    .replace(/ı/g, "i");
 }
+
+const PAGE_SIZE = 1000;
+const UPSERT_CHUNK = 500;
+const PRICE_CHUNK = 1000;
+
+// Büyük dosyalar (5.000+ satır) için süre sınırı.
+export const maxDuration = 300;
 
 function findDuplicateSkuCodes<T extends { sku_code: string }>(rows: T[]): string[] {
   const seen = new Set<string>();
@@ -55,8 +69,12 @@ export async function POST(request: Request) {
   const parsed = productImportRowsSchema.safeParse(body.rows ?? []);
 
   if (!parsed.success) {
+    const issue = parsed.error.issues[0];
+    const rowIndex = typeof issue?.path?.[0] === "number" ? issue.path[0] : null;
     return NextResponse.json(
-      { error: parsed.error.issues[0]?.message ?? "CSV dosyası doğrulanamadı." },
+      {
+        error: `${rowIndex !== null ? `Satır ${rowIndex + 2}: ` : ""}${issue?.message ?? "Dosya doğrulanamadı."}`,
+      },
       { status: 400 },
     );
   }
@@ -131,7 +149,7 @@ export async function POST(request: Request) {
         price_list_id: entry.price_list_id,
         price: entry.price,
       })),
-      is_in_stock: row.is_in_stock,
+      is_in_stock: row.is_in_stock ?? true,
       is_discount_active: false,
       discount_price: null,
       package_quantity: row.package_quantity,
@@ -156,28 +174,50 @@ export async function POST(request: Request) {
   // Production path
   // -------------------------------------------------------------------------
 
-  // 1. Fetch existing SKUs for limit check
-  const { data: existingRows } = await supabase
-    .from("products")
-    .select("sku_code, display_order")
-    .eq("tenant_id", tenant.id);
-
-  const existingProducts = (existingRows as Array<{
-    sku_code: string;
-    display_order: number;
-  }> | null) ?? [];
-  const existingSkuSet = new Set(
-    existingProducts.map((item) => item.sku_code),
-  );
+  // 1. Mevcut ürünler — PostgREST sayfa başına 1000 satır döner; sayfalı oku
+  //    (28 Eyl 2026 denetimi: >1000 ürünlü mağazada mevcut ürün "yeni" sanılıyordu).
+  const existingProducts: Array<{ sku_code: string; display_order: number | null }> = [];
+  for (let from = 0; ; from += PAGE_SIZE) {
+    const { data, error } = await supabase
+      .from("products")
+      .select("sku_code, display_order")
+      .eq("tenant_id", tenant.id)
+      .order("id", { ascending: true })
+      .range(from, from + PAGE_SIZE - 1);
+    if (error) {
+      return NextResponse.json(
+        { error: "Mevcut ürünler okunamadı, lütfen tekrar deneyin." },
+        { status: 500 },
+      );
+    }
+    existingProducts.push(...((data ?? []) as typeof existingProducts));
+    if (!data || data.length < PAGE_SIZE) break;
+  }
+  const existingSkuSet = new Set(existingProducts.map((item) => item.sku_code));
   const existingDisplayOrderMap = new Map(
     existingProducts.map((item) => [item.sku_code, item.display_order]),
   );
 
-  // 2. Load all existing categories into an in-memory cache
+  // 2. Ürün limiti — kategori oluşturmadan ÖNCE; yalnız yeni Model No'lar sayılır.
+  //    Yalnız güncelleme içeren dosya (yeni ürün yok) limitten bağımsız geçer.
+  const newSkuCount = rows.filter((row) => !existingSkuSet.has(row.sku_code)).length;
+  const effectiveLimit = getEffectiveProductLimit(tenant.plan, tenant.product_limit_addon);
+  if (newSkuCount > 0 && existingSkuSet.size + newSkuCount > effectiveLimit) {
+    const remaining = Math.max(effectiveLimit - existingSkuSet.size, 0);
+    return NextResponse.json(
+      {
+        error: `Dosyada ${newSkuCount} yeni ürün var; paketinizde ${remaining} ürünlük yer kaldı (${existingSkuSet.size}/${effectiveLimit}). Ürün sayısını azaltın veya paketinizi yükseltin. Mevcut ürünlerin güncellemesi limite sayılmaz.`,
+      },
+      { status: 400 },
+    );
+  }
+
+  // 3. Kategoriler: mevcutları önbelleğe al, eksikleri oluştur.
   const { data: categoryRows } = await supabase
     .from("categories")
     .select("id, name")
-    .eq("tenant_id", tenant.id);
+    .eq("tenant_id", tenant.id)
+    .order("display_order", { ascending: true });
   const { data: lastCategory } = await supabase
     .from("categories")
     .select("display_order")
@@ -187,32 +227,27 @@ export async function POST(request: Request) {
     .maybeSingle();
   let nextCategoryDisplayOrder = (lastCategory?.display_order ?? 0) + 1;
 
+  const categoryCache = new Map<string, string>();
+  for (const category of (categoryRows as Array<{ id: string; name: string }> | null) ?? []) {
+    const key = normalizeCategoryName(category.name);
+    if (!categoryCache.has(key)) categoryCache.set(key, category.id);
+  }
 
-  // categoryCache: normalized name → uuid
-  const categoryCache = new Map<string, string>(
-    ((categoryRows as Array<{ id: string; name: string }> | null) ?? []).map(
-      (c) => [normalizeCategoryName(c.name), c.id],
-    ),
-  );
-
-  // 3. Resolve (or auto-create) every unique category name in the import batch
   const uniqueCategoryNames = [
-    ...new Set(rows.map((row) => row.category_name.trim())),
+    ...new Set(rows.map((row) => row.category_name.trim().replace(/\s+/g, " "))),
   ];
 
   for (const rawName of uniqueCategoryNames) {
     const key = normalizeCategoryName(rawName);
-
     if (categoryCache.has(key)) {
-      continue; // already cached — nothing to do
+      continue;
     }
 
-    // Not found → auto-create the category
     const { data: newCategory, error: createError } = await supabase
       .from("categories")
       .insert({
         tenant_id: tenant.id,
-        name: rawName.trim(),
+        name: rawName,
         display_order: nextCategoryDisplayOrder,
       })
       .select("id, name")
@@ -220,30 +255,13 @@ export async function POST(request: Request) {
 
     if (createError || !newCategory) {
       return NextResponse.json(
-        {
-          error: `"${rawName}" kategorisi oluşturulamadı: ${createError?.message ?? "bilinmeyen hata"}`,
-        },
+        { error: `"${rawName}" kategorisi oluşturulamadı. Lütfen tekrar deneyin.` },
         { status: 400 },
       );
     }
 
-    // Seed cache so subsequent rows in this batch reuse the new id
     categoryCache.set(key, (newCategory as { id: string; name: string }).id);
     nextCategoryDisplayOrder += 1;
-  }
-
-  // 4. Product limit check (only new SKUs count toward the limit)
-  const newSkuCount = rows.filter(
-    (row) => !existingSkuSet.has(row.sku_code),
-  ).length;
-
-  const effectiveLimit = getEffectiveProductLimit(tenant.plan, tenant.product_limit_addon);
-
-  if (existingSkuSet.size + newSkuCount > effectiveLimit) {
-    return NextResponse.json(
-      { error: "CSV içeriği ürün limitini aşıyor." },
-      { status: 400 },
-    );
   }
 
   let nextProductDisplayOrder =
@@ -253,8 +271,15 @@ export async function POST(request: Request) {
     ) + 1;
 
   const priceLists = await ensureDefaultPriceListsForTenant(supabase, tenant.id);
+  if (!priceLists.some((list) => !list.is_catalog_only)) {
+    return NextResponse.json(
+      { error: "Fiyat listeleriniz okunamadı, lütfen tekrar deneyin." },
+      { status: 500 },
+    );
+  }
 
-  // 5. Build upsert payload — every category_id is now guaranteed to exist
+  // 4. Ürün satırları. Excel'de boş olan alan (görsel, stok) payload'a hiç
+  //    konmaz ki mevcut değer ezilmesin.
   const payload = rows.map((row) => {
     const existingDisplayOrder = existingDisplayOrderMap.get(row.sku_code);
     const display_order = existingDisplayOrder ?? nextProductDisplayOrder;
@@ -263,103 +288,149 @@ export async function POST(request: Request) {
       nextProductDisplayOrder += 1;
     }
 
+    const isNew = !existingSkuSet.has(row.sku_code);
+
     return {
       tenant_id: tenant.id,
       category_id: categoryCache.get(normalizeCategoryName(row.category_name))!,
       sku_code: row.sku_code,
       product_name: row.product_name,
-      // Excel'de görsel adresi yoksa mevcut görseli EZME (28 Eyl 2026: fiyatları
-      // düzeltmek için aynı dosyayı yeniden yükleyen bayinin görselleri siliniyordu).
       ...(row.image_url ? { image_url: row.image_url } : {}),
       currency: row.currency,
-      is_in_stock: row.is_in_stock,
+      // Stok hücresi boşsa: yeni ürün stokta açılır, mevcut ürüne dokunulmaz.
+      ...(row.is_in_stock !== undefined
+        ? { is_in_stock: row.is_in_stock }
+        : isNew
+          ? { is_in_stock: true }
+          : {}),
       ...(hasPackageQuantityColumn ? { package_quantity: row.package_quantity } : {}),
       ...(hasCartonQuantityColumn ? { carton_quantity: row.carton_quantity } : {}),
-      // Tekel bayisinde alkollü görünen satır işaretlenir; yalnız true
-      // gönderilir ki yeniden içe aktarma elle konmuş bayrağı sıfırlamasın.
-      ...(tenant.is_tekel && isLikelyAlcohol(row.product_name, row.category_name)
-        ? { is_alcohol: true }
-        : {}),
       display_order,
     };
   });
 
-  // Toplu upsert'te satırlar farklı kolon taşırsa eksik kolon NULL yazılır;
-  // görseli olan ve olmayan satırlar ayrı gönderilir ki mevcut görsel silinmesin.
-  const withImage = payload.filter((row) => "image_url" in row);
-  const withoutImage = payload.filter((row) => !("image_url" in row));
-  let upsertError: { message: string } | null = null;
-  for (const group of [withImage, withoutImage]) {
-    if (!group.length || upsertError) continue;
-    const { error } = await supabase
-      .from("products")
-      .upsert(group, { onConflict: "tenant_id,sku_code" });
-    upsertError = error;
+  // Toplu upsert'te satırlar farklı kolon taşırsa eksik kolon NULL yazılır
+  // (postgrest-js defaultToNull). Satırlar kolon imzasına göre gruplanır ve
+  // 500'lük parçalarla yazılır; dönen id'ler fiyatlar için kullanılır.
+  const groups = new Map<string, typeof payload>();
+  for (const row of payload) {
+    const signature = Object.keys(row).sort().join(",");
+    const group = groups.get(signature) ?? [];
+    group.push(row);
+    groups.set(signature, group);
   }
 
-  if (upsertError) {
-    return NextResponse.json({ error: upsertError.message }, { status: 400 });
+  const productIdBySku = new Map<string, string>();
+  for (const group of groups.values()) {
+    for (let i = 0; i < group.length; i += UPSERT_CHUNK) {
+      const chunk = group.slice(i, i + UPSERT_CHUNK);
+      const { data, error } = await supabase
+        .from("products")
+        .upsert(chunk, { onConflict: "tenant_id,sku_code" })
+        .select("id, sku_code");
+      if (error) {
+        return NextResponse.json(
+          {
+            error: `Ürünler kaydedilirken hata oluştu (${productIdBySku.size} ürün kaydedildi). Lütfen dosyayı tekrar yükleyin; kaydedilenler çoğalmaz.`,
+          },
+          { status: 400 },
+        );
+      }
+      for (const product of (data ?? []) as Array<{ id: string; sku_code: string }>) {
+        productIdBySku.set(product.sku_code, product.id);
+      }
+    }
   }
 
-  const { data: productRows } = await supabase
-    .from("products")
-    .select("id, sku_code")
-    .eq("tenant_id", tenant.id)
-    .in(
-      "sku_code",
-      rows.map((row) => row.sku_code),
-    );
+  // Tekel: alkollü görünen ürünler ayrı işaretlenir (yalnız true; elle konmuş
+  // bayrak sıfırlanmaz). Upsert'e konmaz ki karışık dosyada NULL hatası olmasın.
+  if (tenant.is_tekel) {
+    const alcoholIds = rows
+      .filter((row) => isLikelyAlcohol(row.product_name, row.category_name))
+      .map((row) => productIdBySku.get(row.sku_code))
+      .filter((id): id is string => Boolean(id));
+    for (let i = 0; i < alcoholIds.length; i += UPSERT_CHUNK) {
+      await supabase
+        .from("products")
+        .update({ is_alcohol: true })
+        .eq("tenant_id", tenant.id)
+        .in("id", alcoholIds.slice(i, i + UPSERT_CHUNK));
+    }
+  }
 
-  const productIdBySku = new Map(
-    ((productRows as Array<{ id: string; sku_code: string }> | null) ?? []).map((row) => [
-      row.sku_code,
-      row.id,
-    ]),
-  );
+  // 5. Fiyatlar: tek seferde toplu; discount_price payload'da YOK ki mevcut
+  //    liste indirimleri silinmesin. Eşleşmeyen fiyat sütunları raporlanır.
+  const resolver = createPriceListResolver(priceLists);
+  const priceRows: Array<{ product_id: string; price_list_id: string; price: number }> = [];
+  const unmatchedLists = new Set<string>();
+  let rowsWithoutPrice = 0;
 
   for (const row of rows) {
     const productId = productIdBySku.get(row.sku_code);
-
-    if (!productId) {
-      continue;
-    }
-
-    const resolvedPrices = resolveImportPricesForTenant(
-      row.prices,
-      priceLists,
-    );
-
-    const priceError = await upsertProductPrices(supabase, productId, resolvedPrices);
-
-    if (priceError) {
-      return NextResponse.json(
-        { error: priceError.message || "Ürün fiyatları kaydedilemedi." },
-        { status: 400 },
-      );
+    if (!productId) continue;
+    const { prices, unmatched } = resolveImportPricesWithReport(row.prices, priceLists, resolver);
+    unmatched.forEach((name) => unmatchedLists.add(name));
+    if (!prices.length) rowsWithoutPrice += 1;
+    for (const entry of prices) {
+      priceRows.push({ product_id: productId, price_list_id: entry.price_list_id, price: entry.price });
     }
   }
 
-  const [{ data: products }, { data: categories }] = await Promise.all([
-    supabase
+  let failedPriceRows = 0;
+  for (let i = 0; i < priceRows.length; i += PRICE_CHUNK) {
+    const chunk = priceRows.slice(i, i + PRICE_CHUNK);
+    const { error } = await supabase
+      .from("product_prices")
+      .upsert(chunk, { onConflict: "product_id,price_list_id" });
+    if (error) failedPriceRows += chunk.length;
+  }
+
+  const warnings: string[] = [];
+  if (unmatchedLists.size) {
+    warnings.push(
+      `Şu fiyat sütunları mağazanızdaki bir fiyat listesiyle eşleşmedi ve atlandı: ${[...unmatchedLists]
+        .map((name) => `"${name}"`)
+        .join(", ")}. Fiyat Listeleri sayfasındaki liste sayısını kontrol edin.`,
+    );
+  }
+  if (rowsWithoutPrice) {
+    warnings.push(`${rowsWithoutPrice} üründe hiç fiyat yoktu; bu ürünler fiyatsız kaldı.`);
+  }
+  if (failedPriceRows) {
+    warnings.push(
+      `${failedPriceRows} fiyat kaydedilemedi. Lütfen dosyayı tekrar yükleyin (ürünler çoğalmaz).`,
+    );
+  }
+
+  // 6. Güncel liste (sayfalı) — istemci tablosu yenilensin.
+  const products: Array<Record<string, unknown>> = [];
+  for (let from = 0; ; from += PAGE_SIZE) {
+    const { data } = await supabase
       .from("products")
       .select("*")
       .eq("tenant_id", tenant.id)
       .order("display_order", { ascending: true })
-      .order("created_at", { ascending: false }),
-    supabase
-      .from("categories")
-      .select("*")
-      .eq("tenant_id", tenant.id)
-      .order("display_order", { ascending: true })
-      .order("name", { ascending: true }),
-  ]);
+      .order("created_at", { ascending: false })
+      .range(from, from + PAGE_SIZE - 1);
+    products.push(...((data ?? []) as Array<Record<string, unknown>>));
+    if (!data || data.length < PAGE_SIZE) break;
+  }
+  const { data: categories } = await supabase
+    .from("categories")
+    .select("*")
+    .eq("tenant_id", tenant.id)
+    .order("display_order", { ascending: true })
+    .order("name", { ascending: true });
 
   // Vitrin onbellegini tazele — degisiklik musteriye aninda yansisin.
   revalidateStorefrontCache({ tenantId: tenant.id, subdomain: tenant.subdomain });
 
   return NextResponse.json({
     count: rows.length,
-    products: products ?? [],
+    created: newSkuCount,
+    updated: rows.length - newSkuCount,
+    warnings,
+    products,
     categories: categories ?? [],
   });
 }

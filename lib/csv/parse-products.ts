@@ -1,15 +1,11 @@
 import Papa from "papaparse";
-import {
-  isCurrencyCode,
-  normalizeCurrencyCode,
-  requiredProductCsvHeaders,
-} from "@/lib/products/constants";
+import { isCurrencyCode, normalizeCurrencyCode } from "@/lib/products/constants";
 import type { ImportListPrice } from "@/lib/price-lists/import";
 import {
   DEFAULT_PRICED_LIST_NAMES,
   parsePriceListCsvHeader,
 } from "@/lib/price-lists/constants";
-import { sanitizePrice } from "@/lib/products/parse-price-input";
+import { isBlankPriceCell, sanitizePrice } from "@/lib/products/parse-price-input";
 import type { Product } from "@/lib/types";
 
 export interface ParsedCsvResult {
@@ -24,23 +20,47 @@ export interface ParsedCsvResult {
     price_tier_1?: number;
     price_tier_2?: number;
     price_tier_3?: number;
-    is_in_stock: Product["is_in_stock"];
+    /** Boş/eksik stok hücresi: undefined → mevcut ürünün stok durumuna dokunulmaz. */
+    is_in_stock?: Product["is_in_stock"];
     package_quantity: Product["package_quantity"];
     carton_quantity: Product["carton_quantity"];
   }>;
   errors: string[];
 }
 
-function normalizeBoolean(value: string | boolean | undefined) {
+// Kullanıcıya gösterilen sütun adları (şablondaki Türkçe başlıklar).
+export const PRODUCT_IMPORT_FIELD_LABELS: Record<string, string> = {
+  category_name: "Kategori Adı",
+  sku_code: "Model No",
+  product_name: "Ürün Adı",
+  currency: "Para Birimi",
+  price_tier_1: "1. Liste Fiyatı",
+  price_tier_2: "2. Liste Fiyatı",
+  price_tier_3: "3. Liste Fiyatı",
+  is_in_stock: "Stok Durumu",
+  package_quantity: "Paket Adedi",
+  carton_quantity: "Koli Adedi",
+};
+
+const REQUIRED_IMPORT_HEADERS = ["category_name", "sku_code", "product_name"] as const;
+
+const OUT_OF_STOCK_VALUES = new Set([
+  "0", "false", "yok", "hayır", "hayir", "no", "stokta yok", "stok yok", "tükendi", "tukendi",
+  "kapalı", "kapali", "pasif", "x yok",
+]);
+
+/** Boş → undefined (dokunma); "yok/hayır/0/tükendi…" → false; diğer her şey → true.
+ *  28 Eyl 2026: eskiden boş ve tanınmayan değer "stok yok" sayılıyordu. */
+function normalizeStock(value: string | boolean | undefined) {
   if (typeof value === "boolean") {
     return value;
   }
-
   const normalized = String(value ?? "")
     .trim()
-    .toLowerCase();
-
-  return ["1", "true", "var", "evet", "yes", "stock", "stokta"].includes(normalized);
+    .toLocaleLowerCase("tr-TR")
+    .replace(/[.!]+$/, "");
+  if (!normalized) return undefined;
+  return !OUT_OF_STOCK_VALUES.has(normalized);
 }
 
 function sanitizeOptionalPositiveInteger(
@@ -49,7 +69,13 @@ function sanitizeOptionalPositiveInteger(
   fieldLabel: string,
   errors: string[],
 ) {
-  const normalized = String(value ?? "").trim();
+  // "1.000" (binlik nokta), "20 adet", "12,0" gibi yazımlar da kabul edilir.
+  const normalized = String(value ?? "")
+    .trim()
+    .toLocaleLowerCase("tr-TR")
+    .replace(/\s*(adet|ad\.?|pcs|pc)$/, "")
+    .replace(/^(\d{1,3})(\.\d{3})+$/, (match) => match.replace(/\./g, ""))
+    .replace(/,0+$/, "");
 
   if (!normalized) {
     return null;
@@ -68,17 +94,23 @@ function sanitizeOptionalPositiveInteger(
 export function parseProductsCsv(csvText: string): ParsedCsvResult {
   const parsed = Papa.parse<Record<string, string>>(csvText, {
     header: true,
-    skipEmptyLines: true,
+    // "greedy": yalnız boşluk/virgülden oluşan (biçimli ama boş) satırları da atla.
+    skipEmptyLines: "greedy",
   });
 
   const errors: string[] = [];
   const parsedHeaders = (parsed.meta.fields ?? []).map((field) => field.trim());
-  const missingHeaders = requiredProductCsvHeaders.filter(
+  const missingHeaders = REQUIRED_IMPORT_HEADERS.filter(
     (header) => !parsedHeaders.includes(header),
   );
 
   if (missingHeaders.length) {
-    errors.push(`Eksik CSV başlıkları: ${missingHeaders.join(", ")}`);
+    errors.push(
+      `Dosyada şu sütunlar bulunamadı: ${missingHeaders
+        .map((header) => `"${PRODUCT_IMPORT_FIELD_LABELS[header] ?? header}"`)
+        .join(", ")}. Lütfen şablondaki başlıkları kullanın.`,
+    );
+    return { parsedHeaders, rows: [], errors };
   }
 
   const rows = parsed.data
@@ -89,27 +121,32 @@ export function parseProductsCsv(csvText: string): ParsedCsvResult {
       const currency = normalizeCurrencyCode(row.currency);
 
       if (!category_name || !sku_code || !product_name) {
-        errors.push(
-          `Satır ${index + 2}: category_name, sku_code ve product_name zorunludur.`,
-        );
+        const missing = [
+          !category_name && "Kategori Adı",
+          !sku_code && "Model No",
+          !product_name && "Ürün Adı",
+        ].filter(Boolean);
+        errors.push(`Satır ${index + 2}: ${missing.join(", ")} boş olamaz.`);
         return null;
       }
 
       if (!isCurrencyCode(currency)) {
-        errors.push(`Satır ${index + 2}: currency alanı TRY, USD veya EUR olmalıdır.`);
+        errors.push(
+          `Satır ${index + 2}: Para Birimi "${row.currency}" tanınmadı (TL, USD veya EUR yazın).`,
+        );
         return null;
       }
 
       const package_quantity = sanitizeOptionalPositiveInteger(
         row.package_quantity,
         index + 2,
-        "package_quantity",
+        "Paket Adedi",
         errors,
       );
       const carton_quantity = sanitizeOptionalPositiveInteger(
         row.carton_quantity,
         index + 2,
-        "carton_quantity",
+        "Koli Adedi",
         errors,
       );
 
@@ -121,6 +158,11 @@ export function parseProductsCsv(csvText: string): ParsedCsvResult {
             return null;
           }
 
+          // Boş hücre fiyat değildir; 0 yazıp mevcut fiyatı ezmesin.
+          if (isBlankPriceCell(row[header])) {
+            return null;
+          }
+
           return {
             list_name: listName,
             price: sanitizePrice(row[header]),
@@ -128,12 +170,11 @@ export function parseProductsCsv(csvText: string): ParsedCsvResult {
         })
         .filter((entry) => entry !== null);
 
-      const legacyPrices = DEFAULT_PRICED_LIST_NAMES.map((listName, index) => ({
-        list_name: listName,
-        price: sanitizePrice(
-          index === 0 ? row.price_tier_1 : index === 1 ? row.price_tier_2 : row.price_tier_3,
-        ),
-      }));
+      const legacyPrices = DEFAULT_PRICED_LIST_NAMES.flatMap((listName, index) => {
+        const raw =
+          index === 0 ? row.price_tier_1 : index === 1 ? row.price_tier_2 : row.price_tier_3;
+        return isBlankPriceCell(raw) ? [] : [{ list_name: listName, price: sanitizePrice(raw) }];
+      });
 
       return {
         category_name,
@@ -141,11 +182,12 @@ export function parseProductsCsv(csvText: string): ParsedCsvResult {
         product_name,
         image_url: row.image_url?.trim() || null,
         currency,
-        prices: dynamicPrices.length ? dynamicPrices : legacyPrices,
+        // Şablon sütunları + "Fiyat: X" sütunları birlikte (biri diğerini silmesin).
+        prices: [...legacyPrices, ...dynamicPrices],
         price_tier_1: sanitizePrice(row.price_tier_1),
         price_tier_2: sanitizePrice(row.price_tier_2),
         price_tier_3: sanitizePrice(row.price_tier_3),
-        is_in_stock: normalizeBoolean(row.is_in_stock),
+        is_in_stock: normalizeStock(row.is_in_stock),
         package_quantity,
         carton_quantity,
       };
