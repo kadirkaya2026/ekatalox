@@ -7,6 +7,9 @@ export const textilePalettes = {
   "hardware-usta": ["#ba421e", "#f6f5f1", "#eee8df"],
   "hardware-yapi": ["#245c50", "#fafbf8", "#e5eee3"],
   "hardware-depo": ["#2b516d", "#f0f3f5", "#dfe7ed"],
+  "cosmetics-duru": ["#58694d", "#f7f7f0", "#e6ebdf"],
+  "cosmetics-aura": ["#993f55", "#fff9f6", "#f5ddd7"],
+  "cosmetics-rituel": ["#356974", "#f3f7f7", "#dfecef"],
 } as const;
 export function paletteStyle(doc: DesignDocument, dark: boolean): CSSProperties {
   if (!(doc.themeId in textilePalettes)) return {};

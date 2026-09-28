@@ -2,11 +2,12 @@ import { z } from "zod";
 
 export const ELECTRONICS_SECTOR = "telefon-aksesuar";
 export const FOOD_SECTOR = "gida";
+export const COSMETICS_SECTOR = "kozmetik";
 export const HARDWARE_SECTOR = "hirdavat";
 export const TEXTILE_SECTOR = "tekstil";
-export const DESIGN_IDS = ["electronics-forma", "electronics-akim", "electronics-modul", "food-hasat", "food-mahalle", "food-kiler", "textile-atelier", "textile-vitrin", "textile-seri", "hardware-usta", "hardware-yapi", "hardware-depo"] as const;
-export function designSector(id: DesignId) { return id.startsWith("hardware-") ? HARDWARE_SECTOR : id.startsWith("textile-") ? TEXTILE_SECTOR : id.startsWith("food-") ? FOOD_SECTOR : ELECTRONICS_SECTOR; }
-export function hasSectorDesign(sector: string | null | undefined) { return sector === ELECTRONICS_SECTOR || sector === FOOD_SECTOR || sector === TEXTILE_SECTOR || sector === HARDWARE_SECTOR; }
+export const DESIGN_IDS = ["electronics-forma", "electronics-akim", "electronics-modul", "food-hasat", "food-mahalle", "food-kiler", "textile-atelier", "textile-vitrin", "textile-seri", "hardware-usta", "hardware-yapi", "hardware-depo", "cosmetics-duru", "cosmetics-aura", "cosmetics-rituel"] as const;
+export function designSector(id: DesignId) { return id.startsWith("cosmetics-") ? COSMETICS_SECTOR : id.startsWith("hardware-") ? HARDWARE_SECTOR : id.startsWith("textile-") ? TEXTILE_SECTOR : id.startsWith("food-") ? FOOD_SECTOR : ELECTRONICS_SECTOR; }
+export function hasSectorDesign(sector: string | null | undefined) { return sector === ELECTRONICS_SECTOR || sector === FOOD_SECTOR || sector === TEXTILE_SECTOR || sector === HARDWARE_SECTOR || sector === COSMETICS_SECTOR; }
 export function designsForSector(sector: string | null | undefined) { return DESIGNS.filter(d => designSector(d.id) === sector); }
 export type DesignId = typeof DESIGN_IDS[number];
 export type SalesMode = "retail" | "wholesale";
@@ -36,10 +37,19 @@ export const DESIGNS = [
   { id: "hardware-usta", name: "Usta", description: "Güçlü ekipman vitrini. Büyük ürün sahnesi, numaralı kategori rehberi ve proje seçkisi.", color: "#ba421e", overlayTheme: "minimal", font: "plus-jakarta" },
   { id: "hardware-yapi", name: "Yapı", description: "Ferah yapı mağazası. Görselli kategoriler, iki ihtiyaç alanı ve açık ürün rafları.", color: "#245c50", overlayTheme: "neutral", font: "dm-sans" },
   { id: "hardware-depo", name: "Depo", description: "Profesyonel tedarik masası. Kategori dizini, ürün kodları ve toptan sipariş listesi.", color: "#2b516d", overlayTheme: "neutral", font: "source-sans" },
+  { id: "cosmetics-duru", name: "Duru", description: "Sade bakım vitrini. Editoryal başlık, tek ürün sahnesi ve rutin seçkisi.", color: "#58694d", overlayTheme: "minimal", font: "dm-sans" },
+  { id: "cosmetics-aura", name: "Aura", description: "Canlı güzellik mağazası. İkili ürün sahnesi, koleksiyon kısayolları ve görselli kategoriler.", color: "#993f55", overlayTheme: "neutral", font: "plus-jakarta" },
+  { id: "cosmetics-rituel", name: "Ritüel", description: "Düzenli bakım kataloğu. Kategori dizini, ürün kodları ve toptan sipariş listesi.", color: "#356974", overlayTheme: "neutral", font: "source-sans" },
 ] as const;
 export function isDesignId(value: unknown): value is DesignId { return DESIGN_IDS.includes(value as DesignId); }
-export function schemaFor(id: DesignId) { return (id === "electronics-forma" || id === "food-hasat" || id === "textile-atelier" || id === "hardware-usta") ? formaSchema : (id === "electronics-akim" || id === "food-kiler" || id === "textile-seri" || id === "hardware-depo") ? akimSchema : modulSchema; }
+export function schemaFor(id: DesignId) { return (id === "electronics-forma" || id === "food-hasat" || id === "textile-atelier" || id === "hardware-usta" || id === "cosmetics-duru") ? formaSchema : (id === "electronics-akim" || id === "food-kiler" || id === "textile-seri" || id === "hardware-depo" || id === "cosmetics-rituel") ? akimSchema : modulSchema; }
 export function defaultContent(id: DesignId): DesignContent {
+  if (id.startsWith("cosmetics-")) {
+    const base = { announcement: "", catalogTitle: "Bakım seçkinizi oluşturun", heroVisible: true, heroTitle: "Kendinize ayırdığınız o an.", heroBody: "Günlük bakımınıza eşlik eden ürünleri keşfedin. Kendi rutininizi, kendi tercihlerinize göre tamamlayın.", heroImage: "", buttonLabel: "Seçkiyi keşfet", heroCategoryId: "all" };
+    if (id === "cosmetics-duru") return { ...base, collectionVisible: true, collectionTitle: "Günün küçük bakım molası.", collectionBody: "Birlikte kullanmayı sevdiğiniz ürünlerle kendinize ait bir seçki oluşturun.", collectionImage: "", collectionCategoryId: "all" };
+    if (id === "cosmetics-aura") return { ...base, heroTitle: "Güzelliğin kendi ritminde.", heroBody: "Renkler, dokular ve günlük favoriler. Sizi yansıtan ürünlerle tanışın.", promoVisible: true, promoTitle: "Bakımınıza yer açın.", promoBody: "Günlük rutininize eşlik edecek ürünleri keşfedin.", promoCategoryId: "all", secondTitle: "Renginizi bulun.", secondBody: "Makyaj seçkisini yakından inceleyin.", secondCategoryId: "all" };
+    return { ...base, heroTitle: "Her bakımın bir düzeni var.", heroBody: "Kategorilerden ilerleyin, ürünleri karşılaştırın. Mağazanızın veya günlük bakımınızın ihtiyaçlarını tamamlayın.", buttonLabel: "Kataloğu incele", featureVisible: true, featureTitle: "Rutininizde ona yer açın.", featureBody: "Seçili ürünün detaylarını ve sipariş seçeneklerini inceleyin.", featureProductId: "", featureImage: "" };
+  }
   if (id.startsWith("hardware-")) {
     const base = { announcement: "", catalogTitle: "İşinize uygun ekipman", heroVisible: true, heroTitle: "İyi iş, doğru aletle başlar.", heroBody: "El aletlerinden montaj malzemelerine, ihtiyacınız olan parçayı bulun. Projenizi tamamlayın.", heroImage: "", buttonLabel: "Ürünleri incele", heroCategoryId: "all" };
     if (id === "hardware-usta") return { ...base, collectionVisible: true, collectionTitle: "Bir sonraki işinize hazır olun.", collectionBody: "Tamir, montaj ve bakım için birlikte kullanacağınız ürünleri seçin.", collectionImage: "", collectionCategoryId: "all" };

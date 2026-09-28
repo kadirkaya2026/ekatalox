@@ -341,7 +341,7 @@ export async function renderStorefrontHome({
   }
   const previewApplyHref = `https://app.${appEnv.rootDomain}/settings/theme?${applyQuery.toString()}`;
   const sectorDesign = readDesignDocument(viewSettings.sector_design, tenant.sector);
-  const featuredId = (sectorDesign?.themeId === "electronics-akim" || sectorDesign?.themeId === "food-kiler" || sectorDesign?.themeId === "textile-seri" || sectorDesign?.themeId === "hardware-depo") ? (getDesignContent(sectorDesign) as AkimContent).featureProductId : "";
+  const featuredId = (sectorDesign?.themeId === "electronics-akim" || sectorDesign?.themeId === "food-kiler" || sectorDesign?.themeId === "textile-seri" || sectorDesign?.themeId === "hardware-depo" || sectorDesign?.themeId === "cosmetics-rituel") ? (getDesignContent(sectorDesign) as AkimContent).featureProductId : "";
   const designProducts = featuredId && /^[0-9a-f-]{36}$/i.test(featuredId)
     ? (await getStorefrontProductsByIds({ ...pricingParams, ids: [featuredId] })).filter(p => !p.category_id || !hiddenCategoryIds.includes(p.category_id)) : [];
   const footerVisible = viewSettings.is_footer_visible;
