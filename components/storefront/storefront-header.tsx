@@ -12,6 +12,7 @@ import { useStorefrontLocale } from "@/lib/storefront/locale-context";
 import type { StorefrontHeaderStyleKey, TenantStorefrontSettings } from "@/lib/types";
 import { cn, formatCurrency, formatDateSlashTr } from "@/lib/utils";
 import { StorefrontImage } from "@/components/storefront/storefront-image";
+import { useIsWideLogo } from "@/lib/storefront/use-wide-logo";
 import { StorefrontHeaderCategoryPicker } from "@/components/storefront/storefront-header-category-picker";
 import { StorefrontLogoutButton } from "@/components/storefront/storefront-logout-button";
 import { StorefrontThemeToggle } from "@/components/storefront/storefront-theme-toggle";
@@ -230,43 +231,6 @@ function HeaderSearch({
       </div>
     </form>
   );
-}
-
-// Yazı logosu (ör. "SETRE", en/boy > 2,4): kare kutuya sığdırılınca
-// küçülüyor ve mağaza adı ikinci kez yazılıyordu (28 Eyl 2026). Geniş logo
-// kutusuz, geniş çizilir; ad yazısı yalnız ekran okuyucuya kalır. Oran
-// görsel yüklenince ölçülür ve cihazda saklanır (sonraki açılışta anında).
-const WIDE_LOGO_RATIO = 2.4;
-
-function useIsWideLogo(url: string | null | undefined) {
-  const [wide, setWide] = useState(false);
-  useEffect(() => {
-    if (!url) return;
-    const key = `ek_logo_ratio:${url}`;
-    let cached: string | null = null;
-    try {
-      cached = window.localStorage.getItem(key);
-    } catch {
-      /* depolama kapalı */
-    }
-    if (cached) {
-      const frame = window.requestAnimationFrame(() => setWide(Number(cached) > WIDE_LOGO_RATIO));
-      return () => window.cancelAnimationFrame(frame);
-    }
-    const probe = new window.Image();
-    probe.onload = () => {
-      if (!probe.naturalHeight) return;
-      const ratio = probe.naturalWidth / probe.naturalHeight;
-      try {
-        window.localStorage.setItem(key, String(ratio));
-      } catch {
-        /* depolama kapalı */
-      }
-      setWide(ratio > WIDE_LOGO_RATIO);
-    };
-    probe.src = url;
-  }, [url]);
-  return wide;
 }
 
 function HeaderBrand({

@@ -11,6 +11,7 @@ import { ProductPrice } from "@/components/storefront/storefront-product-card";
 import { StorefrontImage } from "@/components/storefront/storefront-image";
 import { paletteStyle } from "./palette";
 import s from "./stationery.module.css";
+import { SectorBrandLogo } from "@/components/storefront/sector-design/sector-brand-logo";
 
 function Photo({src,alt,priority=false,sizes="(max-width:640px) 46vw, 440px"}:{src?:string|null;alt:string;priority?:boolean;sizes?:string}) {
   if (!src || (!/^https:\/\//i.test(src) && !/^\/(?!\/)/.test(src))) return <Package size={38} aria-hidden="true" />;
@@ -38,7 +39,7 @@ export function StationeryStorefront(p:SectorStorefrontProps) {
   return <div className={`${s.root} ${s[variant]} ${theme.isDark?s.dark:""} ${p.detailOpen?s.detailHeader:""}`} style={paletteStyle(p.design, theme.isDark)} data-image-fit={c.imageFit||c.imagePosition?true:undefined} data-sector-design={p.design.themeId}>
     {c.announcement && <div data-theme-area="general" className={s.announcement}>{c.announcement}</div>}
     <header className={s.header}>
-      <button data-theme-area="brand" className={s.brand} onClick={p.onHome} aria-label={`${p.title} — ${t.all}`}>{p.settings.logo_url?<img src={p.settings.logo_url} alt=""/> : null}<span>{p.title}</span></button>
+      <button data-theme-area="brand" className={s.brand} onClick={p.onHome} aria-label={`${p.title} — ${t.all}`}><SectorBrandLogo logoUrl={p.settings.logo_url} title={p.title}/></button>
       <div className={s.desktopSearch}>{search}</div><div className={s.actions}>
         <button className={s.icon} aria-label={t.campaigns} onClick={p.onCampaigns}><Bell size={20}/></button>
         <select aria-label="Language / Dil" value={locale} onChange={e=>setLocale(e.target.value as typeof locale)}><option value="tr">TR</option><option value="en">EN</option><option value="de">DE</option><option value="ru">RU</option></select>

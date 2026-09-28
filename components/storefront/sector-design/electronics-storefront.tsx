@@ -12,6 +12,7 @@ import { ProductPrice } from "@/components/storefront/storefront-product-card";
 import { StorefrontImage } from "@/components/storefront/storefront-image";
 import { StorefrontLogoutButton } from "@/components/storefront/storefront-logout-button";
 import styles from "./electronics.module.css";
+import { SectorBrandLogo } from "@/components/storefront/sector-design/sector-brand-logo";
 
 export type SectorStorefrontProps = {
   tenantId: string; subdomain?: string;
@@ -66,7 +67,7 @@ export function ElectronicsStorefront(p: SectorStorefrontProps) {
     {c.announcement && <div data-theme-area="general" className={styles.announcement}>{c.announcement}</div>}
     <header className={styles.header}>
       <button data-theme-area="brand" className={styles.wordmark} onClick={p.onHome} aria-label={`${p.title} — ${labels.all}`}>
-        {p.settings.logo_url ? <img src={p.settings.logo_url} alt="" className={styles.logo} /> : <span className={styles.brandMark} aria-hidden="true"><span /><span /><span /></span>}<span>{p.title}</span>
+        <SectorBrandLogo logoUrl={p.settings.logo_url} title={p.title} className={styles.logo} fallback={<span className={styles.brandMark} aria-hidden="true"><span /><span /><span /></span>} />
       </button>
       <div className={styles.desktopSearch}>{search}</div>
       <div className={styles.headerActions}>
