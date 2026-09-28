@@ -2,15 +2,17 @@ import { z } from "zod";
 
 export const ELECTRONICS_SECTOR = "telefon-aksesuar";
 export const FOOD_SECTOR = "gida";
-export const DESIGN_IDS = ["electronics-forma", "electronics-akim", "electronics-modul", "food-hasat", "food-mahalle", "food-kiler"] as const;
-export function designSector(id: DesignId) { return id.startsWith("food-") ? FOOD_SECTOR : ELECTRONICS_SECTOR; }
-export function hasSectorDesign(sector: string | null | undefined) { return sector === ELECTRONICS_SECTOR || sector === FOOD_SECTOR; }
+export const TEXTILE_SECTOR = "tekstil";
+export const DESIGN_IDS = ["electronics-forma", "electronics-akim", "electronics-modul", "food-hasat", "food-mahalle", "food-kiler", "textile-atelier", "textile-vitrin", "textile-seri"] as const;
+export function designSector(id: DesignId) { return id.startsWith("textile-") ? TEXTILE_SECTOR : id.startsWith("food-") ? FOOD_SECTOR : ELECTRONICS_SECTOR; }
+export function hasSectorDesign(sector: string | null | undefined) { return sector === ELECTRONICS_SECTOR || sector === FOOD_SECTOR || sector === TEXTILE_SECTOR; }
 export function designsForSector(sector: string | null | undefined) { return DESIGNS.filter(d => designSector(d.id) === sector); }
 export type DesignId = typeof DESIGN_IDS[number];
 export type SalesMode = "retail" | "wholesale";
 const text = (max: number) => z.string().trim().max(max);
 const image = z.string().max(2048).refine((v) => !v || /^https:\/\/[^\s]+$/i.test(v) || /^\/(?!\/)[^\s]*$/.test(v), "Görsel için HTTPS adresi kullanın.");
-const common = { announcement: text(120), catalogTitle: text(70), heroVisible: z.boolean(), heroTitle: text(80), heroBody: text(180), heroImage: image, buttonLabel: text(32), heroCategoryId: text(100) };
+const color = z.string().regex(/^#[0-9a-fA-F]{6}$/).optional();
+const common = { accentColor: color, backgroundColor: color, surfaceColor: color, announcement: text(120), catalogTitle: text(70), heroVisible: z.boolean(), heroTitle: text(80), heroBody: text(180), heroImage: image, buttonLabel: text(32), heroCategoryId: text(100) };
 export const formaSchema = z.object({ ...common, collectionVisible: z.boolean(), collectionTitle: text(70), collectionBody: text(160), collectionImage: image, collectionCategoryId: text(100) }).strict();
 export const akimSchema = z.object({ ...common, featureVisible: z.boolean(), featureTitle: text(70), featureBody: text(160), featureProductId: text(100), featureImage: image }).strict();
 export const modulSchema = z.object({ ...common, promoVisible: z.boolean(), promoTitle: text(70), promoBody: text(160), promoCategoryId: text(100), secondTitle: text(70), secondBody: text(160), secondCategoryId: text(100) }).strict();
@@ -27,10 +29,19 @@ export const DESIGNS = [
   { id: "food-hasat", name: "Hasat", description: "Doğal tonlar, büyük gıda vitrini ve görselli kategori rafları. Seçkilerini öne çıkaran mağazalar için.", color: "#416439", overlayTheme: "minimal", font: "dm-sans" },
   { id: "food-mahalle", name: "Mahalle", description: "Canlı market vitrini. Kategori kısayolları, iki kampanya alanı ve kolay ulaşılır sepet.", color: "#a52d3d", overlayTheme: "neutral", font: "plus-jakarta" },
   { id: "food-kiler", name: "Kiler", description: "Düzenli tedarik kataloğu. Solda kategoriler, paket ve koli bilgileri, hızlı sipariş listesi.", color: "#285861", overlayTheme: "neutral", font: "source-sans" },
+  { id: "textile-atelier", name: "Atölye", description: "Editoryal moda vitrini. Büyük dikey fotoğraf, sade tipografi ve koleksiyon hikâyesi.", color: "#594338", overlayTheme: "minimal", font: "dm-sans" },
+  { id: "textile-vitrin", name: "Vitrin", description: "Koleksiyonları öne çıkaran mağaza. İkili görsel sahne ve kategorilere açılan keşif alanları.", color: "#993645", overlayTheme: "neutral", font: "plus-jakarta" },
+  { id: "textile-seri", name: "Seri", description: "Model ve beden odaklı katalog. Solda kategoriler, yoğun ürün sunumu ve hızlı sipariş listesi.", color: "#354a60", overlayTheme: "neutral", font: "source-sans" },
 ] as const;
 export function isDesignId(value: unknown): value is DesignId { return DESIGN_IDS.includes(value as DesignId); }
-export function schemaFor(id: DesignId) { return (id === "electronics-forma" || id === "food-hasat") ? formaSchema : (id === "electronics-akim" || id === "food-kiler") ? akimSchema : modulSchema; }
+export function schemaFor(id: DesignId) { return (id === "electronics-forma" || id === "food-hasat" || id === "textile-atelier") ? formaSchema : (id === "electronics-akim" || id === "food-kiler" || id === "textile-seri") ? akimSchema : modulSchema; }
 export function defaultContent(id: DesignId): DesignContent {
+  if (id.startsWith("textile-")) {
+    const textile = { announcement: "", catalogTitle: "Koleksiyonu keşfedin", heroVisible: true, heroTitle: "Stil, detaylarda başlar.", heroBody: "Dokular, kesimler ve birlikte güzel duran parçalar. Kendi seçkinizi oluşturun.", heroImage: "", buttonLabel: "Koleksiyonu incele", heroCategoryId: "all" };
+    if (id === "textile-atelier") return { ...textile, collectionVisible: true, collectionTitle: "Bir araya gelen parçalar.", collectionBody: "Gardırobunuzda yer açacağınız modelleri yakından inceleyin.", collectionImage: "", collectionCategoryId: "all" };
+    if (id === "textile-vitrin") return { ...textile, heroTitle: "Kendin gibi giyin.", heroBody: "Günün her anına eşlik eden parçaları ve koleksiyonları keşfedin.", promoVisible: true, promoTitle: "Günün stilini bul.", promoBody: "Birlikte kullanabileceğiniz parçaları inceleyin.", promoCategoryId: "all", secondTitle: "Detaylarla tamamla.", secondBody: "Koleksiyonun diğer modellerine göz atın.", secondCategoryId: "all" };
+    return { ...textile, heroTitle: "Koleksiyonunuz. Düzenli bir katalogda.", heroBody: "Modelleri karşılaştırın, uygun beden ve renk seçenekleriyle siparişinizi hazırlayın.", featureVisible: true, featureTitle: "Koleksiyonun odak noktası.", featureBody: "Seçili modelin detaylarını ve mevcut seçeneklerini keşfedin.", featureProductId: "", featureImage: "" };
+  }
   if (id.startsWith("food-")) {
     const food = { announcement: "", catalogTitle: "Raflarımızdan seçin", heroVisible: true, heroTitle: "Sofranıza iyi gelen seçimler.", heroBody: "Kahvaltıdan akşam yemeğine, mutfağınızın ihtiyaçlarını tek bir yerde keşfedin.", heroImage: "", buttonLabel: "Alışverişe başla", heroCategoryId: "all" };
     if (id === "food-hasat") return { ...food, collectionVisible: true, collectionTitle: "Sofranın etrafında buluşalım.", collectionBody: "Birlikte güzel giden lezzetleri seçin, sofranızı kendi zevkinize göre tamamlayın.", collectionImage: "", collectionCategoryId: "all" };

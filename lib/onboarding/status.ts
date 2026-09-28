@@ -209,7 +209,7 @@ export async function getTenantOnboardingStatus(tenant: Tenant, storeUrl: string
 /** Sihirbazın tema adımında gösterilen hazır paketler (sunucu → istemci). */
 export type OnboardingThemePreset = ReturnType<typeof getOnboardingThemePresets>[number];
 export function getOnboardingThemePresets(sector?: string | null) {
-  if ((sector === "telefon-aksesuar" || sector === "gida")) return [];
+  if ((sector === "telefon-aksesuar" || sector === "gida" || sector === "tekstil")) return [];
   return getSectorThemePresets(sector).map((p) => ({
     key: p.key,
     title: p.title,

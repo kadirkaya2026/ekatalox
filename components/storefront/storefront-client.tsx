@@ -1,5 +1,6 @@
 "use client";
 
+import { paletteStyle } from "@/components/storefront/sector-design/palette";
 import { electronicsCommerceTheme, commerceRootClass } from "@/components/storefront/sector-design/commerce-theme";
 import { SectorStorefront } from "@/components/storefront/sector-design/sector-storefront";
 import { readDesignDocument } from "@/lib/storefront/sector-design/config";
@@ -4168,7 +4169,7 @@ export function StorefrontClient({
       productImageBackground={storefrontSettings.product_image_background}
     >
     <StorefrontLayoutProvider layoutKey={storefrontSettings.layout_key ?? "classic-grid"}>
-    <div className={electronicsDesign ? commerceRootClass(electronicsDesign.themeId, theme.isDark) : "contents"} data-commerce-design={electronicsDesign?.themeId}>
+    <div className={electronicsDesign ? commerceRootClass(electronicsDesign.themeId, theme.isDark) : "contents"} style={electronicsDesign ? paletteStyle(electronicsDesign, theme.isDark) : undefined} data-commerce-design={electronicsDesign?.themeId}>
       {isClosedNow ? <StoreClosedOverlay nextOpening={closedNowNextOpening} /> : null}
       {electronicsDesign ? <SectorStorefront key={electronicsDesign.themeId}
         design={electronicsDesign} settings={storefrontSettings} title={storefrontTitle}
@@ -4262,11 +4263,9 @@ export function StorefrontClient({
             onIncrease={() => handleIncreaseCartItem(detailProduct.id)}
             onDecrease={() => handleDecreaseCartItem(detailProduct.id)}
             onChooseVariants={() => handleOpenAddToCartModal(detailProduct.id)}
-            // Sayfada beden/model seçimi + renkler yalnız Moda (tekstil)
-            // vitrininde (28 Eyl 2026, kullanıcı: "sadece demo-giyim'de");
-            // diğer vitrinlerde "Model Seç" penceresi aynen.
+            // Moda vitrini ve üç tekstil teması: seçenekler sepete eklemeden önce sayfada seçilir.
             onAddVariants={
-              productCardStyle.variant === "fashion"
+              productCardStyle.variant === "fashion" || electronicsDesign?.themeId.startsWith("textile-")
                 ? (picks) => addDetailVariants(detailProduct, picks)
                 : undefined
             }
@@ -5067,7 +5066,7 @@ export function StorefrontClient({
         footer={
           selectedProduct?.has_variants ? (
             <div className="space-y-3">
-              <div className={cn("rounded-xl p-3", theme.cartDrawerSummary)}>
+              <div data-commerce-slot="variant-total" className={cn("rounded-xl p-3", theme.cartDrawerSummary)}>
                 <p className={cn("text-xs", theme.cartDrawerMuted)}>{t("addToCart.selectedModels")}</p>
                 <p className={cn("mt-0.5 text-xs", theme.cartDrawerMuted)}>
                   {t("product.modelCount", { count: selectedVariantSummary.count })}
@@ -5161,7 +5160,8 @@ export function StorefrontClient({
                     value={variantSearchTerm}
                     onChange={(event) => setVariantSearchTerm(event.target.value)}
                     placeholder={t("addToCart.searchPlaceholder")}
-                    className="h-9 rounded-lg pl-9 pr-3 text-[16px]"
+                    aria-label={t("addToCart.searchPlaceholder")}
+                    className={cn("h-9 rounded-lg pl-9 pr-3 text-[16px]", theme.formField)}
                   />
                 </div>
 
@@ -5185,6 +5185,7 @@ export function StorefrontClient({
                       return (
                         <div
                           key={variant.id}
+                          data-commerce-slot="variant-row"
                           className={cn(
                             "rounded-xl px-2.5 py-2 transition",
                             isUnavailable
@@ -5209,7 +5210,7 @@ export function StorefrontClient({
                               ) : null}
                               {isUnavailable ? (
                                 <Badge className={cn("px-2 py-1 text-[10px]", theme.surfaceMuted, theme.textMuted)}>
-                                  {t("product.soon")}
+                                  {t(electronicsDesign?.themeId.startsWith("textile-") ? "product.soldOut" : "product.soon")}
                                 </Badge>
                               ) : null}
                             </div>
@@ -5218,6 +5219,7 @@ export function StorefrontClient({
                           <div className="mt-1.5 grid gap-2 sm:mt-2 sm:grid-cols-[minmax(0,1fr)_auto]">
                             <select
                               value={selection.unit}
+                              aria-label={`${variant.model_name} — satış birimi`}
                               disabled={isUnavailable}
                               onChange={(event) => {
                                 updateVariantSelection(variant.id, {

@@ -530,7 +530,7 @@ export function StorefrontProductDetailView({
           ) : null}
 
           {hasVariants && onAddVariants && product.is_in_stock ? (
-            <div className="mt-5">
+            <div data-commerce-slot="detail-variants" className="mt-5">
               <p className={cn("mb-2 text-[11px] font-bold uppercase tracking-[0.12em]", theme.textMuted)}>
                 Beden / Model — adet seçin
               </p>
