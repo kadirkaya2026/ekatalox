@@ -80,6 +80,12 @@ function isEmailExistsError(error: { message?: string; code?: string } | null) {
   );
 }
 
+const NEW_TENANT_CART_FORM_CONFIG = {
+  customer_name: { is_visible: true, is_required: true, sort_order: 1 },
+  customer_phone: { is_visible: true, is_required: true, sort_order: 2 },
+  customer_address: { is_visible: true, is_required: true, sort_order: 3 },
+};
+
 /** Varsayılan fiyat listeleri: fiyatsız katalog + 2 fiyatlı liste (Ücretsiz
  *  plan hakkının tamamı, PLAN_PRICE_LIST_LIMITS.free; 28 Eyl 2026). */
 async function createDefaultPriceLists(supabase: SupabaseClient, tenantId: string) {
@@ -146,6 +152,10 @@ async function applyStorefrontTheme(
       storefront_title: input.businessName,
       site_tab_title: input.businessName,
       ...(logoUrl ? { logo_url: logoUrl, site_favicon_url: logoUrl } : {}),
+      // Yeni mağazada sepet formu ad soyad + telefon + adres ister (28 Eyl 2026,
+      // kullanıcı kararı). Açıkça yazılır ki kayıtlı ayarı olmayan eski
+      // mağazaların varsayılanı değişmesin; mağaza Ayarlar → Sepet'ten kapatabilir.
+      cart_form_config: NEW_TENANT_CART_FORM_CONFIG,
       // Tekstil: ürün kartları moda düzeninde (2:3 tam boy) açılır.
       ...(isFashionSector(input.sector) ? { product_card_style: "fashion" } : {}),
     },
