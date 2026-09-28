@@ -61,7 +61,7 @@ export const storefrontOrderPdfSchema = z
       .nullable()
       .optional(),
     note: z.string().max(500).nullable().optional(),
-    paymentMethod: z.enum(["cash", "card"]).nullable().optional(),
+    paymentMethod: z.enum(["cash", "card", "transfer"]).nullable().optional(),
     selectedInstallmentCount: z.number().int().positive().nullable().optional(),
     cashDiscountTiers: z.array(cashDiscountTierSchema).optional().default([]),
     isCashDiscountActive: z.boolean().optional().default(false),

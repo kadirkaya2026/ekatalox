@@ -11,6 +11,7 @@ import {
   ChevronLeft,
   ChevronRight,
   CreditCard,
+  Landmark,
   Minus,
   Loader2,
   MapPin,
@@ -35,6 +36,11 @@ import type {
   TenantStorefrontSettings,
 } from "@/lib/types";
 import { formatProductModelNo, type CurrencyCode } from "@/lib/products/constants";
+import {
+  getBankTransferInfo,
+  getCheckoutPaymentMethods,
+  type CheckoutPaymentMethod,
+} from "@/lib/storefront/payment-methods";
 import { cn, formatCurrency } from "@/lib/utils";
 import { useStorefrontTheme } from "@/lib/storefront/theme-context";
 import { useStorefrontLocale } from "@/lib/storefront/locale-context";
@@ -55,8 +61,8 @@ export type StorefrontCartDrawerProps = {
   setCart: Dispatch<SetStateAction<CartItem[]>>;
   cartDistinctCount: number;
   cartItemCount: number;
-  selectedPaymentMethod: "cash" | "card" | null;
-  setSelectedPaymentMethod: Dispatch<SetStateAction<"cash" | "card" | null>>;
+  selectedPaymentMethod: CheckoutPaymentMethod | null;
+  setSelectedPaymentMethod: Dispatch<SetStateAction<CheckoutPaymentMethod | null>>;
   selectedInstallmentCount: number | null;
   setSelectedInstallmentCount: Dispatch<SetStateAction<number | null>>;
   paymentMethodError: string | null;
@@ -380,8 +386,16 @@ export function StorefrontCartDrawer({
 
   // ─── Ortak render parçaları ──────────────────────────────────────────────
 
+  // Açık ödeme yöntemleri (0145); kapalı yöntemin kampanya bandı da gösterilmez.
+  const checkoutMethods = getCheckoutPaymentMethods(storefrontSettings);
+  const bankTransferInfo = getBankTransferInfo(storefrontSettings);
+  const cashEnabled = checkoutMethods.includes("cash");
+  const cardEnabled = checkoutMethods.includes("card");
+
   const renderCampaignBars = () =>
-    selectedPaymentMethod === "cash"
+    selectedPaymentMethod === "transfer"
+      ? null
+      : selectedPaymentMethod === "cash"
       ? !isCashCampaignDismissedOnCart &&
         renderCashDiscountBar(false, onDismissCashCampaignOnCart)
       : selectedPaymentMethod === "card"
@@ -389,9 +403,9 @@ export function StorefrontCartDrawer({
           renderCardCampaignBar(false, onDismissCardCampaignOnCart)
         : (
             <>
-              {!isCashCampaignDismissedOnCart &&
+              {cashEnabled && !isCashCampaignDismissedOnCart &&
                 renderCashDiscountBar(false, onDismissCashCampaignOnCart)}
-              {!isCardCampaignDismissedOnCart &&
+              {cardEnabled && !isCardCampaignDismissedOnCart &&
                 renderCardCampaignBar(false, onDismissCardCampaignOnCart)}
             </>
           );
@@ -813,45 +827,59 @@ cartFormConfig.customer_address.is_visible ? (
             {isMarketTenant ? t("cart.required") : t("cart.optional")}
           </span>
         </div>
-        <div className="grid grid-cols-2 gap-2">
-          <button
-            type="button"
-            // İkinci tıklama seçimi kaldırır (kullanıcı isteği, 17 Eyl 2026).
-            onClick={() => {
-              setSelectedPaymentMethod((current) => (current === "cash" ? null : "cash"));
-              setSelectedInstallmentCount(null);
-              setPaymentMethodError(null);
-            }}
-            aria-pressed={selectedPaymentMethod === "cash"}
-            className={cn(
-              "flex items-center justify-center gap-2 rounded-2xl border py-3 text-sm font-semibold transition",
-              selectedPaymentMethod === "cash"
-                ? theme.cartPaymentCashActive
-                : theme.cartPaymentInactive,
-            )}
-          >
-            <Banknote className="size-4" />
-            {t("cart.cash")}
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              setSelectedPaymentMethod((current) => (current === "card" ? null : "card"));
-              setSelectedInstallmentCount(null);
-              setPaymentMethodError(null);
-            }}
-            aria-pressed={selectedPaymentMethod === "card"}
-            className={cn(
-              "flex items-center justify-center gap-2 rounded-2xl border py-3 text-sm font-semibold transition",
-              selectedPaymentMethod === "card"
-                ? theme.cartPaymentCardActive
-                : theme.cartPaymentInactive,
-            )}
-          >
-            <CreditCard className="size-4" />
-            {t("cart.card")}
-          </button>
+        <div className={cn("grid gap-2", checkoutMethods.length === 1 ? "grid-cols-1" : checkoutMethods.length === 2 ? "grid-cols-2" : "grid-cols-3")}>
+          {checkoutMethods.map((method) => {
+            const Icon = method === "cash" ? Banknote : method === "card" ? CreditCard : Landmark;
+            const active = selectedPaymentMethod === method;
+            return (
+              <button
+                key={method}
+                type="button"
+                // İkinci tıklama seçimi kaldırır (kullanıcı isteği, 17 Eyl 2026).
+                onClick={() => {
+                  setSelectedPaymentMethod((current) => (current === method ? null : method));
+                  setSelectedInstallmentCount(null);
+                  setPaymentMethodError(null);
+                }}
+                aria-pressed={active}
+                className={cn(
+                  "flex items-center justify-center gap-2 rounded-2xl border px-2 py-3 text-center text-sm font-semibold leading-tight transition",
+                  active
+                    ? method === "card"
+                      ? theme.cartPaymentCardActive
+                      : theme.cartPaymentCashActive
+                    : theme.cartPaymentInactive,
+                )}
+              >
+                <Icon className="size-4 shrink-0" />
+                {t(`cart.${method}`)}
+              </button>
+            );
+          })}
         </div>
+        {selectedPaymentMethod === "transfer" && bankTransferInfo ? (
+          <div className={cn("mt-3 rounded-xl p-3 text-sm", theme.surfaceMuted)}>
+            <p className={cn("text-xs font-semibold uppercase tracking-[0.16em]", theme.textMuted)}>
+              {t("cart.transferInfoTitle")}
+            </p>
+            {bankTransferInfo.holder ? (
+              <p className={cn("mt-2", theme.text)}>
+                <span className={theme.textMuted}>{t("cart.transferHolder")}: </span>
+                <span className="font-semibold">{bankTransferInfo.holder}</span>
+              </p>
+            ) : null}
+            {bankTransferInfo.bankName ? (
+              <p className={theme.text}>
+                <span className={theme.textMuted}>{t("cart.transferBank")}: </span>
+                {bankTransferInfo.bankName}
+              </p>
+            ) : null}
+            <p className={cn("mt-1 select-all break-all font-mono text-[13px] font-semibold tracking-wide", theme.text)}>
+              {bankTransferInfo.iban}
+            </p>
+            <p className={cn("mt-2 text-xs", theme.textMuted)}>{t("cart.transferHint")}</p>
+          </div>
+        ) : null}
         {paymentMethodError ? (
           <p className={cn("mt-2 text-xs font-medium", theme.dangerText)}>{paymentMethodError}</p>
         ) : null}

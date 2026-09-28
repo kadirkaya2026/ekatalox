@@ -37,6 +37,8 @@ export interface GenerateOrderReceiptPdfParams {
   footerLine?: string | null;
   /** Satır indeksine göre küçük ürün görseli (JPEG data URL), bkz. receipt-images.ts. */
   itemImages?: Array<string | null>;
+  /** Havale / EFT seçildiyse fişin en altında IBAN + alıcı + sipariş no (0145). */
+  bankTransfer?: { iban: string; holder: string | null; bankName: string | null } | null;
 }
 
 const PDF_FONT = "Roboto";
@@ -396,6 +398,40 @@ export async function generateOrderReceiptPdf(
   }
 
   const pageHeight = doc.internal.pageSize.getHeight();
+
+  if (params.bankTransfer) {
+    const bank = params.bankTransfer;
+    const lines = [
+      bank.holder ? `Alıcı: ${bank.holder}` : null,
+      bank.bankName ? `Banka: ${bank.bankName}` : null,
+      `IBAN: ${bank.iban}`,
+      typeof params.orderNo === "number"
+        ? `Açıklama: Sipariş No ${params.orderNo}`
+        : null,
+    ].filter(Boolean) as string[];
+    const boxHeight = 12 + lines.length * 6.5;
+    if (cursorY + boxHeight + 6 > pageHeight - margin - 14) {
+      doc.addPage();
+      cursorY = margin;
+    }
+    cursorY += 4;
+    doc.setDrawColor(...SOFT_BORDER);
+    doc.setFillColor(248, 250, 252);
+    doc.roundedRect(margin, cursorY, pageWidth - margin * 2, boxHeight, 2, 2, "FD");
+    setPdfFont(doc, "bold");
+    doc.setFontSize(PDF_FONT_SIZE.body);
+    doc.text("Havale / EFT Bilgileri", margin + 5, cursorY + 8);
+    doc.setFontSize(PDF_FONT_SIZE.summary);
+    let lineY = cursorY + 15;
+    for (const line of lines) {
+      setPdfFont(doc, line.startsWith("IBAN") || line.startsWith("Açıklama") ? "bold" : "normal");
+      doc.text(line, margin + 5, lineY);
+      lineY += 6.5;
+    }
+    setPdfFont(doc, "normal");
+    cursorY += boxHeight + 4;
+  }
+
   const footerWarning =
     "Bu Fiş 24 Saat Sonra Sistemden Silinecektir. Kaydetmeyi Unutmayın!";
   const footerY = pageHeight - margin;

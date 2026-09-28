@@ -250,7 +250,7 @@ export interface StorefrontOrder {
   customer_address: string | null;
   currency: string;
   total_amount: number;
-  payment_method: "cash" | "card" | null;
+  payment_method: OrderPaymentMethod | null;
   item_count: number;
   items: StorefrontOrderItemSnapshot[];
   note: string | null;
@@ -597,6 +597,15 @@ export interface TenantStorefrontSettings {
   // Tier (basamaklı) kampanya dizileri
   cash_discount_tiers: CashDiscountTier[];
   card_campaign_tiers: CardCampaignTier[];
+  // 0145: ödeme yöntemleri, IBAN, havale kampanyası, online ödeme tercihleri
+  payment_methods?: PaymentMethodToggles | null;
+  bank_iban?: string | null;
+  bank_account_holder?: string | null;
+  bank_name?: string | null;
+  is_transfer_discount_active?: boolean;
+  transfer_discount_note?: string | null;
+  transfer_discount_tiers?: CashDiscountTier[];
+  online_payment_settings?: OnlinePaymentSettings | null;
   price_update_date: string | null;
   is_price_update_date_visible: boolean;
   is_theme_toggle_visible: boolean;
@@ -744,4 +753,19 @@ export interface StorefrontSectionProduct {
 
 export interface StorefrontSectionWithProducts extends StorefrontSection {
   products: StorefrontProduct[];
+}
+/** Sepette seçilebilen ödeme yöntemi (0145). "online" sanal POS entegrasyonuyla açılacak. */
+export type OrderPaymentMethod = "cash" | "card" | "transfer" | "online";
+
+export interface PaymentMethodToggles {
+  cash: boolean;
+  transfer: boolean;
+  card: boolean;
+  online: boolean;
+}
+
+export interface OnlinePaymentSettings {
+  provider?: "iyzico" | "paytr" | null;
+  installments_enabled?: boolean;
+  commission_to_customer?: boolean;
 }

@@ -52,6 +52,10 @@ export interface CardTieredConfig {
   isActive: boolean;
 }
 
+/** Tutar hesabına giren ödeme yöntemi. Havale (0145): tanımlıysa kendi
+ *  basamaklı iskontosu (nakit mantığıyla), yoksa düz fiyat. */
+export type SummaryPaymentMethod = "cash" | "card" | "transfer";
+
 // Backward-compat — hâlâ kullanılabilir
 export interface CartDiscountConfig {
   threshold: number;
@@ -63,7 +67,7 @@ export interface CartDiscountConfig {
 /** Full summary combining discount + installment surcharge */
 export interface CartPaymentSummary {
   currency: CurrencyCode;
-  paymentMethod: "cash" | "card";
+  paymentMethod: SummaryPaymentMethod;
   subtotal: number;
   discountThreshold: number;
   isQualified: boolean;
@@ -265,7 +269,7 @@ function getCampaignDiscountAtThreshold(campaign: TenantCampaign) {
 
 function campaignAppliesToPaymentMethod(
   campaign: TenantCampaign,
-  paymentMethod: "cash" | "card" | null,
+  paymentMethod: SummaryPaymentMethod | null,
 ) {
   if (campaign.payment_method === "any") return true;
   // Ödeme yöntemi henüz seçilmediyse yönteme bağlı kampanya uygulanamaz;
@@ -285,7 +289,7 @@ function campaignAppliesToPaymentMethod(
 export function getCampaignDiscountStatus(
   items: CartItem[],
   campaigns: TenantCampaign[],
-  paymentMethod: "cash" | "card" | null,
+  paymentMethod: SummaryPaymentMethod | null,
   /** kampanya id -> hariç kategori id kümesi (alt kategoriler genişletilmiş) */
   excludedByCampaign?: Map<string, Set<string>>,
 ): CampaignDiscountStatus | null {
@@ -491,7 +495,7 @@ export function buildGiftCampaignNotes(items: CartItem[]): string[] {
 
 export function getCartPaymentSummary(
   items: CartItem[],
-  paymentMethod: "cash" | "card",
+  paymentMethod: SummaryPaymentMethod,
   cashConfig: CashTieredConfig | null,
   cardConfig: CardTieredConfig | null,
   selectedInstallment: InstallmentOption | null,
@@ -499,6 +503,8 @@ export function getCartPaymentSummary(
   excludedByCampaign?: Map<string, Set<string>>,
   coupon: StorefrontCoupon | null = null,
   deliveryFeeConfig: DeliveryFeeConfig | null = null,
+  /** Havale/EFT iskontosu (0145); yalnız paymentMethod "transfer" iken. */
+  transferConfig: CashTieredConfig | null = null,
 ): CartPaymentSummary | null {
   if (!items.length) return null;
 
@@ -511,10 +517,12 @@ export function getCartPaymentSummary(
   const [currency, subtotal] = currencies[0];
   const roundedSubtotal = roundCurrencyAmount(subtotal);
 
-  // ── Nakit ──
+  // ── Nakit / Havale ── (havale kendi basamaklarını kullanır; tanımsızsa düz fiyat)
+  const discountConfig =
+    paymentMethod === "cash" ? cashConfig : paymentMethod === "transfer" ? transferConfig : null;
   const appliedCashTier =
-    paymentMethod === "cash" && cashConfig?.isActive && (cashConfig.tiers?.length ?? 0) > 0
-      ? getBestCashTier(cashConfig.tiers, roundedSubtotal)
+    discountConfig?.isActive && (discountConfig.tiers?.length ?? 0) > 0
+      ? getBestCashTier(discountConfig.tiers, roundedSubtotal)
       : null;
 
   const discountThreshold = appliedCashTier?.threshold ?? 0;
@@ -587,9 +595,9 @@ export function getCartPaymentSummary(
   const finalTotal = roundCurrencyAmount(totalWithSurcharge + deliveryFeeAmount);
 
   const remainingForNextCashTier =
-    paymentMethod === "cash" && cashConfig?.isActive
+    discountConfig?.isActive
       ? roundCurrencyAmount(
-          Math.max((getNextCashTier(cashConfig.tiers ?? [], roundedSubtotal)?.threshold ?? 0) - roundedSubtotal, 0),
+          Math.max((getNextCashTier(discountConfig.tiers ?? [], roundedSubtotal)?.threshold ?? 0) - roundedSubtotal, 0),
         )
       : 0;
 
@@ -600,7 +608,7 @@ export function getCartPaymentSummary(
     discountThreshold,
     isQualified,
     remainingAmount:
-      paymentMethod === "cash"
+      paymentMethod !== "card"
         ? remainingForNextCashTier
         : roundCurrencyAmount(
             Math.max((appliedCardTier?.threshold ?? cardConfig?.tiers?.[0]?.threshold ?? 0) - roundedSubtotal, 0),

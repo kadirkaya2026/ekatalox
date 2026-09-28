@@ -1,8 +1,14 @@
 import { Header } from "@/components/dashboard/header";
+import { PlanFeatureGate } from "@/components/dashboard/plan-feature-gate";
+import { SettingsTabShell } from "@/components/dashboard/settings-tab-shell";
+import { TenantPaymentMethodsForm } from "@/components/dashboard/tenant-payment-methods-form";
 import { TenantPaymentSettingsForm } from "@/components/dashboard/tenant-payment-settings-form";
 import { getTenantStorefrontSettings } from "@/lib/data";
 import { requireTenantAdminPage } from "@/lib/auth/session";
 
+// 28 Eyl 2026: iki sekme. "Ödeme" (yöntemler, IBAN, online ödeme tercihleri)
+// tüm paketlerde; "Ödeme Kampanyaları" (nakit/havale/kart iskontoları, taksit)
+// payment_settings özelliği olan paketlerde.
 export default async function PaymentSettingsPage() {
   const session = await requireTenantAdminPage();
   const tenant = session.tenant!;
@@ -11,15 +17,25 @@ export default async function PaymentSettingsPage() {
   return (
     <div className="space-y-6">
       <Header
-        eyebrow="Ödeme Ayarları"
-        title="Nakit, kart ve taksit kampanyaları"
-        description="Ödeme yöntemine göre iskonto tanımlayın, taksit seçeneklerini ve vade farklarını yönetin. Ayarlar storefront ve WhatsApp sipariş metnine otomatik yansır."
+        eyebrow="Ayarlar / Ödeme ve Kampanyalar"
+        title="Ödeme ve Kampanyalar"
+        description="Müşterilerinizin sepette göreceği ödeme yöntemlerini seçin; nakit, havale ve kart için iskonto ve taksit kampanyaları tanımlayın."
       />
 
-      <TenantPaymentSettingsForm
-        storefrontSettings={storefrontSettings}
-        plan={tenant.plan}
-        companyName={tenant.company_name}
+      <SettingsTabShell
+        layoutId="payment-settings-main-tabs"
+        tabs={[
+          { key: "methods", label: "Ödeme" },
+          { key: "campaigns", label: "Ödeme Kampanyaları" },
+        ]}
+        panels={{
+          methods: <TenantPaymentMethodsForm storefrontSettings={storefrontSettings} plan={tenant.plan} />,
+          campaigns: (
+            <PlanFeatureGate feature="payment_settings" plan={tenant.plan} companyName={tenant.company_name}>
+              <TenantPaymentSettingsForm storefrontSettings={storefrontSettings} />
+            </PlanFeatureGate>
+          ),
+        }}
       />
     </div>
   );

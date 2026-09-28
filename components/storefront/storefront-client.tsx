@@ -58,6 +58,7 @@ import {
   reconcileGiftCartLines,
   updateCartLineQuantity,
 } from "@/lib/storefront/cart";
+import { getCheckoutPaymentMethods, type CheckoutPaymentMethod } from "@/lib/storefront/payment-methods";
 import { resolveCartFormConfig } from "@/lib/storefront/cart-form-config";
 import { useResolvedStorefrontTheme } from "@/lib/storefront/use-resolved-storefront-theme";
 import { StorefrontThemeProvider, useStorefrontTheme } from "@/lib/storefront/theme-context";
@@ -1379,7 +1380,7 @@ export function StorefrontClient({
     };
   }, [storefrontSettings]);
 
-  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<"cash" | "card" | null>(null);
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<CheckoutPaymentMethod | null>(null);
   const [selectedInstallmentCount, setSelectedInstallmentCount] = useState<number | null>(null);
   const [paymentMethodError, setPaymentMethodError] = useState<string | null>(null);
   const [isGeneratingOrderPdf, setIsGeneratingOrderPdf] = useState(false);
@@ -1903,6 +1904,11 @@ export function StorefrontClient({
       tiers: storefrontSettings.card_campaign_tiers ?? [],
       isActive: storefrontSettings.is_card_campaign_active,
     };
+    // Havale (0145): kampanya tanımlıysa kendi iskontosu, yoksa düz fiyat.
+    const transferConfig = {
+      tiers: storefrontSettings.transfer_discount_tiers ?? [],
+      isActive: storefrontSettings.is_transfer_discount_active ?? false,
+    };
 
     const activeOptions =
       (storefrontSettings.card_installment_options ?? []).filter(
@@ -1923,6 +1929,7 @@ export function StorefrontClient({
       excludedCategoriesByCampaign,
       customerCoupon,
       deliveryFeeConfig,
+      transferConfig,
     );
   }, [
     deliveryFeeConfig,
@@ -1937,6 +1944,8 @@ export function StorefrontClient({
     storefrontSettings.card_campaign_tiers,
     storefrontSettings.is_card_campaign_active,
     storefrontSettings.card_installment_options,
+    storefrontSettings.transfer_discount_tiers,
+    storefrontSettings.is_transfer_discount_active,
     isCatalogOnly,
   ]);
   const cartQuantityByProductId = useMemo(
@@ -3566,11 +3575,13 @@ export function StorefrontClient({
         ? null
         : renderCardCampaignBar(compact, () => dismissCampaignOnSurface("card", surface));
     }
+    if (selectedPaymentMethod === "transfer") return null;
+    const enabledMethods = getCheckoutPaymentMethods(storefrontSettings);
     return (
       <>
-        {!isCashDismissed &&
+        {enabledMethods.includes("cash") && !isCashDismissed &&
           renderCashDiscountBar(compact, () => dismissCampaignOnSurface("cash", surface))}
-        {!isCardDismissed &&
+        {enabledMethods.includes("card") && !isCardDismissed &&
           renderCardCampaignBar(compact, () => dismissCampaignOnSurface("card", surface))}
       </>
     );

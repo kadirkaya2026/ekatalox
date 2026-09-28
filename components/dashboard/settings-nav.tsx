@@ -40,7 +40,7 @@ const TABS: Tab[] = [
   { href: "/settings/announcement", label: "Duyuru Modalı", icon: Megaphone, group: "İçerik & İletişim" },
   { href: "/settings/age-verification", label: "Yaş Doğrulama (18+)", icon: ShieldCheck, group: "İçerik & İletişim", requiredBusinessType: "market" },
   { href: "/settings/footer", label: "Footer (Sayfa Altı)", icon: PanelBottom, group: "İçerik & İletişim" },
-  { href: "/settings/payment", label: "Ödeme ve Kampanyalar", icon: CreditCard, group: "Ödeme", requiredFeature: "payment_settings" },
+  { href: "/settings/payment", label: "Ödeme ve Kampanyalar", icon: CreditCard, group: "Ödeme" },
 ];
 
 const GROUP_ORDER = ["Hesap", "Marka & Görünüm", "İçerik & İletişim", "Ödeme"];

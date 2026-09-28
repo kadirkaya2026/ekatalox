@@ -2,14 +2,12 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Banknote, CreditCard, Globe, Plus, Trash2, ShoppingCart, Sparkles } from "lucide-react";
+import { Banknote, CreditCard, Landmark, Plus, Trash2, ShoppingCart, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { InlineAlert } from "@/components/ui/inline-alert";
 import { Input } from "@/components/ui/input";
-import { PlanFeatureGate } from "@/components/dashboard/plan-feature-gate";
 import { SettingsTabs } from "@/components/dashboard/settings-tabs";
-import type { TenantPlan } from "@/lib/billing/plans";
 import type {
   CashDiscountTier,
   CardCampaignTier,
@@ -17,27 +15,23 @@ import type {
   TenantStorefrontSettings,
 } from "@/lib/types";
 import { DEFAULT_INSTALLMENT_OPTIONS } from "@/lib/storefront/cart";
-import { cn } from "@/lib/utils";
 
 type CashTierRow = CashDiscountTier & { _id: string };
 type CardTierRow = CardCampaignTier & { _id: string };
 
-type PaymentSettingsTab = "cash" | "card" | "installments";
+type PaymentSettingsTab = "cash" | "transfer" | "card" | "installments";
 
 const PAYMENT_SETTINGS_TABS: Array<{ key: PaymentSettingsTab; label: string }> = [
   { key: "cash", label: "Nakit Kampanyası" },
+  { key: "transfer", label: "Havale Kampanyası" },
   { key: "card", label: "Kart Kampanyası" },
   { key: "installments", label: "Taksit Seçenekleri & Vade Farkları" },
 ];
 
 export function TenantPaymentSettingsForm({
   storefrontSettings,
-  plan,
-  companyName,
 }: {
   storefrontSettings: TenantStorefrontSettings;
-  plan: TenantPlan;
-  companyName: string;
 }) {
   // ── Nakit kampanyası state ─────────────────────────────────────────────────
   const [cashTiers, setCashTiers] = useState<CashTierRow[]>(() =>
@@ -50,6 +44,18 @@ export function TenantPaymentSettingsForm({
     storefrontSettings.is_cash_discount_active ?? false,
   );
   const [cashNote, setCashNote] = useState(storefrontSettings.cash_discount_note ?? "");
+
+  // ── Havale kampanyası state (0145) ── tanımsızsa havalede düz fiyat.
+  const [transferTiers, setTransferTiers] = useState<CashTierRow[]>(() =>
+    (storefrontSettings.transfer_discount_tiers ?? []).map((t) => ({
+      ...t,
+      _id: crypto.randomUUID(),
+    })),
+  );
+  const [isTransferActive, setIsTransferActive] = useState(
+    storefrontSettings.is_transfer_discount_active ?? false,
+  );
+  const [transferNote, setTransferNote] = useState(storefrontSettings.transfer_discount_note ?? "");
 
   // ── Kart kampanyası state ──────────────────────────────────────────────────
   const [cardTiers, setCardTiers] = useState<CardTierRow[]>(() =>
@@ -92,6 +98,21 @@ export function TenantPaymentSettingsForm({
 
   function removeCashTier(id: string) {
     setCashTiers((prev) => prev.filter((t) => t._id !== id));
+    setMessage(null);
+  }
+
+  function addTransferTier() {
+    setTransferTiers((prev) => [...prev, { threshold: 0, percentage: 0, _id: crypto.randomUUID() }]);
+    setMessage(null);
+  }
+
+  function updateTransferTier(id: string, field: keyof CashDiscountTier, value: number) {
+    setTransferTiers((prev) => prev.map((t) => (t._id === id ? { ...t, [field]: value } : t)));
+    setMessage(null);
+  }
+
+  function removeTransferTier(id: string) {
+    setTransferTiers((prev) => prev.filter((t) => t._id !== id));
     setMessage(null);
   }
 
@@ -144,6 +165,24 @@ export function TenantPaymentSettingsForm({
         setMessage(result.error ?? "Ödeme ayarları kaydedilemedi.");
         return;
       }
+
+      // Havale kampanyası ayrı uçtan (0145 kolonları ana ayar rotasında yok).
+      const transferResponse = await fetch("/api/tenant/settings/payment-methods", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          is_transfer_discount_active: isTransferActive,
+          transfer_discount_note: transferNote.trim() || null,
+          transfer_discount_tiers: transferTiers
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            .map(({ _id, ...t }) => t),
+        }),
+      });
+      if (!transferResponse.ok) {
+        const transferResult = await transferResponse.json().catch(() => ({}));
+        setMessage(transferResult.error ?? "Havale kampanyası kaydedilemedi.");
+        return;
+      }
       setMessage("Ödeme ayarları kaydedildi.");
       router.refresh();
     });
@@ -164,7 +203,7 @@ export function TenantPaymentSettingsForm({
               Ödeme &amp; İskonto Ayarları
             </div>
             <h2 className="mt-3 text-lg font-semibold text-foreground">
-              Basamaklı nakit ve kart kampanyaları
+              Basamaklı nakit, havale ve kart kampanyaları
             </h2>
             <p className="mt-1 text-sm leading-6 text-muted-foreground">
               Her iki kampanyaya birden fazla baraj tanımlayabilirsiniz. Müşteri sepetine
@@ -314,6 +353,135 @@ export function TenantPaymentSettingsForm({
                 <span
                   className={`absolute top-1 size-5 rounded-full bg-card shadow-sm transition ${
                     isCashActive ? "left-6" : "left-1"
+                  }`}
+                />
+              </button>
+            </div>
+          </div>
+        </div>
+        ) : null}
+
+        {/* ── HAVALE KAMPANYASI ─────────────────────────────── */}
+        {activeTab === "transfer" ? (
+        <div>
+          <div className="mb-4 flex items-center gap-2">
+            <Landmark className="size-5 text-emerald-700" />
+            <h2 className="text-lg font-semibold text-foreground">Havale Kampanyası</h2>
+            {isTransferActive && (
+              <span className="rounded-full bg-emerald-100 px-1.5 py-0.5 text-[10px] font-bold text-emerald-700">
+                AKTİF
+              </span>
+            )}
+          </div>
+          <p className="mb-4 text-sm text-muted-foreground">
+            Havale / EFT ile ödeyen müşteriye iskonto tanımlayın. Kampanya kapalıysa havalede liste fiyatı
+            (düz fiyat) uygulanır. Havale / EFT&apos;yi müşteriye açmak için &ldquo;Ödeme&rdquo; sekmesini kullanın.
+          </p>
+          <div className="space-y-4">
+            <div className="rounded-2xl border border-border bg-muted/60 p-4">
+              <div className="mb-3 flex items-center justify-between">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+                  Havale İskonto Barajları
+                </p>
+                <button
+                  type="button"
+                  onClick={addTransferTier}
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-emerald-700"
+                >
+                  <Plus className="size-3.5" />
+                  Baraj Ekle
+                </button>
+              </div>
+              {transferTiers.length === 0 ? (
+                <p className="rounded-xl border border-dashed border-border p-4 text-center text-sm text-muted-foreground">
+                  Henüz baraj eklenmedi. &ldquo;Baraj Ekle&rdquo; butonuna basın.
+                </p>
+              ) : (
+                <div className="space-y-2">
+                  <div className="grid grid-cols-[1fr_1fr_auto] gap-3 px-1">
+                    <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Baraj tutarı</span>
+                    <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">İskonto oranı (%)</span>
+                    <span className="w-8" />
+                  </div>
+                  {transferTiers
+                    .slice()
+                    .sort((a, b) => a.threshold - b.threshold)
+                    .map((tier) => (
+                      <div key={tier._id} className="grid grid-cols-[1fr_1fr_auto] items-center gap-3 rounded-xl border border-border bg-card p-3">
+                        <Input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          inputMode="decimal"
+                          value={tier.threshold}
+                          onChange={(e) => updateTransferTier(tier._id, "threshold", Number(e.target.value))}
+                          placeholder="500"
+                          className="h-9"
+                        />
+                        <div className="relative">
+                          <Input
+                            type="number"
+                            min="0"
+                            max="100"
+                            step="0.01"
+                            inputMode="decimal"
+                            value={tier.percentage}
+                            onChange={(e) => updateTransferTier(tier._id, "percentage", Number(e.target.value))}
+                            placeholder="5"
+                            className="h-9 pr-7"
+                          />
+                          <span className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
+                            %
+                          </span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => removeTransferTier(tier._id)}
+                          className="flex size-8 items-center justify-center rounded-lg text-muted-foreground transition hover:bg-rose-50 hover:text-rose-600"
+                        >
+                          <Trash2 className="size-4" />
+                        </button>
+                      </div>
+                    ))}
+                </div>
+              )}
+              <p className="mt-2 text-xs text-muted-foreground">
+                En yüksek barajı geçen müşteriye o barajın iskontosu uygulanır.
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-border bg-muted/60 p-4">
+              <label className="mb-2 block text-sm font-medium text-slate-700">
+                Şart notu <span className="font-normal text-muted-foreground">(opsiyonel)</span>
+              </label>
+              <textarea
+                rows={2}
+                maxLength={300}
+                value={transferNote}
+                onChange={(e) => { setTransferNote(e.target.value); setMessage(null); }}
+                placeholder="Örn: İndirim, sipariş günü yapılan havalelerde geçerlidir."
+                className="w-full resize-none rounded-xl border border-border bg-card px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:border-slate-400 focus:outline-none"
+              />
+            </div>
+
+            <div className="flex items-start justify-between gap-4 rounded-2xl border border-border bg-muted/60 px-4 py-3">
+              <div>
+                <p className="text-sm font-semibold text-foreground">Havale kampanyasını aktif et</p>
+                <p className="mt-0.5 text-xs text-slate-500">
+                  Aktifken Havale / EFT seçen müşterilere otomatik iskonto uygulanır.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => { setIsTransferActive((v) => !v); setMessage(null); }}
+                aria-pressed={isTransferActive}
+                className={`relative inline-flex h-7 w-12 shrink-0 rounded-full transition ${
+                  isTransferActive ? "bg-emerald-600" : "bg-slate-300"
+                }`}
+              >
+                <span
+                  className={`absolute top-1 size-5 rounded-full bg-card shadow-sm transition ${
+                    isTransferActive ? "left-6" : "left-1"
                   }`}
                 />
               </button>
@@ -566,36 +734,6 @@ export function TenantPaymentSettingsForm({
         </div>
       </form>
 
-    <PlanFeatureGate feature="online_payment" plan={plan} companyName={companyName}>
-      <Card className="overflow-hidden border-border p-0">
-        <div className="border-b border-border bg-[radial-gradient(circle_at_top_right,rgba(59,130,246,0.14),transparent_42%),linear-gradient(135deg,#f8fafc_0%,#ffffff_45%,#eff6ff_100%)] px-5 py-5">
-          <div className="flex items-start gap-4">
-            <div className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-blue-100 text-blue-700">
-              <Globe className="size-5" />
-            </div>
-            <div>
-              <div className="inline-flex items-center gap-2 rounded-full border border-blue-100 bg-card/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-blue-700">
-                <CreditCard className="size-3.5" />
-                Online Sanal POS Ödemesi
-              </div>
-              <h2 className="mt-3 text-lg font-semibold text-foreground">
-                Vitrin üzerinden kredi kartı tahsilatı
-              </h2>
-              <p className="mt-1 text-sm leading-6 text-muted-foreground">
-                iyzico, Paynet ve benzeri sanal POS sağlayıcıları ile müşterilerinizin
-                sitenizden doğrudan ödeme yapmasını sağlayın.
-              </p>
-            </div>
-          </div>
-        </div>
-        <div className="p-5">
-          <p className="text-sm leading-6 text-muted-foreground">
-            Sanal POS entegrasyon ayarları yakında eklenecek. Kurumsal paketinizle bu
-            özelliği kullanmaya hazırsınız.
-          </p>
-        </div>
-      </Card>
-    </PlanFeatureGate>
     </div>
   );
 }

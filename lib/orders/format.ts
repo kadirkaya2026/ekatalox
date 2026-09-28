@@ -19,5 +19,7 @@ export function formatOrderNo(order: Pick<StorefrontOrder, "order_no" | "order_n
 export function formatPaymentMethod(method: StorefrontOrder["payment_method"]) {
   if (method === "cash") return "Nakit";
   if (method === "card") return "Kredi Kartı";
+  if (method === "transfer") return "Havale / EFT";
+  if (method === "online") return "Online Ödeme";
   return null;
 }

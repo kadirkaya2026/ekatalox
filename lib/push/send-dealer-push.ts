@@ -3,6 +3,8 @@ import { appEnv, hasWebPushEnv } from "@/lib/env";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { formatCurrency } from "@/lib/utils";
 import type { CurrencyCode } from "@/lib/products/constants";
+import type { OrderPaymentMethod } from "@/lib/types";
+import { formatPaymentMethod } from "@/lib/orders/format";
 
 export interface DealerPushOrder {
   id: string;
@@ -11,7 +13,7 @@ export interface DealerPushOrder {
   itemCount: number;
   totalAmount: number;
   currency: string;
-  paymentMethod: "cash" | "card" | null;
+  paymentMethod: OrderPaymentMethod | null;
 }
 
 // Bayiye (tenant admin cihazlarına) sipariş bildirimi. Best-effort: hata
@@ -34,7 +36,7 @@ export async function sendDealerOrderPush(params: {
   const o = params.order;
   const no = typeof o.orderNo === "number" ? `#${o.orderNo}` : "";
   const total = o.currency === "CATALOG" ? "Fiyatsız katalog" : formatCurrency(o.totalAmount, o.currency as CurrencyCode);
-  const payment = o.paymentMethod === "cash" ? "Nakit" : o.paymentMethod === "card" ? "Kart" : null;
+  const payment = formatPaymentMethod(o.paymentMethod);
   const firstName = o.customerName.trim().split(/\s+/).slice(0, 2).join(" ");
   const bodyParts = [firstName, `${o.itemCount} ürün`, total, payment].filter(Boolean);
 

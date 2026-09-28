@@ -12,6 +12,8 @@ import {
 } from "@/lib/storefront/order-pdf-log";
 import { generateOrderReceiptPdf } from "@/lib/storefront/order-receipt-pdf";
 import { loadReceiptItemImages } from "@/lib/storefront/receipt-images";
+import { getBankTransferInfo } from "@/lib/storefront/payment-methods";
+import { formatPaymentMethod } from "@/lib/orders/format";
 import {
   buildOrderReceiptOrderNumber,
   buildSecureOrderReceiptUrl,
@@ -43,12 +45,15 @@ import {
 } from "@/lib/storefront/cart-form-config";
 
 function buildPaymentMethodLabel(params: {
-  paymentMethod: "cash" | "card";
+  paymentMethod: "cash" | "card" | "transfer";
   selectedInstallment: { label: string; surchargePercentage: number } | null;
   zeroCommissionApplied: boolean;
 }) {
   if (params.paymentMethod === "cash") {
     return "Nakit";
+  }
+  if (params.paymentMethod === "transfer") {
+    return "Havale / EFT";
   }
 
   if (!params.selectedInstallment) {
@@ -285,8 +290,7 @@ export async function POST(request: Request) {
   if (catalogMode) {
     // Fiyatsız katalogda da ödeme yöntemi seçilebilir (tutar hesabı yok, sadece bilgi).
     const catalogPaymentMethod = parsed.data.paymentMethod ?? null;
-    const catalogPaymentMethodLabel =
-      catalogPaymentMethod === "cash" ? "Nakit" : catalogPaymentMethod === "card" ? "Kredi Kartı" : null;
+    const catalogPaymentMethodLabel = formatPaymentMethod(catalogPaymentMethod);
     const storefrontSettings = await getTenantStorefrontSettings(tenant.id);
     const tenantDisplayName =
       storefrontSettings.storefront_title?.trim() || tenant.company_name;
@@ -348,6 +352,7 @@ export async function POST(request: Request) {
         items,
         paymentSummary: null,
         paymentMethodLabel: catalogPaymentMethodLabel,
+        bankTransfer: catalogPaymentMethod === "transfer" ? getBankTransferInfo(storefrontSettings) : null,
         note: parsed.data.note,
         catalogMode: true,
         footerLine: adFooterLine,
@@ -440,6 +445,15 @@ export async function POST(request: Request) {
         }
       : null;
 
+  // Havale iskontosu sunucudaki ayardan (0145); istemciye güvenilmez.
+  const transferConfig =
+    paymentMethod === "transfer"
+      ? {
+          tiers: deliveryFeeSettings.transfer_discount_tiers ?? [],
+          isActive: deliveryFeeSettings.is_transfer_discount_active ?? false,
+        }
+      : null;
+
   const paymentSummary = getCartPaymentSummary(
     items,
     paymentMethod ?? "cash",
@@ -450,6 +464,7 @@ export async function POST(request: Request) {
     undefined,
     coupon,
     deliveryFeeConfig,
+    transferConfig,
   );
 
   if (!paymentSummary) {
@@ -557,6 +572,7 @@ export async function POST(request: Request) {
             zeroCommissionApplied: paymentSummary.zeroCommissionApplied,
           })
         : null,
+      bankTransfer: paymentMethod === "transfer" ? getBankTransferInfo(storefrontSettings) : null,
       note: parsed.data.note,
       footerLine: adFooterLine,
         itemImages: await itemImagesPromise,

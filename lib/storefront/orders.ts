@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { CartItem } from "@/lib/types";
+import type { CartItem, OrderPaymentMethod } from "@/lib/types";
 import { normalizeCustomerPhone } from "@/lib/storefront/customer-phone";
 
 // Checkout'ta toplanan isim/adres/telefon (bkz. storefront-cart-drawer.tsx)
@@ -14,7 +14,7 @@ export async function recordStorefrontOrder(params: {
   orderNumber: string;
   currency: string;
   totalAmount: number;
-  paymentMethod: "cash" | "card" | null;
+  paymentMethod: OrderPaymentMethod | null;
   items: CartItem[];
   note?: string | null;
   // Siparişin geldiği magnetin magnet_codes.id'si. RPC içinde sipariş
