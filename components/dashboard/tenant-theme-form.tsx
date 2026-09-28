@@ -23,7 +23,7 @@ import type {
 import { THEME_OPTIONS } from "@/lib/storefront/theme-catalog";
 import { LAYOUT_OPTIONS } from "@/lib/storefront/layout-catalog";
 import { FONT_OPTIONS } from "@/lib/storefront/font-catalog";
-import { getSectorThemePresets, hasSectorThemeCollection, matchesThemePreset, type StorefrontThemePreset } from "@/lib/storefront/theme-presets";
+import { STOREFRONT_THEME_PRESETS, getSectorThemePresets, hasSectorThemeCollection, matchesThemePreset, type StorefrontThemePreset } from "@/lib/storefront/theme-presets";
 import {
   DEFAULT_STOREFRONT_APPEARANCE,
   FOOTER_STYLE_OPTIONS,
@@ -168,6 +168,18 @@ export function TenantThemeForm({
   const router = useRouter();
   const sectorPresets = getSectorThemePresets(tenantSector);
   const sectorLocked = hasSectorThemeCollection(tenantSector);
+  // Hazır paketler: önce kayıtlı sektörünkiler, altında diğerleri sektör
+  // başlıklarıyla (29 Eyl 2026). Sektörsüz eski mağazalar hepsini görür.
+  const presetGroups = [
+    ...(sectorPresets.length ? [{ title: "Sektörünüze uygun temalar", presets: sectorPresets }] : []),
+    ...Array.from(
+      STOREFRONT_THEME_PRESETS.filter((preset) => !sectorPresets.includes(preset)).reduce((map, preset) => {
+        map.set(preset.sector, [...(map.get(preset.sector) ?? []), preset]);
+        return map;
+      }, new Map<string, StorefrontThemePreset[]>()),
+      ([title, presets]) => ({ title, presets }),
+    ),
+  ];
   const canUseAdvancedAppearance = hasPlanFeature(tenantPlan, "advanced_appearance");
 
   const previewTitle = initialStorefrontSettings.storefront_title ?? "";
@@ -243,8 +255,8 @@ export function TenantThemeForm({
   }
 
   function applyPreset(preset: StorefrontThemePreset, opts?: { skipConfirm?: boolean }) {
-    if (!sectorPresets.some((item) => item.key === preset.key)) {
-      setSaveMessage("Yalnız kayıtlı sektörünüze ait temaları uygulayabilirsiniz.");
+    // 29 Eyl 2026: her sektörün hazır paketi uygulanabilir (kullanıcı kararı).
+    if (!STOREFRONT_THEME_PRESETS.some((item) => item.key === preset.key)) {
       return;
     }
     const confirmed =
@@ -314,7 +326,7 @@ export function TenantThemeForm({
     if (!autoApply) return;
     // Bir mikro görev sonra: effect içinde doğrudan setState kuralına takılmasın.
     const timer = setTimeout(() => {
-    const preset = autoApply.preset ? sectorPresets.find((x) => x.key === autoApply.preset) : null;
+    const preset = autoApply.preset ? STOREFRONT_THEME_PRESETS.find((x) => x.key === autoApply.preset) : null;
     if (preset) {
       applyPreset(preset, { skipConfirm: true });
     } else {
@@ -368,12 +380,16 @@ export function TenantThemeForm({
                   <h2 className="text-lg font-semibold text-slate-900">Hazır paketler</h2>
                 </div>
                 <p className="mt-1 mb-4 text-sm text-slate-600">
-                  Kayıtlı sektörünüze ait temalardan birini seçin. <strong>Önizle</strong> ile mağazanız yeni sekmede
-                  o temayla, kendi ürünlerinizle açılır; beğenirseniz oradan ya da buradan uygulayın.
+                  Önce sektörünüze uygun temalar, altında diğer sektörlerin temaları listelenir; beğendiğinizi seçebilirsiniz.
+                  <strong> Önizle</strong> ile mağazanız yeni sekmede o temayla, kendi ürünlerinizle açılır; beğenirseniz
+                  oradan ya da buradan uygulayın.
                 </p>
-                {sectorPresets.length === 0 ? <p className="rounded-xl bg-slate-50 p-4 text-sm text-slate-600">Bu sektör için hazır tema koleksiyonu henüz tanımlanmadı. Mevcut görünüm ayarlarınızı diğer sekmelerden yönetebilirsiniz.</p> : null}
+                <div className="space-y-6">
+                {presetGroups.map((group) => (
+                <div key={group.title} className="space-y-3">
+                <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-500">{group.title}</h3>
                 <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-                  {sectorPresets.map((preset) => {
+                  {group.presets.map((preset) => {
                     const isSelected = matchesThemePreset({ ...form, hero_style_key: initialStorefrontSettings.hero_style_key }, preset);
                     const isApplying = applyPending && applyingPresetKey === preset.key;
                     const href = presetPreviewHref(preset.key);
@@ -427,6 +443,9 @@ export function TenantThemeForm({
                       </div>
                     );
                   })}
+                </div>
+                </div>
+                ))}
                 </div>
               </div>
             ) : null}
