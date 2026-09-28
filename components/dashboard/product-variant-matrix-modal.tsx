@@ -133,6 +133,15 @@ export function ProductVariantMatrixModal({
       return;
     }
 
+    const nameKeys = variantRows.map((row) =>
+      row.model_name.trim().replace(/\s+/g, " ").toLocaleLowerCase("tr-TR"),
+    );
+    const duplicate = variantRows.find((row, index) => nameKeys.indexOf(nameKeys[index]) !== index);
+    if (duplicate) {
+      setVariantMessage(`"${duplicate.model_name.trim()}" adlı varyant birden fazla kez girilmiş. Her varyantın adı farklı olmalı.`);
+      return;
+    }
+
     setVariantMessage(null);
     startTransition(async () => {
       const response = await fetch(`/api/tenant/products/${product.id}/variants`, {

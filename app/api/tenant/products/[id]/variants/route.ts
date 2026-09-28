@@ -203,6 +203,42 @@ export async function POST(
     return NextResponse.json({ error: "Ürün bulunamadı." }, { status: 404 });
   }
 
+  // Aynı adlı iki varyant (ör. iki "Siyah") benzersiz indekse takılıp ham
+  // Postgres hatası veriyordu; o arada silinen varyantlar fiyatlarıyla gidiyordu.
+  // Kayda başlamadan ÖNCE Türkçe mesajla durdur (28 Eyl 2026 denetimi).
+  const seenNames = new Set<string>();
+  for (const variant of parsed.data.variants) {
+    const key = variant.model_name.trim().replace(/\s+/g, " ").toLocaleLowerCase("tr-TR");
+    if (seenNames.has(key)) {
+      return NextResponse.json(
+        { error: `"${variant.model_name.trim()}" adlı varyant birden fazla kez girilmiş. Her varyantın adı farklı olmalı.` },
+        { status: 400 },
+      );
+    }
+    seenNames.add(key);
+  }
+
+  // Fiyat listeleri bu tenant'a ait olmalı.
+  const requestedListIds = [
+    ...new Set(
+      parsed.data.variants.flatMap((variant) =>
+        ((variant as { prices?: Array<{ price_list_id: string }> }).prices ?? []).map(
+          (entry) => entry.price_list_id,
+        ),
+      ),
+    ),
+  ];
+  if (requestedListIds.length) {
+    const { data: ownLists } = await supabase
+      .from("price_lists")
+      .select("id")
+      .eq("tenant_id", tenant.id)
+      .in("id", requestedListIds);
+    if ((ownLists ?? []).length !== requestedListIds.length) {
+      return NextResponse.json({ error: "Geçersiz fiyat listesi." }, { status: 400 });
+    }
+  }
+
   const { data: existingVariants, error: existingError } = await supabase
     .from("product_variants")
     .select("id, stock_quantity")
