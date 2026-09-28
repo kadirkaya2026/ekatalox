@@ -129,7 +129,7 @@ export function ProductVariantMatrixModal({
     const hasEmptyModelName = variantRows.some((row) => !row.model_name.trim());
 
     if (hasEmptyModelName) {
-      setVariantMessage("Her satır için model adı zorunludur.");
+      setVariantMessage("Her satır için varyant adı zorunludur (örn. Siyah, M Beden).");
       return;
     }
 
@@ -156,7 +156,7 @@ export function ProductVariantMatrixModal({
     <Modal
       open
       onClose={onClose}
-      title={`${product.product_name} • Model Matrisi`}
+      title={`${product.product_name} • Varyantlar`}
       panelClassName="max-w-6xl sm:max-h-[min(92dvh,100%)]"
       bodyClassName="sm:p-6"
     >
@@ -165,7 +165,7 @@ export function ProductVariantMatrixModal({
           <div>
             <p className="text-sm font-semibold text-foreground">Hızlı varyant düzenleyici</p>
             <p className="mt-1 text-sm text-muted-foreground">
-              Model adı, paket içi, koli içi, fiyat ve satış durumunu tek ekranda yönetin. Fiyat
+              Varyant adı (renk, beden…), paket içi, koli içi, fiyat ve satış durumunu tek ekranda yönetin. Fiyat
               boş bırakılırsa ürün fiyatı kullanılır.
             </p>
           </div>
@@ -185,7 +185,7 @@ export function ProductVariantMatrixModal({
           <table className="min-w-full border-collapse">
             <thead className="bg-muted/60 text-left text-xs uppercase tracking-[0.14em] text-muted-foreground">
               <tr>
-                <th className="px-3 py-3">Model Adı</th>
+                <th className="px-3 py-3">Varyant Adı</th>
                 <th className="px-3 py-3">Paket İçi</th>
                 <th className="px-3 py-3">Koli İçi</th>
                 {pricedLists.map((list) => (

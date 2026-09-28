@@ -411,11 +411,11 @@ export function ProductsTable({
                       variant="secondary"
                       className="h-11 w-full flex-col justify-center gap-0.5 px-0.5 text-[11px] font-semibold leading-[1.1]"
                       onClick={() => onOpenVariantMatrix(product)}
-                      title="Model matrisini düzenle"
-                      aria-label="Model matrisini düzenle"
+                      title="Varyantları düzenle (renk, beden…)"
+                      aria-label="Varyantları düzenle"
                     >
                       <Layers className="size-3.5 shrink-0" />
-                      <span className="text-center">Model</span>
+                      <span className="text-center">Varyant</span>
                     </Button>
                     <Button
                       variant="secondary"
@@ -606,7 +606,7 @@ export function ProductsTable({
 
             <div className="mt-4 flex gap-2">
               <Button variant="secondary" className="flex-1" onClick={() => onOpenVariantMatrix(product)}>
-                Model
+                Varyant
               </Button>
               <Button variant="secondary" className="flex-1" onClick={() => onToggleStock(product)}>
                 {product.is_in_stock ? "Stoğu kapat" : "Stoğu aç"}

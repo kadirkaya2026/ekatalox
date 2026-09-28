@@ -821,7 +821,7 @@ export function ProductsManager({
           onClose={closeVariantMatrix}
           onSaved={(updated) => {
             setProducts((current) => current.map((item) => (item.id === updated.id ? updated : item)));
-            setMessage("Varyant matrisi güncellendi.");
+            setMessage("Varyantlar güncellendi.");
             closeVariantMatrix();
           }}
         />
