@@ -26,8 +26,8 @@ const FIELD_META: Record<
   { title: string; defaultLabel: string; hint: string }
 > = {
   customer_name: {
-    title: "Müşteri / Cari Adı",
-    defaultLabel: "Müşteri / Cari Adı",
+    title: "Ad Soyad / Firma Adı",
+    defaultLabel: "Ad Soyad / Firma Adı",
     hint: "Siparişi kimin verdiğini gösterir; fişe ve WhatsApp mesajına yazılır.",
   },
   customer_phone: {

@@ -24,3 +24,5 @@
 .aura .stepper>button:not(.addButton){min-height:44px;border-radius:8px;background:var(--panel)}
 @media(max-width:700px){.aura .stepper .addButton{font-size:11px;padding:11px 7px;gap:5px}}
 @media(prefers-reduced-motion:reduce){.aura .stepper .addButton{transition:none}}
+
+.root[data-image-fit] [data-theme-area="heroVisible"] img,.root[data-image-fit] [data-theme-area="collectionVisible"] img,.root[data-image-fit] [data-theme-area="promoVisible"] img,.root[data-image-fit] [data-theme-area="featureVisible"] img{object-fit:var(--banner-fit,contain);object-position:var(--banner-position,center)}

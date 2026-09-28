@@ -96,7 +96,7 @@ export function getInternalPathFromResolution(
     }
     // Fiş yazdırma sayfası panel layout'unun dışında (kenar çubuksuz);
     // app.ekatalox.com/yazdir/... /dashboard altına taşınmamalı.
-    if (pathname.startsWith("/yazdir/")) {
+    if (pathname.startsWith("/yazdir/") || pathname === "/tema-onizleme") {
       return pathname;
     }
 

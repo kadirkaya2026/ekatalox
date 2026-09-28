@@ -3,17 +3,25 @@ import { getSessionContext } from "@/lib/auth/session";
 import { ensureTenantAdminResponse } from "@/lib/tenancy/guards";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { revalidateStorefrontCache } from "@/lib/storefront/cache";
-import { DESIGNS, prepareDesignUpdate } from "@/lib/storefront/sector-design/config";
+import { publicationRevision, previousPublication } from "@/lib/storefront/sector-design/publication";
+import { readDesignDocument, DESIGNS, prepareDesignUpdate } from "@/lib/storefront/sector-design/config";
 
 export async function PATCH(request: Request) {
   const guard = await ensureTenantAdminResponse({ blockDemoWrite: true });
   if (guard) return guard;
   const { tenant } = await getSessionContext();
-  const input: unknown = await request.json().catch(() => null);
+  const body = await request.json().catch(() => null);
+  if (!body || typeof body !== "object" || typeof body.baseRevision !== "string") return NextResponse.json({ error: "Güncel düzenleyiciyi açıp tekrar deneyin." }, { status: 428 });
+  const db = createSupabaseAdminClient();
+  if (!db) return NextResponse.json({ error: "Veritabanına ulaşılamıyor." }, { status: 503 });
+  const { data, error: readError } = await db.from("tenant_storefront_settings").select("sector_design").eq("tenant_id", tenant!.id).maybeSingle();
+  if (readError) return NextResponse.json({ error: "Tema okunamadı." }, { status: 503 });
+  if (publicationRevision(data?.sector_design) !== body.baseRevision) return NextResponse.json({ error: "Mağaza başka bir sekmede güncellendi. Taslağınız korunuyor; güncel yayını yeni sekmede açıp karşılaştırın." }, { status: 409 });
+  const previous = body.restore === true ? previousPublication(data?.sector_design, tenant!.sector) : null;
+  if (body.restore === true && !previous) return NextResponse.json({ error: "Geri dönülebilecek önceki tema yayını yok." }, { status: 400 });
+  const input = previous ? { themeId: previous.themeId, mode: previous.mode, content: previous.content[previous.themeId] } : { themeId: body.themeId, mode: body.mode, content: body.content };
   const preflight = prepareDesignUpdate(tenant!.sector, input, null);
   if ("error" in preflight) return NextResponse.json({ error: preflight.error }, { status: 400 });
-  const db = createSupabaseAdminClient();
-  if (!db) return NextResponse.json({ error: "Tema kaydetmek için veritabanı bağlantısı gerekli." }, { status: 503 });
   const selectedContent = preflight.document.content[preflight.document.themeId]!;
   const categoryIds = [...new Set(Object.entries(selectedContent).filter(([key, value]) => key.endsWith("CategoryId") && value && value !== "all").map(([, value]) => String(value)))];
   const productId = "featureProductId" in selectedContent ? selectedContent.featureProductId : "";
@@ -29,13 +37,23 @@ export async function PATCH(request: Request) {
     if (found.error) return NextResponse.json({ error: "Ürün doğrulanamadı." }, { status: 503 });
     if (!found.data) return NextResponse.json({ error: "Yalnız kendi mağazanızın ürünlerini seçebilirsiniz." }, { status: 400 });
   }
-  const { data, error: readError } = await db.from("tenant_storefront_settings").select("sector_design").eq("tenant_id", tenant!.id).maybeSingle();
-  if (readError) return NextResponse.json({ error: "Tema altyapısı hazır değil. Sektör tasarımı veritabanı güncellemesini kontrol edin." }, { status: 503 });
   const result = prepareDesignUpdate(tenant!.sector, input, data?.sector_design);
   if ("error" in result) return NextResponse.json({ error: result.error }, { status: 400 });
   const design = DESIGNS.find(d => d.id === result.document.themeId)!;
-  const { error } = await db.from("tenant_storefront_settings").upsert({ tenant_id: tenant!.id, sector_design: result.document, theme_key: design.overlayTheme, font_key: design.font }, { onConflict: "tenant_id" });
+  const publication = { ...result.document, _publication: { id: crypto.randomUUID(), previous: readDesignDocument(data?.sector_design, tenant!.sector) } };
+  const row = { sector_design: publication, theme_key: design.overlayTheme, font_key: design.font };
+  // Compare-and-swap on the complete JSON value: stale tabs cannot overwrite a newer publication.
+  let write;
+  if (data) {
+    let update = db.from("tenant_storefront_settings").update(row).eq("tenant_id", tenant!.id);
+    update = data.sector_design == null ? update.is("sector_design", null) : update.eq("sector_design", JSON.stringify(data.sector_design));
+    write = await update.select("tenant_id");
+  } else {
+    write = await db.from("tenant_storefront_settings").insert({ tenant_id: tenant!.id, ...row }).select("tenant_id");
+  }
+  const { error } = write;
+  if (error?.code === "23505" || (!error && !write.data?.length)) return NextResponse.json({ error: "Başka bir yayın yapıldı. Taslağınızı kaybetmeden güncel mağazayı tekrar açın." }, { status: 409 });
   if (error) return NextResponse.json({ error: "Tema kaydedilemedi. Tekrar deneyin." }, { status: 500 });
   revalidateStorefrontCache({ tenantId: tenant!.id, subdomain: tenant!.subdomain });
-  return NextResponse.json({ design: result.document });
+  return NextResponse.json({ design: result.document, revision: publication._publication.id, previous: publication._publication.previous });
 }

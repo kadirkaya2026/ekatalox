@@ -11,3 +11,5 @@
 .stepper button.chooseOptions{width:auto;height:auto;min-height:34px;padding:8px 10px;font-size:11px;font-weight:600;line-height:1.3}.productBottom:has(.chooseOptions){flex-wrap:wrap}@media(max-width:700px){.stepper button.chooseOptions{font-size:10px;padding:7px 8px}}
 
 .productImage .photo,.categoryPhoto .photo,.featureImage .photo{object-fit:contain;object-position:center}.productImage:hover .photo{transform:none}.primary,.announcement,.vitrin .cart{color:var(--on-accent,#fff)}
+
+.root[data-image-fit] [data-theme-area="heroVisible"] img,.root[data-image-fit] [data-theme-area="collectionVisible"] img,.root[data-image-fit] [data-theme-area="promoVisible"] img,.root[data-image-fit] [data-theme-area="featureVisible"] img{object-fit:var(--banner-fit,contain);object-position:var(--banner-position,center)}

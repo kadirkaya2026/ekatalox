@@ -3,7 +3,7 @@
 import { paletteStyle } from "@/components/storefront/sector-design/palette";
 import { electronicsCommerceTheme, commerceRootClass } from "@/components/storefront/sector-design/commerce-theme";
 import { SectorStorefront } from "@/components/storefront/sector-design/sector-storefront";
-import { readDesignDocument } from "@/lib/storefront/sector-design/config";
+import { readDesignDocument, getDesignContent } from "@/lib/storefront/sector-design/config";
 
 import { volumeUnitPrice } from "@/lib/storefront/volume-pricing";
 import { DealerPushPrompt } from "@/components/storefront/dealer-push-prompt";
@@ -998,7 +998,7 @@ export function StorefrontClient({
   bestSellerProducts,
   recommendationPool,
   categoryRepresentativeImages = {},
-  storefrontSettings,
+  storefrontSettings: inputStorefrontSettings,
   sections = [],
   subdomain,
   pageTitle,
@@ -1007,6 +1007,8 @@ export function StorefrontClient({
   isCatalogOnly = false,
   sectionMode = false,
   inlineProductNavigation = false,
+  previewMode = false,
+  previewPriceListId = "",
   ads = null,
   initialDetailProduct = null,
   dealerProfile = null,
@@ -1040,6 +1042,8 @@ export function StorefrontClient({
   sectionMode?: boolean;
   /** Local design previews keep their own URL rather than opening live product routes. */
   inlineProductNavigation?: boolean;
+  previewMode?: boolean;
+  previewPriceListId?: string;
   // Ücretsiz plan: eKatalox reklam yerleşimleri (ürün kartı, pop-up, ürün
   // detayı, WhatsApp mesajı). null = reklam yok. Bkz. lib/ads/server.ts.
   ads?: StorefrontAdsConfig | null;
@@ -1049,12 +1053,13 @@ export function StorefrontClient({
   /** Kişiye özel bayi şifresiyle giren müşteri (0138). */
   dealerProfile?: DealerProfile | null;
 }) {
+  const storefrontSettings=useMemo(()=>{const design=readDesignDocument(inputStorefrontSettings.sector_design,tenant.sector);const content=design?getDesignContent(design):null;return {...inputStorefrontSettings,storefront_title:content?.storefrontTitle||inputStorefrontSettings.storefront_title,logo_url:content?.logoUrl||inputStorefrontSettings.logo_url};},[inputStorefrontSettings,tenant.sector]);
   const [cart, setCartState] = useState<CartItem[]>(() => {
     if (typeof window === "undefined") {
       return [];
     }
 
-    return repriceVolumeCart(readStoredCart(getCartStorageKey(tenant.id)));
+    return previewMode ? [] : repriceVolumeCart(readStoredCart(getCartStorageKey(tenant.id)));
   });
   // Her sepet güncellemesinde kademeli fiyat (0142) yeniden hesaplanır.
   const setCart = useCallback((update: React.SetStateAction<CartItem[]>) => {
@@ -1398,7 +1403,8 @@ export function StorefrontClient({
     getClientMountedState,
     getServerMountedState,
   );
-  const analyticsSubdomain = subdomain ?? tenant.subdomain;
+  const analyticsSubdomain = previewMode ? "" : subdomain ?? tenant.subdomain;
+  const productsEndpoint = previewMode ? `/api/tenant/settings/sector-design/preview?priceList=${encodeURIComponent(previewPriceListId)}&` : "/api/storefront/products?";
   const { t } = useStorefrontLocale();
 
   // Daha önce sipariş vermiş bir müşteri telefon numarasını tekrar
@@ -1409,7 +1415,7 @@ export function StorefrontClient({
   const lastLookedUpPhoneRef = useRef<string | null>(null);
 
   useEffect(() => {
-    if (!isMarketTenant) {
+    if (previewMode || !isMarketTenant) {
       return;
     }
 
@@ -1445,13 +1451,14 @@ export function StorefrontClient({
       });
 
     return () => controller.abort();
-  }, [debouncedCustomerPhoneForLookup, isMarketTenant, analyticsSubdomain]);
+  }, [debouncedCustomerPhoneForLookup, isMarketTenant, analyticsSubdomain, previewMode]);
 
   // Bildirim kartında ad + telefon giren müşteri (her bayi türü): sepet
   // formundaki Cari Adı / Telefon boşsa oradan dolar. Önce cihaz depolaması;
   // yoksa ve bildirim izni varsa sunucudaki abonelik kaydı (depolama
   // temizlenmiş olabilir). Kart yeniden kaydedince olay ile tazelenir.
   useEffect(() => {
+    if (previewMode) return;
     let cancelled = false;
     const apply = (identity: { name: string; phone: string } | null) => {
       if (cancelled || !identity) return;
@@ -1473,25 +1480,25 @@ export function StorefrontClient({
       window.clearTimeout(timer);
       window.removeEventListener("ekx-push-identity-changed", run);
     };
-  }, [analyticsSubdomain]);
+  }, [analyticsSubdomain, previewMode]);
 
   // Telefon cihazda hatırlanır: sayfa yenilenince sepet formu boş kalmasın.
   // Ad/adres zaten numaradan otomatik dolduğu için tek başına yeterli.
   useEffect(() => {
-    if (!isMarketTenant) return;
+    if (previewMode || !isMarketTenant) return;
     const saved = readTrackingPhone();
     if (saved) setCustomerPhone((current) => (current.trim() ? current : saved));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isMarketTenant]);
 
   useEffect(() => {
-    if (!isMarketTenant) return;
+    if (previewMode || !isMarketTenant) return;
     const digits = customerPhone.replace(/\D/g, "");
     if (digits.length >= 10) saveTrackingPhone(customerPhone);
-  }, [customerPhone, isMarketTenant]);
+  }, [customerPhone, isMarketTenant, previewMode]);
 
   useEffect(() => {
-    if (!isMarketTenant) return;
+    if (previewMode || !isMarketTenant) return;
     const saved = readTrackingPhone();
     if (!saved || saved.replace(/\D/g, "").length < 10) return;
     const controller = new AbortController();
@@ -1509,7 +1516,7 @@ export function StorefrontClient({
   }, [isMarketTenant, analyticsSubdomain]);
 
   useEffect(() => {
-    if (!isMarketOrTekelTenant(tenant)) return;
+    if (previewMode || !isMarketOrTekelTenant(tenant)) return;
     const controller = new AbortController();
     fetch(`/api/storefront/pairings?subdomain=${encodeURIComponent(analyticsSubdomain)}`, { signal: controller.signal })
       .then((r) => (r.ok ? r.json() : null))
@@ -1517,7 +1524,7 @@ export function StorefrontClient({
       .catch(() => undefined);
     return () => controller.abort();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [analyticsSubdomain]);
+  }, [analyticsSubdomain, previewMode]);
 
   // Bir kategorinin (soyu dahil) eşlenmiş hedef kategorileri, öncelik sırasıyla
   const getPairingTargets = useCallback((categoryId: string | null | undefined) => {
@@ -1562,7 +1569,7 @@ export function StorefrontClient({
         if (!list) {
           try {
             const params = new URLSearchParams({ subdomain, categoryIds: expanded.join(","), page: "1" });
-            const response = await fetch(`/api/storefront/products?${params.toString()}`);
+            const response = await fetch(`${productsEndpoint}${params.toString()}`);
             if (!response.ok) return [] as StorefrontProduct[];
             const result = await response.json();
             list = Array.isArray(result.products) ? (result.products as StorefrontProduct[]) : [];
@@ -1597,7 +1604,7 @@ export function StorefrontClient({
       if (pick.length >= LIMIT) break;
     }
     return pick;
-  }, [categories, subdomain, recommendationSeed]);
+  }, [categories, subdomain, recommendationSeed, productsEndpoint]);
 
   // Sepetin eksik tamamlayıcıları (ilk 3 kategori, 10 ürün)
   useEffect(() => {
@@ -1685,7 +1692,7 @@ export function StorefrontClient({
       .sort((left, right) => left.order - right.order);
   }, [storefrontSettings.homepage_blocks, usesMarketMobileOrder, usesMarketDesktopOrder]);
   const usesSidebarNav = layout.categoryNav === "sidebar";
-  const cartStorageKey = useMemo(() => getCartStorageKey(tenant.id), [tenant.id]);
+  const cartStorageKey = useMemo(() => getCartStorageKey(previewMode ? `preview-${tenant.id}` : tenant.id), [tenant.id, previewMode]);
   const announcementStorageKeys = useMemo(
     () => getAnnouncementStorageKeys(tenant.id),
     [tenant.id],
@@ -2040,7 +2047,7 @@ export function StorefrontClient({
   // "N al Y hediye" kampanyalarının tetikleyici/hediye ürün id'leri (market/
   // tekel sadece — bkz. tenant-campaigns-form.tsx).
   const giftCampaignProductIds = useMemo(() => {
-    if (!isMarketTenant) return [] as string[];
+    if (previewMode || !isMarketTenant) return [] as string[];
     const ids = new Set<string>();
     for (const campaign of campaigns) {
       if (campaign.rule_type !== "buy_x_get_y") continue;
@@ -2048,7 +2055,7 @@ export function StorefrontClient({
       for (const id of campaign.gift_product_ids ?? []) ids.add(id);
     }
     return [...ids];
-  }, [isMarketTenant, campaigns]);
+  }, [isMarketTenant, campaigns, previewMode]);
 
   // Bu ürünler productsById'de yoksa çöz — yoksa otomatik hediye ekleme
   // sessizce çalışmaz (aynı "buz küpleri" hatası).
@@ -2088,10 +2095,10 @@ export function StorefrontClient({
   // katlanan eşiklerde adedi günceller. reconcileGiftCartLines değişiklik
   // yoksa AYNI referansı döndürür — sonsuz döngü olmaz.
   useEffect(() => {
-    if (!isMarketTenant) return;
+    if (previewMode || !isMarketTenant) return;
     const plans = computeGiftCampaignPlans(cart, campaigns);
     setCart((current) => reconcileGiftCartLines(current, plans, productsById));
-  }, [isMarketTenant, cart, campaigns, productsById]);
+  }, [isMarketTenant, cart, campaigns, productsById, previewMode, setCart]);
 
   const cartTotalEntries = useMemo(
     () =>
@@ -2165,7 +2172,7 @@ export function StorefrontClient({
       .catch(() => undefined);
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [analyticsSubdomain]);
+  }, [analyticsSubdomain, previewMode]);
 
   const handleOpenProductDetail = useCallback(
     (productId: string) => {
@@ -2487,6 +2494,7 @@ export function StorefrontClient({
       return;
     }
 
+    if(previewMode&&sectionMode){setRelatedPreviewProducts(initialProducts.filter(p=>p.id!==relatedTarget.id&&p.category_id===relatedTarget.category_id).slice(0,8));return;}
     const lineage = getCategoryLineage(categories, relatedTarget.category_id);
     const parent = lineage.length >= 2 ? lineage[lineage.length - 2] : null;
     const matchCategoryIds = parent
@@ -2517,7 +2525,7 @@ export function StorefrontClient({
           categoryIds: matchCategoryIds.join(","),
           page: "1",
         });
-        const response = await fetch(`/api/storefront/products?${params.toString()}`, {
+        const response = await fetch(`${productsEndpoint}${params.toString()}`, {
           signal: abortController.signal,
         });
 
@@ -2543,7 +2551,7 @@ export function StorefrontClient({
     return () => {
       abortController.abort();
     };
-  }, [previewProduct, detailProduct, subdomain, categories, recommendationSeed]);
+  }, [previewProduct, detailProduct, subdomain, categories, recommendationSeed, productsEndpoint, previewMode, sectionMode, initialProducts]);
   const buildWhatsAppOrderMessage = useCallback(
     (pdfUrl?: string | null, trackingUrl?: string | null, locationUrl?: string | null) => {
       return buildWhatsAppMessage({
@@ -2585,6 +2593,7 @@ export function StorefrontClient({
   ]);
 
   const handleWhatsAppOrder = useCallback(async () => {
+    if (previewMode) { setOrderPdfError("Bu bir tema önizlemesidir. Deneme sepetiniz gerçek sipariş oluşturmaz."); return; }
     if (!cart.length || !isMinCartAmountMet) {
       return;
     }
@@ -2751,6 +2760,7 @@ export function StorefrontClient({
   }, [
     analyticsSubdomain,
     buildWhatsAppOrderMessage,
+    previewMode,
     cart,
     customerReferenceName,
     customerAddress,
@@ -2986,7 +2996,7 @@ export function StorefrontClient({
   ]);
 
   useEffect(() => {
-    if (!isMounted) {
+    if (!isMounted || previewMode) {
       return;
     }
 
@@ -2996,7 +3006,7 @@ export function StorefrontClient({
     }
 
     window.localStorage.setItem(cartStorageKey, JSON.stringify(cart));
-  }, [cart, cartStorageKey, isMounted]);
+  }, [cart, cartStorageKey, isMounted, previewMode]);
 
   useEffect(() => {
     setActiveBannerIndex(0);
@@ -3108,7 +3118,7 @@ export function StorefrontClient({
 
   const fetchProductsPage = useCallback(
     async (targetPage: number, mode: "replace" | "append") => {
-      if (!analyticsSubdomain) {
+      if (!analyticsSubdomain && !previewMode) {
         return;
       }
 
@@ -3136,7 +3146,7 @@ export function StorefrontClient({
           params.set("sort", productSort);
         }
 
-        const response = await fetch(`/api/storefront/products?${params.toString()}`);
+        const response = await fetch(`${productsEndpoint}${params.toString()}`);
 
         if (!response.ok) {
           return;
@@ -3152,7 +3162,7 @@ export function StorefrontClient({
         setIsLoadingProducts(false);
       }
     },
-    [analyticsSubdomain, debouncedSearchTerm, isDiscountCategorySelected, selectedCategoryIds, matchCategoryIds, productSort],
+    [analyticsSubdomain, debouncedSearchTerm, isDiscountCategorySelected, selectedCategoryIds, matchCategoryIds, productSort, previewMode, productsEndpoint],
   );
 
   useEffect(() => {
@@ -3294,6 +3304,7 @@ export function StorefrontClient({
       return;
     }
 
+    if(previewMode&&sectionMode){setPreviewDescription(descriptionTarget.description??"Bu vitrindeki ürünler ve fiyatlar tema tanıtımı için örnektir.");setPreviewDescriptionLoading(false);setPreviewDescriptionError(null);return;}
     const cachedDescription = descriptionCacheRef.current.get(descriptionTarget.id);
 
     if (cachedDescription !== undefined) {
@@ -3320,7 +3331,7 @@ export function StorefrontClient({
 
     void (async () => {
       try {
-        const response = await fetch("/api/storefront/product-description", {
+        const response = await fetch(previewMode ? `${productsEndpoint}descriptionId=${encodeURIComponent(descriptionTarget.id)}` : "/api/storefront/product-description", previewMode ? { signal: abortController.signal } : {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -3376,7 +3387,7 @@ export function StorefrontClient({
     return () => {
       abortController.abort();
     };
-  }, [previewProduct, detailProduct, subdomain, t]);
+  }, [previewProduct, detailProduct, subdomain, t, previewMode, productsEndpoint, sectionMode]);
 
   function openCartDrawer() {
     setIsCartOpen(true);
@@ -3435,7 +3446,7 @@ export function StorefrontClient({
     product: StorefrontProduct,
     selections: VariantSelectionState[],
   ) {
-    if (!subdomain) {
+    if (previewMode || !subdomain) {
       return { ok: true as const };
     }
 
@@ -4185,7 +4196,7 @@ export function StorefrontClient({
       {electronicsDesign ? <SectorStorefront key={electronicsDesign.themeId}
         design={electronicsDesign} settings={storefrontSettings} title={storefrontTitle}
         products={products} initialProducts={[...initialProducts, ...recommendationPool]} categories={categories}
-        tenantId={tenant.id} subdomain={subdomain}
+        tenantId={tenant.id} subdomain={previewMode ? undefined : subdomain}
         selectedCategory={selectedCategoryId} search={searchInput} total={productTotal}
         loading={isLoadingProducts} detailOpen={Boolean(detailProduct)} cartCount={badgeCartCount}
         quantities={isMounted ? cartQuantityByProductId : new Map()} variantCounts={isMounted ? cartVariantCountByProductId : new Map()} onSearch={handleSearchChange} onSearchSubmit={handleSearchSubmit}
@@ -4899,12 +4910,12 @@ export function StorefrontClient({
             ? { applied: cartPaymentSummary.couponDiscountAmount, missing: cartPaymentSummary.couponMissingAmount }
             : null
         }
-        pushSubdomain={analyticsSubdomain}
-        pushVapidPublicKey={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? ""}
+        pushSubdomain={previewMode ? "" : analyticsSubdomain}
+        pushVapidPublicKey={previewMode ? "" : process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? ""}
         announcement={announcement}
       />
 
-      {dealerProfile && !sectionMode ? (
+      {dealerProfile && !sectionMode && !previewMode ? (
         <DealerPushPrompt
           subdomain={analyticsSubdomain}
           vapidPublicKey={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? ""}

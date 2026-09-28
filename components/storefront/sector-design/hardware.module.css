@@ -21,3 +21,5 @@
 .root .list .product{padding:14px;gap:16px;border:1px solid var(--line)}
 .root .list .productBottom{margin:0;padding:12px;border:0;min-width:0}
 @media(max-width:700px){.root .product{padding:9px}.root .productBottom{margin:0 -9px -9px;padding:11px 9px;gap:9px}.root .stepper{gap:3px;flex-wrap:wrap}.root .stepper>button{min-width:32px}.root .stepper .addButton{font-size:10px;padding:10px 5px;gap:4px}.root .stepper>span{min-width:16px}.root .list .product{padding:12px;gap:10px}.root .list .productBottom{grid-column:1/-1;display:flex;flex-direction:row;align-items:center;justify-content:space-between;gap:12px;margin:0 -12px -12px;padding:12px}.root .list .stepper{width:auto;min-width:125px;max-width:65%}.root .list .productImage{grid-row:auto}}
+
+.root[data-image-fit] [data-theme-area="heroVisible"] img,.root[data-image-fit] [data-theme-area="collectionVisible"] img,.root[data-image-fit] [data-theme-area="promoVisible"] img,.root[data-image-fit] [data-theme-area="featureVisible"] img{object-fit:var(--banner-fit,contain);object-position:var(--banner-position,center)}

@@ -1,0 +1,19 @@
+import { notFound } from "next/navigation";
+import { ElectronicsReview } from "@/components/storefront/sector-design/electronics-review";
+import { isDesignId } from "@/lib/storefront/sector-design/config";
+import { getDefaultTenantStorefrontSettings } from "@/lib/data";
+import { demoTenants, demoProducts } from "@/lib/demo-data";
+import type { StorefrontProduct } from "@/lib/types";
+export const metadata = { title: "Kırtasiye ve oyuncak tema incelemesi", robots: { index: false, follow: false } };
+export const dynamic = "force-dynamic";
+export default async function StationeryReview({ searchParams }: { searchParams: Promise<{ tema?: string }> }) {
+  if (process.env.NODE_ENV !== "development") notFound();
+  const { tema } = await searchParams;
+  const tenant = { ...demoTenants[0], id: "theme-review-stationery", subdomain: "theme-review-stationery", company_name: "KAĞIT & OYUN", sector: "kirtasiye-oyuncak", whatsapp_number: "", is_demo: true };
+  const settings = { ...getDefaultTenantStorefrontSettings(tenant.id), storefront_title: tenant.company_name, storefront_description: "Kırtasiye, okul, hobi ve oyuncak kataloğu", is_hero_visible: false, is_theme_toggle_visible: true };
+  // Existing catalog photography; prices and inventory below are local demo data.
+  const samples = [{"name": "Faber Castell Kuru Boya Kalemi Redline Metal Tüp 24  Renk", "image": "https://mfsjzivcsvrxuegqzafe.supabase.co/storage/v1/object/public/market-catalog-images/8690826165247.jpg", "category": "colors", "price": 249}, {"name": "Süpriz Kutu Oyuncak", "image": "https://mfsjzivcsvrxuegqzafe.supabase.co/storage/v1/object/public/market-catalog-images/8588687348742.jpg", "category": "toys", "price": 149}, {"name": "Çınar Colormaxı A4 72 Yp Kareli Pp Kapak Spiralli Defter", "image": "https://mfsjzivcsvrxuegqzafe.supabase.co/storage/v1/object/public/market-catalog-images/8695894730021.jpg", "category": "notebooks", "price": 89}, {"name": "Fatih Sulu Boya 12 Renk S-12", "image": "https://mfsjzivcsvrxuegqzafe.supabase.co/storage/v1/object/public/market-catalog-images/8690216500405.jpg", "category": "colors", "price": 99}, {"name": "Faber Castell  Popart 2B Silgili Kurşun Kalem", "image": "https://mfsjzivcsvrxuegqzafe.supabase.co/storage/v1/object/public/market-catalog-images/8681241423012.jpg", "category": "pens", "price": 19}, {"name": "Çınar Spiralli Resim Defteri 30yp 24*34 33009", "image": "https://mfsjzivcsvrxuegqzafe.supabase.co/storage/v1/object/public/market-catalog-images/8695894330092.jpg", "category": "craft", "price": 69}, {"name": "Adel Sulu Boya Seti 12 Renk", "image": "https://mfsjzivcsvrxuegqzafe.supabase.co/storage/v1/object/public/market-catalog-images/8681241086859.jpg", "category": "colors", "price": 129}, {"name": "Çınar Colormaxi Spiralli Defter A4 40 Yaprak Çizgili", "image": "https://mfsjzivcsvrxuegqzafe.supabase.co/storage/v1/object/public/market-catalog-images/8695894730168.jpg", "category": "notebooks", "price": 59}];
+  const products: StorefrontProduct[] = samples.map((x,i)=>({...demoProducts[0],id:`stationery-sample-${i}`,category_id:x.category,sku_code:`KRT-${1000+i}`,product_name:x.name,image_url:x.image,image_url_2:null,image_url_3:null,price:x.price,package_quantity:6,carton_quantity:24,stock_quantity:120,is_in_stock:true,has_variants:false,variants:[],volume_pricing:null}));
+  const categories=[{"id": "colors", "name": "Boya & Renk"}, {"id": "toys", "name": "Oyuncaklar"}, {"id": "notebooks", "name": "Defterler"}, {"id": "pens", "name": "Kalemler"}, {"id": "craft", "name": "Resim & Hobi"}].map((c,i)=>({...c,tenant_id:tenant.id,parent_id:null,banner_item:null,tile_image_url:null,is_discount_category:false,is_hidden_from_storefront:false,display_order:i,created_at:"2026-01-01T00:00:00Z"}));
+  return <ElectronicsReview tenant={tenant} products={products} categories={categories} settings={settings} initialTheme={isDesignId(tema) && tema.startsWith("stationery-")?tema:"stationery-cizgi"}/>;
+}

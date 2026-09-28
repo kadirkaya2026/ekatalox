@@ -1,5 +1,6 @@
 // Self-servis kayıt formu şeması (app/api/signup). Türkçe mesajlar doğrudan
 // formda gösterilir; `path[0]` alan adı olarak istemciye döner.
+import { DESIGN_IDS, designSector } from "@/lib/storefront/sector-design/config";
 import { z } from "zod";
 import { TOPTAN_PLANS, TOPTAN_SECTOR_VALUES } from "@/lib/billing/toptan-plans";
 import {
@@ -50,6 +51,7 @@ export const signupSubdomainSchema = z.preprocess(
 );
 
 export const signupSchema = z.object({
+  themeId: z.enum(DESIGN_IDS).optional(),
   businessName: trimmed(2, 80, "İşletme adı en az 2 karakter olmalı."),
   sector: z
     .string()
@@ -79,6 +81,6 @@ export const signupSchema = z.object({
   termsAccepted: z.literal(true, {
     error: "Devam etmek için Kullanım Şartları'nı kabul etmelisiniz.",
   }),
-});
+}).refine(value => !value.themeId || designSector(value.themeId) === value.sector, { message: "Tema seçilen sektöre ait olmalıdır.", path: ["themeId"] });
 
 export type SignupInput = z.infer<typeof signupSchema>;

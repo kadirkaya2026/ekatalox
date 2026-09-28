@@ -1,4 +1,5 @@
 "use client";
+import { DESIGNS, isDesignId, designSector } from "@/lib/storefront/sector-design/config";
 
 // Kayıt sihirbazı (21 Eyl 2026): 3 kısa adım + kurulum ekranı, üstte
 // ilerleme çubuğu (components/marketing/signup-stepper.tsx).
@@ -102,7 +103,7 @@ const STEP_VISUAL: Record<0 | 1 | 2, { src: string; alt: string; caption: string
   2: { src: "/site/toptan-giris-v2.png", alt: "Demo kataloğun bayi şifre giriş ekranı", caption: "Fiyatlar yalnız şifre verdiğiniz bayilere açılır" },
 };
 
-export function SignupForm({ initialPlan, initialSector }: { initialPlan?: string; initialSector?: string }) {
+export function SignupForm({ initialPlan, initialSector, initialTheme }: { initialPlan?: string; initialSector?: string; initialTheme?: string }) {
   const [plan, setPlan] = useState<ToptanPlanSlug>(isToptanPlanSlug(initialPlan) ? initialPlan : "free");
   const sectorValid = TOPTAN_SECTOR_OPTIONS.some((o) => o.value === initialSector);
 
@@ -269,6 +270,7 @@ export function SignupForm({ initialPlan, initialSector }: { initialPlan?: strin
         body: JSON.stringify({
           businessName: form.businessName.trim(),
           sector: form.sector,
+          themeId: isDesignId(initialTheme) && designSector(initialTheme) === form.sector ? initialTheme : undefined,
           fullName: form.fullName.trim(),
           phone,
           email: form.email.trim().toLowerCase(),
@@ -360,7 +362,7 @@ export function SignupForm({ initialPlan, initialSector }: { initialPlan?: strin
                   className={fieldInputClass}
                 />
               </Field>
-              <Field id="sector" label="Sektör" error={errors.sector}>
+              <>{isDesignId(initialTheme) && designSector(initialTheme) === form.sector && <p className="mb-3 text-sm text-emerald-800">Seçilen tema: {DESIGNS.find(d => d.id === initialTheme)?.name}</p>}</><Field id="sector" label="Sektör" error={errors.sector}>
                 <Select
                   id="sector"
                   name="sector"

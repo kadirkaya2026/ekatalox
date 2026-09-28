@@ -1,0 +1,6 @@
+"use client";
+import {useState,type ComponentProps} from "react";
+import {SectorPreviewFrame} from "@/components/dashboard/sector-design/preview-frame";
+import {DESIGNS,designSector,newDesignDocument,type DesignId} from "@/lib/storefront/sector-design/config";
+type Props=Pick<ComponentProps<typeof SectorPreviewFrame>,"tenant"|"settings"|"products"|"categories">&{initialTheme:DesignId};
+export function PublicThemeDemo({initialTheme,...props}:Props){const [doc,setDoc]=useState(()=>newDesignDocument(initialTheme));return <><header className="flex flex-wrap items-center justify-between gap-3 border-b bg-white px-5 py-3 text-sm text-slate-900"><a href="/temalar">← Tüm temalar</a><span><b>{DESIGNS.find(d=>d.id===doc.themeId)?.name}</b> · Örnek ürünler ve fiyatlar · Sipariş gönderilmez</span><label>Görünüm <select aria-label="Satış biçimi" value={doc.mode} onChange={e=>setDoc({...doc,mode:e.target.value as typeof doc.mode})}><option value="retail">Perakende</option><option value="wholesale">Toptan</option></select></label><a className="rounded-lg bg-emerald-800 px-4 py-2 text-white" href={`/basvuru?sektor=${designSector(doc.themeId)}&tema=${doc.themeId}`}>Bu temayla ücretsiz başla</a></header><SectorPreviewFrame {...props} total={props.products.length} priceListId="demo" isCatalogOnly={false} fixture designDocument={doc}/></>;}

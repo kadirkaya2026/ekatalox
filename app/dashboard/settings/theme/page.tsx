@@ -1,4 +1,5 @@
-import { ElectronicsEditor } from "@/components/dashboard/sector-design/electronics-editor";
+import { SectorLiveEditor } from "@/components/dashboard/sector-design/live-editor";
+import { getPreviewPriceLists } from "@/lib/storefront/sector-design/preview-data";
 import { readDesignDocument, hasSectorDesign } from "@/lib/storefront/sector-design/config";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { EsnafThemePicker } from "@/components/dashboard/esnaf-theme-picker";
@@ -27,7 +28,7 @@ export default async function TenantThemeSettingsPage(props: ThemePageProps) {
     const db = createSupabaseAdminClient();
     const result = db ? await db.from("products").select("id, product_name").eq("tenant_id", tenant.id).order("product_name").limit(100) : { data: [] };
     return <div className="space-y-6"><Header eyebrow="Ayarlar / Sektör teması" title="Tema ve vitrin alanları" description="Sektörünüze özel üç tasarımdan birini seçin ve o tasarımın alanlarını düzenleyin." />
-      <ElectronicsEditor sector={tenant.sector!} initial={readDesignDocument(storefrontSettings.sector_design, tenant.sector)} categories={categories} products={(result.data ?? []).map(p => ({ id: p.id, name: p.product_name }))} previewUrl={`https://${tenant.subdomain}.${appEnv.rootDomain}`} />
+      <SectorLiveEditor sector={tenant.sector!} initial={readDesignDocument(storefrontSettings.sector_design, tenant.sector)} categories={categories} products={(result.data ?? []).map(p => ({ id: p.id, name: p.product_name }))} priceLists={(await getPreviewPriceLists(tenant.id)).map(p => ({ id: p.id, name: p.name, is_catalog_only: p.is_catalog_only }))} />
     </div>;
   }
   const isEsnaf = tenant.business_type === "market";

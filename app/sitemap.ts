@@ -9,6 +9,7 @@ const BASE_URL = "https://www.ekatalox.com";
 const STATIC: Array<[string, MetadataRoute.Sitemap[number]["changeFrequency"], number]> = [
   ["/", "weekly", 1],
   ["/blog", "weekly", 0.8],
+  ["/temalar", "monthly", 0.8],
   ["/sektorler", "monthly", 0.8],
   ["/sektorler/market-bakkal", "monthly", 0.8],
   ["/basvuru", "monthly", 0.9],

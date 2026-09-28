@@ -19,7 +19,7 @@ const COLLECT_URL = "/api/site-analytics/collect";
 const VISITOR_KEY = "ekatalox_site_visitor";
 const SESSION_KEY = "ekatalox_site_session";
 const SESSION_IDLE_MS = 30 * 60_000;
-const EXCLUDED_PREFIXES = ["/admin", "/dashboard", "/store", "/api", "/t", "/f", "/yazdir"];
+const EXCLUDED_PREFIXES = ["/admin", "/dashboard", "/store", "/api", "/t", "/f", "/yazdir", "/tema-onizleme", "/tema-inceleme", "/tema-demo"];
 
 type TrackerEvent = {
   type: "pageview" | "click" | "leave" | "funnel";
