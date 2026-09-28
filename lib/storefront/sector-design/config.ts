@@ -2,10 +2,11 @@ import { z } from "zod";
 
 export const ELECTRONICS_SECTOR = "telefon-aksesuar";
 export const FOOD_SECTOR = "gida";
+export const HARDWARE_SECTOR = "hirdavat";
 export const TEXTILE_SECTOR = "tekstil";
-export const DESIGN_IDS = ["electronics-forma", "electronics-akim", "electronics-modul", "food-hasat", "food-mahalle", "food-kiler", "textile-atelier", "textile-vitrin", "textile-seri"] as const;
-export function designSector(id: DesignId) { return id.startsWith("textile-") ? TEXTILE_SECTOR : id.startsWith("food-") ? FOOD_SECTOR : ELECTRONICS_SECTOR; }
-export function hasSectorDesign(sector: string | null | undefined) { return sector === ELECTRONICS_SECTOR || sector === FOOD_SECTOR || sector === TEXTILE_SECTOR; }
+export const DESIGN_IDS = ["electronics-forma", "electronics-akim", "electronics-modul", "food-hasat", "food-mahalle", "food-kiler", "textile-atelier", "textile-vitrin", "textile-seri", "hardware-usta", "hardware-yapi", "hardware-depo"] as const;
+export function designSector(id: DesignId) { return id.startsWith("hardware-") ? HARDWARE_SECTOR : id.startsWith("textile-") ? TEXTILE_SECTOR : id.startsWith("food-") ? FOOD_SECTOR : ELECTRONICS_SECTOR; }
+export function hasSectorDesign(sector: string | null | undefined) { return sector === ELECTRONICS_SECTOR || sector === FOOD_SECTOR || sector === TEXTILE_SECTOR || sector === HARDWARE_SECTOR; }
 export function designsForSector(sector: string | null | undefined) { return DESIGNS.filter(d => designSector(d.id) === sector); }
 export type DesignId = typeof DESIGN_IDS[number];
 export type SalesMode = "retail" | "wholesale";
@@ -32,10 +33,19 @@ export const DESIGNS = [
   { id: "textile-atelier", name: "Atölye", description: "Editoryal moda vitrini. Büyük dikey fotoğraf, sade tipografi ve koleksiyon hikâyesi.", color: "#594338", overlayTheme: "minimal", font: "dm-sans" },
   { id: "textile-vitrin", name: "Vitrin", description: "Koleksiyonları öne çıkaran mağaza. İkili görsel sahne ve kategorilere açılan keşif alanları.", color: "#993645", overlayTheme: "neutral", font: "plus-jakarta" },
   { id: "textile-seri", name: "Seri", description: "Model ve beden odaklı katalog. Solda kategoriler, yoğun ürün sunumu ve hızlı sipariş listesi.", color: "#354a60", overlayTheme: "neutral", font: "source-sans" },
+  { id: "hardware-usta", name: "Usta", description: "Güçlü ekipman vitrini. Büyük ürün sahnesi, numaralı kategori rehberi ve proje seçkisi.", color: "#ba421e", overlayTheme: "minimal", font: "plus-jakarta" },
+  { id: "hardware-yapi", name: "Yapı", description: "Ferah yapı mağazası. Görselli kategoriler, iki ihtiyaç alanı ve açık ürün rafları.", color: "#245c50", overlayTheme: "neutral", font: "dm-sans" },
+  { id: "hardware-depo", name: "Depo", description: "Profesyonel tedarik masası. Kategori dizini, ürün kodları ve toptan sipariş listesi.", color: "#2b516d", overlayTheme: "neutral", font: "source-sans" },
 ] as const;
 export function isDesignId(value: unknown): value is DesignId { return DESIGN_IDS.includes(value as DesignId); }
-export function schemaFor(id: DesignId) { return (id === "electronics-forma" || id === "food-hasat" || id === "textile-atelier") ? formaSchema : (id === "electronics-akim" || id === "food-kiler" || id === "textile-seri") ? akimSchema : modulSchema; }
+export function schemaFor(id: DesignId) { return (id === "electronics-forma" || id === "food-hasat" || id === "textile-atelier" || id === "hardware-usta") ? formaSchema : (id === "electronics-akim" || id === "food-kiler" || id === "textile-seri" || id === "hardware-depo") ? akimSchema : modulSchema; }
 export function defaultContent(id: DesignId): DesignContent {
+  if (id.startsWith("hardware-")) {
+    const base = { announcement: "", catalogTitle: "İşinize uygun ekipman", heroVisible: true, heroTitle: "İyi iş, doğru aletle başlar.", heroBody: "El aletlerinden montaj malzemelerine, ihtiyacınız olan parçayı bulun. Projenizi tamamlayın.", heroImage: "", buttonLabel: "Ürünleri incele", heroCategoryId: "all" };
+    if (id === "hardware-usta") return { ...base, collectionVisible: true, collectionTitle: "Bir sonraki işinize hazır olun.", collectionBody: "Tamir, montaj ve bakım için birlikte kullanacağınız ürünleri seçin.", collectionImage: "", collectionCategoryId: "all" };
+    if (id === "hardware-yapi") return { ...base, heroTitle: "Küçük tamirler. Büyük yenilikler.", heroBody: "Evinizden atölyenize, her ihtiyaca uygun ürünleri keşfedin.", promoVisible: true, promoTitle: "Sağlam bir başlangıç.", promoBody: "Vida, dübel ve bağlantı elemanlarını inceleyin.", promoCategoryId: "all", secondTitle: "Son dokunuşu tamamlayın.", secondBody: "Tamir ve bakım ürünlerini keşfedin.", secondCategoryId: "all" };
+    return { ...base, heroTitle: "Malzemeniz hazır. Sıra işinizde.", heroBody: "Ürün koduyla arayın, ölçü ve ambalaj bilgilerini karşılaştırın. Sipariş listenizi tek yerde hazırlayın.", featureVisible: true, featureTitle: "Tezgâhın öne çıkanı.", featureBody: "Ürün detaylarını ve mevcut sipariş seçeneklerini inceleyin.", featureProductId: "", featureImage: "" };
+  }
   if (id.startsWith("textile-")) {
     const textile = { announcement: "", catalogTitle: "Koleksiyonu keşfedin", heroVisible: true, heroTitle: "Stil, detaylarda başlar.", heroBody: "Dokular, kesimler ve birlikte güzel duran parçalar. Kendi seçkinizi oluşturun.", heroImage: "", buttonLabel: "Koleksiyonu incele", heroCategoryId: "all" };
     if (id === "textile-atelier") return { ...textile, collectionVisible: true, collectionTitle: "Bir araya gelen parçalar.", collectionBody: "Gardırobunuzda yer açacağınız modelleri yakından inceleyin.", collectionImage: "", collectionCategoryId: "all" };

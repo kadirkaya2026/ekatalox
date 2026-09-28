@@ -4,9 +4,12 @@ export const textilePalettes = {
   "textile-atelier": ["#594338", "#f7f4ee", "#eae3d8"],
   "textile-vitrin": ["#993645", "#fffafa", "#f3dce2"],
   "textile-seri": ["#354a60", "#f2f4f6", "#e4e9ee"],
+  "hardware-usta": ["#ba421e", "#f6f5f1", "#eee8df"],
+  "hardware-yapi": ["#245c50", "#fafbf8", "#e5eee3"],
+  "hardware-depo": ["#2b516d", "#f0f3f5", "#dfe7ed"],
 } as const;
 export function paletteStyle(doc: DesignDocument, dark: boolean): CSSProperties {
-  if (!doc.themeId.startsWith("textile-")) return {};
+  if (!(doc.themeId in textilePalettes)) return {};
   const c = getDesignContent(doc);
   const vars: Record<string, string> = {};
   if (c.accentColor) {

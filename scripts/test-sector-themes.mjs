@@ -7,8 +7,8 @@ const source = fs.readFileSync(new URL('../lib/storefront/sector-design/config.t
 const exports = {};
 new Function('exports', 'require', ts.transpileModule(source, {compilerOptions:{module:ts.ModuleKind.CommonJS}}).outputText)(exports, require);
 const { DESIGN_IDS, designsForSector, designSector, defaultContent, newDesignDocument, prepareDesignUpdate: update, readDesignDocument, getDesignContent } = exports;
-assert.equal(new Set(DESIGN_IDS).size, 9);
-const sectors = ['telefon-aksesuar', 'gida', 'tekstil'];
+assert.equal(new Set(DESIGN_IDS).size, 12);
+const sectors = ['telefon-aksesuar', 'gida', 'tekstil', 'hirdavat'];
 for (const sector of sectors) {
   const designs = designsForSector(sector);
   assert.equal(designs.length, 3);
@@ -16,7 +16,7 @@ for (const sector of sectors) {
   for (const {id: themeId} of designs) {
     const content = {...defaultContent(themeId), heroTitle: `Özel ${themeId}`};
     const request = {themeId, mode:'wholesale', content};
-    for (const other of [...sectors.filter(s => s !== sector), 'hirdavat', null, undefined]) assert.ok(update(other, request, saved).error);
+    for (const other of [...sectors.filter(s => s !== sector), 'kozmetik', null, undefined]) assert.ok(update(other, request, saved).error);
     assert.ok(update(sector, {...request, sector}, saved).error);
     assert.ok(update(sector, {...request, themeId:'__proto__'}, saved).error);
     assert.ok(update(sector, {...request, content:{...content, otherThemeField:'x'}}, saved).error);
@@ -38,12 +38,13 @@ for (const sector of sectors) {
 }
 assert.equal(readDesignDocument(null,'telefon-aksesuar'),null);
 for (const id of DESIGN_IDS) assert.ok(sectors.includes(designSector(id)));
-console.log('PASS: Üç sektörde üçer tema; çapraz sektör reddi, ayrı alanlar, içerik koruma, URL ve bozuk veri kontrolleri.');
+console.log('PASS: Dört sektörde üçer tema; çapraz sektör reddi, ayrı alanlar, içerik koruma, URL ve bozuk veri kontrolleri.');
 
-for (const {id: themeId} of designsForSector('tekstil')) {
+for (const {id: themeId} of [...designsForSector('tekstil'), ...designsForSector('hirdavat')]) {
   const content = {...defaultContent(themeId), accentColor:'#2458a0', backgroundColor:'#fafafa', surfaceColor:'#e1e9ef'};
-  const result = update('tekstil', {themeId, mode:'retail', content}, null);
+  const result = update(designSector(themeId), {themeId, mode:'retail', content}, null);
   assert.ok(!result.error);
-  assert.ok(update('tekstil', {themeId, mode:'retail', content:{...content, accentColor:'red;display:none'}}, null).error);
+  assert.ok(update(designSector(themeId), {themeId, mode:'retail', content:{...content, accentColor:'red;display:none'}}, null).error);
+  assert.equal(result.document.content[themeId].accentColor, '#2458a0');
 }
-console.log('PASS: Tekstil renk alanları kabul ediliyor; geçersiz renkler reddediliyor.');
+console.log('PASS: Tekstil ve hırdavat renk alanları kabul ediliyor; geçersiz renkler reddediliyor.');
