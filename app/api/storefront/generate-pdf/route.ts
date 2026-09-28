@@ -248,9 +248,16 @@ export async function POST(request: Request) {
 
   const items = parsed.data.items as CartItem[];
   // Fiş görselleri kontrollerle paralel indirilir (28 Eyl 2026); hata fişi düşürmez.
-  const itemImagesPromise = loadReceiptItemImages(supabase, tenant.id, items).catch(
-    () => [] as Array<string | null>,
-  );
+  // Ayarlar → Sipariş Fişi'nde "resimsiz" seçildiyse görsel yüklenmez.
+  const itemImagesPromise = (async () => {
+    const { data: receiptSetting } = await supabase
+      .from("tenants")
+      .select("receipt_show_images")
+      .eq("id", tenant.id)
+      .maybeSingle();
+    if (receiptSetting?.receipt_show_images === false) return [];
+    return loadReceiptItemImages(supabase, tenant.id, items);
+  })().catch(() => [] as Array<string | null>);
   const catalogMode = parsed.data.catalog_mode;
 
   // Tekel bayisi: alkollü ürün online sipariş edilemez (yasal). Vitrin zaten
