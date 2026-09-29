@@ -15,6 +15,7 @@ import {
   formatVisitorLimit,
   getPlanLabel,
   PLAN_OPTIONS,
+  TOPTAN_PLAN_OPTIONS,
 } from "@/lib/billing/plans";
 import { getPlanTrialDaysLeft } from "@/lib/billing/plan-trial";
 import { TRIAL_DURATION_DAYS } from "@/lib/billing/trial";
@@ -854,7 +855,12 @@ export function AdminTenantDetailPanel({ tenant: initialTenant }: { tenant: Tena
               onChange={(event) => setPlanDraft(event.target.value as TenantPlan)}
               className="mt-1.5"
             >
-              {PLAN_OPTIONS.map((plan) => (
+              {/* Eski paketler (vip, pro, start…) listede gösterilmez (29 Eyl 2026);
+                  tenant hâlâ eskisindeyse yalnız onun satırı eklenir. */}
+              {PLAN_OPTIONS.filter(
+                (plan) =>
+                  TOPTAN_PLAN_OPTIONS.includes(plan) || plan.id === (tenant.plan ?? "baslangic"),
+              ).map((plan) => (
                 <option key={plan.id} value={plan.id}>
                   {plan.name} ({plan.id}) — {formatProductLimit(plan.maxProductLimit)} ürün
                 </option>

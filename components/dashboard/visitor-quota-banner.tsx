@@ -2,11 +2,7 @@ import {
   buildPlanChangeHref,
   buildVisitorAddonHref,
   getPlanRank,
-  isLegacyPlan,
-  LEGACY_PLAN_OPTIONS,
-  NEW_PLAN_OPTIONS,
   TOPTAN_PLAN_OPTIONS,
-  isToptanPlan,
   VISITOR_ADDON_PACKAGES,
 } from "@/lib/billing/plans";
 import type { Tenant } from "@/lib/types";
@@ -32,11 +28,7 @@ export function VisitorQuotaBanner({
   }
 
   const exceeded = ratio >= 1;
-  const track = isToptanPlan(tenant.plan)
-    ? TOPTAN_PLAN_OPTIONS
-    : isLegacyPlan(tenant.plan)
-      ? LEGACY_PLAN_OPTIONS
-      : NEW_PLAN_OPTIONS;
+  const track = TOPTAN_PLAN_OPTIONS;
   const nextPlan = track.find((plan) => getPlanRank(plan.id) > getPlanRank(tenant.plan));
   const addonHref = buildVisitorAddonHref(
     tenant.company_name,

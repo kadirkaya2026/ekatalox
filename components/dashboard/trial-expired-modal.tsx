@@ -3,7 +3,7 @@ import { Check } from "lucide-react";
 import {
   buildPlanChangeHref,
   formatPlanCapacityFeature,
-  NEW_PLAN_OPTIONS,
+  TOPTAN_PLAN_OPTIONS,
   PLAN_MARKETING_META,
   PLAN_PRICING,
 } from "@/lib/billing/plans";
@@ -44,7 +44,7 @@ export function TrialExpiredModal({
         </div>
 
         <div className="mt-8 grid gap-4 md:grid-cols-3">
-          {NEW_PLAN_OPTIONS.map((plan) => {
+          {TOPTAN_PLAN_OPTIONS.filter((plan) => plan.id !== "free").map((plan) => {
             const pricing = PLAN_PRICING[plan.id];
             const featured = PLAN_MARKETING_META[plan.id].featured;
 

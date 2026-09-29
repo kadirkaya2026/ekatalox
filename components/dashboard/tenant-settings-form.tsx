@@ -12,11 +12,7 @@ import {
   formatProductLimit,
   getPlanLabel,
   getPlanRank,
-  isLegacyPlan,
-  LEGACY_PLAN_OPTIONS,
-  NEW_PLAN_OPTIONS,
   TOPTAN_PLAN_OPTIONS,
-  isToptanPlan,
   PLAN_PRICING,
 } from "@/lib/billing/plans";
 import { resolveMembershipPeriod } from "@/lib/billing/membership";
@@ -64,11 +60,9 @@ function PlanChangeSection({ tenant }: { tenant: Tenant }) {
   const onTrial = isTrialTenant(tenant);
   // Bir tenant kendi track'i (eski veya yeni plan seti) içinde üst pakete
   // geçer; deneme hesabı her zaman yeni plan setinden başlar.
-  const track = isToptanPlan(currentPlan)
-    ? TOPTAN_PLAN_OPTIONS
-    : onTrial || !isLegacyPlan(currentPlan)
-      ? NEW_PLAN_OPTIONS
-      : LEGACY_PLAN_OPTIONS;
+  // 29 Eyl 2026: tüm tenantlar toptancı merdivenine taşındı; eski/Esnaf
+  // paketleri artık sunulmaz.
+  const track = TOPTAN_PLAN_OPTIONS;
   // Deneme hesabı tüm paketleri seçebilir; normal hesap yalnızca üst
   // paketlere geçiş talep edebilir (alt pakete geçiş sunulmaz).
   const targetPlans = track.filter((plan) =>
