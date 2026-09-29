@@ -138,6 +138,32 @@ export function resolveProvinceCodeFromHeaders(headers: Headers): string | null 
   );
 }
 
+/**
+ * Ülke + şehir adı (ekatalox.com ziyaretçi analitiği için). Aynı kural:
+ * Cloudflare arkasındaysa yalnız cf-* başlıkları; x-vercel-ip-city orada
+ * Cloudflare kenar sunucusunun şehridir (Amsterdam, Londra…), ziyaretçinin değil.
+ * TR'de cf-ipcity yoksa il adı cf-region-code'dan üretilir.
+ */
+export function resolveGeoFromHeaders(headers: Headers): { country: string | null; city: string | null } {
+  const behindCloudflare = Boolean(headers.get("cf-connecting-ip"));
+  const cfCountry = decodeHeader(headers.get("cf-ipcountry"))?.toUpperCase() ?? null;
+
+  if (behindCloudflare || cfCountry) {
+    if (!cfCountry || cfCountry === "XX" || cfCountry === "T1") return { country: null, city: null };
+    let city = decodeHeader(headers.get("cf-ipcity"));
+    if (!city && cfCountry === "TR") {
+      const code = provinceCodeFromRegion(decodeHeader(headers.get("cf-region-code")));
+      city = code ? (TR_PROVINCES[code] ?? null) : null;
+    }
+    return { country: cfCountry, city };
+  }
+
+  return {
+    country: decodeHeader(headers.get("x-vercel-ip-country"))?.toUpperCase() ?? null,
+    city: decodeHeader(headers.get("x-vercel-ip-city")),
+  };
+}
+
 const countryNames =
   typeof Intl !== "undefined" && typeof Intl.DisplayNames === "function"
     ? new Intl.DisplayNames(["tr"], { type: "region" })

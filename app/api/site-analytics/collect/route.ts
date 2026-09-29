@@ -1,6 +1,7 @@
 // Pazarlama sitesi ziyaretçi olaylarını toplar (beacon). Vitrin analitiği
 // geleneği: her durumda 204 — beacon'a asla durum sızdırma, sayfayı asla bozma.
 import { NextResponse } from "next/server";
+import { resolveGeoFromHeaders } from "@/lib/analytics/provinces";
 import { resolveHost } from "@/lib/tenancy/resolve-host";
 import { getClientIp } from "@/lib/storefront/client-ip";
 import { isLikelyBot, parseUserAgent, referrerHost } from "@/lib/site-analytics/ua";
@@ -32,15 +33,6 @@ const EXCLUDED_PREFIXES = ["/admin", "/dashboard", "/store", "/api", "/t", "/f",
 
 function isTrackablePath(path: string) {
   return !EXCLUDED_PREFIXES.some((p) => path === p || path.startsWith(`${p}/`));
-}
-
-function decodeHeader(value: string | null) {
-  if (!value) return null;
-  try {
-    return decodeURIComponent(value).trim() || null;
-  } catch {
-    return value.trim() || null;
-  }
 }
 
 export async function POST(request: Request) {
@@ -86,10 +78,8 @@ export async function POST(request: Request) {
   }
 
   const ua = parseUserAgent(userAgent);
-  const country =
-    decodeHeader(request.headers.get("x-vercel-ip-country")) ??
-    decodeHeader(request.headers.get("cf-ipcountry"));
-  const city = decodeHeader(request.headers.get("x-vercel-ip-city"));
+  // Cloudflare arkasında x-vercel-ip-* kenar sunucusunu gösterir (29 Eyl 2026).
+  const { country, city } = resolveGeoFromHeaders(request.headers);
   const { visitorKey, sessionKey, screen, events } = parsed.data;
 
   // Sıra önemli (pageview → click → leave); art arda, hata olsa da devam.
