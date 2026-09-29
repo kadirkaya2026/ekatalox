@@ -83,15 +83,18 @@ export function getOrderReceiptLineDisplay(
   };
 }
 
+// İlk sütun sıra numarası: bayi telefonda "3. satır" diye konuşabilsin.
 export function getOrderReceiptTableRows(items: CartItem[], catalogMode = false) {
-  return items.map((item) => {
+  return items.map((item, index) => {
     const line = getOrderReceiptLineDisplay(item, catalogMode);
+    const no = String(index + 1);
 
     if (catalogMode) {
-      return [line.productLabel, line.unitLabel, line.quantityLabel];
+      return [no, line.productLabel, line.unitLabel, line.quantityLabel];
     }
 
     return [
+      no,
       line.productLabel,
       line.unitLabel,
       line.quantityLabel,
@@ -117,8 +120,8 @@ export function buildReceiptItemCountSummary(items: CartItem[]) {
 
 export function getOrderReceiptTableHead(catalogMode = false) {
   if (catalogMode) {
-    return ["Ürün", "Birim", "Adet"];
+    return ["No", "Ürün", "Birim", "Adet"];
   }
 
-  return ["Ürün", "Birim", "Adet", "Birim Fiyat", "Tutar"];
+  return ["No", "Ürün", "Birim", "Adet", "Birim Fiyat", "Tutar"];
 }

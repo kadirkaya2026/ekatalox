@@ -43,7 +43,9 @@ export interface GenerateOrderReceiptPdfParams {
 
 const PDF_FONT = "Roboto";
 const SOFT_BORDER = [229, 231, 235] as [number, number, number];
-const PRODUCT_COLUMN_WIDTH_MM = 82;
+// Sıra numarası sütunu ürün sütunundan pay alır; tablo toplam genişliği aynı.
+const NO_COLUMN_WIDTH_MM = 11;
+const PRODUCT_COLUMN_WIDTH_MM = 82 - NO_COLUMN_WIDTH_MM;
 const PRODUCT_CELL_HORIZONTAL_PADDING_MM = 5;
 // Ürün hücresinin solunda kare görsel (28 Eyl 2026); metin görselin sağına kayar.
 const ITEM_IMAGE_MM = 14;
@@ -215,20 +217,33 @@ export async function generateOrderReceiptPdf(
     },
     columnStyles: catalogMode
       ? {
-          0: { cellWidth: PRODUCT_COLUMN_WIDTH_MM + 40, overflow: "linebreak" },
-          1: { cellWidth: 24, halign: "center" },
-          2: { cellWidth: 24, halign: "right" },
+          0: { cellWidth: NO_COLUMN_WIDTH_MM, halign: "center", textColor: [100, 116, 139] },
+          1: { cellWidth: PRODUCT_COLUMN_WIDTH_MM + 40, overflow: "linebreak" },
+          2: { cellWidth: 24, halign: "center" },
+          3: { cellWidth: 24, halign: "right" },
         }
       : {
-          0: { cellWidth: PRODUCT_COLUMN_WIDTH_MM, overflow: "linebreak" },
-          1: { cellWidth: 18, halign: "center" },
-          2: { cellWidth: 16, halign: "right" },
-          3: { cellWidth: 31, halign: "right" },
+          0: { cellWidth: NO_COLUMN_WIDTH_MM, halign: "center", textColor: [100, 116, 139] },
+          1: { cellWidth: PRODUCT_COLUMN_WIDTH_MM, overflow: "linebreak" },
+          2: { cellWidth: 18, halign: "center" },
+          3: { cellWidth: 16, halign: "right" },
           4: { cellWidth: 31, halign: "right" },
+          5: { cellWidth: 31, halign: "right" },
         },
     margin: { left: margin, right: margin },
     didParseCell: (data) => {
-      if (data.section !== "body" || data.column.index !== 0) {
+      // Sıra numarası sütunu: dar olduğu için yan boşluk küçük ("No" tek satır kalsın).
+      if (data.column.index === 0) {
+        data.cell.styles.cellPadding = {
+          top: PDF_SPACING.tableCellPaddingVertical,
+          right: 1,
+          bottom: PDF_SPACING.tableCellPaddingVertical,
+          left: 1,
+        };
+        data.cell.styles.halign = "center";
+        return;
+      }
+      if (data.section !== "body" || data.column.index !== 1) {
         return;
       }
 
@@ -259,7 +274,7 @@ export async function generateOrderReceiptPdf(
       }
     },
     didDrawCell: (data) => {
-      if (!hasImages || data.section !== "body" || data.column.index !== 0) {
+      if (!hasImages || data.section !== "body" || data.column.index !== 1) {
         return;
       }
       const image = itemImages[data.row.index];
