@@ -8,14 +8,15 @@ import { Card } from "@/components/ui/card";
 import { InlineAlert } from "@/components/ui/inline-alert";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
-import { COUPON_PERIODS, COUPON_PLAN_IDS, normalizeCouponCode } from "@/lib/admin/self-service";
-import { ESNAF_PLANS, formatTry, getPlanPrice, type BillingPeriod } from "@/lib/billing/esnaf-plans";
+import { COUPON_PLAN_IDS, normalizeCouponCode } from "@/lib/admin/self-service";
+import { formatTry, TOPTAN_PLANS } from "@/lib/billing/toptan-plans";
 import type { SignupCoupon, SignupCouponDiscountType } from "@/lib/types";
 import { cn, formatDate } from "@/lib/utils";
 
 type CouponPlanId = (typeof COUPON_PLAN_IDS)[number];
 
-const PERIOD_LABELS: Record<BillingPeriod, string> = { monthly: "Aylık", yearly: "Yıllık" };
+// Kupon yalnız ücretli toptancı paketlerinde (yıllık) geçerlidir.
+const COUPON_PLANS = TOPTAN_PLANS.filter((plan) => (COUPON_PLAN_IDS as readonly string[]).includes(plan.slug));
 
 interface CouponFormState {
   code: string;
@@ -23,7 +24,6 @@ interface CouponFormState {
   discount_type: SignupCouponDiscountType;
   discount_value: string;
   applies_to_plans: CouponPlanId[];
-  applies_to_periods: BillingPeriod[];
   valid_from: string;
   valid_until: string;
   max_uses: string;
@@ -35,7 +35,6 @@ const EMPTY_FORM: CouponFormState = {
   discount_type: "percent",
   discount_value: "",
   applies_to_plans: [],
-  applies_to_periods: [],
   valid_from: "",
   valid_until: "",
   max_uses: "",
@@ -48,7 +47,7 @@ function applyDiscount(price: number, type: SignupCouponDiscountType, value: num
 }
 
 function planName(planId: string) {
-  return ESNAF_PLANS.find((plan) => plan.planId === planId)?.name ?? planId;
+  return TOPTAN_PLANS.find((plan) => plan.slug === planId)?.name ?? `${planId} (eski)`;
 }
 
 function formatDiscount(coupon: SignupCoupon) {
@@ -92,26 +91,19 @@ export function AdminCouponsPanel({
 
   const discountValue = Number(form.discount_value.replace(",", "."));
 
-  // Canlı önizleme: seçili paket × dönem kombinasyonları (boş = hepsi).
-  const preview = useMemo(() => {
-    const plans = ESNAF_PLANS.filter(
-      (plan) => form.applies_to_plans.length === 0 || form.applies_to_plans.includes(plan.planId as CouponPlanId),
-    );
-    const periods: BillingPeriod[] = form.applies_to_periods.length ? form.applies_to_periods : [...COUPON_PERIODS];
-    const lines: { key: string; label: string; before: number; after: number }[] = [];
-    for (const plan of plans) {
-      for (const period of periods) {
-        const before = getPlanPrice(plan, period);
-        lines.push({
-          key: `${plan.slug}-${period}`,
-          label: `${plan.name} ${PERIOD_LABELS[period].toLocaleLowerCase("tr-TR")}`,
-          before,
-          after: applyDiscount(before, form.discount_type, discountValue),
-        });
-      }
-    }
-    return lines;
-  }, [discountValue, form.applies_to_periods, form.applies_to_plans, form.discount_type]);
+  // Canlı önizleme: seçili paketlerin yıllık fiyatı (boş = hepsi).
+  const preview = useMemo(
+    () =>
+      COUPON_PLANS.filter(
+        (plan) => form.applies_to_plans.length === 0 || form.applies_to_plans.includes(plan.slug as CouponPlanId),
+      ).map((plan) => ({
+        key: plan.slug,
+        label: `${plan.name} yıllık`,
+        before: plan.yearlyPrice,
+        after: applyDiscount(plan.yearlyPrice, form.discount_type, discountValue),
+      })),
+    [discountValue, form.applies_to_plans, form.discount_type],
+  );
 
   function update<K extends keyof CouponFormState>(key: K, value: CouponFormState[K]) {
     setForm((current) => ({ ...current, [key]: value }));
@@ -142,7 +134,6 @@ export function AdminCouponsPanel({
           discount_type: form.discount_type,
           discount_value: discountValue,
           applies_to_plans: form.applies_to_plans,
-          applies_to_periods: form.applies_to_periods,
           valid_from: form.valid_from,
           valid_until: form.valid_until,
           max_uses: form.max_uses.trim() ? Number(form.max_uses) : null,
@@ -217,7 +208,7 @@ export function AdminCouponsPanel({
           <div>
             <h2 className="text-lg font-semibold text-foreground">Yeni kupon</h2>
             <p className="mt-1 text-xs text-slate-500">
-              Paket veya dönem seçilmezse kupon tüm paket ve dönemlerde geçerli olur.
+              Kupon Başlangıç, Profesyonel ve Kurumsal paketlerin yıllık ücretinde geçerlidir; paket seçilmezse hepsinde.
             </p>
           </div>
           <Button variant="secondary" className="px-3 py-2 text-xs" onClick={() => setFormOpen((open) => !open)}>
@@ -341,8 +332,8 @@ export function AdminCouponsPanel({
               <fieldset>
                 <legend className="text-xs font-medium text-slate-500">Geçerli paketler</legend>
                 <div className="mt-2 flex flex-wrap gap-2">
-                  {ESNAF_PLANS.map((plan) => {
-                    const id = plan.planId as CouponPlanId;
+                  {COUPON_PLANS.map((plan) => {
+                    const id = plan.slug as CouponPlanId;
                     const checked = form.applies_to_plans.includes(id);
                     return (
                       <label
@@ -366,34 +357,6 @@ export function AdminCouponsPanel({
                   })}
                 </div>
                 <p className="mt-1 text-[11px] text-slate-400">Boş = tüm paketler</p>
-              </fieldset>
-              <fieldset>
-                <legend className="text-xs font-medium text-slate-500">Geçerli dönemler</legend>
-                <div className="mt-2 flex flex-wrap gap-2">
-                  {COUPON_PERIODS.map((period) => {
-                    const checked = form.applies_to_periods.includes(period);
-                    return (
-                      <label
-                        key={period}
-                        className={cn(
-                          "inline-flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-sm",
-                          checked
-                            ? "border-emerald-500 bg-emerald-50 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200"
-                            : "border-slate-200 text-slate-700 dark:border-slate-700 dark:text-slate-300",
-                        )}
-                      >
-                        <input
-                          type="checkbox"
-                          className="accent-emerald-600"
-                          checked={checked}
-                          onChange={() => update("applies_to_periods", toggleValue(form.applies_to_periods, period))}
-                        />
-                        {PERIOD_LABELS[period]}
-                      </label>
-                    );
-                  })}
-                </div>
-                <p className="mt-1 text-[11px] text-slate-400">Boş = aylık ve yıllık</p>
               </fieldset>
             </div>
 
@@ -455,7 +418,6 @@ export function AdminCouponsPanel({
                   <th className="px-4 py-2 text-left">Kod</th>
                   <th className="px-4 py-2 text-left">İndirim</th>
                   <th className="px-4 py-2 text-left">Paketler</th>
-                  <th className="px-4 py-2 text-left">Dönemler</th>
                   <th className="px-4 py-2 text-left">Geçerlilik</th>
                   <th className="px-4 py-2 text-right">Kullanım</th>
                   <th className="px-4 py-2 text-left">Durum</th>
@@ -476,9 +438,6 @@ export function AdminCouponsPanel({
                       </td>
                       <td className="px-4 py-2.5 whitespace-nowrap font-semibold tabular-nums">{formatDiscount(coupon)}</td>
                       <td className="px-4 py-2.5">{formatScope(coupon.applies_to_plans, planName, "Tümü")}</td>
-                      <td className="px-4 py-2.5">
-                        {formatScope(coupon.applies_to_periods, (p) => PERIOD_LABELS[p as BillingPeriod] ?? p, "Aylık, Yıllık")}
-                      </td>
                       <td className="px-4 py-2.5 whitespace-nowrap text-xs">
                         {formatDate(coupon.valid_from)} → {coupon.valid_until ? formatDate(coupon.valid_until) : "süresiz"}
                       </td>

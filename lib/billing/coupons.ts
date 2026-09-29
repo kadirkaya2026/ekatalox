@@ -1,15 +1,16 @@
-// Kayıt kuponu doğrulama (signup_coupons tablosu, 0113). Hem /api/kupon/dogrula
-// (form anında) hem de createSelfServiceTenant (kayıt anında) aynı fonksiyonu
-// çağırır ki kullanıcının gördüğü fiyat ile yazılan fiyat asla ayrışmasın.
+// Paket kuponu doğrulama (signup_coupons tablosu, 0113). 29 Eyl 2026'dan beri
+// toptancı paketleri (Başlangıç/Profesyonel/Kurumsal, yıllık) için geçerlidir:
+// panelde paket talebinde /api/kupon/dogrula, süper admin paketi geçirirken
+// /api/admin/tenants/[id] aynı fonksiyonu çağırır ki fiyatlar ayrışmasın.
 import type { SupabaseClient } from "@supabase/supabase-js";
-import {
-  formatTry,
-  getEsnafPlanByPlanId,
-  getPlanPrice,
-  type BillingPeriod,
-} from "@/lib/billing/esnaf-plans";
+import { COUPON_PLAN_IDS } from "@/lib/admin/self-service";
+import { formatTry, getToptanPlan } from "@/lib/billing/toptan-plans";
 
-export type SignupCouponPlanId = "pro" | "business";
+export type SignupCouponPlanId = (typeof COUPON_PLAN_IDS)[number];
+
+export function isCouponPlanId(value: unknown): value is SignupCouponPlanId {
+  return typeof value === "string" && (COUPON_PLAN_IDS as readonly string[]).includes(value);
+}
 export type SignupCouponDiscountType = "percent" | "amount";
 
 export interface SignupCouponInfo {
@@ -70,15 +71,14 @@ export async function validateSignupCoupon(
   supabase: SupabaseClient,
   code: string,
   planId: SignupCouponPlanId,
-  period: BillingPeriod,
 ): Promise<SignupCouponValidation> {
   const normalized = normalizeCouponCode(code);
   if (!normalized) {
     return { ok: false, message: "Kupon kodu girin." };
   }
 
-  const plan = getEsnafPlanByPlanId(planId);
-  if (!plan) {
+  const plan = getToptanPlan(planId);
+  if (!plan || plan.yearlyPrice <= 0) {
     return { ok: false, message: "Geçersiz paket." };
   }
 
@@ -116,7 +116,7 @@ export async function validateSignupCoupon(
   if (
     row.applies_to_periods &&
     row.applies_to_periods.length > 0 &&
-    !row.applies_to_periods.includes(period)
+    !row.applies_to_periods.includes("yearly")
   ) {
     return { ok: false, message: "Bu kupon seçtiğiniz ödeme döneminde geçerli değil." };
   }
@@ -128,7 +128,7 @@ export async function validateSignupCoupon(
     return { ok: false, message: "Kupon kodu bulunamadı." };
   }
 
-  const listPrice = getPlanPrice(plan, period);
+  const listPrice = plan.yearlyPrice;
   const finalPrice = applyCouponDiscount(listPrice, discountType, discountValue);
   const coupon: SignupCouponInfo = {
     code: row.code,

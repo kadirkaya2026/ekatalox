@@ -65,9 +65,55 @@ function PlanChangeSection({ tenant }: { tenant: Tenant }) {
   const track = TOPTAN_PLAN_OPTIONS;
   // Deneme hesabı tüm paketleri seçebilir; normal hesap yalnızca üst
   // paketlere geçiş talep edebilir (alt pakete geçiş sunulmaz).
-  const targetPlans = track.filter((plan) =>
-    onTrial ? true : getPlanRank(plan.id) > getPlanRank(currentPlan),
+  const targetPlans = track.filter(
+    (plan) =>
+      plan.id !== "free" && (onTrial ? true : getPlanRank(plan.id) > getPlanRank(currentPlan)),
   );
+  const [couponInput, setCouponInput] = useState("");
+  const [couponCode, setCouponCode] = useState<string | null>(null);
+  const [couponPrices, setCouponPrices] = useState<Record<string, number>>({});
+  const [couponMessage, setCouponMessage] = useState<{ tone: "ok" | "error"; text: string } | null>(null);
+  const [couponPending, setCouponPending] = useState(false);
+
+  // Kupon her hedef pakette ayrı doğrulanır; geçerli olduğu paketlerde
+  // indirimli yıllık fiyat gösterilir ve kod WhatsApp talebine eklenir.
+  async function applyCoupon() {
+    const code = couponInput.trim().toUpperCase();
+    if (!code) return;
+    setCouponPending(true);
+    setCouponMessage(null);
+    try {
+      const results = await Promise.all(
+        targetPlans.map(async (plan) => {
+          const response = await fetch(
+            `/api/kupon/dogrula?code=${encodeURIComponent(code)}&plan=${plan.id}`,
+          );
+          const data = (await response.json()) as { valid: boolean; message: string; finalPrice?: number };
+          return { planId: plan.id, ...data };
+        }),
+      );
+      const valid = results.filter((result) => result.valid && typeof result.finalPrice === "number");
+      if (!valid.length) {
+        setCouponCode(null);
+        setCouponPrices({});
+        setCouponMessage({ tone: "error", text: results[0]?.message ?? "Kupon geçersiz." });
+        return;
+      }
+      setCouponCode(code);
+      setCouponPrices(Object.fromEntries(valid.map((result) => [result.planId, result.finalPrice as number])));
+      setCouponMessage({
+        tone: "ok",
+        text:
+          valid.length === results.length
+            ? `${code} kuponu uygulandı.`
+            : `${code} kuponu yalnız işaretli paketlerde geçerli.`,
+      });
+    } catch {
+      setCouponMessage({ tone: "error", text: "Kupon şu anda doğrulanamıyor." });
+    } finally {
+      setCouponPending(false);
+    }
+  }
 
   return (
     <div className="mt-1 space-y-3">
@@ -104,8 +150,20 @@ function PlanChangeSection({ tenant }: { tenant: Tenant }) {
               <div>
                 <p className="text-sm font-medium text-slate-900">{plan.name}</p>
                 <p className="text-xs text-slate-500">
-                  {PLAN_PRICING[plan.id].price} {PLAN_PRICING[plan.id].unit} •{" "}
-                  {formatProductLimit(plan.maxProductLimit)} ürün
+                  {couponPrices[plan.id] !== undefined ? (
+                    <>
+                      <span className="line-through">{PLAN_PRICING[plan.id].price}</span>{" "}
+                      <span className="font-semibold text-emerald-700">
+                        ₺{couponPrices[plan.id].toLocaleString("tr-TR")}
+                      </span>{" "}
+                      {PLAN_PRICING[plan.id].unit}
+                    </>
+                  ) : (
+                    <>
+                      {PLAN_PRICING[plan.id].price} {PLAN_PRICING[plan.id].unit}
+                    </>
+                  )}{" "}
+                  • {formatProductLimit(plan.maxProductLimit)} ürün
                 </p>
               </div>
               <a
@@ -115,6 +173,7 @@ function PlanChangeSection({ tenant }: { tenant: Tenant }) {
                   currentPlan,
                   targetPlan: plan.id,
                   isTrial: onTrial,
+                  couponCode: couponPrices[plan.id] !== undefined ? couponCode : null,
                 })}
                 target="_blank"
                 rel="noreferrer"
@@ -124,6 +183,34 @@ function PlanChangeSection({ tenant }: { tenant: Tenant }) {
               </a>
             </div>
           ))}
+          <div className="flex flex-wrap items-center gap-2 pt-1">
+            <Input
+              value={couponInput}
+              onChange={(event) => setCouponInput(event.target.value.toUpperCase())}
+              placeholder="Kupon kodunuz varsa"
+              maxLength={32}
+              spellCheck={false}
+              className="h-9 max-w-[200px] font-mono uppercase"
+            />
+            <Button
+              type="button"
+              variant="secondary"
+              className="h-9 px-3 text-xs"
+              disabled={couponPending || !couponInput.trim()}
+              onClick={applyCoupon}
+            >
+              {couponPending ? "Kontrol ediliyor…" : "Uygula"}
+            </Button>
+            {couponMessage ? (
+              <span
+                className={
+                  couponMessage.tone === "ok" ? "text-xs text-emerald-700" : "text-xs text-rose-600"
+                }
+              >
+                {couponMessage.text}
+              </span>
+            ) : null}
+          </div>
         </div>
       )}
     </div>

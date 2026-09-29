@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { isRateLimited } from "@/lib/api/rate-limit";
-import { validateSignupCoupon } from "@/lib/billing/coupons";
-import { getEsnafPlan } from "@/lib/billing/esnaf-plans";
+import { isCouponPlanId, validateSignupCoupon } from "@/lib/billing/coupons";
 import { getClientIp } from "@/lib/storefront/client-ip";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
@@ -13,10 +12,9 @@ export async function GET(request: Request) {
 
   const { searchParams } = new URL(request.url);
   const code = (searchParams.get("code") ?? "").trim();
-  const plan = getEsnafPlan(searchParams.get("plan") ?? "");
-  const period = searchParams.get("period") === "monthly" ? "monthly" : "yearly";
+  const plan = searchParams.get("plan") ?? "";
 
-  if (!code || !plan) {
+  if (!code || !isCouponPlanId(plan)) {
     return NextResponse.json({ valid: false, message: "Kupon kodu ve paket gerekli." }, { status: 400 });
   }
 
@@ -25,7 +23,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ valid: false, message: "Kupon şu an doğrulanamıyor." });
   }
 
-  const result = await validateSignupCoupon(supabase, code, plan.planId as "pro" | "business", period);
+  const result = await validateSignupCoupon(supabase, code, plan);
   if (!result.ok) {
     return NextResponse.json({ valid: false, message: result.message });
   }

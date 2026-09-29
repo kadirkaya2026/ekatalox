@@ -646,12 +646,16 @@ export function buildPlanChangeHref(params: {
   currentPlan: TenantPlan;
   targetPlan: TenantPlan;
   isTrial: boolean;
+  /** Doğrulanmış paket kuponu (varsa) — mesaja eklenir, admin paketi geçirirken kullanır. */
+  couponCode?: string | null;
 }): string {
   const target = getPlanLabel(params.targetPlan);
   const origin = params.isTrial
     ? "deneme sürümünden"
     : `${getPlanLabel(params.currentPlan)} paketinden`;
-  const message = `Merhaba, ${params.companyName} (${params.subdomain}.ekatalox.com) olarak ${origin} ${target} paketine geçmek istiyoruz.`;
+  const message = `Merhaba, ${params.companyName} (${params.subdomain}.ekatalox.com) olarak ${origin} ${target} paketine geçmek istiyoruz.${
+    params.couponCode ? ` Kupon kodum: ${params.couponCode}` : ""
+  }`;
   return `https://wa.me/${PACKAGE_UPGRADE_PHONE}?text=${encodeURIComponent(message)}`;
 }
 

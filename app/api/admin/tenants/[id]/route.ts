@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { isCouponPlanId, validateSignupCoupon } from "@/lib/billing/coupons";
 import { extendPlanExpiry } from "@/lib/billing/membership";
 import { shouldAllowDemoFallback } from "@/lib/env";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
@@ -104,6 +105,24 @@ export async function PATCH(
     );
   }
 
+  // Paket geçişinde kupon (29 Eyl 2026): önce doğrulanır, güncelleme
+  // başarılı olursa kullanım sayısı atomik olarak artırılır.
+  const couponCode = typeof body.coupon_code === "string" ? body.coupon_code.trim() : "";
+  let couponResult: { code: string; message: string } | null = null;
+  if (couponCode) {
+    if (!isCouponPlanId(updatePayload.plan)) {
+      return NextResponse.json(
+        { error: "Kupon yalnız Başlangıç, Profesyonel veya Kurumsal pakete geçişte kullanılabilir." },
+        { status: 400 },
+      );
+    }
+    const validation = await validateSignupCoupon(supabase, couponCode, updatePayload.plan);
+    if (!validation.ok) {
+      return NextResponse.json({ error: validation.message }, { status: 400 });
+    }
+    couponResult = { code: validation.coupon.code, message: validation.message };
+  }
+
   if (Object.keys(updatePayload).length === 0) {
     return NextResponse.json(
       { error: "Güncellenecek alan bulunamadı." },
@@ -125,7 +144,17 @@ export async function PATCH(
     );
   }
 
-  return NextResponse.json({ tenant: data });
+  if (couponResult) {
+    const { data: redeemed, error: redeemError } = await supabase.rpc("redeem_signup_coupon", {
+      p_code: couponResult.code,
+    });
+    if (redeemError || !redeemed) {
+      console.error("[admin/tenants] kupon kullanımı işlenemedi:", redeemError?.message ?? "limit");
+      couponResult = { ...couponResult, message: `${couponResult.message} (kullanım sayısı artırılamadı)` };
+    }
+  }
+
+  return NextResponse.json({ tenant: data, coupon: couponResult });
 }
 
 export async function DELETE(

@@ -6,8 +6,10 @@ import type { SignupCoupon, SignupRequest, SignupRequestStatus } from "@/lib/typ
 
 export const SIGNUP_PAGE_SIZE = 50;
 export const SIGNUP_STATUSES: SignupRequestStatus[] = ["created", "failed", "cancelled"];
-export const COUPON_PLAN_IDS = ["pro", "business"] as const;
-export const COUPON_PERIODS = ["monthly", "yearly"] as const;
+// 29 Eyl 2026: kuponlar toptancı merdiveninin ücretli paketleri içindir
+// (yıllık faturalanır; eski Esnaf pro/business ve aylık dönem kaldırıldı).
+export const COUPON_PLAN_IDS = ["starter", "professional", "corporate"] as const;
+export const COUPON_PERIODS = ["yearly"] as const;
 
 const CODE_PATTERN = /^[A-Z0-9][A-Z0-9_-]{2,31}$/;
 

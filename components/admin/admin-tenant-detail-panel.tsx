@@ -73,6 +73,7 @@ export function AdminTenantDetailPanel({ tenant: initialTenant }: { tenant: Tena
   const [planDraft, setPlanDraft] = useState<TenantPlan>(tenant.plan ?? "baslangic");
   const [visitorAddonDraft, setVisitorAddonDraft] = useState(tenant.visitor_limit_addon ?? 0);
   const [productAddonDraft, setProductAddonDraft] = useState(tenant.product_limit_addon ?? 0);
+  const [planCouponDraft, setPlanCouponDraft] = useState("");
   const [customDomainDraft, setCustomDomainDraft] = useState(tenant.custom_domain ?? "");
   const [giftMonths, setGiftMonths] = useState(1);
   const [codeDraft, setCodeDraft] = useState("");
@@ -122,6 +123,7 @@ export function AdminTenantDetailPanel({ tenant: initialTenant }: { tenant: Tena
     if (planChanged) {
       body.plan = planDraft;
       body.end_trial = true;
+      if (planCouponDraft.trim()) body.coupon_code = planCouponDraft.trim();
     }
 
     startTransition(async () => {
@@ -139,7 +141,12 @@ export function AdminTenantDetailPanel({ tenant: initialTenant }: { tenant: Tena
       }
 
       setTenant((current) => ({ ...current, ...result.tenant }));
-      setMessage("Değişiklikler kaydedildi.");
+      setPlanCouponDraft("");
+      setMessage(
+        result.coupon
+          ? `Değişiklikler kaydedildi. ${result.coupon.message}`
+          : "Değişiklikler kaydedildi.",
+      );
     });
   }
 
@@ -866,6 +873,16 @@ export function AdminTenantDetailPanel({ tenant: initialTenant }: { tenant: Tena
                 </option>
               ))}
             </Select>
+            {planDraft !== (tenant.plan ?? "baslangic") && planDraft !== "free" ? (
+              <Input
+                value={planCouponDraft}
+                onChange={(event) => setPlanCouponDraft(event.target.value.toUpperCase())}
+                placeholder="Kupon kodu (varsa)"
+                maxLength={32}
+                spellCheck={false}
+                className="mt-2 font-mono uppercase"
+              />
+            ) : null}
           </div>
 
           <div>
