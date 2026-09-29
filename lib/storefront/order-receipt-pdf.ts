@@ -43,9 +43,12 @@ export interface GenerateOrderReceiptPdfParams {
 
 const PDF_FONT = "Roboto";
 const SOFT_BORDER = [229, 231, 235] as [number, number, number];
-// Sıra numarası sütunu ürün sütunundan pay alır; tablo toplam genişliği aynı.
+// Sabit sütunlar; ürün sütunu kalan genişliği alır. Toplam sayfa genişliğinden
+// az kalırsa autoTable "N units width could not fit page" uyarısı basıyordu
+// (katalog modunda 8 mm eksik kalıyordu), bu yüzden ürün sütunu hesaplanır.
 const NO_COLUMN_WIDTH_MM = 11;
-const PRODUCT_COLUMN_WIDTH_MM = 82 - NO_COLUMN_WIDTH_MM;
+const PRICED_COLUMN_WIDTHS_MM = { unit: 18, quantity: 16, unitPrice: 31, total: 31 };
+const CATALOG_COLUMN_WIDTHS_MM = { unit: 24, quantity: 24 };
 const PRODUCT_CELL_HORIZONTAL_PADDING_MM = 5;
 // Ürün hücresinin solunda kare görsel (28 Eyl 2026); metin görselin sağına kayar.
 const ITEM_IMAGE_MM = 14;
@@ -180,7 +183,10 @@ export async function generateOrderReceiptPdf(
   const catalogMode = params.catalogMode ?? false;
   const itemImages = params.itemImages ?? [];
   const hasImages = itemImages.some(Boolean);
-  const productColumnWidth = catalogMode ? PRODUCT_COLUMN_WIDTH_MM + 40 : PRODUCT_COLUMN_WIDTH_MM;
+  const fixedColumnsWidth =
+    NO_COLUMN_WIDTH_MM +
+    Object.values(catalogMode ? CATALOG_COLUMN_WIDTHS_MM : PRICED_COLUMN_WIDTHS_MM).reduce((t, w) => t + w, 0);
+  const productColumnWidth = pageWidth - margin * 2 - fixedColumnsWidth;
   const imageOffset = hasImages ? ITEM_IMAGE_MM + ITEM_IMAGE_GAP_MM : 0;
 
   autoTable(doc, {
@@ -218,17 +224,17 @@ export async function generateOrderReceiptPdf(
     columnStyles: catalogMode
       ? {
           0: { cellWidth: NO_COLUMN_WIDTH_MM, halign: "center", textColor: [100, 116, 139] },
-          1: { cellWidth: PRODUCT_COLUMN_WIDTH_MM + 40, overflow: "linebreak" },
-          2: { cellWidth: 24, halign: "center" },
-          3: { cellWidth: 24, halign: "right" },
+          1: { cellWidth: productColumnWidth, overflow: "linebreak" },
+          2: { cellWidth: CATALOG_COLUMN_WIDTHS_MM.unit, halign: "center" },
+          3: { cellWidth: CATALOG_COLUMN_WIDTHS_MM.quantity, halign: "right" },
         }
       : {
           0: { cellWidth: NO_COLUMN_WIDTH_MM, halign: "center", textColor: [100, 116, 139] },
-          1: { cellWidth: PRODUCT_COLUMN_WIDTH_MM, overflow: "linebreak" },
-          2: { cellWidth: 18, halign: "center" },
-          3: { cellWidth: 16, halign: "right" },
-          4: { cellWidth: 31, halign: "right" },
-          5: { cellWidth: 31, halign: "right" },
+          1: { cellWidth: productColumnWidth, overflow: "linebreak" },
+          2: { cellWidth: PRICED_COLUMN_WIDTHS_MM.unit, halign: "center" },
+          3: { cellWidth: PRICED_COLUMN_WIDTHS_MM.quantity, halign: "right" },
+          4: { cellWidth: PRICED_COLUMN_WIDTHS_MM.unitPrice, halign: "right" },
+          5: { cellWidth: PRICED_COLUMN_WIDTHS_MM.total, halign: "right" },
         },
     margin: { left: margin, right: margin },
     didParseCell: (data) => {
