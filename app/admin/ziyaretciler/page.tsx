@@ -1,7 +1,9 @@
 // Pazarlama sitesi ziyaretçi raporu — her açılışta güncel veri.
 export const dynamic = "force-dynamic";
 
+import Link from "next/link";
 import { SiteAnalyticsPanel } from "@/components/admin/site-analytics-panel";
+import { VisitorStoriesView } from "@/components/admin/visitor-stories-view";
 import { Header } from "@/components/dashboard/header";
 import { getIstanbulToday, shiftIsoDate } from "@/lib/dates/istanbul";
 import { resolvePreset, type SalesPreset } from "@/lib/sales/presets";
@@ -15,7 +17,7 @@ const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 export default async function AdminSiteAnalyticsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ preset?: string; from?: string; to?: string; bucket?: string }>;
+  searchParams: Promise<{ preset?: string; from?: string; to?: string; bucket?: string; sekme?: string; gun?: string }>;
 }) {
   const params = await searchParams;
   const today = getIstanbulToday();
@@ -37,6 +39,45 @@ export default async function AdminSiteAnalyticsPage({
     }
   }
 
+  const storiesTab = params.sekme === "hikayeler";
+  const tabs = (
+    <div className="flex gap-1 rounded-xl border border-slate-200 bg-white p-1">
+      {[
+        { key: "rapor", label: "Grafikli rapor", href: "/ziyaretciler" },
+        { key: "hikayeler", label: "Ziyaretçi hikâyeleri", href: "/ziyaretciler?sekme=hikayeler" },
+      ].map((tab) => {
+        const active = (tab.key === "hikayeler") === storiesTab;
+        return (
+          <Link
+            key={tab.key}
+            href={tab.href}
+            className={`flex-1 rounded-lg px-4 py-2 text-center text-sm font-semibold transition ${active ? "bg-emerald-600 text-white" : "text-slate-600 hover:bg-slate-50"}`}
+          >
+            {tab.label}
+          </Link>
+        );
+      })}
+    </div>
+  );
+  const header = (
+    <Header
+      eyebrow="Ziyaretçiler"
+      title="ekatalox.com ziyaretçi analitiği"
+      description="Siteye kaç kişi girdi, hangi sayfalara baktı, ne kadar kaldı, nereye tıkladı ve nereden çıktı. Yalnızca pazarlama sitesi izlenir; bayi panelleri ve vitrinler dahil değildir."
+    />
+  );
+
+  if (storiesTab) {
+    const day = params.gun && ISO_DATE.test(params.gun) && params.gun <= today ? params.gun : today;
+    return (
+      <div className="space-y-6">
+        {header}
+        {tabs}
+        <VisitorStoriesView day={day} />
+      </div>
+    );
+  }
+
   const bucket: SiteAnalyticsBucket =
     params.bucket === "day" || params.bucket === "week" || params.bucket === "month" ? params.bucket : autoSiteBucket(from, to);
 
@@ -44,11 +85,8 @@ export default async function AdminSiteAnalyticsPage({
 
   return (
     <div className="space-y-6">
-      <Header
-        eyebrow="Ziyaretçiler"
-        title="ekatalox.com ziyaretçi analitiği"
-        description="Siteye kaç kişi girdi, hangi sayfalara baktı, ne kadar kaldı, nereye tıkladı ve nereden çıktı. Yalnızca pazarlama sitesi izlenir; bayi panelleri ve vitrinler dahil değildir."
-      />
+      {header}
+      {tabs}
 
       <SiteAnalyticsPanel initialReport={report} initialPreset={preset} />
     </div>

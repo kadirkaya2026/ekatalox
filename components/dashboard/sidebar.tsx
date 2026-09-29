@@ -198,7 +198,6 @@ const adminLinks: SidebarLink[] = [
   { href: "/kuponlar", label: "Kuponlar", icon: Ticket },
   { href: "/reklamlar", label: "eKatalox Reklamları", icon: Megaphone },
   { href: "/ziyaretciler", label: "Ziyaretçi Analitiği", icon: BarChart3 },
-  { href: "/ziyaretciler/hikayeler", label: "Ziyaretçi Hikâyeleri", icon: ScrollText },
   { href: "/logs", label: "Giriş Logları", icon: ScrollText },
 ];
 
