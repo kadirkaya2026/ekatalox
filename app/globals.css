@@ -336,3 +336,63 @@ section[id] {
   from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }
 }
+
+/* ---------------------------------------------------------------------------
+   Panel teması (29 Eyl 2026): beyaz zemin + mor-mavi vurgu. Yalnız .panel-theme
+   (bayi paneli + süper admin düzeni) içinde geçerli; vitrin ve pazarlama sitesi
+   etkilenmez. Paneldeki emerald sınıfları burada indigo ölçeğine eşlenir, yani
+   sayfalardaki bg-emerald-600 vb. tek tek değişmeden yeni renge geçer.
+   --------------------------------------------------------------------------- */
+.panel-theme {
+  --color-emerald-50: #eef2ff;
+  --color-emerald-100: #e0e7ff;
+  --color-emerald-200: #c7d2fe;
+  --color-emerald-300: #a5b4fc;
+  --color-emerald-400: #818cf8;
+  --color-emerald-500: #6366f1;
+  --color-emerald-600: #4f46e5;
+  --color-emerald-700: #4338ca;
+  --color-emerald-800: #3730a3;
+  --color-emerald-900: #312e81;
+  --color-emerald-950: #1e1b4b;
+  --card-radius: 18px;
+  --card-line: #e8ebf2;
+  --card-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 8px 24px -12px rgba(15, 23, 42, 0.12);
+  font-family: var(--font-plus-jakarta), var(--font-inter), system-ui, sans-serif;
+}
+:root:not(.dark) .panel-theme {
+  --color-background: #f6f7fb;
+  --color-border: #e8ebf2;
+  --color-muted: #f1f3f8;
+  --color-muted-foreground: #64748b;
+}
+/* Kart görünümü Card bileşenindeki değişkenlerden gelir; sayfanın verdiği
+   özel sınıflar (renkli uyarı kenarlığı vb.) yine önceliklidir. */
+.panel-theme [data-ui="card"] {
+  animation: panel-card-in 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+/* Aynı ızgaradaki kartlar sırayla gelsin */
+.panel-theme :is(.grid, .space-y-6) > [data-ui="card"]:nth-child(2) { animation-delay: 0.06s; }
+.panel-theme :is(.grid, .space-y-6) > [data-ui="card"]:nth-child(3) { animation-delay: 0.12s; }
+.panel-theme :is(.grid, .space-y-6) > [data-ui="card"]:nth-child(4) { animation-delay: 0.18s; }
+.panel-theme :is(.grid, .space-y-6) > [data-ui="card"]:nth-child(n + 5) { animation-delay: 0.24s; }
+@keyframes panel-card-in {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .panel-theme [data-ui="card"] { animation: none; }
+}
+/* Genel Bakış ciro grafiği soldan sağa çizilir */
+.panel-chart-reveal {
+  transform-box: fill-box;
+  transform-origin: left center;
+  animation: panel-chart-reveal 1.2s 0.2s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+@keyframes panel-chart-reveal {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .panel-chart-reveal { animation: none; }
+}

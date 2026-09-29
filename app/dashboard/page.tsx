@@ -12,11 +12,13 @@ import {
   ShoppingBasket,
   ShoppingCart,
   Tag,
+  TrendingUp,
   Wallet,
 } from "lucide-react";
 import { Header } from "@/components/dashboard/header";
 import { OnboardingWizard } from "@/components/dashboard/onboarding-wizard";
 import { OnlineNowCard } from "@/components/dashboard/online-now-card";
+import { OrderTrendChart } from "@/components/dashboard/order-trend-chart";
 import { KurumsalProgressCard } from "@/components/dashboard/kurumsal-progress-card";
 import { Card } from "@/components/ui/card";
 import { requireTenantAdminPage } from "@/lib/auth/session";
@@ -34,7 +36,7 @@ import { getOnboardingThemePresets, getTenantOnboardingStatus } from "@/lib/onbo
 import { formatOrderNo } from "@/lib/orders/format";
 import { hasKurumsalSiteAccess } from "@/lib/kurumsal/domain";
 import { getKurumsalSite } from "@/lib/storefront/kurumsal-content";
-import { getTenantOrdersPage, getTenantTodayOrderSummary } from "@/lib/orders/data";
+import { getTenantOrderSeries, getTenantOrdersPage, getTenantTodayOrderSummary } from "@/lib/orders/data";
 import type { StorefrontOrder } from "@/lib/types";
 import { formatCurrency } from "@/lib/utils";
 
@@ -70,13 +72,13 @@ function SectionCard({
 }) {
   return (
     <Card className={`flex flex-col ${className}`}>
-      <div className="flex items-start justify-between gap-3 border-b border-slate-100 px-5 py-4">
+      <div className="flex items-start justify-between gap-3 px-5 pb-1 pt-5">
         <div className="flex min-w-0 items-center gap-3">
-          <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-600">
+          <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600">
             <Icon className="size-4" />
           </span>
           <div className="min-w-0">
-            <h2 className="truncate text-sm font-semibold text-slate-900">{title}</h2>
+            <h2 className="truncate text-[15px] font-bold text-slate-900">{title}</h2>
             {subtitle ? <p className="truncate text-xs text-slate-500">{subtitle}</p> : null}
           </div>
         </div>
@@ -101,29 +103,62 @@ function StatCard({
   value,
   hint,
   tone = "slate",
+  trend,
+  spark,
 }: {
   icon: IconType;
   label: string;
   value: string;
   hint: string;
   tone?: "slate" | "emerald" | "amber" | "sky";
+  /** Dünle kıyas: "↑ %18" gibi; null ise gösterilmez */
+  trend?: { text: string; up: boolean } | null;
+  /** Son günlerin değerleri: sağ üstte küçük çizgi */
+  spark?: number[];
 }) {
   const tones = {
-    slate: "bg-slate-100 text-slate-600",
-    emerald: "bg-emerald-50 text-emerald-700",
-    amber: "bg-amber-50 text-amber-700",
-    sky: "bg-sky-50 text-sky-700",
+    slate: { box: "bg-slate-100 text-slate-600", line: "#94a3b8" },
+    emerald: { box: "bg-emerald-50 text-emerald-600", line: "var(--color-emerald-600)" },
+    amber: { box: "bg-amber-50 text-amber-600", line: "#f59e0b" },
+    sky: { box: "bg-sky-50 text-sky-600", line: "#0ea5e9" },
   } as const;
+  const sparkMax = spark ? Math.max(...spark, 1) : 1;
+  const sparkPath = spark && spark.some((v) => v > 0)
+    ? spark.map((v, i) => `${i ? "L" : "M"}${((i / (spark.length - 1)) * 86 + 2).toFixed(1)} ${(32 - (v / sparkMax) * 28).toFixed(1)}`).join(" ")
+    : null;
   return (
-    <Card className="p-5">
-      <div className={`flex size-9 items-center justify-center rounded-xl ${tones[tone]}`}>
+    <Card className="relative overflow-hidden p-5 transition hover:-translate-y-0.5 hover:shadow-lg">
+      <div className={`flex size-10 items-center justify-center rounded-xl ${tones[tone].box}`}>
         <Icon className="size-5" />
       </div>
-      <p className="mt-4 text-sm text-slate-500">{label}</p>
-      <p className="mt-1 truncate text-3xl font-bold tabular-nums text-slate-900">{value}</p>
-      <p className="mt-1 text-xs text-slate-400">{hint}</p>
+      {sparkPath ? (
+        <svg viewBox="0 0 90 36" className="absolute right-4 top-5 h-9 w-[90px]" aria-hidden>
+          <path d={sparkPath} fill="none" stroke={tones[tone].line} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      ) : null}
+      <p className="mt-4 text-sm font-semibold text-slate-500">{label}</p>
+      <p className="mt-0.5 truncate text-[28px] font-extrabold tabular-nums tracking-tight text-slate-900">{value}</p>
+      <p className="mt-1.5 flex items-center gap-1.5 text-xs text-slate-400">
+        {trend ? (
+          <span
+            className={`rounded-full px-2 py-0.5 font-bold ${
+              trend.up ? "bg-green-50 text-green-700" : "bg-rose-50 text-rose-600"
+            }`}
+          >
+            {trend.text}
+          </span>
+        ) : null}
+        <span className="truncate">{hint}</span>
+      </p>
     </Card>
   );
+}
+
+// Bugün/dün kıyası: dün 0 ise yüzde anlamsız, etiket gösterilmez.
+function dayTrend(today: number, yesterday: number): { text: string; up: boolean } | null {
+  if (yesterday <= 0 || today === yesterday) return null;
+  const pct = Math.round(((today - yesterday) / yesterday) * 100);
+  return { text: `${pct > 0 ? "↑" : "↓"} %${Math.abs(pct)}`, up: pct > 0 };
 }
 
 // Satır kutucuğu: katalog sağlığı + bildirim aboneleri aynı bileşen.
@@ -244,7 +279,7 @@ export default async function DashboardHomePage({
   const canUseReports = hasPlanFeature(tenant.plan, "reports");
   // Kurumsal site kartı yalnız toptancı (general) tenant'larda.
   const showKurumsal = tenant.business_type === "general";
-  const [summary, ordersPage, today, presence, onboarding, report, quality, pushSubscribers, kurumsalSite] =
+  const [summary, ordersPage, today, presence, onboarding, report, quality, pushSubscribers, kurumsalSite, series] =
     await Promise.all([
       getTenantDashboardSummary(tenant),
       getTenantOrdersPage(tenant.id, { page: 1, pageSize: 6 }),
@@ -257,6 +292,7 @@ export default async function DashboardHomePage({
       getTenantCatalogQuality(tenant.id),
       getTenantPushSubscriberCount(tenant.id),
       showKurumsal && hasKurumsalSiteAccess(tenant) ? getKurumsalSite(tenant.id) : null,
+      getTenantOrderSeries(tenant.id, 30),
     ]);
 
   const plan = tenant.plan ?? "baslangic";
@@ -266,6 +302,11 @@ export default async function DashboardHomePage({
   const currency = today.currency as "TRY" | "USD" | "EUR";
   const priceListUsage = report?.priceListUsage.slice(0, 5) ?? [];
   const priceListLoginTotal = priceListUsage.reduce((t, r) => t + r.loginCount, 0);
+  const last14 = series.points.slice(-14);
+  // Dünle kıyas iki tarafı da aynı günlük seriden (brüt) alır; kart değeri iptaller hariç kalır.
+  const todayPoint = series.points[series.points.length - 1] ?? { count: 0, amount: 0 };
+  const yesterday = series.points[series.points.length - 2] ?? { count: 0, amount: 0 };
+  const hasSeries = series.points.some((p) => p.count > 0);
 
   return (
     <div className="space-y-6">
@@ -297,6 +338,7 @@ export default async function DashboardHomePage({
         <StatCard
           icon={Box}
           label="Toplam ürün"
+          tone="emerald"
           value={String(summary.productCount)}
           hint={`${formatEffectiveProductLimit(plan, tenant.product_limit_addon)} kapasite · ${remaining} yer kaldı`}
         />
@@ -306,6 +348,8 @@ export default async function DashboardHomePage({
           value={String(today.count)}
           hint="Bugün oluşturulan sipariş PDF'i"
           tone="sky"
+          trend={dayTrend(todayPoint.count, yesterday.count)}
+          spark={last14.map((p) => p.count)}
         />
         <StatCard
           icon={Wallet}
@@ -313,6 +357,8 @@ export default async function DashboardHomePage({
           value={formatCurrency(today.totalAmount, currency)}
           hint={`${currency} · iptaller hariç`}
           tone="amber"
+          trend={dayTrend(todayPoint.amount, yesterday.amount)}
+          spark={last14.map((p) => p.amount)}
         />
         <OnlineNowCard initial={presence.total} />
       </div>
@@ -320,6 +366,11 @@ export default async function DashboardHomePage({
       {/* Ana alan (sol, geniş) + yan sütun (sağ, dar) */}
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start">
         <div className="space-y-6">
+          {hasSeries ? (
+            <SectionCard icon={TrendingUp} title="Sipariş cirosu" subtitle="Günlük toplam · iptaller dahil">
+              <OrderTrendChart points={series.points} currency={series.currency} />
+            </SectionCard>
+          ) : null}
           <SectionCard
             icon={ShoppingCart}
             title="Son siparişler"

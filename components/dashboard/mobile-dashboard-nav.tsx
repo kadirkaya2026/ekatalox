@@ -42,10 +42,10 @@ export function MobileDashboardNav({
   useBodyScrollLock(open);
 
   return (
-    <div className="border-b border-slate-800 bg-slate-900 md:hidden">
+    <div className="border-b border-slate-200 bg-white md:hidden dark:border-slate-800 dark:bg-slate-900">
       <div className="flex items-center justify-between px-4 py-3">
         <Link href="/#top" className="inline-flex">
-          <EkataloxLogo className="h-7 w-[130px]" />
+          <EkataloxLogo className="h-7 w-[130px]" variant="light" />
         </Link>
         <button
           type="button"
@@ -55,11 +55,11 @@ export function MobileDashboardNav({
               ? `Menüyü aç (${suggestionNoticeCount} bildirim)`
               : "Menüyü aç"
           }
-          className="relative rounded-lg p-2 text-slate-200 transition hover:bg-slate-800"
+          className="relative rounded-lg p-2 text-slate-700 transition hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800"
         >
           <Menu className="size-5" />
           {suggestionNoticeCount ? (
-            <span className="absolute -right-0.5 -top-0.5 inline-flex min-w-[1.125rem] items-center justify-center rounded-full bg-rose-600 px-1 text-[10px] font-bold leading-[1.125rem] text-white ring-2 ring-slate-900">
+            <span className="absolute -right-0.5 -top-0.5 inline-flex min-w-[1.125rem] items-center justify-center rounded-full bg-rose-600 px-1 text-[10px] font-bold leading-[1.125rem] text-white ring-2 ring-white dark:ring-slate-900">
               {suggestionNoticeCount > 9 ? "9+" : suggestionNoticeCount}
             </span>
           ) : null}
@@ -92,7 +92,7 @@ export function MobileDashboardNav({
                 type="button"
                 onClick={() => setOpen(false)}
                 aria-label="Menüyü kapat"
-                className="absolute right-3 top-3 z-20 rounded-full bg-slate-800 p-2 text-slate-200 transition hover:bg-slate-700"
+                className="absolute right-3 top-3 z-20 rounded-full bg-slate-100 p-2 text-slate-600 transition hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
               >
                 <X className="size-4" />
               </button>

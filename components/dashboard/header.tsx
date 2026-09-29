@@ -12,15 +12,15 @@ export function Header({
   action?: React.ReactNode;
 }) {
   return (
-    <div className="flex flex-col gap-4 rounded-2xl bg-card p-5 text-card-foreground shadow-sm md:flex-row md:items-center md:justify-between">
+    <div className="flex flex-col gap-4 px-1 pt-1 md:flex-row md:items-end md:justify-between">
       <div>
-        <p className="text-xs font-semibold uppercase tracking-[0.24em] text-emerald-700 dark:text-emerald-400">
+        <p className="text-xs font-bold uppercase tracking-[0.2em] text-emerald-600 dark:text-emerald-400">
           {eyebrow}
         </p>
-        <h1 className="mt-2 text-2xl font-semibold md:text-3xl">
+        <h1 className="mt-1.5 text-2xl font-extrabold tracking-tight md:text-[28px]">
           {title}
         </h1>
-        <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
+        <p className="mt-1 max-w-2xl text-sm leading-6 text-muted-foreground">
           {description}
         </p>
       </div>

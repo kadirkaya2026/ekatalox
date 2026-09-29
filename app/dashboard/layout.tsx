@@ -58,7 +58,7 @@ export default async function DashboardLayout({
     : [0, 0, 0];
 
   return (
-    <div className="min-h-screen bg-background text-foreground md:grid md:h-screen md:grid-cols-[280px_1fr] md:overflow-hidden">
+    <div className="panel-theme min-h-screen bg-background text-foreground md:grid md:h-screen md:grid-cols-[280px_1fr] md:overflow-hidden">
       <MobileDashboardNav
         mode="tenant"
         title={tenant?.company_name ?? "Tenant Paneli"}

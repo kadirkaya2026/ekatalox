@@ -2,7 +2,7 @@ import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { getPushReach, hasPushReach, type PushReach } from "@/lib/push/reach";
 import type { OrderStatus, OrderStatusEvent, StorefrontOrder } from "@/lib/types";
 import { ORDER_STATUSES } from "@/lib/orders/status";
-import { getIstanbulToday } from "@/lib/dates/istanbul";
+import { getIstanbulToday, shiftIsoDate } from "@/lib/dates/istanbul";
 
 // Sipariş listesi/detayı — bayi paneli. Tüm sorgular tenant_id ile sınırlı;
 // tarih aralığı Europe/Istanbul takvim günü olarak yorumlanır.
@@ -248,5 +248,44 @@ export async function getTenantTodayOrderSummary(
     count,
     totalAmount: Math.max(top.totalAmount - cancelled, 0),
     currency: top.currency,
+  };
+}
+
+// Genel Bakış ciro grafiği: son N günün günlük sipariş sayısı ve tutarı.
+// Tutar en çok sipariş alınan para biriminden gelir (CATALOG hariç); iptaller
+// günlük tabloda düşülmediği için grafik brüt ciroyu gösterir.
+export async function getTenantOrderSeries(
+  tenantId: string,
+  days = 30,
+): Promise<{ currency: string; points: { date: string; count: number; amount: number }[] }> {
+  const today = getIstanbulToday();
+  const from = shiftIsoDate(today, -(days - 1));
+  const dates = Array.from({ length: days }, (_, i) => shiftIsoDate(from, i));
+  const empty = { currency: "TRY", points: dates.map((date) => ({ date, count: 0, amount: 0 })) };
+  const supabase = createSupabaseAdminClient();
+  if (!supabase) return empty;
+  const { data } = await supabase
+    .from("storefront_analytics_orders_daily")
+    .select("stat_date, currency, order_count, total_amount")
+    .eq("tenant_id", tenantId)
+    .gte("stat_date", from)
+    .lte("stat_date", today);
+  const rows = data ?? [];
+  const byCurrency = new Map<string, number>();
+  for (const row of rows) {
+    if (row.currency === "CATALOG") continue;
+    byCurrency.set(row.currency, (byCurrency.get(row.currency) ?? 0) + (Number(row.order_count) || 0));
+  }
+  const currency = [...byCurrency.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? "TRY";
+  const count = new Map<string, number>();
+  const amount = new Map<string, number>();
+  for (const row of rows) {
+    const date = String(row.stat_date);
+    count.set(date, (count.get(date) ?? 0) + (Number(row.order_count) || 0));
+    if (row.currency === currency) amount.set(date, (amount.get(date) ?? 0) + (Number(row.total_amount) || 0));
+  }
+  return {
+    currency,
+    points: dates.map((date) => ({ date, count: count.get(date) ?? 0, amount: amount.get(date) ?? 0 })),
   };
 }

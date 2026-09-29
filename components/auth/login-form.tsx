@@ -134,17 +134,24 @@ export function LoginForm({ target }: { target?: string }) {
         .eq("id", user.id)
         .maybeSingle();
 
+      // Yerel geliştirmede (app.localhost) canlıya atlamadan aynı sunucuda kal.
+      const isProd = process.env.NODE_ENV === "production";
+      const appBase = isProd ? "https://app.ekatalox.com" : "";
+      const adminUrl = isProd
+        ? "https://admin.ekatalox.com/"
+        : `${window.location.protocol}//admin.localhost:${window.location.port}/`;
+
       if (profile?.role === "super_admin") {
-        window.location.href = "https://admin.ekatalox.com/";
+        window.location.href = adminUrl;
         return;
       }
 
       if (profile?.must_change_password) {
-        window.location.href = "https://app.ekatalox.com/settings?forcePasswordChange=1";
+        window.location.href = `${appBase}/settings?forcePasswordChange=1`;
         return;
       }
 
-      window.location.href = "https://app.ekatalox.com/";
+      window.location.href = `${appBase}/`;
     });
   }
 

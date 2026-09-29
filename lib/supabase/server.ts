@@ -3,7 +3,9 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
 import { appEnv, hasSupabaseEnv } from "@/lib/env";
 
-const AUTH_COOKIE_DOMAIN = ".ekatalox.com";
+// Yerel geliştirmede (app.localhost) çerez alan adı verilmez; aksi halde tarayıcı
+// .ekatalox.com çerezini reddeder ve giriş "Oturum açılamadı" ile düşer.
+const AUTH_COOKIE_DOMAIN = process.env.NODE_ENV === "production" ? ".ekatalox.com" : undefined;
 
 export async function createSupabaseServerClient(): Promise<SupabaseClient | null> {
   if (!hasSupabaseEnv()) {
@@ -25,7 +27,7 @@ export async function createSupabaseServerClient(): Promise<SupabaseClient | nul
               domain: AUTH_COOKIE_DOMAIN,
               path: "/",
               sameSite: "lax",
-              secure: true,
+              secure: process.env.NODE_ENV === "production",
             });
           });
         } catch {}
