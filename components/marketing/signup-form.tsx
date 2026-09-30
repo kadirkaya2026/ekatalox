@@ -97,33 +97,40 @@ const FIELD_STEP: Record<string, SignupStepIndex> = {
   termsAccepted: 2,
 };
 
-const STEP_VISUAL: Record<0 | 1 | 2, { src: string; alt: string; caption: string }> = {
-  0: { src: "/site/toptan-katalog-v2.png", alt: "Demo toptan kataloğunun ürün listesi", caption: "Bayileriniz kataloğu telefondan böyle görür" },
-  1: { src: "/site/toptan-sepet-v2.png", alt: "Demo katalogda dolu sepet ve WhatsApp ile gönder tuşu", caption: "Bayi sipariş fişi bağlantısını WhatsApp üzerinden gönderir" },
-  2: { src: "/site/toptan-giris-v2.png", alt: "Demo kataloğun bayi şifre giriş ekranı", caption: "Fiyatlar yalnız şifre verdiğiniz bayilere açılır" },
-};
-
-// Seçilen sektöre göre soldaki telefon o sektörün demosunu gösterir (30 Eyl
-// 2026). Görseller demo mağazalardan 402×874 @3x çekildi (public/site/sektor/).
-// open: demo şifresiz açılıyor → "giriş" adımında mağazanın ana sayfası var.
-const SECTOR_DEMO_VISUALS: Record<string, { name: string; open: boolean; audience: string }> = {
-  "market-bakkal": { name: "market", open: true, audience: "Müşterileriniz" },
-  gida: { name: "gıda toptancısı", open: false, audience: "Bayileriniz" },
-  tekstil: { name: "giyim toptancısı", open: false, audience: "Bayileriniz" },
-  hirdavat: { name: "yapı market", open: true, audience: "Bayileriniz" },
-  kozmetik: { name: "kozmetik toptancısı", open: true, audience: "Bayileriniz" },
-  "ev-mutfak": { name: "ev & yaşam toptancısı", open: true, audience: "Bayileriniz" },
+// Seçilen sektöre göre soldaki telefon o sektörün görünümünü gösterir (30 Eyl
+// 2026). Görseller 402×874 @3x, iOS durum çubuğuyla (public/site/sektor/):
+// store = gerçek demo mağaza (demotoptan, marketgo), theme = /temalar'daki
+// sektörün ilk hazır teması (/tema-demo).
+type SectorVisual = { name: string; kind: "store" | "theme"; audience: string; gated?: boolean };
+const SECTOR_DEMO_VISUALS: Record<string, SectorVisual> = {
+  "telefon-aksesuar": { name: "aksesuar toptancısı", kind: "store", audience: "Bayileriniz", gated: true },
+  "market-bakkal": { name: "market", kind: "store", audience: "Müşterileriniz" },
+  gida: { name: "gıda toptancısı", kind: "theme", audience: "Bayileriniz" },
+  tekstil: { name: "giyim toptancısı", kind: "theme", audience: "Bayileriniz" },
+  hirdavat: { name: "hırdavat toptancısı", kind: "theme", audience: "Bayileriniz" },
+  kozmetik: { name: "kozmetik toptancısı", kind: "theme", audience: "Bayileriniz" },
+  "kirtasiye-oyuncak": { name: "kırtasiye toptancısı", kind: "theme", audience: "Bayileriniz" },
+  ambalaj: { name: "ambalaj toptancısı", kind: "theme", audience: "Bayileriniz" },
+  elektrik: { name: "elektrik toptancısı", kind: "theme", audience: "Bayileriniz" },
+  "ev-mutfak": { name: "ev & mutfak toptancısı", kind: "theme", audience: "Bayileriniz" },
+  "yedek-parca": { name: "yedek parça toptancısı", kind: "theme", audience: "Bayileriniz" },
+  diger: { name: "toptancı", kind: "theme", audience: "Bayileriniz" },
 };
 
 function stepVisual(step: 0 | 1 | 2, sector: string) {
-  const demo = SECTOR_DEMO_VISUALS[sector];
-  if (!demo) return STEP_VISUAL[step];
-  const base = `/site/sektor/${sector}`;
-  if (step === 0) return { src: `${base}-katalog.webp`, alt: `Demo ${demo.name} kataloğunun ürün listesi`, caption: `${demo.audience} kataloğu telefondan böyle görür` };
+  const demo = SECTOR_DEMO_VISUALS[sector] ?? SECTOR_DEMO_VISUALS["telefon-aksesuar"];
+  const key = SECTOR_DEMO_VISUALS[sector] ? sector : "telefon-aksesuar";
+  const base = `/site/sektor/${key}`;
   if (step === 1) return { src: `${base}-sepet.webp`, alt: `Demo ${demo.name} kataloğunda dolu sepet`, caption: `${demo.audience} siparişi sepetten WhatsApp'a gönderir` };
-  return demo.open
-    ? { src: `${base}-giris.webp`, alt: `Demo ${demo.name} kataloğunun ana sayfası`, caption: `${demo.audience} kataloğunuzu tek bağlantıyla açar` }
-    : { src: `${base}-giris.webp`, alt: `Demo ${demo.name} kataloğunun şifreli giriş ekranı`, caption: "Fiyatlar yalnız şifre verdiğiniz bayilere açılır" };
+  if (demo.kind === "theme") {
+    return step === 0
+      ? { src: `${base}-giris.webp`, alt: `Hazır ${demo.name} teması, telefon görünümü`, caption: "Kataloğunuz hazır temayla telefonda böyle görünür" }
+      : { src: `${base}-katalog.webp`, alt: `Hazır ${demo.name} temasında ürün listesi`, caption: `${demo.audience} ürünlerinizi tek tek inceler, sepete ekler` };
+  }
+  if (step === 0) return { src: `${base}-katalog.webp`, alt: `Demo ${demo.name} kataloğunun ürün listesi`, caption: `${demo.audience} kataloğu telefondan böyle görür` };
+  return demo.gated
+    ? { src: `${base}-giris.webp`, alt: `Demo ${demo.name} kataloğunun şifreli giriş ekranı`, caption: "Fiyatlar yalnız şifre verdiğiniz bayilere açılır" }
+    : { src: `${base}-giris.webp`, alt: `Demo ${demo.name} kataloğunun ana sayfası`, caption: `${demo.audience} kataloğunuzu tek bağlantıyla açar` };
 }
 
 export function SignupForm({ initialPlan, initialSector, initialTheme }: { initialPlan?: string; initialSector?: string; initialTheme?: string }) {
