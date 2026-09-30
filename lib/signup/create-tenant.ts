@@ -81,9 +81,9 @@ function isEmailExistsError(error: { message?: string; code?: string } | null) {
 }
 
 const NEW_TENANT_CART_FORM_CONFIG = {
-  customer_name: { is_visible: true, is_required: false, sort_order: 1 },
-  customer_phone: { is_visible: true, is_required: false, sort_order: 2 },
-  customer_address: { is_visible: true, is_required: false, sort_order: 3 },
+  customer_name: { is_visible: true, is_required: false, sort_order: 1, label: null },
+  customer_phone: { is_visible: true, is_required: false, sort_order: 2, label: null },
+  customer_address: { is_visible: true, is_required: false, sort_order: 3, label: null },
 };
 
 /** Varsayılan fiyat listeleri: fiyatsız katalog + 2 fiyatlı liste (Ücretsiz

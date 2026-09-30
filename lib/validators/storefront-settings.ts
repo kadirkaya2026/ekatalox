@@ -181,7 +181,11 @@ const cartFormFieldSchema = z
         z.null(),
         z.undefined(),
       ])
-      .transform((value) => (typeof value === "string" ? value.trim() || null : null)),
+      .transform((value) => (typeof value === "string" ? value.trim() || null : null))
+      // Anahtar hiç yoksa da geçerli (30 Eyl 2026): kayıtta yazılan yapılandırmada
+      // label yoktu, zod v4 eksik anahtarı "nonoptional" sayıp tüm ayar kaydını
+      // "Invalid input" ile düşürüyordu (Autovale kurulum sihirbazı).
+      .optional(),
   })
   .strict();
 
