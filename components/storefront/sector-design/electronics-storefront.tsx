@@ -1,8 +1,8 @@
 "use client";
 import { paletteStyle } from "./palette";
 
-import { ArrowRight, ArrowUpRight, Search, ShoppingBag, Plus, Minus, Grid2X2, List, SlidersHorizontal, Package, Bell, X, ChevronRight } from "lucide-react";
-import { useState, type CSSProperties } from "react";
+import { ArrowRight, ArrowUpRight, Search, ShoppingBag, Plus, Minus, Grid2X2, List, SlidersHorizontal, Package, Bell, X, ChevronRight, ChevronDown, LayoutGrid } from "lucide-react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import type { Category, StorefrontProduct, TenantStorefrontSettings } from "@/lib/types";
 import { type DesignDocument, type FormaContent, type AkimContent, type ModulContent, getDesignContent } from "@/lib/storefront/sector-design/config";
 import { useStorefrontLocale } from "@/lib/storefront/locale-context";
@@ -23,10 +23,10 @@ export type SectorStorefrontProps = {
   onAdd: (id: string) => void; onDecrease: (id: string) => void; onMore: () => void; onHome: () => void;
 };
 export const sectorUi = {
-  tr: { all: "Tüm ürünler", categories: "Kategoriler", discover: "Keşfet", search: "Ürün veya model ara", cart: "Sepetim", campaigns: "Kampanyalar", retail: "Ürün kataloğu", wholesale: "Toptan sipariş", products: "ürün", add: "Sepete ekle", remove: "Adedi azalt", detail: "Ürünü incele", catalog: "Kataloğa dön", more: "Daha fazla ürün", empty: "Aradığınız ürün bulunamadı.", emptyBody: "Başka bir arama yapın veya tüm ürünlere göz atın.", stock: "Stokta yok", package: "Paket", carton: "Koli", units: "adet", grid: "Izgara görünümü", list: "Liste görünümü", loading: "Ürünler yükleniyor", close: "Kapat" },
-  en: { all: "All products", categories: "Categories", discover: "Explore", search: "Search product or model", cart: "My cart", campaigns: "Campaigns", retail: "Product catalog", wholesale: "Wholesale orders", products: "products", add: "Add to cart", remove: "Decrease quantity", detail: "View product", catalog: "Back to catalog", more: "More products", empty: "No products found.", emptyBody: "Try another search or browse all products.", stock: "Out of stock", package: "Pack", carton: "Carton", units: "units", grid: "Grid view", list: "List view", loading: "Loading products", close: "Close" },
-  de: { all: "Alle Produkte", categories: "Kategorien", discover: "Entdecken", search: "Produkt oder Modell suchen", cart: "Warenkorb", campaigns: "Aktionen", retail: "Produktkatalog", wholesale: "Großhandel", products: "Produkte", add: "In den Warenkorb", remove: "Menge verringern", detail: "Produkt ansehen", catalog: "Zum Katalog", more: "Weitere Produkte", empty: "Keine Produkte gefunden.", emptyBody: "Suchen Sie erneut oder sehen Sie alle Produkte an.", stock: "Nicht verfügbar", package: "Packung", carton: "Karton", units: "Stück", grid: "Rasteransicht", list: "Listenansicht", loading: "Produkte werden geladen", close: "Schließen" },
-  ru: { all: "Все товары", categories: "Категории", discover: "Смотреть", search: "Найти товар или модель", cart: "Корзина", campaigns: "Акции", retail: "Каталог товаров", wholesale: "Оптовый заказ", products: "товаров", add: "В корзину", remove: "Уменьшить количество", detail: "Открыть товар", catalog: "В каталог", more: "Больше товаров", empty: "Товары не найдены.", emptyBody: "Измените запрос или откройте все товары.", stock: "Нет в наличии", package: "Упаковка", carton: "Коробка", units: "шт.", grid: "Сетка", list: "Список", loading: "Загрузка товаров", close: "Закрыть" },
+  tr: { allCategories: "Tüm kategoriler", all: "Tüm ürünler", categories: "Kategoriler", discover: "Keşfet", search: "Ürün veya model ara", cart: "Sepetim", campaigns: "Kampanyalar", retail: "Ürün kataloğu", wholesale: "Toptan sipariş", products: "ürün", add: "Sepete ekle", remove: "Adedi azalt", detail: "Ürünü incele", catalog: "Kataloğa dön", more: "Daha fazla ürün", empty: "Aradığınız ürün bulunamadı.", emptyBody: "Başka bir arama yapın veya tüm ürünlere göz atın.", stock: "Stokta yok", package: "Paket", carton: "Koli", units: "adet", grid: "Izgara görünümü", list: "Liste görünümü", loading: "Ürünler yükleniyor", close: "Kapat" },
+  en: { allCategories: "All categories", all: "All products", categories: "Categories", discover: "Explore", search: "Search product or model", cart: "My cart", campaigns: "Campaigns", retail: "Product catalog", wholesale: "Wholesale orders", products: "products", add: "Add to cart", remove: "Decrease quantity", detail: "View product", catalog: "Back to catalog", more: "More products", empty: "No products found.", emptyBody: "Try another search or browse all products.", stock: "Out of stock", package: "Pack", carton: "Carton", units: "units", grid: "Grid view", list: "List view", loading: "Loading products", close: "Close" },
+  de: { allCategories: "Alle Kategorien", all: "Alle Produkte", categories: "Kategorien", discover: "Entdecken", search: "Produkt oder Modell suchen", cart: "Warenkorb", campaigns: "Aktionen", retail: "Produktkatalog", wholesale: "Großhandel", products: "Produkte", add: "In den Warenkorb", remove: "Menge verringern", detail: "Produkt ansehen", catalog: "Zum Katalog", more: "Weitere Produkte", empty: "Keine Produkte gefunden.", emptyBody: "Suchen Sie erneut oder sehen Sie alle Produkte an.", stock: "Nicht verfügbar", package: "Packung", carton: "Karton", units: "Stück", grid: "Rasteransicht", list: "Listenansicht", loading: "Produkte werden geladen", close: "Schließen" },
+  ru: { allCategories: "Все категории", all: "Все товары", categories: "Категории", discover: "Смотреть", search: "Найти товар или модель", cart: "Корзина", campaigns: "Акции", retail: "Каталог товаров", wholesale: "Оптовый заказ", products: "товаров", add: "В корзину", remove: "Уменьшить количество", detail: "Открыть товар", catalog: "В каталог", more: "Больше товаров", empty: "Товары не найдены.", emptyBody: "Измените запрос или откройте все товары.", stock: "Нет в наличии", package: "Упаковка", carton: "Коробка", units: "шт.", grid: "Сетка", list: "Список", loading: "Загрузка товаров", close: "Закрыть" },
 };
 
 function ProductPhoto({ src, alt, priority = false }: { src: string | null; alt: string; priority?: boolean }) {
@@ -41,6 +41,18 @@ export function ElectronicsStorefront(p: SectorStorefrontProps) {
   const labels = sectorUi[locale];
   const theme = useStorefrontTheme();
   const [menuOpen, setMenuOpen] = useState(false);
+  // Akım: masaüstünde arama solunda "Tüm kategoriler" açılır paneli
+  // (demotoptan'daki klasik başlık seçicisi gibi; 30 Eyl 2026, Autovale).
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const pickerRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!pickerOpen) return;
+    const onPointer = (event: PointerEvent) => { if (!pickerRef.current?.contains(event.target as Node)) setPickerOpen(false); };
+    const onKey = (event: KeyboardEvent) => { if (event.key === "Escape") setPickerOpen(false); };
+    document.addEventListener("pointerdown", onPointer);
+    document.addEventListener("keydown", onKey);
+    return () => { document.removeEventListener("pointerdown", onPointer); document.removeEventListener("keydown", onKey); };
+  }, [pickerOpen]);
   const [view, setView] = useState<"grid" | "list" | null>(null);
   const c = getDesignContent(p.design);
   const variant = p.design.themeId.replace("electronics-", "");
@@ -54,12 +66,20 @@ export function ElectronicsStorefront(p: SectorStorefrontProps) {
   const categoryName = p.categories.find(x => x.id === p.selectedCategory)?.name ?? c.catalogTitle;
   const rootStyle = { "--merchant-accent": p.settings.brand_primary_color || undefined } as CSSProperties;
   function choose(id: string, scroll = true) {
-    p.onCategory(id); setMenuOpen(false);
+    p.onCategory(id); setMenuOpen(false); setPickerOpen(false);
     if (scroll) requestAnimationFrame(() => document.getElementById("sector-catalog")?.scrollIntoView({ behavior: "instant", block: "start" }));
   }
   function browseHero() { choose(c.heroCategoryId || "all"); }
   const search = <form className={styles.search} onSubmit={e => { e.preventDefault(); p.onSearchSubmit(); }} role="search"><Search size={19} aria-hidden="true" /><input aria-label={labels.search} placeholder={labels.search} value={p.search} onChange={e => p.onSearch(e.target.value)} /><button type="submit" aria-label={labels.search}><ArrowRight size={18} /></button></form>;
   const nav = <nav aria-label={labels.categories} className={styles.categoryNav}><button aria-pressed={p.selectedCategory === "all"} onClick={() => choose("all")}>{labels.all}</button>{primaryCategories.map(cat => <button key={cat.id} aria-pressed={p.selectedCategory === cat.id} onClick={() => choose(cat.id)}>{cat.name}</button>)}</nav>;
+  const pickerLabel = p.selectedCategory === "all" ? labels.allCategories : (primaryCategories.find(x => x.id === p.selectedCategory)?.name ?? labels.allCategories);
+  const picker = <div ref={pickerRef} className={styles.catPicker}>
+    <button type="button" className={styles.catPickerButton} onClick={() => setPickerOpen(v => !v)} aria-expanded={pickerOpen} aria-haspopup="true"><LayoutGrid size={16} aria-hidden="true" /><span>{pickerLabel}</span><ChevronDown size={16} aria-hidden="true" className={pickerOpen ? styles.catPickerChevronOpen : undefined} /></button>
+    {pickerOpen && <div className={styles.catPanel} role="menu">
+      <button type="button" role="menuitem" className={styles.catPanelAll} aria-pressed={p.selectedCategory === "all"} onClick={() => choose("all")}><LayoutGrid size={17} aria-hidden="true" />{labels.all}</button>
+      <div className={styles.catPanelGrid}>{primaryCategories.map(cat => { const img = cat.tile_image_url || p.initialProducts.find(x => x.category_id === cat.id && x.image_url)?.image_url || null; return <button type="button" role="menuitem" key={cat.id} aria-pressed={p.selectedCategory === cat.id} onClick={() => choose(cat.id)}><span className={styles.catPanelImage}><ProductPhoto src={img} alt="" /></span><span>{cat.name}</span></button>; })}</div>
+    </div>}
+  </div>;
   const heroImage = c.heroImage || heroProduct?.image_url || null;
   const heroCopy = <div className={styles.heroCopy}><span className={styles.heroKicker}>{wholesale ? labels.wholesale : labels.retail}</span><h1>{c.heroTitle}</h1><p>{c.heroBody}</p><button className={styles.primary} onClick={browseHero}>{c.buttonLabel || labels.discover}<ArrowUpRight size={19} /></button></div>;
   const photo = <div className={styles.heroPhoto}><ProductPhoto src={heroImage} alt={c.heroImage ? c.heroTitle : heroProduct?.product_name ?? ""} priority /></div>;
@@ -69,7 +89,7 @@ export function ElectronicsStorefront(p: SectorStorefrontProps) {
       <button data-theme-area="brand" className={styles.wordmark} onClick={p.onHome} aria-label={`${p.title} — ${labels.all}`}>
         <SectorBrandLogo logoUrl={p.settings.logo_url} title={p.title} className={styles.logo} fallback={<span className={styles.brandMark} aria-hidden="true"><span /><span /><span /></span>} />
       </button>
-      <div className={styles.desktopSearch}>{search}</div>
+      <div className={`${styles.desktopSearch} ${variant === "akim" ? styles.withPicker : ""}`}>{variant === "akim" && picker}{search}</div>
       <div className={styles.headerActions}>
         <button className={styles.iconButton} onClick={p.onCampaigns} aria-label={labels.campaigns}><Bell size={20} /></button>
         <select className={styles.language} aria-label="Language / Dil" value={locale} onChange={e => setLocale(e.target.value as typeof locale)}><option value="tr">TR</option><option value="en">EN</option><option value="de">DE</option><option value="ru">RU</option></select>
