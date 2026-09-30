@@ -219,7 +219,8 @@ export function LoginForm({ target }: { target?: string }) {
             {/* Panel app./admin. alt alan adında açılıyor; ana sayfa pazarlama sitesi (30 Eyl 2026). */}
             <a href="https://www.ekatalox.com" className="font-medium text-white underline-offset-4 hover:underline">Ana sayfa</a>
             <span aria-hidden="true" className="text-slate-600">·</span>
-            <Link href="/sifremi-unuttum" className="font-medium text-white underline-offset-4 hover:underline">Şifremi unuttum</Link>
+            {/* Şifre sıfırlama sayfası yalnız www'de; app./admin. altında /sifremi-unuttum 404 veriyordu. */}
+            <a href="https://www.ekatalox.com/sifremi-unuttum" className="font-medium text-white underline-offset-4 hover:underline">Şifremi unuttum</a>
           </p>
         </form>
 
