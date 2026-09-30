@@ -215,7 +215,10 @@ export function LoginForm({ target }: { target?: string }) {
           >
             {pending ? "Giriş yapılıyor..." : "Giriş yap"}
           </button>
-          <p className="pt-1 text-center text-xs text-slate-400">
+          <p className="flex items-center justify-center gap-4 pt-1 text-center text-xs text-slate-400">
+            {/* Panel app./admin. alt alan adında açılıyor; ana sayfa pazarlama sitesi (30 Eyl 2026). */}
+            <a href="https://www.ekatalox.com" className="font-medium text-white underline-offset-4 hover:underline">Ana sayfa</a>
+            <span aria-hidden="true" className="text-slate-600">·</span>
             <Link href="/sifremi-unuttum" className="font-medium text-white underline-offset-4 hover:underline">Şifremi unuttum</Link>
           </p>
         </form>
