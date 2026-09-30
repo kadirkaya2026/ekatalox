@@ -103,6 +103,29 @@ const STEP_VISUAL: Record<0 | 1 | 2, { src: string; alt: string; caption: string
   2: { src: "/site/toptan-giris-v2.png", alt: "Demo kataloğun bayi şifre giriş ekranı", caption: "Fiyatlar yalnız şifre verdiğiniz bayilere açılır" },
 };
 
+// Seçilen sektöre göre soldaki telefon o sektörün demosunu gösterir (30 Eyl
+// 2026). Görseller demo mağazalardan 402×874 @3x çekildi (public/site/sektor/).
+// open: demo şifresiz açılıyor → "giriş" adımında mağazanın ana sayfası var.
+const SECTOR_DEMO_VISUALS: Record<string, { name: string; open: boolean; audience: string }> = {
+  "market-bakkal": { name: "market", open: true, audience: "Müşterileriniz" },
+  gida: { name: "gıda toptancısı", open: false, audience: "Bayileriniz" },
+  tekstil: { name: "giyim toptancısı", open: false, audience: "Bayileriniz" },
+  hirdavat: { name: "yapı market", open: true, audience: "Bayileriniz" },
+  kozmetik: { name: "kozmetik toptancısı", open: true, audience: "Bayileriniz" },
+  "ev-mutfak": { name: "ev & yaşam toptancısı", open: true, audience: "Bayileriniz" },
+};
+
+function stepVisual(step: 0 | 1 | 2, sector: string) {
+  const demo = SECTOR_DEMO_VISUALS[sector];
+  if (!demo) return STEP_VISUAL[step];
+  const base = `/site/sektor/${sector}`;
+  if (step === 0) return { src: `${base}-katalog.webp`, alt: `Demo ${demo.name} kataloğunun ürün listesi`, caption: `${demo.audience} kataloğu telefondan böyle görür` };
+  if (step === 1) return { src: `${base}-sepet.webp`, alt: `Demo ${demo.name} kataloğunda dolu sepet`, caption: `${demo.audience} siparişi sepetten WhatsApp'a gönderir` };
+  return demo.open
+    ? { src: `${base}-giris.webp`, alt: `Demo ${demo.name} kataloğunun ana sayfası`, caption: `${demo.audience} kataloğunuzu tek bağlantıyla açar` }
+    : { src: `${base}-giris.webp`, alt: `Demo ${demo.name} kataloğunun şifreli giriş ekranı`, caption: "Fiyatlar yalnız şifre verdiğiniz bayilere açılır" };
+}
+
 export function SignupForm({ initialPlan, initialSector, initialTheme }: { initialPlan?: string; initialSector?: string; initialTheme?: string }) {
   const [plan, setPlan] = useState<ToptanPlanSlug>(isToptanPlanSlug(initialPlan) ? initialPlan : "free");
   const sectorValid = TOPTAN_SECTOR_OPTIONS.some((o) => o.value === initialSector);
@@ -318,7 +341,7 @@ export function SignupForm({ initialPlan, initialSector, initialTheme }: { initi
     }
   }
 
-  const visual = step < 3 ? STEP_VISUAL[step as 0 | 1 | 2] : null;
+  const visual = step < 3 ? stepVisual(step as 0 | 1 | 2, form.sector) : null;
 
   return (
     <div ref={topRef} className="scroll-mt-24">
