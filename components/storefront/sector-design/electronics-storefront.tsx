@@ -14,6 +14,7 @@ import { StorefrontLogoutButton } from "@/components/storefront/storefront-logou
 import styles from "./electronics.module.css";
 import { SectorBrandLogo } from "@/components/storefront/sector-design/sector-brand-logo";
 import { setAkimDayMode, useAkimDayMode } from "@/lib/storefront/akim-mode";
+import { SectorBannerSlider } from "@/components/storefront/sector-design/sector-banner-slider";
 
 export type SectorStorefrontProps = {
   tenantId: string; subdomain?: string;
@@ -106,6 +107,7 @@ export function ElectronicsStorefront(p: SectorStorefrontProps) {
     {variant !== "modul" && nav}
     {p.detailOpen ? null : <>
       {variant === "forma" && showLanding && c.heroVisible && <section data-theme-area="heroVisible" className={styles.formaHero}>{heroCopy}{photo}<span className={styles.heroSideNote}>{p.title} / {labels.discover}</span></section>}
+      {variant === "akim" && showLanding && <SectorBannerSlider items={p.settings.banner_items ?? []} />}
       {variant === "akim" && showLanding && c.heroVisible && <section data-theme-area="heroVisible" className={styles.akimHero}><div className={styles.akimWord} aria-hidden="true">{p.title.toLocaleUpperCase("tr")}</div>{heroCopy}{photo}<div className={styles.akimCaption}>{heroProduct?.product_name}<ArrowUpRight size={25} /></div></section>}
       {variant === "modul" && <div className={styles.modulLanding}>
         <aside className={styles.sidebar}><h2><Grid2X2 size={19} />{labels.categories}</h2>{nav}</aside>

@@ -18,7 +18,8 @@ export default async function TenantBannerSettingsPage() {
   // yönlendiriliyordu, müşteri banner'ın nereye gittiğini anlamıyordu
   // (29 Eyl 2026, Yaşatan Kozmetik) → açıklama + yönlendirme butonu.
   const design = readDesignDocument(storefrontSettings.sector_design, session.tenant!.sector);
-  if (design) {
+  // Akım teması kayan banner şeridini gösterir (30 Eyl 2026); o temada normal form açılır.
+  if (design && design.themeId !== "electronics-akim") {
     const themeName = DESIGNS.find((item) => item.id === design.themeId)?.name ?? "seçtiğiniz tema";
     const content = getDesignContent(design) as { heroVisible?: boolean; heroImage?: string };
     const heroHidden = content.heroVisible === false;
