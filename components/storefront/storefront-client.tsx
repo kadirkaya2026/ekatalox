@@ -2,6 +2,7 @@
 
 import { paletteStyle } from "@/components/storefront/sector-design/palette";
 import { electronicsCommerceTheme, commerceRootClass } from "@/components/storefront/sector-design/commerce-theme";
+import { useAkimDayMode } from "@/lib/storefront/akim-mode";
 import { SectorStorefront } from "@/components/storefront/sector-design/sector-storefront";
 import { readDesignDocument, getDesignContent } from "@/lib/storefront/sector-design/config";
 
@@ -1639,7 +1640,10 @@ export function StorefrontClient({
     },
     storefrontSettings.product_image_background,
   );
-  const theme = electronicsCommerceTheme(baseTheme, electronicsDesign?.themeId);
+  const akimDay = useAkimDayMode(
+    electronicsDesign?.themeId === "electronics-akim" && Boolean(storefrontSettings.is_theme_toggle_visible),
+  );
+  const theme = electronicsCommerceTheme(baseTheme, electronicsDesign?.themeId, akimDay);
   const layout = getStorefrontLayout(storefrontSettings.layout_key ?? "classic-grid");
   const productCardStyle = getProductCardStyleClasses(storefrontSettings.product_card_style);
   // Market/tekel bayilerde MOBİLDE düzen: banner -> indirimli ürün şeridi ->
@@ -4191,7 +4195,7 @@ export function StorefrontClient({
       productImageBackground={storefrontSettings.product_image_background}
     >
     <StorefrontLayoutProvider layoutKey={storefrontSettings.layout_key ?? "classic-grid"}>
-    <div className={electronicsDesign ? commerceRootClass(electronicsDesign.themeId, theme.isDark) : "contents"} style={electronicsDesign ? paletteStyle(electronicsDesign, theme.isDark) : undefined} data-commerce-design={electronicsDesign?.themeId}>
+    <div className={electronicsDesign ? commerceRootClass(electronicsDesign.themeId, theme.isDark, akimDay) : "contents"} style={electronicsDesign ? paletteStyle(electronicsDesign, theme.isDark, akimDay) : undefined} data-commerce-design={electronicsDesign?.themeId}>
       {isClosedNow ? <StoreClosedOverlay nextOpening={closedNowNextOpening} /> : null}
       {electronicsDesign ? <SectorStorefront key={electronicsDesign.themeId}
         design={electronicsDesign} settings={storefrontSettings} title={storefrontTitle}

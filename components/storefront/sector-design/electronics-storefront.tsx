@@ -1,7 +1,7 @@
 "use client";
 import { paletteStyle } from "./palette";
 
-import { ArrowRight, ArrowUpRight, Search, ShoppingBag, Plus, Minus, Grid2X2, List, SlidersHorizontal, Package, Bell, X, ChevronRight, ChevronDown, LayoutGrid } from "lucide-react";
+import { ArrowRight, ArrowUpRight, Search, ShoppingBag, Plus, Minus, Grid2X2, List, SlidersHorizontal, Package, Bell, X, ChevronRight, ChevronDown, LayoutGrid, Moon, Sun } from "lucide-react";
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import type { Category, StorefrontProduct, TenantStorefrontSettings } from "@/lib/types";
 import { type DesignDocument, type FormaContent, type AkimContent, type ModulContent, getDesignContent } from "@/lib/storefront/sector-design/config";
@@ -13,6 +13,7 @@ import { StorefrontImage } from "@/components/storefront/storefront-image";
 import { StorefrontLogoutButton } from "@/components/storefront/storefront-logout-button";
 import styles from "./electronics.module.css";
 import { SectorBrandLogo } from "@/components/storefront/sector-design/sector-brand-logo";
+import { setAkimDayMode, useAkimDayMode } from "@/lib/storefront/akim-mode";
 
 export type SectorStorefrontProps = {
   tenantId: string; subdomain?: string;
@@ -56,6 +57,8 @@ export function ElectronicsStorefront(p: SectorStorefrontProps) {
   const [view, setView] = useState<"grid" | "list" | null>(null);
   const c = getDesignContent(p.design);
   const variant = p.design.themeId.replace("electronics-", "");
+  const akimToggle = variant === "akim" && Boolean(p.settings.is_theme_toggle_visible);
+  const akimDay = useAkimDayMode(akimToggle);
   const wholesale = p.design.mode === "wholesale";
   const listView = (view ?? (variant === "modul" && wholesale ? "list" : "grid")) === "list";
   const heroProduct = p.initialProducts.find(x => x.image_url);
@@ -83,7 +86,7 @@ export function ElectronicsStorefront(p: SectorStorefrontProps) {
   const heroImage = c.heroImage || heroProduct?.image_url || null;
   const heroCopy = <div className={styles.heroCopy}><span className={styles.heroKicker}>{wholesale ? labels.wholesale : labels.retail}</span><h1>{c.heroTitle}</h1><p>{c.heroBody}</p><button className={styles.primary} onClick={browseHero}>{c.buttonLabel || labels.discover}<ArrowUpRight size={19} /></button></div>;
   const photo = <div className={styles.heroPhoto}><ProductPhoto src={heroImage} alt={c.heroImage ? c.heroTitle : heroProduct?.product_name ?? ""} priority /></div>;
-  return <div className={`${styles.root} ${styles[variant]} ${p.detailOpen ? styles.detailHeader : ""} ${(theme.isDark || variant === "akim") ? styles.dark : ""}`} style={{...rootStyle,...paletteStyle(p.design, theme.isDark)}} data-image-fit={c.imageFit||c.imagePosition?true:undefined} data-sector-design={p.design.themeId}>
+  return <div className={`${styles.root} ${styles[variant]} ${p.detailOpen ? styles.detailHeader : ""} ${(theme.isDark || variant === "akim") && !akimDay ? styles.dark : ""} ${akimDay ? styles.akimDay : ""}`} style={{...rootStyle,...paletteStyle(p.design, theme.isDark, akimDay)}} data-image-fit={c.imageFit||c.imagePosition?true:undefined} data-sector-design={p.design.themeId}>
     {c.announcement && <div data-theme-area="general" className={styles.announcement}>{c.announcement}</div>}
     <header className={styles.header}>
       <button data-theme-area="brand" className={styles.wordmark} onClick={p.onHome} aria-label={`${p.title} — ${labels.all}`}>
@@ -94,6 +97,7 @@ export function ElectronicsStorefront(p: SectorStorefrontProps) {
         <button className={styles.iconButton} onClick={p.onCampaigns} aria-label={labels.campaigns}><Bell size={20} /></button>
         <select className={styles.language} aria-label="Language / Dil" value={locale} onChange={e => setLocale(e.target.value as typeof locale)}><option value="tr">TR</option><option value="en">EN</option><option value="de">DE</option><option value="ru">RU</option></select>
         {p.settings.is_theme_toggle_visible && variant !== "akim" && <span className={styles.themeToggle}><StorefrontThemeToggle /></span>}
+        {akimToggle && <button type="button" className={styles.iconButton} onClick={() => setAkimDayMode(!akimDay)} aria-label={akimDay ? "Gece moduna geç" : "Gündüz moduna geç"} title={akimDay ? "Gece modu" : "Gündüz modu"}>{akimDay ? <Moon size={20} /> : <Sun size={20} />}</button>}
         <button className={styles.cart} aria-label={`${labels.cart} ${p.cartCount}`} onClick={p.onCart}><ShoppingBag size={20} /><span>{labels.cart}</span><b>{p.cartCount}</b></button>
         {p.subdomain && p.settings.is_logout_button_visible && <StorefrontLogoutButton subdomain={p.subdomain} tenantId={p.tenantId} />}
       </div>

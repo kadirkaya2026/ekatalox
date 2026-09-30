@@ -35,7 +35,7 @@ export const textilePalettes = {
   "cosmetics-aura": ["#993f55", "#fff9f6", "#f5ddd7"],
   "cosmetics-rituel": ["#356974", "#f3f7f7", "#dfecef"],
 } as const;
-export function paletteStyle(doc: DesignDocument, dark: boolean): CSSProperties {
+export function paletteStyle(doc: DesignDocument, dark: boolean, akimDay = false): CSSProperties {
   if (!(doc.themeId in textilePalettes)) return {};
   const c = getDesignContent(doc);
   const vars: Record<string, string> = {};
@@ -45,7 +45,8 @@ export function paletteStyle(doc: DesignDocument, dark: boolean): CSSProperties 
     const ink = rgb[0]*.2126 + rgb[1]*.7152 + rgb[2]*.0722 > .179 ? "#111111" : "#ffffff";
     vars["--on-accent"] = vars["--cc-on-accent"] = ink;
   }
-  if (!dark || doc.themeId === "electronics-akim") {
+  // Akım gündüz modunda mağazanın koyu zemin rengi uygulanmaz (açık tonlar CSS'te).
+  if ((!dark || doc.themeId === "electronics-akim") && !(akimDay && doc.themeId === "electronics-akim")) {
     if (c.backgroundColor) vars["--bg"] = vars["--cc-bg"] = c.backgroundColor;
     if (c.surfaceColor) vars["--custom-surface"] = vars["--surface"] = vars["--soft"] = vars["--cc-soft"] = c.surfaceColor;
   }

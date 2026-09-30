@@ -3,12 +3,12 @@ import type { DesignId } from "@/lib/storefront/sector-design/config";
 import s from "./commerce.module.css";
 
 /** Shared purchase surfaces follow the selected storefront without duplicating order logic. */
-export function electronicsCommerceTheme(base: StorefrontTheme, designId?: DesignId): StorefrontTheme {
+export function electronicsCommerceTheme(base: StorefrontTheme, designId?: DesignId, akimDay = false): StorefrontTheme {
   if (!designId) return base;
   return {
     ...base,
     commerceDesign: designId,
-    isDark: designId === "electronics-akim" || base.isDark,
+    isDark: designId === "electronics-akim" ? !akimDay : base.isDark,
     text: s.text, textMuted: s.muted, textTertiary: s.muted,
     surface: s.surface, surfaceMuted: s.soft, panelSurface: s.surface,
     border: s.border, elevation1: s.elevation, elevation2: s.elevation,
@@ -34,6 +34,6 @@ export function electronicsCommerceTheme(base: StorefrontTheme, designId?: Desig
     cartPaymentInactive: s.payment, cartInstallmentActive: s.active,
   };
 }
-export function commerceRootClass(id: DesignId, dark: boolean) {
-  return [s.root, s[id.replace(/^(electronics|food|textile|hardware|cosmetics|stationery|packaging|electricity|homeware|automotive|general)-/, "")], dark && s.night].filter(Boolean).join(" ");
+export function commerceRootClass(id: DesignId, dark: boolean, akimDay = false) {
+  return [s.root, s[id.replace(/^(electronics|food|textile|hardware|cosmetics|stationery|packaging|electricity|homeware|automotive|general)-/, "")], dark && s.night, akimDay && s.akimDay].filter(Boolean).join(" ");
 }
