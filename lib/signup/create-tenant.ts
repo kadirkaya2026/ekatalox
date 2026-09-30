@@ -9,7 +9,8 @@ import { isFashionSector } from "@/lib/storefront/appearance-catalog";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getPlanTrialEndDate } from "@/lib/billing/plan-trial";
 import { getLimitForPlan } from "@/lib/billing/plans";
-import { getToptanPlan } from "@/lib/billing/toptan-plans";
+import { getToptanPlan, MARKET_SIGNUP_SECTOR } from "@/lib/billing/toptan-plans";
+import { seedMarketStorefrontTemplate } from "@/lib/storefront/market-template";
 import { sendEmail } from "@/lib/email/send";
 import { getSalesRecipient } from "@/lib/email/transport";
 import { buildSignupNotificationEmail } from "@/lib/email/templates/signup-notification";
@@ -265,7 +266,9 @@ export async function createSelfServiceTenant(
       max_product_limit: getLimitForPlan(planId),
       whatsapp_number: input.whatsappNumber,
       status: "active",
-      business_type: "general",
+      // Market/bakkal/manav seçen perakende mağaza market tipinde açılır
+      // (marketgo gibi vitrin, getirme ücreti vb.; 30 Eyl 2026).
+      business_type: input.sector === MARKET_SIGNUP_SECTOR ? "market" : "general",
       is_tekel: false,
       age_verification_required: false,
       sector: input.sector,
@@ -330,6 +333,11 @@ export async function createSelfServiceTenant(
     logoPath = logo?.path ?? null;
 
     // (e) tema + içerik
+    // Market: admin akışındaki gibi tekelsiparis'in güncel tasarım şablonu
+    // önce yazılır; ardından ad/logo/sepet formu üstüne işlenir.
+    if (input.sector === MARKET_SIGNUP_SECTOR) {
+      await seedMarketStorefrontTemplate(supabase, tenantId);
+    }
     await applyStorefrontTheme(supabase, tenantId, input, logo?.url ?? null);
 
     // (g) varsayılan fiyat listeleri

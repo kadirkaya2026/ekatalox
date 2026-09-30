@@ -112,10 +112,14 @@ export function formatTry(amount: number): string {
   return `${amount.toLocaleString("tr-TR")} ₺`;
 }
 
-/** Kayıt formundaki sektör seçenekleri (toptancı dikeyleri). */
+/** Perakende market/bakkal/manav kaydı: mağaza business_type='market' açılır (30 Eyl 2026). */
+export const MARKET_SIGNUP_SECTOR = "market-bakkal";
+
+/** Kayıt formundaki sektör seçenekleri (toptancı dikeyleri + market). */
 export const TOPTAN_SECTOR_OPTIONS = [
+  { value: MARKET_SIGNUP_SECTOR, label: "Market, bakkal ve manav (perakende, eve teslimat)" },
   { value: "telefon-aksesuar", label: "Telefon aksesuarı ve elektronik" },
-  { value: "gida", label: "Gıda ve içecek" },
+  { value: "gida", label: "Gıda ve içecek toptancısı" },
   { value: "tekstil", label: "Tekstil, giyim ve ayakkabı" },
   { value: "hirdavat", label: "Hırdavat, nalburiye ve yapı" },
   { value: "kozmetik", label: "Kozmetik ve kişisel bakım" },
