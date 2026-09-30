@@ -17,3 +17,4 @@
 .root.detailHeader{min-height:0;padding-bottom:0}
 
 .root[data-image-fit] [data-theme-area="heroVisible"] img,.root[data-image-fit] [data-theme-area="collectionVisible"] img,.root[data-image-fit] [data-theme-area="promoVisible"] img,.root[data-image-fit] [data-theme-area="featureVisible"] img{object-fit:var(--banner-fit,contain);object-position:var(--banner-position,center)}
+/* 30 Eyl 2026: taşan menüde justify-content:center/flex-end baştaki kategorileri kaydırılamaz şekilde soldan kesiyordu (Autovale). Hiza auto margin ile: sığınca eskisi gibi, taşınca baştan başlar ve kaydırılır. */.akim .categoryNav{justify-content:flex-start}.akim .categoryNav>button:first-child{margin-left:auto}@media(max-width:700px){.akim .categoryNav>button:first-child{margin-left:0}}
