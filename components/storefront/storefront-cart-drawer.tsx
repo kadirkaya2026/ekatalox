@@ -1616,8 +1616,10 @@ cartFormConfig.customer_address.is_visible ? (
                     )
                   ) : (
                     theme.commerceDesign ? <div data-commerce-slot="cart-content">
-                      <div data-commerce-slot="cart-lines">{renderCampaignBars()}{renderItemsList()}{renderInlineSuggestions()}</div>
+                      <div data-commerce-slot="cart-lines">{renderCampaignBars()}{renderItemsList()}</div>
                       <div data-commerce-slot="cart-fields">{renderPaymentPanel()}{renderOrderNotePanel()}</div>
+                      {/* Öneriler klasik düzendeki gibi en altta (30 Eyl 2026, Autovale). */}
+                      {renderInlineSuggestions()}
                     </div> : <div className="space-y-4">
                       {renderCampaignBars()}
                       {renderItemsList()}
