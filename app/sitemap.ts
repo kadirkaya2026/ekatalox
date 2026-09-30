@@ -17,6 +17,7 @@ const STATIC: Array<[string, MetadataRoute.Sitemap[number]["changeFrequency"], n
   ["/nasil-calisir", "monthly", 0.8],
   ["/ozellikler", "monthly", 0.8],
   ["/sss", "monthly", 0.7],
+  ["/sorular", "monthly", 0.7],
   ["/hakkimizda", "monthly", 0.5],
   ["/iletisim", "monthly", 0.6],
   ["/yardim", "monthly", 0.5],

@@ -1,6 +1,7 @@
 import { WHOLESALE_SECTORS } from "@/lib/marketing/sectors";
 import { getBlogPosts } from "@/lib/marketing/blog";
 import { MARKETING_FEATURES } from "@/lib/marketing/features";
+import { SORU_GRUPLARI } from "@/lib/marketing/sorular";
 import { headers } from "next/headers";
 import { TOPTAN_PLANS, TOPTAN_SECTOR_OPTIONS, formatTry } from "@/lib/billing/toptan-plans";
 import { appEnv } from "@/lib/env";
@@ -79,6 +80,7 @@ ${plans}
 - [Özellikler](${site}/ozellikler)
 - [Fiyatlandırma](${site}/fiyatlandirma)
 - [Sık sorulan sorular](${site}/sss)
+- [Toptancıların sorduğu sorular](${site}/sorular)
 - [Ücretsiz başvuru](${site}/basvuru)
 - [Hakkımızda](${site}/hakkimizda)
 - [İletişim](${site}/iletisim)
@@ -101,6 +103,11 @@ ${WHOLESALE_SECTORS.map((sector) => `- [${sector.name}](${site}/sektorler/${sect
 - [MarketGo demo mağazası](https://marketgo.ekatalox.com)
 - [VELIRA tekstil ve giyim demosu](https://demo-giyim.ekatalox.com/): Giyim kategorileri ve görselli ürün kataloğu.
 
+## Toptancıların sorduğu sorular (kısa yanıtlar)
+
+Tam sayfa: ${site}/sorular
+
+${SORU_GRUPLARI.map((g) => [`### ${g.title}`, "", ...g.items.map((f) => `**${f.q}**\n${f.a}\n`)].join("\n")).join("\n")}
 ## Rehberler
 
 - [Blog](${site}/blog)

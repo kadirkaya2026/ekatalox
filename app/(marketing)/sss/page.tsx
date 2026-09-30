@@ -204,6 +204,11 @@ export default function SssPage() {
             title="Karar vermeden önce merak edilenler"
             lead="Katalog kurma, bayi girişi ve paket seçimiyle ilgili yanıtlar. Sorunuz burada yoksa telefon veya WhatsApp üzerinden bize ulaşın."
           />
+          <p className="mt-4 text-sm text-brand-muted">
+            <a href="/sorular" className="font-semibold text-brand-navy underline-offset-4 hover:underline">
+              Toptancı kataloğu, fiyat listesi ve B2B sipariş hakkında genel sorular →
+            </a>
+          </p>
         </Container>
       </Section>
 
