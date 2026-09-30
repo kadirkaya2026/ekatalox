@@ -193,6 +193,9 @@ export async function generateOrderReceiptPdf(
     startY: cursorY,
     head: [getOrderReceiptTableHead(catalogMode)],
     body: getOrderReceiptTableRows(params.items, catalogMode),
+    // Ürün satırı sayfa sonunda ikiye bölünmesin (ad yarım, görsel kayıp
+    // kalıyordu); sığmayan satır bütün olarak sonraki sayfaya geçer.
+    rowPageBreak: "avoid",
     theme: "striped",
     styles: {
       font: PDF_FONT,
@@ -236,7 +239,8 @@ export async function generateOrderReceiptPdf(
           4: { cellWidth: PRICED_COLUMN_WIDTHS_MM.unitPrice, halign: "right" },
           5: { cellWidth: PRICED_COLUMN_WIDTHS_MM.total, halign: "right" },
         },
-    margin: { left: margin, right: margin },
+    // Alt boşluk: sayfa uyarısı satırının yeri kalsın.
+    margin: { left: margin, right: margin, bottom: margin + 12 },
     didParseCell: (data) => {
       // Sıra numarası sütunu: dar olduğu için yan boşluk küçük ("No" tek satır kalsın).
       if (data.column.index === 0) {
@@ -297,6 +301,37 @@ export async function generateOrderReceiptPdf(
     (doc as jsPDF & { lastAutoTable?: { finalY: number } }).lastAutoTable?.finalY ??
     cursorY + 20;
   cursorY = tableEndY + 8;
+
+  // Sayfa sonu koruması (30 Eyl 2026, Lucatech fişi 100151): tablo sayfanın
+  // dibinde bitince özet ve "Genel Toplam" sayfa kenarından taşıp yarım
+  // basılıyordu. Her blok yazılmadan önce yeri ölçülür; sığmıyorsa bütün
+  // olarak yeni sayfaya geçer (alt uyarı satırının yeri de ayrılır).
+  const pageHeight = doc.internal.pageSize.getHeight();
+  const contentBottom = pageHeight - margin - 12;
+  const ensureSpace = (height: number) => {
+    if (cursorY + height > contentBottom) {
+      doc.addPage();
+      cursorY = margin + 6;
+    }
+  };
+
+  // Kalem özeti ve toplam satırları birlikte kalsın (aşağıdaki satır
+  // koşullarıyla aynı sayım).
+  const totals = !catalogMode ? params.paymentSummary : null;
+  const totalsLineCount = totals
+    ? 2 +
+      Number(totals.discountAmount > 0) +
+      Number(totals.campaignDiscountAmount > 0 && Boolean(totals.appliedCampaign)) +
+      Number(totals.couponDiscountAmount > 0) +
+      Number(totals.paymentMethod === "card") +
+      Number(totals.deliveryFeeAmount > 0)
+    : 0;
+  ensureSpace(
+    10 +
+      (totals
+        ? totalsLineCount * PDF_SPACING.summaryLine + (params.paymentMethodLabel ? 11 : 0)
+        : 14),
+  );
 
   // Tablonun hemen altında kalem/adet özeti: "2 kalem, 20 adet ürün".
   // Bayi siparişi hazırlarken kaç satır ve kaç parça olduğunu tek bakışta görsün.
@@ -386,6 +421,7 @@ export async function generateOrderReceiptPdf(
 
       for (const campaignNote of buildAppliedCampaignBenefitNotes(summary)) {
         const campaignNoteLines = doc.splitTextToSize(campaignNote, pageWidth - margin * 2);
+        ensureSpace(campaignNoteLines.length * PDF_SPACING.wrappedLine + 2);
         doc.text(campaignNoteLines, margin, cursorY, { lineHeightFactor: 1.35 });
         cursorY += campaignNoteLines.length * PDF_SPACING.wrappedLine + 2;
       }
@@ -407,6 +443,7 @@ export async function generateOrderReceiptPdf(
   doc.setFontSize(PDF_FONT_SIZE.body);
   for (const giftNote of buildGiftCampaignNotes(params.items)) {
     const giftNoteLines = doc.splitTextToSize(giftNote, pageWidth - margin * 2);
+    ensureSpace(giftNoteLines.length * PDF_SPACING.wrappedLine + 2);
     doc.text(giftNoteLines, margin, cursorY, { lineHeightFactor: 1.35 });
     cursorY += giftNoteLines.length * PDF_SPACING.wrappedLine + 2;
   }
@@ -414,11 +451,10 @@ export async function generateOrderReceiptPdf(
   const trimmedNote = params.note?.trim();
   if (trimmedNote) {
     const noteLines = doc.splitTextToSize(`Not: ${trimmedNote}`, pageWidth - margin * 2);
+    ensureSpace(noteLines.length * PDF_SPACING.wrappedLine);
     doc.text(noteLines, margin, cursorY, { lineHeightFactor: 1.35 });
     cursorY += noteLines.length * PDF_SPACING.wrappedLine;
   }
-
-  const pageHeight = doc.internal.pageSize.getHeight();
 
   if (params.bankTransfer) {
     const bank = params.bankTransfer;
