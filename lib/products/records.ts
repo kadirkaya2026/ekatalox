@@ -100,6 +100,7 @@ export function normalizeProductRecord(record: RawProductRecord): Product {
     image_url: typeof record.image_url === "string" ? record.image_url : null,
     image_url_2: typeof record.image_url_2 === "string" ? record.image_url_2 : null,
     image_url_3: typeof record.image_url_3 === "string" ? record.image_url_3 : null,
+    model_3d_url: typeof record.model_3d_url === "string" ? record.model_3d_url : null,
     currency: (record.currency ?? "TRY") as Product["currency"],
     prices: getPricesFromRecord(record),
     is_in_stock: Boolean(record.is_in_stock),
