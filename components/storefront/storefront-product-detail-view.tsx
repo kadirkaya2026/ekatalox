@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { ArrowLeft, Check, Minus, Plus, Share2, ShoppingCart } from "lucide-react";
+import { ArrowLeft, Box, Check, Minus, Plus, Share2, ShoppingCart } from "lucide-react";
 import type { StorefrontProduct } from "@/lib/types";
 import { useStorefrontTheme } from "@/lib/storefront/theme-context";
 import { useStorefrontLocale } from "@/lib/storefront/locale-context";
@@ -11,6 +11,7 @@ import { StorefrontImage } from "@/components/storefront/storefront-image";
 import { DiscountSticker, ProductPrice } from "@/components/storefront/storefront-product-card";
 import { ProductDescriptionContent } from "@/components/storefront/product-description-content";
 import { ProductImageLightbox } from "@/components/storefront/product-image-lightbox";
+import { ProductModel3D } from "@/components/storefront/product-model-3d";
 import { tierUnitPrice, volumeUnitPrice } from "@/lib/storefront/volume-pricing";
 
 // Vitrin ürün sayfası görünümü (/urun/<slug>, 27 Eyl 2026). StorefrontClient
@@ -124,6 +125,12 @@ export function StorefrontProductDetailView({
     [product.image_url, product.image_url_2, product.image_url_3],
   );
   const [imageIndex, setImageIndex] = useState(0);
+  // 3D kare (1 Eki 2026): model_3d_url dolu ürünlerde görsellerden sonra
+  // döndürülebilir model. Kare ilk açıldığında yüklenir, sonra açık kalır.
+  const model3dUrl = product.model_3d_url ?? null;
+  const modelIndex = images.length;
+  const slideCount = images.length + (model3dUrl ? 1 : 0);
+  const [modelOpened, setModelOpened] = useState(false);
   // Galeri kaydırılabilir şerit (28 Eyl 2026, tüm tenantlar): mobilde
   // parmakla kaydırma, scroll-snap ile her görsel tam oturur; küçük
   // resimler ve noktalar şeritle eşlenir.
@@ -131,6 +138,7 @@ export function StorefrontProductDetailView({
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   function goToImage(index: number) {
     setImageIndex(index);
+    if (model3dUrl && index === modelIndex) setModelOpened(true);
     const track = trackRef.current;
     if (track) track.scrollTo({ left: index * track.clientWidth, behavior: "smooth" });
   }
@@ -387,7 +395,7 @@ export function StorefrontProductDetailView({
         {/* Galeri */}
         <div data-commerce-slot="detail-gallery" className={cn("rounded-3xl border p-4 sm:p-6", theme.surface, theme.border)}>
           <div className="relative mx-auto w-full max-w-[520px]">
-            {images.length ? (
+            {slideCount ? (
               <div
                 ref={trackRef}
                 onScroll={(event) => {
@@ -395,6 +403,7 @@ export function StorefrontProductDetailView({
                   if (!track.clientWidth) return;
                   const index = Math.round(track.scrollLeft / track.clientWidth);
                   if (index !== imageIndex) setImageIndex(index);
+                  if (model3dUrl && index === modelIndex) setModelOpened(true);
                 }}
                 className="scrollbar-hide flex aspect-square w-full snap-x snap-mandatory overflow-x-auto overscroll-x-contain rounded-2xl"
                 style={{ scrollbarWidth: "none", touchAction: "pan-x pan-y" }}
@@ -423,6 +432,26 @@ export function StorefrontProductDetailView({
                     />
                   </div>
                 ))}
+                {model3dUrl ? (
+                  <div className="relative h-full w-full shrink-0 snap-center snap-always">
+                    {modelOpened || !images.length ? (
+                      <ProductModel3D src={model3dUrl} label={`${product.product_name} 3D model`} />
+                    ) : null}
+                    <span className="pointer-events-none absolute left-2 top-2 rounded-full bg-black/65 px-2.5 py-1 text-[11px] font-semibold text-white">
+                      3D · sürükleyip döndür
+                    </span>
+                    {images.length ? (
+                      <button
+                        type="button"
+                        onClick={() => goToImage(modelIndex - 1)}
+                        aria-label="Görsellere dön"
+                        className="absolute right-2 top-2 flex size-9 items-center justify-center rounded-full bg-black/65 text-white"
+                      >
+                        <ArrowLeft className="size-4" />
+                      </button>
+                    ) : null}
+                  </div>
+                ) : null}
               </div>
             ) : (
               <div className={cn("flex aspect-square items-center justify-center rounded-2xl", theme.emptyImage)} />
@@ -439,7 +468,7 @@ export function StorefrontProductDetailView({
                 }}
               />
             ) : null}
-            {images.length > 1 ? (
+            {slideCount > 1 ? (
               <div className="pointer-events-none absolute inset-x-0 bottom-2 flex justify-center gap-1.5 sm:hidden">
                 {images.map((src, index) => (
                   <span
@@ -450,10 +479,18 @@ export function StorefrontProductDetailView({
                     )}
                   />
                 ))}
+                {model3dUrl ? (
+                  <span
+                    className={cn(
+                      "h-1.5 rounded-full transition-all",
+                      imageIndex === modelIndex ? "w-4 bg-black/70" : "w-1.5 bg-black/25",
+                    )}
+                  />
+                ) : null}
               </div>
             ) : null}
           </div>
-          {images.length > 1 ? (
+          {slideCount > 1 ? (
             <div className="mt-4 flex gap-2.5">
               {images.map((src, index) => (
                 <button
@@ -469,6 +506,20 @@ export function StorefrontProductDetailView({
                   <StorefrontImage src={src} alt="" className="object-contain" sizes="80px" />
                 </button>
               ))}
+              {model3dUrl ? (
+                <button
+                  type="button"
+                  onClick={() => goToImage(modelIndex)}
+                  className={cn(
+                    "relative flex size-16 flex-col items-center justify-center gap-0.5 overflow-hidden rounded-xl border-2 text-[11px] font-bold sm:size-20",
+                    imageIndex === modelIndex ? "border-[var(--ek-add-to-cart,#10b981)]" : cn("border-transparent", theme.border),
+                  )}
+                  aria-label="3D görünüm"
+                >
+                  <Box className="size-5" />
+                  3D
+                </button>
+              ) : null}
             </div>
           ) : null}
         </div>
