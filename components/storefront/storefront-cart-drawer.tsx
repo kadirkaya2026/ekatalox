@@ -53,9 +53,12 @@ import {
   type OrderableCartFormFieldKey,
 } from "@/lib/storefront/cart-form-config";
 import { StorefrontImage } from "@/components/storefront/storefront-image";
+import { variantColorDot } from "@/components/storefront/pilot-variant-grid";
 import { ProductImagePlaceholder } from "@/components/product-image-placeholder";
 
 export type StorefrontCartDrawerProps = {
+  /** Pilot sepet özeti (lib/storefront/pilot.ts) */
+  pilot?: boolean;
   isOpen: boolean;
   onClose: () => void;
   cart: CartItem[];
@@ -220,7 +223,9 @@ export function StorefrontCartDrawer({
   onGoHome,
   checkoutValidationNonce = 0,
   isCatalogOnly = false,
+  pilot = false,
 }: StorefrontCartDrawerProps) {
+  const [expandedGroups, setExpandedGroups] = useState<string[]>([]);
   const suggestedList = recommendedOverride?.length ? recommendedOverride : recommendedProducts;
   const theme = useStorefrontTheme();
   const commercePanelRef = useRef<HTMLDivElement>(null);
@@ -427,9 +432,7 @@ export function StorefrontCartDrawer({
             </>
           );
 
-  const renderItemsList = () => (
-    <>
-      {cart.map((item) => (
+  const renderItemRow = (item: CartItem) => (
         <div key={item.id} className={theme.cartDrawerItem}>
           <div className="flex gap-3">
             <div
@@ -620,9 +623,104 @@ export function StorefrontCartDrawer({
             ) : null}
           </div>
         </div>
-      ))}
-    </>
   );
+
+  // Pilot sepet özeti (1 Eki 2026, lib/storefront/pilot.ts): üstte "X ürün ·
+  // Y çeşit · Z adet"; aynı ürünün modelleri tek kartta (model sayısı, toplam
+  // adet, renk noktaları/model adları); "Modelleri düzenle" ile mevcut satırlar.
+  const renderPilotItemsList = () => {
+    const groups: Array<{ productId: string; items: CartItem[] }> = [];
+    for (const item of cart) {
+      const group = item.variant_id && !item.is_gift ? groups.find((g) => g.productId === item.product_id) : undefined;
+      if (group) group.items.push(item);
+      else groups.push({ productId: item.variant_id && !item.is_gift ? item.product_id : item.id, items: [item] });
+    }
+    const totalPieces = cart.reduce((sum, item) => sum + item.quantity, 0);
+    const productCount = new Set(cart.map((item) => item.product_id)).size;
+    return (
+      <>
+        <div
+          data-commerce-slot="pilot-cart-summary"
+          className={cn("mb-2 flex items-center justify-between rounded-xl px-3 py-2 text-xs font-semibold", theme.cartDrawerSummary)}
+        >
+          <span>
+            {productCount} ürün · {cart.length} çeşit
+          </span>
+          <span className="text-sm font-bold">{totalPieces.toLocaleString("tr-TR")} adet</span>
+        </div>
+        {groups.map((group) => {
+          if (group.items.length === 1) return renderItemRow(group.items[0]);
+          const first = group.items[0];
+          const pieces = group.items.reduce((sum, item) => sum + item.quantity, 0);
+          const hasAllPrices = group.items.every((item) => item.price !== null);
+          const amount = group.items.reduce((sum, item) => sum + (item.price ?? 0) * item.quantity, 0);
+          const dots = group.items.map((item) => variantColorDot(item.variant_name ?? "")).filter(Boolean) as string[];
+          const isOpen = expandedGroups.includes(group.productId);
+          return (
+            <div key={`group-${group.productId}`} className={theme.cartDrawerItem}>
+              <div className="flex gap-3">
+                <div
+                  className={cn(
+                    "relative h-[4.5rem] w-[4.5rem] shrink-0 overflow-hidden rounded-[1.15rem] sm:h-20 sm:w-20 sm:rounded-[1.35rem]",
+                    theme.border,
+                    theme.productThumbSurface,
+                  )}
+                >
+                  {first.image_url ? (
+                    <StorefrontImage
+                      src={first.image_url}
+                      alt={first.product_name}
+                      className="object-contain p-2.5 sm:p-3"
+                      sizes={STOREFRONT_CART_THUMB_SIZES}
+                    />
+                  ) : null}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className={cn("line-clamp-2 text-sm font-semibold leading-5", theme.text)}>{first.product_name}</p>
+                  {dots.length === group.items.length ? (
+                    <div className="mt-1 flex flex-wrap items-center gap-1">
+                      {dots.map((dot, index) => (
+                        <span key={index} className="size-3 rounded-full border border-black/15" style={{ background: dot }} />
+                      ))}
+                      <span className={cn("ml-1 text-xs", theme.textMuted)}>{group.items.length} renk</span>
+                    </div>
+                  ) : (
+                    <p className={cn("mt-0.5 line-clamp-2 text-xs", theme.textMuted)}>
+                      {group.items.length} model: {group.items.map((item) => item.variant_name).join(", ")}
+                    </p>
+                  )}
+                  <div className="mt-1.5 flex items-center justify-between gap-2">
+                    <span className={cn("text-sm font-bold", theme.text)}>{pieces.toLocaleString("tr-TR")} adet</span>
+                    {!isCatalogOnly && hasAllPrices ? (
+                      <span className={cn("text-sm font-bold", theme.text)}>{formatCurrency(amount, first.currency)}</span>
+                    ) : null}
+                  </div>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() =>
+                  setExpandedGroups((current) =>
+                    current.includes(group.productId)
+                      ? current.filter((id) => id !== group.productId)
+                      : [...current, group.productId],
+                  )
+                }
+                className={cn("mt-2 w-full rounded-lg py-1.5 text-xs font-bold", theme.surfaceMuted, theme.text)}
+                aria-expanded={isOpen}
+              >
+                {isOpen ? "Modelleri gizle" : "Modelleri düzenle"}
+              </button>
+              {isOpen ? <div className="mt-2 space-y-2">{group.items.map((item) => renderItemRow(item))}</div> : null}
+            </div>
+          );
+        })}
+      </>
+    );
+  };
+
+  const renderItemsList = () =>
+    pilot ? renderPilotItemsList() : <>{cart.map((item) => renderItemRow(item))}</>;
 
   // İletişim alanları bayinin belirlediği sırada çizilir
   // (cart_form_config.sort_order, bkz. lib/storefront/cart-form-config.ts).

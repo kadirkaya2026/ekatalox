@@ -75,6 +75,8 @@ import {
 } from "@/lib/storefront/image-sizes";
 import { getStorefrontProductPath, getStorefrontSectionPath } from "@/lib/storefront/paths";
 import { StorefrontProductDetailView } from "@/components/storefront/storefront-product-detail-view";
+import { PilotQuickQuantities, PilotVariantGrid } from "@/components/storefront/pilot-variant-grid";
+import { isStorefrontPilotTenant, PILOT_QUICK_QUANTITIES } from "@/lib/storefront/pilot";
 import {
   getRequestedUnitQuantity,
   type SalesUnit,
@@ -1251,6 +1253,8 @@ export function StorefrontClient({
   // true iken adres toplanmaz, sepet/checkout metinleri "sipariş listesi
   // hazırlama" diline döner (kullanıcı isteği, 20 Ağu 2026).
   const isTekel = tenant.is_tekel;
+  // Pilot vitrin özellikleri (model ızgarası, sepet özeti, hızlı adet): lib/storefront/pilot.ts
+  const isPilotStorefront = isStorefrontPilotTenant(tenant.id);
   const [searchInput, setSearchInput] = useState("");
   // Üst başlıktaki arama yazarken değil Enter/büyüteçle çalışır (kullanıcı
   // isteği, 22 Eyl 2026: "lc" yazıp devamını getirirken yarım terimle
@@ -2849,13 +2853,20 @@ export function StorefrontClient({
   }, [selectedProduct, variantSearchTerm]);
   const selectedVariantSummary = useMemo(() => {
     if (!selectedProduct?.has_variants) {
-      return { count: 0, total: 0 };
+      return { count: 0, total: 0, pieces: 0 };
     }
 
     const activeSelections = variantSelections.filter((selection) => selection.quantity > 0);
 
     return {
       count: activeSelections.length,
+      // Pilot sayaç: seçilen modellerin toplam adedi (paket/koli adede çevrilmiş)
+      pieces: activeSelections.reduce((sum, selection) => {
+        const variant = selectedProduct.variants.find((item) => item.id === selection.variantId);
+        return variant
+          ? sum + getRequestedUnitQuantity({ unit: selection.unit, quantity: selection.quantity, variant })
+          : sum;
+      }, 0),
       total: activeSelections.reduce((total, selection) => {
         const variant = selectedProduct.variants.find(
           (item) => item.id === selection.variantId,
@@ -4302,6 +4313,7 @@ export function StorefrontClient({
             )}
             subdomain={productCardStyle.variant === "fashion" ? analyticsSubdomain : null}
             onOpenCart={openCartDrawer}
+            quickQuantities={isPilotStorefront ? PILOT_QUICK_QUANTITIES : undefined}
             related={
               relatedPreviewProducts.length ? (
                 <div>
@@ -4940,6 +4952,7 @@ export function StorefrontClient({
       ) : null}
 
       <StorefrontCartDrawer
+        pilot={isPilotStorefront}
         isOpen={isCartOpen}
         openAtInfoStep={cartOpensAtInfoStep}
         onReloadForLocation={reloadForLocation}
@@ -5095,7 +5108,9 @@ export function StorefrontClient({
               <div data-commerce-slot="variant-total" className={cn("rounded-xl p-3", theme.cartDrawerSummary)}>
                 <p className={cn("text-xs", theme.cartDrawerMuted)}>{t("addToCart.selectedModels")}</p>
                 <p className={cn("mt-0.5 text-xs", theme.cartDrawerMuted)}>
-                  {t("product.modelCount", { count: selectedVariantSummary.count })}
+                  {isPilotStorefront
+                    ? `${selectedVariantSummary.count} model seçildi · toplam ${selectedVariantSummary.pieces.toLocaleString("tr-TR")} adet`
+                    : t("product.modelCount", { count: selectedVariantSummary.count })}
                 </p>
                 <p className="mt-1 text-xl font-bold">
                   {formatCurrency(selectedVariantSummary.total, selectedProduct.currency)}
@@ -5191,6 +5206,18 @@ export function StorefrontClient({
                   />
                 </div>
 
+                {isPilotStorefront ? (
+                  <PilotVariantGrid
+                    variants={filteredSelectedVariants}
+                    getSelection={getVariantSelection}
+                    onChange={(variantId, next) => {
+                      updateVariantSelection(variantId, { variantId, ...next });
+                      if (quantityError) {
+                        setQuantityError(null);
+                      }
+                    }}
+                  />
+                ) : (
                 <div className="min-h-0 flex-1 space-y-2.5 overflow-y-auto overscroll-y-contain py-2 pr-1">
                   {filteredSelectedVariants.length ? (
                     filteredSelectedVariants.map((variant) => {
@@ -5322,6 +5349,7 @@ export function StorefrontClient({
                     </div>
                   )}
                 </div>
+                )}
               </div>
             ) : (
               <div data-commerce-slot="purchase-units" className="grid w-full min-w-0 max-w-full gap-3 sm:grid-cols-3">
@@ -5338,6 +5366,18 @@ export function StorefrontClient({
                     placeholder="0"
                     ariaLabel={t("addToCart.quantityAria")}
                   />
+                  {isPilotStorefront ? (
+                    <PilotQuickQuantities
+                      values={PILOT_QUICK_QUANTITIES}
+                      current={selectedQuantity}
+                      onPick={(value) => {
+                        setSelectedQuantity(String(value));
+                        if (quantityError) {
+                          setQuantityError(null);
+                        }
+                      }}
+                    />
+                  ) : null}
                 </div>
 
                 {selectedProduct.package_quantity ? (

@@ -12,6 +12,7 @@ import { DiscountSticker, ProductPrice } from "@/components/storefront/storefron
 import { ProductDescriptionContent } from "@/components/storefront/product-description-content";
 import { ProductImageLightbox } from "@/components/storefront/product-image-lightbox";
 import { ProductModel3D } from "@/components/storefront/product-model-3d";
+import { PilotQuickQuantities } from "@/components/storefront/pilot-variant-grid";
 import { tierUnitPrice, volumeUnitPrice } from "@/lib/storefront/volume-pricing";
 
 // Vitrin ürün sayfası görünümü (/urun/<slug>, 27 Eyl 2026). StorefrontClient
@@ -96,6 +97,7 @@ export function StorefrontProductDetailView({
   variantCartQuantities = {},
   subdomain = null,
   onOpenCart,
+  quickQuantities,
 }: {
   product: StorefrontProduct;
   categoryName: string | null;
@@ -117,6 +119,8 @@ export function StorefrontProductDetailView({
   /** Renkler için (Moda vitrinlerinde /api/storefront/product-colors). */
   subdomain?: string | null;
   onOpenCart: () => void;
+  /** Pilot mağazalarda Adet kutusunun altındaki hızlı adet düğmeleri (lib/storefront/pilot.ts). */
+  quickQuantities?: readonly number[];
 }) {
   const theme = useStorefrontTheme();
   const { t } = useStorefrontLocale();
@@ -754,6 +758,11 @@ export function StorefrontProductDetailView({
                 {packageQty ? <Stepper label="Paket" value={packages} onChange={setPackages} hint={`1 Paket = ${packageQty} adet`} /> : null}
                 {cartonQty ? <Stepper label="Koli" value={cartons} onChange={setCartons} hint={`1 Koli = ${cartonQty} adet`} /> : null}
               </div>
+              {quickQuantities ? (
+                <div className="mt-2.5 max-w-[380px]">
+                  <PilotQuickQuantities values={quickQuantities} current={pieces} onPick={(value) => setPieces(String(value))} />
+                </div>
+              ) : null}
             </>
           ) : null}
 

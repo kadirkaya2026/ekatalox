@@ -205,6 +205,12 @@ async function maybeRedirectStorefrontRequest(params: {
     return null;
   }
 
+  // Yerel geliştirmede (ör. lucatech.localhost:3107) mağazanın kendi alan adına
+  // yönlendirme yapılmaz; yoksa şifre girişinden sonra canlı siteye atlıyordu.
+  if (process.env.NODE_ENV !== "production" && params.normalizedHost.endsWith(".localhost")) {
+    return null;
+  }
+
   const subdomain = params.hostResolution.subdomain;
   const tenant = await cachedTenantLookup(`subdomain:${subdomain}`, () =>
     getStorefrontTenant(subdomain),
