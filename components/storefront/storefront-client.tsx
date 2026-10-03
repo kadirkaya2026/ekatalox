@@ -3616,6 +3616,12 @@ export function StorefrontClient({
     }
 
     if (selectedTotalQuantity <= 0) {
+      // Sepetteki ürün pencereden 0'a çekilirse sepetten çıkar (3 Eki 2026).
+      if (cartRef.current.some((item) => item.id === selectedProduct.id)) {
+        setCart((current) => updateCartLineQuantity(current, selectedProduct.id, 0));
+        closeAddToCartModal();
+        return;
+      }
       setQuantityError(t("errors.enterAtLeastOneValue"));
       return;
     }
