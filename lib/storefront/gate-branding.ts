@@ -21,6 +21,30 @@ export type GateBranding = {
 };
 
 const GATE_BRANDING: Record<string, GateBranding> = {
+  "isego-ticaret": {
+    backgroundImage: "/gate/isego-ticaret/bg.jpg",
+    logoMark: "/gate/isego-ticaret/logo-mark.png",
+    wordmark: "İSEGO TİCARET",
+    accentColor: "#F97316",
+    copy: {
+      tr: {
+        eyebrow: "Bayi Portalı",
+        headline: "Aksesuarda Güvenilir Tedarik.",
+        tagline:
+          "Fulltech şarj aletleri, kablolar, powerbank, kulaklık, telefon tutucu ve akım korumalı prizler; güncel toptan fiyat listesi bayilerimize özel.",
+        chips: ["Şarj Aleti", "Şarj Kablosu", "Powerbank", "Kulaklık", "Telefon Tutucu", "Akım Korumalı Priz"],
+        helpLine: "Şifreniz yok mu? WhatsApp'tan bize yazın.",
+      },
+      en: {
+        eyebrow: "Dealer Portal",
+        headline: "Reliable Supply in Accessories.",
+        tagline:
+          "Fulltech chargers, cables, power banks, earbuds, phone holders and surge-protected power strips; the current wholesale price list, exclusively for our dealers.",
+        chips: ["Chargers", "Cables", "Power Banks", "Earbuds", "Phone Holders", "Power Strips"],
+        helpLine: "No password? Message us on WhatsApp.",
+      },
+    },
+  },
   lucatech: {
     backgroundImage: "/gate/lucatech/bg.jpg",
     logoMark: "/gate/lucatech/logo-mark.png",
