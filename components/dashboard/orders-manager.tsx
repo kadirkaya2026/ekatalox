@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ArrowLeft, BellRing, Loader2, MessageCircle, NotebookText, Pencil, Printer, Search, Trash2 } from "lucide-react";
+import { ArrowLeft, BellRing, FileDown, Loader2, MessageCircle, NotebookText, Pencil, Printer, Search, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -274,6 +274,12 @@ export function OrdersManager({
             Siparişler
           </button>
           <div className="flex items-center gap-2">
+            <Button asChild variant="secondary">
+              <a href={`/api/tenant/orders/${order.id}/receipt-pdf`} title="Siparişin güncel hâliyle fişi PDF olarak indir">
+                <FileDown className="size-4" />
+                PDF indir
+              </a>
+            </Button>
             <Button asChild variant="secondary">
               <a href={`/yazdir/siparis/${order.id}`} target="_blank" rel="noreferrer" title="Fiş yazıcısından yazdır">
                 <Printer className="size-4" />
