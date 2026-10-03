@@ -287,6 +287,38 @@ export async function POST(request: Request) {
     }
   }
 
+  // Stok takibi (0153): sepet istemcide sınırlanır; burası istemciye güvenmeyen
+  // son kontrol. Stok sipariş onaylanınca düşer, burada yalnız aşım engellenir.
+  {
+    const requested = new Map<string, number>();
+    for (const item of items) {
+      if (item.variant_id || item.is_gift || !item.product_id) continue;
+      requested.set(item.product_id, (requested.get(item.product_id) ?? 0) + Number(item.quantity || 0));
+    }
+    if (requested.size) {
+      const { data: stockRows } = await supabase
+        .from("products")
+        .select("id, product_name, stock_quantity")
+        .eq("tenant_id", tenant.id)
+        .eq("track_stock", true)
+        .in("id", [...requested.keys()]);
+      const over = (stockRows ?? []).find(
+        (row) => (requested.get(row.id as string) ?? 0) > Number(row.stock_quantity ?? 0),
+      );
+      if (over) {
+        const left = Number(over.stock_quantity ?? 0);
+        return errorResponse(
+          requestId,
+          left > 0
+            ? `${over.product_name} için stokta ${left} adet kaldı. Lütfen sepetinizdeki adedi azaltın.`
+            : `${over.product_name} stokta kalmadı. Lütfen sepetinizden çıkarın.`,
+          409,
+          { reason: "stock_exceeded", tenantId: tenant.id, productId: over.id },
+        );
+      }
+    }
+  }
+
   if (catalogMode) {
     // Fiyatsız katalogda da ödeme yöntemi seçilebilir (tutar hesabı yok, sadece bilgi).
     const catalogPaymentMethod = parsed.data.paymentMethod ?? null;

@@ -26,6 +26,9 @@ export interface ProductFormState {
   // Liste başına indirimli fiyat; boş = o listede indirim yok.
   listDiscounts: Record<string, string>;
   is_in_stock: boolean;
+  // Stok takibi (0153): açıkken adet girilir, vitrinde "Stok: X adet" görünür.
+  track_stock: boolean;
+  stock_quantity: string;
   is_recommended: boolean;
   is_discount_active: boolean;
   discount_price: string;
@@ -53,6 +56,8 @@ export function buildEmptyProductForm(priceLists: PriceList[]): ProductFormState
     listPrices: buildListPriceFormState(priceLists),
     listDiscounts: buildListDiscountFormState(priceLists),
     is_in_stock: true,
+    track_stock: false,
+    stock_quantity: "",
     is_recommended: false,
     is_discount_active: false,
     discount_price: "",
@@ -82,6 +87,8 @@ export function buildProductFormFromProduct(
     listPrices: buildListPriceFormState(priceLists, product),
     listDiscounts: buildListDiscountFormState(priceLists, product),
     is_in_stock: product.is_in_stock,
+    track_stock: Boolean(product.track_stock),
+    stock_quantity: product.stock_quantity != null ? String(product.stock_quantity) : "",
     is_recommended: product.is_recommended,
     is_discount_active: product.is_discount_active,
     discount_price:
@@ -118,6 +125,8 @@ export function toProductFormData(form: ProductFormState) {
     form.is_discount_active,
   );
   formData.set("is_in_stock", String(form.is_in_stock));
+  formData.set("track_stock", String(form.track_stock));
+  formData.set("stock_quantity", form.track_stock ? form.stock_quantity.trim() : "");
   formData.set("is_recommended", String(form.is_recommended));
   formData.set("is_discount_active", String(form.is_discount_active));
   formData.set("discount_price", form.is_discount_active ? form.discount_price.trim() : "");

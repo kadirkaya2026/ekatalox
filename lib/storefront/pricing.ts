@@ -96,7 +96,8 @@ export function toStorefrontProduct(
     discount_percentage: pricing.discount_percentage,
     package_quantity: product.package_quantity,
     carton_quantity: product.carton_quantity,
-    stock_quantity: null,
+    // Stok takibi açık üründe kalan adet (0153); kapalıysa null = sınırsız, "stokta".
+    stock_quantity: product.track_stock ? Math.max(0, product.stock_quantity ?? 0) : null,
     has_variants: variants.length > 0,
     variants,
     volume_pricing: normalizeVolumePricing(product.volume_pricing),

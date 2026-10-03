@@ -159,6 +159,8 @@ export const storefrontDictionary: Record<StorefrontLocale, StorefrontDictionary
     "cart.clearCartPickup": "Listeyi Boşalt",
 
     "product.soon": "Yakında",
+    "product.stockLeft": "Stok: {count} adet",
+    "product.stockLimit": "Bu üründen en fazla {count} adet sipariş verebilirsiniz.",
     "product.inStock": "Stokta",
     "product.addToCart": "Sepete Ekle",
     "product.addToCartPickup": "Sipariş Listesine Ekle",
@@ -598,6 +600,8 @@ export const storefrontDictionary: Record<StorefrontLocale, StorefrontDictionary
     "cart.clearCartPickup": "Bestellliste leeren",
 
     "product.soon": "Demnächst",
+    "product.stockLeft": "Bestand: {count} Stk.",
+    "product.stockLimit": "Von diesem Produkt können Sie höchstens {count} Stück bestellen.",
     "product.inStock": "Auf Lager",
     "product.addToCart": "In den Warenkorb",
     "product.addToCartPickup": "Zur Bestellliste hinzufügen",
@@ -1034,6 +1038,8 @@ export const storefrontDictionary: Record<StorefrontLocale, StorefrontDictionary
     "cart.clearCartPickup": "Clear Order List",
 
     "product.soon": "Coming Soon",
+    "product.stockLeft": "Stock: {count} pcs",
+    "product.stockLimit": "You can order at most {count} pieces of this product.",
     "product.inStock": "In Stock",
     "product.addToCart": "Add to Cart",
     "product.addToCartPickup": "Add to Order List",
@@ -1470,6 +1476,8 @@ export const storefrontDictionary: Record<StorefrontLocale, StorefrontDictionary
     "cart.clearCartPickup": "Очистить список",
 
     "product.soon": "Скоро",
+    "product.stockLeft": "В наличии: {count} шт.",
+    "product.stockLimit": "Этого товара можно заказать не более {count} шт.",
     "product.inStock": "В наличии",
     "product.addToCart": "В корзину",
     "product.addToCartPickup": "В список заказа",

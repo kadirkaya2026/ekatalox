@@ -536,7 +536,9 @@ export function StorefrontProductDetailView({
                 <span className={cn("rounded-lg px-2.5 py-1 text-xs font-bold", theme.stockBadgeIn)}>{product.sku_code.toUpperCase()}</span>
               ) : null}
               {product.is_in_stock ? (
-                <span className={cn(theme.stockBadgeIn, "px-2.5 py-1 text-xs")}>● Stokta</span>
+                <span className={cn(theme.stockBadgeIn, "px-2.5 py-1 text-xs")}>
+                  ● {product.stock_quantity != null && !hasVariants ? `Stok: ${product.stock_quantity} adet` : "Stokta"}
+                </span>
               ) : null}
             </div>
             <button

@@ -120,7 +120,11 @@ function renderStockBadge(product: Product) {
           : "bg-slate-100 text-muted-foreground",
       )}
     >
-      {product.is_in_stock ? "Stokta var" : "Stok kapalı"}
+      {product.track_stock
+        ? `${product.stock_quantity ?? 0} adet`
+        : product.is_in_stock
+          ? "Stokta var"
+          : "Stok kapalı"}
     </Badge>
   );
 }
@@ -436,7 +440,8 @@ export function ProductsTable({
                       variant="secondary"
                       className="h-11 w-full flex-col justify-center gap-0.5 px-0.5 text-[11px] font-semibold leading-[1.1]"
                       onClick={() => onToggleStock(product)}
-                      title={product.is_in_stock ? "Stoğu kapat" : "Stoğu aç"}
+                      disabled={Boolean(product.track_stock)}
+                      title={product.track_stock ? "Stok takibi açık: adedi Düzenle'den değiştirin" : product.is_in_stock ? "Stoğu kapat" : "Stoğu aç"}
                       aria-label={product.is_in_stock ? "Stoğu kapat" : "Stoğu aç"}
                     >
                       {product.is_in_stock ? (
@@ -624,7 +629,7 @@ export function ProductsTable({
               <Button variant="secondary" className="flex-1" onClick={() => onOpenVariantMatrix(product)}>
                 Varyant
               </Button>
-              <Button variant="secondary" className="flex-1" onClick={() => onToggleStock(product)}>
+              <Button variant="secondary" className="flex-1" onClick={() => onToggleStock(product)} disabled={Boolean(product.track_stock)}>
                 {product.is_in_stock ? "Stoğu kapat" : "Stoğu aç"}
               </Button>
               <Button variant="secondary" className="flex-1" onClick={() => onOpenEdit(product)}>

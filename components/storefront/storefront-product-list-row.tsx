@@ -191,7 +191,9 @@ export const StorefrontProductListRow = memo(function StorefrontProductListRow({
         <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
           {product.is_in_stock ? (
             <span className={cn("inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold", theme.stockBadgeIn)}>
-              {t("product.inStock")}
+              {product.stock_quantity != null && !product.has_variants
+                ? t("product.stockLeft", { count: product.stock_quantity })
+                : t("product.inStock")}
             </span>
           ) : (
             <span className={cn("inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold", theme.stockBadgeOut)}>

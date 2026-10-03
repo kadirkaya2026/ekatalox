@@ -379,6 +379,11 @@ export const StorefrontProductCard = memo(function StorefrontProductCard({
             {formatProductModelNo(product.sku_code)}
           </p>
         ) : null}
+        {product.stock_quantity != null && product.is_in_stock && !product.has_variants ? (
+          <p className={cn("text-[10px] font-semibold leading-4 sm:text-[11px]", theme.productMeta)}>
+            {t("product.stockLeft", { count: product.stock_quantity })}
+          </p>
+        ) : null}
         {product.has_variants ? (
           <div className="flex flex-wrap gap-1 pt-1">
             <Badge className={theme.variantBadge}>

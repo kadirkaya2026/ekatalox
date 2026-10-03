@@ -334,6 +334,36 @@ function repriceVolumeCart(items: CartItem[]) {
   return changed ? next : items;
 }
 
+// Stok takibi (0153): model seçilmemiş satırlarda toplam adet, ürünün kalan
+// stoğunu (stock_quantity, adet) aşamaz. Fazlası kırpılır, 0'a düşen satır çıkar.
+function clampCartToStock(items: CartItem[]): { items: CartItem[]; limited: { name: string; count: number } | null } {
+  const used = new Map<string, number>();
+  let limited: { name: string; count: number } | null = null;
+  let changed = false;
+  const next: CartItem[] = [];
+  for (const item of items) {
+    const stock = item.stock_quantity;
+    if (item.variant_id || item.is_gift || typeof stock !== "number") {
+      next.push(item);
+      continue;
+    }
+    const already = used.get(item.product_id) ?? 0;
+    const allowed = Math.max(0, stock - already);
+    if (item.quantity > allowed) {
+      changed = true;
+      limited = { name: item.product_name, count: stock };
+      if (allowed > 0) {
+        next.push({ ...item, quantity: allowed, unit_quantity: allowed });
+        used.set(item.product_id, already + allowed);
+      }
+      continue;
+    }
+    used.set(item.product_id, already + item.quantity);
+    next.push(item);
+  }
+  return { items: changed ? next : items, limited };
+}
+
 function addToCart(items: CartItem[], product: StorefrontProduct, quantity: number) {
   if (!product.is_in_stock || quantity <= 0) {
     return items;
@@ -1064,9 +1094,15 @@ export function StorefrontClient({
 
     return previewMode ? [] : repriceVolumeCart(readStoredCart(getCartStorageKey(tenant.id)));
   });
-  // Her sepet güncellemesinde kademeli fiyat (0142) yeniden hesaplanır.
+  // Her sepet güncellemesinde stok sınırı (0153) uygulanır ve kademeli fiyat (0142) yeniden hesaplanır.
+  const stockLimitRef = useRef<{ name: string; count: number } | null>(null);
+  const [stockLimitNotice, setStockLimitNotice] = useState<{ name: string; count: number } | null>(null);
   const setCart = useCallback((update: React.SetStateAction<CartItem[]>) => {
-    setCartState((prev) => repriceVolumeCart(typeof update === "function" ? update(prev) : update));
+    setCartState((prev) => {
+      const clamped = clampCartToStock(typeof update === "function" ? update(prev) : update);
+      if (clamped.limited) stockLimitRef.current = clamped.limited;
+      return repriceVolumeCart(clamped.items);
+    });
   }, []);
   const cartRef = useRef(cart);
   cartRef.current = cart;
@@ -1411,6 +1447,15 @@ export function StorefrontClient({
   const analyticsSubdomain = previewMode ? "" : subdomain ?? tenant.subdomain;
   const productsEndpoint = previewMode ? `/api/tenant/settings/sector-design/preview?priceList=${encodeURIComponent(previewPriceListId)}&` : "/api/storefront/products?";
   const { t } = useStorefrontLocale();
+
+  // Sepet stok sınırına takıldıysa kısa bir uyarı göster (setCart içinde ref'e yazılır).
+  useEffect(() => {
+    if (!stockLimitRef.current) return;
+    setStockLimitNotice(stockLimitRef.current);
+    stockLimitRef.current = null;
+    const timer = window.setTimeout(() => setStockLimitNotice(null), 3500);
+    return () => window.clearTimeout(timer);
+  }, [cart]);
 
   // Daha önce sipariş vermiş bir müşteri telefon numarasını tekrar
   // yazdığında isim/adresi otomatik doldurur (bkz. /api/storefront/customer-lookup).
@@ -4197,6 +4242,16 @@ export function StorefrontClient({
   );
 
   return (
+    <>
+    {stockLimitNotice ? (
+      <div
+        role="status"
+        className="fixed bottom-24 left-1/2 z-[80] w-[min(92vw,420px)] -translate-x-1/2 rounded-2xl bg-slate-900 px-4 py-3 text-center text-sm font-medium text-white shadow-xl"
+      >
+        <span className="block truncate text-xs text-white/70">{stockLimitNotice.name}</span>
+        {t("product.stockLimit", { count: stockLimitNotice.count })}
+      </div>
+    ) : null}
     <StorefrontThemeProvider
       commerceDesign={electronicsDesign?.themeId}
       themeKey={storefrontSettings.theme_key}
@@ -5443,5 +5498,6 @@ export function StorefrontClient({
     </div>
     </StorefrontLayoutProvider>
     </StorefrontThemeProvider>
+    </>
   );
 }

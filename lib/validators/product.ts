@@ -91,6 +91,12 @@ const optionalDiscountPriceSchema = z
     return parsedValue;
   });
 
+// Stok takibi (0153): boş = takip yok; takip açıkken adet 0 veya pozitif tam sayı.
+const optionalStockQuantitySchema = z.preprocess(
+  (value) => (value === null || value === undefined || String(value).trim() === "" ? null : Number(String(value).trim())),
+  z.number().int("Stok adedi tam sayı olmalı.").min(0, "Stok adedi negatif olamaz.").max(10_000_000).nullable(),
+);
+
 export const productBaseSchema = z.object({
   category_id: z.string().min(1, "Kategori seçimi zorunludur."),
   sku_code: z.string().min(1, "Model No zorunludur."),
@@ -104,6 +110,11 @@ export const productBaseSchema = z.object({
   ),
   package_quantity: optionalPositiveIntegerSchema,
   carton_quantity: optionalPositiveIntegerSchema,
+  track_stock: z.preprocess(
+    (value) => (value === null || value === undefined ? "false" : value),
+    booleanSchema,
+  ),
+  stock_quantity: optionalStockQuantitySchema,
   description: z
     .union([z.string(), z.null(), z.undefined()])
     .transform((value) => (typeof value === "string" ? value : ""))

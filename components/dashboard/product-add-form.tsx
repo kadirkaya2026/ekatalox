@@ -237,11 +237,35 @@ export function ProductAddForm({
           <label className="flex items-center gap-3 rounded-xl border border-slate-100 bg-slate-50 px-4 py-3 text-sm text-slate-700">
             <input
               type="checkbox"
-              checked={form.is_in_stock}
+              checked={form.track_stock ? Number(form.stock_quantity || 0) > 0 : form.is_in_stock}
+              disabled={form.track_stock}
               onChange={(event) => updateField("is_in_stock", event.target.checked)}
             />
-            Stokta görünsün
+            Stokta görünsün{form.track_stock ? " (stok adedine göre otomatik)" : ""}
           </label>
+          <label className="flex items-center gap-3 rounded-xl border border-slate-100 bg-slate-50 px-4 py-3 text-sm text-slate-700">
+            <input
+              type="checkbox"
+              checked={form.track_stock}
+              onChange={(event) => updateField("track_stock", event.target.checked)}
+            />
+            Stok takibi yapılsın (adet girin; vitrinde kalan adet görünür, bitince “Stokta yok” olur)
+          </label>
+          {form.track_stock ? (
+            <label className="block text-sm text-muted-foreground">
+              Stok adedi
+              <input
+                type="number"
+                min={0}
+                step={1}
+                inputMode="numeric"
+                value={form.stock_quantity}
+                onChange={(event) => updateField("stock_quantity", event.target.value)}
+                placeholder="Örn. 120"
+                className="mt-1 h-10 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground"
+              />
+            </label>
+          ) : null}
 
           <label className="flex items-center gap-3 rounded-xl border border-slate-100 bg-slate-50 px-4 py-3 text-sm text-slate-700">
             <input
