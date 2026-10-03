@@ -4,6 +4,7 @@
 // kontrolü kaldırmak.
 const STOREFRONT_PILOT_TENANT_IDS = new Set<string>([
   "ebeeec82-7cd9-4ab8-bea9-f3dc2a5bfe0c", // Lucatech (toptan.lucatech.com.tr)
+  "21454406-f948-444f-a9c8-267229dca348", // İsego Ticaret (isego-ticaret.ekatalox.com)
 ]);
 
 export function isStorefrontPilotTenant(tenantId: string | null | undefined): boolean {
