@@ -1,4 +1,3 @@
-import { SupportWidget } from "@/components/dashboard/support-widget";
 import type { Metadata } from "next";
 import { MobileDashboardNav } from "@/components/dashboard/mobile-dashboard-nav";
 import { NewOrderWatcher } from "@/components/dashboard/new-order-watcher";
@@ -44,6 +43,14 @@ export default async function DashboardLayout({
 }>) {
   const session = await requireTenantAdminPage();
   const plan = session.tenant?.plan ?? "baslangic";
+  // Menüde mağaza adının altı: paket adı; ücretli paket denemesindeyse kalan gün.
+  const planName = session.tenant ? getToptanPlan(session.tenant.plan)?.name ?? null : null;
+  const planTrialDaysLeft = session.tenant ? getPlanTrialDaysLeft(session.tenant) : null;
+  const sidebarSubtitle = planName
+    ? planTrialDaysLeft !== null
+      ? `${planName} · deneme bitimine ${planTrialDaysLeft} gün`
+      : `${planName} paket`
+    : "";
   const tenant = session.tenant;
   const trialExpired = tenant ? isTrialExpired(tenant) : false;
   const trialDaysLeft =
@@ -63,7 +70,7 @@ export default async function DashboardLayout({
       <MobileDashboardNav
         mode="tenant"
         title={tenant?.company_name ?? "Tenant Paneli"}
-        subtitle=""
+        subtitle={sidebarSubtitle}
         plan={plan}
         businessType={tenant?.business_type}
         suggestionNoticeCount={suggestionNoticeCount}
@@ -73,7 +80,7 @@ export default async function DashboardLayout({
         <Sidebar
           mode="tenant"
           title={tenant?.company_name ?? "Tenant Paneli"}
-          subtitle=""
+          subtitle={sidebarSubtitle}
           plan={plan}
           businessType={tenant?.business_type}
           suggestionNoticeCount={suggestionNoticeCount}
@@ -109,7 +116,6 @@ export default async function DashboardLayout({
         {children}
         {tenant ? <NewOrderWatcher initialNewCount={newOrderCount} /> : null}
       </main>
-      {tenant ? <SupportWidget storeName={tenant.company_name} /> : null}
       {trialExpired && tenant ? (
         <TrialExpiredModal
           companyName={tenant.company_name}
