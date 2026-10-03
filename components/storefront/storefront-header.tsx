@@ -40,6 +40,8 @@ export interface StorefrontHeaderProps {
   searchInput: string;
   onSearchChange: (value: string) => void;
   onSearchSubmit: () => void;
+  /** Logo / "Tüm ürünler": kategori + arama sıfırlanır. Yoksa yalnız kategori "all". */
+  onHome?: () => void;
   cartItemCount: number;
   cartTotalEntries: Array<{ currency: CurrencyCode; total: number }>;
   cartTotal: number;
@@ -255,7 +257,8 @@ function HeaderBrand({
             ? undefined
             : (event) => {
                 event.preventDefault();
-                props.onCategoryChange("all");
+                if (props.onHome) props.onHome();
+                else props.onCategoryChange("all");
               }
         }
         className={cn("flex min-w-0 shrink-0 flex-col justify-center", centered && "mx-auto items-center")}
@@ -287,7 +290,8 @@ function HeaderBrand({
           ? undefined
           : (event) => {
               event.preventDefault();
-              props.onCategoryChange("all");
+              if (props.onHome) props.onHome();
+              else props.onCategoryChange("all");
             }
       }
       className={cn(
@@ -379,7 +383,7 @@ function StorefrontHeaderCategoryNav({ props }: { props: StorefrontHeaderProps }
               ) : (
                 <button
                   type="button"
-                  onClick={() => props.onCategoryChange("all")}
+                  onClick={() => (props.onHome ? props.onHome() : props.onCategoryChange("all"))}
                   className={theme.categoryNavMobile(props.selectedCategoryId === "all")}
                 >
                   {t("header.allProducts")}

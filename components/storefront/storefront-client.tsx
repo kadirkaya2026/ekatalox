@@ -3176,12 +3176,16 @@ export function StorefrontClient({
     return () => window.removeEventListener("keydown", handleEscape);
   }, [activeAnnouncement, closeAnnouncementModal, isAnnouncementEligible]);
 
+  const productsRequestSeqRef = useRef(0);
   const fetchProductsPage = useCallback(
     async (targetPage: number, mode: "replace" | "append") => {
       if (!analyticsSubdomain && !previewMode) {
         return;
       }
 
+      // Sıra numarası: arama hızlıca silinince/değişince eski isteğin geç
+      // gelen cevabı yeni listenin üstüne yazmasın.
+      const requestId = ++productsRequestSeqRef.current;
       setIsLoadingProducts(true);
       try {
         const params = new URLSearchParams();
@@ -3208,18 +3212,19 @@ export function StorefrontClient({
 
         const response = await fetch(`${productsEndpoint}${params.toString()}`);
 
-        if (!response.ok) {
+        if (!response.ok || requestId !== productsRequestSeqRef.current) {
           return;
         }
 
         const result = (await response.json()) as { products: StorefrontProduct[]; total: number };
+        if (requestId !== productsRequestSeqRef.current) return;
         setProducts((current) =>
           mode === "append" ? [...current, ...result.products] : result.products,
         );
         setProductTotal(result.total);
         setProductPage(targetPage);
       } finally {
-        setIsLoadingProducts(false);
+        if (requestId === productsRequestSeqRef.current) setIsLoadingProducts(false);
       }
     },
     [analyticsSubdomain, debouncedSearchTerm, isDiscountCategorySelected, selectedCategoryIds, matchCategoryIds, productSort, previewMode, productsEndpoint],
@@ -3324,8 +3329,20 @@ export function StorefrontClient({
 
   function handleSearchChange(value: string) {
     setSearchInput(value);
-    // Kutu boşaltılınca liste hemen sıfırlanır; Enter beklenmez.
-    if (!value.trim()) setCommittedSearch("");
+    // Kutu boşaltılınca liste hemen sıfırlanır; Enter beklenmez. Aranan
+    // kelimeden harf silinince de (kutu artık o kelimeyle başlamıyorsa) eski
+    // sonuç ekranda kalmaz, tüm ürünlere dönülür (3 Eki 2026, İsego: "silince
+    // sadece aradığım ürün kalıyor"). Kelimeye harf eklemek aramayı bozmaz.
+    const next = value.trim().toLocaleLowerCase("tr-TR");
+    const committed = committedSearch.toLocaleLowerCase("tr-TR");
+    if (!next || (committed && !next.startsWith(committed))) setCommittedSearch("");
+  }
+
+  // Logo / "Tüm ürünler": kategori ve arama birlikte sıfırlanır.
+  function handleGoHome() {
+    setSearchInput("");
+    setCommittedSearch("");
+    handleCategoryChange("all");
   }
 
   function handleSearchSubmit() {
@@ -4272,7 +4289,7 @@ export function StorefrontClient({
         quantities={isMounted ? cartQuantityByProductId : new Map()} variantCounts={isMounted ? cartVariantCountByProductId : new Map()} onSearch={handleSearchChange} onSearchSubmit={handleSearchSubmit}
         onCategory={handleCategoryChange} onCart={openCartDrawer} onCampaigns={() => setIsCampaignsSheetOpen(true)}
         onDetail={handleOpenProductDetail} onAdd={handleQuickAddOrOpenModal} onDecrease={handleDecreaseCartItem}
-        onMore={handleLoadMoreProducts} onHome={() => { handleCategoryChange("all"); handleSearchChange(""); }}
+        onMore={handleLoadMoreProducts} onHome={handleGoHome}
       /> : <StorefrontHeader
         orderTrackingHref={isMarketOrTekelTenant(tenant) ? "/siparislerim" : undefined}
         headerStyleKey={storefrontSettings.header_style_key ?? "standard"}
@@ -4285,6 +4302,7 @@ export function StorefrontClient({
         searchInput={searchInput}
         onSearchChange={handleSearchChange}
         onSearchSubmit={handleSearchSubmit}
+        onHome={handleGoHome}
         cartItemCount={badgeCartCount}
         cartTotalEntries={cartTotalEntries}
         cartTotal={cartTotal}
@@ -4354,6 +4372,9 @@ export function StorefrontClient({
             onAdd={(quantity) => addDetailQuantity(detailProduct, quantity)}
             onIncrease={() => handleIncreaseCartItem(detailProduct.id)}
             onDecrease={() => handleDecreaseCartItem(detailProduct.id)}
+            onSetQuantity={(quantity) =>
+              setCart((current) => updateCartLineQuantity(current, detailProduct.id, quantity))
+            }
             onChooseVariants={() => handleOpenAddToCartModal(detailProduct.id)}
             // Moda vitrini ve üç tekstil teması: seçenekler sepete eklemeden önce sayfada seçilir.
             onAddVariants={

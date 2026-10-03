@@ -55,6 +55,7 @@ import {
 import { StorefrontImage } from "@/components/storefront/storefront-image";
 import { variantColorDot } from "@/components/storefront/pilot-variant-grid";
 import { ProductImagePlaceholder } from "@/components/product-image-placeholder";
+import { CartQuantityInput } from "@/components/storefront/cart-quantity-input";
 
 export type StorefrontCartDrawerProps = {
   /** Pilot sepet özeti (lib/storefront/pilot.ts) */
@@ -544,18 +545,14 @@ export function StorefrontCartDrawer({
                 >
                   <Minus className="size-4" />
                 </button>
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  pattern="[0-9]*"
+                <CartQuantityInput
                   value={item.quantity}
-                  onChange={(event) => updateCartItemQuantity(item.id, event.target.value)}
+                  onCommit={(quantity) => updateCartItemQuantity(item.id, String(quantity))}
                   className={cn(
                     "h-8 w-11 rounded-md bg-transparent py-0 text-center text-[16px] font-bold leading-none outline-none focus-visible:ring-2 focus-visible:ring-current/40 sm:h-9 sm:w-14",
                     theme.text,
                   )}
-                  style={{ fontSize: "16px" }}
-                  aria-label={t("cart.quantityAria")}
+                  ariaLabel={t("cart.quantityAria")}
                 />
                 <button
                   type="button"

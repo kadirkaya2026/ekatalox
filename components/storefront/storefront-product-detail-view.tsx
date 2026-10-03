@@ -13,6 +13,7 @@ import { ProductDescriptionContent } from "@/components/storefront/product-descr
 import { ProductImageLightbox } from "@/components/storefront/product-image-lightbox";
 import { ProductModel3D } from "@/components/storefront/product-model-3d";
 import { PilotQuickQuantities } from "@/components/storefront/pilot-variant-grid";
+import { CartQuantityInput } from "@/components/storefront/cart-quantity-input";
 import { tierUnitPrice, volumeUnitPrice } from "@/lib/storefront/volume-pricing";
 
 // Vitrin ürün sayfası görünümü (/urun/<slug>, 27 Eyl 2026). StorefrontClient
@@ -92,6 +93,7 @@ export function StorefrontProductDetailView({
   onAdd,
   onIncrease,
   onDecrease,
+  onSetQuantity,
   onChooseVariants,
   onAddVariants,
   variantCartQuantities = {},
@@ -111,6 +113,8 @@ export function StorefrontProductDetailView({
   onAdd: (quantity: number) => void;
   onIncrease: () => void;
   onDecrease: () => void;
+  /** Sepetteki adedi doğrudan yazılan sayıya çeker (0 = sepetten çıkar). */
+  onSetQuantity: (quantity: number) => void;
   onChooseVariants: () => void;
   /** Bedenler/modeller sayfada (28 Eyl 2026): seçilenleri sepete ekler; hata metni ya da null. */
   onAddVariants?: (selections: Array<{ variantId: string; quantity: number }>) => Promise<string | null>;
@@ -337,12 +341,15 @@ export function StorefrontProductDetailView({
                 <button type="button" onClick={onDecrease} className="flex h-full w-10 items-center justify-center" aria-label="Azalt">
                   <Minus className="size-4" />
                 </button>
-                <span
-                  key={flash?.seq ?? 0}
-                  className={cn("w-9 text-center text-base tabular-nums", flash && "animate-[ek-pop_0.45s_ease-out]")}
-                >
-                  {cartQuantity}
-                </span>
+                <CartQuantityInput
+                  value={cartQuantity}
+                  onCommit={onSetQuantity}
+                  ariaLabel="Sepetteki adet"
+                  className={cn(
+                    "h-full w-14 bg-transparent text-center font-bold tabular-nums outline-none focus:rounded-lg focus:bg-white/20",
+                    flash && "animate-[ek-pop_0.45s_ease-out]",
+                  )}
+                />
                 <button type="button" onClick={onIncrease} className="flex h-full w-10 items-center justify-center" aria-label="Artır">
                   <Plus className="size-4" />
                 </button>
