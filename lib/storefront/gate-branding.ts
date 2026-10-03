@@ -23,7 +23,7 @@ export type GateBranding = {
 const GATE_BRANDING: Record<string, GateBranding> = {
   "isego-ticaret": {
     backgroundImage: "/gate/isego-ticaret/bg.jpg",
-    logoMark: "/gate/isego-ticaret/logo-mark.png",
+    logoMark: "/gate/isego-ticaret/logo-mark-v2.png",
     wordmark: "İSEGO TİCARET",
     accentColor: "#F97316",
     copy: {
