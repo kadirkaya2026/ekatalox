@@ -29,6 +29,7 @@ export default async function TenantOrdersPage() {
         tenantName={tenant.company_name}
         isTekel={Boolean(tenant.is_tekel)}
         isWholesale={tenant.business_type !== "market"}
+        orderEditEnabled={Boolean(tenant.order_edit_enabled)}
       />
     </div>
   );

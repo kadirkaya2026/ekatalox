@@ -23,3 +23,11 @@ export const orderStatusPatchSchema = z
     message: "İptal sebebi gerekli (en az 3 karakter).",
     path: ["reason"],
   });
+
+// Fiş düzenleme (0151): mevcut kalem sırasıyla yeni adetler; 0 = satırı çıkar.
+export const orderItemsPatchSchema = z.object({
+  quantities: z
+    .array(z.number().int("Adet tam sayı olmalı.").min(0, "Adet eksi olamaz.").max(1_000_000, "Adet çok büyük."))
+    .min(1, "Kalem yok.")
+    .max(500),
+});

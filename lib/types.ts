@@ -127,6 +127,8 @@ export interface Tenant {
   trial_reminder_sent_at?: string | null;
   /** Kurulum sihirbazı kapatıldı/bitirildi (0126). null = ilk girişte otomatik açılır. */
   onboarding_dismissed_at?: string | null;
+  /** Panelde sipariş fişindeki adetler düzenlenebilir (0151). Varsayılan kapalı; SQL ile açılır. */
+  order_edit_enabled?: boolean;
 }
 
 export type TenantBusinessType = "general" | "market";

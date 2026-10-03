@@ -13,6 +13,12 @@ export const ORDER_STATUSES: OrderStatus[] = [
   "cancelled",
 ];
 
+// Fiş düzenleme (0151): yalnız bu durumlarda adet değiştirilebilir — SQL'deki
+// update_order_items ile aynı. Düzenleme olayı, from=to olan bir
+// order_status_events satırı ve bu önekle başlayan reason ile tutulur.
+export const ORDER_EDITABLE_STATUSES: OrderStatus[] = ["new", "confirmed", "preparing"];
+export const ORDER_EDIT_EVENT_PREFIX = "Fiş düzenlendi:";
+
 export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
   new: "Yeni",
   confirmed: "Onaylandı",

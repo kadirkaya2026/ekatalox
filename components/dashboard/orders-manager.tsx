@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ArrowLeft, BellRing, Loader2, MessageCircle, NotebookText, Printer, Search } from "lucide-react";
+import { ArrowLeft, BellRing, Loader2, MessageCircle, NotebookText, Pencil, Printer, Search, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -15,6 +15,8 @@ import type { OrderStatus, OrderStatusEvent, StorefrontOrder } from "@/lib/types
 import type { OrdersPage } from "@/lib/orders/data";
 import { formatOrderTotal, formatPaymentMethod, formatOrderNo } from "@/lib/orders/format";
 import {
+  ORDER_EDITABLE_STATUSES,
+  ORDER_EDIT_EVENT_PREFIX,
   ORDER_STATUSES,
   ORDER_STATUS_TONES,
   getNextActions,
@@ -47,6 +49,7 @@ export function OrdersManager({
   isTekel,
   isWholesale = false,
   storefrontOrigin = null,
+  orderEditEnabled = false,
 }: {
   initialPage: OrdersPage;
   tenantName: string;
@@ -54,6 +57,8 @@ export function OrdersManager({
   /** Toptancı/genel tenant: veresiye (market açık hesabı) gizlenir. */
   isWholesale?: boolean;
   storefrontOrigin?: string | null;
+  /** Fişteki adetler düzenlenebilir (tenants.order_edit_enabled, 0151). */
+  orderEditEnabled?: boolean;
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -71,6 +76,9 @@ export function OrdersManager({
   const [cancelReason, setCancelReason] = useState("");
   const [creditReminderPending, setCreditReminderPending] = useState<string | null>(null);
   const [creditMsg, setCreditMsg] = useState<string | null>(null);
+  // Fiş düzenleme: null = kapalı; dizi = kalem sırasıyla yeni adetler (0 = çıkar).
+  const [editQty, setEditQty] = useState<number[] | null>(null);
+  const [editMsg, setEditMsg] = useState<string | null>(null);
 
   const load = useCallback(
     async (override?: Partial<{ status: StatusFilter; q: string; from: string; to: string; page: number }>) => {
@@ -130,6 +138,7 @@ export function OrdersManager({
       setSelected(null);
       setCancelOpen(false);
       setCancelReason("");
+      setEditQty(null);
     };
     window.addEventListener("ekx-nav-reset", reset);
     return () => window.removeEventListener("ekx-nav-reset", reset);
@@ -160,6 +169,29 @@ export function OrdersManager({
     setSelected(result);
     setCancelOpen(Boolean(options?.openCancel));
     setCancelReason("");
+    setEditQty(null);
+  }
+
+  async function saveItems(order: StorefrontOrder) {
+    if (!editQty) return;
+    setPending(order.id);
+    setError(null);
+    setEditMsg(null);
+    const response = await fetch(`/api/tenant/orders/${order.id}/items`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ quantities: editQty }),
+    });
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      setError(result.error ?? "Fiş güncellenemedi.");
+    } else {
+      setEditQty(null);
+      setEditMsg(`Fiş güncellendi: ${(result.changes as string[]).join("; ")}`);
+      await load();
+      await openOrder(order);
+    }
+    setPending(null);
   }
 
   async function transition(order: StorefrontOrder, toStatus: OrderStatus, reason?: string) {
@@ -337,30 +369,147 @@ export function OrdersManager({
           </div>
 
           {/* Ürünler */}
-          <div className="overflow-hidden rounded-xl border border-slate-200">
-            {order.items.map((item, index) => (
-              <div
-                key={`${order.id}-${index}`}
-                className="flex items-center justify-between gap-3 border-b border-slate-100 px-4 py-2.5 text-sm last:border-b-0"
-              >
-                <p className="text-slate-900">
-                  <span className="mr-2 inline-block min-w-8 font-semibold tabular-nums">{item.quantity}×</span>
-                  {item.product_name}
-                  {item.variant_name ? <span className="text-slate-500"> · {item.variant_name}</span> : null}
-                  {item.sales_unit && item.sales_unit !== "adet" ? <span className="text-slate-500"> · {item.sales_unit}</span> : null}
-                </p>
-                {item.price !== null ? (
-                  <p className="shrink-0 font-medium tabular-nums text-slate-700">
-                    {formatCurrency(item.price * item.quantity, item.currency as CurrencyCode)}
-                  </p>
+          {(() => {
+            const canEdit = orderEditEnabled && ORDER_EDITABLE_STATUSES.includes(order.status);
+            const editing = canEdit && editQty !== null && editQty.length === order.items.length;
+            // Düzenlerken tahmini yeni toplam: eski toplam + satır fiyatı farkı (sunucudaki hesapla aynı).
+            const sub = (qs: number[]) => order.items.reduce((acc, it, i) => acc + (it.price ?? 0) * qs[i], 0);
+            const previewTotal = editing
+              ? Math.max(order.total_amount + sub(editQty) - sub(order.items.map((it) => it.quantity)), 0)
+              : order.total_amount;
+            const editEvents = selected.events.filter(
+              (ev) => ev.from_status === ev.to_status && ev.reason?.startsWith(ORDER_EDIT_EVENT_PREFIX),
+            );
+            return (
+              <div className="space-y-2">
+                <div className={cn("overflow-hidden rounded-xl border", editing ? "border-amber-300" : "border-slate-200")}>
+                  {order.items.map((item, index) => {
+                    const q = editing ? editQty[index] : item.quantity;
+                    const removed = editing && q === 0;
+                    return (
+                      <div
+                        key={`${order.id}-${index}`}
+                        className={cn(
+                          "flex items-center justify-between gap-3 border-b border-slate-100 px-4 py-2.5 text-sm last:border-b-0",
+                          removed && "bg-slate-50 text-slate-400 line-through",
+                        )}
+                      >
+                        <p className={cn("flex min-w-0 items-center gap-2", removed ? "text-slate-400" : "text-slate-900")}>
+                          {editing ? (
+                            <>
+                              <Input
+                                type="number"
+                                min={0}
+                                step={1}
+                                value={q}
+                                disabled={pending === order.id}
+                                onChange={(e) => {
+                                  const v = Math.max(0, Math.floor(Number(e.target.value) || 0));
+                                  setEditQty((curr) => (curr ? curr.map((x, i) => (i === index ? v : x)) : curr));
+                                }}
+                                className="h-8 w-20 shrink-0 px-2 text-right tabular-nums"
+                                aria-label="Adet"
+                              />
+                              <button
+                                type="button"
+                                title={removed ? "Satırı geri al" : "Satırı fişten çıkar"}
+                                disabled={pending === order.id}
+                                onClick={() =>
+                                  setEditQty((curr) =>
+                                    curr ? curr.map((x, i) => (i === index ? (x === 0 ? item.quantity : 0) : x)) : curr,
+                                  )
+                                }
+                                className="shrink-0 rounded-md p-1 text-slate-400 hover:bg-slate-100 hover:text-rose-600"
+                              >
+                                <Trash2 className="size-4" />
+                              </button>
+                            </>
+                          ) : (
+                            <span className="inline-block min-w-8 font-semibold tabular-nums">{item.quantity}×</span>
+                          )}
+                          <span className="min-w-0">
+                            {item.product_name}
+                            {item.variant_name ? <span className="text-slate-500"> · {item.variant_name}</span> : null}
+                            {item.sales_unit && item.sales_unit !== "adet" ? <span className="text-slate-500"> · {item.sales_unit}</span> : null}
+                            {editing && q !== item.quantity && q > 0 ? (
+                              <span className="ml-2 text-xs font-medium text-amber-700">{item.quantity} → {q}</span>
+                            ) : null}
+                          </span>
+                        </p>
+                        {item.price !== null ? (
+                          <p className="shrink-0 font-medium tabular-nums text-slate-700">
+                            {formatCurrency(item.price * q, item.currency as CurrencyCode)}
+                          </p>
+                        ) : null}
+                      </div>
+                    );
+                  })}
+                  <div className="flex flex-wrap items-center justify-between gap-2 bg-slate-50 px-4 py-2.5 text-sm">
+                    <span className="font-semibold text-slate-700">
+                      Toplam · {editing ? editQty.filter((x) => x > 0).length : order.item_count} ürün
+                    </span>
+                    <div className="flex items-center gap-3">
+                      {editing && previewTotal !== order.total_amount ? (
+                        <span className="text-xs text-slate-400 line-through tabular-nums">{formatOrderTotal(order)}</span>
+                      ) : null}
+                      <span className="font-semibold tabular-nums text-slate-900">
+                        {editing ? formatCurrency(previewTotal, order.currency as CurrencyCode) : formatOrderTotal(order)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {canEdit ? (
+                  editing ? (
+                    <div className="flex flex-wrap items-center gap-2 rounded-xl border border-amber-200 bg-amber-50/60 px-4 py-3">
+                      <p className="mr-auto text-xs text-amber-800">
+                        Adetleri düzeltin; çöp kutusu satırı fişten çıkarır. Fiyatlar ve müşteri bilgisi değişmez, yazdırılan fiş yeni adetlerle çıkar.
+                      </p>
+                      <Button
+                        disabled={
+                          pending === order.id ||
+                          editQty.every((x) => x === 0) ||
+                          editQty.every((x, i) => x === order.items[i].quantity)
+                        }
+                        onClick={() => void saveItems(order)}
+                      >
+                        {pending === order.id ? <Loader2 className="size-4 animate-spin" /> : null}
+                        Fişi kaydet
+                      </Button>
+                      <Button variant="ghost" disabled={pending === order.id} onClick={() => setEditQty(null)}>
+                        Vazgeç
+                      </Button>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      disabled={pending === order.id}
+                      onClick={() => {
+                        setEditMsg(null);
+                        setEditQty(order.items.map((it) => it.quantity));
+                      }}
+                      className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-700 hover:underline"
+                    >
+                      <Pencil className="size-4 shrink-0" />
+                      Fişteki adetleri düzenle
+                    </button>
+                  )
+                ) : null}
+                {editMsg ? <p className="text-xs font-medium text-emerald-700">{editMsg}</p> : null}
+                {editEvents.length > 0 ? (
+                  <div className="rounded-xl bg-slate-50 px-4 py-2.5 text-xs text-slate-600">
+                    <p className="font-semibold text-slate-700">Fiş düzenleme geçmişi</p>
+                    {editEvents.map((ev) => (
+                      <p key={ev.id} className="mt-1">
+                        <span className="tabular-nums text-slate-400">{formatDateTime(ev.created_at)}</span> ·{" "}
+                        {ev.reason?.slice(ORDER_EDIT_EVENT_PREFIX.length).trim()}
+                      </p>
+                    ))}
+                  </div>
                 ) : null}
               </div>
-            ))}
-            <div className="flex items-center justify-between bg-slate-50 px-4 py-2.5 text-sm">
-              <span className="font-semibold text-slate-700">Toplam · {order.item_count} ürün</span>
-              <span className="font-semibold tabular-nums text-slate-900">{formatOrderTotal(order)}</span>
-            </div>
-          </div>
+            );
+          })()}
 
           {/* Veresiye: tekel/market açık hesabı */}
           {isWholesale ? null : order.credit_marked_at && !order.credit_paid_at ? (
