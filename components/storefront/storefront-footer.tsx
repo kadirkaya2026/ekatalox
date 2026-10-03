@@ -199,7 +199,7 @@ export function StorefrontFooter({
               <MobileSection showDivider={mobileDividerIndex++ > 0}>
                 <div className="flex flex-col items-center text-center md:items-start md:text-left">
                   <FooterSectionHeading>Kurumsal</FooterSectionHeading>
-                  <div className="grid grid-cols-2 gap-x-6 gap-y-1 md:grid-cols-1">
+                  <div className="grid grid-cols-1 gap-x-10 gap-y-1 md:grid-cols-2">
                     {infoPages.map((page) => (
                       <p key={page.slug}>
                         <FooterDetailLink href={`/bilgi/${page.slug}`}>{page.title}</FooterDetailLink>
