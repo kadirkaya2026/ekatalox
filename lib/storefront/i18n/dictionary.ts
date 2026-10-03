@@ -201,6 +201,7 @@ export const storefrontDictionary: Record<StorefrontLocale, StorefrontDictionary
     "productModal.relatedProductsTitle": "Bunlar da ilgini çekebilir",
 
     "addToCart.selectedModels": "Seçilen Modeller",
+    "addToCart.updateCart": "Sepeti Güncelle",
     "addToCart.searchPlaceholder": "Model/Renk Ara",
     "addToCart.noModelFoundQuery": "“{query}” için model bulunamadı.",
     "addToCart.noModelFound": "Gösterilecek model bulunamadı.",
@@ -642,6 +643,7 @@ export const storefrontDictionary: Record<StorefrontLocale, StorefrontDictionary
     "productModal.relatedProductsTitle": "Das könnte dich auch interessieren",
 
     "addToCart.selectedModels": "Ausgewählte Modelle",
+    "addToCart.updateCart": "Warenkorb aktualisieren",
     "addToCart.searchPlaceholder": "Modell/Farbe suchen",
     "addToCart.noModelFoundQuery": "Kein Modell für „{query}“ gefunden.",
     "addToCart.noModelFound": "Kein Modell zum Anzeigen gefunden.",
@@ -1080,6 +1082,7 @@ export const storefrontDictionary: Record<StorefrontLocale, StorefrontDictionary
     "productModal.relatedProductsTitle": "You might also like these",
 
     "addToCart.selectedModels": "Selected Models",
+    "addToCart.updateCart": "Update cart",
     "addToCart.searchPlaceholder": "Search model/color",
     "addToCart.noModelFoundQuery": "No model found for “{query}”.",
     "addToCart.noModelFound": "No model to display.",
@@ -1518,6 +1521,7 @@ export const storefrontDictionary: Record<StorefrontLocale, StorefrontDictionary
     "productModal.relatedProductsTitle": "Это тоже может вас заинтересовать",
 
     "addToCart.selectedModels": "Выбранные модели",
+    "addToCart.updateCart": "Обновить корзину",
     "addToCart.searchPlaceholder": "Поиск модели/цвета",
     "addToCart.noModelFoundQuery": "Модель по запросу «{query}» не найдена.",
     "addToCart.noModelFound": "Нет моделей для отображения.",

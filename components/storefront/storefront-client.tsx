@@ -3588,6 +3588,12 @@ export function StorefrontClient({
     };
   }
 
+  // Pencere sepetteki satırları seçimle değiştirir; ürün zaten sepetteyse
+  // düğme "Sepeti Güncelle" der.
+  const selectedProductInCart = selectedProduct
+    ? cart.some((item) => (item.product_id ?? item.id) === selectedProduct.id)
+    : false;
+
   function confirmAddToCart(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
@@ -3599,6 +3605,13 @@ export function StorefrontClient({
       const selections = variantSelections.filter((selection) => selection.quantity > 0);
 
       if (!selections.length) {
+        // Sepetteki modeller pencerede hepsi 0'a çekildiyse ürün sepetten
+        // çıkar (3 Eki 2026: "eksiyle sıfırlıyorum, sepette kalıyor").
+        if (cartRef.current.some((item) => item.product_id === selectedProduct.id)) {
+          setCart((current) => current.filter((item) => item.product_id !== selectedProduct.id));
+          closeAddToCartModal();
+          return;
+        }
         setQuantityError(t("errors.selectAtLeastOneModel"));
         return;
       }
@@ -5249,7 +5262,9 @@ export function StorefrontClient({
                   theme.primaryButton,
                 )}
               >
-                {t(isTekel ? "product.addToCartPickup" : "product.addToCart")}
+                {selectedProductInCart
+                  ? t("addToCart.updateCart")
+                  : t(isTekel ? "product.addToCartPickup" : "product.addToCart")}
               </Button>
             </div>
           ) : (
@@ -5263,7 +5278,9 @@ export function StorefrontClient({
                 theme.primaryButton,
               )}
             >
-              {t(isTekel ? "product.addToCartPickup" : "product.addToCart")}
+              {selectedProductInCart
+                ? t("addToCart.updateCart")
+                : t(isTekel ? "product.addToCartPickup" : "product.addToCart")}
             </Button>
           )
         }
