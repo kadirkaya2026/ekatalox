@@ -13,19 +13,25 @@ import type { CartItem } from "@/lib/types";
 // mağaza verir. Kurallar retail_config.menu_builder'dan; sunucu yeniden doğrular.
 const schema = z.object({
   subdomain: z.string().min(1).max(80),
-  productIds: z.array(z.string().uuid()).min(1).max(20),
-  people: z.number().int().min(1).max(10000),
-  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-  name: z.string().trim().min(2, "Adınızı yazın.").max(120),
-  phone: z.string().trim().min(10).max(20),
-  address: z.string().trim().min(5, "Teslimat adresini yazın.").max(500),
-  note: z.string().trim().max(1000).optional(),
+  productIds: z.array(z.string().uuid(), { message: "Lütfen menünüz için çeşit seçin." }).min(1, "Lütfen menünüz için çeşit seçin.").max(20, "Çok fazla çeşit seçildi."),
+  people: z.number({ message: "Kişi sayısını yazın." }).int("Kişi sayısı tam sayı olmalı.").min(1, "Kişi sayısını yazın.").max(10000, "Kişi sayısı çok büyük."),
+  date: z.string({ message: "Teslim tarihini seçin." }).regex(/^\d{4}-\d{2}-\d{2}$/, "Teslim tarihini seçin."),
+  name: z.string({ message: "Adınızı yazın." }).trim().min(2, "Adınızı soyadınızı yazın.").max(120, "Ad çok uzun."),
+  phone: z.string({ message: "Telefon numaranızı yazın." }).trim().min(10, "Telefon numaranızı 05xx xxx xx xx biçiminde yazın.").max(20, "Telefon numarası çok uzun."),
+  address: z.string({ message: "Teslimat adresini yazın." }).trim().min(5, "Teslimat adresini (mahalle, sokak, bina no) yazın.").max(500, "Adres çok uzun."),
+  note: z.string().trim().max(1000, "Not çok uzun (en fazla 1000 karakter).").optional(),
 });
+
+const FIELD_BY_KEY: Record<string, string> = { productIds: "items", people: "people", date: "date", name: "name", phone: "phone", address: "address", note: "note" };
 
 export async function POST(request: Request) {
   const parsed = schema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) {
-    return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "Bilgiler eksik." }, { status: 400 });
+    const issue = parsed.error.issues[0];
+    return NextResponse.json(
+      { error: issue?.message ?? "Lütfen eksik bilgileri tamamlayın.", field: FIELD_BY_KEY[String(issue?.path?.[0] ?? "")] ?? null },
+      { status: 400 },
+    );
   }
   const body = parsed.data;
   const tenant = await getStorefrontTenant(body.subdomain);
@@ -35,17 +41,17 @@ export async function POST(request: Request) {
   if (!builder) return NextResponse.json({ error: "Bu mağazada menü oluşturma kapalı." }, { status: 404 });
 
   if (new Set(body.productIds).size !== builder.pickCount) {
-    return NextResponse.json({ error: `Lütfen ${builder.pickCount} farklı çeşit seçin.` }, { status: 400 });
+    return NextResponse.json({ error: `Lütfen ${builder.pickCount} farklı çeşit seçin.`, field: "items" }, { status: 400 });
   }
   if (body.people < builder.minPeople) {
-    return NextResponse.json({ error: `Menü siparişleri en az ${builder.minPeople} kişiliktir.` }, { status: 400 });
+    return NextResponse.json({ error: `Menü siparişleri en az ${builder.minPeople} kişiliktir.`, field: "people" }, { status: 400 });
   }
   const earliest = istanbulDatePlus(builder.leadDays);
   if (body.date < earliest) {
-    return NextResponse.json({ error: `Menü siparişleri en erken ${formatDeliveryDate(earliest)} için verilebilir.` }, { status: 400 });
+    return NextResponse.json({ error: `Menü siparişleri en erken ${formatDeliveryDate(earliest)} için verilebilir.`, field: "date" }, { status: 400 });
   }
   if (!validateCustomerPhoneInput(body.phone)) {
-    return NextResponse.json({ error: "Telefon numarasını 05xx xxx xx xx biçiminde yazın." }, { status: 400 });
+    return NextResponse.json({ error: "Telefon numaranızı 05xx xxx xx xx biçiminde yazın.", field: "phone" }, { status: 400 });
   }
 
   const supabase = createSupabaseAdminClient();
