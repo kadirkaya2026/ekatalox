@@ -4915,7 +4915,7 @@ export function StorefrontClient({
 
             return null;
           })}
-          {!sectionMode && selectedCategoryId === "all" && !committedSearch.trim() && retailConfig.infoSections.length ? (
+          {!sectionMode && selectedCategoryId === "all" && !committedSearch.trim() && retailConfig.infoSections.length && !retailConfig.infoAsPages ? (
             <StorefrontInfoSections sections={retailConfig.infoSections} />
           ) : null}
           </StorefrontCatalogContent>

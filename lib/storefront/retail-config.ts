@@ -11,6 +11,10 @@ export interface RetailInfoSection {
   emoji: string;
   title: string;
   body: string;
+  /** Ayrı sayfa adresi: /bilgi/<slug> (verilmezse başlıktan üretilir). */
+  slug: string;
+  /** Sayfadaki görsel (isteğe bağlı). */
+  imageUrl: string | null;
 }
 
 export interface RetailDeliveryDate {
@@ -31,6 +35,8 @@ export interface RetailMenuBuilder {
 
 export interface RetailConfig {
   infoSections: RetailInfoSection[];
+  /** true: bölümler anasayfada kart değil, ayrı sayfa olur ve footer'dan bağlanır. */
+  infoAsPages: boolean;
   deliveryDate: RetailDeliveryDate | null;
   menuBuilder: RetailMenuBuilder | null;
 }
@@ -42,6 +48,15 @@ const int = (value: unknown, fallback: number, min: number, max: number) => {
 };
 const ids = (value: unknown) => (Array.isArray(value) ? value.filter((v): v is string => typeof v === "string") : []);
 
+export function slugify(value: string): string {
+  return value
+    .toLocaleLowerCase("tr-TR")
+    .replace(/ı/g, "i").replace(/ğ/g, "g").replace(/ü/g, "u").replace(/ş/g, "s").replace(/ö/g, "o").replace(/ç/g, "c")
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+}
+
 export function resolveRetailConfig(raw: unknown): RetailConfig {
   const value = raw && typeof raw === "object" ? (raw as Record<string, unknown>) : {};
   const sections = Array.isArray(value.info_sections) ? value.info_sections : [];
@@ -51,8 +66,15 @@ export function resolveRetailConfig(raw: unknown): RetailConfig {
   return {
     infoSections: sections
       .map((s) => (s && typeof s === "object" ? (s as Record<string, unknown>) : {}))
-      .map((s) => ({ emoji: str(s.emoji), title: str(s.title), body: str(s.body) }))
-      .filter((s) => s.title && s.body),
+      .map((s) => ({
+        emoji: str(s.emoji),
+        title: str(s.title),
+        body: str(s.body),
+        slug: slugify(str(s.slug) || str(s.title)),
+        imageUrl: str(s.image_url) || null,
+      }))
+      .filter((s) => s.title && s.body && s.slug),
+    infoAsPages: value.info_display === "pages",
     deliveryDate:
       dd && dd.enabled
         ? { minDays, longMinDays: int(dd.long_min_days, minDays, minDays, 60), longCategoryIds: ids(dd.long_category_ids) }

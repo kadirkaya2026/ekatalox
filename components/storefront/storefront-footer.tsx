@@ -15,6 +15,7 @@ import { useStorefrontTheme } from "@/lib/storefront/theme-context";
 import { useStorefrontLocale } from "@/lib/storefront/locale-context";
 import type { TenantStorefrontSettings } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { resolveRetailConfig } from "@/lib/storefront/retail-config";
 
 function SocialIcon({
   platform,
@@ -166,10 +167,14 @@ export function StorefrontFooter({
   const hasSocialColumn = socialLinks.length > 0;
 
   const footerStyle = settings.footer_style_key ?? "standard";
-  const hasQuickLinksColumn = footerStyle === "columns";
-  const hasFooterMainContent = hasContactColumn || hasSocialColumn || hasQuickLinksColumn;
+  // Mağazanın bilgi sayfaları (0155 retail_config, info_display "pages"): /bilgi/<slug>.
+  const retail = resolveRetailConfig(settings.retail_config);
+  const infoPages = retail.infoAsPages ? retail.infoSections : [];
+  const hasInfoColumn = infoPages.length > 0;
+  const hasQuickLinksColumn = footerStyle === "columns" && !hasInfoColumn;
+  const hasFooterMainContent = hasContactColumn || hasSocialColumn || hasQuickLinksColumn || hasInfoColumn;
   const showMainColumns = footerStyle !== "minimal" && hasFooterMainContent;
-  const columnsPresentCount = [hasQuickLinksColumn, hasContactColumn, hasSocialColumn].filter(
+  const columnsPresentCount = [hasQuickLinksColumn || hasInfoColumn, hasContactColumn, hasSocialColumn].filter(
     Boolean,
   ).length;
   const isContactLastColumn = hasContactColumn && !hasSocialColumn;
@@ -190,6 +195,26 @@ export function StorefrontFooter({
       <div className="container-store pt-5 pb-0 md:py-7">
         {showMainColumns ? (
           <div className={gridClassName}>
+            {hasInfoColumn ? (
+              <MobileSection showDivider={mobileDividerIndex++ > 0}>
+                <div className="flex flex-col items-center text-center md:items-start md:text-left">
+                  <FooterSectionHeading>Kurumsal</FooterSectionHeading>
+                  <div className="grid grid-cols-2 gap-x-6 gap-y-1 md:grid-cols-1">
+                    {infoPages.map((page) => (
+                      <p key={page.slug}>
+                        <FooterDetailLink href={`/bilgi/${page.slug}`}>{page.title}</FooterDetailLink>
+                      </p>
+                    ))}
+                    {retail.menuBuilder ? (
+                      <p>
+                        <FooterDetailLink href="/menu">{retail.menuBuilder.title}</FooterDetailLink>
+                      </p>
+                    ) : null}
+                  </div>
+                </div>
+              </MobileSection>
+            ) : null}
+
             {hasQuickLinksColumn ? (
               <MobileSection showDivider={mobileDividerIndex++ > 0}>
                 <div className="flex flex-col items-center text-center md:items-start md:text-left">
