@@ -87,6 +87,8 @@ export const tenantUpdateSchema = z
     custom_domain: customDomainFieldSchema.optional(),
     end_trial: z.boolean().optional(),
     start_trial: z.boolean().optional(),
+    // start_trial ile birlikte: kaç günlük deneme (süper admin sorar; yoksa varsayılan süre).
+    trial_days: z.number().int().min(1).max(365).optional(),
     gift_months: z.number().int().min(1).max(24).optional(),
     // Ücretli paket denemesindeki mağazadan ödeme alındı: deneme biter,
     // mevcut paket bugünden itibaren 12 aylık üyeliğe döner (0132).
@@ -95,9 +97,9 @@ export const tenantUpdateSchema = z
   .transform((data) => {
     // end_trial / start_trial DB kolonu değil; trial_ends_at'e çevrilir.
     // end_trial: süper admin paket atadığında deneme sonlanır.
-    // start_trial: mevcut hesap bugünden itibaren 14 günlük denemeye alınır.
+    // start_trial: mevcut hesap bugünden itibaren trial_days (yoksa varsayılan) günlük denemeye alınır.
     // gift_months route'ta işlenir (mevcut bitişe göre hesap gerekir).
-    const { end_trial, start_trial, confirm_plan_payment, ...rest } = data;
+    const { end_trial, start_trial, trial_days, confirm_plan_payment, ...rest } = data;
     if (confirm_plan_payment) {
       return {
         ...rest,
@@ -110,7 +112,7 @@ export const tenantUpdateSchema = z
     const mapped = end_trial
       ? { ...rest, trial_ends_at: null }
       : start_trial
-        ? { ...rest, trial_ends_at: getTrialEndDate() }
+        ? { ...rest, trial_ends_at: getTrialEndDate(new Date(), trial_days) }
         : rest;
 
     if (mapped.plan) {

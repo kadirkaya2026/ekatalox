@@ -5,9 +5,10 @@ import type { Tenant } from "@/lib/types";
 // lib/billing/esnaf-plans.ts ESNAF_TRIAL_DAYS.
 export const TRIAL_DURATION_DAYS = ESNAF_TRIAL_DAYS;
 
-export function getTrialEndDate(from: Date = new Date()): string {
+/** days verilmezse varsayılan deneme süresi; süper admin "Denemeye al" derken gün sayısını kendisi seçer. */
+export function getTrialEndDate(from: Date = new Date(), days: number = TRIAL_DURATION_DAYS): string {
   const end = new Date(from);
-  end.setDate(end.getDate() + TRIAL_DURATION_DAYS);
+  end.setDate(end.getDate() + days);
   return end.toISOString();
 }
 

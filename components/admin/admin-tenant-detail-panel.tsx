@@ -259,11 +259,24 @@ export function AdminTenantDetailPanel({ tenant: initialTenant }: { tenant: Tena
   function toggleTenantTrial(action: "start" | "end") {
     setMessage(null);
 
+    // Deneme süresi sabit değil: süper admin kaç gün olacağını girer.
+    let trialDays = TRIAL_DURATION_DAYS;
+    if (action === "start") {
+      const answer = window.prompt("Kaç günlük denemeye alınsın?", String(TRIAL_DURATION_DAYS));
+      if (answer === null) return;
+      const parsed = Number.parseInt(answer.trim(), 10);
+      if (!Number.isInteger(parsed) || parsed < 1 || parsed > 365) {
+        setMessage("Gün sayısı 1 ile 365 arasında olmalı.");
+        return;
+      }
+      trialDays = parsed;
+    }
+
     startTransition(async () => {
       const response = await fetch(`/api/admin/tenants/${tenant.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(action === "start" ? { start_trial: true } : { end_trial: true }),
+        body: JSON.stringify(action === "start" ? { start_trial: true, trial_days: trialDays } : { end_trial: true }),
       });
 
       const result = await response.json();
@@ -276,7 +289,7 @@ export function AdminTenantDetailPanel({ tenant: initialTenant }: { tenant: Tena
       setTenant((current) => ({ ...current, ...result.tenant }));
       setMessage(
         action === "start"
-          ? `Hesap ${TRIAL_DURATION_DAYS} günlük deneme süresine alındı.`
+          ? `Hesap ${trialDays} günlük deneme süresine alındı.`
           : "Deneme süresi sonlandırıldı.",
       );
     });
