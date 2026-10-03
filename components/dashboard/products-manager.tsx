@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { AlertTriangle, Trash2 } from "lucide-react";
+import { AlertTriangle, FileDown, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Modal } from "@/components/ui/modal";
@@ -24,6 +24,7 @@ import {
   toProductFormData,
 } from "@/lib/hooks/use-product-form";
 import type { Category, PriceList, Product, Tenant } from "@/lib/types";
+import { getPriceListDisplayName } from "@/lib/price-lists/constants";
 
 // Büyük kataloglarda (binlerce ürün) tüm tabloyu her sayfa açılışında
 // sunucudan çekip tarayıcıda tutmak sayfayı kilitliyordu — bu yüzden arama,
@@ -124,6 +125,10 @@ export function ProductsManager({
     [priceLists],
   );
   const [products, setProducts] = useState(initialProducts);
+  // PDF dışa aktarma: hangi fiyat listesiyle basılacağını kullanıcı seçer ("none" = fiyatsız).
+  const [exportOpen, setExportOpen] = useState(false);
+  const [exportPriceListId, setExportPriceListId] = useState<string>(pricedLists[0]?.id ?? "none");
+  const [isExporting, setIsExporting] = useState(false);
   const [total, setTotal] = useState(initialTotal);
   const [grandTotal, setGrandTotal] = useState(initialTotal);
   const [isLoading, setIsLoading] = useState(false);
@@ -189,6 +194,45 @@ export function ProductsManager({
       giftAddon: tenant.product_limit_addon ?? 0,
     };
   }, [grandTotal, tenant.plan, tenant.product_limit_addon]);
+
+  // Ekrandaki filtreyle (arama, kategori, stok, eksik görsel/fiyat) aynı ürünleri,
+  // seçilen fiyat listesiyle PDF olarak indirir (app/api/tenant/products/export-pdf).
+  async function exportPdf() {
+    setIsExporting(true);
+    setMessage(null);
+    try {
+      const params = new URLSearchParams();
+      params.set("priceListId", exportPriceListId);
+      if (debouncedSearchTerm.trim()) params.set("q", debouncedSearchTerm.trim());
+      if (expandedCategoryIds.length) params.set("categoryIds", expandedCategoryIds.join(","));
+      if (matchCategoryIds.length) params.set("matchCategoryIds", matchCategoryIds.join(","));
+      if (stockFilter !== "all") params.set("stock", stockFilter);
+      if (qualityFilter !== "all") params.set("quality", qualityFilter);
+
+      const response = await fetch(`/api/tenant/products/export-pdf?${params.toString()}`);
+      if (!response.ok) {
+        const result = await response.json().catch(() => ({}));
+        setMessage(result.error ?? "PDF oluşturulamadı.");
+        return;
+      }
+      const blob = await response.blob();
+      const disposition = response.headers.get("Content-Disposition") ?? "";
+      const fileName = /filename="([^"]+)"/.exec(disposition)?.[1] ?? "urun-listesi.pdf";
+      const href = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = href;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(href), 10_000);
+      setExportOpen(false);
+    } catch {
+      setMessage("PDF oluşturulamadı.");
+    } finally {
+      setIsExporting(false);
+    }
+  }
 
   async function fetchPage(targetPage: number) {
     setIsLoading(true);
@@ -648,6 +692,12 @@ export function ProductsManager({
 
       <Card className="overflow-hidden">
         <div className="border-b border-border px-5 py-4">
+          <div className="mb-3 flex justify-end">
+            <Button variant="secondary" onClick={() => setExportOpen(true)} disabled={!total}>
+              <FileDown className="size-4" />
+              PDF olarak dışa aktar
+            </Button>
+          </div>
           <ProductsToolbar
             searchTerm={searchTerm}
             onSearchChange={setSearchTerm}
@@ -855,6 +905,43 @@ export function ProductsManager({
             </div>
           </div>
         ) : null}
+      </Modal>
+
+      <Modal
+        open={exportOpen}
+        onClose={() => (isExporting ? undefined : setExportOpen(false))}
+        title="Ürün listesini PDF olarak dışa aktar"
+      >
+        <div className="space-y-4">
+          <p className="text-sm text-muted-foreground">
+            Ekrandaki filtreye uyan {total} ürün, listedeki sırayla görseli, kodu, kategorisi, koli adedi ve stok durumuyla PDF&apos;e aktarılır.
+          </p>
+          <label className="block text-sm font-medium text-foreground" htmlFor="export-price-list">
+            Hangi fiyat görünsün?
+          </label>
+          <select
+            id="export-price-list"
+            value={exportPriceListId}
+            onChange={(event) => setExportPriceListId(event.target.value)}
+            className="h-10 w-full rounded-lg border border-border bg-background px-3 text-sm"
+          >
+            {pricedLists.map((list) => (
+              <option key={list.id} value={list.id}>
+                {getPriceListDisplayName(list)}
+              </option>
+            ))}
+            <option value="none">Fiyatsız</option>
+          </select>
+          <div className="flex justify-end gap-2">
+            <Button variant="secondary" onClick={() => setExportOpen(false)} disabled={isExporting}>
+              Vazgeç
+            </Button>
+            <Button onClick={() => void exportPdf()} disabled={isExporting}>
+              <FileDown className="size-4" />
+              {isExporting ? "PDF hazırlanıyor…" : "PDF'i indir"}
+            </Button>
+          </div>
+        </div>
       </Modal>
 
       <Modal

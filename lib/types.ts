@@ -396,6 +396,8 @@ export interface Product {
   // gösterilmez ve online sipariş edilemez; demo verisi/eski kayıtlar için
   // opsiyonel — normalizeProductRecord her zaman boolean üretir.
   is_alcohol?: boolean;
+  // Paket limiti üstünde: vitrinde gizli, panelde görünür (0151).
+  is_over_limit?: boolean;
   package_quantity: number | null;
   carton_quantity: number | null;
   created_at: string;

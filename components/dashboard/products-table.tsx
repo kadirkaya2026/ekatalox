@@ -125,6 +125,20 @@ function renderStockBadge(product: Product) {
   );
 }
 
+// Paket limiti üstündeki ürün (0151): silinmez, vitrinde gizlenir. Görünen bir ürün
+// silinince ya da paket yükseltilince otomatik vitrine döner.
+function renderOverLimitBadge(product: Product) {
+  if (!product.is_over_limit) {
+    return null;
+  }
+
+  return (
+    <span title="Paket limitinizin üstünde: bu ürün müşteri sayfasında görünmez. Paketi yükseltin ya da başka bir ürünü silin; otomatik görünür olur.">
+      <Badge className="bg-rose-50 text-rose-700">Limit dışı · vitrinde gizli</Badge>
+    </span>
+  );
+}
+
 // Tekel mağazalarda alkollü ürün vitrinde gizlidir (bkz. 0114) — bayi
 // listede bunu bir bakışta görsün.
 function renderAlcoholBadge(product: Product, isTekel: boolean) {
@@ -392,6 +406,7 @@ export function ProductsTable({
                   <div className="flex flex-wrap gap-1">
                     {renderStockBadge(product)}
                     {renderAlcoholBadge(product, isTekel)}
+                    {renderOverLimitBadge(product)}
                   </div>
                 </td>
                 <td className="px-4 py-3">{renderVariantCountBadge(product)}</td>
@@ -571,6 +586,7 @@ export function ProductsTable({
                 <div className="mt-2 flex flex-wrap gap-1">
                   {renderStockBadge(product)}
                   {renderAlcoholBadge(product, isTekel)}
+                  {renderOverLimitBadge(product)}
                 </div>
                 <div className="mt-2">{renderVariantCountBadge(product)}</div>
               </div>
