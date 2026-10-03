@@ -37,6 +37,7 @@ import type {
 } from "@/lib/types";
 import { formatProductModelNo, type CurrencyCode } from "@/lib/products/constants";
 import { composeAreaAddress, parseAreaAddress, resolveDeliveryArea } from "@/lib/storefront/delivery-area";
+import { formatDeliveryDate } from "@/lib/storefront/retail-config";
 import {
   getBankTransferInfo,
   getCheckoutPaymentMethods,
@@ -102,6 +103,11 @@ export type StorefrontCartDrawerProps = {
   dealerLabel?: string | null;
   orderNoteError: string | null;
   setOrderNoteError: (value: string | null) => void;
+  /** Teslim tarihi (0155): en erken seçilebilir gün; null = alan yok. */
+  deliveryDateMin?: string | null;
+  deliveryDate?: string;
+  setDeliveryDate?: (value: string) => void;
+  deliveryDateError?: string | null;
   // Alkol/sigara bayii (tekel) — yasal olarak dağıtım/teslimat yapamaz.
   // true iken adres alanı hiç gösterilmez/toplanmaz (kullanıcı isteği,
   // 20 Ağu 2026).
@@ -192,6 +198,10 @@ export function StorefrontCartDrawer({
   dealerLabel = null,
   orderNoteError,
   setOrderNoteError,
+  deliveryDateMin = null,
+  deliveryDate = "",
+  setDeliveryDate,
+  deliveryDateError = null,
   isTekel,
   recommendedProducts,
   cartPaymentSummary,
@@ -824,7 +834,7 @@ cartFormConfig.customer_address.is_visible ? (
                   areaNeighborhood ? theme.text : theme.textMuted,
                 )}
               >
-                <option value="">{t("cart.areaNeighborhoodPlaceholder")}</option>
+                <option value="">{deliveryArea.placeholder ?? t("cart.areaNeighborhoodPlaceholder")}</option>
                 {deliveryArea.neighborhoods.map((name) => (
                   <option key={name} value={name}>
                     {name}
@@ -837,7 +847,7 @@ cartFormConfig.customer_address.is_visible ? (
                 placeholder={t("cart.areaDetailPlaceholder")}
                 className={cn("rounded-[1.1rem] text-[16px]", theme.formField, theme.text)}
               />
-              <p className={cn("text-xs", theme.textMuted)}>{t("cart.areaOnlyTheseNeighborhoods")}</p>
+              <p className={cn("text-xs", theme.textMuted)}>{deliveryArea.hint ?? t("cart.areaOnlyTheseNeighborhoods")}</p>
             </div>
           ) : (
             <Textarea
@@ -1096,6 +1106,32 @@ cartFormConfig.customer_address.is_visible ? (
         : null}
     </div>
   );
+
+  // Teslim tarihi (0155): en erken gün mağaza kuralına ve sepetteki ürünlere göre.
+  const renderDeliveryDatePanel = () =>
+    deliveryDateMin && setDeliveryDate ? (
+      <div className={theme.panelSurface}>
+        <div className="mb-2 flex items-center justify-between gap-3">
+          <p className={cn("text-sm font-semibold", theme.text)}>Teslim tarihi</p>
+          <span className={cn("rounded-full px-3 py-1 text-[11px] font-semibold", theme.surfaceMuted, theme.textMuted)}>
+            {t("cart.required")}
+          </span>
+        </div>
+        <input
+          type="date"
+          min={deliveryDateMin}
+          value={deliveryDate}
+          onChange={(event) => setDeliveryDate(event.target.value)}
+          className={cn("h-12 w-full rounded-[1.1rem] border px-3 text-[16px]", theme.formField, theme.text)}
+        />
+        <p className={cn("mt-2 text-xs", theme.textMuted)}>
+          Ürünler sipariş üzerine taze hazırlanır; en erken {formatDeliveryDate(deliveryDateMin)} için sipariş verebilirsiniz.
+        </p>
+        {deliveryDateError ? (
+          <p className={cn("mt-2 text-xs font-medium", theme.dangerText)}>{deliveryDateError}</p>
+        ) : null}
+      </div>
+    ) : null;
 
   const renderOrderNotePanel = () =>
     cartFormConfig.order_note.is_visible ? (
@@ -1706,20 +1742,23 @@ cartFormConfig.customer_address.is_visible ? (
                     ) : (
                       <div className="space-y-4">
                         {renderPaymentPanel()}
-                        {renderOrderNotePanel()}
+                        {renderDeliveryDatePanel()}
+{renderOrderNotePanel()}
                       </div>
                     )
                   ) : (
                     theme.commerceDesign ? <div data-commerce-slot="cart-content">
                       <div data-commerce-slot="cart-lines">{renderCampaignBars()}{renderItemsList()}</div>
-                      <div data-commerce-slot="cart-fields">{renderPaymentPanel()}{renderOrderNotePanel()}</div>
+                      <div data-commerce-slot="cart-fields">{renderPaymentPanel()}{renderDeliveryDatePanel()}
+{renderOrderNotePanel()}</div>
                       {/* Öneriler klasik düzendeki gibi en altta (30 Eyl 2026, Autovale). */}
                       {renderInlineSuggestions()}
                     </div> : <div className="space-y-4">
                       {renderCampaignBars()}
                       {renderItemsList()}
                       {renderPaymentPanel()}
-                      {renderOrderNotePanel()}
+                      {renderDeliveryDatePanel()}
+{renderOrderNotePanel()}
                       {renderInlineSuggestions()}
                     </div>
                   )

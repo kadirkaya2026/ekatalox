@@ -617,6 +617,8 @@ export interface TenantStorefrontSettings {
   online_payment_settings?: OnlinePaymentSettings | null;
   // 0147: mağazaya özel teslimat bölgesi (il/ilçe sabit, mahalle listesi)
   delivery_area?: unknown;
+  /** Perakende ayarları: bilgi bölümleri, teslim tarihi, menü oluşturucu (0155). */
+  retail_config?: unknown;
   price_update_date: string | null;
   is_price_update_date_visible: boolean;
   is_theme_toggle_visible: boolean;

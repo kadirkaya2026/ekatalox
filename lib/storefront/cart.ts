@@ -795,6 +795,8 @@ export function buildWhatsAppMessage(params: {
   // Ücretsiz plan: mesajın son satırı eKatalox reklamı (süper admin ayarı,
   // bkz. lib/ads/config.ts order_footer). Ücretli planlarda geçilmez.
   footerLine?: string | null;
+  /** Teslim tarihi (0155), örn. "12 Ekim 2026 Pazar". */
+  deliveryDateLabel?: string | null;
 }) {
   const lines = [
     `Merhaba, ${params.tenantName} için sipariş oluşturmak istiyorum`,
@@ -810,6 +812,10 @@ export function buildWhatsAppMessage(params: {
 
   if (params.customerPhone?.trim()) {
     lines.push(`📞 Telefon : ${params.customerPhone.trim()}`);
+  }
+
+  if (params.deliveryDateLabel?.trim()) {
+    lines.push(`📅 Teslim tarihi : ${params.deliveryDateLabel.trim()}`);
   }
 
   if (!params.isTekel && params.customerLocationUrl?.trim()) {

@@ -152,6 +152,8 @@ import {
   StorefrontAdProductCard,
 } from "@/components/storefront/storefront-ads";
 import type { StorefrontAdsConfig } from "@/lib/ads/config";
+import { earliestDeliveryDate, formatDeliveryDate, resolveRetailConfig } from "@/lib/storefront/retail-config";
+import { StorefrontInfoSections } from "@/components/storefront/storefront-info-sections";
 
 function getCartStorageKey(tenantId: string) {
   return `ekatalox_cart_${tenantId}`;
@@ -1116,6 +1118,13 @@ export function StorefrontClient({
   // sessizce bulunur ve üst şeritte duyurulur.
   const [customerCoupon, setCustomerCoupon] = useState<StorefrontCoupon | null>(null);
   const [note, setNote] = useState("");
+  // Teslim tarihi (0155): yalnız retail_config.delivery_date açık mağazalarda.
+  const [deliveryDate, setDeliveryDateState] = useState("");
+  const [deliveryDateError, setDeliveryDateError] = useState<string | null>(null);
+  const setDeliveryDate = useCallback((value: string) => {
+    setDeliveryDateState(value);
+    setDeliveryDateError(null);
+  }, []);
   const [customerReferenceName, setCustomerReferenceName] = useState("");
   const [customerReferenceNameError, setCustomerReferenceNameError] = useState<string | null>(
     null,
@@ -1847,6 +1856,22 @@ export function StorefrontClient({
   }, [categories, selectedCategoryLineage]);
 
   const cartTotal = useMemo(() => getCartTotal(cart), [cart]);
+  const retailConfig = useMemo(() => resolveRetailConfig(storefrontSettings.retail_config), [storefrontSettings.retail_config]);
+  const deliveryDateMin = useMemo(
+    () =>
+      retailConfig.deliveryDate
+        ? earliestDeliveryDate(retailConfig.deliveryDate, cart.map((item) => item.category_id))
+        : null,
+    [retailConfig, cart],
+  );
+  // Gönderilen not: teslim tarihi en başta (fişte, panelde ve mesajda görünsün).
+  const orderNote = useMemo(
+    () =>
+      deliveryDateMin && deliveryDate
+        ? [`Teslim tarihi: ${formatDeliveryDate(deliveryDate)}`, note.trim()].filter(Boolean).join(" · ")
+        : note,
+    [deliveryDateMin, deliveryDate, note],
+  );
   const cartCurrency = useMemo(() => getCartCurrency(cart), [cart]);
   const cartTotalsByCurrency = useMemo(() => getCartTotalsByCurrency(cart), [cart]);
   // Minimum sepet tutarı yalnızca tek para birimli sepetlerde uygulanır —
@@ -2617,9 +2642,10 @@ export function StorefrontClient({
         trackingUrl,
         isTekel,
         footerLine: ads?.order_footer.enabled ? ads.order_footer.text : null,
+        deliveryDateLabel: deliveryDateMin && deliveryDate ? formatDeliveryDate(deliveryDate) : null,
       });
     },
-    [customerReferenceName, customerAddress, customerPhone, isMarketTenant, isTekel, tenant.company_name, cartFormConfig, ads],
+    [customerReferenceName, customerAddress, customerPhone, isMarketTenant, isTekel, tenant.company_name, cartFormConfig, ads, deliveryDateMin, deliveryDate],
   );
 
   const clearWhatsappHandoff = useCallback(() => {
@@ -2641,6 +2667,7 @@ export function StorefrontClient({
     customerAddress,
     customerPhone,
     note,
+    deliveryDate,
     selectedInstallmentCount,
     selectedPaymentMethod,
   ]);
@@ -2698,6 +2725,15 @@ export function StorefrontClient({
         hasValidationError = true;
       }
 
+      if (deliveryDateMin && (!deliveryDate || deliveryDate < deliveryDateMin)) {
+        setDeliveryDateError(
+          deliveryDate
+            ? `En erken ${formatDeliveryDate(deliveryDateMin)} seçebilirsiniz; ürünler sipariş üzerine hazırlanır.`
+            : "Lütfen teslim tarihini seçin.",
+        );
+        hasValidationError = true;
+      }
+
       if (hasValidationError) {
         // Her denemede artır: aynı alan aynı hatayla tekrar boşsa da sepet
         // çekmecesi o alana yeniden kaysın (bkz. storefront-cart-drawer.tsx).
@@ -2722,7 +2758,7 @@ export function StorefrontClient({
           subdomain: analyticsSubdomain,
           catalog_mode: isCatalogOnly,
           items: cart,
-          note,
+          note: orderNote,
           customer_reference_name: cartFormConfig.customer_name.is_visible
             ? customerReferenceName.trim()
             : "",
@@ -4866,6 +4902,9 @@ export function StorefrontClient({
 
             return null;
           })}
+          {!sectionMode && selectedCategoryId === "all" && !committedSearch.trim() && retailConfig.infoSections.length ? (
+            <StorefrontInfoSections sections={retailConfig.infoSections} />
+          ) : null}
           </StorefrontCatalogContent>
         </div>}
       </main>
@@ -5078,6 +5117,10 @@ export function StorefrontClient({
         cartFormConfig={cartFormConfig}
         dealerLabel={dealerProfile ? formatDealerDisplayName(dealerProfile) : null}
         orderNoteError={orderNoteError}
+        deliveryDateMin={deliveryDateMin}
+        deliveryDate={deliveryDate}
+        setDeliveryDate={setDeliveryDate}
+        deliveryDateError={deliveryDateError}
         setOrderNoteError={setOrderNoteError}
         isTekel={isTekel}
         recommendedProducts={recommendedProducts}

@@ -7,6 +7,9 @@ export interface DeliveryArea {
   city: string;
   district: string;
   neighborhoods: string[];
+  /** Liste mahalle değil ilçe olduğunda seçim kutusu/uyarı metni (örn. "İlçe seçin"). */
+  placeholder?: string;
+  hint?: string;
 }
 
 export function resolveDeliveryArea(raw: unknown): DeliveryArea | null {
@@ -20,6 +23,8 @@ export function resolveDeliveryArea(raw: unknown): DeliveryArea | null {
     city: typeof value.city === "string" ? value.city.trim() : "",
     district: typeof value.district === "string" ? value.district.trim() : "",
     neighborhoods,
+    placeholder: typeof value.placeholder === "string" && value.placeholder.trim() ? value.placeholder.trim() : undefined,
+    hint: typeof value.hint === "string" && value.hint.trim() ? value.hint.trim() : undefined,
   };
 }
 
