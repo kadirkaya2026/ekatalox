@@ -31,3 +31,32 @@ export function buildOrderStatusWhatsAppHref(params: {
   // vitrindeki "Sipariş Takip" ikonundan numarasıyla ulaşıyor.
   return `https://wa.me/${intl}?text=${encodeURIComponent(lines.join("\n"))}`;
 }
+
+// Fiş düzenlendikten sonra müşteriye gönderilecek güncel fiş (0154): kalemler,
+// adetler ve toplam metin olarak. Otomatik gitmez; bayi wa.me ile gönderir.
+export function buildOrderUpdatedWhatsAppHref(params: {
+  order: Pick<
+    StorefrontOrder,
+    "customer_phone" | "customer_name" | "order_number" | "order_no" | "items" | "total_amount" | "currency"
+  >;
+  tenantName: string;
+  formatMoney: (value: number) => string;
+}): string | null {
+  if (!params.order.customer_phone) return null;
+  const digits = normalizeCustomerPhone(params.order.customer_phone);
+  const intl = digits.startsWith("0") ? `9${digits}` : digits.startsWith("90") ? digits : `90${digits}`;
+  const ad = params.order.customer_name.trim().split(/\s+/)[0] || "";
+  const priced = params.order.currency !== "CATALOG";
+  const lines = [
+    `Merhaba ${ad}, ${params.tenantName} — ${formatOrderNo(params.order)} numaralı siparişiniz güncellendi. Güncel fişiniz:`,
+    "",
+    ...params.order.items.map((item) => {
+      const name = item.product_name + (item.variant_name ? ` (${item.variant_name})` : "");
+      return priced && item.price !== null
+        ? `• ${item.quantity} × ${name} — ${params.formatMoney(item.price * item.quantity)}`
+        : `• ${item.quantity} × ${name}`;
+    }),
+  ];
+  if (priced) lines.push("", `Toplam: ${params.formatMoney(params.order.total_amount)}`);
+  return `https://wa.me/${intl}?text=${encodeURIComponent(lines.join("\n"))}`;
+}

@@ -22,7 +22,8 @@ import {
   getNextActions,
   getStatusLabel,
 } from "@/lib/orders/status";
-import { buildOrderStatusWhatsAppHref } from "@/lib/orders/whatsapp-status-message";
+import { buildOrderStatusWhatsAppHref, buildOrderUpdatedWhatsAppHref } from "@/lib/orders/whatsapp-status-message";
+import { OrderEditor } from "@/components/dashboard/order-editor";
 
 // "credit": durumdan bağımsız özel görünüm — açık veresiyeler.
 type StatusFilter = OrderStatus | "all" | "credit";
@@ -78,6 +79,9 @@ export function OrdersManager({
   const [creditMsg, setCreditMsg] = useState<string | null>(null);
   // Fiş düzenleme: null = kapalı; dizi = kalem sırasıyla yeni adetler (0 = çıkar).
   const [editQty, setEditQty] = useState<number[] | null>(null);
+  // Sipariş düzenleyici v2 (0154) ve kayıttan sonra müşteriye gönderilecek güncel fiş.
+  const [editorOpen, setEditorOpen] = useState(false);
+  const [updatedWaHref, setUpdatedWaHref] = useState<string | null>(null);
   const [editMsg, setEditMsg] = useState<string | null>(null);
 
   const load = useCallback(
@@ -170,28 +174,8 @@ export function OrdersManager({
     setCancelOpen(Boolean(options?.openCancel));
     setCancelReason("");
     setEditQty(null);
-  }
-
-  async function saveItems(order: StorefrontOrder) {
-    if (!editQty) return;
-    setPending(order.id);
-    setError(null);
-    setEditMsg(null);
-    const response = await fetch(`/api/tenant/orders/${order.id}/items`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ quantities: editQty }),
-    });
-    const result = await response.json().catch(() => ({}));
-    if (!response.ok) {
-      setError(result.error ?? "Fiş güncellenemedi.");
-    } else {
-      setEditQty(null);
-      setEditMsg(`Fiş güncellendi: ${(result.changes as string[]).join("; ")}`);
-      await load();
-      await openOrder(order);
-    }
-    setPending(null);
+    setEditorOpen(false);
+    setUpdatedWaHref(null);
   }
 
   async function transition(order: StorefrontOrder, toStatus: OrderStatus, reason?: string) {
@@ -261,7 +245,8 @@ export function OrdersManager({
   if (selected) {
     const order = selected.order;
     const trackingUrl = buildTrackingUrl(storefrontOrigin, order.tracking_token);
-    const next = getNextActions(order.status);
+    // Toptancıda (market olmayan) akış yalnız Onayla / İptal (0154); marketler aynen.
+    const next: OrderStatus[] = isWholesale ? (order.status === "new" ? ["confirmed"] : []) : getNextActions(order.status);
     const primaryNext = next[0];
     const otherNext = next.slice(1);
     const actionLabel = (s: OrderStatus) => {
@@ -369,7 +354,29 @@ export function OrdersManager({
           </div>
 
           {/* Ürünler */}
-          {(() => {
+          {editorOpen ? (
+            <OrderEditor
+              order={order}
+              onCancel={() => setEditorOpen(false)}
+              onSaved={(updated) => {
+                setEditorOpen(false);
+                setEditMsg("Sipariş güncellendi.");
+                setUpdatedWaHref(
+                  buildOrderUpdatedWhatsAppHref({
+                    order: updated,
+                    tenantName,
+                    formatMoney: (value) => formatCurrency(value, updated.currency as CurrencyCode),
+                  }),
+                );
+                void load();
+                void (async () => {
+                  const response = await fetch(`/api/tenant/orders/${order.id}`);
+                  const result = await response.json().catch(() => null);
+                  if (response.ok && result) setSelected(result);
+                })();
+              }}
+            />
+          ) : (() => {
             const canEdit = orderEditEnabled && ORDER_EDITABLE_STATUSES.includes(order.status);
             const editing = canEdit && editQty !== null && editQty.length === order.items.length;
             // Düzenlerken tahmini yeni toplam: eski toplam + satır fiyatı farkı (sunucudaki hesapla aynı).
@@ -459,43 +466,30 @@ export function OrdersManager({
                   </div>
                 </div>
 
-                {canEdit ? (
-                  editing ? (
-                    <div className="flex flex-wrap items-center gap-2 rounded-xl border border-amber-200 bg-amber-50/60 px-4 py-3">
-                      <p className="mr-auto text-xs text-amber-800">
-                        Adetleri düzeltin; çöp kutusu satırı fişten çıkarır. Fiyatlar ve müşteri bilgisi değişmez, yazdırılan fiş yeni adetlerle çıkar.
-                      </p>
-                      <Button
-                        disabled={
-                          pending === order.id ||
-                          editQty.every((x) => x === 0) ||
-                          editQty.every((x, i) => x === order.items[i].quantity)
-                        }
-                        onClick={() => void saveItems(order)}
-                      >
-                        {pending === order.id ? <Loader2 className="size-4 animate-spin" /> : null}
-                        Fişi kaydet
-                      </Button>
-                      <Button variant="ghost" disabled={pending === order.id} onClick={() => setEditQty(null)}>
-                        Vazgeç
-                      </Button>
-                    </div>
-                  ) : (
-                    <button
-                      type="button"
-                      disabled={pending === order.id}
-                      onClick={() => {
-                        setEditMsg(null);
-                        setEditQty(order.items.map((it) => it.quantity));
-                      }}
-                      className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-700 hover:underline"
-                    >
-                      <Pencil className="size-4 shrink-0" />
-                      Fişteki adetleri düzenle
-                    </button>
-                  )
+                {(isWholesale || orderEditEnabled) && order.status !== "delivered" && order.status !== "cancelled" ? (
+                  <button
+                    type="button"
+                    disabled={pending === order.id}
+                    onClick={() => {
+                      setEditMsg(null);
+                      setUpdatedWaHref(null);
+                      setEditorOpen(true);
+                    }}
+                    className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-700 hover:underline"
+                  >
+                    <Pencil className="size-4 shrink-0" />
+                    Düzenle (ürün ekle/çıkar, adet, fiyat, müşteri bilgisi)
+                  </button>
                 ) : null}
                 {editMsg ? <p className="text-xs font-medium text-emerald-700">{editMsg}</p> : null}
+                {updatedWaHref ? (
+                  <Button asChild variant="secondary">
+                    <a href={updatedWaHref} target="_blank" rel="noreferrer">
+                      <MessageCircle className="size-4" />
+                      Güncel fişi WhatsApp&apos;tan gönder
+                    </a>
+                  </Button>
+                ) : null}
                 {editEvents.length > 0 ? (
                   <div className="rounded-xl bg-slate-50 px-4 py-2.5 text-xs text-slate-600">
                     <p className="font-semibold text-slate-700">Fiş düzenleme geçmişi</p>
@@ -569,6 +563,11 @@ export function OrdersManager({
           ) : (
             <div className="rounded-xl border border-slate-200 p-4">
               <div className="flex flex-wrap items-center gap-2">
+                {isWholesale && order.status !== "new" ? (
+                  <span className="text-sm font-semibold text-emerald-700">
+                    ✓ Onaylandı{order.confirmed_at ? ` · ${formatDateTime(order.confirmed_at)}` : ""}
+                  </span>
+                ) : null}
                 {primaryNext ? (
                   <Button
                     disabled={pending === order.id}
@@ -759,7 +758,7 @@ export function OrdersManager({
               <span>Sipariş</span><span>Müşteri</span><span>Tarih</span><span className="text-right">Tutar</span><span>İşlem</span><span />
             </div>
             {page.orders.map((order) => {
-              const next = getNextActions(order.status)[0];
+              const next = isWholesale ? (order.status === "new" ? "confirmed" : undefined) : getNextActions(order.status)[0];
               const nextLabel = next
                 ? next === "confirmed" ? "Onayla"
                   : next === "preparing" ? "Hazırlanıyor"

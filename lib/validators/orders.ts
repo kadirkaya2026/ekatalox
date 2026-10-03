@@ -31,3 +31,27 @@ export const orderItemsPatchSchema = z.object({
     .min(1, "Kalem yok.")
     .max(500),
 });
+
+// Sipariş düzenleme v2 (0154): fiş baştan kurulur. index = mevcut satır (adet/fiyat
+// değişebilir), product_id = yeni eklenen ürün (satırı sunucu ürün kaydından üretir).
+export const orderEditSchema = z.object({
+  items: z
+    .array(
+      z.object({
+        index: z.number().int().min(0).optional(),
+        product_id: z.string().uuid().optional(),
+        quantity: z.number().int("Adet tam sayı olmalı.").min(1, "Adet en az 1 olmalı.").max(1_000_000, "Adet çok büyük."),
+        price: z.number().min(0, "Fiyat eksi olamaz.").max(100_000_000).optional(),
+      }).refine((line) => line.index !== undefined || line.product_id !== undefined, "Satır geçersiz."),
+    )
+    .min(1, "Fişte en az bir ürün kalmalı; tamamını kaldırmak için siparişi iptal edin.")
+    .max(500),
+  customer: z
+    .object({
+      customer_name: z.string().max(120).optional(),
+      customer_phone: z.string().max(40).optional(),
+      customer_address: z.string().max(500).optional(),
+      note: z.string().max(1000).optional(),
+    })
+    .optional(),
+});
