@@ -18,7 +18,6 @@ import {
   TOPTAN_PLAN_OPTIONS,
 } from "@/lib/billing/plans";
 import { getPlanTrialDaysLeft } from "@/lib/billing/plan-trial";
-import { TRIAL_DURATION_DAYS } from "@/lib/billing/trial";
 import { getPriceListDisplayName, normalizePriceListName } from "@/lib/price-lists/constants";
 import { SECTOR_THEME_MAP } from "@/lib/storefront/esnaf-themes";
 import type { AccessCode, TenantPlan, TenantWithRelations } from "@/lib/types";
@@ -83,6 +82,11 @@ export function AdminTenantDetailPanel({ tenant: initialTenant }: { tenant: Tena
     Record<string, { password_code: string; price_list_id: string }>
   >({});
   const [message, setMessage] = useState<string | null>(null);
+  // Deneme diyalogları: "Denemeye al" paket + gün sorar; "Denemeyi sonlandır" ödeme alındı mı / hangi paket sorar.
+  const [trialDialog, setTrialDialog] = useState<"start" | "end" | null>(null);
+  const [trialPlanDraft, setTrialPlanDraft] = useState<TenantPlan>("corporate");
+  const [trialDaysDraft, setTrialDaysDraft] = useState(14);
+  const [trialPaid, setTrialPaid] = useState(true);
   const [newPasswordDraft, setNewPasswordDraft] = useState("");
   const [newAdminEmailDraft, setNewAdminEmailDraft] = useState("");
   const [resetCredentials, setResetCredentials] = useState<{
@@ -234,49 +238,30 @@ export function AdminTenantDetailPanel({ tenant: initialTenant }: { tenant: Tena
 
   // Ücretli paket denemesindeki mağazadan ödeme alındı (0132): deneme biter,
   // mevcut paket 12 aylık kalıcı üyeliğe döner.
-  function confirmPlanPayment() {
-    setMessage(null);
-
-    startTransition(async () => {
-      const response = await fetch(`/api/admin/tenants/${tenant.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ confirm_plan_payment: true }),
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        setMessage(result.error ?? "Ödeme onayı kaydedilemedi.");
-        return;
-      }
-
-      setTenant((current) => ({ ...current, ...result.tenant }));
-      setMessage("Ödeme alındı; paket 12 aylık kalıcı üyeliğe döndü.");
-    });
-  }
-
-  function toggleTenantTrial(action: "start" | "end") {
-    setMessage(null);
-
-    // Deneme süresi sabit değil: süper admin kaç gün olacağını girer.
-    let trialDays = TRIAL_DURATION_DAYS;
-    if (action === "start") {
-      const answer = window.prompt("Kaç günlük denemeye alınsın?", String(TRIAL_DURATION_DAYS));
-      if (answer === null) return;
-      const parsed = Number.parseInt(answer.trim(), 10);
-      if (!Number.isInteger(parsed) || parsed < 1 || parsed > 365) {
-        setMessage("Gün sayısı 1 ile 365 arasında olmalı.");
-        return;
-      }
-      trialDays = parsed;
+  // Ücretli paket denemesi (0132): süper admin paketi ve gün sayısını seçer; süre dolunca
+  // cron Ücretsiz'e düşürür. Sonlandırırken ödeme alındıysa seçilen paket kalıcı olur,
+  // alınmadıysa mağaza hemen Ücretsiz plana düşer (limit üstü ürünler vitrinden gizlenir).
+  function submitTrialDialog() {
+    const mode = trialDialog;
+    if (!mode) return;
+    if (mode === "start" && (!Number.isInteger(trialDaysDraft) || trialDaysDraft < 1 || trialDaysDraft > 365)) {
+      setMessage("Gün sayısı 1 ile 365 arasında olmalı.");
+      return;
     }
+    const body =
+      mode === "start"
+        ? { start_plan_trial: true, plan: trialPlanDraft, trial_days: trialDaysDraft }
+        : trialPaid
+          ? { confirm_plan_payment: true, plan: trialPlanDraft }
+          : { end_plan_trial: true };
+    setMessage(null);
+    setTrialDialog(null);
 
     startTransition(async () => {
       const response = await fetch(`/api/admin/tenants/${tenant.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(action === "start" ? { start_trial: true, trial_days: trialDays } : { end_trial: true }),
+        body: JSON.stringify(body),
       });
 
       const result = await response.json();
@@ -287,11 +272,42 @@ export function AdminTenantDetailPanel({ tenant: initialTenant }: { tenant: Tena
       }
 
       setTenant((current) => ({ ...current, ...result.tenant }));
+      setPlanDraft(result.tenant?.plan ?? planDraft);
       setMessage(
-        action === "start"
-          ? `Hesap ${trialDays} günlük deneme süresine alındı.`
-          : "Deneme süresi sonlandırıldı.",
+        mode === "start"
+          ? `Hesap ${getPlanLabel(trialPlanDraft)} paketinde ${trialDaysDraft} günlük denemeye alındı.`
+          : trialPaid
+            ? `Ödeme alındı; ${getPlanLabel(trialPlanDraft)} paketi 12 aylık kalıcı üyeliğe döndü.`
+            : "Deneme ödeme alınmadan sonlandırıldı; mağaza Ücretsiz plana düştü, limit üstü ürünler vitrinden gizlendi.",
       );
+    });
+  }
+
+  function openTrialDialog(mode: "start" | "end") {
+    setTrialPlanDraft(
+      mode === "end" && tenant.plan && tenant.plan !== "free" ? (tenant.plan as TenantPlan) : "corporate",
+    );
+    setTrialDaysDraft(14);
+    setTrialPaid(true);
+    setTrialDialog(mode);
+  }
+
+  // Eski Esnaf denemesi (trial_ends_at): yalnız mevcut kayıtlar için sonlandırma kalır.
+  function endLegacyTrial() {
+    setMessage(null);
+    startTransition(async () => {
+      const response = await fetch(`/api/admin/tenants/${tenant.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ end_trial: true }),
+      });
+      const result = await response.json();
+      if (!response.ok) {
+        setMessage(result.error ?? "Deneme durumu güncellenemedi.");
+        return;
+      }
+      setTenant((current) => ({ ...current, ...result.tenant }));
+      setMessage("Deneme süresi sonlandırıldı.");
     });
   }
 
@@ -668,19 +684,19 @@ export function AdminTenantDetailPanel({ tenant: initialTenant }: { tenant: Tena
           </div>
 
           <div className="flex flex-wrap gap-2">
-            {tenant.plan_trial_ends_at ? (
-              <Button onClick={confirmPlanPayment} disabled={pending}>
-                Ödeme alındı — paketi kalıcı yap
-              </Button>
-            ) : null}
             <Button
               variant="secondary"
-              onClick={() => toggleTenantTrial(tenant.trial_ends_at ? "end" : "start")}
+              onClick={() => openTrialDialog(tenant.plan_trial_ends_at ? "end" : "start")}
               disabled={pending}
               className="border-amber-200 text-amber-700 hover:bg-amber-50 hover:text-amber-800"
             >
-              {tenant.trial_ends_at ? "Denemeyi sonlandır" : "Denemeye al"}
+              {tenant.plan_trial_ends_at ? "Denemeyi sonlandır" : "Denemeye al"}
             </Button>
+            {tenant.trial_ends_at ? (
+              <Button variant="secondary" onClick={endLegacyTrial} disabled={pending}>
+                Eski denemeyi sonlandır
+              </Button>
+            ) : null}
             <Button
               variant="secondary"
               onClick={() => toggleTenantStatus(tenant.status === "active" ? "suspended" : "active")}
@@ -1091,6 +1107,67 @@ export function AdminTenantDetailPanel({ tenant: initialTenant }: { tenant: Tena
         </Card>
       </div>
 
+      <Modal
+        open={trialDialog !== null}
+        onClose={() => setTrialDialog(null)}
+        title={trialDialog === "start" ? "Denemeye al" : "Denemeyi sonlandır"}
+        footer={
+          <div className="flex justify-end gap-2">
+            <Button variant="secondary" onClick={() => setTrialDialog(null)} disabled={pending}>
+              Vazgeç
+            </Button>
+            <Button onClick={submitTrialDialog} disabled={pending}>
+              {trialDialog === "start" ? "Denemeyi başlat" : trialPaid ? "Ödeme alındı, paketi kalıcı yap" : "Ücretsiz plana düşür"}
+            </Button>
+          </div>
+        }
+      >
+        {trialDialog === "start" ? (
+          <div className="space-y-4 text-sm text-slate-600">
+            <p>Mağaza seçilen paketle belirtilen gün kadar denemeye alınır. Süre dolduğunda siz bir şey yapmazsanız otomatik olarak Ücretsiz plana düşer; limit üstündeki ürünler silinmez, yalnız vitrinden gizlenir.</p>
+            <label className="block text-sm font-medium text-slate-700">Paket</label>
+            <Select value={trialPlanDraft} onChange={(event) => setTrialPlanDraft(event.target.value as TenantPlan)}>
+              {TOPTAN_PLAN_OPTIONS.filter((plan) => plan.id !== "free").map((plan) => (
+                <option key={plan.id} value={plan.id}>
+                  {plan.name} — {formatProductLimit(plan.maxProductLimit)} ürün
+                </option>
+              ))}
+            </Select>
+            <label className="block text-sm font-medium text-slate-700">Kaç gün?</label>
+            <Input
+              type="number"
+              min={1}
+              max={365}
+              value={trialDaysDraft}
+              onChange={(event) => setTrialDaysDraft(Number.parseInt(event.target.value, 10) || 0)}
+            />
+          </div>
+        ) : (
+          <div className="space-y-4 text-sm text-slate-600">
+            <p>Ödeme alındı mı?</p>
+            <label className="flex items-center gap-2">
+              <input type="radio" name="trial_paid" checked={trialPaid} onChange={() => setTrialPaid(true)} />
+              Evet, ödeme alındı — seçilen paket 12 ay kalıcı olsun
+            </label>
+            {trialPaid ? (
+              <div className="space-y-1.5 pl-6">
+                <label className="block text-sm font-medium text-slate-700">Paket</label>
+                <Select value={trialPlanDraft} onChange={(event) => setTrialPlanDraft(event.target.value as TenantPlan)}>
+                  {TOPTAN_PLAN_OPTIONS.filter((plan) => plan.id !== "free").map((plan) => (
+                    <option key={plan.id} value={plan.id}>
+                      {plan.name} — {formatProductLimit(plan.maxProductLimit)} ürün
+                    </option>
+                  ))}
+                </Select>
+              </div>
+            ) : null}
+            <label className="flex items-center gap-2">
+              <input type="radio" name="trial_paid" checked={!trialPaid} onChange={() => setTrialPaid(false)} />
+              Hayır — mağaza Ücretsiz plana düşsün (limit üstü ürünler vitrinden gizlenir)
+            </label>
+          </div>
+        )}
+      </Modal>
       <Modal
         open={Boolean(resetCredentials)}
         onClose={() => setResetCredentials(null)}

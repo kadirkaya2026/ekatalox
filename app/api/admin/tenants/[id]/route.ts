@@ -7,6 +7,7 @@ import { PRODUCT_IMAGES_BUCKET } from "@/lib/storage/product-images";
 import { filterRemovableProductImagePaths } from "@/lib/storage/safe-product-image-removal";
 import { ensureSuperAdminResponse } from "@/lib/tenancy/guards";
 import { tenantUpdateSchema } from "@/lib/validators/tenant";
+import { applyProductVisibilityLimit } from "@/lib/products/limit";
 
 export async function PATCH(
   request: Request,
@@ -142,6 +143,12 @@ export async function PATCH(
       { error: "Tenant güncellenemedi." },
       { status: 400 },
     );
+  }
+
+  // Paket/kapasite değiştiyse limit üstü ürünlerin vitrin görünürlüğünü yeniden hesapla (0151).
+  if ("plan" in updatePayload || "max_product_limit" in updatePayload || "product_limit_addon" in updatePayload) {
+    const t = data as { plan: string; product_limit_addon?: number | null };
+    await applyProductVisibilityLimit(supabase, id, t.plan, t.product_limit_addon ?? 0);
   }
 
   if (couponResult) {

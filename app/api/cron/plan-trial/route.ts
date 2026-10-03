@@ -13,6 +13,7 @@ import { buildPlanTrialEndedEmail, buildPlanTrialReminderEmail } from "@/lib/ema
 import { getSalesRecipient } from "@/lib/email/transport";
 import { appEnv } from "@/lib/env";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { applyProductVisibilityLimit } from "@/lib/products/limit";
 
 type TrialTenant = {
   id: string;
@@ -93,6 +94,8 @@ export async function GET(request: Request) {
     }
     if (!updated?.length) continue;
     downgraded += 1;
+    // Ücretsiz limitin üstündeki (en son eklenen) ürünler silinmez, vitrinden gizlenir (0151).
+    await applyProductVisibilityLimit(supabase, t.id, "free");
 
     const planName = getToptanPlan(t.plan)?.name ?? t.plan;
     const mail = buildPlanTrialEndedEmail({

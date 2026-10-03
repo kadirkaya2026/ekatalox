@@ -1318,7 +1318,8 @@ function applyAlcoholExclusion<Q extends { eq: Function }>(query: Q, hideAlcohol
 function applyStorefrontProductFilters<
   Q extends { in: Function; not: Function; or: Function; eq: Function },
 >(query: Q, filter: StorefrontProductRowFilter, orFilter: string | null): Q {
-  let q = query;
+  // Paket limiti üstündeki ürünler (0151) vitrinde hiç listelenmez.
+  let q = query.eq("is_over_limit", false) as Q;
   if (filter.hideAlcohol) {
     q = q.eq("is_alcohol", false);
   }
@@ -2348,6 +2349,9 @@ export async function getStorefrontSections(
       continue;
     }
     if (hideOutOfStock && !product.is_in_stock) {
+      continue;
+    }
+    if ((row.products as { is_over_limit?: boolean }).is_over_limit) {
       continue;
     }
     const storefrontProduct = toStorefrontProduct(

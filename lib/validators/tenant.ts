@@ -5,6 +5,7 @@ import {
 } from "@/lib/billing/plans";
 import { getPlanPeriodEnd } from "@/lib/billing/membership";
 import { getTrialEndDate } from "@/lib/billing/trial";
+import { getPlanTrialEndDate } from "@/lib/billing/plan-trial";
 import {
   isReservedSubdomain,
   normalizeSubdomain,
@@ -87,8 +88,13 @@ export const tenantUpdateSchema = z
     custom_domain: customDomainFieldSchema.optional(),
     end_trial: z.boolean().optional(),
     start_trial: z.boolean().optional(),
-    // start_trial ile birlikte: kaç günlük deneme (süper admin sorar; yoksa varsayılan süre).
+    // start_trial / start_plan_trial ile birlikte: kaç günlük deneme (süper admin sorar).
     trial_days: z.number().int().min(1).max(365).optional(),
+    // Ücretli paket denemesi (0132): plan + trial_days ile mağaza o pakete alınır,
+    // süre dolunca cron Ücretsiz'e düşürür. end_plan_trial: ödeme alınmadan
+    // sonlandır → hemen Ücretsiz plana düşer (limit üstü ürünler gizlenir).
+    start_plan_trial: z.boolean().optional(),
+    end_plan_trial: z.boolean().optional(),
     gift_months: z.number().int().min(1).max(24).optional(),
     // Ücretli paket denemesindeki mağazadan ödeme alındı: deneme biter,
     // mevcut paket bugünden itibaren 12 aylık üyeliğe döner (0132).
@@ -99,7 +105,29 @@ export const tenantUpdateSchema = z
     // end_trial: süper admin paket atadığında deneme sonlanır.
     // start_trial: mevcut hesap bugünden itibaren trial_days (yoksa varsayılan) günlük denemeye alınır.
     // gift_months route'ta işlenir (mevcut bitişe göre hesap gerekir).
-    const { end_trial, start_trial, trial_days, confirm_plan_payment, ...rest } = data;
+    const { end_trial, start_trial, trial_days, start_plan_trial, end_plan_trial, confirm_plan_payment, ...rest } = data;
+    if (start_plan_trial && rest.plan) {
+      const from = new Date();
+      const end = new Date(from);
+      end.setDate(end.getDate() + (trial_days ?? 14));
+      return {
+        ...rest,
+        max_product_limit: getLimitForPlan(rest.plan),
+        plan_trial_ends_at: trial_days ? end.toISOString() : getPlanTrialEndDate(from),
+        plan_trial_reminder_sent_at: null,
+        trial_ends_at: null,
+      };
+    }
+    if (end_plan_trial) {
+      return {
+        ...rest,
+        plan: "free" as const,
+        max_product_limit: getLimitForPlan("free"),
+        plan_trial_ends_at: null,
+        plan_trial_reminder_sent_at: null,
+        trial_ends_at: null,
+      };
+    }
     if (confirm_plan_payment) {
       return {
         ...rest,
