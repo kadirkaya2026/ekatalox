@@ -36,8 +36,8 @@ export const storefrontDictionary: Record<StorefrontLocale, StorefrontDictionary
     "header.category": "Kategori",
     "header.priceUpdateDate": "Fiyat Güncelleme Tarihi :",
     "header.searchPlaceholder": "Ürün Ara",
-    "header.poweredByPrefix": "Bu site",
-    "header.poweredBySuffix": "ürünüdür.",
+    "header.poweredByPrefix": "Powered by",
+    "header.poweredBySuffix": "",
     "header.poweredByAria": "eKatalox web sitesine git",
 
     "sidebar.categoriesTitle": "Kategoriler",
@@ -483,8 +483,8 @@ export const storefrontDictionary: Record<StorefrontLocale, StorefrontDictionary
     "header.category": "Kategorie",
     "header.priceUpdateDate": "Preisaktualisierung :",
     "header.searchPlaceholder": "Produkt suchen",
-    "header.poweredByPrefix": "Diese Seite ist ein",
-    "header.poweredBySuffix": "Produkt.",
+    "header.poweredByPrefix": "Powered by",
+    "header.poweredBySuffix": "",
     "header.poweredByAria": "Zur eKatalox-Website",
 
     "sidebar.categoriesTitle": "Kategorien",
@@ -924,8 +924,8 @@ export const storefrontDictionary: Record<StorefrontLocale, StorefrontDictionary
     "header.category": "Category",
     "header.priceUpdateDate": "Price Update Date :",
     "header.searchPlaceholder": "Search products",
-    "header.poweredByPrefix": "This site is an",
-    "header.poweredBySuffix": "product.",
+    "header.poweredByPrefix": "Powered by",
+    "header.poweredBySuffix": "",
     "header.poweredByAria": "Go to eKatalox website",
 
     "sidebar.categoriesTitle": "Categories",
@@ -1362,7 +1362,7 @@ export const storefrontDictionary: Record<StorefrontLocale, StorefrontDictionary
     "header.category": "Категория",
     "header.priceUpdateDate": "Дата обновления цен :",
     "header.searchPlaceholder": "Поиск товара",
-    "header.poweredByPrefix": "Этот сайт — продукт",
+    "header.poweredByPrefix": "Powered by",
     "header.poweredBySuffix": "",
     "header.poweredByAria": "Перейти на сайт eKatalox",
 
