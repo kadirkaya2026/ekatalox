@@ -46,7 +46,10 @@ export function buildStorefrontIcons(
   tenant: Pick<Tenant, "business_type" | "is_tekel"> | null | undefined,
 ) {
   if (faviconUrl) {
-    return { icon: faviconUrl };
+    // PNG/JPG ikon yüklendiyse iPhone "Ana Ekrana Ekle" ikonu da o olur (apple-touch-icon);
+    // .ico gibi küçük ikonlarda verilmez, iOS eskisi gibi sayfa görüntüsünü kullanır.
+    const isBitmap = /\.(png|jpe?g)(\?|$)/i.test(faviconUrl);
+    return isBitmap ? { icon: faviconUrl, apple: faviconUrl } : { icon: faviconUrl };
   }
   // Beyaz etiketli vitrinde bayi kendi ikonunu yüklemediyse hiç ikon
   // verilmez (boş dizi) — kök layout'un eKatalox favicon'u miras
