@@ -1,3 +1,4 @@
+import { SupportWidget } from "@/components/dashboard/support-widget";
 import type { Metadata } from "next";
 import { MobileDashboardNav } from "@/components/dashboard/mobile-dashboard-nav";
 import { NewOrderWatcher } from "@/components/dashboard/new-order-watcher";
@@ -62,7 +63,7 @@ export default async function DashboardLayout({
       <MobileDashboardNav
         mode="tenant"
         title={tenant?.company_name ?? "Tenant Paneli"}
-        subtitle={tenant?.subdomain ?? "yönetim"}
+        subtitle=""
         plan={plan}
         businessType={tenant?.business_type}
         suggestionNoticeCount={suggestionNoticeCount}
@@ -72,7 +73,7 @@ export default async function DashboardLayout({
         <Sidebar
           mode="tenant"
           title={tenant?.company_name ?? "Tenant Paneli"}
-          subtitle={tenant?.subdomain ?? "yönetim"}
+          subtitle=""
           plan={plan}
           businessType={tenant?.business_type}
           suggestionNoticeCount={suggestionNoticeCount}
@@ -108,6 +109,7 @@ export default async function DashboardLayout({
         {children}
         {tenant ? <NewOrderWatcher initialNewCount={newOrderCount} /> : null}
       </main>
+      {tenant ? <SupportWidget storeName={tenant.company_name} /> : null}
       {trialExpired && tenant ? (
         <TrialExpiredModal
           companyName={tenant.company_name}

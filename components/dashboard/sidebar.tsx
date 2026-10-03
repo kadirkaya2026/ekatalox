@@ -287,7 +287,7 @@ export function Sidebar({
           <EkataloxLogo className="h-8 w-[148px]" priority />
         </Link>
         <p className="mt-3 text-xl font-semibold">{title}</p>
-        <p className="mt-1 text-sm text-slate-400">{subtitle}</p>
+        {subtitle ? <p className="mt-1 text-sm text-slate-400">{subtitle}</p> : null}
       </div>
 
       <nav className="flex flex-1 flex-col gap-1 overflow-y-auto p-4">
