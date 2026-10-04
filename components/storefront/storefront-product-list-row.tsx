@@ -12,7 +12,7 @@ import { StorefrontImage } from "@/components/storefront/storefront-image";
 import { ProductImagePlaceholder } from "@/components/product-image-placeholder";
 import { useStorefrontTheme } from "@/lib/storefront/theme-context";
 import { useStorefrontLocale } from "@/lib/storefront/locale-context";
-import { ProductPrice } from "@/components/storefront/storefront-product-card";
+import { Model3dSticker, ProductPrice } from "@/components/storefront/storefront-product-card";
 
 function StorefrontInlineCartAction({
   product,
@@ -163,6 +163,7 @@ export const StorefrontProductListRow = memo(function StorefrontProductListRow({
           theme.productImageWrap,
         )}
       >
+        <Model3dSticker product={product} className="bottom-0.5 left-0.5 gap-0.5 px-1 py-0 text-[8px] [&>svg]:size-2.5" />
         {product.image_url ? (
           <StorefrontImage
             src={product.image_url}

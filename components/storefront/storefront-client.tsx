@@ -109,6 +109,7 @@ import { StorefrontThemeToggle } from "@/components/storefront/storefront-theme-
 import { ProductDescriptionContent } from "@/components/storefront/product-description-content";
 import {
   DiscountSticker,
+  Model3dSticker,
   ProductPrice,
   StorefrontFloatingCartAction,
 } from "@/components/storefront/storefront-product-card";
@@ -3997,6 +3998,7 @@ export function StorefrontClient({
           )}
         >
           <DiscountSticker product={product} />
+          {compact ? null : <Model3dSticker product={product} />}
           {product.image_url ? (
             <StorefrontImage
               src={product.image_url}

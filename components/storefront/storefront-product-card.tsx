@@ -2,7 +2,7 @@
 
 import { memo } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Minus, Plus, Trash2 } from "lucide-react";
+import { Box, Minus, Plus, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { BorderTrace, useCartAddFeedback } from "@/components/storefront/border-trace";
 import type { StorefrontProduct } from "@/lib/types";
@@ -107,6 +107,24 @@ export function DiscountSticker({ product }: { product: StorefrontProduct }) {
   return (
     <span className={cn("absolute left-2 top-2 z-10 rounded-full px-2 py-0.5 text-[10px] font-bold shadow-sm", theme.discountBadge)}>
       {t("product.discountBadge", { percentage: product.discount_percentage })}
+    </span>
+  );
+}
+
+// 3D modeli olan ürünlerde (model_3d_url) liste kartında küçük "3D" işareti
+// (4 Eki 2026, kullanıcı isteği): müşteri ürün sayfasında 3D bakabileceğini bilsin.
+export function Model3dSticker({ product, className }: { product: StorefrontProduct; className?: string }) {
+  if (!product.model_3d_url) return null;
+  return (
+    <span
+      title="3D"
+      className={cn(
+        "pointer-events-none absolute bottom-2 left-2 z-10 inline-flex items-center gap-1 rounded-full bg-black/75 px-2 py-0.5 text-[10px] font-bold tracking-wide text-white shadow-sm",
+        className,
+      )}
+    >
+      <Box className="size-3" aria-hidden />
+      3D
     </span>
   );
 }
@@ -332,6 +350,7 @@ export const StorefrontProductCard = memo(function StorefrontProductCard({
         )}
       >
         <DiscountSticker product={product} />
+        <Model3dSticker product={product} />
         {product.image_url ? (
           <StorefrontImage
             src={product.image_url}
