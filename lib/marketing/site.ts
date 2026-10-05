@@ -55,6 +55,7 @@ export const CUSTOMER_NAMES: readonly string[] = [
   "Kalitemarket",
   "Yaşatan Kozmetik",
   "Zeki İletişim",
+  "Börü Tech",
   "SilkRoute",
   "PharmaCore",
   "MaxiPart",
