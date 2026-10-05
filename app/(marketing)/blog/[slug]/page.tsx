@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getBlogPost, getBlogPosts, getRelatedPosts, readingMinutes, blogDate } from "@/lib/marketing/blog";
@@ -6,7 +7,9 @@ import { SITE } from "@/lib/marketing/site";
 import { ButtonLink, Container, Section } from "@/components/marketing/ui";
 
 type Props = { params: Promise<{ slug: string }> };
-export const dynamicParams = false;
+// İleri tarihli yazılar (publishedAt) o gün gelince yeniden yayın gerekmeden açılsın: saatlik yenileme.
+export const revalidate = 3600;
+export const dynamicParams = true;
 export function generateStaticParams() { return getBlogPosts().map(({ slug }) => ({ slug })); }
 async function resolvePost(params: Props["params"]) {
   const { slug } = await params;
@@ -58,6 +61,14 @@ export default async function ArticlePage({ params }: Props) {
             <h2 className="text-2xl font-semibold leading-snug tracking-tight text-brand-navy">{section.title}</h2>
             {section.paragraphs.map((paragraph) => <p key={paragraph} className="mt-5 text-[17px] leading-[1.85] text-brand-muted">{paragraph}</p>)}
             {section.bullets && <ul className="mt-5 list-disc space-y-3 pl-5 text-[17px] leading-relaxed text-brand-muted">{section.bullets.map((item) => <li key={item}>{item}</li>)}</ul>}
+            {section.images && <div className={section.images.length > 1 ? "mt-6 grid gap-4 sm:grid-cols-2" : "mt-6"}>{section.images.map((image) => <figure key={image.src} className="overflow-hidden rounded-2xl border border-brand-line bg-brand-paper">
+              <Image src={image.src} alt={image.alt} width={image.width} height={image.height} sizes="(min-width: 1024px) 560px, 100vw" className="h-auto w-full" />
+              {image.caption && <figcaption className="px-4 py-3 text-sm leading-relaxed text-brand-muted">{image.caption}</figcaption>}
+            </figure>)}</div>}
+            {section.download && <div className="mt-6 rounded-2xl border border-brand-green/40 bg-brand-paper p-5">
+              <a href={section.download.href} download className="font-semibold text-brand-green hover:underline">{section.download.label} ↓</a>
+              {section.download.note && <p className="mt-2 text-sm leading-relaxed text-brand-muted">{section.download.note}</p>}
+            </div>}
           </section>)}
           <aside className="mt-12 rounded-2xl border border-brand-line bg-brand-paper p-6">
             <h2 className="text-xl font-semibold text-brand-navy">Kendi kataloğunuzda uygulayın</h2>

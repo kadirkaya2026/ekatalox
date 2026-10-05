@@ -1,7 +1,9 @@
 import { ImageResponse } from "next/og";
 import { getBlogPost, getBlogPosts } from "@/lib/marketing/blog";
 
-export const dynamic = "force-static";
+// İleri tarihli yazıların paylaşım görseli de o gün gelince üretilsin (yazı sayfasıyla aynı saatlik yenileme).
+export const revalidate = 3600;
+export const dynamicParams = true;
 export function generateStaticParams() { return getBlogPosts().map(({ slug }) => ({ slug })); }
 export async function GET(_request: Request, { params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;

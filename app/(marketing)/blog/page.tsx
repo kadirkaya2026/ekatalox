@@ -4,6 +4,9 @@ import { getBlogPosts, readingMinutes, blogDate } from "@/lib/marketing/blog";
 import { marketingMetadata } from "@/lib/marketing/metadata";
 import { ButtonLink, Container, Section } from "@/components/marketing/ui";
 
+// İleri tarihli yazılar listeye o gün gelince girsin.
+export const revalidate = 3600;
+
 export const metadata = marketingMetadata("/blog", "Dijital Katalog ve Toptan Sipariş Rehberleri", "Dijital katalog, PDF katalog, bayi fiyat listeleri ve WhatsApp sipariş hakkında uygulamalı rehberler. Ürünlerinizi online sunmanın yollarını keşfedin.");
 
 export default function BlogPage() {

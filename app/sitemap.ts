@@ -5,6 +5,9 @@ import { MARKETING_FEATURES } from "@/lib/marketing/features";
 
 const BASE_URL = "https://www.ekatalox.com";
 
+// İleri tarihli blog yazıları sitemap'e o gün gelince girsin.
+export const revalidate = 3600;
+
 // /musteriler gerçek referans gelene kadar noindex; sitemap'te yok.
 const STATIC: Array<[string, MetadataRoute.Sitemap[number]["changeFrequency"], number]> = [
   ["/", "weekly", 1],

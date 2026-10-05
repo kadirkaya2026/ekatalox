@@ -6,9 +6,23 @@ export interface BlogPost {
   publishedAt: string;
   updatedAt?: string;
   status: "published" | "draft";
-  sections: { id: string; title: string; paragraphs: string[]; bullets?: string[] }[];
+  sections: {
+    id: string;
+    title: string;
+    paragraphs: string[];
+    bullets?: string[];
+    /** Bölüm sonunda gösterilen gerçek ekran görüntüleri (public/ altından). */
+    images?: { src: string; alt: string; caption?: string; width: number; height: number }[];
+    /** İndirilebilir dosya kutusu (ör. Excel şablonu). */
+    download?: { href: string; label: string; note?: string };
+  }[];
   relatedSlugs: string[];
   featureLinks: { href: string; label: string }[];
+}
+
+/** Bugünün tarihi (Europe/Istanbul, YYYY-MM-DD): ileri tarihli yazılar o gün gelince kendiliğinden yayına girer. */
+function istanbulToday() {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Istanbul", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
 }
 
 // Editorial dates are explicit: builds must not make an old article look new.
@@ -593,10 +607,711 @@ const posts: BlogPost[] = [
     }
   ]
 },
+  // ---------------------------------------------------------------------
+  // 5 Eki 2026 yazı dizisi: ileri tarihli; her yazı publishedAt günü kendiliğinden yayına girer.
+  // Müşteri hikâyelerinde ciro, fiyat, sipariş sayısı/tutarı YOK (müşteri izni bu koşulla).
+  // ---------------------------------------------------------------------
+  {
+    slug: "lucatech-bayi-katalogu-nasil-acildi",
+    title: "Lucatech kataloğunu bayilerine nasıl açtı? İlk 109 ürün tek dakikada",
+    description: "Telefon aksesuarı markası Lucatech, ürünlerini Excel'den tek seferde yükleyip şifreli bayi kataloğunu aynı gün açtı. Kurulumun adımlarını ve bugün kullandığı yapıyı anlatıyoruz.",
+    category: "Müşteri hikâyesi",
+    publishedAt: "2026-10-06",
+    status: "published",
+    sections: [
+      {
+        id: "lucatech-kimdir",
+        title: "Lucatech kimdir, ne arıyordu?",
+        paragraphs: [
+          "Lucatech; şarj aleti, kablo, kulaklık, powerbank, hoparlör ve telefon tutucu gibi telefon aksesuarları satan bir marka. Ürünlerini Türkiye'nin farklı şehirlerindeki bayilere toptan satıyor. Ürün sayısı arttıkça fiyat listesini güncel tutmak ve siparişleri tek bir düzende toplamak zorlaştı.",
+          "Lucatech'in istediği basitti: bayi telefondan kataloğu açsın, kendi fiyatını görsün, sepetini doldursun ve siparişi WhatsApp'tan göndersin. Fiyatlar ise bayi olmayan birinin göremeyeceği şekilde kapalı kalsın.",
+        ],
+      },
+      {
+        id: "ilk-gun",
+        title: "İlk gün: mağaza sabah açıldı, ürünler akşam tek seferde geldi",
+        paragraphs: [
+          "Lucatech mağazasını 26 Mayıs 2026'da açtı. Aynı akşam ürün listesini eKatalox'un Excel şablonuna aktardı ve Toplu Ürün Ekleme sayfasından yükledi. Sistem kayıtlarına göre 109 ürünün tamamı aynı dakika içinde kataloğa eklendi.",
+          "Şablonda her ürün için kategori, model kodu, ürün adı, para birimi, liste fiyatları, stok durumu ve paket/koli adedi bulunuyor. Görseller için iki yol var: model koduyla adlandırılmış dosyaları (ör. lc-119.jpg) ZIP olarak toplu yüklemek ya da ürün sayfasından tek tek eklemek. Lucatech ikisini de kullandı.",
+        ],
+        bullets: [
+          "Ürün listesi Excel şablonuna aktarıldı.",
+          "Toplu Ürün Ekleme sayfasından tek dosyayla yüklendi.",
+          "Görseller model koduyla adlandırılarak ya da ürün ürün eklendi.",
+          "Fiyat listeleri ve bayi şifreleri tanımlandı, katalog bayilere açıldı.",
+        ],
+      },
+      {
+        id: "fiyat-listeleri",
+        title: "Her bayi grubu kendi fiyatını görüyor",
+        paragraphs: [
+          "Lucatech bugün dört fiyat listesiyle çalışıyor. Ürünler tek bir katalogda duruyor; bayinin girdiği şifre hangi listeye bağlıysa o listenin fiyatları gösteriliyor. Böylece aynı ürün için ayrı ayrı PDF hazırlamak gerekmiyor.",
+          "Fiyat değiştiğinde panelde ürünün fiyatı güncelleniyor; bayi kataloğu bir sonraki açışında yeni fiyatı görüyor. Eski bir dosyanın elden ele dolaşması ve eski fiyattan sipariş gelmesi riski ortadan kalkıyor.",
+        ],
+      },
+      {
+        id: "katalog-buyudu",
+        title: "Katalog büyüdükçe yapı da büyüdü",
+        paragraphs: [
+          "İlk yüklemeden sonra ürünler zamanla eklendi. Bugün katalogda 163 ürün, 16 kategori ve renk ya da model seçeneklerini gösteren 274 varyant var. Bayi aynı ürünün farklı renklerini tek kartta görüp istediği seçeneği sepete ekliyor.",
+          "Lucatech kataloğunu kendi alan adında, toptan.lucatech.com.tr adresinde yayınlıyor. Bayinin ilk gördüğü giriş ekranı Lucatech'in kendi görselleri ve renkleriyle hazırlandı. Kategori görselleri ve üç ürünün döndürülebilir 3D modeli de ürün sayfalarında yer alıyor.",
+        ],
+        images: [
+          { src: "/site/blog/lucatech-giris.webp", alt: "Lucatech bayi portalının şifreli giriş ekranı", caption: "Lucatech'in bayi giriş ekranı: fiyatlar ancak bayiye verilen şifreyle görünür.", width: 1280, height: 800 },
+        ],
+      },
+      {
+        id: "google-ve-yeni-bayi",
+        title: "Fiyatlar kapalı, marka Google'da açık",
+        paragraphs: [
+          "Şifreli katalog Google'a kapalıdır; bu, fiyatların aramalarda görünmemesi için bilerek böyle yapılır. Lucatech'in Google'daki yüzü ise kurumsal sitesi: ürün grupları, marka bilgisi ve iletişim burada fiyatsız olarak yer alıyor.",
+          "Kurumsal sitedeki Bayimiz Olun formundan gelen başvurular panelde toplanıyor. Başvuru onaylanırken bayi bir fiyat listesine bağlanıyor ve ona özel bir şifre tanımlanıyor.",
+        ],
+        images: [
+          { src: "/site/blog/lucatech-kurumsal.webp", alt: "Lucatech kurumsal sitesinin ana sayfası", caption: "Kurumsal site Google'a açık, fiyat içermez; bayilik başvurusu buradan alınır.", width: 1280, height: 680 },
+        ],
+      },
+      {
+        id: "kendi-isletmeniz-icin",
+        title: "Kendi işletmenizde nasıl uygularsınız?",
+        paragraphs: [
+          "Lucatech'in izlediği yol her toptancı için aynı: ürün listesini şablona aktarmak, görselleri model koduyla adlandırmak, fiyat listelerini ve şifreleri tanımlamak. Ücretsiz pakette 250 ürün ve 2 fiyat listesiyle başlanabilir; kendi alan adı, kurumsal site ve bayi başvuru formu Kurumsal pakettedir.",
+        ],
+        bullets: [
+          "Ürün listenizi hazırlarken her ürüne tek bir model kodu verin.",
+          "Görsel dosyalarını model koduyla adlandırın (ör. LC-125.jpg, ikinci görsel LC-125 (2).jpg).",
+          "Bayi gruplarınızı belirleyip her biri için bir fiyat listesi açın.",
+          "Kataloğu önce bir bayiyle deneyin, sonra hepsine duyurun.",
+        ],
+      },
+    ],
+    relatedSlugs: ["excelden-urun-katalogu", "bayiye-ozel-fiyat-listesi", "whatsapp-toptan-siparis"],
+    featureLinks: [
+      { href: "/ozellikler/toplu-urun-yukleme", label: "Toplu ürün yüklemeyi inceleyin" },
+      { href: "/ozellikler/bayi-fiyat-listeleri", label: "Bayi fiyat listeleri" },
+      { href: "/ozellikler/kurumsal-site", label: "Kurumsal site ve kendi alan adı" },
+    ],
+  },
+  {
+    slug: "genax-paket-koli-siparis",
+    title: "Genax bayilerinden paket ve koli siparişini nasıl alıyor?",
+    description: "Şarj aksesuarı toptancısı Genax, ürünlerini adet, paket ve koli birimleriyle satıyor. Kataloğunu nasıl kurduğunu ve bayinin siparişi nasıl verdiğini adım adım anlatıyoruz.",
+    category: "Müşteri hikâyesi",
+    publishedAt: "2026-10-08",
+    status: "published",
+    sections: [
+      {
+        id: "genax-kimdir",
+        title: "Genax kimdir?",
+        paragraphs: [
+          "Genax, şarj aleti ve kablo ağırlıklı telefon aksesuarları satan bir toptancı. Ürünleri GNX kodlarıyla takip ediliyor ve bayilere çoğunlukla paket ya da koli halinde satılıyor. Bir bayinin \"3 koli kablo\" demesiyle \"3 adet kablo\" demesi arasındaki fark, toptanda yanlış sevkiyatın en sık sebeplerinden biri.",
+        ],
+      },
+      {
+        id: "katalog-kurulumu",
+        title: "Katalog bir öğlen arasında kuruldu",
+        paragraphs: [
+          "Genax ürünlerini Excel şablonuyla yükledi. Sistem kayıtlarına göre 65 ürün 12 Haziran 2026'da aynı dakika içinde kataloğa eklendi. Bugün katalogda 11 kategori altında 72 ürün ve 22 varyant bulunuyor.",
+          "Şablondaki Paket Adedi ve Koli Adedi sütunları burada belirleyici oldu. Örneğin bir pakette 20, bir kolide 200 adet olan bir ürün için bu bilgiler bir kez giriliyor; bayi sipariş verirken birimi seçiyor, adedi sistem hesaplıyor.",
+        ],
+      },
+      {
+        id: "bayi-siparisi",
+        title: "Bayi siparişi nasıl veriyor?",
+        paragraphs: [
+          "Bayi kendisine verilen şifreyle kataloğa giriyor ve ürünü seçiyor. Sepete eklerken adet, paket veya koli birimlerinden birini seçip miktarı yazıyor. Sepette toplam adet ve tutar görünüyor.",
+          "Siparişi tamamladığında PDF sipariş fişinin bağlantısı WhatsApp mesajına ekleniyor ve bayi mesajı Genax'a gönderiyor. Fişte ürün kodları, birimler ve miktarlar açıkça yazdığı için siparişi hazırlayan kişi mesajlardan ürün toplamak zorunda kalmıyor.",
+        ],
+        bullets: [
+          "Şifreyle giriş: bayi yalnız kendi fiyat listesini görür.",
+          "Birim seçimi: adet, paket veya koli.",
+          "Sepet: toplam adet ve tutar tek ekranda.",
+          "WhatsApp: PDF sipariş fişi bağlantısıyla gönderim.",
+        ],
+        images: [
+          { src: "/site/blog/genax-giris-mobil.webp", alt: "Genax bayi kataloğunun telefondaki giriş ekranı", caption: "Genax'ın bayi girişi telefonda tek ekranda açılır.", width: 390, height: 844 },
+          { src: "/site/order-flow/receipt-anonymized.png", alt: "Örnek PDF sipariş fişi", caption: "Örnek PDF sipariş fişi (temsili verilerle).", width: 1536, height: 1024 },
+        ],
+      },
+      {
+        id: "fiyat-listeleri",
+        title: "Dört fiyat listesi, tek katalog",
+        paragraphs: [
+          "Genax dört fiyat listesiyle çalışıyor. Bayinin şifresi hangi listeye bağlıysa o fiyatları görüyor. Fiyatsız katalog listesine bağlı bir şifreyle giren kişi ise ürünleri görüyor ama fiyat görmüyor; bu, henüz bayi olmayan birine ürün yelpazesini göstermek için kullanılabiliyor.",
+        ],
+      },
+      {
+        id: "dersler",
+        title: "Paket ve koli ile satan toptancılar için öneriler",
+        paragraphs: [
+          "Birim karışıklığı çoğu zaman ürün bilgisinden değil, siparişin yazılış biçiminden doğar. Paket ve koli adetlerini katalogda tanımlamak, bayinin ne istediğini sayı olarak netleştirir.",
+        ],
+        bullets: [
+          "Her ürün için paket ve koli adedini şablona girin; bilmediğinizi boş bırakın.",
+          "Ürün adında birim yazmayın; birimi bayi sepette seçsin.",
+          "Fiyatı adet başına girin; paket ve koli tutarını sistem hesaplar.",
+          "İlk siparişi bir bayiyle birlikte verip fişi kontrol edin.",
+        ],
+      },
+    ],
+    relatedSlugs: ["toptan-siparis-kurallari", "whatsapp-toptan-siparis", "lucatech-bayi-katalogu-nasil-acildi"],
+    featureLinks: [
+      { href: "/ozellikler/whatsapp-siparis", label: "WhatsApp sipariş akışı" },
+      { href: "/ozellikler/toplu-urun-yukleme", label: "Excel ile toplu ürün yükleme" },
+    ],
+  },
+  {
+    slug: "toptan-fiyatlari-rakiplerden-koruma",
+    title: "Toptan fiyatlarınızı rakiplerden nasıl korursunuz?",
+    description: "PDF fiyat listesi bir kez gönderildiğinde kimin elinde olduğunu bilemezsiniz. Fiyatları şifreli katalogda tutmanın, bayiye özel şifre vermenin ve erişimi geri almanın yollarını anlatıyoruz.",
+    category: "Bayi yönetimi",
+    publishedAt: "2026-10-10",
+    status: "published",
+    sections: [
+      {
+        id: "sorun",
+        title: "Fiyat listesi neden elden ele dolaşır?",
+        paragraphs: [
+          "PDF ya da Excel fiyat listesi bir bayiye gönderildiği anda kopyalanabilir hale gelir. Bayi dosyayı bir çalışanına, o da bir başkasına iletebilir. Bir süre sonra listenin rakip bir firmada olup olmadığını bilmenin yolu kalmaz.",
+          "Üstelik eski dosyalar silinmez. Fiyat güncellediğinizde, eski listeyi saklayan bayi ya da ona ulaşan rakip hâlâ eski fiyatları görür.",
+        ],
+      },
+      {
+        id: "sifreli-katalog",
+        title: "Dosya göndermek yerine şifreli katalog",
+        paragraphs: [
+          "Şifreli katalogda fiyatlar bir dosyada değil, bir bağlantının arkasında durur. Bağlantıyı açan herkes giriş ekranını görür; fiyatları ancak doğru şifreyi giren görür. Şifreli mağaza sayfaları arama motorlarına da kapalıdır, yani fiyatlar Google'da çıkmaz.",
+          "Fiyatı güncellediğinizde herkes aynı anda yeni fiyatı görür. Ortada eski bir dosya kalmaz.",
+        ],
+        images: [
+          { src: "/site/toptan-giris-v2.png", alt: "Şifreli toptan kataloğun giriş ekranı", caption: "Şifreli katalog: fiyatlar ancak bayiye verilen şifreyle açılır (demo mağaza).", width: 1206, height: 2622 },
+        ],
+      },
+      {
+        id: "kisiye-ozel-sifre",
+        title: "Herkese aynı şifre mi, bayiye özel şifre mi?",
+        paragraphs: [
+          "En basit kurulumda her fiyat listesinin bir şifresi olur ve o gruptaki bütün bayiler aynı şifreyi kullanır. Kurulumu kolaydır, ama şifre bir kişiden sızarsa o grubun bütün bayilerine yeni şifre vermeniz gerekir.",
+          "Kurumsal pakette bayi başvurusunu onaylarken bayiye özel bir şifre tanımlayabilirsiniz. Bu şifre bayinin bağlı olduğu fiyat listesini açar ve yalnız ona aittir. Bir bayiyle çalışmayı bıraktığınızda yalnız onun şifresini silersiniz; diğer bayiler etkilenmez.",
+        ],
+      },
+      {
+        id: "fiyatsiz-katalog",
+        title: "Bayi adayına ürünleri fiyatsız gösterin",
+        paragraphs: [
+          "Henüz bayiniz olmayan bir işletmeye ürün yelpazenizi göstermek istediğinizde fiyat listesini göndermek zorunda değilsiniz. Fiyatsız katalog listesine bağlı bir şifre verirseniz kişi ürünleri, görselleri ve kodları görür ama fiyat görmez. Anlaşma olduktan sonra ona fiyatlı bir şifre verirsiniz.",
+        ],
+      },
+      {
+        id: "sinirlar",
+        title: "Hiçbir yöntem her şeyi engellemez",
+        paragraphs: [
+          "Dürüst olmak gerekirse, fiyatı görme yetkisi olan biri ekran görüntüsü alıp paylaşabilir. Şifreli katalog bunu engelleyemez; ama dosyanın kendiliğinden yayılmasını, eski fiyatların dolaşmasını ve Google'da görünmesini önler. Ayrıca kimin hangi şifreyle eriştiğini bilmenizi sağlar.",
+        ],
+        bullets: [
+          "Fiyatları dosya olarak göndermeyin, bağlantı paylaşın.",
+          "Fiyat listelerini bayi gruplarına göre ayırın.",
+          "Mümkünse bayiye özel şifre kullanın.",
+          "Çalışmayı bıraktığınız bayinin şifresini silin.",
+          "Bayi adaylarına fiyatsız katalog şifresi verin.",
+        ],
+      },
+    ],
+    relatedSlugs: ["bayiye-ozel-fiyat-listesi", "pdf-katalog-mu-online-katalog-mu", "yeni-bayi-basvurusu-alma"],
+    featureLinks: [
+      { href: "/ozellikler/bayi-fiyat-listeleri", label: "Şifreli bayi fiyat listeleri" },
+      { href: "/fiyatlandirma", label: "Paketlerde fiyat listesi sayıları" },
+    ],
+  },
+  {
+    slug: "telefonla-urun-fotografi-cekme",
+    title: "Toptancılar için telefonla ürün fotoğrafı çekme rehberi",
+    description: "Stüdyo kurmadan, yalnız telefon ve gün ışığıyla katalog için temiz ürün fotoğrafı çekin. Arka plan, ışık, açı ve dosya adlandırma için uygulanabilir adımlar.",
+    category: "Katalog hazırlığı",
+    publishedAt: "2026-10-13",
+    status: "published",
+    sections: [
+      {
+        id: "neden-onemli",
+        title: "Bayi neden fotoğrafa bakar?",
+        paragraphs: [
+          "Toptan katalogda bayi çoğu zaman ürün adını okumadan önce görsele bakar. Rengi, kutusu ve ucu açıkça görünmeyen bir ürün yanlış siparişe ya da telefonla \"bu hangisi?\" sorusuna dönüşür. İyi bir fotoğraf için stüdyo şart değil; düzenli bir arka plan, doğru ışık ve tutarlı bir açı yeterli.",
+        ],
+      },
+      {
+        id: "isik-ve-zemin",
+        title: "Işık ve arka plan",
+        paragraphs: [
+          "En kolay ışık, pencereden gelen gün ışığıdır. Ürünü pencereye yakın ama doğrudan güneş almayan bir yere koyun. Tavan lambası ve flaş sert gölge yapar; ikisini de kapatın.",
+          "Arka plan için beyaz bir karton ya da A3 kâğıt yeterli. Kâğıdı duvara yaslayıp masaya doğru kıvrılacak şekilde koyarsanız arka planda köşe çizgisi görünmez. Gölge fazlaysa ürünün karşı tarafına ikinci bir beyaz karton koyarak ışığı yansıtın.",
+        ],
+        bullets: [
+          "Gün ışığı, doğrudan güneş değil.",
+          "Flaş ve tavan lambası kapalı.",
+          "Kıvrılmış beyaz karton arka plan.",
+          "Gölge tarafına yansıtıcı olarak ikinci bir beyaz karton.",
+        ],
+      },
+      {
+        id: "aci-ve-cekim",
+        title: "Açı, mesafe ve odak",
+        paragraphs: [
+          "Telefonun geniş açısı yakından çekilen ürünü olduğundan büyük ve eğri gösterir. Bunun yerine bir adım geri çekilip 2x yakınlaştırmayla çekin. Odaklamak için ekranda ürüne dokunun ve parlaklığı gerekirse biraz düşürün.",
+          "Bütün ürünleri aynı açıdan çekin: önden ya da hafif yukarıdan. Katalogda kartlar yan yana durduğu için açıların tutarlı olması kataloğu daha düzenli gösterir.",
+        ],
+      },
+      {
+        id: "kac-fotograf",
+        title: "Bir ürün için kaç fotoğraf?",
+        paragraphs: [
+          "eKatalox'ta her ürüne üç görsel eklenebilir. Pratik bir düzen şöyle olabilir: ilk görsel ürünün kendisi, ikincisi kutusu ya da ambalajı, üçüncüsü önemli bir ayrıntı (giriş ucu, etiket, renk seçenekleri). Bayi için kutu görseli özellikle önemlidir; rafta göreceği şey odur.",
+        ],
+      },
+      {
+        id: "dosya-adlari",
+        title: "Dosya adlarını model koduyla verin",
+        paragraphs: [
+          "Yüzlerce ürünün görselini tek tek eşleştirmek uzun sürer. Dosyayı ürünün model koduyla adlandırırsanız toplu görsel yükleme her dosyayı kendi ürününe otomatik eşleştirir. İkinci ve üçüncü görseller için kodun sonuna (2) ya da _2 eklemeniz yeterli.",
+          "Yüklenen görseller en fazla 1200 piksele küçültülüp sıkıştırılır; telefonun çektiği büyük dosyaları önceden küçültmeniz gerekmez.",
+        ],
+        bullets: [
+          "LC-125.jpg → ürünün ana görseli",
+          "LC-125 (2).jpg ya da LC-125_2.jpg → ikinci görsel",
+          "LC-125 (3).jpg ya da LC-125_3.jpg → üçüncü görsel",
+        ],
+      },
+      {
+        id: "kontrol",
+        title: "Yüklemeden önce son kontrol",
+        bullets: [
+          "Ürünün rengi gerçeğiyle aynı mı? Beyaz dengesi sarıya kaymasın.",
+          "Kutu yazıları okunuyor mu?",
+          "Arka planda başka ürün, kablo ya da el görünüyor mu?",
+          "Bütün görseller aynı açıdan ve benzer boyutta mı?",
+        ],
+        paragraphs: [
+          "Birkaç ürünü çekip katalogda telefondan açarak bakın. Telefonda iyi görünen bir kart, bayinin göreceği kartla aynıdır.",
+        ],
+      },
+    ],
+    relatedSlugs: ["excelden-urun-katalogu", "ucretsiz-dijital-katalog-olusturma", "toptan-fiyat-listesi-excel-sablonu"],
+    featureLinks: [
+      { href: "/ozellikler/toplu-urun-yukleme", label: "Toplu görsel yükleme" },
+    ],
+  },
+  {
+    slug: "yeni-bayi-basvurusu-alma",
+    title: "Yeni bayi başvurusu nasıl alınır ve onaylanır?",
+    description: "Bayilik taleplerini telefon ve WhatsApp mesajları arasında kaybetmeyin. Başvuru formu, değerlendirme, fiyat listesine bağlama ve şifreyi bayiye iletme adımları.",
+    category: "Bayi yönetimi",
+    publishedAt: "2026-10-15",
+    status: "published",
+    sections: [
+      {
+        id: "neden-form",
+        title: "Bayilik talepleri neden kaybolur?",
+        paragraphs: [
+          "Bayilik talepleri farklı yerlerden gelir: telefon, WhatsApp, fuar kartvizitleri, sitedeki iletişim formu. Hangisine dönüldüğü, kime hangi fiyatın verildiği çoğu zaman bir deftere ya da bir kişinin hafızasına kalır. Talep sayısı arttıkça bazıları cevapsız kalır.",
+          "Tek bir başvuru formu bu dağınıklığı toplar. Her başvuru aynı bilgilerle gelir ve aynı ekranda bekler.",
+        ],
+      },
+      {
+        id: "hangi-bilgiler",
+        title: "Başvuruda hangi bilgileri isteyin?",
+        paragraphs: [
+          "Formu uzatmak başvuru sayısını düşürür. Değerlendirme için gerçekten gerekenleri isteyin; vergi bilgisi gibi ayrıntıları onaydan sonra da alabilirsiniz.",
+        ],
+        bullets: [
+          "Firma adı ve yetkili kişi",
+          "Telefon (WhatsApp'tan ulaşacaksanız)",
+          "Şehir ve ilçe",
+          "Kısa bir not: hangi ürün gruplarıyla ilgilendiği",
+        ],
+      },
+      {
+        id: "ekataloxta-akis",
+        title: "eKatalox'ta başvuru akışı",
+        paragraphs: [
+          "Kurumsal pakette kurumsal sitenizde bir Bayimiz Olun formu bulunur. Gelen başvurular panelde Bayi Başvuruları sayfasında toplanır. Başvuruyu açtığınızda bayinin bilgilerini görürsünüz.",
+          "Onaylarken bayiyi bir fiyat listesine bağlar ve ona özel bir giriş şifresi belirlersiniz. Onaydan sonra çıkan Şifreyi WhatsApp'tan gönder düğmesi, şifreyi ve katalog bağlantısını içeren mesajı bayinin numarasına hazırlar; siz yalnız gönderirsiniz. Onaylanan bayi Müşteriler sayfasında listelenir.",
+        ],
+        bullets: [
+          "Kurumsal sitedeki form → Bayi Başvuruları sayfası",
+          "Başvuruyu incele → fiyat listesi seç → bayiye özel şifre belirle",
+          "Şifreyi WhatsApp'tan gönder",
+          "Bayi Müşteriler sayfasında",
+        ],
+      },
+      {
+        id: "degerlendirme",
+        title: "Onaylamadan önce nelere bakın?",
+        paragraphs: [
+          "Her başvuruyu onaylamak zorunda değilsiniz. Bölgenizde aynı caddede iki bayiniz olmasını istemeyebilir ya da yeni bir bayiye önce daha yüksek fiyatlı bir listeyle başlamayı tercih edebilirsiniz.",
+        ],
+        bullets: [
+          "Bayinin bölgesi mevcut bayilerinizle çakışıyor mu?",
+          "Hangi fiyat listesiyle başlamalı?",
+          "Ödeme ve teslim koşullarınızı biliyor mu?",
+          "İlk siparişi birlikte vermek ister misiniz?",
+        ],
+      },
+      {
+        id: "ozel-sifre",
+        title: "Neden bayiye özel şifre?",
+        paragraphs: [
+          "Bir gruptaki bütün bayilerin aynı şifreyi kullanması kolaydır ama şifre sızdığında herkesin şifresini değiştirmeniz gerekir. Bayiye özel şifrede ilişkiyi bitirdiğiniz bayinin yalnız kendi şifresini silersiniz. Ayrıca siparişin hangi bayiden geldiği daha net olur.",
+        ],
+      },
+    ],
+    relatedSlugs: ["toptan-fiyatlari-rakiplerden-koruma", "bayiye-ozel-fiyat-listesi", "toptanci-google-da-nasil-bulunur"],
+    featureLinks: [
+      { href: "/ozellikler/kurumsal-site", label: "Kurumsal site ve Bayimiz Olun formu" },
+      { href: "/fiyatlandirma", label: "Kurumsal paketi inceleyin" },
+    ],
+  },
+  {
+    slug: "toptan-fiyat-listesi-excel-sablonu",
+    title: "Ücretsiz toptan fiyat listesi Excel şablonu",
+    description: "Bayi, perakende ve özel müşteri fiyatları için hazır sütunlu toptan fiyat listesi şablonunu indirin. Doldurma kuralları, sık yapılan hatalar ve şablonu online kataloğa dönüştürme.",
+    category: "Şablon",
+    publishedAt: "2026-10-17",
+    status: "published",
+    sections: [
+      {
+        id: "sablonu-indirin",
+        title: "Şablonu indirin",
+        paragraphs: [
+          "Şablonda kategori, model numarası, ürün adı, para birimi, üç ayrı liste fiyatı, stok durumu ve paket/koli adedi sütunları hazır. Gri renkli örnek satırları silip kendi ürünlerinizi yazmanız yeterli. Para birimi ve stok durumu hücrelerinde seçim listesi var; yanlış yazımın önüne geçer.",
+        ],
+        download: {
+          href: "/indir/toptan-fiyat-listesi-sablonu.xlsx",
+          label: "Toptan fiyat listesi şablonunu indir (.xlsx)",
+          note: "Ücretsizdir, kayıt gerektirmez. Excel, Google E-Tablolar ve LibreOffice ile açılır.",
+        },
+      },
+      {
+        id: "sutunlar",
+        title: "Sütunlar ne anlama geliyor?",
+        bullets: [
+          "Kategori Adı: Ürünün listelendiği grup (ör. Şarj Kabloları).",
+          "Model No: Her ürüne özel kod. Aynı kod iki satırda olmamalı.",
+          "Ürün Adı: Bayinin ürünü tanıyacağı açık ad.",
+          "Para Birimi: TL, USD veya EUR.",
+          "1., 2. ve 3. Liste Fiyatı: Farklı müşteri grupları için adet başına fiyat. Kullanmadığınızı boş bırakın.",
+          "Stok Durumu: Var veya Yok.",
+          "Paket Adedi ve Koli Adedi: Bir paket ve bir kolide kaç adet olduğu.",
+        ],
+        paragraphs: [
+          "Liste fiyatlarını bayi, perakende ve özel müşteri gibi gruplara göre kullanabilirsiniz. Hangi listenin kime ait olduğunu bir kenara not edin; sütun adları listeyi değil sırayı gösterir.",
+        ],
+      },
+      {
+        id: "sik-hatalar",
+        title: "Sık yapılan hatalar",
+        paragraphs: [
+          "Fiyat listesindeki hataların çoğu ürün bilgisinden değil, hücrelerin dolduruluş biçiminden kaynaklanır. Aşağıdaki maddeleri dosyayı paylaşmadan ya da yüklemeden önce bir kez kontrol edin.",
+        ],
+        bullets: [
+          "Fiyat hücresine \"150 TL\" yazmak: Hücreye yalnız sayı yazın, para birimi kendi sütununda.",
+          "Aynı ürünü iki satıra yazmak: Renk ve model farkı varsa kodları ayırın.",
+          "Model numarasını sonradan değiştirmek: Kod, ürünün kimliğidir; değişirse eski kayıtla eşleşmez.",
+          "Sütun adlarını çevirmek ya da kısaltmak.",
+          "Birleştirilmiş hücre kullanmak: Her satır tek bir ürün olmalı.",
+        ],
+      },
+      {
+        id: "dosyadan-kataloga",
+        title: "Dosyayı göndermek yerine kataloğa dönüştürün",
+        paragraphs: [
+          "Excel dosyasını bayilere göndermek hızlıdır ama dosya kopyalanır, eski sürümler dolaşır ve fiyatlar herkesin elinde kalır. Bu şablonun sütunları eKatalox'un toplu yükleme şablonuyla aynıdır. Dosyayı Ürünler > Toplu Ürün Ekleme sayfasından olduğu gibi yüklerseniz ürünleriniz şifreli bir online kataloğa dönüşür; her bayi kendi listesinin fiyatını görür ve siparişini WhatsApp'tan gönderir.",
+          "Daha sonra fiyat güncellerken aynı dosyayı yeniden yükleyebilirsiniz: aynı model numaralı ürünler güncellenir, yeni kodlar yeni ürün olarak eklenir.",
+        ],
+      },
+    ],
+    relatedSlugs: ["excelden-urun-katalogu", "bayiye-ozel-fiyat-listesi", "telefonla-urun-fotografi-cekme"],
+    featureLinks: [
+      { href: "/ozellikler/toplu-urun-yukleme", label: "Excel ile toplu ürün yükleme" },
+      { href: "/basvuru", label: "Ücretsiz katalog açın" },
+    ],
+  },
+  {
+    slug: "toptanci-google-da-nasil-bulunur",
+    title: "Toptancı firması Google'da nasıl bulunur? Fiyatları gizli tutarak",
+    description: "Bayi fiyatlarınız Google'da görünmeden firmanızın ve ürün gruplarınızın aramalarda bulunmasını sağlayın. Kurumsal site, Google İşletme Profili ve Search Console için uygulanabilir adımlar.",
+    category: "Görünürlük",
+    publishedAt: "2026-10-20",
+    status: "published",
+    sections: [
+      {
+        id: "ikilem",
+        title: "Görünmek isteyip fiyatı göstermek istememek",
+        paragraphs: [
+          "Toptancı iki şey ister: yeni bayiler kendisini Google'da bulsun, ama fiyat listesi herkesin önüne düşmesin. Bu ikisi çelişmez. Çözüm, fiyatlı kataloğu ve firmayı tanıtan sayfaları birbirinden ayırmaktır.",
+        ],
+      },
+      {
+        id: "iki-katman",
+        title: "İki katman: şifreli katalog ve açık kurumsal site",
+        paragraphs: [
+          "Şifreli bayi kataloğu arama motorlarına kapalıdır; fiyatlar bu yüzden aramalarda çıkmaz. Firmanızın Google'daki yüzü ise fiyat içermeyen bir kurumsal site olmalıdır: ürün grupları, ürün adları ve kodları, firma bilgisi, iletişim ve bayilik başvurusu.",
+          "Bayi adayı ürün kodunu ya da ürün grubunu arayıp kurumsal sitenize gelir, başvurur. Onaylandıktan sonra fiyatları şifreli katalogda görür.",
+        ],
+        images: [
+          { src: "/site/blog/lucatech-kurumsal.webp", alt: "Fiyat içermeyen kurumsal site örneği", caption: "Örnek: Lucatech'in kurumsal sitesi aramalarda görünür, fiyat içermez.", width: 1280, height: 680 },
+        ],
+      },
+      {
+        id: "kurumsal-sitede-ne-olmali",
+        title: "Kurumsal sitede ne olmalı?",
+        bullets: [
+          "Firmanızı ve ne sattığınızı anlatan kısa, gerçek bir metin.",
+          "Ürün grupları ve ürün sayfaları: ad, kod, görsel, açıklama (fiyatsız).",
+          "Adres, telefon ve çalışma saatleri.",
+          "Bayilik başvuru formu.",
+          "Kendi alan adınız: firmaniz.com ya da katalog.firmaniz.com.",
+        ],
+        paragraphs: [
+          "eKatalox'un Kurumsal paketinde bu site kataloğunuzdaki ürünlerden otomatik oluşur; ürün eklediğinizde kurumsal sitedeki ürün sayfası da eklenir. Ürün sayfaları arama motorlarının ürünü anlaması için yapılandırılmış veriyle yayınlanır, fiyat bilgisi eklenmez.",
+        ],
+      },
+      {
+        id: "isletme-profili",
+        title: "Google İşletme Profili'ni unutmayın",
+        paragraphs: [
+          "\"Yakınımdaki telefon aksesuarı toptancısı\" gibi aramalarda harita sonuçları öne çıkar. Ücretsiz bir Google İşletme Profili açıp adresinizi, çalışma saatlerinizi, fotoğraflarınızı ve web sitenizi ekleyin. Kategori olarak \"toptancı\" ile başlayan en uygun seçeneği seçin.",
+        ],
+      },
+      {
+        id: "olcum",
+        title: "Neyin işe yaradığını ölçün",
+        paragraphs: [
+          "Google Search Console'a sitenizi ekleyin. Hangi aramalarda göründüğünüzü, kaç kez tıklandığınızı ve sayfalarınızın dizine girip girmediğini buradan görürsünüz. Yapay zekâ destekli arama sonuçlarındaki görünürlük de aynı yerden izlenir.",
+        ],
+        bullets: [
+          "Kurumsal sitenizi Search Console'a ekleyin.",
+          "İlk ay sayfaların dizine girdiğini kontrol edin.",
+          "Gösterimi olup tıklaması az olan aramalar için ürün sayfalarınızı zenginleştirin.",
+        ],
+      },
+      {
+        id: "yapmayin",
+        title: "Yapmamanız gerekenler",
+        paragraphs: [
+          "Görünür olmak için yapılan bazı şeyler ya fiyatları ortaya çıkarır ya da arama motorlarının gözünde sitenin değerini düşürür.",
+        ],
+        bullets: [
+          "Fiyat listesini PDF olarak siteye koymak: PDF'ler de aramalarda çıkar.",
+          "Her şehir için aynı metinle ayrı sayfa açmak: arama motorları bunu değersiz içerik sayar.",
+          "Görsellerin üzerine fiyat yazmak: görseller herkese açıktır.",
+        ],
+      },
+    ],
+    relatedSlugs: ["toptan-fiyatlari-rakiplerden-koruma", "yeni-bayi-basvurusu-alma", "lucatech-bayi-katalogu-nasil-acildi"],
+    featureLinks: [
+      { href: "/ozellikler/kurumsal-site", label: "Kurumsal site ve kendi alan adı" },
+    ],
+  },
+  {
+    slug: "bayilere-kampanya-duyurma",
+    title: "Bayilere kampanya ve yeni ürün nasıl duyurulur?",
+    description: "Toplu WhatsApp mesajı, katalog içi banner ve kampanya kartı, anlık bildirim: hangisi ne zaman işe yarar? Bayileri bıktırmadan duyuru yapmanın yolları.",
+    category: "Bayi iletişimi",
+    publishedAt: "2026-10-22",
+    status: "published",
+    sections: [
+      {
+        id: "sorun",
+        title: "Duyuru yapmak kolay, okutmak zor",
+        paragraphs: [
+          "Yeni bir ürün geldiğinde ya da bir kampanya başladığında ilk akla gelen, bütün bayilere WhatsApp'tan mesaj atmaktır. İlk birkaç mesaj okunur; sonra bayi her mesajı açmaz, bazıları sizi sessize alır. Duyuru sayısı arttıkça etkisi azalır.",
+          "Daha iyi yol, duyuruyu bayinin zaten baktığı yere koymak ve yalnız gerçekten önemli olanı mesaj ya da bildirimle göndermektir.",
+        ],
+      },
+      {
+        id: "katalog-ici",
+        title: "Katalogun içinde duyurun",
+        paragraphs: [
+          "Bayi sipariş vermek için kataloğu açtığında ilk gördüğü yer ana sayfanın üstüdür. Yeni ürünü ya da kampanyayı buraya bir banner olarak koyun. Kampanya kartları ve indirimli ürünler bölümü, bayinin sepetini doldururken kampanyayı görmesini sağlar. Ürün listesinde Yeni Eklenenler sıralaması da son gelen ürünleri öne çıkarır.",
+          "Bu yöntemler bütün paketlerde vardır ve bayiyi rahatsız etmez; bayi duyuruyu sipariş verirken görür.",
+        ],
+        bullets: [
+          "Ana sayfa banner'ı: yeni ürün ya da kampanya görseli.",
+          "Kampanya kartı: koşulu ve süresi yazılı kısa duyuru.",
+          "İndirimli ürünler: indirimin ürün kartında görünmesi.",
+          "Öne çıkan bölümler: belirli ürünleri bir başlık altında toplamak.",
+        ],
+      },
+      {
+        id: "bildirim",
+        title: "Önemli duyurular için anlık bildirim",
+        paragraphs: [
+          "Profesyonel ve Kurumsal paketlerde bayilere anlık bildirim gönderebilirsiniz. Bayi kataloğunuzu telefonunun ana ekranına ekleyip bildirimlere izin verdiğinde, gönderdiğiniz bildirim kilit ekranına düşer. Bildirime dokunan bayi doğrudan ilgili ürüne ya da kategoriye gider.",
+          "iPhone'da bildirimler için kataloğun Safari'den Ana Ekrana Ekle ile eklenmiş olması gerekir; Android'de tarayıcıdan izin vermek yeterlidir. Bayilere bunu ilk seferde bir kez anlatmanız, sonraki bütün duyuruları kolaylaştırır.",
+        ],
+      },
+      {
+        id: "ne-zaman-hangisi",
+        title: "Hangi duyuru hangi kanaldan?",
+        bullets: [
+          "Yeni ürün: katalog banner'ı ve Yeni Eklenenler; ürün önemliyse bildirim.",
+          "Süreli kampanya: kampanya kartı; başlangıçta bir bildirim.",
+          "Stoka yeniden giren çok aranan ürün: bildirim.",
+          "Fiyat güncellemesi: katalog zaten günceldir; ayrıca mesaj atmanız gerekmez.",
+          "Çalışma saati ya da tatil: katalogdaki duyuru alanı.",
+        ],
+        paragraphs: [
+          "Genel kural: haftada bir ya da iki bildirimi geçmeyin. Bayi her bildirimin işine yaradığını görürse açmaya devam eder.",
+        ],
+      },
+      {
+        id: "whatsapp-ne-zaman",
+        title: "WhatsApp mesajı hâlâ işe yarar mı?",
+        paragraphs: [
+          "Yarar, ama kişiye özel olduğunda. Bir bayinin sık aldığı ürün stoka girdiğinde ona özel kısa bir mesaj, bütün listeye atılan genel duyurudan çok daha fazla okunur. Genel duyuruları katalog ve bildirime, kişisel konuları WhatsApp'a bırakın.",
+        ],
+      },
+    ],
+    relatedSlugs: ["whatsapp-toptan-siparis", "toptan-stok-takibi", "genax-paket-koli-siparis"],
+    featureLinks: [
+      { href: "/ozellikler/kampanya-bildirimleri", label: "Kampanya ve bildirimler" },
+      { href: "/fiyatlandirma", label: "Bildirim hangi pakette?" },
+    ],
+  },
+  {
+    slug: "toptan-stok-takibi",
+    title: "Toptan stok takibi: stokta olmayan ürüne sipariş gelmesi nasıl önlenir?",
+    description: "Stokta olmayan ürüne gelen sipariş, bayiyle tatsız bir telefon demektir. Katalogda stok durumunu göstermenin, sepeti stokla sınırlamanın ve stoğu güncel tutmanın yolları.",
+    category: "Sipariş yönetimi",
+    publishedAt: "2026-10-24",
+    status: "published",
+    sections: [
+      {
+        id: "sorun",
+        title: "\"O ürün bitti\" telefonu",
+        paragraphs: [
+          "Bayi siparişi verir, siz hazırlarken ürünün bittiğini fark edersiniz. Bayiyi arayıp sipariş değiştirmek hem zaman alır hem de bayide güven kaybı yaratır. Sorun çoğu zaman stoğun bilinmemesi değil, katalogda görünmemesidir.",
+        ],
+      },
+      {
+        id: "iki-yontem",
+        title: "İki seviye: var/yok ya da adet",
+        paragraphs: [
+          "En basit yöntem her ürün için yalnız stokta olup olmadığını işaretlemektir. Stokta olmayan ürün katalogda \"Yakında\" olarak görünür ve sepete eklenemez. Bu yöntem stok adedini bilmeyen ya da her gün saymak istemeyen toptancılar için yeterlidir.",
+          "Adet bazlı takipte ise ürünün stok adedini girersiniz. Bayi katalogda \"Stok: 120 adet\" gibi kalan miktarı görür, sepete kalan adetten fazlasını ekleyemez. Stok sıfıra indiğinde ürüne sipariş verilemez.",
+        ],
+        bullets: [
+          "Var/yok: Stokta olmayan ürün \"Yakında\" görünür, sepete eklenemez.",
+          "Adet bazlı: Kalan adet görünür, sepet kalan adetle sınırlanır.",
+          "İkisi bir arada kullanılabilir: önemli ürünlerde adet, diğerlerinde var/yok.",
+        ],
+      },
+      {
+        id: "stok-ne-zaman-duser",
+        title: "Stok ne zaman düşer?",
+        paragraphs: [
+          "Toptancı mağazalarında stok, siparişi onayladığınızda düşer. Bayi siparişi verdiği anda değil, siz onayladığınızda düşmesi; iptal ettiğiniz ya da hiç hazırlamayacağınız siparişlerin stoğu boşuna kilitlemesini önler. Onaylı bir siparişte adet değiştirirseniz stok farkı da buna göre düzeltilir.",
+        ],
+      },
+      {
+        id: "gizle-mi-goster-mi",
+        title: "Stokta olmayan ürünü gizlemeli mi?",
+        paragraphs: [
+          "İki yaklaşımın da avantajı var. Stokta olmayan ürünü göstermek, bayiye ürünün yelpazenizde olduğunu ve yakında geleceğini söyler. Gizlemek ise katalogu sadeleştirir. Ayarlar'dan stokta olmayan ürünleri vitrinde gizlemeyi açıp kapatabilirsiniz; ürünler panelde kalmaya devam eder.",
+        ],
+      },
+      {
+        id: "guncel-tutmak",
+        title: "Stoğu güncel tutmanın pratik yolları",
+        bullets: [
+          "Mal girişinde ilgili ürünleri hemen \"stokta\" yapın.",
+          "Toplu değişikliklerde Excel dosyasındaki Stok Durumu sütununu (Var/Yok) güncelleyip aynı dosyayı yeniden yükleyin.",
+          "Haftada bir, en çok satan ürünlerin stok adedini sayıp girin.",
+          "Stoka yeniden giren aranan ürünü bayilere duyurun.",
+        ],
+        paragraphs: [
+          "Stok bilgisinin her zaman kusursuz olması gerekmez; bayinin \"bu ürün var mı?\" diye sormasına gerek bırakmayacak kadar güncel olması yeterlidir.",
+        ],
+      },
+    ],
+    relatedSlugs: ["toptan-siparis-kurallari", "bayi-siparisi-duzenleme", "bayilere-kampanya-duyurma"],
+    featureLinks: [
+      { href: "/ozellikler/whatsapp-siparis", label: "Sipariş akışını inceleyin" },
+    ],
+  },
+  {
+    slug: "bayi-siparisi-duzenleme",
+    title: "Bayi siparişi geldikten sonra ürün ekleme, çıkarma ve güncel fişi gönderme",
+    description: "Bayi siparişini verdikten sonra \"şunu da ekle\" der ya da bir ürün biter. Siparişi baştan almadan düzenlemenin, onaylamanın ve güncel fişi bayiye göndermenin adımları.",
+    category: "Sipariş yönetimi",
+    publishedAt: "2026-10-27",
+    status: "published",
+    sections: [
+      {
+        id: "sorun",
+        title: "Sipariş verildikten sonra değişir",
+        paragraphs: [
+          "Toptanda sipariş nadiren ilk haliyle kalır. Bayi telefonla iki ürün daha ister, bir ürün depoda bitmiştir ya da bayi adet değiştirir. Siparişi baştan aldırmak bayiyi yorar; mesajlardan elle düzeltmek ise hataya açıktır.",
+        ],
+      },
+      {
+        id: "onayla-iptal",
+        title: "Önce onaylayın ya da iptal edin",
+        paragraphs: [
+          "eKatalox'ta toptancı mağazalarında gelen her sipariş Siparişler sayfasında bekler. Siparişi kontrol ettikten sonra Onayla ya da İptal ile karar verirsiniz. Onaylanan sipariş raporlarda satış olarak sayılır ve stok takibi açık ürünlerde stok düşer.",
+        ],
+      },
+      {
+        id: "duzenle",
+        title: "Siparişi düzenleyin",
+        paragraphs: [
+          "Siparişin Düzenle ekranında ürün ekleyebilir, ürün çıkarabilir, adetleri ve fiyatları değiştirebilir, bayinin bilgilerini düzeltebilirsiniz. Düzenleme sipariş onaylandıktan sonra da yapılabilir.",
+          "Siparişe eklediğiniz yeni ürünün fiyatı, siparişin verildiği fiyat listesinden gelir. Bayi 2. liste fiyatlarıyla sipariş verdiyse eklenen ürün de 2. liste fiyatıyla girer; listeyi elle kontrol etmeniz gerekmez.",
+        ],
+        bullets: [
+          "Ürün ekle: fiyat siparişin fiyat listesinden.",
+          "Ürün çıkar ya da adet değiştir.",
+          "Gerekirse birim fiyatı değiştir.",
+          "Bayi adı, telefonu ya da adresini düzelt.",
+        ],
+      },
+      {
+        id: "guncel-fis",
+        title: "Güncel fişi bayiye gönderin",
+        paragraphs: [
+          "Düzenlemeden sonra Güncel fişi WhatsApp'tan gönder düğmesi, siparişin son halini içeren fiş bağlantısını bayiye gönderilecek mesaja ekler. Fiş her açılışta siparişin o anki haliyle yeniden oluşturulur; bayinin elindeki bağlantı hep güncel kalır.",
+          "Böylece bayi \"ne değişti?\" diye sormadan son tutarı ve ürünleri görür, siz de aynı belge üzerinden hazırlık yaparsınız.",
+        ],
+        images: [
+          { src: "/site/order-flow/whatsapp-anonymized.png", alt: "Sipariş fişi bağlantısı içeren WhatsApp mesajı örneği", caption: "Fiş bağlantısı WhatsApp mesajıyla iletilir (temsili veriler).", width: 1536, height: 1024 },
+        ],
+      },
+      {
+        id: "iyi-uygulamalar",
+        title: "Düzenlemeyi düzenli tutmak için",
+        bullets: [
+          "Bayinin telefonla istediği değişikliği hemen siparişe işleyin; sonraya bırakmayın.",
+          "Biten ürünü siparişten çıkardığınızda bayiye kısa bir not düşün.",
+          "Fiyatı elle değiştirdiyseniz nedenini bayiye söyleyin.",
+          "Hazırlık için hep güncel fişi kullanın, eski mesajı değil.",
+        ],
+        paragraphs: [],
+      },
+    ],
+    relatedSlugs: ["whatsapp-toptan-siparis", "toptan-stok-takibi", "genax-paket-koli-siparis"],
+    featureLinks: [
+      { href: "/ozellikler/whatsapp-siparis", label: "Sipariş ve PDF fişi" },
+      { href: "/ozellikler/raporlar", label: "Satış raporları" },
+    ],
+  },
 ];
 
 export function getBlogPosts(): BlogPost[] {
-  return posts.filter((post) => post.status === "published").sort((a, b) => b.publishedAt.localeCompare(a.publishedAt));
+  const today = istanbulToday();
+  // Yerelde (next dev) ileri tarihli yazılar da görünür ki yayından önce kontrol edilebilsin.
+  const showScheduled = process.env.NODE_ENV === "development";
+  return posts
+    .filter((post) => post.status === "published" && (showScheduled || post.publishedAt <= today))
+    .sort((a, b) => b.publishedAt.localeCompare(a.publishedAt));
 }
 export function getBlogPost(slug: string) {
   return getBlogPosts().find((post) => post.slug === slug);
@@ -606,8 +1321,7 @@ export function getRelatedPosts(post: BlogPost) {
   return [...others.filter((item) => post.relatedSlugs.includes(item.slug)), ...others.filter((item) => !post.relatedSlugs.includes(item.slug))].slice(0, 3);
 }
 export function readingMinutes(post: BlogPost) {
-  const text = post.sections.map((section) => [section.title, ...section.paragraphs, ...(section.bullets ?? [])].join(" ")).join(" ");
-  return Math.max(1, Math.ceil(text.split(/\s+/).length / 200));
+  const text = post.sections.map((section) => [section.title, ...section.paragraphs, ...(section.bullets ?? [])].join(" ")).join(" ");  return Math.max(1, Math.ceil(text.split(/\s+/).length / 200));
 }
 export function blogDate(date: string) {
   return new Intl.DateTimeFormat("tr-TR", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" }).format(new Date(`${date}T00:00:00Z`));
