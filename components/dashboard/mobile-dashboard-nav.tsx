@@ -43,10 +43,8 @@ export function MobileDashboardNav({
 
   return (
     <div className="border-b border-slate-200 bg-white md:hidden dark:border-slate-800 dark:bg-slate-900">
-      <div className="flex items-center justify-between px-4 py-3">
-        <Link href="/#top" className="inline-flex">
-          <EkataloxLogo className="h-7 w-[130px]" variant="light" />
-        </Link>
+      {/* Menü soldan açıldığı için düğme de solda (6 Eki 2026, kullanıcı isteği). */}
+      <div className="flex items-center gap-2 px-4 py-3">
         <button
           type="button"
           onClick={() => setOpen(true)}
@@ -55,7 +53,7 @@ export function MobileDashboardNav({
               ? `Menüyü aç (${suggestionNoticeCount} bildirim)`
               : "Menüyü aç"
           }
-          className="relative rounded-lg p-2 text-slate-700 transition hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800"
+          className="relative -ml-2 rounded-lg p-2 text-slate-700 transition hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800"
         >
           <Menu className="size-5" />
           {suggestionNoticeCount ? (
@@ -64,6 +62,9 @@ export function MobileDashboardNav({
             </span>
           ) : null}
         </button>
+        <Link href="/#top" className="inline-flex">
+          <EkataloxLogo className="h-7 w-[130px]" variant="light" />
+        </Link>
       </div>
 
       <AnimatePresence>
