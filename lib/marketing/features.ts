@@ -1,5 +1,7 @@
 export interface MarketingFeature {
   slug: string; title: string; lead: string; plan: string;
+  /** Arama sonucu başlığı ve açıklaması (sayfadaki başlıktan ayrı). */
+  seoTitle: string; metaDescription: string;
   sections: { title: string; body: string }[];
   example: string; related: string[];
 }
@@ -7,6 +9,8 @@ export interface MarketingFeature {
 export const MARKETING_FEATURES: MarketingFeature[] = [
   {
     "slug": "whatsapp-siparis",
+    "seoTitle": "WhatsApp Sipariş Sistemi: Toptancılar için",
+    "metaDescription": "Bayileriniz katalogdan sepetini doldurur, siparişi PDF fiş bağlantısıyla WhatsApp'tan gönderir. Minimum sepet ve zorunlu bilgi ayarlarıyla düzenli sipariş.",
     "title": "Toptancılar için WhatsApp sipariş sistemi",
     "lead": "Minimum sepet tutarını ve gerekli müşteri bilgilerini belirleyin. Siparişlerinizi Siparişlerim sayfasından takip edin; PDF fişi bağlantısını WhatsApp üzerinden paylaşın.",
     "plan": "Temel sipariş araçları tüm paketlerde",
@@ -36,6 +40,8 @@ export const MARKETING_FEATURES: MarketingFeature[] = [
   },
   {
     "slug": "bayi-fiyat-listeleri",
+    "seoTitle": "Bayi Fiyat Listesi Programı: Şifreli Katalog",
+    "metaDescription": "Tek katalog, birden çok fiyat listesi: her bayi kendi şifresiyle yalnız kendi fiyatını görür. PDF fiyat listesi göndermeden fiyatlarınızı güncel tutun.",
     "title": "Şifreli bayi kataloğu ve farklı fiyat listeleri",
     "lead": "Ürünlerinizi tek katalogda yönetin; bayi, perakende ve özel müşteri gruplarınıza ayrı fiyat listeleri sunun.",
     "plan": "Ücretsiz: 2 · Başlangıç: 3 · Profesyonel: 15 · Kurumsal: sınırsız liste",
@@ -65,6 +71,8 @@ export const MARKETING_FEATURES: MarketingFeature[] = [
   },
   {
     "slug": "toplu-urun-yukleme",
+    "seoTitle": "Excel ile Toplu Ürün ve Görsel Yükleme",
+    "metaDescription": "Ürünlerinizi Excel/CSV dosyasından tek seferde aktarın, görselleri model koduyla toplu eşleştirin. Fiyat güncellemesi için aynı dosyayı yeniden yükleyin.",
     "title": "Excel’den toplu ürün ve görsel yükleme",
     "lead": "Ürünlerinizi Excel/CSV dosyasından aktarın; fotoğraflarınızı ürün kodlarıyla eşleştirerek toplu yükleyin.",
     "plan": "Tüm paketlerde, paketinizin ürün limiti içinde",
@@ -94,6 +102,8 @@ export const MARKETING_FEATURES: MarketingFeature[] = [
   },
   {
     "slug": "kurumsal-site",
+    "seoTitle": "Toptancı Kurumsal Web Sitesi ve Bayi Başvuru Formu",
+    "metaDescription": "Kataloğunuzdan otomatik oluşan, fiyat içermeyen kurumsal site: Google'da görünün, Bayimiz Olun formuyla yeni bayi başvurusu toplayın. Kurumsal pakete dahil.",
     "title": "Kurumsal site ve Bayimiz ol formu",
     "lead": "Kurumsal pakete dahil sitenizle firmanızı ve ürünlerinizi tanıtın; Bayimiz ol formuyla yeni bayi başvuruları toplayın.",
     "plan": "Kurumsal pakete dahil; kurumsal site için ayrıca paket ücreti yok",
@@ -123,6 +133,8 @@ export const MARKETING_FEATURES: MarketingFeature[] = [
   },
   {
     "slug": "raporlar",
+    "seoTitle": "Katalog Arama ve Ürün Raporları",
+    "metaDescription": "Bayilerinizin katalogda ne aradığını, hangi ürünleri sepete eklediğini ve hangi illerden giriş yapıldığını görün. Başlangıç ve üzeri paketlerde.",
     "title": "Katalog arama, ürün ve il raporları",
     "lead": "Müşterilerinizin ne aradığını, hangi ürünleri sepete eklediğini ve hangi illerden hangi fiyat listelerine giriş yapıldığını görün.",
     "plan": "Başlangıç ve üzeri paketlerde",
@@ -152,6 +164,8 @@ export const MARKETING_FEATURES: MarketingFeature[] = [
   },
   {
     "slug": "kampanya-bildirimleri",
+    "seoTitle": "Bayilere Kampanya ve Yeni Ürün Bildirimi",
+    "metaDescription": "Yeni ürün ve kampanyaları katalogda duyurun, izin veren bayilere anlık bildirim gönderin. Çalışma saatlerinizi katalogdan yönetin.",
     "title": "Kampanya bildirimleri ve katalog duyuruları",
     "lead": "Yeni ürünlerinizi duyurun, izin veren müşterilere kampanya bildirimi gönderin ve çalışma saatlerinizi katalogda yönetin.",
     "plan": "Duyuru ve saatler tüm paketlerde · Müşteriye bildirim Profesyonel ve üzeri",
@@ -181,8 +195,10 @@ export const MARKETING_FEATURES: MarketingFeature[] = [
   },
   {
     "slug": "online-odeme",
+    "seoTitle": "Katalogdan Online Ödeme: İyzico ve PayTR",
+    "metaDescription": "Bayileriniz katalogdan ödeme yapsın istiyorsanız iyzico veya PayTR entegrasyonunu birlikte planlayalım. Kurumsal pakette, kapsam görüşmeyle belirlenir.",
     "title": "Kataloğunuzdan online ödeme alın",
-    "lead": "İyzico/Paytr entegrasyonuyla kataloğunuzdan ödeme alın.",
+    "lead": "İyzico veya PayTR ile kataloğunuzdan ödeme almak için entegrasyonu birlikte planlayalım.",
     "plan": "Kurumsal paket · Sağlayıcı başvurusu ve entegrasyon kapsamı birlikte netleştirilir",
     "sections": [
       {

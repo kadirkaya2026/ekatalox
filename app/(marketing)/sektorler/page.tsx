@@ -4,7 +4,7 @@ import { Container, Section, SectionHeading } from "@/components/marketing/ui";
 import { marketingMetadata } from "@/lib/marketing/metadata";
 import { WHOLESALE_SECTORS } from "@/lib/marketing/sectors";
 
-export const metadata = marketingMetadata("/sektorler", "Sektöre Özel Dijital Katalog ve Sipariş Çözümleri", "Tekstil, elektronik, mobilya, otomotiv, gıda, kozmetik ve marketler için eKatalox çözümleri. Sektörünüze uygun dijital katalog ve sipariş akışını keşfedin.");
+export const metadata = marketingMetadata("/sektorler", "Sektörlere Göre Toptan Katalog ve Sipariş", "Tekstil, elektronik, mobilya, otomotiv, gıda, kozmetik ve marketler için eKatalox çözümleri. Sektörünüze uygun dijital katalog ve sipariş akışını keşfedin.");
 const icons = [Shirt, Cable, Armchair, Wrench, Package, Sparkles];
 export default function SectorsPage() {
   return <>

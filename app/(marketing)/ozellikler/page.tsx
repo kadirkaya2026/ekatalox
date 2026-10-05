@@ -8,7 +8,7 @@ import { SITE } from "@/lib/marketing/site";
 
 export const metadata = marketingMetadata(
   "/ozellikler",
-  "Dijital Katalog ve B2B Sipariş Özellikleri",
+  "Bayi Sipariş Sistemi Özellikleri",
   "Şifreli bayi kataloğu, farklı fiyat listeleri, toplu ürün yükleme, WhatsApp sipariş, kampanya bildirimleri ve raporlama özelliklerini inceleyin.",
 );
 

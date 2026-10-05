@@ -823,7 +823,7 @@ const posts: BlogPost[] = [
   },
   {
     slug: "telefonla-urun-fotografi-cekme",
-    title: "Toptancılar için telefonla ürün fotoğrafı çekme rehberi",
+    title: "Ürün fotoğrafı nasıl çekilir? Telefonla katalog rehberi",
     description: "Stüdyo kurmadan telefon ve gün ışığıyla katalog için temiz ürün fotoğrafı çekin: arka plan, ışık, açı ve dosya adlandırma adımları.",
     category: "Katalog hazırlığı",
     publishedAt: "2026-10-13",
@@ -998,7 +998,7 @@ const posts: BlogPost[] = [
   },
   {
     slug: "toptan-fiyat-listesi-excel-sablonu",
-    title: "Ücretsiz toptan fiyat listesi Excel şablonu",
+    title: "Fiyat listesi Excel şablonu: ücretsiz toptan liste",
     description: "Bayi ve özel müşteri fiyatları için hazır sütunlu toptan fiyat listesi Excel şablonunu indirin; doldurma kuralları ve sık yapılan hatalar.",
     category: "Şablon",
     publishedAt: "2026-10-17",

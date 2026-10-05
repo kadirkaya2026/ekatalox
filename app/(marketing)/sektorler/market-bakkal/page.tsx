@@ -5,7 +5,7 @@ import { ButtonLink, Container, Section, SectionHeading } from "@/components/mar
 import { marketingMetadata } from "@/lib/marketing/metadata";
 import { SITE } from "@/lib/marketing/site";
 
-export const metadata = marketingMetadata("/sektorler/market-bakkal", "Market ve Bakkallar için WhatsApp Sipariş Sistemi", "Marketiniz için online katalog, konumlu WhatsApp siparişi, mobil sepet ve kampanya bildirimleri. Kurumsal pakette marketlere 200 QR magnet hediye.");
+export const metadata = marketingMetadata("/sektorler/market-bakkal", "Market ve Bakkal Sipariş Programı: Online Katalog", "Marketiniz için online katalog, konumlu WhatsApp siparişi, mobil sepet ve kampanya bildirimleri. Kurumsal pakette marketlere 200 QR magnet hediye.");
 const features = [
   { icon: Languages, title: "Yabancı müşterileriniz için İngilizce, Almanca ve Rusça", body: "Kataloğunuzda yabancı müşterileriniz için İngilizce, Almanca ve Rusça dil seçenekleri mevcuttur. Müşterileriniz dil menüsünden tercih ettikleri dili seçerek kataloğunuzu kullanabilir." },
   { icon: MapPin, title: "Siparişin yanında müşterinizin konumu", body: "Müşteriniz isterse cihazından konum paylaşımına izin verir. Konum bağlantısı WhatsApp sipariş mesajına eklenir; yazılı adresle birlikte teslimat için kullanabilirsiniz." },

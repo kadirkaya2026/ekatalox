@@ -5,7 +5,7 @@ import { SITE } from "@/lib/marketing/site";
 
 export const metadata = marketingMetadata(
   "/sss",
-  "Dijital Katalog Hakkında Sık Sorulan Sorular",
+  "Sık Sorulan Sorular: Paketler ve Bayi Şifreleri",
   "Ücretsiz plan, bayi şifreleri, fiyat listeleri, ürün yükleme, WhatsApp sipariş ve paket limitleri hakkındaki sorularınıza yanıt bulun.",
 );
 

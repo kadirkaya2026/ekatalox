@@ -18,7 +18,7 @@ async function getFeature(params: Props["params"]) {
 }
 export async function generateMetadata({ params }: Props) {
   const feature = await getFeature(params);
-  return marketingMetadata(`/ozellikler/${feature.slug}`, feature.title, feature.lead);
+  return marketingMetadata(`/ozellikler/${feature.slug}`, feature.seoTitle, feature.metaDescription);
 }
 export default async function FeaturePage({ params }: Props) {
   const feature = await getFeature(params);

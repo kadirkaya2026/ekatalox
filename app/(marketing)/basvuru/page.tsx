@@ -5,7 +5,7 @@ import { Container, Section } from "@/components/marketing/ui";
 
 export const metadata = marketingMetadata(
   "/basvuru",
-  "Ücretsiz Dijital Katalog Oluşturun",
+  "Ücretsiz Online Katalog Oluşturun",
   "Ücretsiz hesabınızı oluşturun, ürünlerinizi ekleyip kataloğunuzu bayilerinizle paylaşın. Ücretsiz planda 250 ürün; kart bilgisi istenmez.",
 );
 

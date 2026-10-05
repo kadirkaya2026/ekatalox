@@ -1,5 +1,7 @@
 export type Sector = {
   slug: string; name: string; shortName: string; registration: string;
+  /** Arama motoru başlığı ve H1 üst satırı: sektörün aranan ifadesi. */
+  seoTitle: string;
   title: string; description: string; problem: string;
   demo?: { url: string; name: string; description: string };
   example: { title: string; body: string; steps: string[] };
@@ -10,7 +12,7 @@ export type Sector = {
 export const WHOLESALE_SECTORS: Sector[] = [
   {
     demo: { url: "https://demo-giyim.ekatalox.com/", name: "VELIRA — Giyim demosu", description: "VELIRA giyim demosunda elbise, üst giyim, dış giyim, alt giyim ve aksesuar kategorilerini inceleyin. Ürünlerin görselli sunumunu ve katalogdan sipariş akışını deneyin." },
-    slug: "tekstil-giyim", name: "Tekstil & Giyim Toptancıları", shortName: "Tekstil & Giyim", registration: "tekstil",
+    slug: "tekstil-giyim", seoTitle: "Toptan giyim kataloğu ve bayi sipariş sistemi", name: "Tekstil & Giyim Toptancıları", shortName: "Tekstil & Giyim", registration: "tekstil",
     title: "Yeni koleksiyonunuzu bayilerinizle tek katalogdan paylaşın.",
     description: "Tekstil ve giyim toptancıları için online ürün kataloğu, bayiye özel fiyat listeleri ve WhatsApp sipariş sistemi. Koleksiyonlarınızı görsellerle sunun, siparişleri panelden takip edin.",
     problem: "Her koleksiyonda yeniden PDF hazırlamak, model görsellerini ayrı ayrı göndermek ve bayi fiyatlarını mesajlardan takip etmek zaman alır. Güncel ürünlerinizi tek katalogda toplayın; bayileriniz aynı bağlantıdan inceleyip sipariş oluştursun.",
@@ -26,7 +28,7 @@ export const WHOLESALE_SECTORS: Sector[] = [
     ],
   },
   {
-    slug: "elektronik-aksesuar", name: "Elektronik & Aksesuar Dağıtıcıları", shortName: "Elektronik & Aksesuar", registration: "telefon-aksesuar",
+    slug: "elektronik-aksesuar", seoTitle: "Telefon aksesuarı toptan katalog ve sipariş programı", name: "Elektronik & Aksesuar Dağıtıcıları", shortName: "Elektronik & Aksesuar", registration: "telefon-aksesuar",
     title: "Geniş aksesuar kataloğunuzu kolay bulunan ürünlere dönüştürün.",
     description: "Elektronik ve telefon aksesuarı dağıtıcıları için dijital bayi kataloğu. Ürün kodları, toplu yükleme, farklı fiyat listeleri ve WhatsApp siparişlerini tek yerde yönetin.",
     problem: "Kablo, adaptör ve aksesuar çeşitleri arttıkça müşterinin doğru ürünü bulması zorlaşır. Ürün adı, kodu ve açıklamasını düzenli tutarak bayinizin katalogdan seçim yapmasını kolaylaştırın.",
@@ -42,7 +44,7 @@ export const WHOLESALE_SECTORS: Sector[] = [
     ],
   },
   {
-    slug: "mobilya-dekorasyon", name: "Mobilya & Dekorasyon Üreticileri", shortName: "Mobilya & Dekorasyon", registration: "ev-mutfak",
+    slug: "mobilya-dekorasyon", seoTitle: "Mobilya bayi kataloğu ve fiyat listesi programı", name: "Mobilya & Dekorasyon Üreticileri", shortName: "Mobilya & Dekorasyon", registration: "ev-mutfak",
     title: "Ürünlerinizin detayını gösterin, bayi siparişini netleştirin.",
     description: "Mobilya ve dekorasyon üreticileri için görselli dijital katalog, bayi fiyat listeleri ve kurumsal site. Ölçü, malzeme ve ürün açıklamalarını müşterilerinize birlikte sunun.",
     problem: "Ürün fotoğrafları bir mesajda, ölçüler başka dosyada, fiyatlar ayrı listede kalmasın. Bayinizin karar vermek için ihtiyaç duyduğu bilgileri ürün sayfasında bir araya getirin.",
@@ -58,7 +60,7 @@ export const WHOLESALE_SECTORS: Sector[] = [
     ],
   },
   {
-    slug: "otomotiv-yedek-parca", name: "Otomotiv Yedek Parça Satıcıları", shortName: "Otomotiv Yedek Parça", registration: "yedek-parca",
+    slug: "otomotiv-yedek-parca", seoTitle: "Yedek parça kataloğu ve bayi sipariş sistemi", name: "Otomotiv Yedek Parça Satıcıları", shortName: "Otomotiv Yedek Parça", registration: "yedek-parca",
     title: "Bayiniz parçayı koduyla bulsun, siparişini ürün listesiyle iletsin.",
     description: "Otomotiv yedek parça satıcıları için ürün koduyla arama, kategorili online katalog, bayi fiyatları ve WhatsApp sipariş takibi.",
     problem: "Benzer isimli parçaları yalnızca mesajla tarif etmek sipariş takibini zorlaştırır. Ürün kodu, fotoğrafı ve sizin eklediğiniz uyumluluk açıklamalarıyla bayinizin seçimini netleştirin.",
@@ -74,7 +76,7 @@ export const WHOLESALE_SECTORS: Sector[] = [
     ],
   },
   {
-    slug: "gida-toptancilari", name: "Gıda Toptancıları", shortName: "Gıda Toptan", registration: "gida",
+    slug: "gida-toptancilari", seoTitle: "Gıda toptan sipariş programı: koli ve adet", name: "Gıda Toptancıları", shortName: "Gıda Toptan", registration: "gida",
     title: "Koli ve adet siparişlerini güncel kataloğunuzda toplayın.",
     description: "Gıda toptancıları için dijital ürün kataloğu, koli ve adet bazlı sipariş, minimum sepet ve müşteriye özel fiyat listeleri. Siparişlerinizi panelden takip edin.",
     problem: "Market, kafe ve restoran müşterilerinizin siparişlerini dağınık mesajlardan toparlamak yerine ürün ve adetleri belirli bir liste halinde alın. Fiyat ve ambalaj bilgisini güncel katalogda sunun.",
@@ -90,7 +92,7 @@ export const WHOLESALE_SECTORS: Sector[] = [
     ],
   },
   {
-    slug: "kozmetik-temizlik", name: "Kozmetik & Temizlik Markaları", shortName: "Kozmetik & Temizlik", registration: "kozmetik",
+    slug: "kozmetik-temizlik", seoTitle: "Kozmetik ve temizlik toptan katalog, bayi sipariş", name: "Kozmetik & Temizlik Markaları", shortName: "Kozmetik & Temizlik", registration: "kozmetik",
     title: "Ürün serilerinizi tanıtın, bayilerinizi tekrar siparişe davet edin.",
     description: "Kozmetik ve temizlik markaları için online bayi kataloğu, ürün serileri, farklı fiyat listeleri ve kampanya bildirimleri. Bayi başvuruları ve siparişleri yönetin.",
     problem: "Ürün serileri, ambalaj çeşitleri ve kampanyalar sık değişirken eski kataloglar dolaşımda kalmasın. Bayilerinize güncel içerikleri inceleyebilecekleri tek bağlantı verin.",

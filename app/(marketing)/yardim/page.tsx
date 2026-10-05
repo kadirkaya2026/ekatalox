@@ -6,7 +6,7 @@ import { SITE } from "@/lib/marketing/site";
 
 export const metadata = marketingMetadata(
   "/yardim",
-  "Dijital Katalog Yardım Merkezi",
+  "Yardım Merkezi: Katalog Kurulumu ve Ürün Yükleme",
   "Katalog kurulumu, Excel ile ürün yükleme, bayi şifreleri, WhatsApp sipariş, paket ve hesap işlemleri için yardım alın.",
 );
 

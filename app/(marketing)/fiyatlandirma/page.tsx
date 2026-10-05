@@ -3,8 +3,8 @@ import { PricingContent } from "@/components/marketing/pricing-content";
 
 export const metadata = marketingMetadata(
   "/fiyatlandirma",
-  "Dijital Katalog Fiyatları ve Ücretsiz Paket",
-  "250 ürünle ücretsiz başlayın. Başlangıç, Profesyonel ve Kurumsal paketlerin yıllık fiyatlarını, ürün sınırlarını ve özelliklerini karşılaştırın.",
+  "Katalog ve Sipariş Programı Fiyatları",
+  "Ücretsiz paket 250 ürün; Başlangıç 5.000 ₺, Profesyonel 10.000 ₺, Kurumsal 15.000 ₺ yıllık. Paket limitlerini ve özellikleri karşılaştırın.",
 );
 
 export default async function Page({ searchParams }: { searchParams: Promise<{ gorunum?: string | string[] }> }) {

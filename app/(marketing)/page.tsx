@@ -25,8 +25,8 @@ import { CUSTOMER_NAMES, SITE } from "@/lib/marketing/site";
 
 export const metadata = marketingMetadata(
   "/",
-  "Toptancılar İçin Dijital Katalog ve Sipariş",
-  "Ürünlerinizi online katalogda paylaşın, bayilerinize farklı fiyatlar gösterin ve WhatsApp üzerinden sipariş toplayın. 250 ürünle ücretsiz başlayın.",
+  "Toptan Sipariş Programı ve Şifreli Bayi Kataloğu",
+  "Toptancılar için şifreli online katalog ve WhatsApp sipariş programı. Bayilerinize ayrı fiyat listesi gösterin, Excel'den ürün yükleyin. Ücretsiz başlayın.",
 );
 
 // Ana sayfa (24 Eyl 2026 reklam öncesi yeniden düzen; tema 21 Eyl koyu/yeşil).

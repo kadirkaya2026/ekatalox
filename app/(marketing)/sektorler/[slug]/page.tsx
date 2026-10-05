@@ -18,7 +18,7 @@ async function getSector(params: Props["params"]) {
 }
 export async function generateMetadata({ params }: Props) {
   const sector = await getSector(params);
-  return marketingMetadata(`/sektorler/${sector.slug}`, `${sector.shortName} için Dijital Katalog ve Sipariş Sistemi`, sector.description);
+  return marketingMetadata(`/sektorler/${sector.slug}`, sector.seoTitle, sector.description);
 }
 export default async function SectorPage({ params }: Props) {
   const sector = await getSector(params);
@@ -37,7 +37,7 @@ export default async function SectorPage({ params }: Props) {
     <Section tone="navy" glow className="py-12 sm:py-16"><Container>
       <nav aria-label="Sayfa yolu" className="mb-9 text-sm text-white/60"><Link href="/sektorler" className="hover:text-white">Sektörler</Link><span aria-hidden> / </span><span aria-current="page">{sector.shortName}</span></nav>
       <div className="grid items-center gap-12 lg:grid-cols-[1.4fr_1fr]">
-        <div><p className="text-xs font-semibold uppercase tracking-widest text-brand-neon">{sector.name}</p><h1 className="mt-5 text-balance text-4xl font-bold leading-[1.12] tracking-tight sm:text-5xl">{sector.title}</h1><p className="mt-6 max-w-2xl text-lg leading-relaxed text-white/75">{sector.problem}</p><div className="mt-8 flex flex-wrap gap-3"><ButtonLink href={`/basvuru?sektor=${sector.registration}`}>Kataloğunu oluştur</ButtonLink><ButtonLink href="/fiyatlandirma?gorunum=toptanci" tone="outline-dark">Paketleri karşılaştır</ButtonLink></div><p className="mt-5 text-sm text-white/55">Ortak paket fiyatları · İşletmenize uygun kullanım</p></div>
+        <div><p className="text-xs font-semibold uppercase tracking-widest text-brand-neon">{sector.name}</p><h1 className="mt-5 text-balance text-4xl font-bold leading-[1.12] tracking-tight sm:text-5xl"><span className="mb-3 block text-base font-medium leading-normal tracking-normal text-white/75">{sector.seoTitle}</span>{sector.title}</h1><p className="mt-6 max-w-2xl text-lg leading-relaxed text-white/75">{sector.problem}</p><div className="mt-8 flex flex-wrap gap-3"><ButtonLink href={`/basvuru?sektor=${sector.registration}`}>Kataloğunu oluştur</ButtonLink><ButtonLink href="/fiyatlandirma?gorunum=toptanci" tone="outline-dark">Paketleri karşılaştır</ButtonLink></div><p className="mt-5 text-sm text-white/55">Ortak paket fiyatları · İşletmenize uygun kullanım</p></div>
         {clothing ? <figure className="mx-auto w-full max-w-[250px]">
           <div className="overflow-hidden rounded-[2rem] border-[5px] border-white/20 shadow-2xl"><Image src="/site/velira-mobile.png" alt="VELIRA giyim demosunun gerçek mobil ekranı: kategori menüsü, öne çıkan elbiseler ve sepete ekleme düğmeleri" width={390} height={844} sizes="250px" priority className="h-auto w-full" /></div>
           <figcaption className="mt-4 text-center text-xs text-white/60">VELIRA demosundan gerçek mobil ekran.</figcaption>

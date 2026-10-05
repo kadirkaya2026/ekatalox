@@ -7,7 +7,7 @@ import { SITE } from "@/lib/marketing/site";
 
 export const metadata = marketingMetadata(
   "/nasil-calisir",
-  "Dijital Katalog Nasıl Oluşturulur?",
+  "B2B Sipariş Sistemi Nasıl Çalışır?",
   "Hesabınızı açın, ürünlerinizi yükleyin, bayi fiyat listelerini tanımlayın. Bayileriniz PDF sipariş fişi bağlantısını WhatsApp üzerinden paylaşsın.",
 );
 

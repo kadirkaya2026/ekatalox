@@ -23,7 +23,7 @@ export async function generateMetadata({ params }: Props) {
   const image = `${SITE.url}/blog/${post.slug}/paylasim`;
   return {
     ...base,
-    openGraph: { ...base.openGraph, type: "article", publishedTime: `${post.publishedAt}T00:00:00+03:00`, ...(post.updatedAt ? { modifiedTime: `${post.updatedAt}T00:00:00+03:00` } : {}), authors: [SITE.name], images: [{ url: image, width: 1200, height: 630, alt: post.title }] },
+    openGraph: { ...base.openGraph, type: "article", publishedTime: `${post.publishedAt}T00:00:00+03:00`, ...(post.updatedAt ? { modifiedTime: `${post.updatedAt}T00:00:00+03:00` } : {}), authors: ["Kadir Kaya"], images: [{ url: image, width: 1200, height: 630, alt: post.title }] },
     twitter: { ...base.twitter, images: [image] },
   };
 }
@@ -32,7 +32,7 @@ export default async function ArticlePage({ params }: Props) {
   const related = getRelatedPosts(post);
   const url = `${SITE.url}/blog/${post.slug}`;
   const schema = { "@context": "https://schema.org", "@graph": [
-    { "@type": "BlogPosting", "@id": `${url}#article`, headline: post.title, description: post.description, mainEntityOfPage: url, url, inLanguage: "tr-TR", datePublished: `${post.publishedAt}T00:00:00+03:00`, ...(post.updatedAt ? { dateModified: `${post.updatedAt}T00:00:00+03:00` } : {}), image: `${url}/paylasim`, author: { "@type": "Organization", name: SITE.name, url: `${SITE.url}/hakkimizda` }, publisher: { "@type": "Organization", name: SITE.name, url: SITE.url, logo: { "@type": "ImageObject", url: `${SITE.url}/ekatalox-logo-rgb-v2.png` } } },
+    { "@type": "BlogPosting", "@id": `${url}#article`, headline: post.title, description: post.description, mainEntityOfPage: url, url, inLanguage: "tr-TR", datePublished: `${post.publishedAt}T00:00:00+03:00`, ...(post.updatedAt ? { dateModified: `${post.updatedAt}T00:00:00+03:00` } : {}), image: `${url}/paylasim`, author: { "@type": "Person", name: "Kadir Kaya", url: `${SITE.url}/hakkimizda`, worksFor: { "@type": "Organization", name: SITE.name, url: SITE.url } }, publisher: { "@type": "Organization", name: SITE.name, url: SITE.url, logo: { "@type": "ImageObject", url: `${SITE.url}/ekatalox-logo-rgb-v2.png` } } },
     { "@type": "BreadcrumbList", itemListElement: [
       { "@type": "ListItem", position: 1, name: "Ana sayfa", item: SITE.url },
       { "@type": "ListItem", position: 2, name: "Blog", item: `${SITE.url}/blog` },
@@ -47,7 +47,7 @@ export default async function ArticlePage({ params }: Props) {
         <p className="mt-8 text-sm font-semibold text-brand-neon">{post.category}</p>
         <h1 className="mt-4 max-w-4xl text-balance text-3xl font-bold leading-tight tracking-tight sm:text-5xl">{post.title}</h1>
         <p className="mt-5 max-w-3xl text-lg leading-relaxed text-white/75">{post.description}</p>
-        <div className="mt-7 flex flex-wrap gap-x-4 gap-y-2 text-sm text-white/65"><Link href="/hakkimizda" rel="author" className="text-white hover:underline">eKatalox</Link><span>Yayın: <time dateTime={post.publishedAt}>{blogDate(post.publishedAt)}</time></span>{post.updatedAt && <span>Güncelleme: <time dateTime={post.updatedAt}>{blogDate(post.updatedAt)}</time></span>}<span>{readingMinutes(post)} dk okuma</span></div>
+        <div className="mt-7 flex flex-wrap gap-x-4 gap-y-2 text-sm text-white/65"><span>Yazar: <Link href="/hakkimizda" rel="author" className="text-white hover:underline">Kadir Kaya</Link></span><span>Yayın: <time dateTime={post.publishedAt}>{blogDate(post.publishedAt)}</time></span>{post.updatedAt && <span>Güncelleme: <time dateTime={post.updatedAt}>{blogDate(post.updatedAt)}</time></span>}<span>{readingMinutes(post)} dk okuma</span></div>
       </Container>
     </Section>
     <Section tone="white">
