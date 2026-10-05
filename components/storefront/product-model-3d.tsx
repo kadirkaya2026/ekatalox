@@ -18,11 +18,14 @@ export function ProductModel3D({ src, label }: { src: string; label: string }) {
 
     (async () => {
       try {
-        const [THREE, { OrbitControls }, { GLTFLoader }, { RoomEnvironment }] = await Promise.all([
+        const [THREE, { OrbitControls }, { GLTFLoader }, { RoomEnvironment }, { MeshoptDecoder }] = await Promise.all([
           import("three"),
           import("three/examples/jsm/controls/OrbitControls.js"),
           import("three/examples/jsm/loaders/GLTFLoader.js"),
           import("three/examples/jsm/environments/RoomEnvironment.js"),
+          // meshopt ile sıkıştırılmış .glb'ler (5 Eki 2026, LS-810: 22 MB → 5 MB) için çözücü;
+          // sıkıştırılmamış dosyalar eskisi gibi açılır.
+          import("three/examples/jsm/libs/meshopt_decoder.module.js"),
         ]);
         if (disposed) return;
 
@@ -82,7 +85,7 @@ export function ProductModel3D({ src, label }: { src: string; label: string }) {
           canvas.remove();
         };
 
-        const gltf = await new GLTFLoader().loadAsync(src);
+        const gltf = await new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).loadAsync(src);
         if (disposed) return;
         gltf.scene.traverse((object) => {
           const mesh = object as import("three").Mesh;
