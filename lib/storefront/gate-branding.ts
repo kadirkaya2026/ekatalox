@@ -210,6 +210,9 @@ const GATE_BRANDING: Record<string, GateBranding> = {
   },
 };
 
+// 6 Eki 2026: Börü Tech adresi borutech → borutechtoptan oldu; aynı kapı iki adla da çalışır.
+GATE_BRANDING.borutechtoptan = GATE_BRANDING.borutech;
+
 export function getGateBranding(subdomain: string): GateBranding | null {
   return GATE_BRANDING[subdomain.toLowerCase()] ?? null;
 }
