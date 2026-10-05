@@ -247,9 +247,9 @@ export function ProductsTable({
     <>
       <TableWrapper>
         <Table>
-          <thead className="bg-muted/60 text-left text-xs uppercase tracking-[0.16em] text-muted-foreground">
+          <thead className="bg-muted/60 text-left text-xs uppercase tracking-wider text-muted-foreground">
             <tr>
-              <th className="px-4 py-3">
+              <th className="px-3 py-3">
                 <input
                   type="checkbox"
                   className="size-5 cursor-pointer accent-emerald-600"
@@ -263,17 +263,17 @@ export function ProductsTable({
                   aria-label="Tüm filtrelenmiş ürünleri seç"
                 />
               </th>
-              <th className="px-4 py-3">Sıra</th>
-              <th className="px-4 py-3">Ürün</th>
-              <th className="px-4 py-3">Kategori</th>
-              <th className="px-4 py-3">Stok</th>
-              <th className="px-4 py-3">Model</th>
+              <th className="px-3 py-3">Sıra</th>
+              <th className="px-3 py-3">Ürün</th>
+              <th className="px-3 py-3">Kategori</th>
+              <th className="px-3 py-3">Stok</th>
+              <th className="px-3 py-3">Varyant</th>
               {pricedLists.map((list) => (
-                <th key={list.id} className="px-4 py-3">
+                <th key={list.id} className="whitespace-nowrap px-3 py-3">
                   {getPriceListDisplayName(list)}
                 </th>
               ))}
-              <th className="sticky right-0 z-10 border-l border-border bg-muted/60 px-4 py-3 text-right">
+              <th className="sticky right-0 z-10 border-l border-border bg-muted/60 px-4 py-3 text-right shadow-[-10px_0_12px_-10px_rgba(15,23,42,0.25)]">
                 Aksiyon
               </th>
             </tr>
@@ -301,7 +301,7 @@ export function ProductsTable({
                 onDrop={() => onDrop(product.id)}
                 onDragEnd={onDragEnd}
               >
-                <td className="px-4 py-3">
+                <td className="px-3 py-3">
                   <input
                     type="checkbox"
                     className="size-5 cursor-pointer accent-emerald-600"
@@ -310,11 +310,8 @@ export function ProductsTable({
                     aria-label={`${product.product_name} seç`}
                   />
                 </td>
-                <td className="px-4 py-3">
+                <td className="px-3 py-3">
                   <div className="flex items-center gap-3">
-                    <div className="rounded-lg border border-border bg-card p-2 text-slate-400">
-                      <GripVertical className="size-4" />
-                    </div>
                     <div>
                       <ProductOrderInput
                         displayOrder={product.display_order}
@@ -346,7 +343,7 @@ export function ProductsTable({
                     </div>
                   </div>
                 </td>
-                <td className="px-4 py-3">
+                <td className="px-3 py-3">
                   <div className="flex items-center gap-3">
                     <div className="relative h-14 w-14 overflow-hidden rounded-xl bg-slate-100">
                       {product.image_url ? (
@@ -366,7 +363,7 @@ export function ProductsTable({
                         />
                       )}
                     </div>
-                    <div>
+                    <div className="min-w-[180px] max-w-[280px]">
                       <p className="font-semibold text-foreground">{product.product_name}</p>
                       <p className="text-sm text-muted-foreground">
                         {product.sku_code} • {product.currency}
@@ -374,7 +371,7 @@ export function ProductsTable({
                     </div>
                   </div>
                 </td>
-                <td className="px-4 py-3">
+                <td className="px-3 py-3">
                   {inlineCategoryProductId === product.id ? (
                     <select
                       autoFocus
@@ -406,22 +403,22 @@ export function ProductsTable({
                     </button>
                   )}
                 </td>
-                <td className="px-4 py-3">
+                <td className="px-3 py-3">
                   <div className="flex flex-wrap gap-1">
                     {renderStockBadge(product)}
                     {renderAlcoholBadge(product, isTekel)}
                     {renderOverLimitBadge(product)}
                   </div>
                 </td>
-                <td className="px-4 py-3">{renderVariantCountBadge(product)}</td>
+                <td className="px-3 py-3">{renderVariantCountBadge(product)}</td>
                 {pricedLists.map((list) => (
-                  <td key={list.id} className="px-4 py-3 text-base">
+                  <td key={list.id} className="whitespace-nowrap px-3 py-3 text-base">
                     {renderProductListPrice(product, list.id)}
                   </td>
                 ))}
                 <td
                   className={cn(
-                    "sticky right-0 z-10 border-l border-border bg-card px-2 py-3 align-top",
+                    "sticky right-0 z-10 border-l border-border bg-card px-2 py-3 align-top shadow-[-10px_0_12px_-10px_rgba(15,23,42,0.25)]",
                     draggedProductId === product.id && "bg-emerald-50/60",
                   )}
                 >

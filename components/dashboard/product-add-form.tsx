@@ -118,178 +118,220 @@ export function ProductAddForm({
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="mt-5 grid gap-3">
-          <div className="grid gap-3 md:grid-cols-2">
-            <Select
-              value={form.category_id}
-              onChange={(event) => updateField("category_id", event.target.value)}
-            >
-              <option value="">Kategori seçin</option>
-              {flatCategories.map((category) => (
-                <option key={category.id} value={category.id}>
-                  {"— ".repeat(category.depth)}
-                  {category.name}
-                </option>
-              ))}
-            </Select>
-            <Input
-              placeholder="Model No"
-              value={form.sku_code}
-              onChange={(event) => updateField("sku_code", event.target.value)}
-            />
-            <Input
-              placeholder="Ürün adı"
-              value={form.product_name}
-              onChange={(event) => updateField("product_name", event.target.value)}
-            />
-          </div>
-
-          <ProductDescriptionEditor
-            value={form.description}
-            onChange={(value) => updateField("description", value)}
-          />
-
-          <div className="grid gap-3 md:grid-cols-4">
-            <Select
-              value={form.currency}
-              onChange={(event) => updateField("currency", event.target.value)}
-            >
-              {supportedCurrencyCodes.map((currency) => (
-                <option key={currency} value={currency}>
-                  {currency}
-                </option>
-              ))}
-            </Select>
-            <div className="md:col-span-2">
-              <Input
-                value={form.purchase_price}
-                onChange={(event) => updateField("purchase_price", event.target.value)}
-                placeholder="Alış fiyatı (maliyet)"
-                inputMode="decimal"
-              />
-              <p className="mt-1 text-xs text-muted-foreground">
-                Müşteriye gösterilmez; Satış &amp; Kârlılık raporunda kâr hesabı için kullanılır.
-              </p>
-            </div>
-          </div>
-
-          <ProductPriceFields
-            priceLists={priceLists}
-            values={form.listPrices}
-            onChange={updateListPrice}
-            discountValues={form.listDiscounts}
-            onDiscountChange={updateListDiscount}
-            showDiscounts={form.is_discount_active}
-          />
-
-          <PlanFeatureGate
-            feature="product_discount"
-            plan={tenant.plan}
-            companyName={tenant.company_name}
+        <form onSubmit={handleSubmit} className="mt-6 grid gap-5">
+          <FormSection
+            title="Temel bilgiler"
+            description="Bayinin ürünü bulup tanıdığı bilgiler."
           >
-            <div className="rounded-xl border border-slate-100 bg-slate-50 px-4 py-3">
-              <label className="flex items-center gap-3 text-sm text-slate-700">
-                <input
-                  type="checkbox"
-                  checked={form.is_discount_active}
-                  onChange={(event) => updateField("is_discount_active", event.target.checked)}
+            <div className="grid gap-4 md:grid-cols-2">
+              <Field label="Kategori" hint="Ürün katalogda bu kategorinin altında listelenir.">
+                <Select
+                  value={form.category_id}
+                  onChange={(event) => updateField("category_id", event.target.value)}
+                >
+                  <option value="">Kategori seçin</option>
+                  {flatCategories.map((category) => (
+                    <option key={category.id} value={category.id}>
+                      {"— ".repeat(category.depth)}
+                      {category.name}
+                    </option>
+                  ))}
+                </Select>
+              </Field>
+              <Field
+                label="Model No"
+                hint="Ürünün kimliği. Bayi bu kodla arar; Excel ile güncellemede ürün bu kodla eşleşir."
+              >
+                <Input
+                  placeholder="Model No"
+                  value={form.sku_code}
+                  onChange={(event) => updateField("sku_code", event.target.value)}
                 />
-                İndirim uygula
-              </label>
-              {form.is_discount_active ? (
-                <p className="mt-2 text-sm text-slate-500">
-                  İndirimli fiyatı her fiyat listesi için yukarıdaki alanlara ayrı ayrı
-                  girin. Boş bıraktığınız listede indirim uygulanmaz.
-                </p>
-              ) : null}
+              </Field>
+              <Field label="Ürün adı" className="md:col-span-2">
+                <Input
+                  placeholder="Ürün adı"
+                  value={form.product_name}
+                  onChange={(event) => updateField("product_name", event.target.value)}
+                />
+              </Field>
             </div>
-          </PlanFeatureGate>
+          </FormSection>
+
+          <FormSection
+            title="Açıklama"
+            description="Katalogda ürünün Detaylar sekmesinde görünür. Kalın yazı, madde listesi ve tablo kullanabilirsiniz."
+          >
+            <ProductDescriptionEditor
+              value={form.description}
+              onChange={(value) => updateField("description", value)}
+            />
+          </FormSection>
+
+          <FormSection
+            title="Fotoğraflar"
+            description="En fazla 3 görsel. İlk görsel katalogdaki ürün kartında görünür."
+          >
+            <div className="max-w-2xl">
+              <ProductImageFields
+                images={[form.image, form.image2, form.image3]}
+                onSelect={(slot, file) => handleImageSelect(slot, file)}
+                onRemove={(slot) => handleImageSelect(slot, null)}
+              />
+            </div>
+          </FormSection>
+
+          <FormSection
+            title="Fiyatlar"
+            description="Her fiyat listesi için adet fiyatını girin. Bayi kataloğa girdiğinde yalnız kendi listesinin fiyatını görür."
+          >
+            <div className="grid gap-4 md:grid-cols-3">
+              <Field label="Para birimi">
+                <Select
+                  value={form.currency}
+                  onChange={(event) => updateField("currency", event.target.value)}
+                >
+                  {supportedCurrencyCodes.map((currency) => (
+                    <option key={currency} value={currency}>
+                      {currency}
+                    </option>
+                  ))}
+                </Select>
+              </Field>
+              <Field
+                label="Alış fiyatı (maliyet)"
+                hint="Müşteriye gösterilmez; Satış & Kârlılık raporunda kâr hesabı için kullanılır."
+                className="md:col-span-2"
+              >
+                <Input
+                  value={form.purchase_price}
+                  onChange={(event) => updateField("purchase_price", event.target.value)}
+                  placeholder="Alış fiyatı (maliyet)"
+                  inputMode="decimal"
+                />
+              </Field>
+            </div>
+
+            <div className="mt-4">
+              <ProductPriceFields
+                priceLists={priceLists}
+                values={form.listPrices}
+                onChange={updateListPrice}
+                discountValues={form.listDiscounts}
+                onDiscountChange={updateListDiscount}
+                showDiscounts={form.is_discount_active}
+              />
+            </div>
+
+            <PlanFeatureGate
+              feature="product_discount"
+              plan={tenant.plan}
+              companyName={tenant.company_name}
+            >
+              <div className="mt-4">
+                <OptionCheckbox
+                  checked={form.is_discount_active}
+                  onChange={(checked) => updateField("is_discount_active", checked)}
+                  title="İndirim uygula"
+                  description={
+                    form.is_discount_active
+                      ? "İndirimli fiyatı her fiyat listesi için yukarıdaki alanlara ayrı ayrı girin. Boş bıraktığınız listede indirim uygulanmaz."
+                      : "Açarsanız her fiyat listesine indirimli fiyat girebilirsiniz; katalogda eski fiyat üstü çizili görünür."
+                  }
+                />
+              </div>
+            </PlanFeatureGate>
+          </FormSection>
 
           {/* Paket / koli adedi market tipi hesaplarda girilmiyor (kullanıcı
               isteği, 4 Eyl 2026) — toptancı/genel tipte gösterilir. */}
           {tenant.business_type !== "market" ? (
-            <div className="grid gap-3 md:grid-cols-2">
-              <Input
-                type="number"
-                min="1"
-                step="1"
-                placeholder="Paket adedi"
-                value={form.package_quantity}
-                onChange={(event) => updateField("package_quantity", event.target.value)}
+            <FormSection
+              title="Satış birimi"
+              description="Girerseniz bayi sepette adet, paket ya da koli seçerek sipariş verir; adedi sistem hesaplar. Bilmiyorsanız boş bırakın."
+            >
+              <div className="grid gap-4 md:grid-cols-2">
+                <Field label="Paket adedi" hint="Bir pakette kaç adet var?">
+                  <Input
+                    type="number"
+                    min="1"
+                    step="1"
+                    placeholder="Paket adedi"
+                    value={form.package_quantity}
+                    onChange={(event) => updateField("package_quantity", event.target.value)}
+                  />
+                </Field>
+                <Field label="Koli adedi" hint="Bir kolide kaç adet var?">
+                  <Input
+                    type="number"
+                    min="1"
+                    step="1"
+                    placeholder="Koli adedi"
+                    value={form.carton_quantity}
+                    onChange={(event) => updateField("carton_quantity", event.target.value)}
+                  />
+                </Field>
+              </div>
+            </FormSection>
+          ) : null}
+
+          <FormSection title="Stok ve görünürlük">
+            <div className="grid gap-3">
+              <OptionCheckbox
+                checked={form.track_stock ? Number(form.stock_quantity || 0) > 0 : form.is_in_stock}
+                disabled={form.track_stock}
+                onChange={(checked) => updateField("is_in_stock", checked)}
+                title="Stokta görünsün"
+                description={
+                  form.track_stock
+                    ? "Stok takibi açık: adet 0'ın üstündeyse otomatik olarak stokta görünür."
+                    : "İşaretliyse ürün katalogda satışa açıktır. Kaldırırsanız ürün “Stokta yok” görünür ve sepete eklenemez."
+                }
               />
-              <Input
-                type="number"
-                min="1"
-                step="1"
-                placeholder="Koli adedi"
-                value={form.carton_quantity}
-                onChange={(event) => updateField("carton_quantity", event.target.value)}
+              <OptionCheckbox
+                checked={form.track_stock}
+                onChange={(checked) => updateField("track_stock", checked)}
+                title="Stok takibi yapılsın"
+                description="Elinizdeki adedi girin. Katalogda kalan adet görünür ve bayi bundan fazlasını sepete ekleyemez. Siparişi onayladığınızda stok düşer, iptal ederseniz geri eklenir; 0 olunca ürün “Stokta yok” olur."
+              >
+                {form.track_stock ? (
+                  <label className="mt-3 block max-w-xs text-sm font-medium text-slate-700">
+                    Stok adedi
+                    <input
+                      type="number"
+                      min={0}
+                      step={1}
+                      inputMode="numeric"
+                      value={form.stock_quantity}
+                      onChange={(event) => updateField("stock_quantity", event.target.value)}
+                      placeholder="Örn. 120"
+                      className="mt-1 h-10 w-full rounded-lg border border-border bg-background px-3 text-sm font-normal text-foreground"
+                    />
+                  </label>
+                ) : null}
+              </OptionCheckbox>
+              <OptionCheckbox
+                checked={form.is_recommended}
+                onChange={(checked) => updateField("is_recommended", checked)}
+                title="Sepet önerilerinde göster"
+                description="Sepet önerileri ayarı manuel moddaysa bu ürün, bayinin sepetinde önerilen ürünler arasında gösterilir."
               />
+
+              {/* Alkollü ürün bayrağı yalnız market tipi hesaplarda; tekel
+                  (is_tekel) mağazalarda bu ürünler vitrinde gizlenir (bkz. 0114). */}
+              {tenant.business_type === "market" ? (
+                <OptionCheckbox
+                  checked={form.is_alcohol}
+                  onChange={(checked) => updateField("is_alcohol", checked)}
+                  title="Alkollü ürün"
+                  description="Tekel mağazalarda vitrinde gösterilmez."
+                  tone="amber"
+                />
+              ) : null}
             </div>
-          ) : null}
+          </FormSection>
 
-          <ProductImageFields
-            images={[form.image, form.image2, form.image3]}
-            onSelect={(slot, file) => handleImageSelect(slot, file)}
-            onRemove={(slot) => handleImageSelect(slot, null)}
-          />
-
-          <label className="flex items-center gap-3 rounded-xl border border-slate-100 bg-slate-50 px-4 py-3 text-sm text-slate-700">
-            <input
-              type="checkbox"
-              checked={form.track_stock ? Number(form.stock_quantity || 0) > 0 : form.is_in_stock}
-              disabled={form.track_stock}
-              onChange={(event) => updateField("is_in_stock", event.target.checked)}
-            />
-            Stokta görünsün{form.track_stock ? " (stok adedine göre otomatik)" : ""}
-          </label>
-          <label className="flex items-center gap-3 rounded-xl border border-slate-100 bg-slate-50 px-4 py-3 text-sm text-slate-700">
-            <input
-              type="checkbox"
-              checked={form.track_stock}
-              onChange={(event) => updateField("track_stock", event.target.checked)}
-            />
-            Stok takibi yapılsın (adet girin; vitrinde kalan adet görünür, bitince “Stokta yok” olur)
-          </label>
-          {form.track_stock ? (
-            <label className="block text-sm text-muted-foreground">
-              Stok adedi
-              <input
-                type="number"
-                min={0}
-                step={1}
-                inputMode="numeric"
-                value={form.stock_quantity}
-                onChange={(event) => updateField("stock_quantity", event.target.value)}
-                placeholder="Örn. 120"
-                className="mt-1 h-10 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground"
-              />
-            </label>
-          ) : null}
-
-          <label className="flex items-center gap-3 rounded-xl border border-slate-100 bg-slate-50 px-4 py-3 text-sm text-slate-700">
-            <input
-              type="checkbox"
-              checked={form.is_recommended}
-              onChange={(event) => updateField("is_recommended", event.target.checked)}
-            />
-            Sepet önerilerinde göster (manuel modda)
-          </label>
-
-          {/* Alkollü ürün bayrağı yalnız market tipi hesaplarda; tekel
-              (is_tekel) mağazalarda bu ürünler vitrinde gizlenir (bkz. 0114). */}
-          {tenant.business_type === "market" ? (
-            <label className="flex items-center gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-              <input
-                type="checkbox"
-                checked={form.is_alcohol}
-                onChange={(event) => updateField("is_alcohol", event.target.checked)}
-              />
-              Alkollü ürün (tekel mağazalarda vitrinde gösterilmez)
-            </label>
-          ) : null}
-
-          <div className="flex gap-3">
+          <div className="flex gap-3 border-t border-slate-100 pt-5">
             <Button
               type="button"
               variant="secondary"
@@ -303,6 +345,88 @@ export function ProductAddForm({
           </div>
         </form>
       </Card>
+    </div>
+  );
+}
+
+/** Formu başlıklı bölümlere ayırır (ürün ekleme ekranı, 6 Eki 2026). */
+function FormSection({
+  title,
+  description,
+  children,
+}: {
+  title: string;
+  description?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="rounded-2xl border border-slate-200/80 p-4 sm:p-5">
+      <h3 className="text-base font-semibold text-slate-900">{title}</h3>
+      {description ? <p className="mt-1 text-sm text-slate-500">{description}</p> : null}
+      <div className="mt-4">{children}</div>
+    </section>
+  );
+}
+
+function Field({
+  label,
+  hint,
+  className,
+  children,
+}: {
+  label: string;
+  hint?: string;
+  className?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <label className={`grid gap-1.5 text-sm ${className ?? ""}`}>
+      <span className="font-medium text-slate-700">{label}</span>
+      {children}
+      {hint ? <span className="text-xs text-slate-500">{hint}</span> : null}
+    </label>
+  );
+}
+
+function OptionCheckbox({
+  checked,
+  disabled,
+  onChange,
+  title,
+  description,
+  tone = "slate",
+  children,
+}: {
+  checked: boolean;
+  disabled?: boolean;
+  onChange: (checked: boolean) => void;
+  title: string;
+  description: string;
+  tone?: "slate" | "amber";
+  children?: React.ReactNode;
+}) {
+  return (
+    <div
+      className={
+        tone === "amber"
+          ? "rounded-xl border border-amber-200 bg-amber-50 px-4 py-3"
+          : "rounded-xl border border-slate-100 bg-slate-50 px-4 py-3"
+      }
+    >
+      <label className="flex items-start gap-3">
+        <input
+          type="checkbox"
+          className="mt-0.5 size-4 shrink-0 accent-emerald-600"
+          checked={checked}
+          disabled={disabled}
+          onChange={(event) => onChange(event.target.checked)}
+        />
+        <span>
+          <span className="block text-sm font-semibold text-slate-800">{title}</span>
+          <span className="mt-0.5 block text-sm text-slate-500">{description}</span>
+        </span>
+      </label>
+      {children}
     </div>
   );
 }
