@@ -14,12 +14,16 @@ const SLOT_LABELS: Record<ProductImageSlot, string> = {
 
 function ImageSlotField({
   label,
+  hint,
   file,
   existingUrl,
   onSelect,
   onRemove,
+  className,
 }: {
   label: string;
+  hint?: string;
+  className?: string;
   file: File | null;
   existingUrl: string | null;
   onSelect: (file: File) => void;
@@ -42,7 +46,7 @@ function ImageSlotField({
   const displayUrl = previewUrl ?? existingUrl;
 
   return (
-    <label className="relative flex aspect-square cursor-pointer flex-col items-center justify-center gap-1.5 overflow-hidden rounded-xl border border-dashed border-slate-200 bg-slate-50 text-center text-xs text-slate-500 transition hover:border-emerald-300 hover:bg-emerald-50/40">
+    <label className={`relative flex aspect-square cursor-pointer flex-col items-center justify-center gap-1.5 overflow-hidden rounded-xl border border-dashed border-slate-200 bg-slate-50 text-center text-xs text-slate-500 transition hover:border-emerald-300 hover:bg-emerald-50/40 ${className ?? ""}`}>
       <input
         type="file"
         accept="image/*"
@@ -75,6 +79,7 @@ function ImageSlotField({
         <>
           <ImagePlus className="size-5 text-emerald-700" />
           <span>{label}</span>
+          {hint ? <span className="px-3 text-[11px] text-slate-400">{hint}</span> : null}
         </>
       )}
     </label>
@@ -87,13 +92,35 @@ export function ProductImageFields({
   removedSlots,
   onSelect,
   onRemove,
+  featured = false,
 }: {
   images: [File | null, File | null, File | null];
   existingUrls?: [string | null, string | null, string | null];
   removedSlots?: [boolean, boolean, boolean];
   onSelect: (slot: ProductImageSlot, file: File) => void;
   onRemove: (slot: ProductImageSlot) => void;
+  /** Ürün ekleme ekranı: ilk görsel büyük "Ana görsel", diğer ikisi yanında küçük. */
+  featured?: boolean;
 }) {
+  if (featured) {
+    return (
+      <div className="grid max-w-xl grid-cols-3 grid-rows-2 gap-3">
+        {SLOTS.map((slot) => (
+          <ImageSlotField
+            key={slot}
+            label={slot === 1 ? "Ana görsel" : SLOT_LABELS[slot]}
+            hint={slot === 1 ? "Katalog kartında görünür" : undefined}
+            className={slot === 1 ? "col-span-2 row-span-2" : undefined}
+            file={images[slot - 1]}
+            existingUrl={removedSlots?.[slot - 1] ? null : existingUrls?.[slot - 1] ?? null}
+            onSelect={(file) => onSelect(slot, file)}
+            onRemove={() => onRemove(slot)}
+          />
+        ))}
+      </div>
+    );
+  }
+
   return (
     <div>
       <p className="mb-2 text-sm font-medium text-slate-700">
