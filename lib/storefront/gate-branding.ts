@@ -85,6 +85,47 @@ const GATE_BRANDING: Record<string, GateBranding> = {
       },
     },
   },
+  // 5 Eki 2026: Börü Tech (Lucatech bayisi) — Lucatech kapısının düzeni, kendi kurdu ve markasız arka planla.
+  borutech: {
+    backgroundImage: "/gate/borutech/bg.jpg",
+    logoMark: "/gate/borutech/logo-mark.png",
+    wordmark: "BÖRÜ TECH",
+    accentColor: "#F58F1E",
+    copy: {
+      tr: {
+        eyebrow: "Bayi Portalı",
+        headline: "Börü Güvencesiyle.",
+        tagline:
+          "Şarj aletinden kabloya, kulaklıktan powerbank'e; güncel toptan fiyat listemiz bayilerimize özel.",
+        chips: ["Şarj Aleti", "Kablo", "Kulaklık", "Powerbank", "Hoparlör", "Garantili"],
+        helpLine: "Şifreniz yok mu? WhatsApp'tan bize yazın.",
+      },
+      en: {
+        eyebrow: "Dealer Portal",
+        headline: "Backed by Börü.",
+        tagline:
+          "From chargers to cables, earbuds to power banks; our current wholesale price list, exclusively for our dealers.",
+        chips: ["Chargers", "Cables", "Earbuds", "Power Banks", "Speakers", "Warranty"],
+        helpLine: "No password? Message us on WhatsApp.",
+      },
+      de: {
+        eyebrow: "Händlerportal",
+        headline: "Mit Börü-Garantie.",
+        tagline:
+          "Von Ladegeräten bis Kabeln, von Ohrhörern bis Powerbanks; unsere aktuelle Großhandelspreisliste, exklusiv für unsere Händler.",
+        chips: ["Ladegeräte", "Kabel", "Ohrhörer", "Powerbanks", "Lautsprecher", "Garantie"],
+        helpLine: "Kein Passwort? Schreiben Sie uns auf WhatsApp.",
+      },
+      ru: {
+        eyebrow: "Портал дилера",
+        headline: "С гарантией Börü.",
+        tagline:
+          "От зарядных устройств до кабелей, от наушников до пауэрбанков; наш актуальный оптовый прайс-лист только для наших дилеров.",
+        chips: ["Зарядные устройства", "Кабели", "Наушники", "Пауэрбанки", "Колонки", "Гарантия"],
+        helpLine: "Нет пароля? Напишите нам в WhatsApp.",
+      },
+    },
+  },
   demotoptan: {
     backgroundImage: "/gate/demotoptan/bg.jpg",
     logoMark: "/gate/demotoptan/logo-mark.png",
