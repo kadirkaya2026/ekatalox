@@ -976,7 +976,7 @@ function ImageImportTab() {
               </p>
             </div>
             <p className="mt-1 text-sm leading-relaxed text-slate-500">
-              Sistem resimleri otomatik sıkıştıracak (maks. 1200px, %75 kalite), Supabase Storage&apos;a yükleyecek ve her resmi ilgili ürünle eşleştirecektir.
+              Sistem resimleri otomatik sıkıştıracak (maks. 1200px, %75 kalite), güvenli sunucumuza yükleyecek ve her resmi ilgili ürünle eşleştirecektir.
             </p>
           </div>
         </div>
