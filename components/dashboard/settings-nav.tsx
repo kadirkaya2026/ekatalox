@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import {
   Building2, Clock, ClipboardList, CreditCard, Globe, ImageIcon, LayoutTemplate,
   Megaphone, PackageX, PanelBottom, Palette, Receipt, ShieldCheck, Store, Ticket, Truck,
-  UserCircle, type LucideIcon,
+  UserCircle, PlugZap, type LucideIcon,
   Lock,
 } from "lucide-react";
 import {
@@ -49,9 +49,10 @@ const TABS: Tab[] = [
   { href: "/settings/age-verification", label: "Yaş Doğrulama (18+)", icon: ShieldCheck, group: "İçerik & İletişim", requiredBusinessType: "market" },
   { href: "/settings/footer", label: "Footer (Sayfa Altı)", icon: PanelBottom, group: "İçerik & İletişim" },
   { href: "/settings/payment", label: "Ödeme ve Kampanyalar", icon: CreditCard, group: "Ödeme" },
+  { href: "/settings/bizimhesap", label: "BizimHesap", icon: PlugZap, group: "Entegrasyonlar" },
 ];
 
-const GROUP_ORDER = ["Hesap", "Marka & Görünüm", "İçerik & İletişim", "Ödeme"];
+const GROUP_ORDER = ["Hesap", "Marka & Görünüm", "İçerik & İletişim", "Ödeme", "Entegrasyonlar"];
 
 export function SettingsNav({
   plan,

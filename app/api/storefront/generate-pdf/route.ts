@@ -22,6 +22,7 @@ import {
 } from "@/lib/storage/order-receipts";
 import { recordStorefrontOrderStat } from "@/lib/analytics/record-stats";
 import { recordStorefrontOrder } from "@/lib/storefront/orders";
+import { sendOrderToBizimHesap } from "@/lib/integrations/bizimhesap";
 import { readStorefrontPriceList } from "@/lib/storefront/session";
 import {
   formatDealerAddress,
@@ -552,6 +553,11 @@ export async function POST(request: Request) {
     after(async () => {
       await supabase.from("orders").update({ access_code_id: accessCodeId }).eq("id", orderId);
     });
+  }
+  if (recorded) {
+    // BizimHesap'a satış belgesi (0159); bağlı değilse sessizce atlanır, hata siparişi etkilemez.
+    const bizimhesapOrderId = recorded.orderId;
+    after(() => sendOrderToBizimHesap(supabase, bizimhesapOrderId).then(() => undefined));
   }
   if (recorded) {
     const rec = recorded;
