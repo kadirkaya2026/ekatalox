@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { BadgeCheck } from "lucide-react";
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -67,7 +67,13 @@ const BILLING_PERIOD_LABELS: Record<string, string> = { monthly: "Aylık", yearl
 
 export function AdminTenantDetailPanel({ tenant: initialTenant }: { tenant: TenantWithRelations }) {
   const router = useRouter();
+  // Kayıttan sonra tenant listesi eski halini göstermesin (staleTimes.dynamic 30 sn
+  // istemci önbelleği): tenant her değiştiğinde sunucu verisi tazelenir.
   const [tenant, setTenant] = useState(initialTenant);
+  const loadedTenant = useRef(tenant);
+  useEffect(() => {
+    if (tenant !== loadedTenant.current) router.refresh();
+  }, [tenant, router]);
   const [isEditingName, setIsEditingName] = useState(false);
   const [companyNameDraft, setCompanyNameDraft] = useState(tenant.company_name);
   const [planDraft, setPlanDraft] = useState<TenantPlan>(tenant.plan ?? "baslangic");
