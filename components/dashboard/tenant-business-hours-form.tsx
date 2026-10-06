@@ -153,14 +153,14 @@ export function TenantBusinessHoursForm({
                         type="time"
                         value={dayHours.open_time}
                         onChange={(event) => updateDay(day, { open_time: event.target.value })}
-                        className="w-32"
+                        className="w-40 px-3"
                       />
                       <span className="text-sm text-slate-400">—</span>
                       <Input
                         type="time"
                         value={dayHours.close_time}
                         onChange={(event) => updateDay(day, { close_time: event.target.value })}
-                        className="w-32"
+                        className="w-40 px-3"
                       />
                     </div>
                   ) : (
