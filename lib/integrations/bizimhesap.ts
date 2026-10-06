@@ -202,7 +202,8 @@ export async function sendOrderToBizimHesap(
         taxNo: "",
         email: "",
         phone: (order.customer_phone ?? "").replace(/\D/g, "").slice(-10),
-        address: order.customer_address ?? "",
+        // BizimHesap adressiz belgeyi reddediyor ("Adres bilgisi gönderilmemiş", 6 Eki 2026).
+        address: order.customer_address?.trim() || "Adres belirtilmedi",
       },
       amounts: {
         currency: currencyCode(order.currency),
