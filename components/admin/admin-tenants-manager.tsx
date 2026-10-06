@@ -7,6 +7,18 @@ import { formatEffectiveProductLimit, formatProductLimit, getPlanLabel } from "@
 import type { TenantWithRelations } from "@/lib/types";
 import { cn, formatDate, formatTimeAgo } from "@/lib/utils";
 
+// Paket rozeti: listede hangi pakette olduğu tek bakışta görünsün (6 Eki 2026).
+const PLAN_BADGE_CLASS: Record<string, string> = {
+  free: "bg-slate-200 text-slate-700",
+  starter: "bg-sky-600 text-white",
+  professional: "bg-violet-600 text-white",
+  corporate: "bg-amber-500 text-white",
+};
+
+function getPlanBadgeClass(plan: string | null | undefined) {
+  return PLAN_BADGE_CLASS[plan ?? ""] ?? "bg-slate-500 text-white";
+}
+
 function getTrialBadge(trialEndsAt: string | null | undefined) {
   if (!trialEndsAt) {
     return null;
@@ -89,6 +101,14 @@ export function AdminTenantsManager({
                     <span className="text-base font-semibold text-emerald-700 underline-offset-4 hover:underline">
                       {tenant.company_name}
                     </span>
+                    <Badge
+                      className={cn(
+                        "px-2.5 py-1 text-xs font-bold uppercase tracking-wide",
+                        getPlanBadgeClass(tenant.plan),
+                      )}
+                    >
+                      {getPlanLabel(tenant.plan ?? "baslangic")}
+                    </Badge>
                     <Badge
                       className={cn(
                         tenant.status === "active"
