@@ -39,7 +39,10 @@ export type PlanFeature =
   // Kurumsal site (tenant'ın kendi kök alan adında şifresiz tanıtım sitesi +
   // bayi başvuru formu, bkz. 0133/0134). Yalnız en üst paketlerde: toptancı
   // "corporate" (Kurumsal), eski "kurumsal" ve özel "vip".
-  | "kurumsal_site";
+  | "kurumsal_site"
+  // BizimHesap entegrasyonu (0159): vitrin siparişi BizimHesap'a satış belgesi.
+  // Yalnız Kurumsal (kullanıcı kararı 6 Eki 2026).
+  | "bizimhesap";
 
 export interface PlanOption {
   id: TenantPlan;
@@ -361,6 +364,7 @@ const PROFESSIONAL_FEATURES: Record<PlanFeature, boolean> = {
   push_notifications: true,
   ad_free: true,
   kurumsal_site: false,
+  bizimhesap: false,
 };
 
 const STARTER_FEATURES: Record<PlanFeature, boolean> = {
@@ -377,6 +381,7 @@ const STARTER_FEATURES: Record<PlanFeature, boolean> = {
   push_notifications: true,
   ad_free: true,
   kurumsal_site: false,
+  bizimhesap: false,
 };
 
 // Esnaf (pro): banner, ürün indirimi, vitrin ürünleri, ödeme/kampanya
@@ -397,6 +402,7 @@ const ESNAF_FEATURES: Record<PlanFeature, boolean> = {
   push_notifications: true,
   ad_free: true,
   kurumsal_site: false,
+  bizimhesap: false,
 };
 
 // Toptancı merdiveni (20 Eyl 2026, güncelleme 21 Eyl). Ücretsiz: banner,
@@ -418,6 +424,7 @@ const TOPTAN_FREE_FEATURES: Record<PlanFeature, boolean> = {
   push_notifications: false,
   ad_free: false,
   kurumsal_site: false,
+  bizimhesap: false,
 };
 
 const TOPTAN_STARTER_FEATURES: Record<PlanFeature, boolean> = {
@@ -438,6 +445,7 @@ const TOPTAN_CORPORATE_FEATURES: Record<PlanFeature, boolean> = {
   sales_accounting: true,
   online_payment: true,
   kurumsal_site: true,
+  bizimhesap: true,
 };
 
 export const PLAN_FEATURES: Record<TenantPlan, Record<PlanFeature, boolean>> = {
@@ -451,6 +459,7 @@ export const PLAN_FEATURES: Record<TenantPlan, Record<PlanFeature, boolean>> = {
     ...PROFESSIONAL_FEATURES,
     online_payment: true,
     kurumsal_site: true,
+    bizimhesap: true,
   },
   start: STARTER_FEATURES,
   pro: ESNAF_FEATURES,
@@ -463,6 +472,7 @@ export const PLAN_FEATURES: Record<TenantPlan, Record<PlanFeature, boolean>> = {
     ...PROFESSIONAL_FEATURES,
     online_payment: true,
     kurumsal_site: true,
+    bizimhesap: true,
   },
 };
 
@@ -480,6 +490,7 @@ const PLAN_FEATURE_LABELS: Record<PlanFeature, string> = {
   push_notifications: "Müşterilere bildirim gönderme",
   ad_free: "Reklamsız vitrin",
   kurumsal_site: "Kurumsal site",
+  bizimhesap: "BizimHesap entegrasyonu",
 };
 
 const PLAN_FEATURE_UPGRADE_MESSAGES: Partial<Record<PlanFeature, string>> = {

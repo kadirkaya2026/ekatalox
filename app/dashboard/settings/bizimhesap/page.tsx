@@ -1,4 +1,5 @@
 import { Header } from "@/components/dashboard/header";
+import { PlanFeatureGate } from "@/components/dashboard/plan-feature-gate";
 import { BizimHesapSettingsForm } from "@/components/dashboard/bizimhesap-settings-form";
 import { requireTenantAdminPage } from "@/lib/auth/session";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
@@ -23,6 +24,7 @@ export default async function BizimHesapSettingsPage() {
         title="BizimHesap Entegrasyonu"
         description="Vitrininizden gelen fiyatlı siparişler BizimHesap'a otomatik olarak satış belgesi olarak aktarılır."
       />
+      <PlanFeatureGate feature="bizimhesap" plan={session.tenant!.plan} companyName={session.tenant!.company_name}>
       <BizimHesapSettingsForm
         initial={{
           connected: Boolean(data?.firm_id),
@@ -31,6 +33,7 @@ export default async function BizimHesapSettingsPage() {
           isEnabled: data?.is_enabled ?? false,
         }}
       />
+      </PlanFeatureGate>
     </div>
   );
 }

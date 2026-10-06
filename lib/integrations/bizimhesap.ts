@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { hasPlanFeature, type TenantPlan } from "@/lib/billing/plans";
 
 // BizimHesap B2B API (https://apidocs.bizimhesap.com). Kimlik: Key (BizimHesap'ın
 // genel entegrasyon anahtarı, env) + Token/firmId (mağazanın firma kimliği,
@@ -113,6 +114,11 @@ export async function sendOrderToBizimHesap(
       .eq("tenant_id", order.tenant_id)
       .maybeSingle();
     if (!config?.is_enabled || !config.firm_id) return { ok: false, error: "BizimHesap bağlantısı kapalı." };
+    // Paket düşerse (Kurumsal dışı) aktarım durur; bağlantı kaydı silinmez.
+    const { data: tenantRow } = await supabase.from("tenants").select("plan").eq("id", order.tenant_id).maybeSingle();
+    if (!hasPlanFeature((tenantRow?.plan ?? "free") as TenantPlan, "bizimhesap")) {
+      return { ok: false, error: "BizimHesap entegrasyonu Kurumsal pakette." };
+    }
     if (!apiKey()) return fail("Sunucuda BizimHesap anahtarı tanımlı değil.");
 
     const rate = Number(config.vat_rate ?? 20);

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getSessionContext } from "@/lib/auth/session";
 import { testBizimHesapConnection } from "@/lib/integrations/bizimhesap";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
-import { ensureTenantAdminResponse } from "@/lib/tenancy/guards";
+import { ensureTenantAdminResponse, ensureTenantPlanFeatureResponse } from "@/lib/tenancy/guards";
 
 // BizimHesap bağlantı ayarları (0159). Firma kimliği yazılır ama ASLA geri
 // döndürülmez; panel yalnız "kayıtlı" bilgisini ve son 4 haneyi görür.
@@ -40,6 +40,8 @@ export async function GET() {
 export async function PUT(request: Request) {
   const guard = await ensureTenantAdminResponse({ blockDemoWrite: true });
   if (guard) return guard;
+  const planGuard = await ensureTenantPlanFeatureResponse("bizimhesap");
+  if (planGuard) return planGuard;
   const session = await getSessionContext();
   const body = (await request.json().catch(() => ({}))) as {
     firmId?: unknown;
