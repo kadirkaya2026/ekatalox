@@ -1769,11 +1769,14 @@ export function StorefrontClient({
   // Masaüstü kategori seçicideki görseller (arama kutusunun solu).
   const headerCategoryImages = useMemo(
     () =>
+      // Alt kategoriler de: açılır menünün sağ paneli alt kategorileri görselli gösterir.
       Object.fromEntries(
-        topCategories.map((category) => [
-          category.id,
-          resolveCategoryImage(category, categories, products, categoryRepresentativeImages),
-        ]),
+        topCategories
+          .flatMap((category) => [category, ...category.children])
+          .map((category) => [
+            category.id,
+            resolveCategoryImage(category, categories, products, categoryRepresentativeImages),
+          ]),
       ),
     [topCategories, categories, products, categoryRepresentativeImages],
   );

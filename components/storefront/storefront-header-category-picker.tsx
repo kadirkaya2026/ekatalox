@@ -1,19 +1,30 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { ChevronDown, LayoutGrid, Store } from "lucide-react";
+import { ArrowRight, ChevronDown, ChevronRight, LayoutGrid, Store } from "lucide-react";
 import type { CategoryNode } from "@/lib/categories/tree";
 import { useStorefrontTheme } from "@/lib/storefront/theme-context";
 import { useStorefrontLocale } from "@/lib/storefront/locale-context";
 import { cn } from "@/lib/utils";
 import { StorefrontImage } from "@/components/storefront/storefront-image";
 
-// Masaüstü kategori seçici — arama kutusunun solunda (Amazon tarzı; 26 Eyl
-// 2026, tüm tenantlar). Üst bardaki kategori satırının yerini aldı: sabit
-// üst bar tek satır kalır. Açılır panelde her ana kategori görseliyle
-// (categoryImages, bkz. storefront-client) ve ilk birkaç alt kategorisiyle.
+// Masaüstü kategori seçici — arama kutusunun solunda (26 Eyl 2026, tüm tenantlar).
+// 6 Eki 2026: iki panelli mega menü. Solda ana kategoriler (üstüne gelince seçilir),
+// sağda seçili kategorinin TÜM alt kategorileri görselli kutucuk olarak; alt
+// kategorisi yoksa tek büyük "bu kategorideki ürünler" kutusu. Eski tek panelde
+// alt kategoriler 4 tane soluk yazıyla sınırlıydı (Nailport geri bildirimi).
 
-const MAX_CHILDREN = 4;
+function CategoryThumb({ image, className, iconClassName }: { image: string | null; className: string; iconClassName: string }) {
+  return (
+    <span className={cn("relative shrink-0 overflow-hidden bg-white ring-1 ring-black/5", className)}>
+      {image ? (
+        <StorefrontImage src={image} alt="" className="object-contain p-1" sizes="96px" />
+      ) : (
+        <Store className={cn("absolute inset-0 m-auto text-slate-400", iconClassName)} />
+      )}
+    </span>
+  );
+}
 
 export function StorefrontHeaderCategoryPicker({
   topCategories,
@@ -31,6 +42,7 @@ export function StorefrontHeaderCategoryPicker({
   const theme = useStorefrontTheme();
   const { t } = useStorefrontLocale();
   const [open, setOpen] = useState(false);
+  const [hoveredId, setHoveredId] = useState<string | null>(null);
   const rootRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -52,17 +64,31 @@ export function StorefrontHeaderCategoryPicker({
   const isAll = selectedCategoryId === "all";
   const selectedTop = topCategories.find((category) => category.id === selectedTopCategoryId);
   const label = isAll || !selectedTop ? t("header.allCategories") : selectedTop.name;
+  // Sağ panel: üstüne gelinen ana kategori; yoksa seçili olan; o da yoksa ilki.
+  const focused =
+    topCategories.find((category) => category.id === hoveredId) ?? selectedTop ?? topCategories[0] ?? null;
 
   const choose = (categoryId: string) => {
     onCategoryChange(categoryId);
     setOpen(false);
   };
 
+  const muted = theme.isDark ? "text-neutral-400" : "text-slate-500";
+  const tileClass = cn(
+    "group flex flex-col items-center gap-2 rounded-2xl border p-3 text-center transition",
+    theme.isDark
+      ? "border-neutral-700 hover:border-neutral-500 hover:bg-white/5"
+      : "border-slate-200 bg-white hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md",
+  );
+
   return (
     <div ref={rootRef} className="relative hidden shrink-0 self-stretch md:flex">
       <button
         type="button"
-        onClick={() => setOpen((value) => !value)}
+        onClick={() => {
+          setHoveredId(null);
+          setOpen((value) => !value);
+        }}
         aria-expanded={open}
         aria-haspopup="true"
         className={cn(
@@ -82,77 +108,109 @@ export function StorefrontHeaderCategoryPicker({
           <div
             className={cn(
               theme.categoryDropdown,
-              "max-h-[min(70vh,640px)] w-[min(880px,calc(100vw-3rem))] overflow-y-auto p-3",
+              "flex max-h-[min(72vh,620px)] w-[min(900px,calc(100vw-3rem))] overflow-hidden p-0",
             )}
           >
-            <button
-              type="button"
-              onClick={() => choose("all")}
-              className={cn(theme.categorySidebarItem(isAll), "mb-2 gap-2")}
+            {/* Sol panel: ana kategoriler */}
+            <div
+              className={cn(
+                "flex w-64 shrink-0 flex-col gap-1 overflow-y-auto border-r p-3",
+                theme.isDark ? "border-neutral-700" : "border-slate-100",
+              )}
             >
-              <LayoutGrid className="size-4" />
-              {t("header.allProducts")}
-            </button>
-            <div className="grid grid-cols-2 gap-1.5 lg:grid-cols-3">
+              <button
+                type="button"
+                onClick={() => choose("all")}
+                className={cn(theme.categorySidebarItem(isAll), "gap-2")}
+              >
+                <LayoutGrid className="size-4" />
+                {t("header.allProducts")}
+              </button>
               {topCategories.map((category) => {
-                const image = categoryImages[category.id] ?? null;
                 const isActive = !isAll && selectedTopCategoryId === category.id;
+                const isFocused = focused?.id === category.id;
                 return (
-                  <div
+                  <button
                     key={category.id}
-                    className={cn(theme.categorySidebarItem(isActive), "items-center gap-3 p-2")}
+                    type="button"
+                    onMouseEnter={() => setHoveredId(category.id)}
+                    onFocus={() => setHoveredId(category.id)}
+                    onClick={() => choose(category.id)}
+                    className={cn(
+                      theme.categorySidebarItem(isActive || isFocused),
+                      "items-center gap-2.5 py-1.5 pl-1.5 text-left",
+                    )}
                   >
-                    <button
-                      type="button"
-                      onClick={() => choose(category.id)}
-                      className="relative size-16 shrink-0 overflow-hidden rounded-xl bg-white ring-1 ring-black/5"
-                      aria-label={category.name}
-                    >
-                      {image ? (
-                        <StorefrontImage src={image} alt="" className="object-contain p-1" sizes="64px" />
-                      ) : (
-                        <Store className="absolute inset-0 m-auto size-6 text-slate-400" />
-                      )}
-                    </button>
-                    <div className="min-w-0 flex-1">
-                      <button
-                        type="button"
-                        onClick={() => choose(category.id)}
-                        className="block w-full truncate text-left text-[13px] font-bold leading-5 hover:underline"
-                      >
-                        {category.name}
-                      </button>
-                      {category.children.length ? (
-                        <div className="mt-0.5 flex flex-wrap gap-x-2 gap-y-0.5">
-                          {category.children.slice(0, MAX_CHILDREN).map((child) => (
-                            <button
-                              key={child.id}
-                              type="button"
-                              onClick={() => choose(child.id)}
-                              className={cn(
-                                "max-w-full truncate text-[11px] leading-4 hover:underline",
-                                selectedCategoryId === child.id ? "font-bold" : "font-medium opacity-70",
-                              )}
-                            >
-                              {child.name}
-                            </button>
-                          ))}
-                          {category.children.length > MAX_CHILDREN ? (
-                            <button
-                              type="button"
-                              onClick={() => choose(category.id)}
-                              className="text-[11px] font-semibold leading-4 opacity-70 hover:underline"
-                            >
-                              +{category.children.length - MAX_CHILDREN}
-                            </button>
-                          ) : null}
-                        </div>
-                      ) : null}
-                    </div>
-                  </div>
+                    <CategoryThumb
+                      image={categoryImages[category.id] ?? null}
+                      className="size-9 rounded-lg"
+                      iconClassName="size-4"
+                    />
+                    <span className="min-w-0 flex-1 truncate text-[13px] font-semibold">{category.name}</span>
+                    {category.children.length ? <ChevronRight className="size-4 shrink-0 opacity-60" /> : null}
+                  </button>
                 );
               })}
             </div>
+
+            {/* Sağ panel: seçili kategorinin alt kategorileri */}
+            {focused ? (
+              <div className="min-w-0 flex-1 overflow-y-auto p-5">
+                <div className="mb-4 flex items-center justify-between gap-3">
+                  <p className="truncate text-lg font-bold">{focused.name}</p>
+                  <button
+                    type="button"
+                    onClick={() => choose(focused.id)}
+                    className={cn(
+                      "inline-flex shrink-0 items-center gap-1 rounded-full px-3 py-1.5 text-xs font-semibold transition",
+                      theme.isDark ? "bg-white/10 hover:bg-white/15" : "bg-slate-100 text-slate-700 hover:bg-slate-200",
+                    )}
+                  >
+                    {t("header.seeAll")}
+                    <ArrowRight className="size-3.5" />
+                  </button>
+                </div>
+
+                {focused.children.length ? (
+                  <div className="grid grid-cols-[repeat(auto-fill,minmax(132px,1fr))] gap-3">
+                    {focused.children.map((child) => (
+                      <button
+                        key={child.id}
+                        type="button"
+                        onClick={() => choose(child.id)}
+                        className={cn(
+                          tileClass,
+                          selectedCategoryId === child.id && (theme.isDark ? "border-neutral-400" : "border-slate-400"),
+                        )}
+                      >
+                        <CategoryThumb
+                          image={categoryImages[child.id] ?? null}
+                          className="aspect-square w-full rounded-xl"
+                          iconClassName="size-7"
+                        />
+                        <span className="line-clamp-2 text-[13px] font-semibold leading-tight">{child.name}</span>
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => choose(focused.id)}
+                    className={cn(tileClass, "w-full max-w-xs flex-row text-left")}
+                  >
+                    <CategoryThumb
+                      image={categoryImages[focused.id] ?? null}
+                      className="size-20 rounded-xl"
+                      iconClassName="size-7"
+                    />
+                    <span className="min-w-0">
+                      <span className="block text-sm font-semibold">{t("header.categoryAllProducts")}</span>
+                      <span className={cn("mt-0.5 block text-xs", muted)}>{focused.name}</span>
+                    </span>
+                  </button>
+                )}
+              </div>
+            ) : null}
           </div>
         </div>
       ) : null}
