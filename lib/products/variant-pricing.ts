@@ -87,14 +87,9 @@ export function collectDisplayVariantPrices(
     return resolved !== null ? [resolved] : [];
   }
 
-  const hasExplicit = hasExplicitVariantPricesForList(product, priceListId);
-  const sourceVariants = hasExplicit
-    ? variants.filter(
-        (variant) => getVariantPriceForList(variant.prices, priceListId) !== null,
-      )
-    : variants;
-
-  return sourceVariants
+  // Fiyatı boş bırakılan varyant ürünün liste fiyatını kullanır; en düşük/en yüksek
+  // fiyata o da girer (yalnız fiyatlı varyantlara bakmak en düşük fiyatı şişiriyordu).
+  return variants
     .map((variant) => resolveStorefrontVariantPrice(variant, product, priceListId, false).price)
     .filter((price): price is number => price !== null);
 }
