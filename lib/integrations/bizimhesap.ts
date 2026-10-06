@@ -122,6 +122,24 @@ export async function sendOrderToBizimHesap(
     }
     if (!apiKey()) return fail("Sunucuda BizimHesap anahtarı tanımlı değil.");
 
+    // Eşleştirilmiş ürünler BizimHesap iç kimliğiyle gider (0160), yoksa stok koduyla.
+    const productIds = [
+      ...new Set(
+        ((Array.isArray(order.items) ? order.items : []) as OrderItem[])
+          .map((item) => item.product_id)
+          .filter((id): id is string => Boolean(id)),
+      ),
+    ];
+    const bizimhesapIdByProduct = new Map<string, string>();
+    if (productIds.length) {
+      const { data: mapped } = await supabase
+        .from("products")
+        .select("id, bizimhesap_product_id")
+        .in("id", productIds)
+        .not("bizimhesap_product_id", "is", null);
+      for (const row of mapped ?? []) bizimhesapIdByProduct.set(row.id, row.bizimhesap_product_id);
+    }
+
     const rate = Number(config.vat_rate ?? 20);
     const divisor = 1 + rate / 100;
     const items = (Array.isArray(order.items) ? order.items : []) as OrderItem[];
@@ -135,7 +153,11 @@ export async function sendOrderToBizimHesap(
         .filter(Boolean)
         .join(" ");
       return {
-        productId: item.sku_code || item.product_id || name,
+        productId:
+          (item.product_id ? bizimhesapIdByProduct.get(item.product_id) : undefined) ||
+          item.sku_code ||
+          item.product_id ||
+          name,
         productName: name,
         note: item.is_gift ? "Hediye" : "",
         barcode: "",
