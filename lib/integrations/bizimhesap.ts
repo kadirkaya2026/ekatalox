@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { hasPlanFeature, type TenantPlan } from "@/lib/billing/plans";
+import { formatPaymentMethod } from "@/lib/orders/format";
 
 // BizimHesap B2B API (https://apidocs.bizimhesap.com). Kimlik: Key (BizimHesap'ın
 // genel entegrasyon anahtarı, env) + Token/firmId (mağazanın firma kimliği,
@@ -100,7 +101,7 @@ export async function sendOrderToBizimHesap(
     const { data: order } = await supabase
       .from("orders")
       .select(
-        "id, tenant_id, order_number, order_no, customer_name, customer_phone, customer_address, currency, total_amount, coupon_discount, items, note, bizimhesap_guid",
+        "id, tenant_id, order_number, order_no, customer_name, customer_phone, customer_address, currency, total_amount, coupon_discount, items, note, payment_method, bizimhesap_guid",
       )
       .eq("id", orderId)
       .maybeSingle();
@@ -161,9 +162,16 @@ export async function sendOrderToBizimHesap(
     const now = new Date().toISOString();
     const body = {
       firmId: config.firm_id,
-      invoiceNo: order.order_number ?? (order.order_no ? `EKX-${order.order_no}` : ""),
+      // Panelde görünen sipariş numarasıyla eşleşsin: EKX-100003 (iç kod okunaksızdı).
+      invoiceNo: order.order_no ? `EKX-${order.order_no}` : (order.order_number ?? ""),
       invoiceType: 3,
-      note: [`eKatalox siparişi${order.order_no ? ` #${order.order_no}` : ""}`, order.note].filter(Boolean).join(" — "),
+      note: [
+        `eKatalox siparişi${order.order_no ? ` #${order.order_no}` : ""}`,
+        order.payment_method ? `Ödeme: ${formatPaymentMethod(order.payment_method)}` : null,
+        order.note,
+      ]
+        .filter(Boolean)
+        .join(" — "),
       dates: { invoiceDate: now, dueDate: now, deliveryDate: now },
       customer: {
         customerId: customerIdFromPhone(order.customer_phone),
