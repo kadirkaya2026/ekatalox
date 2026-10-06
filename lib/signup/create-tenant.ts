@@ -271,6 +271,10 @@ export async function createSelfServiceTenant(
       business_type: input.sector === MARKET_SIGNUP_SECTOR ? "market" : "general",
       is_tekel: false,
       age_verification_required: false,
+      // Yeni mağaza şifresiz/herkese açık başlar (6 Eki 2026): kayıtta şifre
+      // oluşturulmuyor, DB varsayılanı (true) sahibini bile kapıda bırakıyordu.
+      // Sahip isterse panelde Şifreler → "Şifre kullan" ile açar.
+      is_password_protected: false,
       sector: input.sector,
       billing_period: billingPeriod,
       coupon_code: null,
