@@ -164,6 +164,14 @@ const GROUPS: FaqGroup[] = [
         a: "Yok. Ücretli paketler yıllık sabit ücrettir: Başlangıç 5.000 ₺, Profesyonel 10.000 ₺, Kurumsal 15.000 ₺ (KDV hariç). eKatalox sipariş başına komisyon almaz. Online ödeme sağlayıcısının işlem ücretleri ayrıca geçerlidir.",
       },
       {
+        q: "Paketimi yıl ortasında yükseltebilir miyim?",
+        a: "Evet, istediğiniz zaman. Yeniden tam ücret ödemezsiniz: mevcut paketinizin kalan süresine ait tutar, yeni paketin güncel fiyatından düşülür ve yeni paketiniz yükseltme gününden itibaren 1 yıl geçerli olur. Örneğin Başlangıç paketini (5.000 ₺) 4 ay kullandıktan sonra Kurumsal'a (15.000 ₺) geçerseniz, kalan 8 ayın 3.333 ₺'lik karşılığı düşülür ve 11.667 ₺ ödersiniz; Kurumsal paketiniz o günden itibaren 12 ay sürer. Ürünleriniz, şifreleriniz ve bayileriniz olduğu gibi kalır.",
+      },
+      {
+        q: "Paket fiyatları değişirse ne olur?",
+        a: "Ödediğiniz fiyat, paket döneminiz bitene kadar değişmez. Paket yükseltme ve yenilemelerde o günkü güncel fiyat geçerlidir; yükseltmede düşülen kalan süre tutarı ise sizin ödediğiniz fiyat üzerinden hesaplanır.",
+      },
+      {
         q: "Ödemeyi nasıl yaparım?",
         a: "Havale/EFT ile ya da temsilcimiz üzerinden kartla. Fatura kesilir; ödeme sonrası paket aynı gün açılır.",
       },
