@@ -100,6 +100,8 @@ const tenantUpdateObject = z
     // mevcut paket bugünden itibaren 12 aylık üyeliğe döner (0132).
     confirm_plan_payment: z.boolean().optional(),
     // Süper admin "ödeme alındı" işareti (0156): plan_paid_at/plan_paid_note'a çevrilir.
+    // Süper admin "Demo Mağazalar" sekmesi (0158).
+    is_internal_demo: z.boolean().optional(),
     mark_plan_paid: z.boolean().optional(),
     unmark_plan_paid: z.boolean().optional(),
     plan_paid_note: z.string().trim().max(200).optional(),

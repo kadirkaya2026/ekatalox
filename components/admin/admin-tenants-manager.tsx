@@ -39,14 +39,20 @@ function getTrialBadge(trialEndsAt: string | null | undefined) {
 
 export function AdminTenantsManager({
   initialTenants,
+  activeTab = "musteriler",
 }: {
   initialTenants: TenantWithRelations[];
+  activeTab?: "musteriler" | "demo";
 }) {
-  const tenants = initialTenants;
+  // Demo Mağazalar sekmesi (0158): bizim açtığımız tanıtım mağazaları ayrı listelenir;
+  // üstteki sayılar yalnız gerçek müşterileri sayar.
+  const customerTenants = initialTenants.filter((tenant) => !tenant.is_internal_demo);
+  const demoTenants = initialTenants.filter((tenant) => tenant.is_internal_demo);
+  const tenants = activeTab === "demo" ? demoTenants : customerTenants;
   const totals = {
-    total: tenants.length,
-    active: tenants.filter((tenant) => tenant.status === "active").length,
-    suspended: tenants.filter((tenant) => tenant.status === "suspended").length,
+    total: customerTenants.length,
+    active: customerTenants.filter((tenant) => tenant.status === "active").length,
+    suspended: customerTenants.filter((tenant) => tenant.status === "suspended").length,
   };
 
   return (
@@ -81,9 +87,31 @@ export function AdminTenantsManager({
       </Card>
 
       <Card className="p-5">
-        <h2 className="text-lg font-semibold text-slate-900">Tenant’lar</h2>
-        <p className="mt-1 text-sm text-slate-600">
-          Detayları görmek ve düzenlemek için bir tenant’ın adına tıklayın.
+        <div className="flex flex-wrap gap-2">
+          {(
+            [
+              { key: "musteriler", label: "Müşteriler", href: "?", count: customerTenants.length },
+              { key: "demo", label: "Demo Mağazalar", href: "?sekme=demo", count: demoTenants.length },
+            ] as const
+          ).map((tab) => (
+            <Link
+              key={tab.key}
+              href={tab.href}
+              className={cn(
+                "rounded-full px-4 py-2 text-sm font-semibold transition",
+                activeTab === tab.key
+                  ? "bg-slate-900 text-white"
+                  : "bg-slate-100 text-slate-600 hover:bg-slate-200",
+              )}
+            >
+              {tab.label} ({tab.count})
+            </Link>
+          ))}
+        </div>
+        <p className="mt-3 text-sm text-slate-600">
+          {activeTab === "demo"
+            ? "Bizim açtığımız tanıtım mağazaları. Detayda “Müşterilere taşı” ile geri alınır."
+            : "Detayları görmek ve düzenlemek için bir tenant’ın adına tıklayın."}
         </p>
 
         <div className="mt-4 divide-y divide-slate-100">

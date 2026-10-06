@@ -100,6 +100,8 @@ export interface Tenant {
   plan_paid_note?: string | null;
   /** Tenant adminin paneli en son açık görüldüğü an (0157). */
   last_panel_seen_at?: string | null;
+  /** Bizim açtığımız tanıtım mağazası (0158); süper admin listede ayrı sekmede. */
+  is_internal_demo?: boolean;
   visitor_limit_addon: number;
   visitor_quota_exceeded: boolean;
   product_limit_addon: number;

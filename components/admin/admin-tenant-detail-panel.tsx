@@ -216,6 +216,29 @@ export function AdminTenantDetailPanel({ tenant: initialTenant }: { tenant: Tena
     setIsEditingName(false);
   }
 
+  // Demo Mağazalar sekmesi (0158): mağazayı müşteri listesi ile demo listesi arasında taşır.
+  function setInternalDemo(value: boolean) {
+    setMessage(null);
+
+    startTransition(async () => {
+      const response = await fetch(`/api/admin/tenants/${tenant.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ is_internal_demo: value }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        setMessage(result.error ?? "Liste güncellenemedi.");
+        return;
+      }
+
+      setTenant((current) => ({ ...current, ...result.tenant }));
+      setMessage(value ? "Mağaza Demo Mağazalar listesine taşındı." : "Mağaza müşteri listesine taşındı.");
+    });
+  }
+
   // Paket ödemesi alındı işareti (0156): tenant listesinde rozet olarak görünür.
   function setPlanPaid(paid: boolean) {
     setMessage(null);
@@ -1002,6 +1025,14 @@ export function AdminTenantDetailPanel({ tenant: initialTenant }: { tenant: Tena
           ) : (
             <p className="text-sm text-slate-500">Bu mağaza için ödeme kaydı yok.</p>
           )}
+          <Button
+            variant="secondary"
+            onClick={() => setInternalDemo(!tenant.is_internal_demo)}
+            disabled={pending}
+            className="shrink-0"
+          >
+            {tenant.is_internal_demo ? "Müşterilere taşı" : "Demo mağazalara taşı"}
+          </Button>
           {tenant.plan_paid_at ? (
             <Button variant="secondary" onClick={() => setPlanPaid(false)} disabled={pending}>
               İşareti kaldır
