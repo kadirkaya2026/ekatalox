@@ -1,5 +1,9 @@
 import sanitizeHtml from "sanitize-html";
 
+// 6 Eki 2026: 2000 → 6000. Sınırı aşan açıklama vitrinde TAMAMEN boş görünüyordu
+// (Nailport'ta 39 ürün, ~4.800 karaktere kadar). Panel düzenleyici de bu sınırı kullanır.
+export const PRODUCT_DESCRIPTION_MAX_PLAIN_TEXT_LENGTH = 6000;
+
 const ALLOWED_TAGS = [
   "p",
   "br",
@@ -66,7 +70,7 @@ export function sanitizeProductDescription(html: string): string | null {
 
 export function normalizeProductDescription(
   value: string | null | undefined,
-  maxPlainTextLength = 2000,
+  maxPlainTextLength = PRODUCT_DESCRIPTION_MAX_PLAIN_TEXT_LENGTH,
 ): string | null {
   if (typeof value !== "string") {
     return null;
@@ -93,4 +97,4 @@ export function normalizeProductDescription(
   return normalized;
 }
 
-export const PRODUCT_DESCRIPTION_MAX_PLAIN_TEXT_LENGTH = 2000;
+
