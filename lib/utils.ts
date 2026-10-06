@@ -70,3 +70,15 @@ export function toSlug(value: string) {
     .replace(/-{2,}/g, "-")
     .replace(/^-|-$/g, "");
 }
+// "3 dk önce", "2 saat önce" — süper admin panel ziyaretleri (0157).
+export function formatTimeAgo(value: string | null | undefined, empty = "—") {
+  if (!value) return empty;
+  const minutes = Math.floor((Date.now() - new Date(value).getTime()) / 60_000);
+  if (minutes < 1) return "Az önce";
+  if (minutes < 60) return `${minutes} dk önce`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours} saat önce`;
+  const days = Math.floor(hours / 24);
+  if (days < 30) return `${days} gün önce`;
+  return `${Math.floor(days / 30)} ay önce`;
+}

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { MobileDashboardNav } from "@/components/dashboard/mobile-dashboard-nav";
 import { NewOrderWatcher } from "@/components/dashboard/new-order-watcher";
+import { PanelVisitTracker } from "@/components/dashboard/panel-visit-tracker";
 import { Sidebar } from "@/components/dashboard/sidebar";
 import { TrialExpiredModal } from "@/components/dashboard/trial-expired-modal";
 import { VisitorQuotaBanner } from "@/components/dashboard/visitor-quota-banner";
@@ -115,6 +116,7 @@ export default async function DashboardLayout({
         ) : null}
         {children}
         {tenant ? <NewOrderWatcher initialNewCount={newOrderCount} /> : null}
+        {tenant ? <PanelVisitTracker /> : null}
       </main>
       {trialExpired && tenant ? (
         <TrialExpiredModal

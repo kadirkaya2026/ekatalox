@@ -98,6 +98,8 @@ export interface Tenant {
   /** Süper admin "ödeme alındı" işareti (0156); NULL = ödeme kaydı yok. */
   plan_paid_at?: string | null;
   plan_paid_note?: string | null;
+  /** Tenant adminin paneli en son açık görüldüğü an (0157). */
+  last_panel_seen_at?: string | null;
   visitor_limit_addon: number;
   visitor_quota_exceeded: boolean;
   product_limit_addon: number;
@@ -483,6 +485,8 @@ export interface AdminLoginLogEntry {
   tenant_name: string | null;
   tenant_subdomain: string | null;
   last_sign_in_at: string | null;
+  /** Panelin en son açık görüldüğü an (0157); açık oturumla girişler dahil. */
+  last_panel_seen_at: string | null;
   created_at: string;
 }
 
@@ -786,4 +790,15 @@ export interface OnlinePaymentSettings {
   provider?: "iyzico" | "paytr" | null;
   installments_enabled?: boolean;
   commission_to_customer?: boolean;
+}
+
+/** Süper admin tenant detayı: panel ziyaret oturumu (0157). */
+export interface PanelVisit {
+  id: string;
+  user_id: string;
+  started_at: string;
+  last_seen_at: string;
+  page_views: number;
+  last_path: string | null;
+  user_agent: string | null;
 }

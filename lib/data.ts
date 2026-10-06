@@ -32,6 +32,7 @@ import { normalizeBrandPalette } from "@/lib/storefront/brand-palette";
 import type {
   AccessCode,
   AdminLoginLogEntry,
+  PanelVisit,
   BusinessHours,
   Category,
   DashboardSummary,
@@ -385,6 +386,7 @@ export async function getAdminLoginLogs(): Promise<AdminLoginLogEntry[]> {
         tenant_name: tenant?.company_name ?? null,
         tenant_subdomain: tenant?.subdomain ?? null,
         last_sign_in_at: new Date().toISOString(),
+        last_panel_seen_at: null,
         created_at: profile.created_at,
       } satisfies AdminLoginLogEntry;
     });
@@ -392,12 +394,18 @@ export async function getAdminLoginLogs(): Promise<AdminLoginLogEntry[]> {
 
   // Supabase Auth her kullanıcı için last_sign_in_at tutar; ayrıca tabloya
   // ihtiyaç olmadan giriş bilgisinin kaynağı budur.
-  const [usersResult, profilesResult, membershipsResult, tenantsResult] =
+  const [usersResult, profilesResult, membershipsResult, tenantsResult, visitsResult] =
     await Promise.all([
       supabase.auth.admin.listUsers({ page: 1, perPage: 1000 }),
       supabase.from("profiles").select("*"),
       supabase.from("tenant_memberships").select("*"),
       supabase.from("tenants").select("id, company_name, subdomain"),
+      // Kullanıcı başına son panel ziyareti (0157); açık oturumla girişleri de yakalar.
+      supabase
+        .from("panel_visits")
+        .select("user_id, last_seen_at")
+        .order("last_seen_at", { ascending: false })
+        .limit(5000),
     ]);
 
   const users = usersResult.data?.users ?? [];
@@ -412,6 +420,12 @@ export async function getAdminLoginLogs(): Promise<AdminLoginLogEntry[]> {
   const profileById = new Map(profiles.map((p) => [p.id, p]));
   const membershipByUserId = new Map(memberships.map((m) => [m.user_id, m]));
   const tenantById = new Map(tenants.map((t) => [t.id, t]));
+  const lastPanelSeenByUserId = new Map<string, string>();
+  for (const visit of (visitsResult.data as Array<{ user_id: string; last_seen_at: string }> | null) ?? []) {
+    if (!lastPanelSeenByUserId.has(visit.user_id)) {
+      lastPanelSeenByUserId.set(visit.user_id, visit.last_seen_at);
+    }
+  }
 
   const entries = users.map((user) => {
     const profile = profileById.get(user.id);
@@ -426,6 +440,7 @@ export async function getAdminLoginLogs(): Promise<AdminLoginLogEntry[]> {
       tenant_name: tenant?.company_name ?? null,
       tenant_subdomain: tenant?.subdomain ?? null,
       last_sign_in_at: user.last_sign_in_at ?? null,
+      last_panel_seen_at: lastPanelSeenByUserId.get(user.id) ?? null,
       created_at: user.created_at,
     } satisfies AdminLoginLogEntry;
   });
@@ -2528,4 +2543,17 @@ export async function getThemeDistributionOverview(): Promise<ThemeDistributionR
   }
 
   return [...grouped.values()].sort((left, right) => right.count - left.count);
+}
+
+// Süper admin tenant detayı: son panel ziyaretleri (0157).
+export async function getTenantPanelVisits(tenantId: string, limit = 20): Promise<PanelVisit[]> {
+  const supabase = createSupabaseAdminClient();
+  if (!supabase) return [];
+  const { data } = await supabase
+    .from("panel_visits")
+    .select("id, user_id, started_at, last_seen_at, page_views, last_path, user_agent")
+    .eq("tenant_id", tenantId)
+    .order("started_at", { ascending: false })
+    .limit(limit);
+  return (data as PanelVisit[] | null) ?? [];
 }

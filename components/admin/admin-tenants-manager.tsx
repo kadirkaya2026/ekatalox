@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { formatEffectiveProductLimit, formatProductLimit, getPlanLabel } from "@/lib/billing/plans";
 import type { TenantWithRelations } from "@/lib/types";
-import { cn } from "@/lib/utils";
+import { cn, formatTimeAgo } from "@/lib/utils";
 
 function getTrialBadge(trialEndsAt: string | null | undefined) {
   if (!trialEndsAt) {
@@ -121,10 +121,15 @@ export function AdminTenantsManager({
                   </p>
                 </div>
 
-                <p className="text-sm font-medium text-slate-700 md:text-right">
-                  {formatProductLimit(tenant.product_count ?? 0)} ürün yüklü •{" "}
-                  {formatProductLimit(tenant.monthly_visitor_count ?? 0)} ziyaretçi (bu ay)
-                </p>
+                <div className="md:text-right">
+                  <p className="text-sm font-medium text-slate-700">
+                    {formatProductLimit(tenant.product_count ?? 0)} ürün yüklü •{" "}
+                    {formatProductLimit(tenant.monthly_visitor_count ?? 0)} ziyaretçi (bu ay)
+                  </p>
+                  <p className="mt-0.5 text-xs text-slate-500">
+                    Panel: {formatTimeAgo(tenant.last_panel_seen_at, "henüz ziyaret yok")}
+                  </p>
+                </div>
               </Link>
             );
           })}

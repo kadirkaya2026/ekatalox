@@ -7,7 +7,8 @@ import { ReportsPanel } from "@/components/dashboard/reports-panel";
 import { getTenantOnlinePresence } from "@/lib/analytics/presence";
 import { getTenantAnalyticsReport } from "@/lib/analytics/queries";
 import { getTenantCustomersOverview } from "@/lib/customers/data";
-import { getTenantsOverview } from "@/lib/data";
+import { getTenantPanelVisits, getTenantsOverview } from "@/lib/data";
+import { AdminPanelVisitsCard } from "@/components/admin/admin-panel-visits-card";
 
 export default async function AdminTenantDetailPage({
   params,
@@ -20,10 +21,11 @@ export default async function AdminTenantDetailPage({
     notFound();
   }
 
-  const [report, presence, customers] = await Promise.all([
+  const [report, presence, customers, panelVisits] = await Promise.all([
     getTenantAnalyticsReport(tenant.id, "daily"),
     getTenantOnlinePresence(tenant.id),
     tenant.business_type === "market" ? getTenantCustomersOverview(tenant.id) : Promise.resolve([]),
+    getTenantPanelVisits(tenant.id),
   ]);
 
   return (
@@ -35,6 +37,8 @@ export default async function AdminTenantDetailPage({
       />
 
       <AdminTenantDetailPanel tenant={tenant} />
+
+      <AdminPanelVisitsCard visits={panelVisits} />
 
       <Header
         eyebrow="Raporlar"
