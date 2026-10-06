@@ -38,11 +38,18 @@ import {
   UploadCloud,
 
   Wallet,
+  Lock,
 } from "lucide-react";
 import { EkataloxLogo } from "@/components/brand/ekatalox-logo";
 import { SidebarLogoutButton } from "@/components/dashboard/sidebar-logout-button";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
-import { hasPlanFeature, type PlanFeature, type TenantPlan } from "@/lib/billing/plans";
+import {
+  getMinimumPlanForFeature,
+  getPlanLabel,
+  hasPlanFeature,
+  type PlanFeature,
+  type TenantPlan,
+} from "@/lib/billing/plans";
 import type { TenantBusinessType } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -68,6 +75,8 @@ interface SubLink {
   requiredFeature?: PlanFeature;
   requiredBusinessType?: TenantBusinessType;
   group?: string;
+  /** Paket özelliği yoksa menüde kilitli görünür (gizlenmez); sayfa yükseltme kartı gösterir. */
+  lockedPlanLabel?: string;
 }
 
 interface SidebarLink {
@@ -77,6 +86,7 @@ interface SidebarLink {
   requiredFeature?: PlanFeature;
   requiredBusinessType?: TenantBusinessType;
   children?: SubLink[];
+  lockedPlanLabel?: string;
 }
 
 const tenantLinks: SidebarLink[] = [
@@ -201,29 +211,43 @@ const adminLinks: SidebarLink[] = [
   { href: "/logs", label: "Giriş Logları", icon: ScrollText },
 ];
 
+function LockedPlanPill({ label }: { label: string }) {
+  return (
+    <span
+      className="ml-auto inline-flex shrink-0 items-center gap-1 rounded-full bg-amber-400/15 px-2 py-0.5 text-[10px] font-semibold text-amber-300"
+      title={`${label} paketinde`}
+    >
+      <Lock className="size-3" />
+      {label}
+    </span>
+  );
+}
+
 function filterLinksForTenant(
   links: SidebarLink[],
   plan: TenantPlan,
   businessType: TenantBusinessType,
 ): SidebarLink[] {
+  // Paket özelliği olmayan bağlantılar gizlenmez, kilitli gösterilir (6 Eki 2026):
+  // müşteri üst pakette ne kazanacağını menüde görsün.
+  const lockLabel = (feature?: PlanFeature) =>
+    feature && !hasPlanFeature(plan, feature)
+      ? getPlanLabel(getMinimumPlanForFeature(feature, plan))
+      : undefined;
+
   return links
-    .filter(
-      (link) =>
-        (!link.requiredFeature || hasPlanFeature(plan, link.requiredFeature)) &&
-        (!link.requiredBusinessType || link.requiredBusinessType === businessType),
-    )
+    .filter((link) => !link.requiredBusinessType || link.requiredBusinessType === businessType)
     .map((link) => {
+      const lockedPlanLabel = lockLabel(link.requiredFeature);
       if (!link.children) {
-        return link;
+        return { ...link, lockedPlanLabel };
       }
 
-      const children = link.children.filter(
-        (child) =>
-          (!child.requiredFeature || hasPlanFeature(plan, child.requiredFeature)) &&
-          (!child.requiredBusinessType || child.requiredBusinessType === businessType),
-      );
+      const children = link.children
+        .filter((child) => !child.requiredBusinessType || child.requiredBusinessType === businessType)
+        .map((child) => ({ ...child, lockedPlanLabel: lockLabel(child.requiredFeature) }));
 
-      return { ...link, children };
+      return { ...link, lockedPlanLabel, children };
     });
 }
 
@@ -315,7 +339,8 @@ export function Sidebar({
                 )}
               >
                 <link.icon className="size-4" />
-                <span>{link.label}</span>
+                <span className={link.lockedPlanLabel ? "text-slate-400" : undefined}>{link.label}</span>
+                {link.lockedPlanLabel ? <LockedPlanPill label={link.lockedPlanLabel} /> : null}
                 {link.href === "/products" ? (
                   <NavNotificationBadge count={suggestionNoticeCount} />
                 ) : null}
@@ -362,6 +387,7 @@ export function Sidebar({
                                 )}
                               />
                               <span>{child.label}</span>
+                              {child.lockedPlanLabel ? <LockedPlanPill label={child.lockedPlanLabel} /> : null}
                               {child.href === "/products/suggestions" ? (
                                 <NavNotificationBadge count={suggestionNoticeCount} />
                               ) : null}

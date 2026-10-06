@@ -6,8 +6,15 @@ import {
   Building2, Clock, ClipboardList, CreditCard, Globe, ImageIcon, LayoutTemplate,
   Megaphone, PackageX, PanelBottom, Palette, Receipt, ShieldCheck, Store, Ticket, Truck,
   UserCircle, type LucideIcon,
+  Lock,
 } from "lucide-react";
-import { hasPlanFeature, type PlanFeature, type TenantPlan } from "@/lib/billing/plans";
+import {
+  getMinimumPlanForFeature,
+  getPlanLabel,
+  hasPlanFeature,
+  type PlanFeature,
+  type TenantPlan,
+} from "@/lib/billing/plans";
 import type { TenantBusinessType } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -54,11 +61,14 @@ export function SettingsNav({
   businessType: TenantBusinessType;
 }) {
   const pathname = usePathname();
+  // Paket özelliği olmayan sekmeler gizlenmez, kilitli gösterilir (6 Eki 2026).
   const visible = TABS.filter(
-    (t) =>
-      (!t.requiredFeature || hasPlanFeature(plan, t.requiredFeature)) &&
-      (!t.requiredBusinessType || t.requiredBusinessType === businessType),
+    (t) => !t.requiredBusinessType || t.requiredBusinessType === businessType,
   );
+  const lockedLabel = (feature?: PlanFeature) =>
+    feature && !hasPlanFeature(plan, feature)
+      ? getPlanLabel(getMinimumPlanForFeature(feature, plan))
+      : null;
 
   return (
     <nav className="lg:w-64 lg:shrink-0">
@@ -88,6 +98,15 @@ export function SettingsNav({
                   >
                     <Icon className="size-4 shrink-0" />
                     {t.label}
+                    {lockedLabel(t.requiredFeature) ? (
+                      <span
+                        className="ml-auto inline-flex shrink-0 items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-800"
+                        title={`${lockedLabel(t.requiredFeature)} paketinde`}
+                      >
+                        <Lock className="size-3" />
+                        {lockedLabel(t.requiredFeature)}
+                      </span>
+                    ) : null}
                   </Link>
                 );
               })}
