@@ -273,8 +273,30 @@ export function AccessCodesManager({
     });
   }
 
+  // Şifresiz mağaza uyarısı (6 Eki 2026): yeni mağazalar şifresiz açılır; sahibi
+  // ürünlerini yükledikten sonra şifreyi açmayı unutmasın.
+  const publicPriceList = priceLists.find((list) => list.id === tenant.public_price_list_id);
+
   return (
     <div className="space-y-6">
+      {!isPasswordProtected ? (
+        <div className="flex gap-3 rounded-2xl border border-amber-300 bg-amber-50 px-5 py-4 text-amber-900">
+          <AlertTriangle className="mt-0.5 size-5 shrink-0 text-amber-600" />
+          <div>
+            <p className="font-semibold">Mağazanız şu anda şifresiz, herkese açık</p>
+            <p className="mt-1 text-sm">
+              Mağaza adresinizi bilen herkes ürünlerinizi
+              {publicPriceList && !publicPriceList.is_catalog_only
+                ? ` ve “${getPriceListDisplayName(publicPriceList)}” fiyatlarını`
+                : ""}{" "}
+              şifre girmeden görebilir. Ürünlerinizi yükledikten sonra fiyatlarınızı yalnız
+              bayilerinize göstermek için aşağıdaki “Şifre kullanma” kutusundaki işareti kaldırın
+              ve bayileriniz için şifre oluşturun.
+            </p>
+          </div>
+        </div>
+      ) : null}
+
       <Card className="p-5 border-violet-200 bg-violet-50/40">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
