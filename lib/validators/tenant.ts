@@ -70,7 +70,7 @@ export const tenantSchema = z
     path: ["plan"],
   });
 
-export const tenantUpdateSchema = z
+const tenantUpdateObject = z
   .object({
     company_name: z.string().min(2, "Firma adı zorunludur.").optional(),
     status: z.enum(["active", "suspended"]).optional(),
@@ -99,8 +99,44 @@ export const tenantUpdateSchema = z
     // Ücretli paket denemesindeki mağazadan ödeme alındı: deneme biter,
     // mevcut paket bugünden itibaren 12 aylık üyeliğe döner (0132).
     confirm_plan_payment: z.boolean().optional(),
-  })
-  .transform((data) => {
+    // Süper admin "ödeme alındı" işareti (0156): plan_paid_at/plan_paid_note'a çevrilir.
+    mark_plan_paid: z.boolean().optional(),
+    unmark_plan_paid: z.boolean().optional(),
+    plan_paid_note: z.string().trim().max(200).optional(),
+  });
+
+type TenantUpdateInput = Omit<
+  z.infer<typeof tenantUpdateObject>,
+  "mark_plan_paid" | "unmark_plan_paid" | "plan_paid_note"
+>;
+
+export const tenantUpdateSchema = tenantUpdateObject.transform(
+  ({ mark_plan_paid, unmark_plan_paid, plan_paid_note, ...data }) => {
+    const nowIso = new Date().toISOString();
+    const paidPatch =
+      mark_plan_paid || data.confirm_plan_payment
+        ? { plan_paid_at: nowIso, plan_paid_note: plan_paid_note || null }
+        : unmark_plan_paid
+          ? { plan_paid_at: null, plan_paid_note: null }
+          : {};
+    return { ...mapTenantUpdate(data), ...paidPatch };
+  },
+)
+  .refine(
+    (data) => {
+      if (data.plan && data.max_product_limit) {
+        return data.max_product_limit === getLimitForPlan(data.plan);
+      }
+
+      return true;
+    },
+    {
+      message: "Plan ve ürün limiti uyuşmuyor.",
+      path: ["plan"],
+    },
+  );
+
+function mapTenantUpdate(data: TenantUpdateInput) {
     // end_trial / start_trial DB kolonu değil; trial_ends_at'e çevrilir.
     // end_trial: süper admin paket atadığında deneme sonlanır.
     // start_trial: mevcut hesap bugünden itibaren trial_days (yoksa varsayılan) günlük denemeye alınır.
@@ -157,17 +193,4 @@ export const tenantUpdateSchema = z
     }
 
     return mapped;
-  })
-  .refine(
-    (data) => {
-      if (data.plan && data.max_product_limit) {
-        return data.max_product_limit === getLimitForPlan(data.plan);
-      }
-
-      return true;
-    },
-    {
-      message: "Plan ve ürün limiti uyuşmuyor.",
-      path: ["plan"],
-    },
-  );
+}

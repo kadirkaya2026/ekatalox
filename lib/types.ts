@@ -95,6 +95,9 @@ export interface Tenant {
   plan_trial_reminder_sent_at?: string | null;
   plan_started_at: string | null;
   plan_expires_at: string | null;
+  /** Süper admin "ödeme alındı" işareti (0156); NULL = ödeme kaydı yok. */
+  plan_paid_at?: string | null;
+  plan_paid_note?: string | null;
   visitor_limit_addon: number;
   visitor_quota_exceeded: boolean;
   product_limit_addon: number;

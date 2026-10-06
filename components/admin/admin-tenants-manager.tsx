@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { BadgeCheck } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -99,6 +100,14 @@ export function AdminTenantsManager({
                     </Badge>
                     {trialBadge ? (
                       <Badge className={trialBadge.className}>{trialBadge.label}</Badge>
+                    ) : null}
+                    {tenant.plan_paid_at && tenant.plan !== "free" ? (
+                      <span title={tenant.plan_paid_note ?? "Paket ödemesi alındı"}>
+                        <Badge className="inline-flex items-center gap-1 bg-emerald-600 text-white">
+                          <BadgeCheck className="size-3.5" />
+                          Ödeme alındı
+                        </Badge>
+                      </span>
                     ) : null}
                     {tenant.product_limit_addon ? (
                       <Badge className="bg-amber-50 text-amber-700">

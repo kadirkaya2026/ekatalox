@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { BadgeCheck } from "lucide-react";
 import { useMemo, useState, useTransition } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -75,6 +76,7 @@ export function AdminTenantDetailPanel({ tenant: initialTenant }: { tenant: Tena
   const [planCouponDraft, setPlanCouponDraft] = useState("");
   const [customDomainDraft, setCustomDomainDraft] = useState(tenant.custom_domain ?? "");
   const [giftMonths, setGiftMonths] = useState(1);
+  const [paidNoteDraft, setPaidNoteDraft] = useState("");
   const [codeDraft, setCodeDraft] = useState("");
   const [priceListDraft, setPriceListDraft] = useState(tenant.price_lists?.[0]?.id ?? "");
   const [editingAccessCodeId, setEditingAccessCodeId] = useState<string | null>(null);
@@ -212,6 +214,34 @@ export function AdminTenantDetailPanel({ tenant: initialTenant }: { tenant: Tena
   function cancelEditingCompanyName() {
     setCompanyNameDraft(tenant.company_name);
     setIsEditingName(false);
+  }
+
+  // Paket ödemesi alındı işareti (0156): tenant listesinde rozet olarak görünür.
+  function setPlanPaid(paid: boolean) {
+    setMessage(null);
+
+    startTransition(async () => {
+      const response = await fetch(`/api/admin/tenants/${tenant.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(
+          paid
+            ? { mark_plan_paid: true, plan_paid_note: paidNoteDraft.trim() || undefined }
+            : { unmark_plan_paid: true },
+        ),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        setMessage(result.error ?? "Ödeme durumu güncellenemedi.");
+        return;
+      }
+
+      setTenant((current) => ({ ...current, ...result.tenant }));
+      if (paid) setPaidNoteDraft("");
+      setMessage(paid ? "Ödeme alındı olarak işaretlendi." : "Ödeme işareti kaldırıldı.");
+    });
   }
 
   function addGiftMonths() {
@@ -959,6 +989,37 @@ export function AdminTenantDetailPanel({ tenant: initialTenant }: { tenant: Tena
             </span>
           ) : null}
         </p>
+
+        <div className="mt-4 flex flex-col gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3 sm:flex-row sm:items-center sm:justify-between">
+          {tenant.plan_paid_at ? (
+            <p className="flex flex-wrap items-center gap-2 text-sm font-medium text-emerald-700">
+              <BadgeCheck className="size-4" />
+              Ödeme alındı • {formatDate(tenant.plan_paid_at)}
+              {tenant.plan_paid_note ? (
+                <span className="font-normal text-slate-500">— {tenant.plan_paid_note}</span>
+              ) : null}
+            </p>
+          ) : (
+            <p className="text-sm text-slate-500">Bu mağaza için ödeme kaydı yok.</p>
+          )}
+          {tenant.plan_paid_at ? (
+            <Button variant="secondary" onClick={() => setPlanPaid(false)} disabled={pending}>
+              İşareti kaldır
+            </Button>
+          ) : (
+            <div className="flex gap-2">
+              <Input
+                value={paidNoteDraft}
+                onChange={(event) => setPaidNoteDraft(event.target.value)}
+                placeholder="Not (ör. 5.000 ₺ havale)"
+                maxLength={200}
+              />
+              <Button onClick={() => setPlanPaid(true)} disabled={pending} className="shrink-0">
+                Ödeme alındı
+              </Button>
+            </div>
+          )}
+        </div>
 
         <div className="mt-4 flex justify-end border-t border-slate-100 pt-4">
           <Button onClick={saveChanges} disabled={pending || !hasPendingChanges}>
