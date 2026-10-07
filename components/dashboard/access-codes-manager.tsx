@@ -58,6 +58,7 @@ export function AccessCodesManager({
   );
   const [pending, startTransition] = useTransition();
   const [priceListPending, startPriceListTransition] = useTransition();
+  const [confirmDeleteListId, setConfirmDeleteListId] = useState<string | null>(null);
   const [passwordModePending, startPasswordModeTransition] = useTransition();
   const router = useRouter();
 
@@ -208,6 +209,31 @@ export function AccessCodesManager({
       setPriceListMessage(
         `"${created.name}" eklendi. Şimdi ürünlerin bu listedeki fiyatlarını girin ve listeye bir şifre bağlayın.`,
       );
+      router.refresh();
+    });
+  }
+
+  function deletePriceList(listId: string) {
+    setCodeMessage(null);
+
+    startPriceListTransition(async () => {
+      const response = await fetch("/api/tenant/price-lists", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: listId }),
+      });
+
+      const result = await response.json().catch(() => ({}));
+      setConfirmDeleteListId(null);
+
+      if (!response.ok) {
+        setCodeMessage({ listId, text: result.error ?? "Fiyat listesi silinemedi.", ok: false });
+        return;
+      }
+
+      const removed = priceLists.find((entry) => entry.id === listId);
+      setPriceLists((current) => current.filter((entry) => entry.id !== listId));
+      setPriceListMessage(removed ? `"${getPriceListDisplayName(removed)}" silindi.` : "Liste silindi.");
       router.refresh();
     });
   }
@@ -484,8 +510,51 @@ export function AccessCodesManager({
                     {listCustomers.length ? (
                       <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-emerald-800">{listCustomers.length} müşteri</span>
                     ) : null}
+                    {!list.is_catalog_only && pricedListCount > 1 ? (
+                      <button
+                        type="button"
+                        onClick={() => setConfirmDeleteListId(list.id)}
+                        disabled={priceListPending}
+                        title="Listeyi sil"
+                        className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-slate-500 hover:bg-rose-50 hover:text-rose-600"
+                      >
+                        <Trash2 className="size-3.5" /> Sil
+                      </button>
+                    ) : null}
                   </div>
                 </div>
+
+                {confirmDeleteListId === list.id ? (
+                  <div className="mt-3 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-900">
+                    {listCodes.length || listCustomers.length ? (
+                      <p>
+                        Bu listeye bağlı şifre veya müşteri var. Silmeden önce şifreleri kaldırın ya da müşterileri başka
+                        listeye taşıyın.
+                      </p>
+                    ) : (
+                      <p>
+                        <span className="font-semibold">{getPriceListDisplayName(list)}</span> silinsin mi? Ürünlerin bu
+                        listedeki fiyatları da silinir, geri alınamaz.
+                      </p>
+                    )}
+                    <div className="mt-3 flex gap-2">
+                      {!listCodes.length && !listCustomers.length ? (
+                        <Button
+                          type="button"
+                         
+                          onClick={() => deletePriceList(list.id)}
+                          disabled={priceListPending}
+                          className="bg-rose-600 text-white hover:bg-rose-700"
+                        >
+                          {priceListPending ? "Siliniyor..." : "Evet, sil"}
+                        </Button>
+                      ) : null}
+                      <Button type="button" variant="secondary" onClick={() => setConfirmDeleteListId(null)}>
+                        Vazgeç
+                      </Button>
+                    </div>
+                  </div>
+                ) : null}
 
                 {list.is_catalog_only ? (
                   <p className="mt-2 text-sm text-slate-500">Bu şifreyle girenler ürünleri fiyatsız görür.</p>
