@@ -35,7 +35,7 @@ export function ProductEditModal({
   onError: (message: string) => void;
 }) {
   const [pending, startTransition] = useTransition();
-  const { form, updateField, updateListPrice, updateListDiscount, handleImageSelect, handleImageRemove, discountPreview } =
+  const { form, updateField, updateListPrice, updateListDiscount, updateListHidden, handleImageSelect, handleImageRemove, discountPreview } =
     useProductForm(() => buildProductFormFromProduct(product, priceLists), {
       onImageResult: (message) => {
         if (message) {
@@ -147,6 +147,8 @@ export function ProductEditModal({
             discountValues={form.listDiscounts}
             onDiscountChange={updateListDiscount}
             showDiscounts={form.is_discount_active}
+            hiddenValues={form.hiddenLists}
+            onHiddenChange={updateListHidden}
           />
 
         <PlanFeatureGate feature="product_discount" plan={tenant.plan} companyName={tenant.company_name}>

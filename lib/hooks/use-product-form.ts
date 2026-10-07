@@ -27,6 +27,9 @@ export interface ProductFormState {
   listPrices: Record<string, string>;
   // Liste başına indirimli fiyat; boş = o listede indirim yok.
   listDiscounts: Record<string, string>;
+  // Liste başına "Bu listede gizle" (0162): işaretli listede ürün, fiyatı
+  // girilmiş olsa bile vitrinde görünmez.
+  hiddenLists: Record<string, boolean>;
   is_in_stock: boolean;
   // Stok takibi (0153): açıkken adet girilir, vitrinde "Stok: X adet" görünür.
   track_stock: boolean;
@@ -58,6 +61,7 @@ export function buildEmptyProductForm(priceLists: PriceList[]): ProductFormState
     currency: defaultCurrencyCode,
     listPrices: buildListPriceFormState(priceLists),
     listDiscounts: buildListDiscountFormState(priceLists),
+    hiddenLists: {},
     is_in_stock: true,
     track_stock: false,
     stock_quantity: "",
@@ -90,6 +94,9 @@ export function buildProductFormFromProduct(
     currency: product.currency ?? defaultCurrencyCode,
     listPrices: buildListPriceFormState(priceLists, product),
     listDiscounts: buildListDiscountFormState(priceLists, product),
+    hiddenLists: Object.fromEntries(
+      (product.hidden_price_list_ids ?? []).map((priceListId) => [priceListId, true]),
+    ),
     is_in_stock: product.is_in_stock,
     track_stock: Boolean(product.track_stock),
     stock_quantity: product.stock_quantity != null ? String(product.stock_quantity) : "",
@@ -128,6 +135,14 @@ export function toProductFormData(form: ProductFormState) {
     form.listPrices,
     form.listDiscounts,
     form.is_discount_active,
+  );
+  formData.set(
+    "hidden_price_list_ids",
+    JSON.stringify(
+      Object.entries(form.hiddenLists)
+        .filter(([, hidden]) => hidden)
+        .map(([priceListId]) => priceListId),
+    ),
   );
   formData.set("is_in_stock", String(form.is_in_stock));
   formData.set("track_stock", String(form.track_stock));
@@ -222,6 +237,16 @@ export function useProductForm(
     }));
   }
 
+  function updateListHidden(priceListId: string, hidden: boolean) {
+    setForm((current) => ({
+      ...current,
+      hiddenLists: {
+        ...current.hiddenLists,
+        [priceListId]: hidden,
+      },
+    }));
+  }
+
   function handleImageSelect(slot: ProductImageSlot, file: File | null) {
     const { file: fileKey, remove: removeKey } = IMAGE_SLOT_FIELDS[slot];
 
@@ -258,6 +283,7 @@ export function useProductForm(
     updateField,
     updateListPrice,
     updateListDiscount,
+    updateListHidden,
     handleImageSelect,
     handleImageRemove,
     discountPreview,

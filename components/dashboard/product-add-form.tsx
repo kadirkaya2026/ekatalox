@@ -37,7 +37,7 @@ export function ProductAddForm({
   const router = useRouter();
   const [message, setMessage] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
-  const { form, updateField, updateListPrice, updateListDiscount, handleImageSelect } =
+  const { form, updateField, updateListPrice, updateListDiscount, updateListHidden, handleImageSelect } =
     useProductForm(() => buildEmptyProductForm(priceLists), { onImageResult: setMessage });
 
   const [categories, setCategories] = useState(initialCategories);
@@ -224,6 +224,8 @@ export function ProductAddForm({
                 discountValues={form.listDiscounts}
                 onDiscountChange={updateListDiscount}
                 showDiscounts={form.is_discount_active}
+                hiddenValues={form.hiddenLists}
+                onHiddenChange={updateListHidden}
               />
             </div>
 

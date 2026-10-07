@@ -75,3 +75,22 @@ export function buildProductPricesFormPayload(
     })),
   );
 }
+
+const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+// "Bu listede gizle" (0162). Alan formda yoksa undefined döner: çağıran
+// taraf sütuna dokunmaz (ör. eski istemciler, toplu işlemler).
+export function parseHiddenPriceListIdsFromFormData(formData: FormData): string[] | undefined {
+  const raw = formData.get("hidden_price_list_ids");
+  if (typeof raw !== "string") return undefined;
+
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return Array.from(
+      new Set(parsed.filter((id): id is string => typeof id === "string" && uuidPattern.test(id))),
+    );
+  } catch {
+    return [];
+  }
+}

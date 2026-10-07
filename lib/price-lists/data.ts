@@ -75,6 +75,25 @@ export function countPricedLists(priceLists: PriceList[]) {
   return getPricedLists(priceLists).length;
 }
 
+// Formdan gelen gizli liste kimliklerini yalnız bu mağazanın fiyatlı
+// listeleriyle sınırlar (başka tenant'ın liste kimliği yazılamasın).
+export async function filterTenantHiddenPriceListIds(
+  supabase: AdminClient,
+  tenantId: string,
+  ids: string[],
+) {
+  if (!ids.length) return [];
+
+  const { data } = await supabase
+    .from("price_lists")
+    .select("id")
+    .eq("tenant_id", tenantId)
+    .eq("is_catalog_only", false)
+    .in("id", ids);
+
+  return ((data ?? []) as Array<{ id: string }>).map((row) => row.id);
+}
+
 export async function upsertProductPrices(
   supabase: AdminClient,
   productId: string,

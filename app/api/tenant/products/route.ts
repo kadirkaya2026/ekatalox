@@ -3,8 +3,11 @@ import { revalidateStorefrontCache } from "@/lib/storefront/cache";
 import { NextResponse } from "next/server";
 import { normalizeProductRecord } from "@/lib/products/records";
 import { productWithVariantsAndPricesSelect } from "@/lib/products/queries";
-import { parseProductPricesFromFormData } from "@/lib/products/form-prices";
-import { upsertProductPrices } from "@/lib/price-lists/data";
+import {
+  parseHiddenPriceListIdsFromFormData,
+  parseProductPricesFromFormData,
+} from "@/lib/products/form-prices";
+import { filterTenantHiddenPriceListIds, upsertProductPrices } from "@/lib/price-lists/data";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import {
   ProductImageValidationError,
@@ -215,6 +218,12 @@ export async function POST(request: Request) {
     .limit(1)
     .maybeSingle();
 
+  const requestedHiddenIds = parseHiddenPriceListIdsFromFormData(formData);
+  const hiddenPriceListIds =
+    requestedHiddenIds === undefined
+      ? undefined
+      : await filterTenantHiddenPriceListIds(supabase, tenant.id, requestedHiddenIds);
+
   const payload = {
     id: productId,
     tenant_id: tenant.id,
@@ -235,6 +244,7 @@ export async function POST(request: Request) {
     discount_price: parsed.data.discount_price,
     purchase_price: parsed.data.purchase_price,
     is_alcohol: parsed.data.is_alcohol,
+    ...(hiddenPriceListIds !== undefined ? { hidden_price_list_ids: hiddenPriceListIds } : {}),
     image_url: imageUrl,
     image_url_2: imageUrl2,
     image_url_3: imageUrl3,

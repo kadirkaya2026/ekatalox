@@ -2,8 +2,11 @@ import { NextResponse } from "next/server";
 import { revalidateStorefrontCache } from "@/lib/storefront/cache";
 import { normalizeProductRecord } from "@/lib/products/records";
 import { productWithVariantsAndPricesSelect } from "@/lib/products/queries";
-import { parseProductPricesFromFormData } from "@/lib/products/form-prices";
-import { upsertProductPrices } from "@/lib/price-lists/data";
+import {
+  parseHiddenPriceListIdsFromFormData,
+  parseProductPricesFromFormData,
+} from "@/lib/products/form-prices";
+import { filterTenantHiddenPriceListIds, upsertProductPrices } from "@/lib/price-lists/data";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import {
   PRODUCT_IMAGES_BUCKET,
@@ -175,6 +178,12 @@ export async function PATCH(
     }
   }
 
+  const requestedHiddenIds = parseHiddenPriceListIdsFromFormData(formData);
+  const hiddenPriceListIds =
+    requestedHiddenIds === undefined
+      ? undefined
+      : await filterTenantHiddenPriceListIds(supabase, tenant.id, requestedHiddenIds);
+
   const payload = {
     category_id: parsed.data.category_id,
     sku_code: parsed.data.sku_code,
@@ -193,6 +202,7 @@ export async function PATCH(
     discount_price: parsed.data.discount_price,
     purchase_price: parsed.data.purchase_price,
     is_alcohol: parsed.data.is_alcohol,
+    ...(hiddenPriceListIds !== undefined ? { hidden_price_list_ids: hiddenPriceListIds } : {}),
     ...(imageUrl !== undefined ? { image_url: imageUrl } : {}),
     ...(imageUrl2 !== undefined ? { image_url_2: imageUrl2 } : {}),
     ...(imageUrl3 !== undefined ? { image_url_3: imageUrl3 } : {}),

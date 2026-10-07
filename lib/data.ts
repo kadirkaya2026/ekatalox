@@ -61,7 +61,7 @@ const sectionProductsFallbackSelect =
   "product_id, display_order, products(*, product_prices(price_list_id, price))";
 
 const storefrontProductListColumns =
-  "id, tenant_id, category_id, display_order, sku_code, product_name, brand, image_url, image_url_2, image_url_3, model_3d_url, currency, is_in_stock, is_discount_active, is_recommended, discount_price, package_quantity, carton_quantity, track_stock, stock_quantity, volume_pricing, created_at";
+  "id, tenant_id, category_id, display_order, sku_code, product_name, brand, image_url, image_url_2, image_url_3, model_3d_url, currency, is_in_stock, is_discount_active, is_recommended, discount_price, package_quantity, carton_quantity, track_stock, stock_quantity, volume_pricing, hidden_price_list_ids, created_at";
 const storefrontProductWithVariantsSelect =
   `${storefrontProductListColumns}, variants:product_variants(*, prices:product_variant_prices(price_list_id, price)), product_prices(price_list_id, price)`;
 const storefrontSectionProductsWithVariantsSelect =
@@ -1266,6 +1266,9 @@ interface StorefrontProductRowFilter {
   hideAlcohol?: boolean;
   // Mağaza ayarı: stokta olmayan ürünler vitrinde listelenmez (0149).
   hideOutOfStock?: boolean;
+  // Ziyaretçinin fiyat listesi; ürün bu listede gizliyse (0162) listelenmez.
+  priceListId?: string;
+  hiddenForPriceListId?: string;
   // Yalnız fiyattan bağımsız sıralamalar burada uygulanır ("featured" |
   // "newest"). Fiyat sıralaması müşterinin fiyat listesine bağlı olduğu
   // için önbelleklenen satır sorgusunun DIŞINDA yapılır (bkz.
@@ -1326,6 +1329,41 @@ async function shouldHideOutOfStockProducts(tenantId: string): Promise<boolean> 
   return readFlag(tenantId);
 }
 
+// Ürün düzenlemede "Bu listede gizle" (0162): işaretli listeyi kullanan
+// ziyaretçi ürünü vitrinin hiçbir yerinde görmez (katalog, arama, şeritler,
+// bölümler, ürün sayfası, sepet çözümlemesi).
+function isVisibleForPriceList(product: Product, priceListId: string) {
+  return !product.hidden_price_list_ids?.includes(priceListId);
+}
+
+// Sayfalı sorgularda gizleme veritabanında uygulanır (toplam/sayfa doğru
+// kalsın). Mağazada hiç gizli ürün yoksa liste kimliği önbellek anahtarına
+// girmez: tüm fiyat listeleri aynı satır önbelleğini paylaşmaya devam eder.
+async function resolveHiddenForPriceListId(
+  tenantId: string,
+  priceListId: string | undefined,
+): Promise<string> {
+  if (!priceListId || !createSupabaseAdminClient()) return "";
+
+  const readFlag = unstable_cache(
+    async (resolvedTenantId: string) => {
+      const admin = createSupabaseAdminClient();
+      if (!admin) return false;
+      const { data } = await admin
+        .from("products")
+        .select("id")
+        .eq("tenant_id", resolvedTenantId)
+        .neq("hidden_price_list_ids", "{}")
+        .limit(1);
+      return Boolean(data?.length);
+    },
+    [tenantId, "has-list-hidden-products"],
+    { tags: [`storefront_${tenantId}`], revalidate: 300 },
+  );
+
+  return (await readFlag(tenantId)) ? priceListId : "";
+}
+
 function applyAlcoholExclusion<Q extends { eq: Function }>(query: Q, hideAlcohol: boolean): Q {
   return hideAlcohol ? (query.eq("is_alcohol", false) as Q) : query;
 }
@@ -1340,6 +1378,9 @@ function applyStorefrontProductFilters<
   }
   if (filter.hideOutOfStock) {
     q = q.eq("is_in_stock", true);
+  }
+  if (filter.hiddenForPriceListId) {
+    q = q.not("hidden_price_list_ids", "cs", `{${filter.hiddenForPriceListId}}`);
   }
   if (filter.discountOnly) {
     q = q.eq("is_discount_active", true);
@@ -1365,9 +1406,10 @@ async function getCachedStorefrontProductRowsPage(
   filter: StorefrontProductRowFilter,
 ): Promise<{ products: Product[]; total: number }> {
   const page = Math.max(1, filter.page);
-  const [hideAlcohol, hideOutOfStock] = await Promise.all([
+  const [hideAlcohol, hideOutOfStock, hiddenForPriceListId] = await Promise.all([
     shouldHideAlcoholProducts(filter.tenantId),
     shouldHideOutOfStockProducts(filter.tenantId),
+    resolveHiddenForPriceListId(filter.tenantId, filter.priceListId),
   ]);
 
   if (!createSupabaseAdminClient()) {
@@ -1411,6 +1453,7 @@ async function getCachedStorefrontProductRowsPage(
       sort: StorefrontProductSort,
       resolvedHideAlcohol: boolean,
       resolvedHideOutOfStock: boolean,
+      resolvedHiddenForPriceListId: string,
     ) => {
       const admin = createSupabaseAdminClient();
       if (!admin) return { products: [] as Product[], total: 0 };
@@ -1427,6 +1470,7 @@ async function getCachedStorefrontProductRowsPage(
         discountOnly,
         hideAlcohol: resolvedHideAlcohol,
         hideOutOfStock: resolvedHideOutOfStock,
+        hiddenForPriceListId: resolvedHiddenForPriceListId,
       };
 
       const escapedTerm = term ? term.replace(/[()]/g, "") : "";
@@ -1527,6 +1571,7 @@ async function getCachedStorefrontProductRowsPage(
     filter.sort === "newest" ? "newest" : "featured",
     hideAlcohol,
     hideOutOfStock,
+    hiddenForPriceListId,
   );
 }
 
@@ -1542,15 +1587,16 @@ async function getCachedStorefrontProductRowsPage(
 // 2095→2000 indirimli ürün 2200 ile 2095 arasına gelmişti). Varyantlar tam
 // satır: fiyat çözümlemesi vitrin kartıyla birebir aynı veriyi görsün.
 const storefrontPricingRowSelect =
-  "id, tenant_id, category_id, display_order, product_name, currency, is_in_stock, is_discount_active, discount_price, created_at, variants:product_variants(*, prices:product_variant_prices(price_list_id, price)), product_prices(price_list_id, price, discount_price)";
+  "id, tenant_id, category_id, display_order, product_name, currency, is_in_stock, is_discount_active, discount_price, hidden_price_list_ids, created_at, variants:product_variants(*, prices:product_variant_prices(price_list_id, price)), product_prices(price_list_id, price, discount_price)";
 
 async function getCachedStorefrontPricingRows(
   filter: StorefrontProductRowFilter,
 ): Promise<Product[]> {
   const admin = createSupabaseAdminClient();
-  const [hideAlcohol, hideOutOfStock] = await Promise.all([
+  const [hideAlcohol, hideOutOfStock, hiddenForPriceListId] = await Promise.all([
     shouldHideAlcoholProducts(filter.tenantId),
     shouldHideOutOfStockProducts(filter.tenantId),
+    resolveHiddenForPriceListId(filter.tenantId, filter.priceListId),
   ]);
   if (!admin) {
     if (!shouldAllowDemoFallback()) return [];
@@ -1577,6 +1623,7 @@ async function getCachedStorefrontPricingRows(
       discountOnly: boolean,
       resolvedHideAlcohol: boolean,
       resolvedHideOutOfStock: boolean,
+      resolvedHiddenForPriceListId: string,
     ) => {
       const client = createSupabaseAdminClient();
       if (!client) return [] as Product[];
@@ -1594,6 +1641,7 @@ async function getCachedStorefrontPricingRows(
         discountOnly,
         hideAlcohol: resolvedHideAlcohol,
         hideOutOfStock: resolvedHideOutOfStock,
+        hiddenForPriceListId: resolvedHiddenForPriceListId,
       };
 
       const rows: Array<Record<string, unknown>> = [];
@@ -1625,6 +1673,7 @@ async function getCachedStorefrontPricingRows(
     filter.discountOnly ?? false,
     hideAlcohol,
     hideOutOfStock,
+    hiddenForPriceListId,
   );
 }
 
@@ -1695,9 +1744,9 @@ export async function getStorefrontProductsPage(params: {
   const { products, total } = await getCachedStorefrontProductRowsPage(params);
 
   return {
-    products: products.map((product) =>
-      toStorefrontProduct(product, params.priceListId, params.isCatalogOnly),
-    ),
+    products: products
+      .filter((product) => isVisibleForPriceList(product, params.priceListId))
+      .map((product) => toStorefrontProduct(product, params.priceListId, params.isCatalogOnly)),
     total,
   };
 }
@@ -1722,6 +1771,7 @@ export async function getStorefrontRecommendationPool(params: {
     return demoProducts
       .filter((product) => product.tenant_id === params.tenantId && !(hideAlcohol && product.is_alcohol))
       .slice(0, 300)
+      .filter((product) => isVisibleForPriceList(product, params.priceListId))
       .map((product) => toStorefrontProduct(product, params.priceListId, params.isCatalogOnly));
   }
 
@@ -1776,7 +1826,8 @@ export async function getStorefrontRecommendationPool(params: {
   );
 
   const rows = await readPool(params.tenantId, params.excludeCategoryIds ?? [], hideAlcohol);
-  return rows.map((product) => toStorefrontProduct(product, params.priceListId, params.isCatalogOnly));
+  return rows.filter((product) => isVisibleForPriceList(product, params.priceListId))
+      .map((product) => toStorefrontProduct(product, params.priceListId, params.isCatalogOnly));
 }
 
 // "N al Y hediye" kampanyalarının tetikleyici/hediye ürünleri sayfada hiç
@@ -1803,6 +1854,7 @@ export async function getStorefrontProductsByIds(params: {
           params.ids.includes(product.id) &&
           !(hideAlcohol && product.is_alcohol),
       )
+      .filter((product) => isVisibleForPriceList(product, params.priceListId))
       .map((product) => toStorefrontProduct(product, params.priceListId, params.isCatalogOnly));
   }
 
@@ -1815,7 +1867,8 @@ export async function getStorefrontProductsByIds(params: {
   ).in("id", params.ids);
 
   const rows = normalizeProductRows(data);
-  return rows.map((product) => toStorefrontProduct(product, params.priceListId, params.isCatalogOnly));
+  return rows.filter((product) => isVisibleForPriceList(product, params.priceListId))
+      .map((product) => toStorefrontProduct(product, params.priceListId, params.isCatalogOnly));
 }
 
 // Vitrin ürün sayfası (/urun/<slug>, 27 Eyl 2026): slug model kodu
@@ -1968,6 +2021,7 @@ export async function getStorefrontPromoProducts(params: {
           !(hideAlcohol && product.is_alcohol),
       )
       .slice(0, limit)
+      .filter((product) => isVisibleForPriceList(product, params.priceListId))
       .map((product) => toStorefrontProduct(product, params.priceListId, params.isCatalogOnly));
   }
 
@@ -2004,7 +2058,8 @@ export async function getStorefrontPromoProducts(params: {
   );
 
   const rows = await readPromo(params.tenantId, params.excludeCategoryIds ?? [], limit, hideAlcohol);
-  return rows.map((product) => toStorefrontProduct(product, params.priceListId, params.isCatalogOnly));
+  return rows.filter((product) => isVisibleForPriceList(product, params.priceListId))
+      .map((product) => toStorefrontProduct(product, params.priceListId, params.isCatalogOnly));
 }
 
 // İndirimli ürün şeridinin sağ üstündeki "Tümü (N)" sayacı için — şeritte
@@ -2064,6 +2119,7 @@ export async function getStorefrontPromoProductCount(params: {
       if (resolvedHideAlcohol) {
         query = query.eq("is_alcohol", false);
       }
+      query = query.not("hidden_price_list_ids", "cs", `{${priceListId}}`);
 
       const { count } = await query;
       return count ?? 0;
@@ -2159,7 +2215,8 @@ export async function getStorefrontBestSellerProducts(params: {
   );
 
   const rows = await readBestSellers(params.tenantId, params.excludeCategoryIds ?? [], limit, hideAlcohol);
-  return rows.map((product) => toStorefrontProduct(product, params.priceListId, params.isCatalogOnly));
+  return rows.filter((product) => isVisibleForPriceList(product, params.priceListId))
+      .map((product) => toStorefrontProduct(product, params.priceListId, params.isCatalogOnly));
 }
 
 export async function getStorefrontProductDescription(
@@ -2367,6 +2424,9 @@ export async function getStorefrontSections(
       continue;
     }
     if ((row.products as { is_over_limit?: boolean }).is_over_limit) {
+      continue;
+    }
+    if (!isVisibleForPriceList(product, priceListId)) {
       continue;
     }
     const storefrontProduct = toStorefrontProduct(

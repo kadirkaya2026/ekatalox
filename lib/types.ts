@@ -407,6 +407,8 @@ export interface Product {
   is_alcohol?: boolean;
   // Paket limiti üstünde: vitrinde gizli, panelde görünür (0151).
   is_over_limit?: boolean;
+  // Bu fiyat listelerini kullanan müşteriye vitrinde gösterilmez (0162).
+  hidden_price_list_ids?: string[];
   // Stok takibi (0153): açıkken stock_quantity adet; is_in_stock adetten türetilir.
   track_stock?: boolean;
   stock_quantity?: number | null;

@@ -288,6 +288,31 @@ export async function POST(request: Request) {
     }
   }
 
+  // "Bu listede gizle" (0162): vitrin gizli ürünü göstermez; ürün gizlenmeden
+  // önce sepete eklenmişse sipariş burada reddedilir.
+  if (priceListCookie && priceListCookie.tenantId === tenant.id && priceListCookie.priceListId) {
+    const productIds = [...new Set(items.map((item) => item.product_id).filter(Boolean))];
+    if (productIds.length) {
+      const { data: hiddenRows } = await supabase
+        .from("products")
+        .select("id, product_name")
+        .eq("tenant_id", tenant.id)
+        .contains("hidden_price_list_ids", [priceListCookie.priceListId])
+        .in("id", productIds);
+
+      if (hiddenRows?.length) {
+        return errorResponse(
+          requestId,
+          `Şu ürün artık satışta değil, lütfen sepetten çıkarın: ${hiddenRows
+            .map((row) => row.product_name)
+            .join(", ")}`,
+          400,
+          { reason: "hidden_for_price_list", tenantId: tenant.id, productIds: hiddenRows.map((row) => row.id) },
+        );
+      }
+    }
+  }
+
   // Stok takibi (0153): sepet istemcide sınırlanır; burası istemciye güvenmeyen
   // son kontrol. Stok sipariş onaylanınca düşer, burada yalnız aşım engellenir.
   {
