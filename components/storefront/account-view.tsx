@@ -1,7 +1,28 @@
 "use client";
 
 import { useEffect, useState, type FormEvent, type ReactNode } from "react";
-import { Check, FileText, Loader2, MapPin, Package, Pencil, RotateCcw, Star, Trash2, UserRound } from "lucide-react";
+import {
+  ArrowLeft,
+  CalendarClock,
+  Check,
+  ChevronRight,
+  FileText,
+  LayoutDashboard,
+  Loader2,
+  MapPin,
+  Package,
+  Pencil,
+  Phone,
+  Receipt,
+  RotateCcw,
+  ShoppingBag,
+  Star,
+  Trash2,
+  UserRound,
+  Wallet,
+  type LucideIcon,
+} from "lucide-react";
+import { StorefrontImage } from "@/components/storefront/storefront-image";
 import { StorefrontSubpageShell } from "@/components/storefront/storefront-subpage-shell";
 import { formatDealerAddress, PRIMARY_DEALER_ADDRESS_ID, type DealerAddress } from "@/lib/kurumsal/dealer-profile";
 import { getStatusLabel } from "@/lib/orders/status";
@@ -15,8 +36,12 @@ import type { OrderStatus } from "@/lib/types";
 import { cn, formatCurrency } from "@/lib/utils";
 
 // Vitrin "Hesabım" (8 Eki 2026, önce Lucatech). Kişiye özel bayi şifresiyle
-// giren müşteri: siparişlerim (fiş, tekrar sipariş), bilgilerim, adreslerim.
-// Buradaki bilgiler panelde Müşteriler sayfasındaki kaydın aynısıdır.
+// giren müşteri: genel bakış, siparişlerim (fiş, tekrar sipariş), bilgilerim,
+// adreslerim. Bilgiler panelde Müşteriler sayfasındaki kaydın aynısıdır.
+// Düzen: masaüstünde solda profil + menü, sağda içerik; mobilde üstte profil
+// ve 2x2 menü kutuları (ilk sürümdeki üst sekmeler "boş" bulundu).
+
+type OrderPreviewLine = { name: string; quantity: number; image_url: string | null };
 
 type AccountOrder = {
   id: string;
@@ -28,23 +53,51 @@ type AccountOrder = {
   total_amount: number;
   item_count: number;
   tracking_token: string | null;
-  preview: Array<{ name: string; quantity: number }>;
+  preview: OrderPreviewLine[];
+};
+
+type FrequentProduct = {
+  id: string;
+  name: string;
+  sku_code: string | null;
+  image_url: string | null;
+  price: number | null;
+  currency: string;
+  is_in_stock: boolean;
+  times: number;
+  path: string;
 };
 
 type AccountProfile = { company: string | null; name: string | null; phone: string | null };
 
-type AccountData = { profile: AccountProfile; addresses: DealerAddress[]; orders: AccountOrder[] };
-
-type Tab = "orders" | "info" | "addresses";
-
-const STATUS_DOT: Record<OrderStatus, string> = {
-  new: "bg-amber-400",
-  confirmed: "bg-sky-400",
-  preparing: "bg-indigo-400",
-  shipped: "bg-violet-400",
-  delivered: "bg-emerald-500",
-  cancelled: "bg-rose-500",
+type AccountData = {
+  profile: AccountProfile;
+  addresses: DealerAddress[];
+  orders: AccountOrder[];
+  frequent: FrequentProduct[];
+  stats: { order_count: number; totals: Array<{ currency: string; amount: number }>; last_order_at: string | null };
 };
+
+type Tab = "overview" | "orders" | "info" | "addresses";
+
+const TAB_HASH: Record<Tab, string> = { overview: "", orders: "#siparislerim", info: "#bilgilerim", addresses: "#adreslerim" };
+
+const STATUS_PILL: Record<OrderStatus, string> = {
+  new: "bg-amber-100 text-amber-800",
+  confirmed: "bg-sky-100 text-sky-800",
+  preparing: "bg-indigo-100 text-indigo-800",
+  shipped: "bg-violet-100 text-violet-800",
+  delivered: "bg-emerald-100 text-emerald-800",
+  cancelled: "bg-rose-100 text-rose-800",
+};
+
+const PROGRESS_STEPS: Array<{ status: OrderStatus; label: string }> = [
+  { status: "new", label: "Alındı" },
+  { status: "confirmed", label: "Onaylandı" },
+  { status: "preparing", label: "Hazırlanıyor" },
+  { status: "shipped", label: "Yola çıktı" },
+  { status: "delivered", label: "Teslim edildi" },
+];
 
 function displayNo(order: Pick<AccountOrder, "order_no" | "order_number">) {
   if (typeof order.order_no === "number") return `#${order.order_no}`;
@@ -56,19 +109,35 @@ function fmtDate(iso: string) {
   return new Date(iso).toLocaleString("tr-TR", { day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" });
 }
 
+function fmtShortDate(iso: string) {
+  return new Date(iso).toLocaleDateString("tr-TR", { day: "numeric", month: "short", year: "numeric" });
+}
+
+function initialsOf(profile: AccountProfile) {
+  const source = (profile.company || profile.name || "?").trim();
+  const words = source.split(/\s+/).filter(Boolean);
+  return ((words[0]?.[0] ?? "") + (words[1]?.[0] ?? "")).toLocaleUpperCase("tr") || "?";
+}
+
+function useButtonClasses() {
+  const theme = useStorefrontTheme();
+  return {
+    primary: cn("inline-flex items-center justify-center gap-1.5 rounded-full font-semibold transition hover:opacity-90", theme.activeTileBg, theme.activeTileText),
+    secondary: cn("inline-flex items-center justify-center gap-1.5 rounded-full border font-semibold transition hover:opacity-80", theme.border, theme.surface, theme.text),
+  };
+}
+
 function AccountCard({ subdomain, tenantName, logoUrl }: { subdomain: string; tenantName: string; logoUrl: string | null }) {
   const theme = useStorefrontTheme();
-  const text = theme.text;
-  const muted = theme.textMuted;
-  const [tab, setTab] = useState<Tab>("orders");
+  const [tab, setTab] = useState<Tab>("overview");
   const [data, setData] = useState<AccountData | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
 
   useEffect(() => {
-    const initial = window.location.hash.replace("#", "");
+    const hash = window.location.hash;
+    const initial = (Object.entries(TAB_HASH) as Array<[Tab, string]>).find(([, value]) => value && value === hash)?.[0];
     const timer = window.setTimeout(() => {
-      if (initial === "bilgilerim") setTab("info");
-      if (initial === "adreslerim") setTab("addresses");
+      if (initial) setTab(initial);
     }, 0);
     fetch(`/api/storefront/account?${new URLSearchParams({ subdomain })}`)
       .then(async (response) => {
@@ -82,145 +151,389 @@ function AccountCard({ subdomain, tenantName, logoUrl }: { subdomain: string; te
 
   function selectTab(next: Tab) {
     setTab(next);
-    const hash = next === "info" ? "#bilgilerim" : next === "addresses" ? "#adreslerim" : "";
-    window.history.replaceState(window.history.state, "", window.location.pathname + hash);
+    window.history.replaceState(window.history.state, "", window.location.pathname + TAB_HASH[next]);
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
-  const tabs: Array<{ key: Tab; label: string; icon: typeof Package }> = [
-    { key: "orders", label: "Siparişlerim", icon: Package },
-    { key: "info", label: "Bilgilerim", icon: UserRound },
-    { key: "addresses", label: "Adreslerim", icon: MapPin },
+  const menu: Array<{ key: Tab; label: string; hint: string; icon: LucideIcon }> = [
+    { key: "overview", label: "Genel bakış", hint: "Özet ve son sipariş", icon: LayoutDashboard },
+    { key: "orders", label: "Siparişlerim", hint: data ? `${data.orders.length} sipariş` : "Geçmiş siparişler", icon: Package },
+    { key: "addresses", label: "Adreslerim", hint: data ? `${data.addresses.length} kayıtlı adres` : "Teslimat adresleri", icon: MapPin },
+    { key: "info", label: "Bilgilerim", hint: "Firma ve iletişim", icon: UserRound },
   ];
-  const firstName = data?.profile.name?.trim().split(/\s+/)[0];
+  const titles: Record<Tab, { title: string; subtitle: string }> = {
+    overview: { title: "Genel bakış", subtitle: "Hesabınızın özeti ve son hareketleriniz." },
+    orders: { title: "Siparişlerim", subtitle: "Verdiğiniz tüm siparişler, fişleri ve durumları." },
+    addresses: { title: "Adreslerim", subtitle: "Sepette seçebileceğiniz teslimat adresleri." },
+    info: { title: "Bilgilerim", subtitle: "Sipariş fişlerinize yazılan firma ve iletişim bilgileri." },
+  };
 
   return (
-    <StorefrontSubpageShell logoUrl={logoUrl} title={tenantName} maxWidthClassName="max-w-4xl">
-      <section>
-        <p className={cn("text-xs font-semibold uppercase tracking-[0.22em]", muted)}>Hesabım</p>
-        <h1 className={cn("mt-2 text-2xl font-semibold sm:text-3xl", text)}>
-          {firstName ? `Merhaba, ${firstName}` : "Hesabım"}
-        </h1>
-        {data?.profile.company ? <p className={cn("mt-1 text-sm", muted)}>{data.profile.company}</p> : null}
+    <StorefrontSubpageShell logoUrl={logoUrl} title={tenantName} maxWidthClassName="max-w-6xl">
+      <div className="grid gap-6 lg:grid-cols-[288px_minmax(0,1fr)] lg:gap-10">
+        <aside className="grid content-start gap-4 lg:sticky lg:top-6 lg:self-start">
+          <div className={cn("rounded-3xl border p-5", theme.border, theme.surface)}>
+            <div className="flex items-center gap-4">
+              <span
+                className={cn(
+                  "flex size-14 shrink-0 items-center justify-center rounded-2xl text-lg font-bold tracking-wide",
+                  theme.activeTileBg,
+                  theme.activeTileText,
+                )}
+              >
+                {data ? initialsOf(data.profile) : ""}
+              </span>
+              <div className="min-w-0">
+                <p className={cn("truncate text-base font-semibold", theme.text)}>
+                  {data?.profile.company || data?.profile.name || "Hesabım"}
+                </p>
+                {data?.profile.company && data.profile.name ? (
+                  <p className={cn("truncate text-sm", theme.textMuted)}>{data.profile.name}</p>
+                ) : null}
+                {data?.profile.phone ? (
+                  <p className={cn("mt-0.5 flex items-center gap-1 truncate text-xs", theme.textMuted)}>
+                    <Phone className="size-3" /> {data.profile.phone}
+                  </p>
+                ) : null}
+              </div>
+            </div>
+          </div>
 
-        <div className={cn("mt-6 grid grid-cols-3 gap-1 rounded-2xl border p-1", theme.border, theme.surface)} role="tablist">
-          {tabs.map(({ key, label, icon: Icon }) => (
-            <button
-              key={key}
-              type="button"
-              role="tab"
-              aria-selected={tab === key}
-              onClick={() => selectTab(key)}
+          <nav className="grid grid-cols-2 gap-2 lg:grid-cols-1 lg:gap-1.5" aria-label="Hesabım menüsü">
+            {menu.map(({ key, label, hint, icon: Icon }) => {
+              const active = tab === key;
+              return (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => selectTab(key)}
+                  aria-current={active ? "page" : undefined}
+                  className={cn(
+                    "group flex min-w-0 items-center gap-3 rounded-2xl border p-3 text-left transition",
+                    active
+                      ? cn("border-transparent", theme.activeTileBg, theme.activeTileText)
+                      : cn(theme.border, theme.surface, theme.text, "hover:opacity-90"),
+                  )}
+                >
+                  <span
+                    className={cn(
+                      "flex size-9 shrink-0 items-center justify-center rounded-xl",
+                      active ? "bg-white/15" : theme.surfaceMuted,
+                    )}
+                  >
+                    <Icon className="size-4" />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-sm font-semibold">{label}</span>
+                    <span className={cn("block truncate text-xs", active ? "opacity-75" : theme.textMuted)}>{hint}</span>
+                  </span>
+                  <ChevronRight className={cn("hidden size-4 shrink-0 lg:block", active ? "opacity-75" : theme.textMuted)} />
+                </button>
+              );
+            })}
+          </nav>
+
+          {/* Vitrin özel alan adında da çalışsın diye tam sayfa geçiş (subpage shell ile aynı). */}
+          {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
+          <a href="/" className={cn("hidden items-center gap-2 px-2 text-sm font-semibold lg:inline-flex", theme.textMuted)}>
+            <ArrowLeft className="size-4" /> Alışverişe devam et
+          </a>
+        </aside>
+
+        <main className="min-w-0">
+          <h1 className={cn("text-2xl font-semibold sm:text-3xl", theme.text)}>{titles[tab].title}</h1>
+          <p className={cn("mt-1 text-sm", theme.textMuted)}>{titles[tab].subtitle}</p>
+
+          {loadError ? (
+            <div className={cn("mt-6 rounded-3xl border px-6 py-10 text-center text-sm", theme.border, theme.surface, theme.text)}>
+              {loadError}
+            </div>
+          ) : !data ? (
+            <div className={cn("mt-12 flex justify-center", theme.textMuted)}>
+              <Loader2 className="size-6 animate-spin" />
+            </div>
+          ) : tab === "overview" ? (
+            <OverviewTab subdomain={subdomain} data={data} onNavigate={selectTab} />
+          ) : tab === "orders" ? (
+            <OrdersTab subdomain={subdomain} orders={data.orders} />
+          ) : tab === "info" ? (
+            <InfoTab subdomain={subdomain} profile={data.profile} onSaved={(profile) => setData({ ...data, profile })} />
+          ) : (
+            <AddressesTab subdomain={subdomain} addresses={data.addresses} onChange={(addresses) => setData({ ...data, addresses })} />
+          )}
+        </main>
+      </div>
+    </StorefrontSubpageShell>
+  );
+}
+
+function Thumb({ src, alt, className }: { src: string | null; alt: string; className?: string }) {
+  const theme = useStorefrontTheme();
+  return (
+    <span className={cn("relative block shrink-0 overflow-hidden rounded-xl border", theme.border, theme.productThumbSurface, className)}>
+      {src ? (
+        <StorefrontImage src={src} alt={alt} className="object-contain p-1" sizes="96px" />
+      ) : (
+        <span className={cn("flex size-full items-center justify-center", theme.textMuted)}>
+          <Package className="size-4" />
+        </span>
+      )}
+    </span>
+  );
+}
+
+function StatusPill({ status }: { status: OrderStatus }) {
+  return (
+    <span className={cn("inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold", STATUS_PILL[status])}>
+      {getStatusLabel(status)}
+    </span>
+  );
+}
+
+function OrderProgress({ status }: { status: OrderStatus }) {
+  const theme = useStorefrontTheme();
+  if (status === "cancelled") {
+    return <p className={cn("text-sm font-medium", theme.dangerText)}>Bu sipariş iptal edildi.</p>;
+  }
+  const current = PROGRESS_STEPS.findIndex((step) => step.status === status);
+  return (
+    <ol className="grid grid-cols-5 gap-1.5" aria-label="Sipariş durumu">
+      {PROGRESS_STEPS.map((step, index) => {
+        const done = index <= current;
+        return (
+          <li key={step.status} className="min-w-0">
+            <span className={cn("block h-1.5 rounded-full", done ? theme.activeTileBg : theme.surfaceMuted)} />
+            <span
               className={cn(
-                "inline-flex min-w-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-xl px-1.5 py-2.5 text-[13px] font-semibold transition sm:gap-2 sm:px-3 sm:text-sm",
-                tab === key ? cn(theme.activeTileBg, theme.activeTileText) : cn(muted, "hover:opacity-80"),
+                "mt-1.5 block truncate text-[11px] sm:text-xs",
+                done ? cn("font-semibold", theme.text) : theme.textMuted,
               )}
             >
-              <Icon className="hidden size-4 shrink-0 sm:block" /> {label}
-            </button>
-          ))}
-        </div>
+              {step.label}
+            </span>
+          </li>
+        );
+      })}
+    </ol>
+  );
+}
 
-        {loadError ? (
-          <div className={cn("mt-6 rounded-2xl border px-6 py-10 text-center text-sm", theme.border, theme.surface, text)}>
-            {loadError}
+function OrderActions({ subdomain, order, compact = false }: { subdomain: string; order: AccountOrder; compact?: boolean }) {
+  const buttons = useButtonClasses();
+  return (
+    <div className={cn("grid grid-cols-2 gap-2 sm:flex sm:flex-wrap", compact && "sm:justify-end")}>
+      <a href={`/?tekrar=${order.id}`} className={cn(buttons.primary, "col-span-2 h-11 px-5 text-sm sm:h-10")}>
+        <RotateCcw className="size-4" /> Tekrar sipariş ver
+      </a>
+      <a
+        href={`/api/storefront/account/orders/${order.id}/pdf?${new URLSearchParams({ subdomain })}`}
+        target="_blank"
+        rel="noopener"
+        className={cn(buttons.secondary, "h-10 px-4 text-sm")}
+      >
+        <FileText className="size-4" /> Fiş
+      </a>
+      {order.tracking_token ? (
+        <a href={`/siparis/${order.tracking_token}`} className={cn(buttons.secondary, "h-10 px-4 text-sm")}>
+          Detay <ChevronRight className="size-4" />
+        </a>
+      ) : null}
+    </div>
+  );
+}
+
+function OverviewTab({
+  subdomain,
+  data,
+  onNavigate,
+}: {
+  subdomain: string;
+  data: AccountData;
+  onNavigate: (tab: Tab) => void;
+}) {
+  const theme = useStorefrontTheme();
+  const buttons = useButtonClasses();
+  const last = data.orders[0];
+  const defaultAddress = data.addresses[0];
+  const totalLabel = data.stats.totals.length
+    ? data.stats.totals.map((entry) => formatCurrency(entry.amount, entry.currency as CurrencyCode)).join(" + ")
+    : "—";
+  const stats: Array<{ icon: LucideIcon; label: string; value: string }> = [
+    { icon: ShoppingBag, label: "Toplam sipariş", value: String(data.stats.order_count) },
+    { icon: Wallet, label: "Toplam alışveriş", value: totalLabel },
+    { icon: CalendarClock, label: "Son sipariş", value: data.stats.last_order_at ? fmtShortDate(data.stats.last_order_at) : "—" },
+  ];
+
+  return (
+    <div className="mt-6 grid grid-cols-[minmax(0,1fr)] gap-6">
+      <div className="grid grid-cols-3 gap-2 sm:gap-3">
+        {stats.map(({ icon: Icon, label, value }) => (
+          <div key={label} className={cn("flex min-w-0 flex-col items-start gap-2 rounded-3xl border p-3 sm:flex-row sm:items-center sm:gap-3 sm:p-4 lg:p-5", theme.border, theme.surface)}>
+            <span className={cn("flex size-9 shrink-0 items-center justify-center rounded-xl sm:size-11 sm:rounded-2xl", theme.surfaceMuted, theme.text)}>
+              <Icon className="size-5" />
+            </span>
+            <span className="min-w-0 max-w-full">
+              <span className={cn("block truncate text-[11px] font-medium sm:text-xs", theme.textMuted)}>{label}</span>
+              <span className={cn("block truncate text-sm font-semibold tabular-nums sm:text-lg lg:text-xl", theme.text)}>{value}</span>
+            </span>
           </div>
-        ) : !data ? (
-          <div className={cn("mt-10 flex justify-center", muted)}>
-            <Loader2 className="size-6 animate-spin" />
+        ))}
+      </div>
+
+      {last ? (
+        <section className={cn("rounded-3xl border p-5 sm:p-6", theme.border, theme.surface)}>
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <p className={cn("text-xs font-semibold uppercase tracking-wider", theme.textMuted)}>Son siparişiniz</p>
+              <p className={cn("mt-1 text-lg font-semibold", theme.text)}>Sipariş {displayNo(last)}</p>
+              <p className={cn("text-xs", theme.textMuted)}>{fmtDate(last.created_at)}</p>
+            </div>
+            <div className="shrink-0 text-right">
+              <p className={cn("text-xl font-semibold tabular-nums", theme.text)}>
+                {formatCurrency(last.total_amount, last.currency as CurrencyCode)}
+              </p>
+              <p className={cn("text-xs", theme.textMuted)}>{last.item_count} kalem</p>
+            </div>
           </div>
-        ) : tab === "orders" ? (
-          <OrdersTab subdomain={subdomain} orders={data.orders} />
-        ) : tab === "info" ? (
-          <InfoTab subdomain={subdomain} profile={data.profile} onSaved={(profile) => setData({ ...data, profile })} />
-        ) : (
-          <AddressesTab
-            subdomain={subdomain}
-            addresses={data.addresses}
-            onChange={(addresses) => setData({ ...data, addresses })}
-          />
-        )}
-      </section>
-    </StorefrontSubpageShell>
+          <div className="mt-4 flex gap-2">
+            {last.preview.map((line, index) => (
+              <Thumb key={`${line.name}-${index}`} src={line.image_url} alt={line.name} className="size-14 sm:size-16" />
+            ))}
+            {last.item_count > last.preview.length ? (
+              <span className={cn("flex size-14 items-center justify-center rounded-xl border text-sm font-semibold sm:size-16", theme.border, theme.textMuted)}>
+                +{last.item_count - last.preview.length}
+              </span>
+            ) : null}
+          </div>
+          <div className="mt-5">
+            <OrderProgress status={last.status} />
+          </div>
+          <div className="mt-5">
+            <OrderActions subdomain={subdomain} order={last} />
+          </div>
+        </section>
+      ) : (
+        <EmptyOrders />
+      )}
+
+      {data.frequent.length ? (
+        <section>
+          <div className="flex items-end justify-between gap-3">
+            <div>
+              <h2 className={cn("text-lg font-semibold", theme.text)}>Sık aldıklarınız</h2>
+              <p className={cn("text-sm", theme.textMuted)}>Güncel fiyatlarla, tek dokunuşla ürüne gidin.</p>
+            </div>
+          </div>
+          <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3">
+            {data.frequent.map((product) => (
+              <a
+                key={product.id}
+                href={product.path}
+                className={cn("group flex min-w-0 flex-col rounded-3xl border p-3 transition hover:opacity-90", theme.border, theme.surface)}
+              >
+                <Thumb src={product.image_url} alt={product.name} className="aspect-square w-full rounded-2xl" />
+                <span className={cn("mt-3 line-clamp-2 text-sm font-semibold leading-snug", theme.text)}>{product.name}</span>
+                <span className={cn("mt-1 text-xs", theme.textMuted)}>{product.times} siparişte</span>
+                <span className="mt-auto flex items-center justify-between gap-2 pt-2">
+                  <span className={cn("text-sm font-semibold tabular-nums", theme.text)}>
+                    {product.price !== null ? formatCurrency(product.price, product.currency as CurrencyCode) : ""}
+                  </span>
+                  {!product.is_in_stock ? (
+                    <span className={cn("text-xs font-medium", theme.dangerText)}>Stokta yok</span>
+                  ) : (
+                    <ChevronRight className={cn("size-4", theme.textMuted)} />
+                  )}
+                </span>
+              </a>
+            ))}
+          </div>
+        </section>
+      ) : null}
+
+      <div className="grid gap-3 sm:grid-cols-2">
+        <section className={cn("rounded-3xl border p-5", theme.border, theme.surface)}>
+          <p className={cn("flex items-center gap-2 text-sm font-semibold", theme.text)}>
+            <MapPin className="size-4" /> Teslimat adresi
+          </p>
+          <p className={cn("mt-2 min-h-10 break-words text-sm", theme.textMuted)}>
+            {defaultAddress ? formatDealerAddress(defaultAddress) : "Henüz adres eklenmedi."}
+          </p>
+          <button type="button" onClick={() => onNavigate("addresses")} className={cn(buttons.secondary, "mt-3 h-9 px-4 text-xs")}>
+            Adresleri yönet
+          </button>
+        </section>
+        <section className={cn("rounded-3xl border p-5", theme.border, theme.surface)}>
+          <p className={cn("flex items-center gap-2 text-sm font-semibold", theme.text)}>
+            <Receipt className="size-4" /> Fişe yazılan bilgiler
+          </p>
+          <p className={cn("mt-2 min-h-10 text-sm", theme.textMuted)}>
+            {[data.profile.company, data.profile.name, data.profile.phone].filter(Boolean).join(" · ") || "—"}
+          </p>
+          <button type="button" onClick={() => onNavigate("info")} className={cn(buttons.secondary, "mt-3 h-9 px-4 text-xs")}>
+            Bilgileri düzenle
+          </button>
+        </section>
+      </div>
+    </div>
+  );
+}
+
+function EmptyOrders() {
+  const theme = useStorefrontTheme();
+  const buttons = useButtonClasses();
+  return (
+    <div className={cn("rounded-3xl border px-6 py-12 text-center", theme.border, theme.surface)}>
+      <span className={cn("mx-auto flex size-14 items-center justify-center rounded-2xl", theme.surfaceMuted, theme.textMuted)}>
+        <ShoppingBag className="size-6" />
+      </span>
+      <p className={cn("mt-4 text-base font-semibold", theme.text)}>Henüz siparişiniz yok</p>
+      <p className={cn("mt-1 text-sm", theme.textMuted)}>Verdiğiniz siparişler burada listelenir.</p>
+      {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
+      <a href="/" className={cn(buttons.primary, "mt-5 h-11 px-6 text-sm")}>
+        Ürünlere göz at
+      </a>
+    </div>
   );
 }
 
 function OrdersTab({ subdomain, orders }: { subdomain: string; orders: AccountOrder[] }) {
   const theme = useStorefrontTheme();
-  const text = theme.text;
-  const muted = theme.textMuted;
-  const secondaryButton = cn(
-    "inline-flex h-10 items-center justify-center gap-1.5 rounded-full border px-4 text-sm font-semibold transition hover:opacity-80",
-    theme.border,
-    text,
-  );
-
-  if (!orders.length) {
-    return (
-      <div className={cn("mt-6 rounded-2xl border px-6 py-12 text-center", theme.border, theme.surface)}>
-        <Package className={cn("mx-auto size-8", muted)} />
-        <p className={cn("mt-3 text-sm font-semibold", text)}>Henüz siparişiniz yok</p>
-        <p className={cn("mt-1 text-sm", muted)}>Verdiğiniz siparişler burada listelenir.</p>
-        {/* Vitrin özel alan adında da çalışsın diye tam sayfa geçiş (subpage shell ile aynı). */}
-        {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
-        <a href="/" className={cn("rounded-full font-semibold transition hover:opacity-90", theme.activeTileBg, theme.activeTileText, "mt-5 inline-flex h-11 items-center justify-center px-5 text-sm")}>
-          Ürünlere göz at
-        </a>
-      </div>
-    );
-  }
+  if (!orders.length) return <div className="mt-6"><EmptyOrders /></div>;
 
   return (
-    <div className="mt-6 grid grid-cols-[minmax(0,1fr)] gap-3">
+    <div className="mt-6 grid grid-cols-[minmax(0,1fr)] gap-4">
       {orders.map((order) => {
-        const extra = order.item_count - order.preview.length;
         return (
-          <article key={order.id} className={cn("rounded-2xl border p-4 sm:p-5", theme.border, theme.surface)}>
-            <div className="flex flex-wrap items-start justify-between gap-2">
-              <div>
-                <p className={cn("text-base font-semibold", text)}>Sipariş {displayNo(order)}</p>
-                <p className={cn("text-xs", muted)}>{fmtDate(order.created_at)}</p>
+          <article key={order.id} className={cn("overflow-hidden rounded-3xl border", theme.border, theme.surface)}>
+            <div className={cn("flex flex-wrap items-center justify-between gap-3 border-b px-5 py-3", theme.border, theme.surfaceMuted)}>
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                <span className={cn("text-sm font-semibold", theme.text)}>Sipariş {displayNo(order)}</span>
+                <span className={cn("text-xs", theme.textMuted)}>{fmtDate(order.created_at)}</span>
               </div>
-              <div className="text-right">
-                <p className={cn("text-base font-semibold tabular-nums", text)}>
-                  {formatCurrency(order.total_amount, order.currency as CurrencyCode)}
-                </p>
-                <p className={cn("mt-0.5 inline-flex items-center gap-1.5 text-xs font-semibold", text)}>
-                  <span className={cn("size-2 rounded-full", STATUS_DOT[order.status] ?? "bg-slate-400")} />
-                  {getStatusLabel(order.status)}
-                </p>
-              </div>
+              <StatusPill status={order.status} />
             </div>
-
-            <ul className={cn("mt-3 space-y-1 border-t pt-3 text-sm", theme.border, muted)}>
-              {order.preview.map((line, index) => (
-                <li key={`${line.name}-${index}`} className="flex justify-between gap-3">
-                  <span className="min-w-0 truncate">{line.name}</span>
-                  <span className="shrink-0 tabular-nums">× {line.quantity}</span>
-                </li>
-              ))}
-              {extra > 0 ? <li className="text-xs">+ {extra} ürün daha</li> : null}
-            </ul>
-
-            <div className="mt-4 grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
-              <a
-                href={`/?tekrar=${order.id}`}
-                className={cn("rounded-full font-semibold transition hover:opacity-90", theme.activeTileBg, theme.activeTileText, "col-span-2 inline-flex h-11 items-center justify-center gap-1.5 px-4 text-sm sm:h-10")}
-              >
-                <RotateCcw className="size-4" /> Tekrar sipariş ver
-              </a>
-              <a
-                href={`/api/storefront/account/orders/${order.id}/pdf?${new URLSearchParams({ subdomain })}`}
-                target="_blank"
-                rel="noopener"
-                className={secondaryButton}
-              >
-                <FileText className="size-4" /> Fiş
-              </a>
-              {order.tracking_token ? (
-                <a href={`/siparis/${order.tracking_token}`} className={secondaryButton}>
-                  Detay
-                </a>
-              ) : null}
+            <div className="grid gap-4 p-5 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
+              <div className="flex min-w-0 items-center gap-3">
+                <div className="flex shrink-0 -space-x-3">
+                  {order.preview.slice(0, 3).map((line, index) => (
+                    <Thumb key={`${line.name}-${index}`} src={line.image_url} alt={line.name} className="size-12" />
+                  ))}
+                </div>
+                <div className="min-w-0">
+                  <p className={cn("truncate text-sm font-medium", theme.text)}>
+                    {order.preview[0]?.name ?? "Ürün"} {order.preview[0] ? <span className={theme.textMuted}>× {order.preview[0].quantity}</span> : null}
+                  </p>
+                  <p className={cn("text-xs", theme.textMuted)}>
+                    {order.item_count > 1 ? `+${order.item_count - 1} ürün daha` : "Tek kalem"}
+                  </p>
+                </div>
+              </div>
+              <p className={cn("text-left text-lg font-semibold tabular-nums sm:text-right", theme.text)}>
+                {formatCurrency(order.total_amount, order.currency as CurrencyCode)}
+              </p>
+            </div>
+            <div className="px-5 pb-5">
+              <OrderActions subdomain={subdomain} order={order} />
             </div>
           </article>
         );
@@ -288,7 +601,7 @@ function InfoTab({
   }
 
   return (
-    <form onSubmit={onSubmit} className={cn("mt-6 grid gap-4 rounded-2xl border p-5 sm:p-6", theme.border, theme.surface)}>
+    <form onSubmit={onSubmit} className={cn("mt-6 grid gap-4 rounded-3xl border p-5 sm:p-6", theme.border, theme.surface)}>
       <Field label="Firma adı">
         <input
           className={inputClass}
@@ -400,7 +713,7 @@ function AddressesTab({
       {addresses.map((entry) => {
         const isDefault = entry.id === PRIMARY_DEALER_ADDRESS_ID;
         return (
-          <article key={entry.id} className={cn("rounded-2xl border p-4 sm:p-5", theme.border, theme.surface)}>
+          <article key={entry.id} className={cn("rounded-3xl border p-4 sm:p-5", theme.border, theme.surface)}>
             <p className={cn("flex flex-wrap items-center gap-2 text-sm font-semibold", text)}>
               <MapPin className="size-4 shrink-0" />
               {entry.label ?? (isDefault ? "Varsayılan adres" : "Adres")}

@@ -16,6 +16,8 @@ export type StorefrontAccountContext = {
   tenant: NonNullable<Awaited<ReturnType<typeof getStorefrontTenant>>>;
   profile: DealerProfile;
   supabase: SupabaseClient;
+  priceListId: string;
+  isCatalogOnly: boolean;
 };
 
 export async function resolveStorefrontAccount(subdomain: string | null | undefined): Promise<StorefrontAccountContext | null> {
@@ -27,7 +29,7 @@ export async function resolveStorefrontAccount(subdomain: string | null | undefi
   const profile = await resolveStorefrontDealerProfile(tenant, cookie.accessCodeId);
   const supabase = createSupabaseAdminClient();
   if (!profile || !supabase) return null;
-  return { tenant, profile, supabase };
+  return { tenant, profile, supabase, priceListId: cookie.priceListId, isCatalogOnly: cookie.isCatalogOnly };
 }
 
 function optionalText(max: number) {
