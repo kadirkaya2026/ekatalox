@@ -4,11 +4,13 @@ import { NewOrderWatcher } from "@/components/dashboard/new-order-watcher";
 import { PanelVisitTracker } from "@/components/dashboard/panel-visit-tracker";
 import { Sidebar } from "@/components/dashboard/sidebar";
 import { TrialExpiredModal } from "@/components/dashboard/trial-expired-modal";
+import { FeatureAnnouncementModal } from "@/components/dashboard/feature-announcement-modal";
+import { isMarketOrTekelTenant } from "@/lib/storefront/white-label";
 import { VisitorQuotaBanner } from "@/components/dashboard/visitor-quota-banner";
 import { getSessionContext, requireTenantAdminPage } from "@/lib/auth/session";
 import { getTenantStorefrontSettings } from "@/lib/data";
 import { getCurrentMonthVisitorCount } from "@/lib/analytics/queries";
-import { getVisitorLimitForPlan } from "@/lib/billing/plans";
+import { getVisitorLimitForPlan, hasPlanFeature } from "@/lib/billing/plans";
 import { getTenantSuggestionNoticeCount } from "@/lib/products/suggestions";
 import { getTenantNewOrderCount } from "@/lib/orders/data";
 import {
@@ -118,6 +120,10 @@ export default async function DashboardLayout({
         {tenant ? <NewOrderWatcher initialNewCount={newOrderCount} /> : null}
         {tenant ? <PanelVisitTracker /> : null}
       </main>
+      {/* Yenilik penceresi (8 Eki 2026, Hesabım): yalnız toptancılar, market/tekel hariç. */}
+      {tenant && !trialExpired && !isMarketOrTekelTenant(tenant) ? (
+        <FeatureAnnouncementModal hasPersonalCodes={hasPlanFeature(tenant.plan, "kurumsal_site")} />
+      ) : null}
       {trialExpired && tenant ? (
         <TrialExpiredModal
           companyName={tenant.company_name}
