@@ -29,6 +29,7 @@ import {
   formatDealerDisplayName,
   resolveStorefrontDealerProfile,
 } from "@/lib/kurumsal/dealer-customers";
+import { listDealerAddresses } from "@/lib/kurumsal/dealer-profile";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { getStorefrontMagnetCookieName } from "@/lib/storefront/magnet-cookie";
 import { getClientIp } from "@/lib/storefront/client-ip";
@@ -181,7 +182,10 @@ export async function POST(request: Request) {
   if (dealerProfile) {
     parsed.data.customer_reference_name = formatDealerDisplayName(dealerProfile);
     parsed.data.customer_phone = dealerProfile.phone ?? "";
-    parsed.data.customer_address = formatDealerAddress(dealerProfile);
+    const chosenAddress = parsed.data.dealer_address_id
+      ? listDealerAddresses(dealerProfile).find((entry) => entry.id === parsed.data.dealer_address_id)
+      : undefined;
+    parsed.data.customer_address = formatDealerAddress(chosenAddress ?? dealerProfile);
   }
 
   // Bayinin sepet ayarında zorunlu işaretlediği alanlar boş gelemez —

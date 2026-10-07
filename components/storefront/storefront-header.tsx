@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import { AnimatePresence, motion } from "framer-motion";
-import { ChevronDown, PackageSearch, Search, ShoppingCart, Store, Ticket } from "lucide-react";
+import { ChevronDown, PackageSearch, Search, ShoppingCart, Store, Ticket, UserRound } from "lucide-react";
 import type { CategoryNode } from "@/lib/categories/tree";
 import type { Category } from "@/lib/types";
 import type { CurrencyCode } from "@/lib/products/constants";
@@ -75,6 +75,8 @@ export interface StorefrontHeaderProps {
   // Market/tekel vitrinlerinde dil seçicinin solunda "Sipariş Takip" ikonu:
   // müşteri telefon numarasıyla siparişlerini görür (/siparislerim).
   orderTrackingHref?: string;
+  // Kişiye özel bayi şifresiyle girene "Hesabım" (8 Eki 2026, önce Lucatech).
+  accountHref?: string;
 }
 
 function HeaderActions({
@@ -117,6 +119,16 @@ function HeaderActions({
         >
           <PackageSearch className="size-5" />
           <OrderTrackingBadge count={unseenOrderUpdates} />
+        </a>
+      ) : null}
+      {props.accountHref ? (
+        <a
+          href={props.accountHref}
+          className={cn(theme.headerIconButton, "relative size-11 lg:size-12")}
+          aria-label="Hesabım"
+          title="Hesabım"
+        >
+          <UserRound className="size-5" />
         </a>
       ) : null}
       <StorefrontLanguageSwitcher />

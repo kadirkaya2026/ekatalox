@@ -2,7 +2,7 @@ import { z } from "zod";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { hasPlanFeature, type TenantPlan } from "@/lib/billing/plans";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
-import type { DealerProfile } from "@/lib/kurumsal/dealer-profile";
+import { normalizeDealerAddresses, type DealerProfile } from "@/lib/kurumsal/dealer-profile";
 import { getPushReach, hasPushReach } from "@/lib/push/reach";
 
 export { formatDealerAddress, formatDealerDisplayName, type DealerProfile } from "@/lib/kurumsal/dealer-profile";
@@ -81,7 +81,7 @@ export async function getDealerProfileByAccessCode(
   if (!accessCodeId) return null;
   const { data } = await supabase
     .from("access_codes")
-    .select("id, is_personal, customer_company, customer_name, customer_phone, customer_address, customer_city")
+    .select("id, is_personal, customer_company, customer_name, customer_phone, customer_address, customer_city, customer_addresses")
     .eq("tenant_id", tenantId)
     .eq("id", accessCodeId)
     .maybeSingle();
@@ -93,6 +93,7 @@ export async function getDealerProfileByAccessCode(
     phone: data.customer_phone ?? null,
     address: data.customer_address ?? null,
     city: data.customer_city ?? null,
+    addresses: normalizeDealerAddresses(data.customer_addresses),
   };
 }
 

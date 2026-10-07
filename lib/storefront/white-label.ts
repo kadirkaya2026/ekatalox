@@ -30,6 +30,15 @@ export function isMarketOrTekelTenant(
 // Müşterinin telefonuyla geçmiş siparişlerini gördüğü "Sipariş Takip" (/siparislerim):
 // market/tekel vitrinlerinde her zaman açık; toptancılarda yalnız isteyen mağazalarda
 // (Nailport, Vedat Bey isteği 7 Eki 2026). Başlık ikonu + sepette telefonun kaydı bu kapıya bağlı.
+// Vitrin "Hesabım" (8 Eki 2026, deneme): kişiye özel bayi şifresiyle girene
+// siparişlerim / tekrar sipariş / bilgilerim / adreslerim. Önce Lucatech;
+// beğenilirse tüm toptancılara açılacak.
+const ACCOUNT_PAGE_SUBDOMAINS = new Set(["lucatech"]);
+
+export function hasAccountPage(tenant: { subdomain: string }) {
+  return ACCOUNT_PAGE_SUBDOMAINS.has(tenant.subdomain);
+}
+
 const ORDER_TRACKING_SUBDOMAINS = new Set(["nailport"]);
 
 export function hasOrderTracking(

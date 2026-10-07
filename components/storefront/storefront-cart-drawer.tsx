@@ -101,6 +101,8 @@ export type StorefrontCartDrawerProps = {
   cartFormConfig: CartFormConfig;
   /** Kişiye özel bayi şifresiyle girenin adı (0138): ad/telefon/adres sorulmaz, fişe otomatik yazılır. */
   dealerLabel?: string | null;
+  /** Hesabım açık tenantlarda (8 Eki 2026) kayıtlı adres seçici; verilirse dealerLabel notunun yerine geçer. */
+  dealerSlot?: ReactNode;
   orderNoteError: string | null;
   setOrderNoteError: (value: string | null) => void;
   /** Teslim tarihi (0155): en erken seçilebilir gün; null = alan yok. */
@@ -196,6 +198,7 @@ export function StorefrontCartDrawer({
   isMarketTenant,
   cartFormConfig,
   dealerLabel = null,
+  dealerSlot,
   orderNoteError,
   setOrderNoteError,
   deliveryDateMin = null,
@@ -1043,7 +1046,7 @@ cartFormConfig.customer_address.is_visible ? (
           <p className={cn("mt-2 text-xs font-medium", theme.dangerText)}>{paymentMethodError}</p>
         ) : null}
       </>
-      {dealerLabel ? (
+      {dealerSlot ? dealerSlot : dealerLabel ? (
         <p className={cn("mt-3 rounded-xl p-3 text-sm", theme.surfaceMuted)}>
           <span className="font-semibold">{dealerLabel}</span> adına sipariş veriliyor. Adres ve iletişim bilgileriniz fişe otomatik
           yazılır.

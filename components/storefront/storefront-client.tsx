@@ -8,7 +8,8 @@ import { readDesignDocument, getDesignContent } from "@/lib/storefront/sector-de
 
 import { volumeUnitPrice } from "@/lib/storefront/volume-pricing";
 import { DealerPushPrompt } from "@/components/storefront/dealer-push-prompt";
-import { formatDealerDisplayName, type DealerProfile } from "@/lib/kurumsal/dealer-profile";
+import { formatDealerDisplayName, listDealerAddresses, type DealerAddress, type DealerProfile } from "@/lib/kurumsal/dealer-profile";
+import { DealerAddressPicker, type NewDealerAddressInput } from "@/components/storefront/dealer-address-picker";
 import {
   Fragment,
   useCallback,
@@ -129,7 +130,7 @@ import { StorefrontBottomNav } from "@/components/storefront/storefront-bottom-n
 import { STOREFRONT_PRODUCT_SORTS, type StorefrontProductSort } from "@/lib/storefront/product-sort";
 import { StorefrontCampaignsSheet } from "@/components/storefront/storefront-campaigns-sheet";
 import { StorefrontSearchSheet } from "@/components/storefront/storefront-search-sheet";
-import { hasOrderTracking, isMarketOrTekelTenant } from "@/lib/storefront/white-label";
+import { hasAccountPage, hasOrderTracking, isMarketOrTekelTenant } from "@/lib/storefront/white-label";
 import { readPushIdentity, readTrackingPhone, saveTrackingPhone } from "@/lib/storefront/tracking-phone";
 import { getCampaignPushStatus } from "@/lib/push/client";
 import { validateCustomerPhoneInput } from "@/lib/storefront/customer-phone";
@@ -1282,6 +1283,15 @@ export function StorefrontClient({
   const isMarketTenant = tenant.business_type === "market";
   // Sipariş Takip (/siparislerim) açık mı: market/tekel + isteyen toptancılar (bkz. hasOrderTracking).
   const orderTrackingEnabled = hasOrderTracking(tenant);
+  // Hesabım (8 Eki 2026, önce Lucatech): kişiye özel şifreyle girende başlık
+  // ikonu, sepette kayıtlı adres seçimi ve ?tekrar=<sipariş> ile tekrar sipariş.
+  const accountEnabled = Boolean(dealerProfile) && hasAccountPage(tenant) && !previewMode;
+  const [dealerAddresses, setDealerAddresses] = useState<DealerAddress[]>(() =>
+    dealerProfile ? listDealerAddresses(dealerProfile) : [],
+  );
+  const [dealerAddressId, setDealerAddressId] = useState<string | null>(() =>
+    dealerProfile ? (listDealerAddresses(dealerProfile)[0]?.id ?? null) : null,
+  );
   // Sepet formu alan ayarları (0118): hangi alan görünür/zorunlu, etiketi ne.
   // Ayar yoksa tür bazlı eski davranış (market: telefon+adres zorunlu).
   // Kişiye özel bayi şifresiyle girende (0138) ad/telefon/adres sorulmaz —
@@ -2211,6 +2221,55 @@ export function StorefrontClient({
   const selectedPackageCountValue = parseUnitCount(selectedPackageCount);
   const selectedCartonCountValue = parseUnitCount(selectedCartonCount);
 
+  // Hesabım > "Tekrar sipariş ver" (?tekrar=<sipariş id>): eski siparişin
+  // satırları bugünkü fiyat/stokla sepete eklenir, sepet açılır.
+  useEffect(() => {
+    const orderId = new URLSearchParams(window.location.search).get("tekrar");
+    if (!orderId || !accountEnabled || !analyticsSubdomain) return;
+    const url = new URL(window.location.href);
+    url.searchParams.delete("tekrar");
+    window.history.replaceState(window.history.state, "", url.pathname + url.search + url.hash);
+    void fetch(`/api/storefront/account/reorder?${new URLSearchParams({ subdomain: analyticsSubdomain, order: orderId })}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((json) => {
+        if (!json) return;
+        const products = new Map(((json.products ?? []) as StorefrontProduct[]).map((product) => [product.id, product]));
+        const lines = (json.lines ?? []) as Array<{ product_id: string; variant_id: string | null; quantity: number }>;
+        let skipped = 0;
+        setCart((current) =>
+          lines.reduce((items, line) => {
+            const product = products.get(line.product_id);
+            if (!product || !product.is_in_stock || product.price === null) {
+              skipped += 1;
+              return items;
+            }
+            if (line.variant_id) {
+              const variant = product.variants.find((entry) => entry.id === line.variant_id);
+              if (!variant || !variant.is_purchasable) {
+                skipped += 1;
+                return items;
+              }
+              return addVariantSelectionsToCart(items, product, [
+                { variantId: variant.id, unit: "adet", quantity: line.quantity },
+              ]);
+            }
+            return addToCart(items, product, line.quantity);
+          }, current),
+        );
+        window.setTimeout(() => {
+          if (skipped > 0) {
+            setAnnouncement({
+              title: "Tekrar sipariş",
+              body: `${skipped} ürün artık satışta olmadığı için sepete eklenmedi. Diğer ürünler güncel fiyatlarıyla sepetinizde.`,
+            });
+          }
+          setIsCartOpen(true);
+        }, 0);
+      })
+      .catch(() => undefined);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Bildirim derin bağlantıları (lib/push/send-tenant-broadcast-push.ts üretir):
   //   ?kampanya=1            Kampanyalar panelini aç
   //   ?bildirim=<b64url>     panelin üstünde duyuru kartı ({t,b})
@@ -2778,6 +2837,7 @@ export function StorefrontClient({
             ? customerAddress.trim()
             : "",
           customer_location: isMarketTenant ? customerLocation : null,
+          dealer_address_id: accountEnabled ? (dealerAddressId ?? undefined) : undefined,
           paymentMethod: selectedPaymentMethod,
           selectedInstallmentCount: isCatalogOnly ? null : selectedInstallmentCount,
           cashDiscountTiers: storefrontSettings.cash_discount_tiers ?? [],
@@ -2878,6 +2938,8 @@ export function StorefrontClient({
     isCatalogOnly,
     isMinCartAmountMet,
     isMarketTenant,
+    accountEnabled,
+    dealerAddressId,
     t,
   ]);
   const cartItemCount = useMemo(
@@ -3515,6 +3577,23 @@ export function StorefrontClient({
 
   function openCartDrawer() {
     setIsCartOpen(true);
+  }
+
+  async function addDealerAddress(input: NewDealerAddressInput): Promise<string | null> {
+    try {
+      const response = await fetch("/api/storefront/account", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ subdomain: analyticsSubdomain, action: "add", address: input }),
+      });
+      const json = await response.json().catch(() => ({}));
+      if (!response.ok) return typeof json.error === "string" ? json.error : "Adres kaydedilemedi.";
+      if (Array.isArray(json.addresses)) setDealerAddresses(json.addresses as DealerAddress[]);
+      if (typeof json.selectedId === "string") setDealerAddressId(json.selectedId);
+      return null;
+    } catch {
+      return "Bağlantı hatası, tekrar deneyin.";
+    }
   }
 
   function closeAddToCartModal() {
@@ -4367,6 +4446,7 @@ export function StorefrontClient({
         orderTrackingHref={orderTrackingEnabled && !previewMode ? "/siparislerim" : undefined}
       /> : <StorefrontHeader
         orderTrackingHref={orderTrackingEnabled ? "/siparislerim" : undefined}
+        accountHref={accountEnabled ? "/hesabim" : undefined}
         headerStyleKey={storefrontSettings.header_style_key ?? "standard"}
         storefrontSettings={storefrontSettings}
         storefrontTitle={storefrontTitle}
@@ -5149,6 +5229,17 @@ export function StorefrontClient({
         isMarketTenant={isMarketTenant}
         cartFormConfig={cartFormConfig}
         dealerLabel={dealerProfile ? formatDealerDisplayName(dealerProfile) : null}
+        dealerSlot={
+          accountEnabled && dealerProfile ? (
+            <DealerAddressPicker
+              dealerLabel={formatDealerDisplayName(dealerProfile)}
+              addresses={dealerAddresses}
+              selectedId={dealerAddressId}
+              onSelect={setDealerAddressId}
+              onAdd={addDealerAddress}
+            />
+          ) : undefined
+        }
         orderNoteError={orderNoteError}
         deliveryDateMin={deliveryDateMin}
         deliveryDate={deliveryDate}

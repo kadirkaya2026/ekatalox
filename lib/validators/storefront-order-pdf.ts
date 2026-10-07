@@ -54,6 +54,9 @@ export const storefrontOrderPdfSchema = z
     customer_reference_name: z.string().trim().max(200).optional().default(""),
     customer_phone: z.string().trim().max(40).optional().default(""),
     customer_address: z.string().trim().max(500).optional().default(""),
+    // Kişiye özel bayi şifresinde sepette seçilen kayıtlı adres (0163); sunucu
+    // adresi kimlikten kendisi çözer, istemcinin yazdığı metne güvenmez.
+    dealer_address_id: z.string().trim().max(64).optional(),
     // Müşterinin isteğe bağlı paylaştığı anlık konum (yalnız teslimatlı
     // market vitrinleri). Sunucu bundan kısa bir harita linki üretir.
     customer_location: z
