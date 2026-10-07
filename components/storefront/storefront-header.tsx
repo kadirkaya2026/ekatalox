@@ -535,8 +535,13 @@ function StorefrontHeaderTopBar({ props }: { props: StorefrontHeaderProps }) {
             />
           ) : null}
         </div>
-        <HeaderSearch props={props} className="lg:justify-self-center" />
-        <HeaderActions props={props} />
+        {/* Mobilde arama ikonların ALTINDA tam genişlik satır: ikon sayısı arttıkça
+            (kampanya, sipariş takip, dil, tema, sepet) aynı satırda arama kutusu
+            "Ürü…" kadar daralıyordu (Nailport, 7 Eki 2026). Masaüstü düzeni aynı. */}
+        <HeaderSearch props={props} className="order-3 col-span-2 lg:order-none lg:col-span-1 lg:justify-self-center" />
+        <div className="order-2 col-span-2 flex justify-end lg:order-none lg:col-span-1">
+          <HeaderActions props={props} />
+        </div>
       </div>
     </div>
   );
