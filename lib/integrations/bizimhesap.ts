@@ -79,6 +79,46 @@ function customerIdFromPhone(phone: string | null | undefined) {
   return digits.length >= 10 ? Number(digits) : 900000;
 }
 
+type BizimHesapCustomer = {
+  id: string;
+  title: string | null;
+  phone: string | null;
+  address: string | null;
+  taxno: string | null;
+  taxoffice: string | null;
+  email: string | null;
+};
+
+const phone10 = (phone: string | null | undefined) => (phone ?? "").replace(/\D/g, "").slice(-10);
+const normalizeTitle = (title: string) =>
+  title.toLocaleLowerCase("tr").replace(/[.,;:'"()]/g, " ").replace(/\s+/g, " ").trim();
+
+/**
+ * BizimHesap'ta zaten açılmış cariyi bulur (belgelenmemiş GET b2b/customers ucu, 7 Eki 2026'da
+ * doğrulandı): önce telefonun son 10 hanesi, tek sonuç yoksa unvan birebir (büyük/küçük harf ve
+ * noktalama hariç). Bayi adı "Firma (Kişi)" ise firma kısmı da denenir. Birden fazla aday varsa
+ * yanlış cariye yazmamak için eşleştirme yapılmaz. Liste alınamazsa null (eski davranış).
+ */
+async function findExistingCustomer(firmId: string, name: string, phone: string | null | undefined) {
+  try {
+    const { status, json } = await callBizimHesap("customers", firmId);
+    const list = (json?.data as { customers?: BizimHesapCustomer[] } | undefined)?.customers;
+    if (status !== 200 || !Array.isArray(list)) return null;
+    const p = phone10(phone);
+    if (p.length === 10) {
+      const byPhone = list.filter((c) => phone10(c.phone) === p);
+      if (byPhone.length === 1) return byPhone[0];
+    }
+    const names = new Set(
+      [name, name.replace(/\s*\([^)]*\)\s*$/, "")].map(normalizeTitle).filter((n) => n.length > 0),
+    );
+    const byTitle = list.filter((c) => names.has(normalizeTitle(c.title ?? "")));
+    return byTitle.length === 1 ? byTitle[0] : null;
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Siparişi BizimHesap'a satış belgesi olarak gönderir ve sonucu orders satırına
  * yazar. Asla fırlatmaz; sipariş akışını engellememeli (after() içinde çağrılır).
@@ -181,6 +221,31 @@ export async function sendOrderToBizimHesap(
     const finalNet = round2(finalTotal / divisor);
     const discountNet = Math.max(0, round2(linesNet - finalNet));
 
+    // BizimHesap'ta aynı telefon ya da unvanla açılmış cari varsa fiş ona yazılır (Vedat Bey isteği,
+    // 7 Eki 2026); yoksa eskisi gibi telefondan türeyen kimlikle (ilk siparişte açılan cari).
+    const phoneCustomer = {
+      customerId: customerIdFromPhone(order.customer_phone) as number | string,
+      title: order.customer_name?.trim() || "eKatalox Bayi",
+      taxOffice: "",
+      taxNo: "",
+      email: "",
+      phone: phone10(order.customer_phone),
+      // BizimHesap adressiz belgeyi reddediyor ("Adres bilgisi gönderilmemiş", 6 Eki 2026).
+      address: order.customer_address?.trim() || "Adres belirtilmedi",
+    };
+    const existing = await findExistingCustomer(config.firm_id, order.customer_name?.trim() ?? "", order.customer_phone);
+    const customer = existing
+      ? {
+          customerId: existing.id as number | string,
+          title: existing.title?.trim() || phoneCustomer.title,
+          taxOffice: existing.taxoffice ?? "",
+          taxNo: existing.taxno ?? "",
+          email: existing.email ?? "",
+          phone: phone10(existing.phone) || phoneCustomer.phone,
+          address: existing.address?.trim() || phoneCustomer.address,
+        }
+      : phoneCustomer;
+
     const now = new Date().toISOString();
     const body = {
       firmId: config.firm_id,
@@ -195,16 +260,7 @@ export async function sendOrderToBizimHesap(
         .filter(Boolean)
         .join(" — "),
       dates: { invoiceDate: now, dueDate: now, deliveryDate: now },
-      customer: {
-        customerId: customerIdFromPhone(order.customer_phone),
-        title: order.customer_name?.trim() || "eKatalox Bayi",
-        taxOffice: "",
-        taxNo: "",
-        email: "",
-        phone: (order.customer_phone ?? "").replace(/\D/g, "").slice(-10),
-        // BizimHesap adressiz belgeyi reddediyor ("Adres bilgisi gönderilmemiş", 6 Eki 2026).
-        address: order.customer_address?.trim() || "Adres belirtilmedi",
-      },
+      customer,
       amounts: {
         currency: currencyCode(order.currency),
         gross: money(linesNet),
@@ -221,7 +277,13 @@ export async function sendOrderToBizimHesap(
       }),
     };
 
-    const { status, json, text } = await callBizimHesap("addinvoice", config.firm_id, body);
+    let { status, json, text } = await callBizimHesap("addinvoice", config.firm_id, body);
+    // Eşleşen cari kimliği reddedilirse sipariş aktarımı kırılmasın: eski yöntemle (telefon kimliği) tekrar dene.
+    // (BizimHesap başarılı yanıtta da boş "error" alanı dönebilir; yalnız dolu hata ya da guid yokluğu ret sayılır.)
+    const rejected = status !== 200 || Boolean(typeof json?.error === "string" && json.error) || !(typeof json?.guid === "string" && json.guid);
+    if (existing && rejected) {
+      ({ status, json, text } = await callBizimHesap("addinvoice", config.firm_id, { ...body, customer: phoneCustomer }));
+    }
     const error = typeof json?.error === "string" ? json.error : "";
     const guid = typeof json?.guid === "string" ? json.guid : "";
     if (status !== 200 || error || !guid) {
