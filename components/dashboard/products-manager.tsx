@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { AlertTriangle, FileDown, Trash2 } from "lucide-react";
+import { AlertTriangle, FileDown, FileSpreadsheet, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Modal } from "@/components/ui/modal";
@@ -129,6 +129,7 @@ export function ProductsManager({
   const [exportOpen, setExportOpen] = useState(false);
   const [exportPriceListId, setExportPriceListId] = useState<string>(pricedLists[0]?.id ?? "none");
   const [isExporting, setIsExporting] = useState(false);
+  const [isExportingExcel, setIsExportingExcel] = useState(false);
   const [total, setTotal] = useState(initialTotal);
   const [grandTotal, setGrandTotal] = useState(initialTotal);
   const [isLoading, setIsLoading] = useState(false);
@@ -231,6 +232,44 @@ export function ProductsManager({
       setMessage("PDF oluşturulamadı.");
     } finally {
       setIsExporting(false);
+    }
+  }
+
+  // Ekrandaki filtreyle aynı ürünleri, Toplu İşlemler içe aktarmasının okuduğu sütunlarla
+  // Excel olarak indirir; müşteri fiyatları değiştirip aynı dosyayı geri yükler (7 Eki 2026).
+  async function exportExcel() {
+    setIsExportingExcel(true);
+    setMessage(null);
+    try {
+      const params = new URLSearchParams();
+      if (debouncedSearchTerm.trim()) params.set("q", debouncedSearchTerm.trim());
+      if (expandedCategoryIds.length) params.set("categoryIds", expandedCategoryIds.join(","));
+      if (matchCategoryIds.length) params.set("matchCategoryIds", matchCategoryIds.join(","));
+      if (stockFilter !== "all") params.set("stock", stockFilter);
+      if (qualityFilter !== "all") params.set("quality", qualityFilter);
+
+      const response = await fetch(`/api/tenant/products/export-excel?${params.toString()}`);
+      if (!response.ok) {
+        const result = await response.json().catch(() => ({}));
+        setMessage(result.error ?? "Excel oluşturulamadı.");
+        return;
+      }
+      const blob = await response.blob();
+      const disposition = response.headers.get("Content-Disposition") ?? "";
+      const fileName = /filename="([^"]+)"/.exec(disposition)?.[1] ?? "urunler.xlsx";
+      const href = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = href;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(href), 10_000);
+      setMessage("Excel indirildi. Fiyatları değiştirip Toplu İşlemler → Excel yükle bölümünden aynı dosyayı geri yükleyebilirsiniz.");
+    } catch {
+      setMessage("Excel oluşturulamadı.");
+    } finally {
+      setIsExportingExcel(false);
     }
   }
 
@@ -692,7 +731,16 @@ export function ProductsManager({
 
       <Card className="overflow-hidden">
         <div className="border-b border-border px-5 py-4">
-          <div className="mb-3 flex justify-end">
+          <div className="mb-3 flex flex-wrap justify-end gap-2">
+            <Button
+              variant="secondary"
+              onClick={() => void exportExcel()}
+              disabled={!total || isExportingExcel}
+              title="Fiyatları Excel'de güncelleyip Toplu İşlemler'den geri yükleyebilirsiniz"
+            >
+              <FileSpreadsheet className="size-4" />
+              {isExportingExcel ? "Excel hazırlanıyor…" : "Excel olarak dışa aktar"}
+            </Button>
             <Button variant="secondary" onClick={() => setExportOpen(true)} disabled={!total}>
               <FileDown className="size-4" />
               PDF olarak dışa aktar
