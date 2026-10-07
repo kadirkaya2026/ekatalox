@@ -29,6 +29,7 @@ export function StorefrontThemeProvider({
   brandAccentColor,
   brandPalette,
   productImageBackground,
+  hideProductModelNo = false,
   children,
 }: {
   themeKey: StorefrontThemeKey | string;
@@ -38,6 +39,8 @@ export function StorefrontThemeProvider({
   /** Buton / bölüm bazlı renkler (tenant_storefront_settings.brand_palette). */
   brandPalette?: BrandPalette | null;
   productImageBackground?: ProductImageBackgroundKey | null;
+  /** Market mağazalarında ürün adının altındaki "Model No" satırı gizlenir (7 Eki 2026). */
+  hideProductModelNo?: boolean;
   children: React.ReactNode;
 }) {
   const theme = useResolvedStorefrontTheme(
@@ -51,10 +54,16 @@ export function StorefrontThemeProvider({
   );
 
   return (
-    <StorefrontThemeContext.Provider value={electronicsCommerceTheme(theme, commerceDesign)}>
+    <StorefrontThemeContext.Provider
+      value={withProductModelNo(electronicsCommerceTheme(theme, commerceDesign), hideProductModelNo)}
+    >
       {children}
     </StorefrontThemeContext.Provider>
   );
+}
+
+export function withProductModelNo(theme: StorefrontTheme, hide: boolean): StorefrontTheme {
+  return hide && theme.showProductModelNo ? { ...theme, showProductModelNo: false } : theme;
 }
 
 export function useStorefrontTheme(): StorefrontTheme {

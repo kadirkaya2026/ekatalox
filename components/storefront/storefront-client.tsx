@@ -62,7 +62,7 @@ import {
 import { getCheckoutPaymentMethods, type CheckoutPaymentMethod } from "@/lib/storefront/payment-methods";
 import { resolveCartFormConfig } from "@/lib/storefront/cart-form-config";
 import { useResolvedStorefrontTheme } from "@/lib/storefront/use-resolved-storefront-theme";
-import { StorefrontThemeProvider, useStorefrontTheme } from "@/lib/storefront/theme-context";
+import { StorefrontThemeProvider, useStorefrontTheme, withProductModelNo } from "@/lib/storefront/theme-context";
 import { containsWholeWord, expandCategorySearchTerm, normalizeSearchKey } from "@/lib/search/turkish-search-aliases";
 import { useStorefrontLocale, type TranslateFn } from "@/lib/storefront/locale-context";
 import type { StorefrontTheme } from "@/lib/storefront/themes";
@@ -1704,7 +1704,12 @@ export function StorefrontClient({
   const akimDay = useAkimDayMode(
     electronicsDesign?.themeId === "electronics-akim" && Boolean(storefrontSettings.is_theme_toggle_visible),
   );
-  const theme = electronicsCommerceTheme(baseTheme, electronicsDesign?.themeId, akimDay);
+  // Market mağazalarında "Model No" satırı yok (barkod müşteriye anlamsız; 7 Eki 2026).
+  const hideProductModelNo = tenant.business_type === "market";
+  const theme = withProductModelNo(
+    electronicsCommerceTheme(baseTheme, electronicsDesign?.themeId, akimDay),
+    hideProductModelNo,
+  );
   const layout = getStorefrontLayout(storefrontSettings.layout_key ?? "classic-grid");
   const productCardStyle = getProductCardStyleClasses(storefrontSettings.product_card_style);
   // Market/tekel bayilerde MOBİLDE düzen: banner -> indirimli ürün şeridi ->
@@ -4338,6 +4343,7 @@ export function StorefrontClient({
       brandAccentColor={storefrontSettings.brand_accent_color}
       brandPalette={storefrontSettings.brand_palette}
       productImageBackground={storefrontSettings.product_image_background}
+      hideProductModelNo={hideProductModelNo}
     >
     <StorefrontLayoutProvider layoutKey={storefrontSettings.layout_key ?? "classic-grid"}>
     <div className={electronicsDesign ? commerceRootClass(electronicsDesign.themeId, theme.isDark, akimDay) : "contents"} style={electronicsDesign ? paletteStyle(electronicsDesign, theme.isDark, akimDay) : undefined} data-commerce-design={electronicsDesign?.themeId}>
