@@ -53,6 +53,7 @@ export async function testBizimHesapConnection(firmId: string): Promise<{ ok: bo
 }
 
 type OrderItem = {
+  original_price?: number | null;
   product_name?: string | null;
   sku_code?: string | null;
   product_id?: string | null;
@@ -189,6 +190,12 @@ export async function sendOrderToBizimHesap(
       const unitGross = Number(item.price ?? 0) || 0; // KDV dahil
       const lineTotal = round2(unitGross * quantity);
       const lineNet = round2(lineTotal / divisor);
+      // Liste indirimi (Vedat Bey isteği, 7 Eki 2026): birim fiyat listenin indirimsiz
+      // (perakende) fiyatı, aradaki fark satır iskontosu olarak gider.
+      const listGross = Number(item.original_price ?? 0) || 0;
+      const unitList = listGross > unitGross ? listGross : unitGross;
+      const lineGross = round2((unitList * quantity) / divisor);
+      const lineDiscount = Math.max(0, round2(lineGross - lineNet));
       const name = [item.product_name ?? "Ürün", item.variant_name ? `(${item.variant_name})` : null]
         .filter(Boolean)
         .join(" ");
@@ -203,19 +210,23 @@ export async function sendOrderToBizimHesap(
         barcode: "",
         taxRate: plain(rate),
         quantity,
-        unitPrice: plain(unitGross / divisor),
-        grossPrice: money(lineNet),
-        discount: "0.00",
+        unitPrice: plain(unitList / divisor),
+        grossPrice: money(lineGross),
+        discount: money(lineDiscount),
         net: money(lineNet),
         tax: money(lineTotal - lineNet),
         total: money(lineTotal),
         _total: lineTotal,
         _net: lineNet,
+        _gross: lineGross,
+        _discount: lineDiscount,
       };
     });
 
     const linesTotal = details.reduce((sum, line) => sum + line._total, 0);
     const linesNet = details.reduce((sum, line) => sum + line._net, 0);
+    const linesGross = details.reduce((sum, line) => sum + line._gross, 0);
+    const linesDiscount = details.reduce((sum, line) => sum + line._discount, 0);
     const finalTotal = round2(Number(order.total_amount ?? linesTotal));
     // Kupon vb. sipariş indirimi: KDV dahil fark net'e oranlanır.
     const finalNet = round2(finalTotal / divisor);
@@ -263,16 +274,18 @@ export async function sendOrderToBizimHesap(
       customer,
       amounts: {
         currency: currencyCode(order.currency),
-        gross: money(linesNet),
-        discount: money(discountNet),
+        gross: money(linesGross),
+        discount: money(linesDiscount + discountNet),
         net: money(finalNet),
         tax: money(finalTotal - finalNet),
         total: money(finalTotal),
       },
       details: details.map((line) => {
-        const { _total, _net, ...payload } = line;
+        const { _total, _net, _gross, _discount, ...payload } = line;
         void _total;
         void _net;
+        void _gross;
+        void _discount;
         return payload;
       }),
     };
