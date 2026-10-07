@@ -27,6 +27,18 @@ export function isMarketOrTekelTenant(
   return tenant.business_type === "market" || Boolean(tenant.is_tekel);
 }
 
+// Müşterinin telefonuyla geçmiş siparişlerini gördüğü "Sipariş Takip" (/siparislerim):
+// market/tekel vitrinlerinde her zaman açık; toptancılarda yalnız isteyen mağazalarda
+// (Nailport, Vedat Bey isteği 7 Eki 2026). Başlık ikonu + sepette telefonun kaydı bu kapıya bağlı.
+const ORDER_TRACKING_SUBDOMAINS = new Set(["nailport"]);
+
+export function hasOrderTracking(
+  tenant: Pick<Tenant, "business_type" | "is_tekel" | "subdomain"> | null | undefined,
+): boolean {
+  if (!tenant) return false;
+  return isMarketOrTekelTenant(tenant) || ORDER_TRACKING_SUBDOMAINS.has(tenant.subdomain);
+}
+
 // Kök layout'ta title template'i "%s | eKatalox". absolute vermek o eki
 // atlar; beyaz etiketli olmayan bayilerde eski davranış korunur.
 export function buildStorefrontTitle(

@@ -129,7 +129,7 @@ import { StorefrontBottomNav } from "@/components/storefront/storefront-bottom-n
 import { STOREFRONT_PRODUCT_SORTS, type StorefrontProductSort } from "@/lib/storefront/product-sort";
 import { StorefrontCampaignsSheet } from "@/components/storefront/storefront-campaigns-sheet";
 import { StorefrontSearchSheet } from "@/components/storefront/storefront-search-sheet";
-import { isMarketOrTekelTenant } from "@/lib/storefront/white-label";
+import { hasOrderTracking, isMarketOrTekelTenant } from "@/lib/storefront/white-label";
 import { readPushIdentity, readTrackingPhone, saveTrackingPhone } from "@/lib/storefront/tracking-phone";
 import { getCampaignPushStatus } from "@/lib/push/client";
 import { validateCustomerPhoneInput } from "@/lib/storefront/customer-phone";
@@ -1280,6 +1280,8 @@ export function StorefrontClient({
   // adı, adresi ve telefonu zorunlu tutulur — teslimat yapan tekel/marketlerin
   // WhatsApp mesajında bu bilgiler olmadan sipariş alması istenmiyor.
   const isMarketTenant = tenant.business_type === "market";
+  // Sipariş Takip (/siparislerim) açık mı: market/tekel + isteyen toptancılar (bkz. hasOrderTracking).
+  const orderTrackingEnabled = hasOrderTracking(tenant);
   // Sepet formu alan ayarları (0118): hangi alan görünür/zorunlu, etiketi ne.
   // Ayar yoksa tür bazlı eski davranış (market: telefon+adres zorunlu).
   // Kişiye özel bayi şifresiyle girende (0138) ad/telefon/adres sorulmaz —
@@ -1552,10 +1554,10 @@ export function StorefrontClient({
   }, [isMarketTenant]);
 
   useEffect(() => {
-    if (previewMode || !isMarketTenant) return;
+    if (previewMode || !orderTrackingEnabled) return;
     const digits = customerPhone.replace(/\D/g, "");
     if (digits.length >= 10) saveTrackingPhone(customerPhone);
-  }, [customerPhone, isMarketTenant, previewMode]);
+  }, [customerPhone, orderTrackingEnabled, previewMode]);
 
   useEffect(() => {
     if (previewMode || !isMarketTenant) return;
@@ -2785,7 +2787,7 @@ export function StorefrontClient({
       trackingUrl = result.trackingUrl ?? null;
       // Sipariş kaydedildi: bu numara takip sayfasına "giriş yapmış" olur.
       // Başka numarayla sipariş verilirse üzerine yazılır.
-      if (isMarketTenant && customerPhone.trim()) saveTrackingPhone(customerPhone);
+      if (orderTrackingEnabled && customerPhone.trim()) saveTrackingPhone(customerPhone);
     } catch (error) {
       const apiError =
         error instanceof OrderPdfRequestError && error.apiError?.trim()
@@ -4351,7 +4353,7 @@ export function StorefrontClient({
         onDetail={handleOpenProductDetail} onAdd={handleQuickAddOrOpenModal} onDecrease={handleDecreaseCartItem}
         onMore={handleLoadMoreProducts} onHome={handleGoHome}
       /> : <StorefrontHeader
-        orderTrackingHref={isMarketOrTekelTenant(tenant) ? "/siparislerim" : undefined}
+        orderTrackingHref={orderTrackingEnabled ? "/siparislerim" : undefined}
         headerStyleKey={storefrontSettings.header_style_key ?? "standard"}
         storefrontSettings={storefrontSettings}
         storefrontTitle={storefrontTitle}
