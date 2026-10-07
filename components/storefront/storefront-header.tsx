@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { flushSync } from "react-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { ChevronDown, PackageSearch, Search, ShoppingCart, Store, Ticket } from "lucide-react";
 import type { CategoryNode } from "@/lib/categories/tree";
@@ -173,30 +174,72 @@ function HeaderActions({
   );
 }
 
+// Mobilde açılır arama (7 Eki 2026, kullanıcı isteği): kapalıyken yalnız büyüteç;
+// dokununca satır boyunca genişler ve klavye açılır; boşken dışarı dokununca kapanır.
+// Masaüstünde (lg) her zaman açık kutu.
+type MobileSearchToggle = { open: boolean; setOpen: (open: boolean) => void };
+
 function HeaderSearch({
   props,
   className,
+  mobileToggle,
 }: {
   props: StorefrontHeaderProps;
   className?: string;
+  mobileToggle?: MobileSearchToggle;
 }) {
   const theme = useStorefrontTheme();
   const { t } = useStorefrontLocale();
+  const inputRef = useRef<HTMLInputElement>(null);
+  const formRef = useRef<HTMLFormElement>(null);
+  const collapsed = Boolean(mobileToggle && !mobileToggle.open);
   // Masaüstünde kategori seçici arama kutusunun içinde (26 Eyl 2026);
   // kenar menülü düzende kategoriler zaten solda listelendiği için yok.
   const showPicker = !props.usesSidebarNav && props.topCategories.length > 0;
 
+  const openMobileSearch = () => {
+    if (!mobileToggle) return;
+    // iOS klavyeyi yalnız dokunmayla AYNI anda odaklanan kutuda açar: önce
+    // senkron görünür yap, sonra hemen odakla.
+    flushSync(() => mobileToggle.setOpen(true));
+    inputRef.current?.focus();
+  };
+
+  const closeIfEmpty = () => {
+    if (!mobileToggle) return;
+    window.setTimeout(() => {
+      const value = inputRef.current?.value.trim() ?? "";
+      const stillInside = formRef.current?.contains(document.activeElement);
+      if (!value && !stillInside) mobileToggle.setOpen(false);
+    }, 150);
+  };
+
   return (
+    <>
+    {collapsed ? (
+      <button
+        type="button"
+        onClick={openMobileSearch}
+        aria-label={t("header.searchPlaceholder")}
+        title={t("header.searchPlaceholder")}
+        className={cn(theme.headerIconButton, "relative size-11 justify-self-end lg:hidden")}
+      >
+        <Search className="size-5" />
+      </button>
+    ) : null}
     <form
+      ref={formRef}
       role="search"
       onSubmit={(event) => {
         event.preventDefault();
         props.onSearchSubmit();
       }}
+      onBlur={closeIfEmpty}
       className={cn(
         theme.searchWrap,
         "flex h-10 min-w-0 max-w-none items-stretch rounded-full shadow-none lg:h-11 lg:w-full",
         showPicker ? "lg:max-w-2xl" : "lg:max-w-md",
+        collapsed && "hidden lg:flex",
         className,
       )}
     >
@@ -219,6 +262,7 @@ function HeaderSearch({
           <Search className="size-4" />
         </button>
         <input
+          ref={inputRef}
           type="search"
           enterKeyHint="search"
           placeholder={t("header.searchPlaceholder")}
@@ -232,6 +276,7 @@ function HeaderSearch({
         />
       </div>
     </form>
+    </>
   );
 }
 
@@ -447,6 +492,7 @@ function StorefrontHeaderCategoryNav({ props }: { props: StorefrontHeaderProps }
 }
 
 function StorefrontHeaderTopBar({ props }: { props: StorefrontHeaderProps }) {
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
 
   // Arama ve sepet alt bara taşındığında dört başlık varyantının da
   // ortasında bir boşluk kalıyor (grid gözü boşalıyor, arama satırı
@@ -535,11 +581,14 @@ function StorefrontHeaderTopBar({ props }: { props: StorefrontHeaderProps }) {
             />
           ) : null}
         </div>
-        {/* Mobilde arama ikonların ALTINDA tam genişlik satır: ikon sayısı arttıkça
-            (kampanya, sipariş takip, dil, tema, sepet) aynı satırda arama kutusu
-            "Ürü…" kadar daralıyordu (Nailport, 7 Eki 2026). Masaüstü düzeni aynı. */}
-        <HeaderSearch props={props} className="order-3 col-span-2 lg:order-none lg:col-span-1 lg:justify-self-center" />
-        <div className="order-2 col-span-2 flex justify-end lg:order-none lg:col-span-1">
+        {/* Mobilde arama kapalıyken büyüteç ikonu (ikonların solunda); açılınca
+            satırı kaplar, diğer ikonlar o an gizlenir (Nailport, 7 Eki 2026). */}
+        <HeaderSearch
+          props={props}
+          mobileToggle={{ open: mobileSearchOpen, setOpen: setMobileSearchOpen }}
+          className={cn(mobileSearchOpen && "col-span-2 lg:col-span-1", "lg:justify-self-center")}
+        />
+        <div className={cn("flex justify-end", mobileSearchOpen && "hidden lg:flex")}>
           <HeaderActions props={props} />
         </div>
       </div>
