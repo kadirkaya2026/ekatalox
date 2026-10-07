@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { ArrowRight, ArrowUpRight, Search, ShoppingBag, Plus, Minus, Grid2X2, List, SlidersHorizontal, Package, Bell, X, ChevronRight } from "lucide-react";
+import { ArrowRight, ArrowUpRight, Search, ShoppingBag, Plus, Minus, Grid2X2, List, SlidersHorizontal, Package, Bell, X, ChevronRight, PackageSearch } from "lucide-react";
 import { type SectorStorefrontProps, sectorUi } from "./electronics-storefront";
 import { getDesignContent, type FormaContent, type ModulContent, type AkimContent } from "@/lib/storefront/sector-design/config";
 import { useStorefrontLocale } from "@/lib/storefront/locale-context";
@@ -42,6 +42,7 @@ export function GeneralStorefront(p:SectorStorefrontProps) {
       <button data-theme-area="brand" className={s.brand} onClick={p.onHome} aria-label={`${p.title} — ${t.all}`}><SectorBrandLogo logoUrl={p.settings.logo_url} title={p.title}/></button>
       <div className={s.desktopSearch}>{search}</div><div className={s.actions}>
         <button className={s.icon} aria-label={t.campaigns} onClick={p.onCampaigns}><Bell size={20}/></button>
+        {p.orderTrackingHref ? <a className={s.icon} href={p.orderTrackingHref} aria-label={t.trackOrders} title={t.trackOrders}><PackageSearch size={20}/></a> : null}
         <select aria-label="Language / Dil" value={locale} onChange={e=>setLocale(e.target.value as typeof locale)}><option value="tr">TR</option><option value="en">EN</option><option value="de">DE</option><option value="ru">RU</option></select>
         {p.settings.is_theme_toggle_visible && <StorefrontThemeToggle/>}
         <button className={s.cart} aria-label={`${t.cart} ${p.cartCount}`} onClick={p.onCart}><ShoppingBag size={19}/><span>{t.cart}</span><b>{p.cartCount}</b></button>

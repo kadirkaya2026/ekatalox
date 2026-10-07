@@ -4358,6 +4358,7 @@ export function StorefrontClient({
         onCategory={handleCategoryChange} onCart={openCartDrawer} onCampaigns={() => setIsCampaignsSheetOpen(true)}
         onDetail={handleOpenProductDetail} onAdd={handleQuickAddOrOpenModal} onDecrease={handleDecreaseCartItem}
         onMore={handleLoadMoreProducts} onHome={handleGoHome}
+        orderTrackingHref={orderTrackingEnabled && !previewMode ? "/siparislerim" : undefined}
       /> : <StorefrontHeader
         orderTrackingHref={orderTrackingEnabled ? "/siparislerim" : undefined}
         headerStyleKey={storefrontSettings.header_style_key ?? "standard"}
