@@ -14,6 +14,8 @@ export interface ParsedCsvResult {
     category_name: string;
     sku_code: string;
     product_name: string;
+    /** Marka (0161); yalnız "Marka" sütunu olan dosyada anlamlı, boş → null. */
+    brand?: string | null;
     image_url: Product["image_url"];
     currency: Product["currency"];
     prices?: ImportListPrice[];
@@ -33,6 +35,7 @@ export const PRODUCT_IMPORT_FIELD_LABELS: Record<string, string> = {
   category_name: "Kategori Adı",
   sku_code: "Model No",
   product_name: "Ürün Adı",
+  brand: "Marka",
   currency: "Para Birimi",
   price_tier_1: "1. Liste Fiyatı",
   price_tier_2: "2. Liste Fiyatı",
@@ -180,6 +183,7 @@ export function parseProductsCsv(csvText: string): ParsedCsvResult {
         category_name,
         sku_code,
         product_name,
+        brand: row.brand?.trim() || null,
         image_url: row.image_url?.trim() || null,
         currency,
         // Şablon sütunları + "Fiyat: X" sütunları birlikte (biri diğerini silmesin).

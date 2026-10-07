@@ -130,6 +130,15 @@ export function ProductAddForm({
                   onChange={(event) => updateField("product_name", event.target.value)}
                 />
               </Field>
+              <Field label="Marka" hint="İsteğe bağlı. Vitrinde ürün adının üstünde küçük harflerle görünür.">
+                <Input
+                  placeholder="Örn. Marathon"
+                  aria-label="Marka"
+                  maxLength={80}
+                  value={form.brand}
+                  onChange={(event) => updateField("brand", event.target.value)}
+                />
+              </Field>
               <div className="grid gap-5 md:grid-cols-2">
                 <CategoryField
                   categories={flatCategories}

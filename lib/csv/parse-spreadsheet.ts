@@ -11,6 +11,7 @@ export const TURKISH_COLUMN_MAP: Record<string, string> = {
   "Model No": "sku_code",
   "Stok Kodu (SKU)": "sku_code",
   "Ürün Adı": "product_name",
+  "Marka": "brand",
   "Para Birimi": "currency",
   "1. Liste Fiyatı": "price_tier_1",
   "2. Liste Fiyatı": "price_tier_2",
@@ -39,6 +40,7 @@ const HEADER_ALIASES: Record<string, string> = (() => {
   add("category_name", ["Kategori", "Kategori İsmi", "Ürün Kategorisi", "Grup"]);
   add("sku_code", ["Model Kodu", "Stok Kodu", "Ürün Kodu", "Kod", "SKU", "Model", "Stok No"]);
   add("product_name", ["Ürün", "Ürün İsmi", "Ürün Açıklaması", "Ad", "İsim"]);
+  add("brand", ["Marka", "Brand", "Marka Adı"]);
   add("currency", ["Döviz", "Döviz Cinsi", "Para"]);
   add("price_tier_1", ["Fiyat", "Satış Fiyatı", "Liste Fiyatı", "1. Liste", "1.Liste", "1. Fiyat", "Fiyat 1"]);
   add("price_tier_2", ["2. Liste", "2.Liste", "2. Fiyat", "Fiyat 2"]);

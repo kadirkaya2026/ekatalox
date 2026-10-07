@@ -21,6 +21,8 @@ export interface ProductFormState {
   category_id: string;
   sku_code: string;
   product_name: string;
+  // Marka (0161): isteğe bağlı; vitrinde adın üstünde görünür.
+  brand: string;
   currency: string;
   listPrices: Record<string, string>;
   // Liste başına indirimli fiyat; boş = o listede indirim yok.
@@ -52,6 +54,7 @@ export function buildEmptyProductForm(priceLists: PriceList[]): ProductFormState
     category_id: "",
     sku_code: "",
     product_name: "",
+    brand: "",
     currency: defaultCurrencyCode,
     listPrices: buildListPriceFormState(priceLists),
     listDiscounts: buildListDiscountFormState(priceLists),
@@ -83,6 +86,7 @@ export function buildProductFormFromProduct(
     category_id: product.category_id,
     sku_code: product.sku_code,
     product_name: product.product_name,
+    brand: product.brand ?? "",
     currency: product.currency ?? defaultCurrencyCode,
     listPrices: buildListPriceFormState(priceLists, product),
     listDiscounts: buildListDiscountFormState(priceLists, product),
@@ -117,6 +121,7 @@ export function toProductFormData(form: ProductFormState) {
   formData.set("category_id", form.category_id);
   formData.set("sku_code", form.sku_code);
   formData.set("product_name", form.product_name);
+  formData.set("brand", form.brand.trim());
   formData.set("currency", form.currency);
   appendProductPricesToFormData(
     formData,

@@ -97,10 +97,20 @@ const optionalStockQuantitySchema = z.preprocess(
   z.number().int("Stok adedi tam sayı olmalı.").min(0, "Stok adedi negatif olamaz.").max(10_000_000).nullable(),
 );
 
+const productBrandSchema = z
+  .string()
+  .trim()
+  .max(80, "Marka en fazla 80 karakter olabilir.")
+  .optional()
+  .nullable()
+  .transform((value) => (value ? value : null));
+
 export const productBaseSchema = z.object({
   category_id: z.string().min(1, "Kategori seçimi zorunludur."),
   sku_code: z.string().min(1, "Model No zorunludur."),
   product_name: z.string().min(2, "Ürün adı zorunludur."),
+  // Marka (0161): isteğe bağlı; boş metin → null.
+  brand: productBrandSchema,
   currency: currencyCodeSchema,
   prices: productPricesSchema.min(1, "En az bir fiyat listesi girilmelidir."),
   is_in_stock: booleanSchema,
@@ -180,6 +190,8 @@ export const productImportRowSchema = z.object({
   category_name: z.string().min(1, "Kategori adı zorunludur."),
   sku_code: z.string().min(1, "Model No zorunludur."),
   product_name: z.string().min(2, "Ürün adı zorunludur."),
+  // Marka (0161): yalnız dosyada "Marka" sütunu varsa dolu gelir.
+  brand: productBrandSchema,
   currency: currencyCodeSchema,
   prices: importListPriceSchema,
   // Boş stok hücresi gönderilmez → mevcut ürünün stok durumuna dokunulmaz.

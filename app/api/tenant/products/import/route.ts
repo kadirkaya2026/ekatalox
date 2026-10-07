@@ -66,6 +66,8 @@ export async function POST(request: Request) {
     : [];
   const hasPackageQuantityColumn = parsedHeaders.includes("package_quantity");
   const hasCartonQuantityColumn = parsedHeaders.includes("carton_quantity");
+  // Marka (0161): "Marka" sütunu olmayan eski dosyalar mevcut markaları silmesin.
+  const hasBrandColumn = parsedHeaders.includes("brand");
   const parsed = productImportRowsSchema.safeParse(body.rows ?? []);
 
   if (!parsed.success) {
@@ -139,6 +141,7 @@ export async function POST(request: Request) {
       created_at: new Date().toISOString(),
       sku_code: row.sku_code,
       product_name: row.product_name,
+      brand: hasBrandColumn ? row.brand || null : null,
       image_url: row.image_url,
       currency: row.currency,
       prices: resolveImportPricesForTenant(
@@ -295,6 +298,7 @@ export async function POST(request: Request) {
       category_id: categoryCache.get(normalizeCategoryName(row.category_name))!,
       sku_code: row.sku_code,
       product_name: row.product_name,
+      ...(hasBrandColumn ? { brand: row.brand || null } : {}),
       ...(row.image_url ? { image_url: row.image_url } : {}),
       currency: row.currency,
       // Stok hücresi boşsa: yeni ürün stokta açılır, mevcut ürüne dokunulmaz.

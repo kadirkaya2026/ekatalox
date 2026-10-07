@@ -181,6 +181,12 @@ export const StorefrontProductListRow = memo(function StorefrontProductListRow({
       </div>
 
       <div className="min-w-0 space-y-0.5">
+        {product.brand?.trim() ? (
+          // Marka (0161): adın üstünde küçük, büyük harf etiket.
+          <p className={cn("truncate text-[10px] font-semibold uppercase leading-4 tracking-[0.14em]", theme.productMeta)}>
+            {product.brand}
+          </p>
+        ) : null}
         <p className={cn("line-clamp-2 text-[13px] font-semibold leading-5 sm:text-sm", theme.productTitle)}>
           {product.product_name}
         </p>

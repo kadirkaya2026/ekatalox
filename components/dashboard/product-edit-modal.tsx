@@ -101,6 +101,13 @@ export function ProductEditModal({
             value={form.product_name}
             onChange={(event) => updateField("product_name", event.target.value)}
           />
+          <Input
+            placeholder="Marka (isteğe bağlı, ör. Marathon)"
+            aria-label="Marka"
+            maxLength={80}
+            value={form.brand}
+            onChange={(event) => updateField("brand", event.target.value)}
+          />
         </div>
 
         <ProductDescriptionEditor

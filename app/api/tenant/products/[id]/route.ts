@@ -61,6 +61,7 @@ export async function PATCH(
     category_id: formData.get("category_id"),
     sku_code: formData.get("sku_code"),
     product_name: formData.get("product_name"),
+    brand: formData.get("brand"),
     currency: formData.get("currency"),
     prices: parseProductPricesFromFormData(formData),
     is_in_stock: formData.get("is_in_stock"),
@@ -178,6 +179,8 @@ export async function PATCH(
     category_id: parsed.data.category_id,
     sku_code: parsed.data.sku_code,
     product_name: parsed.data.product_name,
+    // Marka alanı göndermeyen eski istemciler mevcut markayı silmesin.
+    ...(formData.has("brand") ? { brand: parsed.data.brand } : {}),
     currency: parsed.data.currency,
     is_in_stock: parsed.data.is_in_stock,
     track_stock: parsed.data.track_stock,

@@ -557,6 +557,12 @@ export function StorefrontProductDetailView({
             </button>
           </div>
 
+          {product.brand?.trim() ? (
+            // Marka (0161): adın üstünde küçük, büyük harf etiket.
+            <p className={cn("-mb-2 mt-3 text-[11px] font-bold uppercase tracking-[0.16em]", theme.textMuted)}>
+              {product.brand}
+            </p>
+          ) : null}
           <h1 className={cn("mt-3 text-xl font-extrabold leading-tight sm:text-2xl lg:text-[28px]", theme.text)}>
             {product.product_name}
           </h1>

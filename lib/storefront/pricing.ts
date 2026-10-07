@@ -81,6 +81,7 @@ export function toStorefrontProduct(
     category_id: product.category_id,
     sku_code: product.sku_code,
     product_name: product.product_name,
+    brand: product.brand ?? null,
     description: product.description ?? null,
     image_url: product.image_url,
     image_url_2: product.image_url_2,

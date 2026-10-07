@@ -383,6 +383,12 @@ export const StorefrontProductCard = memo(function StorefrontProductCard({
       {fashion ? (
         // Moda: önce ad (ince), altında fiyat — setre.com düzeni.
         <div className="flex flex-col gap-1 px-0.5 pb-1 pt-2.5">
+          {product.brand?.trim() ? (
+            // Marka (0161): adın üstünde küçük, büyük harf etiket.
+            <p className={cn("-mb-1 truncate text-[10px] font-semibold uppercase leading-4 tracking-[0.14em]", theme.productMeta)}>
+              {product.brand}
+            </p>
+          ) : null}
           <p className={cn("line-clamp-1 text-[13px] font-normal leading-5 sm:text-[15px]", theme.productTitle)}>
             {product.product_name}
           </p>
@@ -391,6 +397,12 @@ export const StorefrontProductCard = memo(function StorefrontProductCard({
       ) : (
       <div className="flex flex-1 flex-col gap-1 p-2.5 sm:p-3.5">
         <ProductPrice product={product} size="card" />
+        {product.brand?.trim() ? (
+          // Marka (0161): adın üstünde küçük, büyük harf etiket.
+          <p className={cn("-mb-1 truncate text-[9px] font-semibold uppercase leading-4 tracking-[0.14em] sm:text-[10px]", theme.productMeta)}>
+            {product.brand}
+          </p>
+        ) : null}
         {/* Mobilde 3 satır: dar kartta ürün adı anlaşılmaz kalmasın. */}
         <p className={cn("line-clamp-3 text-[11px] leading-4 sm:line-clamp-2 sm:text-[13px] sm:leading-5", theme.productTitle)}>
           {product.product_name}

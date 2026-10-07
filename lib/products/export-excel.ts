@@ -67,6 +67,7 @@ export async function buildProductsExcel(
     "Kategori Adı",
     "Model No",
     "Ürün Adı",
+    "Marka",
     "Para Birimi",
     ...pricedLists.map((list) => `Fiyat: ${list.name}`),
     "Stok Durumu",
@@ -77,6 +78,7 @@ export async function buildProductsExcel(
     categoryName.get(product.category_id) ?? "",
     product.sku_code ?? "",
     product.product_name,
+    product.brand ?? "",
     product.currency ?? "TRY",
     ...pricedLists.map((list) => {
       const entry = product.prices?.find((price) => price.price_list_id === list.id);

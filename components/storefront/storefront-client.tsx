@@ -4029,6 +4029,12 @@ export function StorefrontClient({
         </CrossSellCardFx>
 
         <div className={compact ? "mt-1.5 space-y-1" : "mt-3 space-y-1.5"}>
+          {!compact && product.brand?.trim() ? (
+            // Marka (0161): adın üstünde küçük, büyük harf etiket.
+            <p className={cn("-mb-1 truncate text-[10px] font-semibold uppercase tracking-[0.14em]", theme.productThumbMeta)}>
+              {product.brand}
+            </p>
+          ) : null}
           <p
             className={cn(
               // Kompakt kartta 2 satır + küçük punto: uzun ürün adının en
@@ -5322,6 +5328,12 @@ export function StorefrontClient({
               {electronicsDesign && selectedProduct.image_url && <div data-commerce-slot="purchase-photo"><StorefrontImage src={selectedProduct.image_url} alt={selectedProduct.product_name} sizes="160px" className="object-contain" /></div>}
               <div data-commerce-slot="purchase-meta" className="flex w-full min-w-0 items-start justify-between gap-3">
                 <div className="min-w-0 flex-1">
+                  {selectedProduct.brand?.trim() ? (
+                    // Marka (0161): adın üstünde küçük, büyük harf etiket.
+                    <p className={cn("mb-0.5 truncate text-[10px] font-semibold uppercase tracking-[0.14em]", theme.textMuted)}>
+                      {selectedProduct.brand}
+                    </p>
+                  ) : null}
                   <p
                     data-commerce-slot="purchase-name"
                     className={cn(

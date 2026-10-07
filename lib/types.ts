@@ -384,6 +384,8 @@ export interface Product {
   display_order: number;
   sku_code: string;
   product_name: string;
+  /** İsteğe bağlı marka (0161); vitrinde adın üstünde küçük etiket. */
+  brand?: string | null;
   description?: string | null;
   image_url: string | null;
   image_url_2: string | null;
@@ -703,6 +705,8 @@ export interface StorefrontProduct {
   category_id: string;
   sku_code: string;
   product_name: string;
+  /** İsteğe bağlı marka (0161); vitrinde adın üstünde küçük etiket. */
+  brand?: string | null;
   description?: string | null;
   image_url: string | null;
   image_url_2: string | null;

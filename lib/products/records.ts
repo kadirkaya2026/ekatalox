@@ -96,6 +96,8 @@ export function normalizeProductRecord(record: RawProductRecord): Product {
     display_order: Number(record.display_order ?? 0),
     sku_code: String(record.sku_code ?? ""),
     product_name: String(record.product_name ?? ""),
+    // Marka (0161); boş metin null sayılır.
+    brand: typeof record.brand === "string" && record.brand.trim() ? record.brand.trim() : null,
     description: typeof record.description === "string" ? record.description : null,
     image_url: typeof record.image_url === "string" ? record.image_url : null,
     image_url_2: typeof record.image_url_2 === "string" ? record.image_url_2 : null,
