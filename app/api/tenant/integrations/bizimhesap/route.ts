@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSessionContext } from "@/lib/auth/session";
-import { testBizimHesapConnection } from "@/lib/integrations/bizimhesap";
+import { resolveBizimHesapPolicy, testBizimHesapConnection } from "@/lib/integrations/bizimhesap";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { ensureTenantAdminResponse, ensureTenantPlanFeatureResponse } from "@/lib/tenancy/guards";
 
@@ -29,15 +29,17 @@ type ConfigRow = {
   updated_at: string;
 };
 
-function publicView(config: ConfigRow | null) {
+function publicView(tenantId: string, config: ConfigRow | null) {
+  const policy = resolveBizimHesapPolicy(tenantId, config);
   return {
     connected: Boolean(config?.firm_id),
     firmIdHint: config?.firm_id ? config.firm_id.slice(-4) : null,
     vatRate: config ? Number(config.vat_rate) : 20,
     isEnabled: config?.is_enabled ?? false,
-    sendOn: config?.send_on === "confirmed" ? "confirmed" : "order",
-    fixedCustomerTitle: config?.fixed_customer_title ?? "",
-    requireProductMatch: Boolean(config?.require_product_match),
+    sendOn: policy.sendOn,
+    fixedCustomerTitle: policy.fixedCustomerTitle ?? "",
+    requireProductMatch: policy.requireProductMatch,
+    rulesLocked: policy.locked,
     updatedAt: config?.updated_at ?? null,
   };
 }
@@ -47,7 +49,7 @@ export async function GET() {
   if (guard) return guard;
   const session = await getSessionContext();
   const { config } = await loadConfig(session.tenant!.id);
-  return NextResponse.json(publicView(config));
+  return NextResponse.json(publicView(session.tenant!.id, config));
 }
 
 export async function PUT(request: Request) {
@@ -70,7 +72,7 @@ export async function PUT(request: Request) {
 
   if (body.disconnect === true) {
     await supabase.from("tenant_bizimhesap").delete().eq("tenant_id", session.tenant!.id);
-    return NextResponse.json(publicView(null));
+    return NextResponse.json(publicView(session.tenant!.id, null));
   }
 
   const firmId = typeof body.firmId === "string" ? body.firmId.trim() : "";
@@ -86,6 +88,8 @@ export async function PUT(request: Request) {
   }
 
   const nextFirmId = firmId || config!.firm_id;
+  // Sabit kurallı mağazada (Lucatech) kurallar panelden değiştirilemez; DB'ye de sabit değer yazılır.
+  const locked = resolveBizimHesapPolicy(session.tenant!.id, null);
   if (firmId) {
     const test = await testBizimHesapConnection(nextFirmId);
     if (!test.ok) {
@@ -101,14 +105,19 @@ export async function PUT(request: Request) {
         firm_id: nextFirmId,
         vat_rate: vatRate,
         is_enabled: typeof body.isEnabled === "boolean" ? body.isEnabled : (config?.is_enabled ?? true),
-        send_on:
-          body.sendOn === "confirmed" || body.sendOn === "order" ? body.sendOn : (config?.send_on ?? "order"),
-        fixed_customer_title:
-          typeof body.fixedCustomerTitle === "string"
+        send_on: locked.locked
+          ? locked.sendOn
+          : body.sendOn === "confirmed" || body.sendOn === "order"
+            ? body.sendOn
+            : (config?.send_on ?? "order"),
+        fixed_customer_title: locked.locked
+          ? locked.fixedCustomerTitle
+          : typeof body.fixedCustomerTitle === "string"
             ? body.fixedCustomerTitle.trim().slice(0, 120) || null
             : (config?.fixed_customer_title ?? null),
-        require_product_match:
-          typeof body.requireProductMatch === "boolean"
+        require_product_match: locked.locked
+          ? true
+          : typeof body.requireProductMatch === "boolean"
             ? body.requireProductMatch
             : Boolean(config?.require_product_match),
         updated_at: new Date().toISOString(),
@@ -118,7 +127,7 @@ export async function PUT(request: Request) {
     .select("firm_id, vat_rate, is_enabled, send_on, fixed_customer_title, require_product_match, updated_at")
     .single();
   if (error) return NextResponse.json({ error: "Ayar kaydedilemedi." }, { status: 400 });
-  return NextResponse.json(publicView(data));
+  return NextResponse.json(publicView(session.tenant!.id, data));
 }
 
 export async function POST() {

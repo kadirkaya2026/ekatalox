@@ -3,6 +3,7 @@ import { PlanFeatureGate } from "@/components/dashboard/plan-feature-gate";
 import { BizimHesapSettingsForm } from "@/components/dashboard/bizimhesap-settings-form";
 import { requireTenantAdminPage } from "@/lib/auth/session";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { resolveBizimHesapPolicy } from "@/lib/integrations/bizimhesap";
 
 export const metadata = { title: "BizimHesap" };
 
@@ -19,6 +20,8 @@ export default async function BizimHesapSettingsPage() {
         .maybeSingle()
     : { data: null };
 
+  const policy = resolveBizimHesapPolicy(session.tenant!.id, data);
+
   return (
     <div className="space-y-6">
       <Header
@@ -33,9 +36,10 @@ export default async function BizimHesapSettingsPage() {
           firmIdHint: data?.firm_id ? String(data.firm_id).slice(-4) : null,
           vatRate: data ? Number(data.vat_rate) : 20,
           isEnabled: data?.is_enabled ?? false,
-          sendOn: data?.send_on === "confirmed" ? "confirmed" : "order",
-          fixedCustomerTitle: data?.fixed_customer_title ?? "",
-          requireProductMatch: Boolean(data?.require_product_match),
+          sendOn: policy.sendOn,
+          fixedCustomerTitle: policy.fixedCustomerTitle ?? "",
+          requireProductMatch: policy.requireProductMatch,
+          rulesLocked: policy.locked,
         }}
       />
       </PlanFeatureGate>

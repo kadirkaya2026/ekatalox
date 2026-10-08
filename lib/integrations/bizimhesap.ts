@@ -16,6 +16,39 @@ import {
 
 const API_BASE = "https://bizimhesap.com/api/b2b/";
 
+// SABİT KURAL (8 Eki 2026, Lucatech): ayarlardan bağımsız. Yalnız panelde
+// ONAYLANAN siparişler aktarılır (elle "Tekrar gönder" dahil); eşleşmeyen ürün
+// varsa gönderilmez — BizimHesap'ta ASLA ürün açılmaz; cari her zaman "eKatalox".
+const ENFORCED_POLICIES: Record<string, { sendOn: "confirmed"; requireProductMatch: true; fixedCustomerTitle: string }> = {
+  "ebeeec82-7cd9-4ab8-bea9-f3dc2a5bfe0c": { sendOn: "confirmed", requireProductMatch: true, fixedCustomerTitle: "eKatalox" },
+};
+
+export type BizimHesapPolicy = {
+  sendOn: "order" | "confirmed";
+  requireProductMatch: boolean;
+  fixedCustomerTitle: string | null;
+  /** true: kurallar mağazaya sabitlenmiş, panelden değiştirilemez. */
+  locked: boolean;
+};
+
+/** Mağazanın geçerli aktarım kuralları: sabit kural varsa o, yoksa ayarlar (0166). */
+export function resolveBizimHesapPolicy(
+  tenantId: string,
+  config: { send_on?: string | null; require_product_match?: boolean | null; fixed_customer_title?: string | null } | null,
+): BizimHesapPolicy {
+  const enforced = ENFORCED_POLICIES[tenantId];
+  if (enforced) return { ...enforced, locked: true };
+  return {
+    sendOn: config?.send_on === "confirmed" ? "confirmed" : "order",
+    requireProductMatch: Boolean(config?.require_product_match),
+    fixedCustomerTitle: config?.fixed_customer_title?.trim() || null,
+    locked: false,
+  };
+}
+
+/** Onaylanmış sayılan durumlar (toptancı akışı 0154: Onaylandı ve sonrası). */
+const APPROVED_STATUSES = new Set(["confirmed", "preparing", "shipped", "delivered"]);
+
 type BizimHesapResult = { ok: true; guid: string; url: string | null } | { ok: false; error: string };
 
 function apiKey() {
@@ -178,7 +211,7 @@ export async function sendOrderToBizimHesap(
     const { data: order } = await supabase
       .from("orders")
       .select(
-        "id, tenant_id, order_number, order_no, customer_name, customer_phone, customer_address, currency, total_amount, coupon_discount, items, note, payment_method, bizimhesap_guid",
+        "id, tenant_id, status, order_number, order_no, customer_name, customer_phone, customer_address, currency, total_amount, coupon_discount, items, note, payment_method, bizimhesap_guid",
       )
       .eq("id", orderId)
       .maybeSingle();
@@ -192,10 +225,15 @@ export async function sendOrderToBizimHesap(
       .eq("tenant_id", order.tenant_id)
       .maybeSingle();
     if (!config?.is_enabled || !config.firm_id) return { ok: false, error: "BizimHesap bağlantısı kapalı." };
+    const policy = resolveBizimHesapPolicy(order.tenant_id, config);
     const trigger = options.trigger ?? "order";
-    const sendOn = config.send_on === "confirmed" ? "confirmed" : "order";
+    const sendOn = policy.sendOn;
     if (trigger !== "manual" && trigger !== sendOn) {
       return { ok: false, error: sendOn === "confirmed" ? "Sipariş onaylanınca gönderilecek." : "Sipariş gelince gönderildi." };
+    }
+    // "Onaylanınca" modunda onaylanmamış sipariş HİÇBİR yoldan gitmez (elle gönderim dahil).
+    if (sendOn === "confirmed" && !APPROVED_STATUSES.has(String(order.status ?? ""))) {
+      return { ok: false, error: "Yalnız onaylanan siparişler BizimHesap'a aktarılır." };
     }
     // Paket düşerse (Kurumsal dışı) aktarım durur; bağlantı kaydı silinmez.
     const { data: tenantRow } = await supabase.from("tenants").select("plan").eq("id", order.tenant_id).maybeSingle();
@@ -236,8 +274,13 @@ export async function sendOrderToBizimHesap(
     // Zorunlu eşleşme (Lucatech): eşleşmeyen satırlar için BizimHesap stok kartlarında
     // tek ve kesin aday aranır, bulunanlar kaydedilir; hâlâ eşleşmeyen varsa GÖNDERİLMEZ
     // (BizimHesap'ta yanlış/yeni ürün açılmasın).
-    if (config.require_product_match) {
-      const pending = orderItems.filter((item) => item.product_id && !resolveMapped(item));
+    if (policy.requireProductMatch && orderItems.some((item) => !item.product_id)) {
+      return fail("Siparişte katalogda artık olmayan bir ürün var; BizimHesap'a elle girilmeli.");
+    }
+    if (policy.requireProductMatch) {
+      // Sabit kurallı mağazada (Lucatech) gönderimde TAHMİN yapılmaz: yalnız personelin
+      // panelde onayladığı eşleşmeler kullanılır. Diğerlerinde tek ve kesin aday kaydedilir.
+      const pending = policy.locked ? [] : orderItems.filter((item) => item.product_id && !resolveMapped(item));
       if (pending.length) {
         const bhProducts = await fetchBizimHesapProducts(config.firm_id);
         if (!bhProducts) return fail("BizimHesap ürün listesi alınamadı; tekrar deneyin.");
@@ -260,16 +303,17 @@ export async function sendOrderToBizimHesap(
             await supabase.from("products").update({ bizimhesap_product_id: match.id }).eq("id", item.product_id!);
           }
         }
-        const unmatched = orderItems.filter((item) => item.product_id && !item.is_gift && !resolveMapped(item));
-        if (unmatched.length) {
-          const names = unmatched
-            .map((item) => [item.sku_code ?? item.product_name, item.variant_name].filter(Boolean).join(" "))
-            .slice(0, 5)
-            .join(", ");
-          return fail(
-            `BizimHesap'ta eşleşmeyen ürün var: ${names}${unmatched.length > 5 ? "…" : ""}. Ürünler > BizimHesap Eşleştirme'den seçip tekrar gönderin.`,
-          );
-        }
+      }
+      // Hediye satırları dahil HER satır eşleşmiş olmalı; yoksa gönderilmez.
+      const unmatched = orderItems.filter((item) => !resolveMapped(item));
+      if (unmatched.length) {
+        const names = unmatched
+          .map((item) => [item.sku_code ?? item.product_name, item.variant_name].filter(Boolean).join(" "))
+          .slice(0, 5)
+          .join(", ");
+        return fail(
+          `BizimHesap'ta eşleşmeyen ürün var: ${names}${unmatched.length > 5 ? "…" : ""}. Ürünler > BizimHesap Eşleştirme'den seçip tekrar gönderin.`,
+        );
       }
     }
 
@@ -292,8 +336,11 @@ export async function sendOrderToBizimHesap(
         .filter(Boolean)
         .join(" ");
       return {
-        productId:
-          resolveMapped(item) ||
+        // Zorunlu eşleşmede YALNIZ eşleşmiş BizimHesap kimliği gider; stok koduna
+        // düşülmez (BizimHesap bilinmeyen kodla yeni ürün açar).
+        productId: policy.requireProductMatch
+          ? (resolveMapped(item) as string)
+          : resolveMapped(item) ||
           item.sku_code ||
           item.product_id ||
           name,
@@ -338,7 +385,7 @@ export async function sendOrderToBizimHesap(
     };
     // Sabit cari (0166, Lucatech): tüm siparişler tek unvanlı cariye (ör. "eKatalox")
     // taslak düşer; gerçek bayiyi personel BizimHesap'ta seçer. Bayi bilgisi açıklamada.
-    const fixedTitle = config.fixed_customer_title?.trim() || null;
+    const fixedTitle = policy.fixedCustomerTitle;
     const existing = fixedTitle
       ? await findCustomerByTitle(config.firm_id, fixedTitle)
       : await findExistingCustomer(config.firm_id, order.customer_name?.trim() ?? "", order.customer_phone);

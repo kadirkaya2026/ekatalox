@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { CheckCircle2, Link2, PlugZap } from "lucide-react";
+import { CheckCircle2, Link2, Lock, PlugZap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -15,6 +15,8 @@ type View = {
   sendOn: "order" | "confirmed";
   fixedCustomerTitle: string;
   requireProductMatch: boolean;
+  /** Kurallar mağazaya sabit (Lucatech): seçenekler gösterilir ama değiştirilemez. */
+  rulesLocked: boolean;
 };
 
 export function BizimHesapSettingsForm({ initial }: { initial: View }) {
@@ -110,7 +112,28 @@ export function BizimHesapSettingsForm({ initial }: { initial: View }) {
         </div>
       </div>
 
-      {view.connected ? (
+      {view.connected && view.rulesLocked ? (
+        <div className="space-y-2 rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
+          <p className="flex items-center gap-2 font-semibold text-slate-900">
+            <Lock className="size-4" /> Aktarım kuralları (mağazanıza sabit)
+          </p>
+          <ul className="list-disc space-y-1 pl-5">
+            <li>Yalnız <strong>onaylanan</strong> siparişler BizimHesap&apos;a aktarılır.</li>
+            <li>
+              Tüm siparişler <strong>{view.fixedCustomerTitle || "eKatalox"}</strong> carisine taslak olarak düşer; bayi bilgisi
+              açıklamada yer alır.
+            </li>
+            <li>
+              Eşleşmeyen ürün varsa sipariş <strong>gönderilmez</strong>; BizimHesap&apos;ta yeni ürün açılmaz. Eşleştirme:{" "}
+              <a href="/products/bizimhesap" className="font-medium text-primary underline">
+                Ürünler &gt; BizimHesap Eşleştirme
+              </a>
+            </li>
+          </ul>
+        </div>
+      ) : null}
+
+      {view.connected && !view.rulesLocked ? (
         <div className="space-y-4 rounded-xl border border-slate-200 p-4">
           <p className="text-sm font-semibold text-slate-900">Aktarım kuralları</p>
           <div>
@@ -197,7 +220,7 @@ export function BizimHesapSettingsForm({ initial }: { initial: View }) {
               {
                 firmId,
                 vatRate: Number(vatRate),
-                ...(view.connected
+                ...(view.connected && !view.rulesLocked
                   ? {
                       sendOn,
                       fixedCustomerTitle: useFixedCustomer ? fixedCustomerTitle : "",

@@ -4,6 +4,7 @@ import { DealerPushOptIn } from "@/components/dashboard/dealer-push-opt-in";
 import { requireTenantAdminPage } from "@/lib/auth/session";
 import { getTenantOrdersPage } from "@/lib/orders/data";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { resolveBizimHesapPolicy } from "@/lib/integrations/bizimhesap";
 
 export const metadata = { title: "Siparişler" };
 
@@ -19,7 +20,7 @@ export default async function TenantOrdersPage() {
   const { data: bizimhesap } = supabase
     ? await supabase.from("tenant_bizimhesap").select("is_enabled, send_on").eq("tenant_id", tenant.id).maybeSingle()
     : { data: null };
-  const bizimhesapSendOn = bizimhesap?.is_enabled ? (bizimhesap.send_on === "confirmed" ? "confirmed" : "order") : null;
+  const bizimhesapSendOn = bizimhesap?.is_enabled ? resolveBizimHesapPolicy(tenant.id, bizimhesap).sendOn : null;
 
   return (
     <div className="space-y-6">
