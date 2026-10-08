@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { CheckCircle2, CircleAlert, Link2, Loader2, RefreshCw, Search, Sparkles, Unlink, Wand2, X } from "lucide-react";
+import { CheckCircle2, CircleAlert, Link2, Loader2, RefreshCw, Search, Sparkles, TriangleAlert, Unlink, Wand2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -211,6 +211,23 @@ export function BizimHesapMappingManager() {
 
   return (
     <div className="space-y-4">
+      <div className="flex gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+        <TriangleAlert className="mt-0.5 size-5 shrink-0 text-amber-600" />
+        <div className="space-y-1.5">
+          <p className="font-semibold">BizimHesap ürünlerinizde mutlaka Barkod tanımlı olmalıdır.</p>
+          <p>
+            BizimHesap, eKatalox&apos;tan gelen siparişteki ürünü <strong>barkodundan</strong> tanır. Barkodu olmayan ürün
+            eşleşmez ve BizimHesap&apos;ta <strong>yeni bir ürün kaydı açılır</strong>. Bu yüzden barkodu boş ürün içeren
+            siparişler BizimHesap&apos;a gönderilmez.
+          </p>
+          <ul className="list-disc space-y-0.5 pl-5 text-amber-800">
+            <li>Barkod kısa ve benzersiz olmalı; boşluk ve &quot;/&quot; içermemeli (ör. LT-422, 10DS-A21S).</li>
+            <li>BizimHesap&apos;ta ürünlerin barkodunu silmeyin; değiştirirseniz yenisi de dolu olmalı.</li>
+            <li>Yeni ürün eklediğinizde önce BizimHesap kartına barkod yazın, sonra burada eşleştirin.</li>
+          </ul>
+        </div>
+      </div>
+
       <Card className="p-5">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
@@ -220,9 +237,9 @@ export function BizimHesapMappingManager() {
             </p>
             {cardStats ? (
               <p className={cn("mt-1 text-xs font-medium", cardStats.codedCards < cardStats.mappedCards ? "text-amber-700" : "text-emerald-700")}>
-                Eşlenen {cardStats.mappedCards} BizimHesap kartının {cardStats.codedCards} tanesinde Ürün Kodu ya da Barkodu dolu.
+                Eşlenen {cardStats.mappedCards} BizimHesap kartının {cardStats.codedCards} tanesinde Barkod (ya da Ürün Kodu) dolu.
                 {cardStats.codedCards < cardStats.mappedCards
-                  ? " BizimHesap ürünü kod/barkoddan tanır; ikisi de boş kartlara sipariş gönderilmez."
+                  ? " Barkodu boş kartları BizimHesap'ta doldurun; bu kartlara sipariş gönderilmez."
                   : ""}
               </p>
             ) : null}
@@ -402,8 +419,8 @@ function MappingRow({
           ) : item.mappedId ? (
             <>
               {item.codeMissing ? (
-                <span className="rounded-md bg-slate-100 px-1.5 py-0.5 text-[11px] font-medium text-slate-600" title="BizimHesap kartının Ürün Kodu ve Barkodu boş">
-                  Kod yok
+                <span className="rounded-md bg-slate-100 px-1.5 py-0.5 text-[11px] font-medium text-slate-600" title="BizimHesap kartının Barkodu (ve Ürün Kodu) boş">
+                  Barkod yok
                 </span>
               ) : null}
               <span className="inline-flex min-w-0 items-center gap-1.5 rounded-lg bg-emerald-50 px-2.5 py-1.5 text-xs font-medium text-emerald-800">
