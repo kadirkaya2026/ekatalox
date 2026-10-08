@@ -134,6 +134,22 @@ const money = (value: number) =>
   round2(value).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const plain = (value: number) => round2(value).toFixed(2);
 
+/** Türkiye saatiyle "YYYY-MM-DDTHH:mm:ss" (saat dilimi eki yok). */
+export function istanbulDateTime(date: Date) {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Europe/Istanbul",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(date);
+  const get = (type: string) => parts.find((part) => part.type === type)?.value ?? "00";
+  return `${get("year")}-${get("month")}-${get("day")}T${get("hour")}:${get("minute")}:${get("second")}`;
+}
+
 function currencyCode(currency: string | null | undefined) {
   const c = (currency ?? "TRY").toUpperCase();
   return c === "TRY" || c === "TL" ? "TL" : c;
@@ -544,6 +560,7 @@ export async function sendOrderToBizimHesap(
       : fallbackCustomer;
 
     const now = new Date().toISOString();
+    const localNow = istanbulDateTime(new Date());
     const body = {
       firmId: config.firm_id,
       // Panelde görünen sipariş numarasıyla eşleşsin: EKX-100003 (iç kod okunaksızdı).
@@ -559,7 +576,9 @@ export async function sendOrderToBizimHesap(
       ]
         .filter(Boolean)
         .join(" — "),
-      dates: { invoiceDate: now, dueDate: now, deliveryDate: now },
+      // BizimHesap tarihi saat dilimsiz yerel saat sayar: UTC ("…Z") gönderilince
+      // belge 3 saat geride görünüyordu (8 Eki 2026). Türkiye saatiyle gönderilir.
+      dates: { invoiceDate: localNow, dueDate: localNow, deliveryDate: localNow },
       customer,
       amounts: {
         currency: currencyCode(order.currency),
