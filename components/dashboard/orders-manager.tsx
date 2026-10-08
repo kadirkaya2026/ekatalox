@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { OrderBizimHesapStrip } from "@/components/dashboard/order-bizimhesap-strip";
+import { BizimHesapApproveDialog } from "@/components/dashboard/bizimhesap-approve-dialog";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft, BellRing, FileDown, Loader2, MessageCircle, NotebookText, Pencil, Printer, Search, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -77,6 +78,8 @@ export function OrdersManager({
   const [error, setError] = useState<string | null>(null);
   const [selected, setSelected] = useState<{ order: StorefrontOrder; events: OrderStatusEvent[] } | null>(null);
   const [pending, setPending] = useState<string | null>(null);
+  // BizimHesap "onaylanınca" modunda Onayla önce cari/ürün seçim penceresini açar (0167).
+  const [approveOrder, setApproveOrder] = useState<StorefrontOrder | null>(null);
   const [cancelOpen, setCancelOpen] = useState(false);
   const [cancelReason, setCancelReason] = useState("");
   const [creditReminderPending, setCreditReminderPending] = useState<string | null>(null);
@@ -203,6 +206,14 @@ export function OrdersManager({
     setPending(null);
   }
 
+  function requestTransition(order: StorefrontOrder, toStatus: OrderStatus) {
+    if (toStatus === "confirmed" && bizimhesapSendOn === "confirmed" && order.currency !== "CATALOG") {
+      setApproveOrder(order);
+      return;
+    }
+    void transition(order, toStatus);
+  }
+
   async function creditAction(order: StorefrontOrder, action: "mark" | "unmark" | "paid") {
     setPending(order.id);
     setError(null);
@@ -246,6 +257,15 @@ export function OrdersManager({
 
   const pageCount = Math.max(1, Math.ceil(page.total / page.pageSize));
 
+  const approveDialog = approveOrder ? (
+    <BizimHesapApproveDialog
+      orderId={approveOrder.id}
+      orderLabel={formatOrderNo(approveOrder)}
+      onClose={() => setApproveOrder(null)}
+      onApprove={() => transition(approveOrder, "confirmed")}
+    />
+  ) : null;
+
   if (selected) {
     const order = selected.order;
     const trackingUrl = buildTrackingUrl(storefrontOrigin, order.tracking_token);
@@ -266,6 +286,8 @@ export function OrdersManager({
     // Telefonsuz siparişte (toptancı/genel tenant, 0127) WhatsApp düğmesi yok.
     const waHref = buildOrderStatusWhatsAppHref({ order, status: order.status, tenantName, isTekel, isWholesale, trackingUrl });
     return (
+      <>
+      {approveDialog}
       <Card className="overflow-hidden p-0">
         {/* Üst şerit: geri + araçlar */}
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 px-4 py-3">
@@ -588,7 +610,7 @@ export function OrdersManager({
                 {primaryNext ? (
                   <Button
                     disabled={pending === order.id}
-                    onClick={() => void transition(order, primaryNext)}
+                    onClick={() => requestTransition(order, primaryNext)}
                     className="h-11 px-6 text-base"
                   >
                     {pending === order.id ? <Loader2 className="size-4 animate-spin" /> : null}
@@ -596,7 +618,7 @@ export function OrdersManager({
                   </Button>
                 ) : null}
                 {otherNext.map((s) => (
-                  <Button key={s} variant="secondary" disabled={pending === order.id} onClick={() => void transition(order, s)}>
+                  <Button key={s} variant="secondary" disabled={pending === order.id} onClick={() => requestTransition(order, s)}>
                     {actionLabel(s)}
                   </Button>
                 ))}
@@ -640,11 +662,13 @@ export function OrdersManager({
 
         </div>
       </Card>
+      </>
     );
   }
 
   return (
     <div className="space-y-4">
+      {approveDialog}
       <InlineAlert tone="error" message={error} />
 
       <div className="flex flex-wrap items-center gap-2">
@@ -825,7 +849,7 @@ export function OrdersManager({
                       <Button
                         variant={next === "delivered" ? "primary" : "secondary"}
                         disabled={pending === order.id}
-                        onClick={() => void transition(order, next)}
+                        onClick={() => requestTransition(order, next)}
                         className="h-9 w-full justify-center md:w-auto"
                       >
                         {pending === order.id ? <Loader2 className="size-4 animate-spin" /> : null}

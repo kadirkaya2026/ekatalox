@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { CheckCircle2, CircleAlert, Link2, Loader2, Search, Sparkles, Unlink, Wand2, X } from "lucide-react";
+import { CheckCircle2, CircleAlert, Link2, Loader2, RefreshCw, Search, Sparkles, Unlink, Wand2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -51,6 +51,7 @@ export function BizimHesapMappingManager() {
   const [busyRow, setBusyRow] = useState<string | null>(null);
   const [bulkBusy, setBulkBusy] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
 
   async function load() {
     setError(null);
@@ -137,6 +138,15 @@ export function BizimHesapMappingManager() {
     }
   }
 
+  // Liste her zaman BizimHesap'tan canlı gelir; yeni açılan ürünler için tekrar çeker.
+  async function refreshFromBizimHesap() {
+    setRefreshing(true);
+    setNotice(null);
+    await load();
+    setRefreshing(false);
+    setNotice("BizimHesap ürün listesi güncellendi.");
+  }
+
   async function applySuggestions() {
     setBulkBusy(true);
     setNotice(null);
@@ -197,12 +207,18 @@ export function BizimHesapMappingManager() {
               {stats.unmatched ? " Eşleşmeyen ürün içeren sipariş BizimHesap'a gönderilmez." : " Tüm ürünler hazır."}
             </p>
           </div>
+          <div className="flex flex-wrap gap-2">
+          <Button variant="secondary" onClick={() => void refreshFromBizimHesap()} disabled={refreshing || bulkBusy}>
+            {refreshing ? <Loader2 className="size-4 animate-spin" /> : <RefreshCw className="size-4" />}
+            BizimHesap&apos;tan yenile
+          </Button>
           {stats.suggested ? (
             <Button onClick={() => void applySuggestions()} disabled={bulkBusy}>
               {bulkBusy ? <Loader2 className="size-4 animate-spin" /> : <Wand2 className="size-4" />}
               {stats.suggested} öneriyi uygula
             </Button>
           ) : null}
+          </div>
         </div>
         <div className="mt-4 h-2 overflow-hidden rounded-full bg-slate-100">
           <div className="h-full rounded-full bg-emerald-500 transition-all" style={{ width: `${percent}%` }} />

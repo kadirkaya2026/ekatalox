@@ -186,6 +186,32 @@ async function findCustomerByTitle(firmId: string, title: string) {
   }
 }
 
+/** BizimHesap carileri (onay penceresi; her açılışta canlı çekilir). */
+export async function fetchBizimHesapCustomers(firmId: string) {
+  if (!apiKey()) return null;
+  try {
+    const { status, json } = await callBizimHesap("customers", firmId);
+    const list = (json?.data as { customers?: BizimHesapCustomer[] } | undefined)?.customers;
+    if (status !== 200 || !Array.isArray(list)) return null;
+    return list.filter((c) => c && c.id);
+  } catch {
+    return null;
+  }
+}
+
+/** Bayi → cari hafızası anahtarı: kişiye özel şifre, yoksa telefon, yoksa ad. */
+export function bizimhesapCustomerLinkKey(order: {
+  access_code_id?: string | null;
+  customer_phone?: string | null;
+  customer_name?: string | null;
+}) {
+  if (order.access_code_id) return `kod:${order.access_code_id}`;
+  const phone = phone10(order.customer_phone);
+  if (phone.length === 10) return `tel:${phone}`;
+  const name = normalizeTitle(order.customer_name ?? "");
+  return name ? `ad:${name}` : null;
+}
+
 /**
  * Siparişi BizimHesap'a satış belgesi olarak gönderir ve sonucu orders satırına
  * yazar. Asla fırlatmaz; sipariş akışını engellememeli (after() içinde çağrılır).
@@ -211,7 +237,7 @@ export async function sendOrderToBizimHesap(
     const { data: order } = await supabase
       .from("orders")
       .select(
-        "id, tenant_id, status, order_number, order_no, customer_name, customer_phone, customer_address, currency, total_amount, coupon_discount, items, note, payment_method, bizimhesap_guid",
+        "id, tenant_id, status, order_number, order_no, customer_name, customer_phone, customer_address, currency, total_amount, coupon_discount, items, note, payment_method, bizimhesap_guid, bizimhesap_customer_id",
       )
       .eq("id", orderId)
       .maybeSingle();
@@ -386,9 +412,17 @@ export async function sendOrderToBizimHesap(
     // Sabit cari (0166, Lucatech): tüm siparişler tek unvanlı cariye (ör. "eKatalox")
     // taslak düşer; gerçek bayiyi personel BizimHesap'ta seçer. Bayi bilgisi açıklamada.
     const fixedTitle = policy.fixedCustomerTitle;
-    const existing = fixedTitle
-      ? await findCustomerByTitle(config.firm_id, fixedTitle)
-      : await findExistingCustomer(config.firm_id, order.customer_name?.trim() ?? "", order.customer_phone);
+    // Onay penceresinde seçilen cari (0167) her şeyden önce gelir.
+    let existing: BizimHesapCustomer | null = null;
+    if (order.bizimhesap_customer_id) {
+      const customers = await fetchBizimHesapCustomers(config.firm_id);
+      existing = customers?.find((c) => String(c.id) === String(order.bizimhesap_customer_id)) ?? null;
+      if (!existing) return fail("Onayda seçilen BizimHesap carisi bulunamadı (silinmiş olabilir); cariyi yeniden seçip tekrar gönderin.");
+    } else {
+      existing = fixedTitle
+        ? await findCustomerByTitle(config.firm_id, fixedTitle)
+        : await findExistingCustomer(config.firm_id, order.customer_name?.trim() ?? "", order.customer_phone);
+    }
     const fallbackCustomer = fixedTitle
       ? { ...phoneCustomer, customerId: 900001, title: fixedTitle, phone: "", address: "Adres belirtilmedi" }
       : phoneCustomer;
