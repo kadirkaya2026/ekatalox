@@ -6,6 +6,7 @@ import {
   bizimhesapCardKey,
   fetchBizimHesapProducts,
   resolveBizimHesapPolicy,
+  isBizimHesapBusinessAllowed,
 } from "@/lib/integrations/bizimhesap";
 import { autoMatch, buildBizimHesapIndex, type BizimHesapProduct } from "@/lib/integrations/bizimhesap-matching";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
@@ -35,6 +36,7 @@ async function loadContext(orderId: string) {
   const planGuard = await ensureTenantPlanFeatureResponse("bizimhesap");
   if (planGuard) return { error: planGuard };
   const session = await getSessionContext();
+  if (!isBizimHesapBusinessAllowed(session.tenant!)) return { error: NextResponse.json({ error: "BizimHesap entegrasyonu yalnız toptancı mağazalarda kullanılabilir." }, { status: 403 }) };
   const tenantId = session.tenant!.id;
   const supabase = createSupabaseAdminClient();
   if (!supabase) return { error: NextResponse.json({ error: "Veritabanı yapılandırması eksik." }, { status: 500 }) };

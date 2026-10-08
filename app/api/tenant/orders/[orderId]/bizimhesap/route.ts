@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSessionContext } from "@/lib/auth/session";
-import { sendOrderToBizimHesap } from "@/lib/integrations/bizimhesap";
+import { sendOrderToBizimHesap, isBizimHesapBusinessAllowed } from "@/lib/integrations/bizimhesap";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { ensureTenantAdminResponse } from "@/lib/tenancy/guards";
 
@@ -11,6 +11,7 @@ export async function POST(_request: Request, ctx: { params: Promise<{ orderId: 
   const guard = await ensureTenantAdminResponse({ blockDemoWrite: true });
   if (guard) return guard;
   const session = await getSessionContext();
+  if (!isBizimHesapBusinessAllowed(session.tenant!)) return NextResponse.json({ error: "BizimHesap entegrasyonu yalnız toptancı mağazalarda kullanılabilir." }, { status: 403 });
   const { orderId } = await ctx.params;
   const supabase = createSupabaseAdminClient();
   if (!supabase) return NextResponse.json({ error: "Veritabanı yapılandırması eksik." }, { status: 500 });

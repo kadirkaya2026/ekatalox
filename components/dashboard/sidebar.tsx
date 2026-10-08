@@ -139,6 +139,8 @@ const tenantLinks: SidebarLink[] = [
         label: "BizimHesap Eşleştirme",
         icon: Link2,
         requiredFeature: "bizimhesap",
+        // BizimHesap yalnız toptancılarda (market/tekel hariç), Kurumsal pakette açık.
+        requiredBusinessType: "general",
       },
     ],
   },

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSessionContext } from "@/lib/auth/session";
-import { resolveBizimHesapPolicy, testBizimHesapConnection } from "@/lib/integrations/bizimhesap";
+import { resolveBizimHesapPolicy, testBizimHesapConnection, isBizimHesapBusinessAllowed } from "@/lib/integrations/bizimhesap";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { ensureTenantAdminResponse, ensureTenantPlanFeatureResponse } from "@/lib/tenancy/guards";
 
@@ -48,6 +48,7 @@ export async function GET() {
   const guard = await ensureTenantAdminResponse();
   if (guard) return guard;
   const session = await getSessionContext();
+  if (!isBizimHesapBusinessAllowed(session.tenant!)) return NextResponse.json({ error: "BizimHesap entegrasyonu yalnız toptancı mağazalarda kullanılabilir." }, { status: 403 });
   const { config } = await loadConfig(session.tenant!.id);
   return NextResponse.json(publicView(session.tenant!.id, config));
 }
@@ -58,6 +59,7 @@ export async function PUT(request: Request) {
   const planGuard = await ensureTenantPlanFeatureResponse("bizimhesap");
   if (planGuard) return planGuard;
   const session = await getSessionContext();
+  if (!isBizimHesapBusinessAllowed(session.tenant!)) return NextResponse.json({ error: "BizimHesap entegrasyonu yalnız toptancı mağazalarda kullanılabilir." }, { status: 403 });
   const body = (await request.json().catch(() => ({}))) as {
     firmId?: unknown;
     vatRate?: unknown;
@@ -134,6 +136,7 @@ export async function POST() {
   const guard = await ensureTenantAdminResponse();
   if (guard) return guard;
   const session = await getSessionContext();
+  if (!isBizimHesapBusinessAllowed(session.tenant!)) return NextResponse.json({ error: "BizimHesap entegrasyonu yalnız toptancı mağazalarda kullanılabilir." }, { status: 403 });
   const { config } = await loadConfig(session.tenant!.id);
   if (!config) return NextResponse.json({ ok: false, message: "Önce firma kimliğini kaydedin." });
   return NextResponse.json(await testBizimHesapConnection(config.firm_id));

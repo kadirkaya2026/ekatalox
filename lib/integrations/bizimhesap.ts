@@ -46,6 +46,11 @@ export function resolveBizimHesapPolicy(
   };
 }
 
+/** BizimHesap entegrasyonu yalnız toptancı mağazalarda (market/tekel hariç; paket: Kurumsal). */
+export function isBizimHesapBusinessAllowed(tenant: { business_type?: string | null; is_tekel?: boolean | null }) {
+  return tenant.business_type !== "market" && !tenant.is_tekel;
+}
+
 /** Onaylanmış sayılan durumlar (toptancı akışı 0154: Onaylandı ve sonrası). */
 const APPROVED_STATUSES = new Set(["confirmed", "preparing", "shipped", "delivered"]);
 
@@ -271,7 +276,14 @@ export async function sendOrderToBizimHesap(
       return { ok: false, error: "Yalnız onaylanan siparişler BizimHesap'a aktarılır." };
     }
     // Paket düşerse (Kurumsal dışı) aktarım durur; bağlantı kaydı silinmez.
-    const { data: tenantRow } = await supabase.from("tenants").select("plan").eq("id", order.tenant_id).maybeSingle();
+    const { data: tenantRow } = await supabase
+      .from("tenants")
+      .select("plan, business_type, is_tekel")
+      .eq("id", order.tenant_id)
+      .maybeSingle();
+    if (!tenantRow || !isBizimHesapBusinessAllowed(tenantRow)) {
+      return { ok: false, error: "BizimHesap entegrasyonu yalnız toptancı mağazalarda." };
+    }
     if (!hasPlanFeature((tenantRow?.plan ?? "free") as TenantPlan, "bizimhesap")) {
       return { ok: false, error: "BizimHesap entegrasyonu Kurumsal pakette." };
     }

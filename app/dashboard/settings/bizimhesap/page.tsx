@@ -1,9 +1,10 @@
+import { notFound } from "next/navigation";
 import { Header } from "@/components/dashboard/header";
 import { PlanFeatureGate } from "@/components/dashboard/plan-feature-gate";
 import { BizimHesapSettingsForm } from "@/components/dashboard/bizimhesap-settings-form";
 import { requireTenantAdminPage } from "@/lib/auth/session";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
-import { resolveBizimHesapPolicy } from "@/lib/integrations/bizimhesap";
+import { isBizimHesapBusinessAllowed, resolveBizimHesapPolicy } from "@/lib/integrations/bizimhesap";
 
 export const metadata = { title: "BizimHesap" };
 
@@ -11,6 +12,8 @@ export const metadata = { title: "BizimHesap" };
 // kayıtlı olup olmadığı ve son 4 hanesi.
 export default async function BizimHesapSettingsPage() {
   const session = await requireTenantAdminPage();
+  // Yalnız toptancı mağazalar (market/tekel hariç).
+  if (!isBizimHesapBusinessAllowed(session.tenant!)) notFound();
   const supabase = createSupabaseAdminClient();
   const { data } = supabase
     ? await supabase

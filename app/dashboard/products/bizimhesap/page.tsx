@@ -1,7 +1,9 @@
+import { notFound } from "next/navigation";
 import { Header } from "@/components/dashboard/header";
 import { PlanFeatureGate } from "@/components/dashboard/plan-feature-gate";
 import { BizimHesapMappingManager } from "@/components/dashboard/bizimhesap-mapping-manager";
 import { requireTenantAdminPage } from "@/lib/auth/session";
+import { isBizimHesapBusinessAllowed } from "@/lib/integrations/bizimhesap";
 
 export const metadata = { title: "BizimHesap Eşleştirme" };
 
@@ -9,6 +11,8 @@ export const metadata = { title: "BizimHesap Eşleştirme" };
 // doğru stok kartıyla gitmesi için ürün/varyant ↔ BizimHesap ürünü eşleşmesi.
 export default async function BizimHesapMappingPage() {
   const session = await requireTenantAdminPage();
+  // Yalnız toptancı mağazalar (market/tekel hariç).
+  if (!isBizimHesapBusinessAllowed(session.tenant!)) notFound();
   return (
     <div className="space-y-6">
       <Header

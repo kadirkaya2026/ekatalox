@@ -49,7 +49,7 @@ const TABS: Tab[] = [
   { href: "/settings/age-verification", label: "Yaş Doğrulama (18+)", icon: ShieldCheck, group: "İçerik & İletişim", requiredBusinessType: "market" },
   { href: "/settings/footer", label: "Footer (Sayfa Altı)", icon: PanelBottom, group: "İçerik & İletişim" },
   { href: "/settings/payment", label: "Ödeme ve Kampanyalar", icon: CreditCard, group: "Ödeme" },
-  { href: "/settings/bizimhesap", label: "BizimHesap", icon: PlugZap, group: "Entegrasyonlar", requiredFeature: "bizimhesap" },
+  { href: "/settings/bizimhesap", label: "BizimHesap", icon: PlugZap, group: "Entegrasyonlar", requiredFeature: "bizimhesap", requiredBusinessType: "general" },
 ];
 
 const GROUP_ORDER = ["Hesap", "Marka & Görünüm", "İçerik & İletişim", "Ödeme", "Entegrasyonlar"];
