@@ -3,6 +3,8 @@ import { TenantStockVisibilityForm } from "@/components/dashboard/tenant-stock-v
 import { requireTenantAdminPage } from "@/lib/auth/session";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
+export const metadata = { title: "Stokta Olmayan Ürünler" };
+
 export default async function TenantStockSettingsPage() {
   const session = await requireTenantAdminPage();
   const tenantId = session.tenant!.id;

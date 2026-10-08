@@ -3,6 +3,8 @@ import { TenantReceiptSettingsForm } from "@/components/dashboard/tenant-receipt
 import { requireTenantAdminPage } from "@/lib/auth/session";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
+export const metadata = { title: "Sipariş Fişi" };
+
 export default async function TenantReceiptSettingsPage() {
   const session = await requireTenantAdminPage();
   const tenantId = session.tenant!.id;

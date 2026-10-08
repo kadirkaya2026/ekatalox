@@ -3,6 +3,8 @@ import { TenantBusinessHoursForm } from "@/components/dashboard/tenant-business-
 import { requireTenantAdminPage } from "@/lib/auth/session";
 import { getTenantStorefrontSettings } from "@/lib/data";
 
+export const metadata = { title: "Çalışma Saatleri" };
+
 export default async function TenantBusinessHoursSettingsPage() {
   const session = await requireTenantAdminPage();
   const storefrontSettings = await getTenantStorefrontSettings(session.tenant!.id);

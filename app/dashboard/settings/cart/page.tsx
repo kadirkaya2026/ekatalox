@@ -6,6 +6,8 @@ import { SettingsTabShell } from "@/components/dashboard/settings-tab-shell";
 import { requireTenantAdminPage } from "@/lib/auth/session";
 import { getTenantStorefrontSettings } from "@/lib/data";
 
+export const metadata = { title: "Sepet Ayarları" };
+
 export default async function TenantCartFormSettingsPage() {
   const session = await requireTenantAdminPage();
   const storefrontSettings = await getTenantStorefrontSettings(session.tenant!.id);

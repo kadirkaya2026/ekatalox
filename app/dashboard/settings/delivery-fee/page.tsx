@@ -4,6 +4,8 @@ import { TenantDeliveryFeeForm } from "@/components/dashboard/tenant-delivery-fe
 import { requireTenantAdminPage } from "@/lib/auth/session";
 import { getTenantStorefrontSettings } from "@/lib/data";
 
+export const metadata = { title: "Getirme Ücreti" };
+
 export default async function TenantDeliveryFeeSettingsPage() {
   const session = await requireTenantAdminPage();
   const tenant = session.tenant!;

@@ -3,6 +3,8 @@ import { ProductAddForm } from "@/components/dashboard/product-add-form";
 import { requireTenantAdminPage } from "@/lib/auth/session";
 import { getTenantCategories, getTenantPriceLists } from "@/lib/data";
 
+export const metadata = { title: "Ürün Ekle" };
+
 export default async function ProductAddPage() {
   const session = await requireTenantAdminPage();
   const [categories, priceLists] = await Promise.all([

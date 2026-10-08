@@ -7,6 +7,8 @@ import { hasPlanFeature } from "@/lib/billing/plans";
 import { resolvePreset } from "@/lib/sales/presets";
 import { getSalesReport } from "@/lib/sales/queries";
 
+export const metadata = { title: "Satış & Kârlılık" };
+
 export const dynamic = "force-dynamic";
 
 export default async function SalesReportPage() {

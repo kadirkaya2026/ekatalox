@@ -3,6 +3,8 @@ import { PlanFeatureGate } from "@/components/dashboard/plan-feature-gate";
 import { TenantDomainInfo } from "@/components/dashboard/tenant-domain-info";
 import { requireTenantAdminPage } from "@/lib/auth/session";
 
+export const metadata = { title: "Özel Alan Adı" };
+
 export default async function TenantDomainSettingsPage() {
   const session = await requireTenantAdminPage();
   const tenant = session.tenant!;

@@ -9,6 +9,8 @@ import { TenantBannerForm } from "@/components/dashboard/tenant-banner-form";
 import { requireTenantAdminPage } from "@/lib/auth/session";
 import { getTenantStorefrontSettings } from "@/lib/data";
 
+export const metadata = { title: "Anasayfa Banner'ı" };
+
 export default async function TenantBannerSettingsPage() {
   const session = await requireTenantAdminPage();
   const tenant = session.tenant!;

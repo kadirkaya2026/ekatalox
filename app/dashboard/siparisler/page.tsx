@@ -4,6 +4,8 @@ import { DealerPushOptIn } from "@/components/dashboard/dealer-push-opt-in";
 import { requireTenantAdminPage } from "@/lib/auth/session";
 import { getTenantOrdersPage } from "@/lib/orders/data";
 
+export const metadata = { title: "Siparişler" };
+
 export const dynamic = "force-dynamic";
 
 export default async function TenantOrdersPage() {

@@ -7,6 +7,8 @@ import { getTenantAnalyticsReport } from "@/lib/analytics/queries";
 import { requireTenantAdminPage } from "@/lib/auth/session";
 import { hasPlanFeature } from "@/lib/billing/plans";
 
+export const metadata = { title: "Mağaza Raporları" };
+
 export default async function ReportsPage() {
   const session = await requireTenantAdminPage();
   const tenant = session.tenant!;

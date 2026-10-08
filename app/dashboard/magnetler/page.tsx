@@ -4,6 +4,8 @@ import { requireTenantAdminPage } from "@/lib/auth/session";
 import { getTenantMagnets } from "@/lib/magnet/tenant-data";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
+export const metadata = { title: "Magnetlerim" };
+
 export const dynamic = "force-dynamic";
 
 export default async function TenantMagnetsPage({

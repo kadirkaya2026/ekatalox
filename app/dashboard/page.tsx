@@ -41,6 +41,8 @@ import { getTenantOrderSeries, getTenantOrdersPage, getTenantTodayOrderSummary }
 import type { StorefrontOrder } from "@/lib/types";
 import { formatCurrency } from "@/lib/utils";
 
+export const metadata = { title: "Genel Bakış" };
+
 type IconType = ComponentType<{ className?: string }>;
 
 function fmtTime(iso: string) {

@@ -3,6 +3,8 @@ import { TenantFooterSettingsForm } from "@/components/dashboard/tenant-footer-s
 import { requireTenantAdminPage } from "@/lib/auth/session";
 import { getTenantStorefrontSettings } from "@/lib/data";
 
+export const metadata = { title: "Footer" };
+
 export default async function TenantFooterSettingsPage() {
   const session = await requireTenantAdminPage();
   const storefrontSettings = await getTenantStorefrontSettings(session.tenant!.id);

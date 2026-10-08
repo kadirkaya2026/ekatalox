@@ -4,6 +4,8 @@ import { StockImportPanel } from "@/components/dashboard/stock-import-panel";
 import { requireTenantAdminPage } from "@/lib/auth/session";
 import { getTenantCategories, getTenantPriceLists } from "@/lib/data";
 
+export const metadata = { title: "Stok Listesi Yükle" };
+
 export default async function StockImportPage() {
   const session = await requireTenantAdminPage();
   const tenant = session.tenant!;

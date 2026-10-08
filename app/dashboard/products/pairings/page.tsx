@@ -5,6 +5,8 @@ import { requireTenantAdminPage } from "@/lib/auth/session";
 import { getTenantCategories } from "@/lib/data";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
+export const metadata = { title: "Yanında İyi Gider" };
+
 export const dynamic = "force-dynamic";
 
 export default async function PairingsPage() {

@@ -5,6 +5,8 @@ import { TenantSettingsForm } from "@/components/dashboard/tenant-settings-form"
 import { Card } from "@/components/ui/card";
 import { requireTenantAdminPage } from "@/lib/auth/session";
 
+export const metadata = { title: "Hesap ve Üyelik" };
+
 export default async function TenantSettingsPage(
   props: PageProps<"/dashboard/settings">,
 ) {

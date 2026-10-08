@@ -6,6 +6,8 @@ import { getTenantVisitorProvinceReport } from "@/lib/analytics/province-queries
 import { requireTenantAdminPage } from "@/lib/auth/session";
 import { hasPlanFeature } from "@/lib/billing/plans";
 
+export const metadata = { title: "Ziyaretçi İlleri" };
+
 export const dynamic = "force-dynamic";
 
 export default async function VisitorProvincesPage() {

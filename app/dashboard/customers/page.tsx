@@ -12,6 +12,8 @@ import { getTenantDealerCustomers } from "@/lib/kurumsal/dealer-customers";
 import type { Tenant } from "@/lib/types";
 import Link from "next/link";
 
+export const metadata = { title: "Müşteriler" };
+
 export default async function TenantCustomersPage() {
   const session = await requireTenantAdminPage();
   const tenant = session.tenant!;

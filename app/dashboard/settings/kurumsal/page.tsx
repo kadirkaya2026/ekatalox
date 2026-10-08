@@ -14,6 +14,8 @@ import { getKurumsalSite } from "@/lib/storefront/kurumsal-content";
 import { getKurumsalDataCached } from "@/lib/storefront/kurumsal-data";
 import { isWhiteLabelStorefront } from "@/lib/storefront/white-label";
 
+export const metadata = { title: "Kurumsal Site" };
+
 // Ayarlar → Kurumsal Site. Sihirbaz önizlemesi için katalog verisi
 // (kategoriler/öne çıkanlar) ve hero görsel seçenekleri burada hazırlanır.
 export default async function KurumsalSettingsPage({

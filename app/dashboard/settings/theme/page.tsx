@@ -10,6 +10,8 @@ import { getTenantStorefrontSettings, getTenantCategories } from "@/lib/data";
 import type { EsnafThemeKey } from "@/lib/storefront/esnaf-themes";
 import { appEnv } from "@/lib/env";
 
+export const metadata = { title: "Tema & Marka Renkleri" };
+
 type ThemePageProps = { searchParams?: Promise<Record<string, string | string[] | undefined>> };
 
 export default async function TenantThemeSettingsPage(props: ThemePageProps) {

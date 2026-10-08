@@ -9,6 +9,8 @@ import type { DealerApplication } from "@/lib/kurumsal/applications";
 import { getKurumsalSite } from "@/lib/storefront/kurumsal-content";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
+export const metadata = { title: "Bayi Başvuruları" };
+
 export const dynamic = "force-dynamic";
 
 // Kurumsal sayfadaki (/kurumsal#basvuru) formdan gelen bayi başvuruları.

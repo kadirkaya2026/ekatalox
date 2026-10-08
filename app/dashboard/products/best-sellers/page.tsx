@@ -3,6 +3,8 @@ import { BestSellersSettings } from "@/components/dashboard/best-sellers-setting
 import { requireTenantAdminPage } from "@/lib/auth/session";
 import { getTenantStorefrontSettings } from "@/lib/data";
 
+export const metadata = { title: "En Çok Satanlar" };
+
 export default async function BestSellersPage() {
   const session = await requireTenantAdminPage();
   const tenant = session.tenant!;

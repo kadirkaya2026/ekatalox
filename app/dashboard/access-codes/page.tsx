@@ -9,6 +9,8 @@ import { getTenantAccessCodes, getTenantPriceLists } from "@/lib/data";
 import { formatDealerDisplayName } from "@/lib/kurumsal/dealer-profile";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
+export const metadata = { title: "Fiyat Listeleri" };
+
 export const dynamic = "force-dynamic";
 
 // Fiyat Listeleri (eski "Şifreler", 28 Eyl 2026): liste kartları + şifreler +

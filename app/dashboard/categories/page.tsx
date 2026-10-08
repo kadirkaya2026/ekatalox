@@ -3,6 +3,8 @@ import { Header } from "@/components/dashboard/header";
 import { requireTenantAdminPage } from "@/lib/auth/session";
 import { getTenantCategories } from "@/lib/data";
 
+export const metadata = { title: "Kategoriler" };
+
 export default async function TenantCategoriesPage() {
   const session = await requireTenantAdminPage();
   const categories = await getTenantCategories(session.tenant!.id);

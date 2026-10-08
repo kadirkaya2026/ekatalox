@@ -5,6 +5,8 @@ import { TenantHomepageContentForm } from "@/components/dashboard/tenant-homepag
 import { requireTenantAdminPage } from "@/lib/auth/session";
 import { getTenantStorefrontSettings } from "@/lib/data";
 
+export const metadata = { title: "Ana Sayfa İçerikleri" };
+
 export default async function TenantHomepageSettingsPage() {
   const session = await requireTenantAdminPage();
   const storefrontSettings = await getTenantStorefrontSettings(session.tenant!.id);

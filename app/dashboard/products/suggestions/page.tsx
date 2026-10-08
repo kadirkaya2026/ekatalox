@@ -7,6 +7,8 @@ import {
   getTenantPendingSuggestionNotices,
 } from "@/lib/products/suggestions";
 
+export const metadata = { title: "Önerdiğim Ürünler" };
+
 export default async function ProductSuggestionsPage() {
   const session = await requireTenantAdminPage();
   const [suggestions, notices] = await Promise.all([

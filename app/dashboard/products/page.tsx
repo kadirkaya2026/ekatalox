@@ -6,6 +6,8 @@ import { getTenantCategories, getTenantPriceLists, getTenantProductsPage } from 
 import { parseProductQualityFilter, parseProductStockFilter } from "@/lib/products/constants";
 import { getTenantPendingSuggestionNotices } from "@/lib/products/suggestions";
 
+export const metadata = { title: "Ürünler" };
+
 // Bildirim zilinden gelen "stok açmak için tıklayın" bağlantısı ?q=<barkod>
 // &focus=<productId> ile geliyor: arama sunucu tarafında uygulanır ki ürün
 // ilk sayfaya düşsün, focus da satırı vurgulayıp ekrana kaydırır.

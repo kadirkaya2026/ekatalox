@@ -6,6 +6,8 @@ import { getDealerCustomerDetail } from "@/lib/kurumsal/dealer-customers";
 import { buildCatalogOrigin, hasKurumsalSiteAccess } from "@/lib/kurumsal/domain";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
+export const metadata = { title: "Müşteri Detayı" };
+
 export const dynamic = "force-dynamic";
 
 // Toptancı bayi müşterisi sayfası (kişiye özel şifre, 0138). Market'in

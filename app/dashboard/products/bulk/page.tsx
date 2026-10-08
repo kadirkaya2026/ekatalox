@@ -4,6 +4,8 @@ import { requireTenantAdminPage } from "@/lib/auth/session";
 import { getEffectiveProductLimit } from "@/lib/billing/plans";
 import { getTenantProductCount } from "@/lib/data";
 
+export const metadata = { title: "Toplu Ürün Ekleme" };
+
 export default async function ProductBulkPage() {
   const session = await requireTenantAdminPage();
   const tenant = session.tenant!;

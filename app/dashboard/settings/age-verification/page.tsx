@@ -3,6 +3,8 @@ import { Card } from "@/components/ui/card";
 import { TenantAgeVerificationForm } from "@/components/dashboard/tenant-age-verification-form";
 import { requireTenantAdminPage } from "@/lib/auth/session";
 
+export const metadata = { title: "Yaş Doğrulama" };
+
 export default async function TenantAgeVerificationSettingsPage() {
   const session = await requireTenantAdminPage();
   const tenant = session.tenant!;

@@ -33,6 +33,9 @@ export async function generateMetadata(): Promise<Metadata> {
   const name = settings.storefront_title?.trim() || tenant.company_name;
   const icon = settings.logo_url || settings.site_favicon_url || "/ekatalox-logo-v2.png";
   return {
+    // Sekme başlığı (8 Eki 2026): "Siparişler · Lucatech | eKatalox". Önceden tüm
+    // panel sekmelerinde sitenin "Mahalle esnafı için…" varsayılan başlığı vardı.
+    title: { absolute: `Panel · ${name} | eKatalox`, template: `%s · ${name} | eKatalox` },
     manifest: `/api/tenant/panel-manifest?tenant=${tenant.id}`,
     appleWebApp: { capable: true, title: name, statusBarStyle: "default" },
     icons: { apple: icon },

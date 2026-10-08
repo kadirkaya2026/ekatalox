@@ -4,6 +4,8 @@ import { BizimHesapSettingsForm } from "@/components/dashboard/bizimhesap-settin
 import { requireTenantAdminPage } from "@/lib/auth/session";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
+export const metadata = { title: "BizimHesap" };
+
 // BizimHesap entegrasyonu (0159). Firma kimliği sayfaya GÖNDERİLMEZ; yalnız
 // kayıtlı olup olmadığı ve son 4 hanesi.
 export default async function BizimHesapSettingsPage() {

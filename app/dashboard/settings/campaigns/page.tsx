@@ -9,6 +9,8 @@ import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import type { TenantCampaign } from "@/lib/types";
 import { getTenantStorefrontOrigin } from "@/lib/push/send-tenant-broadcast-push";
 
+export const metadata = { title: "Bildirim & Kampanyalar" };
+
 // Admin ekranı vitrinden farklı olarak PASİF ve süresi geçmiş kampanyaları
 // da göstermeli (bayi onları düzenleyebilsin), o yüzden getStorefrontCampaigns
 // değil doğrudan okuma yapılıyor.

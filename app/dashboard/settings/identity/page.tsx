@@ -3,6 +3,8 @@ import { TenantSiteIdentityForm } from "@/components/dashboard/tenant-site-ident
 import { requireTenantAdminPage } from "@/lib/auth/session";
 import { getTenantStorefrontSettings } from "@/lib/data";
 
+export const metadata = { title: "Mağaza Kimliği" };
+
 export default async function TenantIdentitySettingsPage() {
   const session = await requireTenantAdminPage();
   const storefrontSettings = await getTenantStorefrontSettings(session.tenant!.id);

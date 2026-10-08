@@ -5,6 +5,8 @@ import { requireTenantAdminPage } from "@/lib/auth/session";
 import { hasPlanFeature } from "@/lib/billing/plans";
 import { getTenantCategories, getTenantStorefrontSections } from "@/lib/data";
 
+export const metadata = { title: "Öne Çıkan Bölümler" };
+
 export default async function ShowcasePage() {
   const session = await requireTenantAdminPage();
   const tenant = session.tenant!;

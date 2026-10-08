@@ -4,6 +4,8 @@ import { TenantAnnouncementForm } from "@/components/dashboard/tenant-announceme
 import { requireTenantAdminPage } from "@/lib/auth/session";
 import { getTenantStorefrontSettings } from "@/lib/data";
 
+export const metadata = { title: "Duyuru Modalı" };
+
 export default async function TenantAnnouncementSettingsPage() {
   const session = await requireTenantAdminPage();
   const storefrontSettings = await getTenantStorefrontSettings(session.tenant!.id);

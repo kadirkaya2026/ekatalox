@@ -6,6 +6,8 @@ import { TenantPaymentSettingsForm } from "@/components/dashboard/tenant-payment
 import { getTenantStorefrontSettings } from "@/lib/data";
 import { requireTenantAdminPage } from "@/lib/auth/session";
 
+export const metadata = { title: "Ödeme ve Kampanyalar" };
+
 // 28 Eyl 2026: iki sekme. "Ödeme" (yöntemler, IBAN, online ödeme tercihleri)
 // tüm paketlerde; "Ödeme Kampanyaları" (nakit/havale/kart iskontoları, taksit)
 // payment_settings özelliği olan paketlerde.
