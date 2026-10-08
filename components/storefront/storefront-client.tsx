@@ -253,6 +253,8 @@ function notifyAnnouncementStorageChanged() {
 }
 
 function readStoredCounterValue(storageKey: string) {
+  // Sunucu render'ında da çağrılıyor (announcementRenderKey) → localStorage yok.
+  if (typeof window === "undefined") return 0;
   const rawValue = window.localStorage.getItem(storageKey);
 
   if (!rawValue) {
