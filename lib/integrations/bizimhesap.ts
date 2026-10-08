@@ -1,6 +1,12 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { hasPlanFeature, type TenantPlan } from "@/lib/billing/plans";
 import { formatPaymentMethod } from "@/lib/orders/format";
+import {
+  autoMatch,
+  buildBizimHesapIndex,
+  normalizeBizimHesapProducts,
+  type BizimHesapProduct,
+} from "@/lib/integrations/bizimhesap-matching";
 
 // BizimHesap B2B API (https://apidocs.bizimhesap.com). Kimlik: Key (BizimHesap'ın
 // genel entegrasyon anahtarı, env) + Token/firmId (mağazanın firma kimliği,
@@ -52,7 +58,20 @@ export async function testBizimHesapConnection(firmId: string): Promise<{ ok: bo
   }
 }
 
+/** BizimHesap stok kartları (eşleştirme ekranı ve otomatik eşleştirme için). */
+export async function fetchBizimHesapProducts(firmId: string): Promise<BizimHesapProduct[] | null> {
+  if (!apiKey()) return null;
+  try {
+    const { status, json } = await callBizimHesap("products", firmId);
+    if (status !== 200) return null;
+    return normalizeBizimHesapProducts(json);
+  } catch {
+    return null;
+  }
+}
+
 type OrderItem = {
+  variant_id?: string | null;
   original_price?: number | null;
   product_name?: string | null;
   sku_code?: string | null;
@@ -120,6 +139,20 @@ async function findExistingCustomer(firmId: string, name: string, phone: string 
   }
 }
 
+/** Sabit cari: unvanı birebir (büyük/küçük harf, noktalama hariç) tek cari. */
+async function findCustomerByTitle(firmId: string, title: string) {
+  try {
+    const { status, json } = await callBizimHesap("customers", firmId);
+    const list = (json?.data as { customers?: BizimHesapCustomer[] } | undefined)?.customers;
+    if (status !== 200 || !Array.isArray(list)) return null;
+    const wanted = normalizeTitle(title);
+    const matches = list.filter((c) => normalizeTitle(c.title ?? "") === wanted);
+    return matches.length === 1 ? matches[0] : null;
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Siparişi BizimHesap'a satış belgesi olarak gönderir ve sonucu orders satırına
  * yazar. Asla fırlatmaz; sipariş akışını engellememeli (after() içinde çağrılır).
@@ -128,7 +161,10 @@ async function findExistingCustomer(firmId: string, name: string, phone: string 
 export async function sendOrderToBizimHesap(
   supabase: SupabaseClient,
   orderId: string,
-  options: { force?: boolean } = {},
+  // trigger: "order" = vitrinde sipariş oluşunca, "confirmed" = panelde Onaylandı'ya
+  // geçince, "manual" = panelden "Tekrar gönder". Mağazanın send_on ayarı (0166)
+  // hangisinde gönderileceğini seçer; manual her zaman gönderir.
+  options: { force?: boolean; trigger?: "order" | "confirmed" | "manual" } = {},
 ): Promise<BizimHesapResult> {
   const fail = async (error: string): Promise<BizimHesapResult> => {
     await supabase
@@ -152,10 +188,15 @@ export async function sendOrderToBizimHesap(
 
     const { data: config } = await supabase
       .from("tenant_bizimhesap")
-      .select("firm_id, vat_rate, is_enabled")
+      .select("firm_id, vat_rate, is_enabled, send_on, fixed_customer_title, require_product_match")
       .eq("tenant_id", order.tenant_id)
       .maybeSingle();
     if (!config?.is_enabled || !config.firm_id) return { ok: false, error: "BizimHesap bağlantısı kapalı." };
+    const trigger = options.trigger ?? "order";
+    const sendOn = config.send_on === "confirmed" ? "confirmed" : "order";
+    if (trigger !== "manual" && trigger !== sendOn) {
+      return { ok: false, error: sendOn === "confirmed" ? "Sipariş onaylanınca gönderilecek." : "Sipariş gelince gönderildi." };
+    }
     // Paket düşerse (Kurumsal dışı) aktarım durur; bağlantı kaydı silinmez.
     const { data: tenantRow } = await supabase.from("tenants").select("plan").eq("id", order.tenant_id).maybeSingle();
     if (!hasPlanFeature((tenantRow?.plan ?? "free") as TenantPlan, "bizimhesap")) {
@@ -163,27 +204,78 @@ export async function sendOrderToBizimHesap(
     }
     if (!apiKey()) return fail("Sunucuda BizimHesap anahtarı tanımlı değil.");
 
-    // Eşleştirilmiş ürünler BizimHesap iç kimliğiyle gider (0160), yoksa stok koduyla.
-    const productIds = [
-      ...new Set(
-        ((Array.isArray(order.items) ? order.items : []) as OrderItem[])
-          .map((item) => item.product_id)
-          .filter((id): id is string => Boolean(id)),
-      ),
-    ];
+    // Eşleştirilmiş ürünler BizimHesap iç kimliğiyle gider (0160; varyant 0166), yoksa stok koduyla.
+    const orderItems = (Array.isArray(order.items) ? order.items : []) as OrderItem[];
+    const productIds = [...new Set(orderItems.map((item) => item.product_id).filter((id): id is string => Boolean(id)))];
+    const variantIds = [...new Set(orderItems.map((item) => item.variant_id).filter((id): id is string => Boolean(id)))];
     const bizimhesapIdByProduct = new Map<string, string>();
+    const bizimhesapIdByVariant = new Map<string, string>();
+    const skuByProduct = new Map<string, string | null>();
     if (productIds.length) {
       const { data: mapped } = await supabase
         .from("products")
+        .select("id, sku_code, bizimhesap_product_id")
+        .in("id", productIds);
+      for (const row of mapped ?? []) {
+        skuByProduct.set(row.id, row.sku_code ?? null);
+        if (row.bizimhesap_product_id) bizimhesapIdByProduct.set(row.id, row.bizimhesap_product_id);
+      }
+    }
+    if (variantIds.length) {
+      const { data: mappedVariants } = await supabase
+        .from("product_variants")
         .select("id, bizimhesap_product_id")
-        .in("id", productIds)
+        .in("id", variantIds)
         .not("bizimhesap_product_id", "is", null);
-      for (const row of mapped ?? []) bizimhesapIdByProduct.set(row.id, row.bizimhesap_product_id);
+      for (const row of mappedVariants ?? []) bizimhesapIdByVariant.set(row.id, row.bizimhesap_product_id);
+    }
+    const resolveMapped = (item: OrderItem) =>
+      (item.variant_id ? bizimhesapIdByVariant.get(item.variant_id) : undefined) ??
+      (item.product_id ? bizimhesapIdByProduct.get(item.product_id) : undefined);
+
+    // Zorunlu eşleşme (Lucatech): eşleşmeyen satırlar için BizimHesap stok kartlarında
+    // tek ve kesin aday aranır, bulunanlar kaydedilir; hâlâ eşleşmeyen varsa GÖNDERİLMEZ
+    // (BizimHesap'ta yanlış/yeni ürün açılmasın).
+    if (config.require_product_match) {
+      const pending = orderItems.filter((item) => item.product_id && !resolveMapped(item));
+      if (pending.length) {
+        const bhProducts = await fetchBizimHesapProducts(config.firm_id);
+        if (!bhProducts) return fail("BizimHesap ürün listesi alınamadı; tekrar deneyin.");
+        const index = buildBizimHesapIndex(bhProducts);
+        for (const item of pending) {
+          const code = item.sku_code ?? skuByProduct.get(item.product_id!) ?? null;
+          const name = item.product_name ?? "";
+          if (item.variant_id) {
+            const match = autoMatch(index, { code, name, variantName: item.variant_name ?? null });
+            if (match) {
+              bizimhesapIdByVariant.set(item.variant_id, match.id);
+              await supabase.from("product_variants").update({ bizimhesap_product_id: match.id }).eq("id", item.variant_id);
+              continue;
+            }
+          }
+          // Ürün düzeyi: BizimHesap'ta bu stok koduyla TEK kart varsa (renkler ayrı kart değil).
+          const match = autoMatch(index, { code, name });
+          if (match) {
+            bizimhesapIdByProduct.set(item.product_id!, match.id);
+            await supabase.from("products").update({ bizimhesap_product_id: match.id }).eq("id", item.product_id!);
+          }
+        }
+        const unmatched = orderItems.filter((item) => item.product_id && !item.is_gift && !resolveMapped(item));
+        if (unmatched.length) {
+          const names = unmatched
+            .map((item) => [item.sku_code ?? item.product_name, item.variant_name].filter(Boolean).join(" "))
+            .slice(0, 5)
+            .join(", ");
+          return fail(
+            `BizimHesap'ta eşleşmeyen ürün var: ${names}${unmatched.length > 5 ? "…" : ""}. Ürünler > BizimHesap Eşleştirme'den seçip tekrar gönderin.`,
+          );
+        }
+      }
     }
 
     const rate = Number(config.vat_rate ?? 20);
     const divisor = 1 + rate / 100;
-    const items = (Array.isArray(order.items) ? order.items : []) as OrderItem[];
+    const items = orderItems;
 
     const details = items.map((item) => {
       const quantity = Number(item.quantity ?? 0) || 0;
@@ -201,7 +293,7 @@ export async function sendOrderToBizimHesap(
         .join(" ");
       return {
         productId:
-          (item.product_id ? bizimhesapIdByProduct.get(item.product_id) : undefined) ||
+          resolveMapped(item) ||
           item.sku_code ||
           item.product_id ||
           name,
@@ -244,7 +336,15 @@ export async function sendOrderToBizimHesap(
       // BizimHesap adressiz belgeyi reddediyor ("Adres bilgisi gönderilmemiş", 6 Eki 2026).
       address: order.customer_address?.trim() || "Adres belirtilmedi",
     };
-    const existing = await findExistingCustomer(config.firm_id, order.customer_name?.trim() ?? "", order.customer_phone);
+    // Sabit cari (0166, Lucatech): tüm siparişler tek unvanlı cariye (ör. "eKatalox")
+    // taslak düşer; gerçek bayiyi personel BizimHesap'ta seçer. Bayi bilgisi açıklamada.
+    const fixedTitle = config.fixed_customer_title?.trim() || null;
+    const existing = fixedTitle
+      ? await findCustomerByTitle(config.firm_id, fixedTitle)
+      : await findExistingCustomer(config.firm_id, order.customer_name?.trim() ?? "", order.customer_phone);
+    const fallbackCustomer = fixedTitle
+      ? { ...phoneCustomer, customerId: 900001, title: fixedTitle, phone: "", address: "Adres belirtilmedi" }
+      : phoneCustomer;
     const customer = existing
       ? {
           customerId: existing.id as number | string,
@@ -255,7 +355,7 @@ export async function sendOrderToBizimHesap(
           phone: phone10(existing.phone) || phoneCustomer.phone,
           address: existing.address?.trim() || phoneCustomer.address,
         }
-      : phoneCustomer;
+      : fallbackCustomer;
 
     const now = new Date().toISOString();
     const body = {
@@ -265,6 +365,9 @@ export async function sendOrderToBizimHesap(
       invoiceType: 3,
       note: [
         `eKatalox siparişi${order.order_no ? ` #${order.order_no}` : ""}`,
+        fixedTitle
+          ? `Bayi: ${[order.customer_name, order.customer_phone, order.customer_address].map((v) => v?.trim()).filter(Boolean).join(" · ") || "belirtilmedi"}`
+          : null,
         order.payment_method ? `Ödeme: ${formatPaymentMethod(order.payment_method)}` : null,
         order.note,
       ]
@@ -295,7 +398,7 @@ export async function sendOrderToBizimHesap(
     // (BizimHesap başarılı yanıtta da boş "error" alanı dönebilir; yalnız dolu hata ya da guid yokluğu ret sayılır.)
     const rejected = status !== 200 || Boolean(typeof json?.error === "string" && json.error) || !(typeof json?.guid === "string" && json.guid);
     if (existing && rejected) {
-      ({ status, json, text } = await callBizimHesap("addinvoice", config.firm_id, { ...body, customer: phoneCustomer }));
+      ({ status, json, text } = await callBizimHesap("addinvoice", config.firm_id, { ...body, customer: fallbackCustomer }));
     }
     const error = typeof json?.error === "string" ? json.error : "";
     const guid = typeof json?.guid === "string" ? json.guid : "";

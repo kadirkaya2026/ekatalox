@@ -13,18 +13,31 @@ async function loadConfig(tenantId: string) {
   if (!supabase) return { supabase: null, config: null };
   const { data } = await supabase
     .from("tenant_bizimhesap")
-    .select("firm_id, vat_rate, is_enabled, updated_at")
+    .select("firm_id, vat_rate, is_enabled, send_on, fixed_customer_title, require_product_match, updated_at")
     .eq("tenant_id", tenantId)
     .maybeSingle();
   return { supabase, config: data };
 }
 
-function publicView(config: { firm_id: string; vat_rate: number; is_enabled: boolean; updated_at: string } | null) {
+type ConfigRow = {
+  firm_id: string;
+  vat_rate: number;
+  is_enabled: boolean;
+  send_on?: string | null;
+  fixed_customer_title?: string | null;
+  require_product_match?: boolean | null;
+  updated_at: string;
+};
+
+function publicView(config: ConfigRow | null) {
   return {
     connected: Boolean(config?.firm_id),
     firmIdHint: config?.firm_id ? config.firm_id.slice(-4) : null,
     vatRate: config ? Number(config.vat_rate) : 20,
     isEnabled: config?.is_enabled ?? false,
+    sendOn: config?.send_on === "confirmed" ? "confirmed" : "order",
+    fixedCustomerTitle: config?.fixed_customer_title ?? "",
+    requireProductMatch: Boolean(config?.require_product_match),
     updatedAt: config?.updated_at ?? null,
   };
 }
@@ -48,6 +61,9 @@ export async function PUT(request: Request) {
     vatRate?: unknown;
     isEnabled?: unknown;
     disconnect?: unknown;
+    sendOn?: unknown;
+    fixedCustomerTitle?: unknown;
+    requireProductMatch?: unknown;
   };
   const { supabase, config } = await loadConfig(session.tenant!.id);
   if (!supabase) return NextResponse.json({ error: "Veritabanı yapılandırması eksik." }, { status: 500 });
@@ -85,11 +101,21 @@ export async function PUT(request: Request) {
         firm_id: nextFirmId,
         vat_rate: vatRate,
         is_enabled: typeof body.isEnabled === "boolean" ? body.isEnabled : (config?.is_enabled ?? true),
+        send_on:
+          body.sendOn === "confirmed" || body.sendOn === "order" ? body.sendOn : (config?.send_on ?? "order"),
+        fixed_customer_title:
+          typeof body.fixedCustomerTitle === "string"
+            ? body.fixedCustomerTitle.trim().slice(0, 120) || null
+            : (config?.fixed_customer_title ?? null),
+        require_product_match:
+          typeof body.requireProductMatch === "boolean"
+            ? body.requireProductMatch
+            : Boolean(config?.require_product_match),
         updated_at: new Date().toISOString(),
       },
       { onConflict: "tenant_id" },
     )
-    .select("firm_id, vat_rate, is_enabled, updated_at")
+    .select("firm_id, vat_rate, is_enabled, send_on, fixed_customer_title, require_product_match, updated_at")
     .single();
   if (error) return NextResponse.json({ error: "Ayar kaydedilemedi." }, { status: 400 });
   return NextResponse.json(publicView(data));

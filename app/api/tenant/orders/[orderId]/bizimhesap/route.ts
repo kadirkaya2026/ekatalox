@@ -23,6 +23,6 @@ export async function POST(_request: Request, ctx: { params: Promise<{ orderId: 
     .maybeSingle();
   if (!order) return NextResponse.json({ error: "Sipariş bulunamadı." }, { status: 404 });
 
-  const result = await sendOrderToBizimHesap(supabase, orderId, { force: false });
+  const result = await sendOrderToBizimHesap(supabase, orderId, { force: false, trigger: "manual" });
   return NextResponse.json(result, { status: result.ok ? 200 : 400 });
 }

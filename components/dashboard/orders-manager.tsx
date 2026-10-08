@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { OrderBizimHesapStrip } from "@/components/dashboard/order-bizimhesap-strip";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft, BellRing, FileDown, Loader2, MessageCircle, NotebookText, Pencil, Printer, Search, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -51,6 +52,7 @@ export function OrdersManager({
   isWholesale = false,
   storefrontOrigin = null,
   orderEditEnabled = false,
+  bizimhesapSendOn = null,
 }: {
   initialPage: OrdersPage;
   tenantName: string;
@@ -60,6 +62,8 @@ export function OrdersManager({
   storefrontOrigin?: string | null;
   /** Fişteki adetler düzenlenebilir (tenants.order_edit_enabled, 0151). */
   orderEditEnabled?: boolean;
+  /** BizimHesap bağlıysa aktarım zamanı (0166); null = entegrasyon yok, şerit gösterilmez. */
+  bizimhesapSendOn?: "order" | "confirmed" | null;
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -301,6 +305,13 @@ export function OrdersManager({
             ) : null}
           </div>
         </div>
+        {bizimhesapSendOn && order.currency !== "CATALOG" ? (
+          <OrderBizimHesapStrip
+            order={order}
+            sendOn={bizimhesapSendOn}
+            onOrderUpdated={(next) => setSelected((current) => (current ? { ...current, order: next } : current))}
+          />
+        ) : null}
 
         <div className="space-y-5 p-5">
           <InlineAlert tone="error" message={error} />

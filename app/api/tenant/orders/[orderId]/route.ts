@@ -8,6 +8,7 @@ import { getTenantOrderWithEvents } from "@/lib/orders/data";
 import { orderStatusPatchSchema } from "@/lib/validators/orders";
 import { formatOrderNo } from "@/lib/orders/format";
 import { getTenantStorefrontSettings } from "@/lib/data";
+import { sendOrderToBizimHesap } from "@/lib/integrations/bizimhesap";
 
 export async function GET(_request: Request, ctx: { params: Promise<{ orderId: string }> }) {
   const guard = await ensureTenantAdminResponse();
@@ -75,6 +76,11 @@ export async function PATCH(request: Request, ctx: { params: Promise<{ orderId: 
     const origin = tenant.custom_domain?.trim()
       ? `https://${tenant.custom_domain.trim()}`
       : `https://${tenant.subdomain}.${process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? "ekatalox.com"}`;
+    // BizimHesap "onaylanınca gönder" modu (0166, Lucatech): Onaylandı'ya geçişte taslak
+    // gönderilir; mağaza bu modda değilse fonksiyon hiçbir şey yapmadan döner.
+    if (order.status === "confirmed") {
+      after(() => sendOrderToBizimHesap(supabase, order.id, { trigger: "confirmed" }).then(() => undefined));
+    }
     after(async () => {
       const settings = await getTenantStorefrontSettings(tenant.id).catch(() => null);
       await sendOrderStatusPush({

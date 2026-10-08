@@ -3,6 +3,7 @@ import { OrdersManager } from "@/components/dashboard/orders-manager";
 import { DealerPushOptIn } from "@/components/dashboard/dealer-push-opt-in";
 import { requireTenantAdminPage } from "@/lib/auth/session";
 import { getTenantOrdersPage } from "@/lib/orders/data";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
 export const metadata = { title: "Siparişler" };
 
@@ -13,6 +14,12 @@ export default async function TenantOrdersPage() {
   const tenant = session.tenant!;
 
   const initialPage = await getTenantOrdersPage(tenant.id, { status: "all", page: 1 });
+  // BizimHesap aktarım şeridi (0166): bağlı ve açıksa sipariş detayında durum gösterilir.
+  const supabase = createSupabaseAdminClient();
+  const { data: bizimhesap } = supabase
+    ? await supabase.from("tenant_bizimhesap").select("is_enabled, send_on").eq("tenant_id", tenant.id).maybeSingle()
+    : { data: null };
+  const bizimhesapSendOn = bizimhesap?.is_enabled ? (bizimhesap.send_on === "confirmed" ? "confirmed" : "order") : null;
 
   return (
     <div className="space-y-6">
@@ -32,6 +39,7 @@ export default async function TenantOrdersPage() {
         isTekel={Boolean(tenant.is_tekel)}
         isWholesale={tenant.business_type !== "market"}
         orderEditEnabled={Boolean(tenant.order_edit_enabled)}
+        bizimhesapSendOn={bizimhesapSendOn}
       />
     </div>
   );

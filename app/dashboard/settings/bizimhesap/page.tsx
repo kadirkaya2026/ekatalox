@@ -14,7 +14,7 @@ export default async function BizimHesapSettingsPage() {
   const { data } = supabase
     ? await supabase
         .from("tenant_bizimhesap")
-        .select("firm_id, vat_rate, is_enabled")
+        .select("firm_id, vat_rate, is_enabled, send_on, fixed_customer_title, require_product_match")
         .eq("tenant_id", session.tenant!.id)
         .maybeSingle()
     : { data: null };
@@ -33,6 +33,9 @@ export default async function BizimHesapSettingsPage() {
           firmIdHint: data?.firm_id ? String(data.firm_id).slice(-4) : null,
           vatRate: data ? Number(data.vat_rate) : 20,
           isEnabled: data?.is_enabled ?? false,
+          sendOn: data?.send_on === "confirmed" ? "confirmed" : "order",
+          fixedCustomerTitle: data?.fixed_customer_title ?? "",
+          requireProductMatch: Boolean(data?.require_product_match),
         }}
       />
       </PlanFeatureGate>

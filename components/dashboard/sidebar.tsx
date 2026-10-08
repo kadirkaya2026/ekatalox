@@ -39,6 +39,7 @@ import {
 
   Wallet,
   Lock,
+  Link2,
 } from "lucide-react";
 import { EkataloxLogo } from "@/components/brand/ekatalox-logo";
 import { SidebarLogoutButton } from "@/components/dashboard/sidebar-logout-button";
@@ -132,6 +133,12 @@ const tenantLinks: SidebarLink[] = [
         href: "/products/suggestions",
         label: "Önerdiğim Ürünler",
         icon: Lightbulb,
+      },
+      {
+        href: "/products/bizimhesap",
+        label: "BizimHesap Eşleştirme",
+        icon: Link2,
+        requiredFeature: "bizimhesap",
       },
     ],
   },
