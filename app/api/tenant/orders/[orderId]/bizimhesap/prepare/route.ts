@@ -101,9 +101,11 @@ export async function GET(_request: Request, ctx: { params: Promise<{ orderId: s
       imageUrl: product?.image_url ?? null,
       mappedId: mapped ? mappedId : null,
       mappedLabel: mapped ? productLabel(mapped) : null,
+      // BizimHesap ürünü "Ürün Kodu" ile tanır; kodsuz karta gönderim engellenir.
+      mappedHasCode: Boolean(mapped?.code?.trim()),
       // Eşleşme kaydı var ama BizimHesap'ta kart artık yok (silinmiş).
       missingMapped: Boolean(mappedId && !mapped),
-      suggestion: suggestion ? { id: suggestion.id, label: productLabel(suggestion) } : null,
+      suggestion: suggestion ? { id: suggestion.id, label: productLabel(suggestion), hasCode: Boolean(suggestion.code?.trim()) } : null,
     };
   });
 

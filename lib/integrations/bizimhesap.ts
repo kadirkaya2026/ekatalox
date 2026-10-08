@@ -343,6 +343,30 @@ export async function sendOrderToBizimHesap(
       }
     }
 
+    // BizimHesap faturadaki ürünü İÇ KİMLİKLE DEĞİL "Ürün Kodu" ile tanır (productId =
+    // "kaynak sistem kodu"; 8 Eki 2026 Lucatech vakası: iç kimlik gönderilince tanınmayıp
+    // yeni ürün açıldı). Eşlenen kartın kodu canlı okunur ve o kodla gönderilir.
+    const cardByMappedId = new Map<string, BizimHesapProduct>();
+    if (orderItems.some((item) => resolveMapped(item))) {
+      const liveProducts = await fetchBizimHesapProducts(config.firm_id);
+      if (!liveProducts) return fail("BizimHesap ürün listesi alınamadı; tekrar deneyin.");
+      for (const product of liveProducts) cardByMappedId.set(product.id, product);
+    }
+    if (policy.requireProductMatch) {
+      const problems = orderItems.flatMap((item) => {
+        const card = cardByMappedId.get(resolveMapped(item) ?? "");
+        const label = [item.sku_code ?? item.product_name, item.variant_name].filter(Boolean).join(" ");
+        if (!card) return [`${label} (eşlendiği kart BizimHesap'ta yok)`];
+        if (!card.code?.trim()) return [`${label} (BizimHesap kartının Ürün Kodu boş: ${card.title})`];
+        return [];
+      });
+      if (problems.length) {
+        return fail(
+          `Gönderilmedi: ${problems.slice(0, 4).join("; ")}${problems.length > 4 ? "…" : ""}. BizimHesap'ta ürün açılmaması için kart kodları dolu olmalı.`,
+        );
+      }
+    }
+
     const rate = Number(config.vat_rate ?? 20);
     const divisor = 1 + rate / 100;
     const items = orderItems;
@@ -361,16 +385,17 @@ export async function sendOrderToBizimHesap(
       const name = [item.product_name ?? "Ürün", item.variant_name ? `(${item.variant_name})` : null]
         .filter(Boolean)
         .join(" ");
+      const mappedCard = cardByMappedId.get(resolveMapped(item) ?? "");
       return {
         // Zorunlu eşleşmede YALNIZ eşleşmiş BizimHesap kimliği gider; stok koduna
         // düşülmez (BizimHesap bilinmeyen kodla yeni ürün açar).
-        productId: policy.requireProductMatch
-          ? (resolveMapped(item) as string)
-          : resolveMapped(item) ||
-          item.sku_code ||
-          item.product_id ||
-          name,
-        productName: name,
+        productId: mappedCard?.code?.trim()
+          ? mappedCard.code.trim()
+          : policy.requireProductMatch
+            ? "" // yukarıda engellendi; buraya düşmez
+            : item.sku_code || item.product_id || name,
+        // Tanınan kartta BizimHesap'taki adı kullanılır (faturada aynı ad görünsün).
+        productName: mappedCard?.code?.trim() ? mappedCard.title : name,
         note: item.is_gift ? "Hediye" : "",
         barcode: "",
         taxRate: plain(rate),

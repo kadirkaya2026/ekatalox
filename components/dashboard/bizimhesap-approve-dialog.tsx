@@ -24,8 +24,9 @@ type Line = {
   imageUrl: string | null;
   mappedId: string | null;
   mappedLabel: string | null;
+  mappedHasCode: boolean;
   missingMapped: boolean;
-  suggestion: { id: string; label: string } | null;
+  suggestion: { id: string; label: string; hasCode: boolean } | null;
 };
 type Prepared = {
   customers: Customer[];
@@ -36,7 +37,7 @@ type Prepared = {
   requireProductMatch: boolean;
   alreadySent: boolean;
 };
-type Choice = { id: string; label: string; source: "mapped" | "suggestion" | "picked" };
+type Choice = { id: string; label: string; source: "mapped" | "suggestion" | "picked"; hasCode: boolean };
 
 export function BizimHesapApproveDialog({
   orderId,
@@ -74,7 +75,8 @@ export function BizimHesapApproveDialog({
         for (const line of prepared.lines) {
           const kept = current[line.key];
           if (kept && kept.source === "picked") next[line.key] = kept;
-          else if (line.mappedId && line.mappedLabel) next[line.key] = { id: line.mappedId, label: line.mappedLabel, source: "mapped" };
+          else if (line.mappedId && line.mappedLabel)
+            next[line.key] = { id: line.mappedId, label: line.mappedLabel, source: "mapped", hasCode: line.mappedHasCode };
           else if (line.suggestion) next[line.key] = { ...line.suggestion, source: "suggestion" };
           else next[line.key] = null;
         }
@@ -102,7 +104,9 @@ export function BizimHesapApproveDialog({
 
   const lines = data?.lines ?? [];
   const unmatched = lines.filter((line) => !choices[line.key]);
-  const blocked = Boolean(data?.requireProductMatch) && unmatched.length > 0;
+  // BizimHesap ürünü Ürün Kodu ile tanır: kodsuz karta giden satır yeni ürün açtırır.
+  const codeless = lines.filter((line) => choices[line.key] && !choices[line.key]!.hasCode);
+  const blocked = Boolean(data?.requireProductMatch) && (unmatched.length > 0 || codeless.length > 0);
 
   async function submit() {
     if (!data) return;
@@ -231,8 +235,8 @@ export function BizimHesapApproveDialog({
             <section>
               <div className="flex items-center justify-between gap-2">
                 <h3 className="text-sm font-semibold text-slate-900">2. Ürünler</h3>
-                <span className={cn("text-xs font-medium", unmatched.length ? "text-rose-600" : "text-emerald-700")}>
-                  {lines.length - unmatched.length} / {lines.length} eşleşti
+                <span className={cn("text-xs font-medium", unmatched.length || codeless.length ? "text-rose-600" : "text-emerald-700")}>
+                  {lines.length - unmatched.length - codeless.length} / {lines.length} hazır
                 </span>
               </div>
               <ul className="mt-2 divide-y divide-slate-100 rounded-xl border border-slate-200">
@@ -262,7 +266,12 @@ export function BizimHesapApproveDialog({
                           </div>
                         </div>
                         <div className="flex min-w-0 items-center gap-2 sm:max-w-[50%] sm:justify-end">
-                          {choice ? (
+                          {choice && !choice.hasCode ? (
+                            <span className="inline-flex min-w-0 items-center gap-1.5 rounded-lg bg-rose-50 px-2.5 py-1.5 text-xs font-medium text-rose-700" title={choice.label}>
+                              <CircleAlert className="size-3.5 shrink-0" />
+                              <span className="truncate">Kartın Ürün Kodu boş: {choice.label}</span>
+                            </span>
+                          ) : choice ? (
                             <span
                               className={cn(
                                 "inline-flex min-w-0 items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium",
@@ -292,7 +301,10 @@ export function BizimHesapApproveDialog({
                           products={data.products}
                           line={line}
                           onPick={(product) => {
-                            setChoices((current) => ({ ...current, [line.key]: { id: product.id, label: product.label, source: "picked" } }));
+                            setChoices((current) => ({
+                              ...current,
+                              [line.key]: { id: product.id, label: product.label, source: "picked", hasCode: Boolean(product.code?.trim()) },
+                            }));
                             setOpenLine(null);
                           }}
                         />
@@ -303,7 +315,9 @@ export function BizimHesapApproveDialog({
               </ul>
               {blocked ? (
                 <p className="mt-2 text-xs text-rose-600">
-                  Eşleşmeyen {unmatched.length} ürün var. BizimHesap&apos;ta yeni ürün açılmaması için hepsini seçmeden gönderilemez.
+                  {unmatched.length ? `Eşleşmeyen ${unmatched.length} ürün var. ` : ""}
+                  {codeless.length ? `${codeless.length} satırın BizimHesap kartında Ürün Kodu boş (BizimHesap ürünü koddan tanır). ` : ""}
+                  BizimHesap&apos;ta yeni ürün açılmaması için bunlar düzelmeden gönderilemez.
                 </p>
               ) : null}
             </section>
