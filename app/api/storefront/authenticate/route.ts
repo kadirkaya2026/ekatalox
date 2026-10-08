@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { recordStorefrontPriceListLogin } from "@/lib/analytics/record-stats";
+import { isGateLocked, recordGateFailure } from "@/lib/api/shared-rate-limit";
 import { validateAccessCode } from "@/lib/data";
+import { getTrustedClientIp } from "@/lib/storefront/client-ip";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import {
   clearStorefrontPriceListCookie,
@@ -9,7 +11,7 @@ import {
 } from "@/lib/storefront/session";
 
 export async function POST(request: Request) {
-  const body = await request.json();
+  const body = await request.json().catch(() => ({}));
   const subdomain = String(body.subdomain ?? "").trim().toLowerCase();
   const code = String(body.code ?? "").trim();
   const secure = isSecureStorefrontRequest(request);
@@ -21,9 +23,24 @@ export async function POST(request: Request) {
     );
   }
 
+  // Deneme sınırı: yanlış kodlar IP ve mağaza başına DB'de sayılır; sınır
+  // dolduysa kod hiç denenmez (doğru kod da 429 alır — yoksa sınır anlamsız).
+  const supabase = createSupabaseAdminClient();
+  const ip = getTrustedClientIp(request);
+
+  if (supabase && (await isGateLocked(supabase, subdomain, ip))) {
+    return NextResponse.json(
+      { error: "Çok fazla hatalı deneme yapıldı. Lütfen 15 dakika sonra tekrar deneyin." },
+      { status: 429 },
+    );
+  }
+
   const matched = await validateAccessCode({ subdomain, code });
 
   if (!matched) {
+    if (supabase) {
+      await recordGateFailure(supabase, subdomain, ip);
+    }
     const response = NextResponse.json(
       { error: "Girilen şifre kodu geçersiz." },
       { status: 401 },
@@ -53,7 +70,6 @@ export async function POST(request: Request) {
     secure,
   });
 
-  const supabase = createSupabaseAdminClient();
   if (supabase) {
     await recordStorefrontPriceListLogin(
       supabase,

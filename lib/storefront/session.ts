@@ -3,19 +3,18 @@ import type { NextResponse } from "next/server";
 import type { Tenant } from "@/lib/types";
 
 import {
+  decodeTierCookie,
+  encodeTierCookie,
   getStorefrontAgeCookieName,
   getStorefrontTierCookieName,
+  TIER_COOKIE_MAX_AGE_SECONDS,
+  type StorefrontTierCookiePayload,
 } from "@/lib/storefront/tier-cookie";
 
 export { getStorefrontAgeCookieName, getStorefrontTierCookieName };
 
-export interface StorefrontPriceListCookieValue {
-  tenantId: string;
-  priceListId: string;
-  isCatalogOnly: boolean;
-  /** Şifreyle girildiyse access_codes.id; şifresiz giriş (auto/magnet) → yok. */
-  accessCodeId?: string;
-}
+/** accessCodeId: şifreyle girildiyse access_codes.id; şifresiz giriş (auto/magnet) → yok. */
+export type StorefrontPriceListCookieValue = StorefrontTierCookiePayload;
 
 function getStorefrontTierCookieOptions(secure: boolean) {
   return {
@@ -23,19 +22,7 @@ function getStorefrontTierCookieOptions(secure: boolean) {
     sameSite: "lax" as const,
     secure,
     path: "/",
-    maxAge: 60 * 60 * 12,
-  };
-}
-
-function parseLegacyTierLevel(value: string): StorefrontPriceListCookieValue | null {
-  if (value !== "1" && value !== "2" && value !== "3") {
-    return null;
-  }
-
-  return {
-    tenantId: "",
-    priceListId: "",
-    isCatalogOnly: false,
+    maxAge: TIER_COOKIE_MAX_AGE_SECONDS,
   };
 }
 
@@ -49,33 +36,8 @@ export async function readStorefrontPriceList(
     return null;
   }
 
-  const legacy = parseLegacyTierLevel(value);
-  if (legacy) {
-    return null;
-  }
-
-  try {
-    const parsed = JSON.parse(value) as Partial<StorefrontPriceListCookieValue>;
-
-    if (
-      typeof parsed.tenantId === "string" &&
-      typeof parsed.priceListId === "string" &&
-      typeof parsed.isCatalogOnly === "boolean"
-    ) {
-      return {
-        tenantId: parsed.tenantId,
-        priceListId: parsed.priceListId,
-        isCatalogOnly: parsed.isCatalogOnly,
-        ...(typeof parsed.accessCodeId === "string" && parsed.accessCodeId
-          ? { accessCodeId: parsed.accessCodeId }
-          : {}),
-      };
-    }
-  } catch {
-    return null;
-  }
-
-  return null;
+  // İmza doğrulanır; düz JSON (eski biçim) ya da kurcalanmış çerez → null.
+  return decodeTierCookie(value);
 }
 
 export async function clearStorefrontPriceList(subdomain: string) {
@@ -104,12 +66,12 @@ export function setStorefrontPriceListCookie(params: {
 }) {
   params.response.cookies.set(
     getStorefrontTierCookieName(params.subdomain),
-    JSON.stringify({
+    encodeTierCookie({
       tenantId: params.tenantId,
       priceListId: params.priceListId,
       isCatalogOnly: params.isCatalogOnly,
       ...(params.accessCodeId ? { accessCodeId: params.accessCodeId } : {}),
-    } satisfies StorefrontPriceListCookieValue),
+    }),
     getStorefrontTierCookieOptions(params.secure),
   );
 }

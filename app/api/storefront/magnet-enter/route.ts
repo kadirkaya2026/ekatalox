@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
+import { isGateLocked, recordGateFailure } from "@/lib/api/shared-rate-limit";
 import { getStorefrontTenant, resolveDefaultPriceListForTenant } from "@/lib/data";
+import { getTrustedClientIp } from "@/lib/storefront/client-ip";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import {
   getStorefrontMagnetCookieName,
@@ -53,6 +55,15 @@ export async function GET(request: Request) {
     return response;
   }
 
+  // Şifre kapısıyla aynı deneme sınırı (kod tahmini engellenir). Sınır doluyken
+  // magnet çerezine dokunulmaz; proxy döngüsü olmasın diye fiyat çerezi de
+  // kurulmaz, ziyaretçi normal şifre kapısına düşer.
+  const ip = getTrustedClientIp(request);
+  if (await isGateLocked(supabase, subdomain, ip)) {
+    response.cookies.set({ ...cookieBase, value: "", maxAge: 0 });
+    return response;
+  }
+
   const { data: magnet } = await supabase
     .from("magnet_codes")
     .select("id, is_disabled")
@@ -61,6 +72,9 @@ export async function GET(request: Request) {
     .maybeSingle();
 
   if (!magnet || magnet.is_disabled) {
+    if (!magnet) {
+      await recordGateFailure(supabase, subdomain, ip);
+    }
     // Geçersiz/pasif kod şifresiz giriş hakkı vermez; çerez de silinir ki
     // ziyaretçi şifre kapısına düşebilsin (döngü kırılır).
     response.cookies.set({ ...cookieBase, value: "", maxAge: 0 });

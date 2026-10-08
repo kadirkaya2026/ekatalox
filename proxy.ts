@@ -13,6 +13,7 @@ import {
 import { toPublicStorefrontPath } from "@/lib/storefront/paths";
 import {
   getStorefrontAgeCookieName,
+  decodeTierCookie,
   getStorefrontTierCookieName,
 } from "@/lib/storefront/tier-cookie";
 import {
@@ -600,9 +601,11 @@ export async function proxy(request: NextRequest) {
       }
     }
 
-    const hasTierCookie = request.cookies.has(
-      getStorefrontTierCookieName(hostResolution.subdomain),
+    // Varlık değil İMZA kontrolü: sahte/eski/başka mağazanın çerezi kapıyı geçmez.
+    const tierCookie = decodeTierCookie(
+      request.cookies.get(getStorefrontTierCookieName(hostResolution.subdomain))?.value,
     );
+    const hasTierCookie = Boolean(tierCookie && (!tenant || tierCookie.tenantId === tenant.id));
 
     if (!hasTierCookie) {
       // Magnetle şifresiz giriş: daha önce magnet okutmuş cihazda (kalıcı
