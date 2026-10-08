@@ -30,14 +30,22 @@ type MappingItem = {
   mappedLabel: string | null;
   inheritedLabel: string | null;
   suggestion: { id: string; label: string } | null;
+  cardMissing: boolean;
+  codeMissing: boolean;
+  sharedWith: string[];
 };
 
-type Filter = "all" | "unmatched" | "suggested" | "matched";
+type Filter = "problem" | "all" | "unmatched" | "suggested" | "matched";
 
 const PAGE_SIZE = 50;
 
 function isMatched(item: MappingItem) {
-  return Boolean(item.mappedId) || Boolean(item.inheritedLabel);
+  return (Boolean(item.mappedId) && !item.cardMissing) || Boolean(item.inheritedLabel);
+}
+
+/** Silinmiş karta bağlı ya da aynı kartı farklı bir ürünle paylaşan satır. */
+function isProblem(item: MappingItem) {
+  return item.cardMissing || item.sharedWith.length > 0;
 }
 
 export function BizimHesapMappingManager() {
@@ -52,6 +60,7 @@ export function BizimHesapMappingManager() {
   const [bulkBusy, setBulkBusy] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [cardStats, setCardStats] = useState<{ mappedCards: number; codedCards: number } | null>(null);
 
   async function load() {
     setError(null);
@@ -60,7 +69,11 @@ export function BizimHesapMappingManager() {
       const json = await response.json();
       if (!response.ok) throw new Error(json.error ?? "Liste alınamadı.");
       setBhProducts(json.bhProducts as BhOption[]);
-      setItems(json.items as MappingItem[]);
+      const loaded = json.items as MappingItem[];
+      setItems(loaded);
+      setCardStats(json.cardStats ?? null);
+      // Sorun varsa sayfa "Sorunlu" filtresiyle açılır (ilk yüklemede).
+      setFilter((current) => (current === "unmatched" && loaded.some(isProblem) ? "problem" : current));
     } catch (err) {
       setError(err instanceof Error ? err.message : "Liste alınamadı.");
     }
@@ -84,12 +97,14 @@ export function BizimHesapMappingManager() {
     const list = items ?? [];
     const matched = list.filter(isMatched).length;
     const suggested = list.filter((item) => !isMatched(item) && item.suggestion).length;
-    return { total: list.length, matched, suggested, unmatched: list.length - matched };
+    const problem = list.filter(isProblem).length;
+    return { total: list.length, matched, suggested, unmatched: list.length - matched, problem };
   }, [items]);
 
   const visible = useMemo(() => {
     const q = matchKey(query);
     return (items ?? []).filter((item) => {
+      if (filter === "problem" && !isProblem(item)) return false;
       if (filter === "matched" && !isMatched(item)) return false;
       if (filter === "unmatched" && isMatched(item)) return false;
       if (filter === "suggested" && (isMatched(item) || !item.suggestion)) return false;
@@ -187,6 +202,7 @@ export function BizimHesapMappingManager() {
 
   const percent = stats.total ? Math.round((stats.matched / stats.total) * 100) : 0;
   const filters: Array<{ key: Filter; label: string; count: number }> = [
+    ...(stats.problem ? [{ key: "problem" as const, label: "Sorunlu", count: stats.problem }] : []),
     { key: "unmatched", label: "Eşleşmeyen", count: stats.unmatched },
     { key: "suggested", label: "Önerisi olan", count: stats.suggested },
     { key: "matched", label: "Eşleşen", count: stats.matched },
@@ -202,6 +218,14 @@ export function BizimHesapMappingManager() {
             <p className="mt-1 text-2xl font-semibold text-slate-900">
               {stats.matched} / {stats.total} <span className="text-base font-medium text-slate-500">eşleşti</span>
             </p>
+            {cardStats ? (
+              <p className={cn("mt-1 text-xs font-medium", cardStats.codedCards < cardStats.mappedCards ? "text-amber-700" : "text-emerald-700")}>
+                Eşlenen {cardStats.mappedCards} BizimHesap kartının {cardStats.codedCards} tanesinde Ürün Kodu dolu.
+                {cardStats.codedCards < cardStats.mappedCards
+                  ? " BizimHesap ürünü koddan tanır; kodu boş kartlara sipariş gönderilmez."
+                  : ""}
+              </p>
+            ) : null}
             <p className="mt-1 text-xs text-slate-500">
               BizimHesap&apos;ta {bhProducts.length} aktif ürün bulundu.
               {stats.unmatched ? " Eşleşmeyen ürün içeren sipariş BizimHesap'a gönderilmez." : " Tüm ürünler hazır."}
@@ -356,12 +380,32 @@ function MappingRow({
               ) : null}
             </p>
             <p className="truncate text-xs text-slate-500">{item.name}</p>
+            {item.sharedWith.length ? (
+              <p className="mt-0.5 text-xs font-medium text-amber-700">
+                Bu BizimHesap kartı şunlara da bağlı: {item.sharedWith.slice(0, 3).join(", ")}
+                {item.sharedWith.length > 3 ? "…" : ""}. Doğru mu kontrol edin.
+              </p>
+            ) : null}
           </div>
         </div>
 
         <div className="flex min-w-0 flex-wrap items-center gap-2 md:w-[46%] md:justify-end">
-          {item.mappedId ? (
+          {item.mappedId && item.cardMissing ? (
             <>
+              <span className="inline-flex items-center gap-1.5 rounded-lg bg-rose-50 px-2.5 py-1.5 text-xs font-medium text-rose-700">
+                <CircleAlert className="size-3.5" /> Eşleştiği kart BizimHesap&apos;ta silinmiş
+              </span>
+              <Button onClick={onToggle} disabled={busy}>
+                <Link2 className="size-4" /> Yeniden seç
+              </Button>
+            </>
+          ) : item.mappedId ? (
+            <>
+              {item.codeMissing ? (
+                <span className="rounded-md bg-slate-100 px-1.5 py-0.5 text-[11px] font-medium text-slate-600" title="BizimHesap kartının Ürün Kodu boş">
+                  Kod yok
+                </span>
+              ) : null}
               <span className="inline-flex min-w-0 items-center gap-1.5 rounded-lg bg-emerald-50 px-2.5 py-1.5 text-xs font-medium text-emerald-800">
                 <CheckCircle2 className="size-3.5 shrink-0" />
                 <span className="truncate">{item.mappedLabel}</span>

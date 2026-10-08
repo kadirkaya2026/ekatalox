@@ -23,6 +23,12 @@ type MappingItem = {
   mappedLabel: string | null;
   inheritedLabel: string | null;
   suggestion: { id: string; label: string } | null;
+  /** Eşleşme var ama kart BizimHesap'ta yok (silinmiş) — yeniden seçilmeli. */
+  cardMissing: boolean;
+  /** Kart var ama "Ürün Kodu" boş — BizimHesap ürünü koddan tanır, gönderilemez. */
+  codeMissing: boolean;
+  /** Aynı BizimHesap kartı FARKLI stok kodlu başka ürün(ler)e de bağlı. */
+  sharedWith: string[];
 };
 type VariantRow = { id: string; product_id: string; model_name: string | null; bizimhesap_product_id: string | null };
 
@@ -102,6 +108,9 @@ export async function GET() {
           mappedId: product.bizimhesap_product_id,
           mappedLabel: productMapped ? label(productMapped) : product.bizimhesap_product_id ? "BizimHesap'ta bulunamadı" : null,
           inheritedLabel: null,
+          cardMissing: false,
+          codeMissing: false,
+          sharedWith: [],
           suggestion: suggestion ? { id: suggestion.id, label: label(suggestion) } : null,
         },
       ];
@@ -120,12 +129,45 @@ export async function GET() {
         mappedLabel: mapped ? label(mapped) : variant.bizimhesap_product_id ? "BizimHesap'ta bulunamadı" : null,
         // Varyant eşlenmemiş ama ürün tek karta eşliyse sipariş o karta gider.
         inheritedLabel: !variant.bizimhesap_product_id && productMapped ? label(productMapped) : null,
+        cardMissing: false,
+        codeMissing: false,
+        sharedWith: [],
         suggestion: suggestion ? { id: suggestion.id, label: label(suggestion) } : null,
       };
     });
   });
 
+  // Bayraklar: silinmiş kart, kodsuz kart, aynı karta bağlı farklı ürünler.
+  const ownersByCard = new Map<string, Set<string>>();
+  for (const item of items) {
+    if (!item.mappedId) continue;
+    const owners = ownersByCard.get(item.mappedId) ?? new Set<string>();
+    owners.add([item.code ?? item.name, item.variantName].filter(Boolean).join(" "));
+    ownersByCard.set(item.mappedId, owners);
+  }
+  const codesByCard = new Map<string, Set<string>>();
+  for (const item of items) {
+    if (!item.mappedId) continue;
+    const codes = codesByCard.get(item.mappedId) ?? new Set<string>();
+    codes.add((item.code ?? "").trim().toLocaleLowerCase("tr"));
+    codesByCard.set(item.mappedId, codes);
+  }
+  for (const item of items) {
+    const card = item.mappedId ? byId.get(item.mappedId) : undefined;
+    item.cardMissing = Boolean(item.mappedId && !card);
+    item.codeMissing = Boolean(card && !card.code?.trim());
+    const ownCode = [item.code ?? item.name, item.variantName].filter(Boolean).join(" ");
+    // Aynı ürünün renkleri tek kartta olabilir (aynı stok kodu) — yalnız farklı kodlar uyarılır.
+    item.sharedWith =
+      item.mappedId && (codesByCard.get(item.mappedId)?.size ?? 0) > 1
+        ? [...(ownersByCard.get(item.mappedId) ?? [])].filter((owner) => owner !== ownCode)
+        : [];
+  }
+  const mappedCardIds = new Set(items.map((i) => i.mappedId).filter((id): id is string => Boolean(id && byId.get(id))));
+  const codedCards = [...mappedCardIds].filter((id) => byId.get(id)?.code?.trim()).length;
+
   return NextResponse.json({
+    cardStats: { mappedCards: mappedCardIds.size, codedCards },
     bhProducts: bh.filter((p) => p.isActive).map((p) => ({ id: p.id, code: p.code, barcode: p.barcode, title: p.title, variantName: p.variantName, label: label(p) })),
     items,
   });
