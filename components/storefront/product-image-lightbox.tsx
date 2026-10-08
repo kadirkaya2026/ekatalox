@@ -8,7 +8,8 @@ import { cn } from "@/lib/utils";
 
 // Ürün görseli tam ekran (28 Eyl 2026, tüm tenantlar): ürün sayfasında
 // görsele dokununca açılır; parmakla sağa-sola kaydırılır (scroll-snap),
-// masaüstünde oklar ve klavye (← → Esc), sağ üstte çarpı ile kapanır.
+// masaüstünde oklar ve klavye (← → Esc), sağ üstte çarpı ya da görsel dışındaki
+// boş alana dokunarak kapanır.
 export function ProductImageLightbox({
   images,
   startIndex,
@@ -60,7 +61,14 @@ export function ProductImageLightbox({
         style={{ scrollbarWidth: "none" }}
       >
         {images.map((src, i) => (
-          <div key={src} className="flex h-full w-full shrink-0 snap-center snap-always items-center justify-center">
+          <div
+            key={src}
+            // Görselin dışındaki boş alana dokununca kapanır (görselin kendisine değil).
+            onClick={(event) => {
+              if (event.target === event.currentTarget) onClose(index);
+            }}
+            className="flex h-full w-full shrink-0 snap-center snap-always items-center justify-center"
+          >
             {/* eslint-disable-next-line @next/next/no-img-element -- tam çözünürlük, oran korunur */}
             <img
               src={src}
