@@ -20,6 +20,8 @@ export interface ParsedCsvResult {
     image_url: Product["image_url"];
     currency: Product["currency"];
     prices?: ImportListPrice[];
+    /** Ürün açıklaması (HTML olabilir); boş hücre → undefined, mevcut açıklamaya dokunulmaz. */
+    description?: string;
     /** "İndirimli Fiyat: X" sütunları; price null = hücre boş → o listede indirim kaldırılır. */
     discount_prices?: Array<{ list_name: string; price: number | null }>;
     price_tier_1?: number;
@@ -204,6 +206,9 @@ export function parseProductsCsv(csvText: string): ParsedCsvResult {
         // Şablon sütunları + "Fiyat: X" sütunları birlikte (biri diğerini silmesin).
         prices: [...legacyPrices, ...dynamicPrices],
         ...(discountPrices.length ? { discount_prices: discountPrices } : {}),
+        ...(typeof row.description === "string" && row.description.trim()
+          ? { description: row.description.trim() }
+          : {}),
         price_tier_1: sanitizePrice(row.price_tier_1),
         price_tier_2: sanitizePrice(row.price_tier_2),
         price_tier_3: sanitizePrice(row.price_tier_3),

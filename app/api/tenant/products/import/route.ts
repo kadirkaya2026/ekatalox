@@ -298,6 +298,8 @@ export async function POST(request: Request) {
       category_id: categoryCache.get(normalizeCategoryName(row.category_name))!,
       sku_code: row.sku_code,
       product_name: row.product_name,
+      // Açıklama yalnız dolu hücreden yazılır; boş/eksik → mevcut açıklama korunur.
+      ...(row.description ? { description: row.description } : {}),
       ...(hasBrandColumn ? { brand: row.brand || null } : {}),
       ...(row.image_url ? { image_url: row.image_url } : {}),
       currency: row.currency,

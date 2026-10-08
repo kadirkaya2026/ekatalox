@@ -194,6 +194,8 @@ export const productImportRowSchema = z.object({
   brand: productBrandSchema,
   currency: currencyCodeSchema,
   prices: importListPriceSchema,
+  // Açıklama (8 Eki 2026): yalnız dolu hücre gelir; boşsa mevcut açıklamaya dokunulmaz.
+  description: z.string().trim().max(30000, "Açıklama çok uzun.").optional(),
   // "İndirimli Fiyat: X" sütunları (8 Eki 2026): null = o listede indirimi kaldır.
   discount_prices: z
     .array(

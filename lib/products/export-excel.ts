@@ -75,6 +75,9 @@ export async function buildProductsExcel(
     "Stok Durumu",
     "Paket Adedi",
     "Koli Adedi",
+    // Açıklama (HTML olabilir). Excel hücre sınırını (32.767) aşan açıklama boş yazılır;
+    // boş hücre içe aktarmada mevcut açıklamaya dokunmaz.
+    "Açıklama",
   ];
   const rows = products.map((product) => [
     categoryName.get(product.category_id) ?? "",
@@ -94,6 +97,7 @@ export async function buildProductsExcel(
     product.is_in_stock ? "Var" : "Yok",
     product.package_quantity ?? "",
     product.carton_quantity ?? "",
+    product.description && product.description.length <= 32_000 ? product.description : "",
   ]);
 
   const sheet = XLSX.utils.aoa_to_sheet([header, ...rows]);
@@ -111,7 +115,8 @@ export async function buildProductsExcel(
     ['3. Sütun adlarını değiştirmeyin; dosyayı .xlsx olarak kaydedin.'],
     ['4. Panelde Ürünler → Toplu İşlemler → Excel yükle bölümünden dosyayı yükleyin.'],
     [""],
-    ["Ürün açıklamaları ve görseller bu dosyayla değişmez; ad, kategori, fiyat, indirimli fiyat, stok ve paket/koli adedi güncellenir."],
+    ["Görseller bu dosyayla değişmez; ad, kategori, fiyat, indirimli fiyat, stok, paket/koli adedi ve açıklama güncellenir."],
+    ['"Açıklama" sütununa düz yazı ya da HTML (ör. Entegra açıklaması) yapıştırabilirsiniz. Boş bırakılan açıklama değişmez (silinmez).'],
     ["Bir listede indirimli fiyat girilen üründe \"İndirim uygula\" kendiliğinden açılır, hiçbir listede indirimi kalmayan üründe kapanır."],
     ["Yeni Model No ile eklenen satırlar yeni ürün olarak eklenir."],
   ]);

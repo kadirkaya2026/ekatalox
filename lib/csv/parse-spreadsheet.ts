@@ -49,6 +49,8 @@ const HEADER_ALIASES: Record<string, string> = (() => {
   add("package_quantity", ["Paket", "Paket İçi", "Paket İçi Adet"]);
   add("carton_quantity", ["Koli", "Koli İçi", "Koli İçi Adet"]);
   add("image_url", ["Görsel", "Görsel URL", "Resim", "Resim URL", "Fotoğraf"]);
+  // Ürün açıklaması (8 Eki 2026, Nailport isteği; HTML olabilir, ör. Entegra UrunAciklamasi).
+  add("description", ["Açıklama", "Ürün Detayı", "Detay", "Description"]);
   return map;
 })();
 
@@ -62,7 +64,12 @@ function mapHeaderRow(row: unknown[]) {
     if (/^fiyat\s*:/i.test(original)) return original;
     // "İndirimli Fiyat: VIP" (liste indirimli fiyatı) da olduğu gibi kalır.
     if (/^indirimli\s+fiyat\s*:/.test(original.normalize("NFC").toLocaleLowerCase("tr-TR").replace(/ı/g, "i"))) return original;
-    const field = HEADER_ALIASES[headerKey(original)];
+    let field = HEADER_ALIASES[headerKey(original)];
+    // "Ürün Açıklaması" eskiden ürün adı sayılıyordu; dosyada ad sütunu zaten varsa
+    // (ör. Entegra: UrunAdi + UrunAciklamasi) bu sütun açıklamadır.
+    if (field === "product_name" && used.has("product_name") && headerKey(original) === "urunaciklamasi") {
+      field = "description";
+    }
     // Aynı alana ikinci sütun (ör. hem "Model No" hem "Stok Kodu") eşlenmez.
     if (field && !used.has(field)) {
       used.add(field);
