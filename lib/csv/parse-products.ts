@@ -4,6 +4,7 @@ import type { ImportListPrice } from "@/lib/price-lists/import";
 import {
   DEFAULT_PRICED_LIST_NAMES,
   parsePriceListCsvHeader,
+  parseDiscountPriceListCsvHeader,
 } from "@/lib/price-lists/constants";
 import { isBlankPriceCell, sanitizePrice } from "@/lib/products/parse-price-input";
 import type { Product } from "@/lib/types";
@@ -19,6 +20,8 @@ export interface ParsedCsvResult {
     image_url: Product["image_url"];
     currency: Product["currency"];
     prices?: ImportListPrice[];
+    /** "İndirimli Fiyat: X" sütunları; price null = hücre boş → o listede indirim kaldırılır. */
+    discount_prices?: Array<{ list_name: string; price: number | null }>;
     price_tier_1?: number;
     price_tier_2?: number;
     price_tier_3?: number;
@@ -173,6 +176,18 @@ export function parseProductsCsv(csvText: string): ParsedCsvResult {
         })
         .filter((entry) => entry !== null);
 
+      // Liste indirimli fiyatları: sütun VARSA boş hücre "indirimi kaldır" demektir.
+      const discountPrices = parsedHeaders
+        .map((header) => {
+          const listName = parseDiscountPriceListCsvHeader(header);
+          if (!listName) return null;
+          return {
+            list_name: listName,
+            price: isBlankPriceCell(row[header]) ? null : sanitizePrice(row[header]),
+          };
+        })
+        .filter((entry) => entry !== null);
+
       const legacyPrices = DEFAULT_PRICED_LIST_NAMES.flatMap((listName, index) => {
         const raw =
           index === 0 ? row.price_tier_1 : index === 1 ? row.price_tier_2 : row.price_tier_3;
@@ -188,6 +203,7 @@ export function parseProductsCsv(csvText: string): ParsedCsvResult {
         currency,
         // Şablon sütunları + "Fiyat: X" sütunları birlikte (biri diğerini silmesin).
         prices: [...legacyPrices, ...dynamicPrices],
+        ...(discountPrices.length ? { discount_prices: discountPrices } : {}),
         price_tier_1: sanitizePrice(row.price_tier_1),
         price_tier_2: sanitizePrice(row.price_tier_2),
         price_tier_3: sanitizePrice(row.price_tier_3),

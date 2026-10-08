@@ -194,6 +194,15 @@ export const productImportRowSchema = z.object({
   brand: productBrandSchema,
   currency: currencyCodeSchema,
   prices: importListPriceSchema,
+  // "İndirimli Fiyat: X" sütunları (8 Eki 2026): null = o listede indirimi kaldır.
+  discount_prices: z
+    .array(
+      z.object({
+        list_name: z.string().min(1),
+        price: z.coerce.number().min(0, "İndirimli fiyat sıfırdan küçük olamaz.").nullable(),
+      }),
+    )
+    .optional(),
   // Boş stok hücresi gönderilmez → mevcut ürünün stok durumuna dokunulmaz.
   is_in_stock: booleanSchema.optional(),
   image_url: imageUrlSchema,

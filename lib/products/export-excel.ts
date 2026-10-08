@@ -7,7 +7,8 @@ import type { Product } from "@/lib/types";
 // Sütunlar Toplu İşlemler içe aktarmasının tanıdığı başlıklardır; müşteri fiyatı
 // değiştirip AYNI dosyayı geri yükleyince ürünler güncellenir. Fiyatlar her liste
 // için "Fiyat: <liste adı>" sütununda (lib/csv/parse-spreadsheet dinamik sütun).
-// İçe aktarma açıklama/görsel/indirim/sıraya dokunmaz (bkz. products/import route).
+// İçe aktarma açıklama/görsel/sıraya dokunmaz; "İndirimli Fiyat: X" sütunları liste
+// indirimlerini günceller (bkz. products/import route, 8 Eki 2026).
 const MAX_PRODUCTS = 20_000;
 
 export interface ProductsExcelParams {
@@ -69,7 +70,8 @@ export async function buildProductsExcel(
     "Ürün Adı",
     "Marka",
     "Para Birimi",
-    ...pricedLists.map((list) => `Fiyat: ${list.name}`),
+    // Her liste için normal ve indirimli (bayi) fiyat yan yana (8 Eki 2026, Nailport isteği).
+    ...pricedLists.flatMap((list) => [`Fiyat: ${list.name}`, `İndirimli Fiyat: ${list.name}`]),
     "Stok Durumu",
     "Paket Adedi",
     "Koli Adedi",
@@ -80,10 +82,14 @@ export async function buildProductsExcel(
     product.product_name,
     product.brand ?? "",
     product.currency ?? "TRY",
-    ...pricedLists.map((list) => {
+    ...pricedLists.flatMap((list) => {
       const entry = product.prices?.find((price) => price.price_list_id === list.id);
       const value = entry ? Number(entry.price) : NaN;
-      return Number.isFinite(value) && value > 0 ? value : "";
+      const discount = entry?.discount_price === null || entry?.discount_price === undefined ? NaN : Number(entry.discount_price);
+      return [
+        Number.isFinite(value) && value > 0 ? value : "",
+        Number.isFinite(discount) && discount >= 0 ? discount : "",
+      ];
     }),
     product.is_in_stock ? "Var" : "Yok",
     product.package_quantity ?? "",
@@ -100,11 +106,13 @@ export async function buildProductsExcel(
     ["Fiyat güncelleme nasıl yapılır?"],
     [""],
     ['1. "Ürünler" sayfasındaki fiyat sütunlarını (Fiyat: …) değiştirin. Stok Durumu için "Var" veya "Yok" yazın.'],
+    ['   "İndirimli Fiyat: …" sütunu o listenin indirimli (bayi) fiyatıdır; normal fiyattan düşük olmalı. Boş bırakırsanız o listedeki indirim kaldırılır.'],
     ['2. "Model No" sütununu DEĞİŞTİRMEYİN: ürünler bu kodla eşleşir. Satır silmek ürünü silmez.'],
     ['3. Sütun adlarını değiştirmeyin; dosyayı .xlsx olarak kaydedin.'],
     ['4. Panelde Ürünler → Toplu İşlemler → Excel yükle bölümünden dosyayı yükleyin.'],
     [""],
-    ["Ürün açıklamaları, görseller ve indirimli fiyatlar bu dosyayla değişmez; yalnız ad, kategori, fiyat, stok ve paket/koli adedi güncellenir."],
+    ["Ürün açıklamaları ve görseller bu dosyayla değişmez; ad, kategori, fiyat, indirimli fiyat, stok ve paket/koli adedi güncellenir."],
+    ["Bir listede indirimli fiyat girilen üründe \"İndirim uygula\" kendiliğinden açılır, hiçbir listede indirimi kalmayan üründe kapanır."],
     ["Yeni Model No ile eklenen satırlar yeni ürün olarak eklenir."],
   ]);
   guide["!cols"] = [{ wch: 110 }];

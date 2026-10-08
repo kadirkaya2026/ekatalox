@@ -389,7 +389,104 @@ export async function POST(request: Request) {
     if (error) failedPriceRows += chunk.length;
   }
 
+  // 5b. Liste indirimli fiyatları ("İndirimli Fiyat: X", 8 Eki 2026): sütun varsa
+  //     dolu hücre o listenin indirimli (bayi) fiyatını yazar, boş hücre indirimi
+  //     kaldırır. İndirimli fiyat normal fiyattan küçük olmalı. Sonra ürünün
+  //     "İndirim uygula" anahtarı, herhangi bir listede indirimi kalıp kalmadığına göre ayarlanır.
+  let invalidDiscounts = 0;
+  let discountsWithoutPrice = 0;
+  let failedDiscountRows = 0;
+  if (rows.some((row) => row.discount_prices?.length)) {
+    const basePrice = new Map<string, number>();
+    const touchedProductIds = [
+      ...new Set(
+        rows
+          .filter((row) => row.discount_prices?.length)
+          .map((row) => productIdBySku.get(row.sku_code))
+          .filter((id): id is string => Boolean(id)),
+      ),
+    ];
+    for (let i = 0; i < touchedProductIds.length; i += PRICE_CHUNK) {
+      const { data } = await supabase
+        .from("product_prices")
+        .select("product_id, price_list_id, price")
+        .in("product_id", touchedProductIds.slice(i, i + PRICE_CHUNK));
+      for (const entry of (data ?? []) as Array<{ product_id: string; price_list_id: string; price: number }>) {
+        basePrice.set(`${entry.product_id}:${entry.price_list_id}`, Number(entry.price));
+      }
+    }
+    // Bu dosyada yazılan normal fiyatlar en günceli.
+    for (const entry of priceRows) basePrice.set(`${entry.product_id}:${entry.price_list_id}`, Number(entry.price));
+
+    const discountRows: Array<{ product_id: string; price_list_id: string; price: number; discount_price: number | null }> = [];
+    for (const row of rows) {
+      const productId = productIdBySku.get(row.sku_code);
+      if (!productId || !row.discount_prices?.length) continue;
+      for (const entry of row.discount_prices) {
+        const priceListId = resolver(entry.list_name);
+        if (!priceListId) {
+          unmatchedLists.add(`İndirimli Fiyat: ${entry.list_name}`);
+          continue;
+        }
+        const base = basePrice.get(`${productId}:${priceListId}`);
+        if (entry.price === null) {
+          if (base !== undefined) discountRows.push({ product_id: productId, price_list_id: priceListId, price: base, discount_price: null });
+          continue;
+        }
+        if (base === undefined || base <= 0) {
+          discountsWithoutPrice += 1;
+          continue;
+        }
+        if (entry.price >= base) {
+          invalidDiscounts += 1;
+          continue;
+        }
+        discountRows.push({ product_id: productId, price_list_id: priceListId, price: base, discount_price: entry.price });
+      }
+    }
+    for (let i = 0; i < discountRows.length; i += PRICE_CHUNK) {
+      const chunk = discountRows.slice(i, i + PRICE_CHUNK);
+      const { error } = await supabase.from("product_prices").upsert(chunk, { onConflict: "product_id,price_list_id" });
+      if (error) failedDiscountRows += chunk.length;
+    }
+    // "İndirim uygula": herhangi bir listede indirimli fiyatı kalan ürün açık, kalmayan kapalı.
+    const stillDiscounted = new Set<string>();
+    for (let i = 0; i < touchedProductIds.length; i += PRICE_CHUNK) {
+      const { data } = await supabase
+        .from("product_prices")
+        .select("product_id")
+        .in("product_id", touchedProductIds.slice(i, i + PRICE_CHUNK))
+        .not("discount_price", "is", null);
+      for (const entry of (data ?? []) as Array<{ product_id: string }>) stillDiscounted.add(entry.product_id);
+    }
+    const turnOn = touchedProductIds.filter((id) => stillDiscounted.has(id));
+    const turnOff = touchedProductIds.filter((id) => !stillDiscounted.has(id));
+    for (const [ids, value] of [
+      [turnOn, true],
+      [turnOff, false],
+    ] as const) {
+      for (let i = 0; i < ids.length; i += UPSERT_CHUNK) {
+        await supabase
+          .from("products")
+          .update({ is_discount_active: value })
+          .eq("tenant_id", tenant.id)
+          .in("id", ids.slice(i, i + UPSERT_CHUNK));
+      }
+    }
+  }
+
   const warnings: string[] = [];
+  if (invalidDiscounts) {
+    warnings.push(
+      `${invalidDiscounts} indirimli fiyat, normal fiyattan küçük olmadığı için kaydedilmedi (indirimli fiyat normal fiyattan düşük olmalı).`,
+    );
+  }
+  if (discountsWithoutPrice) {
+    warnings.push(`${discountsWithoutPrice} indirimli fiyat, o listede normal fiyat olmadığı için kaydedilmedi.`);
+  }
+  if (failedDiscountRows) {
+    warnings.push(`${failedDiscountRows} indirimli fiyat kaydedilemedi. Lütfen dosyayı tekrar yükleyin.`);
+  }
   if (unmatchedLists.size) {
     warnings.push(
       `Şu fiyat sütunları mağazanızdaki bir fiyat listesiyle eşleşmedi ve atlandı: ${[...unmatchedLists]

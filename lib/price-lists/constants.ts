@@ -57,6 +57,21 @@ export function buildPriceListCsvHeader(listName: string) {
   return `Fiyat: ${normalizePriceListName(listName)}`;
 }
 
+/** "İndirimli Fiyat: <liste>" sütunu (8 Eki 2026, Nailport isteği): listedeki indirimli (bayi) fiyat. */
+export function buildDiscountPriceListCsvHeader(listName: string) {
+  return `İndirimli Fiyat: ${normalizePriceListName(listName)}`;
+}
+
+export function parseDiscountPriceListCsvHeader(header: string) {
+  const trimmed = header.trim().normalize("NFC");
+  // Türkçe küçük harf: "İndirimli" / "INDIRIMLI" / "indirimli" hepsi tanınır.
+  const lower = trimmed.toLocaleLowerCase("tr-TR").replace(/ı/g, "i");
+  const match = /^indirimli\s+fiyat\s*:/.exec(lower);
+  if (!match) return null;
+  const name = trimmed.slice(match[0].length).trim();
+  return name ? normalizePriceListName(name) : null;
+}
+
 export function parsePriceListCsvHeader(header: string) {
   const trimmed = header.trim();
   const prefix = "Fiyat:";

@@ -60,6 +60,8 @@ function mapHeaderRow(row: unknown[]) {
     const original = String(cell ?? "").trim();
     // "Fiyat: VIP" gibi dinamik liste sütunları olduğu gibi kalır.
     if (/^fiyat\s*:/i.test(original)) return original;
+    // "İndirimli Fiyat: VIP" (liste indirimli fiyatı) da olduğu gibi kalır.
+    if (/^indirimli\s+fiyat\s*:/.test(original.normalize("NFC").toLocaleLowerCase("tr-TR").replace(/ı/g, "i"))) return original;
     const field = HEADER_ALIASES[headerKey(original)];
     // Aynı alana ikinci sütun (ör. hem "Model No" hem "Stok Kodu") eşlenmez.
     if (field && !used.has(field)) {
