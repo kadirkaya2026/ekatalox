@@ -130,7 +130,8 @@ import { StorefrontBottomNav } from "@/components/storefront/storefront-bottom-n
 import { STOREFRONT_PRODUCT_SORTS, type StorefrontProductSort } from "@/lib/storefront/product-sort";
 import { StorefrontCampaignsSheet } from "@/components/storefront/storefront-campaigns-sheet";
 import { StorefrontSearchSheet } from "@/components/storefront/storefront-search-sheet";
-import { hasAccountPage, hasOrderTracking, isMarketOrTekelTenant } from "@/lib/storefront/white-label";
+import { hasAccountPage, hasEnhancedNavCues, hasOrderTracking, isMarketOrTekelTenant } from "@/lib/storefront/white-label";
+import { ProminentLoadMoreButton } from "@/components/storefront/enhanced-nav-cues";
 import { readPushIdentity, readTrackingPhone, saveTrackingPhone } from "@/lib/storefront/tracking-phone";
 import { getCampaignPushStatus } from "@/lib/push/client";
 import { validateCustomerPhoneInput } from "@/lib/storefront/customer-phone";
@@ -1285,6 +1286,8 @@ export function StorefrontClient({
   const isMarketTenant = tenant.business_type === "market";
   // Sipariş Takip (/siparislerim) açık mı: market/tekel + isteyen toptancılar (bkz. hasOrderTracking).
   const orderTrackingEnabled = hasOrderTracking(tenant);
+  // İsego denemesi: belirgin "daha fazla göster" + kategori kaydırma işaretleri.
+  const enhancedNavCues = hasEnhancedNavCues(tenant);
   // Hesabım (8 Eki 2026, önce Lucatech): kişiye özel şifreyle girende başlık
   // ikonu, sepette kayıtlı adres seçimi ve ?tekrar=<sipariş> ile tekrar sipariş.
   const accountEnabled = Boolean(dealerProfile) && hasAccountPage(tenant) && !previewMode;
@@ -4449,6 +4452,7 @@ export function StorefrontClient({
       /> : <StorefrontHeader
         orderTrackingHref={orderTrackingEnabled ? "/siparislerim" : undefined}
         accountHref={accountEnabled ? "/hesabim" : undefined}
+        enhancedNavCues={enhancedNavCues}
         headerStyleKey={storefrontSettings.header_style_key ?? "standard"}
         storefrontSettings={storefrontSettings}
         storefrontTitle={storefrontTitle}
@@ -4996,6 +5000,13 @@ export function StorefrontClient({
 
                   {products.length < productTotal ? (
                     <div className="mt-8 flex justify-center">
+                      {enhancedNavCues ? (
+                        <ProminentLoadMoreButton
+                          remaining={productTotal - products.length}
+                          loading={isLoadingProducts}
+                          onClick={handleLoadMoreProducts}
+                        />
+                      ) : (
                       <button
                         type="button"
                         onClick={handleLoadMoreProducts}
@@ -5009,6 +5020,7 @@ export function StorefrontClient({
                       >
                         {t("catalog.showMore", { count: productTotal - products.length })}
                       </button>
+                      )}
                     </div>
                   ) : null}
                 </section>

@@ -38,6 +38,15 @@ export function hasAccountPage(tenant: Pick<Tenant, "business_type" | "is_tekel"
   return !isMarketOrTekelTenant(tenant);
 }
 
+// Belirgin gezinme işaretleri (8 Eki 2026, İsego isteği): kalın "Daha fazla ürün
+// göster" düğmesi + kategori şeridinde kaydırma okları/ipucu. Deneme; beğenilirse
+// tüm mağazalara açılacak (components/storefront/enhanced-nav-cues.tsx).
+const ENHANCED_NAV_CUE_SUBDOMAINS = new Set(["isego-ticaret"]);
+
+export function hasEnhancedNavCues(tenant: { subdomain: string }) {
+  return ENHANCED_NAV_CUE_SUBDOMAINS.has(tenant.subdomain);
+}
+
 const ORDER_TRACKING_SUBDOMAINS = new Set(["nailport"]);
 
 export function hasOrderTracking(

@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
+import { CategoryScrollFrame } from "@/components/storefront/enhanced-nav-cues";
 import { AnimatePresence, motion } from "framer-motion";
 import { ChevronDown, PackageSearch, Search, ShoppingCart, Store, Ticket, UserRound } from "lucide-react";
 import type { CategoryNode } from "@/lib/categories/tree";
@@ -77,6 +78,8 @@ export interface StorefrontHeaderProps {
   orderTrackingHref?: string;
   // Kişiye özel bayi şifresiyle girene "Hesabım" (8 Eki 2026, önce Lucatech).
   accountHref?: string;
+  /** İsego denemesi: kategori şeridinde kaydırma okları + ilk giriş ipucu. */
+  enhancedNavCues?: boolean;
 }
 
 function HeaderActions({
@@ -432,7 +435,11 @@ function StorefrontHeaderCategoryNav({ props }: { props: StorefrontHeaderProps }
           </div>
         ) : (
           <div className={cn("py-3 md:hidden", theme.sectionDivider)}>
-            <div className="scrollbar-hide -mx-4 flex gap-5 overflow-x-auto px-4 whitespace-nowrap">
+            <CategoryScrollFrame
+              enabled={Boolean(props.enhancedNavCues)}
+              storageKey={props.subdomain ?? props.tenantId ?? "vitrin"}
+              className="scrollbar-hide -mx-4 flex gap-5 overflow-x-auto px-4 whitespace-nowrap"
+            >
               {props.homeHref ? (
                 <a href={props.homeHref} className={theme.categoryNavMobile(false)}>
                   {t("header.allProducts")}
@@ -457,7 +464,7 @@ function StorefrontHeaderCategoryNav({ props }: { props: StorefrontHeaderProps }
                   {category.name}
                 </button>
               ))}
-            </div>
+            </CategoryScrollFrame>
 
             {props.mobileSubcategories.length ? (
               <div className="scrollbar-hide -mx-4 mt-3 flex gap-3 overflow-x-auto px-4 pb-1">
