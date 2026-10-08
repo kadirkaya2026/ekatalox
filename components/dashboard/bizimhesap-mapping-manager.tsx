@@ -220,9 +220,9 @@ export function BizimHesapMappingManager() {
             </p>
             {cardStats ? (
               <p className={cn("mt-1 text-xs font-medium", cardStats.codedCards < cardStats.mappedCards ? "text-amber-700" : "text-emerald-700")}>
-                Eşlenen {cardStats.mappedCards} BizimHesap kartının {cardStats.codedCards} tanesinde Ürün Kodu dolu.
+                Eşlenen {cardStats.mappedCards} BizimHesap kartının {cardStats.codedCards} tanesinde Ürün Kodu ya da Barkodu dolu.
                 {cardStats.codedCards < cardStats.mappedCards
-                  ? " BizimHesap ürünü koddan tanır; kodu boş kartlara sipariş gönderilmez."
+                  ? " BizimHesap ürünü kod/barkoddan tanır; ikisi de boş kartlara sipariş gönderilmez."
                   : ""}
               </p>
             ) : null}
@@ -402,7 +402,7 @@ function MappingRow({
           ) : item.mappedId ? (
             <>
               {item.codeMissing ? (
-                <span className="rounded-md bg-slate-100 px-1.5 py-0.5 text-[11px] font-medium text-slate-600" title="BizimHesap kartının Ürün Kodu boş">
+                <span className="rounded-md bg-slate-100 px-1.5 py-0.5 text-[11px] font-medium text-slate-600" title="BizimHesap kartının Ürün Kodu ve Barkodu boş">
                   Kod yok
                 </span>
               ) : null}

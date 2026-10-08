@@ -3,6 +3,7 @@ import { getSessionContext } from "@/lib/auth/session";
 import {
   bizimhesapCustomerLinkKey,
   fetchBizimHesapCustomers,
+  bizimhesapCardKey,
   fetchBizimHesapProducts,
   resolveBizimHesapPolicy,
 } from "@/lib/integrations/bizimhesap";
@@ -102,10 +103,10 @@ export async function GET(_request: Request, ctx: { params: Promise<{ orderId: s
       mappedId: mapped ? mappedId : null,
       mappedLabel: mapped ? productLabel(mapped) : null,
       // BizimHesap ürünü "Ürün Kodu" ile tanır; kodsuz karta gönderim engellenir.
-      mappedHasCode: Boolean(mapped?.code?.trim()),
+      mappedHasCode: Boolean(mapped && bizimhesapCardKey(mapped)),
       // Eşleşme kaydı var ama BizimHesap'ta kart artık yok (silinmiş).
       missingMapped: Boolean(mappedId && !mapped),
-      suggestion: suggestion ? { id: suggestion.id, label: productLabel(suggestion), hasCode: Boolean(suggestion.code?.trim()) } : null,
+      suggestion: suggestion ? { id: suggestion.id, label: productLabel(suggestion), hasCode: Boolean(bizimhesapCardKey(suggestion)) } : null,
     };
   });
 

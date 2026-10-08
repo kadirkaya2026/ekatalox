@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSessionContext } from "@/lib/auth/session";
-import { fetchBizimHesapProducts } from "@/lib/integrations/bizimhesap";
+import { bizimhesapCardKey, fetchBizimHesapProducts } from "@/lib/integrations/bizimhesap";
 import { autoMatch, buildBizimHesapIndex, type BizimHesapProduct } from "@/lib/integrations/bizimhesap-matching";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { ensureTenantAdminResponse, ensureTenantPlanFeatureResponse } from "@/lib/tenancy/guards";
@@ -155,7 +155,7 @@ export async function GET() {
   for (const item of items) {
     const card = item.mappedId ? byId.get(item.mappedId) : undefined;
     item.cardMissing = Boolean(item.mappedId && !card);
-    item.codeMissing = Boolean(card && !card.code?.trim());
+    item.codeMissing = Boolean(card && !bizimhesapCardKey(card));
     const ownCode = [item.code ?? item.name, item.variantName].filter(Boolean).join(" ");
     // Aynı ürünün renkleri tek kartta olabilir (aynı stok kodu) — yalnız farklı kodlar uyarılır.
     item.sharedWith =
@@ -164,7 +164,7 @@ export async function GET() {
         : [];
   }
   const mappedCardIds = new Set(items.map((i) => i.mappedId).filter((id): id is string => Boolean(id && byId.get(id))));
-  const codedCards = [...mappedCardIds].filter((id) => byId.get(id)?.code?.trim()).length;
+  const codedCards = [...mappedCardIds].filter((id) => { const card = byId.get(id); return Boolean(card && bizimhesapCardKey(card)); }).length;
 
   return NextResponse.json({
     cardStats: { mappedCards: mappedCardIds.size, codedCards },

@@ -91,6 +91,15 @@ export async function testBizimHesapConnection(firmId: string): Promise<{ ok: bo
   }
 }
 
+/**
+ * BizimHesap faturadaki ürünü productId ("kaynak sistem kodu") ile tanır. Kartın
+ * Ürün Kodu doluysa o, değilse Barkodu gönderilir (Lucatech: fişte kod görünmesin
+ * diye barkodla eşleştirme isteği, 8 Eki 2026). İkisi de boşsa kart tanınamaz.
+ */
+export function bizimhesapCardKey(card: { code?: string | null; barcode?: string | null }) {
+  return card.code?.trim() || card.barcode?.trim() || "";
+}
+
 /** BizimHesap stok kartları (eşleştirme ekranı ve otomatik eşleştirme için). */
 export async function fetchBizimHesapProducts(firmId: string): Promise<BizimHesapProduct[] | null> {
   if (!apiKey()) return null;
@@ -357,7 +366,7 @@ export async function sendOrderToBizimHesap(
         const card = cardByMappedId.get(resolveMapped(item) ?? "");
         const label = [item.sku_code ?? item.product_name, item.variant_name].filter(Boolean).join(" ");
         if (!card) return [`${label} (eşlendiği kart BizimHesap'ta yok)`];
-        if (!card.code?.trim()) return [`${label} (BizimHesap kartının Ürün Kodu boş: ${card.title})`];
+        if (!bizimhesapCardKey(card)) return [`${label} (BizimHesap kartının Ürün Kodu ve Barkodu boş: ${card.title})`];
         return [];
       });
       if (problems.length) {
@@ -389,15 +398,16 @@ export async function sendOrderToBizimHesap(
       return {
         // Zorunlu eşleşmede YALNIZ eşleşmiş BizimHesap kimliği gider; stok koduna
         // düşülmez (BizimHesap bilinmeyen kodla yeni ürün açar).
-        productId: mappedCard?.code?.trim()
-          ? mappedCard.code.trim()
+        productId: mappedCard && bizimhesapCardKey(mappedCard)
+          ? bizimhesapCardKey(mappedCard)
           : policy.requireProductMatch
             ? "" // yukarıda engellendi; buraya düşmez
             : item.sku_code || item.product_id || name,
         // Tanınan kartta BizimHesap'taki adı kullanılır (faturada aynı ad görünsün).
-        productName: mappedCard?.code?.trim() ? mappedCard.title : name,
+        productName: mappedCard && bizimhesapCardKey(mappedCard) ? mappedCard.title : name,
         note: item.is_gift ? "Hediye" : "",
-        barcode: "",
+        // Kart barkodla tanınıyorsa (fişte kod görünmesin diye Ürün Kodu boş) barkod da gider.
+        barcode: mappedCard?.barcode?.trim() ?? "",
         taxRate: plain(rate),
         quantity,
         unitPrice: plain(unitList / divisor),

@@ -269,7 +269,7 @@ export function BizimHesapApproveDialog({
                           {choice && !choice.hasCode ? (
                             <span className="inline-flex min-w-0 items-center gap-1.5 rounded-lg bg-rose-50 px-2.5 py-1.5 text-xs font-medium text-rose-700" title={choice.label}>
                               <CircleAlert className="size-3.5 shrink-0" />
-                              <span className="truncate">Kartın Ürün Kodu boş: {choice.label}</span>
+                              <span className="truncate">Kartın Ürün Kodu/Barkodu boş: {choice.label}</span>
                             </span>
                           ) : choice ? (
                             <span
@@ -303,7 +303,7 @@ export function BizimHesapApproveDialog({
                           onPick={(product) => {
                             setChoices((current) => ({
                               ...current,
-                              [line.key]: { id: product.id, label: product.label, source: "picked", hasCode: Boolean(product.code?.trim()) },
+                              [line.key]: { id: product.id, label: product.label, source: "picked", hasCode: Boolean(product.code?.trim() || product.barcode?.trim()) },
                             }));
                             setOpenLine(null);
                           }}
@@ -316,7 +316,7 @@ export function BizimHesapApproveDialog({
               {blocked ? (
                 <p className="mt-2 text-xs text-rose-600">
                   {unmatched.length ? `Eşleşmeyen ${unmatched.length} ürün var. ` : ""}
-                  {codeless.length ? `${codeless.length} satırın BizimHesap kartında Ürün Kodu boş (BizimHesap ürünü koddan tanır). ` : ""}
+                  {codeless.length ? `${codeless.length} satırın BizimHesap kartında Ürün Kodu ve Barkodu boş (BizimHesap ürünü bunlardan tanır). ` : ""}
                   BizimHesap&apos;ta yeni ürün açılmaması için bunlar düzelmeden gönderilemez.
                 </p>
               ) : null}
