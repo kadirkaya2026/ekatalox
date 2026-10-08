@@ -251,7 +251,7 @@ export async function sendOrderToBizimHesap(
     const { data: order } = await supabase
       .from("orders")
       .select(
-        "id, tenant_id, status, order_number, order_no, customer_name, customer_phone, customer_address, currency, total_amount, coupon_discount, items, note, payment_method, bizimhesap_guid, bizimhesap_customer_id",
+        "id, tenant_id, status, order_number, order_no, customer_name, customer_phone, customer_address, currency, total_amount, coupon_discount, items, note, payment_method, bizimhesap_guid, bizimhesap_customer_id, access_code_id",
       )
       .eq("id", orderId)
       .maybeSingle();
@@ -388,6 +388,64 @@ export async function sendOrderToBizimHesap(
       }
     }
 
+    // Liste (perakende) fiyatı: sepet kalemi original_price taşımıyor (vitrin sepeti
+    // indirimli fiyatı yazıyor; Nailport 8 Eki 2026), bu yüzden siparişin fiyat
+    // listesindeki normal fiyat DB'den okunur. Liste: girilen şifrenin listesi, yoksa
+    // mağazanın şifresiz vitrin listesi. Satır fiyatı o listedeki indirimli fiyata
+    // eşitse ve ürün indirimi açıksa, birim fiyat = liste fiyatı, fark = iskonto.
+    const listPriceByProduct = new Map<string, number>();
+    {
+      let priceListId: string | null = null;
+      if (order.access_code_id) {
+        const { data: code } = await supabase
+          .from("access_codes")
+          .select("price_list_id")
+          .eq("id", order.access_code_id)
+          .maybeSingle();
+        priceListId = code?.price_list_id ?? null;
+      }
+      if (!priceListId) {
+        const { data: tenantPublic } = await supabase
+          .from("tenants")
+          .select("public_price_list_id")
+          .eq("id", order.tenant_id)
+          .maybeSingle();
+        priceListId = tenantPublic?.public_price_list_id ?? null;
+      }
+      const plainProductIds = [
+        ...new Set(orderItems.filter((i) => i.product_id && !i.variant_id && !i.is_gift).map((i) => i.product_id!)),
+      ];
+      if (priceListId && plainProductIds.length) {
+        const [{ data: prices }, { data: discountFlags }] = await Promise.all([
+          supabase
+            .from("product_prices")
+            .select("product_id, price, discount_price")
+            .eq("price_list_id", priceListId)
+            .in("product_id", plainProductIds),
+          supabase.from("products").select("id, is_discount_active").in("id", plainProductIds),
+        ]);
+        const discountActive = new Set((discountFlags ?? []).filter((p) => p.is_discount_active).map((p) => p.id));
+        for (const row of prices ?? []) {
+          const list = Number(row.price);
+          const discounted = row.discount_price === null ? null : Number(row.discount_price);
+          if (discountActive.has(row.product_id) && discounted !== null && list > discounted) {
+            listPriceByProduct.set(row.product_id, list);
+            // Satır fiyatını doğrulamak için indirimli fiyat da saklanır (aşağıda).
+            listPriceByProduct.set(`${row.product_id}:discounted`, discounted);
+          }
+        }
+      }
+    }
+    const listPriceFor = (item: OrderItem) => {
+      const fromItem = Number(item.original_price ?? 0) || 0;
+      if (fromItem) return fromItem;
+      if (!item.product_id || item.variant_id || item.is_gift) return 0;
+      const list = listPriceByProduct.get(item.product_id) ?? 0;
+      const discounted = listPriceByProduct.get(`${item.product_id}:discounted`);
+      // Satır başka bir fiyattan (ör. kademeli/özel) geldiyse iskonto uydurulmaz.
+      return list && discounted !== undefined && Math.abs((Number(item.price) || 0) - discounted) < 0.005 ? list : 0;
+    };
+
     const rate = Number(config.vat_rate ?? 20);
     const divisor = 1 + rate / 100;
     const items = orderItems;
@@ -399,7 +457,7 @@ export async function sendOrderToBizimHesap(
       const lineNet = round2(lineTotal / divisor);
       // Liste indirimi (Vedat Bey isteği, 7 Eki 2026): birim fiyat listenin indirimsiz
       // (perakende) fiyatı, aradaki fark satır iskontosu olarak gider.
-      const listGross = Number(item.original_price ?? 0) || 0;
+      const listGross = listPriceFor(item);
       const unitList = listGross > unitGross ? listGross : unitGross;
       const lineGross = round2((unitList * quantity) / divisor);
       const lineDiscount = Math.max(0, round2(lineGross - lineNet));
