@@ -16,8 +16,8 @@ import { SectorBrandLogo } from "@/components/storefront/sector-design/sector-br
 import { setAkimDayMode, useAkimDayMode } from "@/lib/storefront/akim-mode";
 import { SectorBannerSlider } from "@/components/storefront/sector-design/sector-banner-slider";
 
-// Mobilde (≤700px) ürünleri tek sütun listeleyen mağazalar (9 Eki 2026, Autovale isteği).
-// Masaüstü ve tablet düzeni aynı kalır; kural electronics.module.css'te.
+// Mobil ve tablette (≤1023px) ürünleri tek sütun listeleyen mağazalar (9 Eki 2026, Autovale isteği).
+// Bilgisayar düzeni aynı kalır; kural electronics.module.css'te.
 const MOBILE_ONE_COLUMN_TENANT_IDS: ReadonlySet<string> = new Set([
   "322f69d3-0e11-4e28-b274-dea1fe347b51", // Autovale
 ]);
@@ -43,7 +43,7 @@ function ProductPhoto({ src, alt, priority = false, wide = false }: { src: strin
   if (src && !/^https:\/\//i.test(src) && !/^\/(?!\/)/.test(src)) return <Package size={48} aria-hidden="true" />;
   // Merchant-uploaded HTTPS images may use a host outside Next's optimizer allowlist.
   if (src && !src.startsWith("/") && !src.includes(".supabase.co/")) return <img src={src} alt={alt} className={styles.productPhoto} loading={priority ? "eager" : "lazy"} referrerPolicy="no-referrer" />;
-  return src ? <StorefrontImage src={src} alt={alt} sizes={wide ? "(max-width: 700px) 100vw, 400px" : "(max-width: 640px) 48vw, 400px"} className={styles.productPhoto} priority={priority} /> : <Package size={48} aria-hidden="true" />;
+  return src ? <StorefrontImage src={src} alt={alt} sizes={wide ? "(max-width: 700px) 100vw, (max-width: 1023px) 600px, 400px" : "(max-width: 640px) 48vw, 400px"} className={styles.productPhoto} priority={priority} /> : <Package size={48} aria-hidden="true" />;
 }
 
 export function ElectronicsStorefront(p: SectorStorefrontProps) {
