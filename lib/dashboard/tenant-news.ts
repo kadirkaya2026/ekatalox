@@ -11,7 +11,7 @@ export const TENANT_NEWS: Record<string, TenantNews> = {
   "ebeeec82-7cd9-4ab8-bea9-f3dc2a5bfe0c": {
     id: "lucatech-siparis-bizimhesap-2026-10-10",
     from: "2026-10-10",
-    until: "2026-10-31",
+    until: "2026-10-10",
     title: "Sipariş ve BizimHesap yenilikleri",
     items: [
       { icon: Pencil, title: "Düzelt", body: "Gelen siparişte adetleri değiştirebilir, ürün ekleyip çıkarabilirsiniz. Bayinin yeniden sipariş vermesine gerek yok." },
