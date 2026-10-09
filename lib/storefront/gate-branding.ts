@@ -166,6 +166,48 @@ const GATE_BRANDING: Record<string, GateBranding> = {
       },
     },
   },
+  // 9 Eki 2026: QOOP (tekstil aksesuar toptancısı) — arka plan kendi ürün fotoğraflarından
+  // (bere, şal, şapka mankenli çekimler), işaret logodaki Q harfi.
+  qoop: {
+    backgroundImage: "/gate/qoop/bg.jpg",
+    logoMark: "/gate/qoop/logo-mark.png",
+    wordmark: "QOOP",
+    accentColor: "#B23A3A",
+    copy: {
+      tr: {
+        eyebrow: "Bayi Portalı",
+        headline: "Sezonun Şık Aksesuarları.",
+        tagline:
+          "Şaldan bereye, eldivenden fular ve şapkaya; QOOP yeni sezon koleksiyonunun güncel toptan fiyat listesi bayilerimize özel.",
+        chips: ["Şal", "Bere", "Eldiven", "Fular", "Şapka", "Panço"],
+        helpLine: "Şifreniz yok mu? WhatsApp'tan bize yazın.",
+      },
+      en: {
+        eyebrow: "Dealer Portal",
+        headline: "The Season's Finest Accessories.",
+        tagline:
+          "From shawls to beanies, gloves to scarves and hats; the current wholesale price list of the new QOOP collection, exclusively for our dealers.",
+        chips: ["Shawls", "Beanies", "Gloves", "Scarves", "Hats", "Ponchos"],
+        helpLine: "No password? Message us on WhatsApp.",
+      },
+      de: {
+        eyebrow: "Händlerportal",
+        headline: "Die schönsten Accessoires der Saison.",
+        tagline:
+          "Von Schals bis Mützen, von Handschuhen bis Tüchern und Hüten; die aktuelle Großhandelspreisliste der neuen QOOP-Kollektion, exklusiv für unsere Händler.",
+        chips: ["Schals", "Mützen", "Handschuhe", "Tücher", "Hüte", "Ponchos"],
+        helpLine: "Kein Passwort? Schreiben Sie uns über WhatsApp.",
+      },
+      ru: {
+        eyebrow: "Портал дилера",
+        headline: "Самые стильные аксессуары сезона.",
+        tagline:
+          "От шалей до шапок, от перчаток до платков и шляп; актуальный оптовый прайс-лист новой коллекции QOOP только для наших дилеров.",
+        chips: ["Шали", "Шапки", "Перчатки", "Платки", "Шляпы", "Пончо"],
+        helpLine: "Нет пароля? Напишите нам в WhatsApp.",
+      },
+    },
+  },
   // Moda/tekstil demo vitrini (VELIRA, 28 Eyl 2026). Arka plan gerçek ürün
   // fotoğraflarından derlendi (~/setre-aktarim/velira).
   "demo-giyim": {
