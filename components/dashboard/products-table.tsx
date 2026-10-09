@@ -175,6 +175,8 @@ function isThumbnailOptimizable(url: string) {
   return url.includes(".supabase.co/storage/v1/object/public/") && !/\.svg($|\?)/i.test(url);
 }
 
+const MOBILE_CARD_STEP = 24;
+
 export function ProductsTable({
   highlightedProductId = null,
   isTekel = false,
@@ -243,6 +245,18 @@ export function ProductsTable({
   // görünür olacağı için ikisi de aynı ref'e yazıyor, sonuncusu kazanmıyor:
   // gizli olan scrollIntoView'da zaten viewport dışında sayılmaz.
   const highlightedRowRef = useRef<HTMLElement | null>(null);
+
+  // Mobil kart listesi parça parça (9 Eki 2026): 100 kart birden iPhone'da
+  // (Lucatech, Börü Tech) sayfayı anında çökertiyordu; tek ürünle açılıyordu.
+  // Liste değişince (sayfa/arama/filtre) yine ilk parçadan başlar; vurgulanan
+  // ürün her zaman görünür kalır.
+  const mobileListKey = `${filteredProducts.length}:${filteredProducts[0]?.id ?? ""}`;
+  const [mobileLimitState, setMobileLimitState] = useState({ key: mobileListKey, limit: MOBILE_CARD_STEP });
+  const mobileLimit = mobileLimitState.key === mobileListKey ? mobileLimitState.limit : MOBILE_CARD_STEP;
+  const highlightedIndex = highlightedProductId
+    ? filteredProducts.findIndex((product) => product.id === highlightedProductId)
+    : -1;
+  const visibleMobileCount = Math.min(filteredProducts.length, Math.max(mobileLimit, highlightedIndex + 1));
 
   useEffect(() => {
     if (!highlightedProductId) {
@@ -499,7 +513,7 @@ export function ProductsTable({
       ) : null}
 
       <div className="grid gap-3 p-4 md:hidden">
-        {filteredProducts.map((product, index) => (
+        {filteredProducts.slice(0, visibleMobileCount).map((product, index) => (
           <Card
             key={product.id}
             ref={
@@ -651,6 +665,17 @@ export function ProductsTable({
             </div>
           </Card>
         ))}
+        {visibleMobileCount < filteredProducts.length ? (
+          <Button
+            variant="secondary"
+            className="w-full"
+            onClick={() =>
+              setMobileLimitState({ key: mobileListKey, limit: visibleMobileCount + MOBILE_CARD_STEP })
+            }
+          >
+            Daha fazla göster ({visibleMobileCount} / {filteredProducts.length})
+          </Button>
+        ) : null}
       </div>
     </>
   );
