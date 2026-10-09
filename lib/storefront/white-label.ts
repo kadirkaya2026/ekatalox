@@ -1,19 +1,15 @@
 import type { Tenant } from "@/lib/types";
 
-// Market ve tekel bayilerinin vitrinlerinde eKatalox markası hiç
-// görünmemeli (kullanıcı isteği, 21 Ağu 2026). Bu iki şeyi kapatır:
-//   1) sayfanın altındaki "eKatalox ürünüdür" rozeti
-//      (StorefrontPoweredByBar — daha önce bilerek kaldırılamaz
-//       yapılmıştı, bkz. o dosyadaki yorum)
-//   2) sekme başlığındaki "| eKatalox" eki (kök layout'taki
-//      title template'i)
-//
-// Kapı, mobil anasayfa sıralamasıyla aynı: market VEYA tekel işaretli
-// bayiler.
+// Beyaz etiket (eKatalox markasını gizleme) şu an HİÇBİR mağazada yok.
+// 21 Ağu 2026'da market ve tekel vitrinlerinde gizlenmişti; 9 Eki 2026'da
+// kullanıcı isteğiyle kaldırıldı: "Powered by eKatalox" rozeti, sekme
+// başlığındaki "| eKatalox" eki ve varsayılan ikon artık bütün mağazalarda
+// aynı. Tekrar açılırsa kapı burası (çağıranlar hidePoweredBy / title / icon).
 export function isWhiteLabelStorefront(
-  tenant: Pick<Tenant, "business_type" | "is_tekel"> | null | undefined,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- imza çağıranlar için korunuyor
+  _tenant: Pick<Tenant, "business_type" | "is_tekel"> | null | undefined,
 ): boolean {
-  return isMarketOrTekelTenant(tenant);
+  return false;
 }
 
 // "Market veya tekel bayii mi?" sorusunun tek kaynağı. Beyaz etiket,
