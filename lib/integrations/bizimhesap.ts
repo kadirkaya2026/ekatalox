@@ -293,7 +293,7 @@ export async function sendOrderToBizimHesap(
     const { data: order } = await supabase
       .from("orders")
       .select(
-        "id, tenant_id, status, order_number, order_no, customer_name, customer_phone, customer_address, currency, total_amount, coupon_discount, items, note, payment_method, bizimhesap_guid, bizimhesap_customer_id, access_code_id",
+        "id, tenant_id, status, order_number, order_no, customer_name, customer_phone, customer_address, currency, total_amount, coupon_discount, items, note, payment_method, bizimhesap_guid, bizimhesap_customer_id, bizimhesap_line_warehouses, access_code_id",
       )
       .eq("id", orderId)
       .maybeSingle();
@@ -495,7 +495,15 @@ export async function sendOrderToBizimHesap(
     const divisor = 1 + rate / 100;
     const items = orderItems;
 
-    const details = items.map((item) => {
+    // Satır deposu: onay penceresinde bu sipariş için seçilen (0169), yoksa ürünün deposu (0168).
+    const lineWarehouses = (order.bizimhesap_line_warehouses ?? {}) as Record<string, string>;
+    const warehouseFor = (item: OrderItem, position: number) =>
+      String(position) in lineWarehouses
+        ? lineWarehouses[String(position)] || undefined
+        : item.product_id
+          ? warehouseByProduct.get(item.product_id)
+          : undefined;
+    const details = items.map((item, position) => {
       const quantity = Number(item.quantity ?? 0) || 0;
       const unitGross = Number(item.price ?? 0) || 0; // KDV dahil
       const lineTotal = round2(unitGross * quantity);
@@ -524,7 +532,7 @@ export async function sendOrderToBizimHesap(
         // Kart barkodla tanınıyorsa (fişte kod görünmesin diye Ürün Kodu boş) barkod da gider.
         barcode: mappedCard?.barcode?.trim() ?? "",
         // Satırın deposu (0168). Alan adı: BizimHesap satış fişi ekranının gönderdiği ad.
-        ...warehouseField(item.product_id ? warehouseByProduct.get(item.product_id) : undefined),
+        ...warehouseField(warehouseFor(item, position)),
         taxRate: plain(rate),
         quantity,
         unitPrice: plain(unitList / divisor),

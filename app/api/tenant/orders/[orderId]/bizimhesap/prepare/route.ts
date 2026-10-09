@@ -5,6 +5,7 @@ import {
   fetchBizimHesapCustomers,
   bizimhesapCardKey,
   fetchBizimHesapProducts,
+  fetchBizimHesapWarehouses,
   resolveBizimHesapPolicy,
   isBizimHesapBusinessAllowed,
 } from "@/lib/integrations/bizimhesap";
@@ -50,7 +51,7 @@ async function loadContext(orderId: string) {
   }
   const { data: order } = await supabase
     .from("orders")
-    .select("id, status, items, access_code_id, customer_name, customer_phone, bizimhesap_customer_id, bizimhesap_guid")
+    .select("id, status, items, access_code_id, customer_name, customer_phone, bizimhesap_customer_id, bizimhesap_guid, bizimhesap_line_warehouses")
     .eq("tenant_id", tenantId)
     .eq("id", orderId)
     .maybeSingle();
@@ -63,7 +64,12 @@ export async function GET(_request: Request, ctx: { params: Promise<{ orderId: s
   const c = await loadContext(orderId);
   if ("error" in c) return c.error;
 
-  const [customers, bhProducts] = await Promise.all([fetchBizimHesapCustomers(c.firmId), fetchBizimHesapProducts(c.firmId)]);
+  const [customers, bhProducts, warehouses] = await Promise.all([
+    fetchBizimHesapCustomers(c.firmId),
+    fetchBizimHesapProducts(c.firmId),
+    fetchBizimHesapWarehouses(c.firmId),
+  ]);
+  const lineWarehouses = (c.order.bizimhesap_line_warehouses ?? {}) as Record<string, string>;
   if (!customers || !bhProducts) {
     return NextResponse.json({ error: "BizimHesap listesi alınamadı; birazdan tekrar deneyin." }, { status: 502 });
   }
@@ -71,17 +77,20 @@ export async function GET(_request: Request, ctx: { params: Promise<{ orderId: s
   const byId = new Map(active.map((p) => [p.id, p]));
   const index = buildBizimHesapIndex(active);
 
-  const items = ((Array.isArray(c.order.items) ? c.order.items : []) as OrderItem[]).filter((item) => item.product_id);
+  // Satır anahtarı = order.items içindeki sıra (gönderimde de aynı sıra kullanılır).
+  const items = ((Array.isArray(c.order.items) ? c.order.items : []) as OrderItem[])
+    .map((item, position) => ({ ...item, position }))
+    .filter((item) => item.product_id);
   const productIds = [...new Set(items.map((i) => i.product_id!))];
   const variantIds = [...new Set(items.map((i) => i.variant_id).filter((v): v is string => Boolean(v)))];
   const [{ data: products }, { data: variants }] = await Promise.all([
-    c.supabase.from("products").select("id, sku_code, image_url, bizimhesap_product_id").in("id", productIds.length ? productIds : ["00000000-0000-0000-0000-000000000000"]),
+    c.supabase.from("products").select("id, sku_code, image_url, bizimhesap_product_id, bizimhesap_warehouse_id").in("id", productIds.length ? productIds : ["00000000-0000-0000-0000-000000000000"]),
     c.supabase.from("product_variants").select("id, bizimhesap_product_id").in("id", variantIds.length ? variantIds : ["00000000-0000-0000-0000-000000000000"]),
   ]);
   const productMap = new Map((products ?? []).map((p) => [p.id, p]));
   const variantMap = new Map((variants ?? []).map((v) => [v.id, v]));
 
-  const lines = items.map((item, index_) => {
+  const lines = items.map((item) => {
     const product = productMap.get(item.product_id!);
     const variant = item.variant_id ? variantMap.get(item.variant_id) : undefined;
     const mappedId = variant?.bizimhesap_product_id ?? product?.bizimhesap_product_id ?? null;
@@ -92,7 +101,9 @@ export async function GET(_request: Request, ctx: { params: Promise<{ orderId: s
       : autoMatch(index, { code, name: item.product_name ?? "", variantName: item.variant_name ?? null }) ??
         (item.variant_id ? null : autoMatch(index, { code, name: item.product_name ?? "" }));
     return {
-      key: `${index_}`,
+      key: `${item.position}`,
+      // Bu siparişte seçilen depo; yoksa ürünün varsayılan deposu ("" = BizimHesap varsayılanı).
+      warehouseId: (item.position.toString() in lineWarehouses ? lineWarehouses[item.position.toString()] : product?.bizimhesap_warehouse_id) || null,
       // Varyant satırı varyanta, düz ürün ürüne eşlenir.
       kind: item.variant_id ? ("variant" as const) : ("product" as const),
       id: item.variant_id ?? item.product_id!,
@@ -135,6 +146,7 @@ export async function GET(_request: Request, ctx: { params: Promise<{ orderId: s
       code: (cu as { code?: string | null }).code ?? null,
       phone: cu.phone ?? null,
     })),
+    warehouses: warehouses ?? [],
     products: active.map((p) => ({ id: p.id, code: p.code, barcode: p.barcode, title: p.title, variantName: p.variantName, label: productLabel(p) })),
     lines,
     selectedCustomerId,
@@ -151,6 +163,7 @@ export async function PUT(request: Request, ctx: { params: Promise<{ orderId: st
   const body = (await request.json().catch(() => null)) as {
     customerId?: unknown;
     lines?: Array<{ kind?: unknown; id?: unknown; bizimhesapProductId?: unknown }>;
+    warehouses?: Record<string, unknown>;
   } | null;
 
   const customerId = typeof body?.customerId === "string" && body.customerId.trim() ? body.customerId.trim() : null;
@@ -179,9 +192,29 @@ export async function PUT(request: Request, ctx: { params: Promise<{ orderId: st
       .eq("id", id);
   }
 
+  // Satır depoları (0169): yalnız bu siparişin satırları ve BizimHesap'ta var olan depolar.
+  let lineWarehouses: Record<string, string> | undefined;
+  if (body?.warehouses && typeof body.warehouses === "object") {
+    const known = await fetchBizimHesapWarehouses(c.firmId);
+    if (!known) return NextResponse.json({ error: "BizimHesap depo listesi alınamadı; tekrar deneyin." }, { status: 502 });
+    const knownIds = new Set(known.map((w) => w.id));
+    lineWarehouses = {};
+    for (const [key, value] of Object.entries(body.warehouses)) {
+      const position = Number(key);
+      if (!Number.isInteger(position) || position < 0 || position >= items.length) continue;
+      const id = typeof value === "string" ? value.trim() : "";
+      if (id && !knownIds.has(id)) return NextResponse.json({ error: "Seçilen depo BizimHesap'ta bulunamadı; listeyi yenileyin." }, { status: 400 });
+      lineWarehouses[String(position)] = id;
+    }
+  }
+
   await c.supabase
     .from("orders")
-    .update({ bizimhesap_customer_id: customerId, bizimhesap_customer_title: customerTitle })
+    .update({
+      bizimhesap_customer_id: customerId,
+      bizimhesap_customer_title: customerTitle,
+      ...(lineWarehouses ? { bizimhesap_line_warehouses: lineWarehouses } : {}),
+    })
     .eq("tenant_id", c.tenantId)
     .eq("id", orderId);
 

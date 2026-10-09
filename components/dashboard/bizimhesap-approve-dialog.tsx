@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { CheckCircle2, CircleAlert, Loader2, RefreshCw, Search, Sparkles, UserRound, X } from "lucide-react";
+import { CheckCircle2, CircleAlert, Loader2, RefreshCw, Search, Sparkles, UserRound, Warehouse, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { matchKey } from "@/lib/integrations/bizimhesap-matching";
@@ -27,8 +27,11 @@ type Line = {
   mappedHasCode: boolean;
   missingMapped: boolean;
   suggestion: { id: string; label: string; hasCode: boolean } | null;
+  /** Satırın BizimHesap deposu: siparişte seçilen ya da ürünün varsayılanı (null = BizimHesap varsayılanı). */
+  warehouseId: string | null;
 };
 type Prepared = {
+  warehouses: Array<{ id: string; title: string }>;
   customers: Customer[];
   products: BhProduct[];
   lines: Line[];
@@ -59,6 +62,7 @@ export function BizimHesapApproveDialog({
   const [customerSearch, setCustomerSearch] = useState("");
   const [choices, setChoices] = useState<Record<string, Choice | null>>({});
   const [openLine, setOpenLine] = useState<string | null>(null);
+  const [warehouseChoices, setWarehouseChoices] = useState<Record<string, string>>({});
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -80,6 +84,12 @@ export function BizimHesapApproveDialog({
           else if (line.suggestion) next[line.key] = { ...line.suggestion, source: "suggestion" };
           else next[line.key] = null;
         }
+        return next;
+      });
+      // Depo: kullanıcının bu pencerede değiştirdiği korunur, gerisi sunucudan.
+      setWarehouseChoices((current) => {
+        const next: Record<string, string> = {};
+        for (const line of prepared.lines) next[line.key] = line.key in current ? current[line.key] : (line.warehouseId ?? "");
         return next;
       });
     } catch (err) {
@@ -120,7 +130,7 @@ export function BizimHesapApproveDialog({
       const response = await fetch(`/api/tenant/orders/${orderId}/bizimhesap/prepare`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ customerId, lines: changed }),
+        body: JSON.stringify({ customerId, lines: changed, warehouses: warehouseChoices }),
       });
       const json = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(json.error ?? "Kaydedilemedi.");
@@ -296,6 +306,27 @@ export function BizimHesapApproveDialog({
                           </button>
                         </div>
                       </div>
+                      {data.warehouses.length ? (
+                        <label className="mt-2 flex items-center gap-2 text-xs text-slate-500 sm:pl-[3.25rem]">
+                          <Warehouse className="size-3.5 shrink-0" />
+                          <span className="shrink-0">Depo:</span>
+                          <select
+                            value={warehouseChoices[line.key] ?? ""}
+                            onChange={(event) => setWarehouseChoices((current) => ({ ...current, [line.key]: event.target.value }))}
+                            className={cn(
+                              "h-8 min-w-0 max-w-[16rem] rounded-lg border bg-white px-2 text-xs",
+                              warehouseChoices[line.key] ? "border-indigo-200 font-medium text-indigo-700" : "border-slate-200 text-slate-600",
+                            )}
+                          >
+                            <option value="">Varsayılan depo</option>
+                            {data.warehouses.map((w) => (
+                              <option key={w.id} value={w.id}>
+                                {w.title}
+                              </option>
+                            ))}
+                          </select>
+                        </label>
+                      ) : null}
                       {openLine === line.key ? (
                         <ProductPicker
                           products={data.products}
