@@ -512,7 +512,7 @@ export function ProductsTable({
         </div>
       ) : null}
 
-      <div className="grid gap-3 p-4 md:hidden">
+      <div className="grid grid-cols-1 gap-3 p-3 md:hidden">
         {filteredProducts.slice(0, visibleMobileCount).map((product, index) => (
           <Card
             key={product.id}
@@ -524,44 +524,29 @@ export function ProductsTable({
                 : undefined
             }
             className={cn(
+              // min-w-0 + overflow-hidden: uzun ad/düğme kartı ekrandan taşırmasın.
               // Ekran dışındaki kartlar çizilmez (100 kartlık mobil listede iOS bellek yükü).
-              "p-4 [content-visibility:auto] [contain-intrinsic-size:auto_560px]",
+              "min-w-0 overflow-hidden p-3 [content-visibility:auto] [contain-intrinsic-size:auto_300px]",
               product.id === highlightedProductId &&
                 "bg-amber-50 ring-2 ring-amber-400 dark:bg-amber-900/20",
             )}
           >
-            <div className="mb-3 flex items-center justify-between">
-              <label className="flex items-center gap-2 text-sm text-muted-foreground">
-                <input
-                  type="checkbox"
-                  className="size-5 cursor-pointer accent-emerald-600"
-                  checked={selectedProductIds.includes(product.id)}
-                  onChange={() => onToggleSelect(product.id)}
-                />
-                Seç
-              </label>
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <GripVertical className="size-4" />
-                <span className="shrink-0">Sıra</span>
-                <ProductOrderInput
-                  displayOrder={product.display_order}
-                  maxOrder={grandTotal}
-                  disabled={isOrderSaving}
-                  productName={product.product_name}
-                  onCommit={(targetOrder) => onSetOrder(product.id, targetOrder)}
-                />
-              </div>
-            </div>
-
-            <div className="flex gap-3">
-              <div className="relative h-20 w-20 overflow-hidden rounded-xl bg-slate-100">
+            <div className="flex items-start gap-3">
+              <input
+                type="checkbox"
+                aria-label={`${product.product_name} seç`}
+                className="mt-1 size-5 shrink-0 cursor-pointer accent-emerald-600"
+                checked={selectedProductIds.includes(product.id)}
+                onChange={() => onToggleSelect(product.id)}
+              />
+              <div className="relative size-16 shrink-0 overflow-hidden rounded-lg bg-slate-100">
                 {product.image_url ? (
                   <Image
                     src={product.image_url}
                     alt={product.product_name}
                     fill
                     className="object-cover"
-                    sizes="80px"
+                    sizes="64px"
                     unoptimized={!isThumbnailOptimizable(product.image_url)}
                   />
                 ) : (
@@ -573,11 +558,13 @@ export function ProductsTable({
                 )}
               </div>
               <div className="min-w-0 flex-1">
-                <p className="font-semibold text-foreground">{product.product_name}</p>
-                <p className="mt-1 text-sm text-muted-foreground">
+                <p className="line-clamp-2 break-words text-sm font-semibold leading-snug text-foreground">
+                  {product.product_name}
+                </p>
+                <p className="mt-0.5 truncate text-xs text-muted-foreground">
                   {product.sku_code} • {product.currency}
                 </p>
-                <div className="mt-2">
+                <div className="mt-1">
                   {inlineCategoryProductId === product.id ? (
                     <select
                       autoFocus
@@ -601,65 +588,86 @@ export function ProductsTable({
                     <button
                       type="button"
                       onClick={() => onInlineCategoryEditStart(product.id)}
-                      className="flex items-center gap-1 text-sm text-muted-foreground underline-offset-2 hover:underline"
+                      className="flex max-w-full items-center gap-1 text-xs text-muted-foreground underline-offset-2 hover:underline"
                     >
-                      <span>{categoryNameMap.get(product.category_id) ?? "Kategori yok"}</span>
-                      <PencilLine className="size-3 text-slate-400" />
+                      <span className="truncate">{categoryNameMap.get(product.category_id) ?? "Kategori yok"}</span>
+                      <PencilLine className="size-3 shrink-0 text-slate-400" />
                     </button>
                   )}
                 </div>
-                <div className="mt-2 flex flex-wrap gap-1">
+                <div className="mt-1.5 flex flex-wrap gap-1">
                   {renderStockBadge(product)}
+                  {renderVariantCountBadge(product)}
                   {renderAlcoholBadge(product, isTekel)}
                   {renderOverLimitBadge(product)}
                 </div>
-                <div className="mt-2">{renderVariantCountBadge(product)}</div>
               </div>
             </div>
 
-            <div className="mt-4 flex gap-2">
-              <button
-                type="button"
-                onClick={() => onMoveProduct(product.id, "up")}
-                disabled={index === 0 || isOrderSaving}
-                className="flex-1 rounded-lg border border-border px-3 py-2 text-sm font-medium text-muted-foreground disabled:opacity-40"
-              >
-                Yukarı taşı
-              </button>
-              <button
-                type="button"
-                onClick={() => onMoveProduct(product.id, "down")}
-                disabled={index === filteredProducts.length - 1 || isOrderSaving}
-                className="flex-1 rounded-lg border border-border px-3 py-2 text-sm font-medium text-muted-foreground disabled:opacity-40"
-              >
-                Aşağı taşı
-              </button>
+            {pricedLists.length ? (
+              <div className="mt-3 grid grid-cols-3 gap-x-2 gap-y-2 rounded-lg bg-muted/60 px-3 py-2">
+                {pricedLists.map((list) => (
+                  <div key={list.id} className="min-w-0">
+                    <p className="truncate text-[11px] text-muted-foreground">{getPriceListDisplayName(list)}</p>
+                    <div className="text-sm">{renderProductListPrice(product, list.id)}</div>
+                  </div>
+                ))}
+              </div>
+            ) : null}
+
+            <div className="mt-3 flex items-center justify-between gap-2 text-xs text-muted-foreground">
+              <div className="flex items-center gap-1.5">
+                <GripVertical className="size-4 shrink-0" />
+                <span>Sıra</span>
+                <ProductOrderInput
+                  displayOrder={product.display_order}
+                  maxOrder={grandTotal}
+                  disabled={isOrderSaving}
+                  productName={product.product_name}
+                  onCommit={(targetOrder) => onSetOrder(product.id, targetOrder)}
+                />
+              </div>
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  aria-label="Yukarı taşı"
+                  onClick={() => onMoveProduct(product.id, "up")}
+                  disabled={index === 0 || isOrderSaving}
+                  className="flex size-9 items-center justify-center rounded-lg border border-border disabled:opacity-40"
+                >
+                  <ArrowUp className="size-4" />
+                </button>
+                <button
+                  type="button"
+                  aria-label="Aşağı taşı"
+                  onClick={() => onMoveProduct(product.id, "down")}
+                  disabled={index === filteredProducts.length - 1 || isOrderSaving}
+                  className="flex size-9 items-center justify-center rounded-lg border border-border disabled:opacity-40"
+                >
+                  <ArrowDown className="size-4" />
+                </button>
+              </div>
             </div>
 
-            <div className="mt-4 grid grid-cols-1 gap-2 rounded-xl bg-muted/60 p-3 sm:grid-cols-3">
-              {pricedLists.map((list) => (
-                <div key={list.id} className="text-center">
-                  <p className="text-xs text-muted-foreground">{getPriceListDisplayName(list)}</p>
-                  <div className="mt-1 text-sm">{renderProductListPrice(product, list.id)}</div>
-                </div>
-              ))}
-            </div>
-
-            <div className="mt-4 flex gap-2">
-              <Button variant="secondary" className="flex-1" onClick={() => onOpenVariantMatrix(product)}>
+            <div className="mt-3 grid grid-cols-2 gap-2">
+              <Button variant="secondary" className="min-w-0 px-2 py-2" onClick={() => onOpenVariantMatrix(product)}>
+                <Layers className="size-4 shrink-0" />
                 Varyant
               </Button>
-              <Button variant="secondary" className="flex-1" onClick={() => onToggleStock(product)} disabled={Boolean(product.track_stock)}>
+              <Button variant="secondary" className="min-w-0 px-2 py-2" onClick={() => onToggleStock(product)} disabled={Boolean(product.track_stock)}>
+                {product.is_in_stock ? <PackageX className="size-4 shrink-0" /> : <PackageCheck className="size-4 shrink-0" />}
                 {product.is_in_stock ? "Stoğu kapat" : "Stoğu aç"}
               </Button>
-              <Button variant="secondary" className="flex-1" onClick={() => onOpenEdit(product)}>
+              <Button variant="secondary" className="min-w-0 px-2 py-2" onClick={() => onOpenEdit(product)}>
+                <PencilLine className="size-4 shrink-0" />
                 Düzenle
               </Button>
               <Button
                 variant="secondary"
-                className="flex-1 border-red-200 text-red-700 hover:bg-red-50"
+                className="min-w-0 border-red-200 px-2 py-2 text-red-700 hover:bg-red-50"
                 onClick={() => onRequestDelete(product)}
               >
+                <Trash2 className="size-4 shrink-0" />
                 Sil
               </Button>
             </div>
