@@ -19,14 +19,20 @@ const API_BASE = "https://bizimhesap.com/api/b2b/";
 // SABİT KURAL (8 Eki 2026, Lucatech): ayarlardan bağımsız. Yalnız panelde
 // ONAYLANAN siparişler aktarılır (elle "Tekrar gönder" dahil); eşleşmeyen ürün
 // varsa gönderilmez — BizimHesap'ta ASLA ürün açılmaz; cari her zaman "eKatalox".
-const ENFORCED_POLICIES: Record<string, { sendOn: "confirmed"; requireProductMatch: true; fixedCustomerTitle: string }> = {
-  "ebeeec82-7cd9-4ab8-bea9-f3dc2a5bfe0c": { sendOn: "confirmed", requireProductMatch: true, fixedCustomerTitle: "eKatalox" },
+// omitInvoiceNo (10 Eki 2026, Lucatech): fişte "EKX-100286" belge numarası istenmiyor.
+const ENFORCED_POLICIES: Record<
+  string,
+  { sendOn: "confirmed"; requireProductMatch: true; fixedCustomerTitle: string; omitInvoiceNo: boolean }
+> = {
+  "ebeeec82-7cd9-4ab8-bea9-f3dc2a5bfe0c": { sendOn: "confirmed", requireProductMatch: true, fixedCustomerTitle: "eKatalox", omitInvoiceNo: true },
 };
 
 export type BizimHesapPolicy = {
   sendOn: "order" | "confirmed";
   requireProductMatch: boolean;
   fixedCustomerTitle: string | null;
+  /** true: belge numarası (EKX-…) gönderilmez; BizimHesap kendi numarasını kullanır. */
+  omitInvoiceNo: boolean;
   /** true: kurallar mağazaya sabitlenmiş, panelden değiştirilemez. */
   locked: boolean;
 };
@@ -42,6 +48,7 @@ export function resolveBizimHesapPolicy(
     sendOn: config?.send_on === "confirmed" ? "confirmed" : "order",
     requireProductMatch: Boolean(config?.require_product_match),
     fixedCustomerTitle: config?.fixed_customer_title?.trim() || null,
+    omitInvoiceNo: false,
     locked: false,
   };
 }
@@ -605,10 +612,11 @@ export async function sendOrderToBizimHesap(
 
     const now = new Date().toISOString();
     const localNow = istanbulDateTime(new Date());
+    const orderInvoiceNo = order.order_no ? `EKX-${order.order_no}` : (order.order_number ?? "");
     const body = {
       firmId: config.firm_id,
       // Panelde görünen sipariş numarasıyla eşleşsin: EKX-100003 (iç kod okunaksızdı).
-      invoiceNo: order.order_no ? `EKX-${order.order_no}` : (order.order_number ?? ""),
+      invoiceNo: policy.omitInvoiceNo ? "" : orderInvoiceNo,
       invoiceType: 3,
       note: [
         `eKatalox siparişi${order.order_no ? ` #${order.order_no}` : ""}`,
@@ -648,6 +656,12 @@ export async function sendOrderToBizimHesap(
     const rejected = status !== 200 || Boolean(typeof json?.error === "string" && json.error) || !(typeof json?.guid === "string" && json.guid);
     if (existing && rejected) {
       ({ status, json, text } = await callBizimHesap("addinvoice", config.firm_id, { ...body, customer: fallbackCustomer }));
+    }
+    // Belge numarasız gönderim reddedilirse sipariş aktarımı kırılmasın: numarayla bir kez daha.
+    const stillRejected =
+      status !== 200 || Boolean(typeof json?.error === "string" && json.error) || !(typeof json?.guid === "string" && json.guid);
+    if (policy.omitInvoiceNo && stillRejected && orderInvoiceNo) {
+      ({ status, json, text } = await callBizimHesap("addinvoice", config.firm_id, { ...body, invoiceNo: orderInvoiceNo }));
     }
     const error = typeof json?.error === "string" ? json.error : "";
     const guid = typeof json?.guid === "string" ? json.guid : "";
