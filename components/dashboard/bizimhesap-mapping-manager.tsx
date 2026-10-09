@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { CheckCircle2, CircleAlert, Link2, Loader2, RefreshCw, Search, Sparkles, TriangleAlert, Unlink, Wand2, X } from "lucide-react";
+import { CheckCircle2, CircleAlert, Link2, Loader2, RefreshCw, Search, Sparkles, TriangleAlert, Unlink, Wand2, Warehouse, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -15,6 +15,9 @@ import { cn } from "@/lib/utils";
 
 // Ürünler > BizimHesap Eşleştirme (8 Eki 2026, Lucatech). Her eKatalox ürünü /
 // varyantı için BizimHesap stok kartı seçilir; siparişte o kart gider.
+
+type WarehouseOption = { id: string; title: string };
+type CategoryOption = { id: string; name: string; parentId: string | null };
 
 type BhOption = { id: string; code: string | null; barcode: string | null; title: string; variantName: string | null; label: string };
 
@@ -33,6 +36,7 @@ type MappingItem = {
   cardMissing: boolean;
   codeMissing: boolean;
   sharedWith: string[];
+  warehouseId: string | null;
 };
 
 type Filter = "problem" | "all" | "unmatched" | "suggested" | "matched";
@@ -61,6 +65,10 @@ export function BizimHesapMappingManager() {
   const [notice, setNotice] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [cardStats, setCardStats] = useState<{ mappedCards: number; codedCards: number } | null>(null);
+  const [warehouses, setWarehouses] = useState<WarehouseOption[]>([]);
+  const [categories, setCategories] = useState<CategoryOption[]>([]);
+  const [bulkCategory, setBulkCategory] = useState("");
+  const [bulkWarehouse, setBulkWarehouse] = useState("");
 
   async function load() {
     setError(null);
@@ -72,6 +80,8 @@ export function BizimHesapMappingManager() {
       const loaded = json.items as MappingItem[];
       setItems(loaded);
       setCardStats(json.cardStats ?? null);
+      setWarehouses((json.warehouses ?? []) as WarehouseOption[]);
+      setCategories((json.categories ?? []) as CategoryOption[]);
       // Sorun varsa sayfa "Sorunlu" filtresiyle açılır (ilk yüklemede).
       setFilter((current) => (current === "unmatched" && loaded.some(isProblem) ? "problem" : current));
     } catch (err) {
@@ -150,6 +160,33 @@ export function BizimHesapMappingManager() {
       setNotice(err instanceof Error ? err.message : "Kaydedilemedi.");
     } finally {
       setBusyRow(null);
+    }
+  }
+
+  // Depo (0168) ürün düzeyinde tutulur: bir varyantta seçilen depo o ürünün tüm satırlarına yazılır.
+  async function setWarehouse(payload: { productId: string } | { categoryId: string }, warehouseId: string | null, rowKey?: string) {
+    if (rowKey) setBusyRow(rowKey);
+    else setBulkBusy(true);
+    setNotice(null);
+    try {
+      const response = await fetch("/api/tenant/integrations/bizimhesap/mapping", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...payload, warehouseId }),
+      });
+      const json = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(json.error ?? "Kaydedilemedi.");
+      const updated = new Set<string>(json.updated ?? []);
+      setItems((current) => (current ?? []).map((row) => (updated.has(row.productId) ? { ...row, warehouseId } : row)));
+      if (!rowKey) {
+        const name = warehouses.find((w) => w.id === warehouseId)?.title ?? "varsayılan depo";
+        setNotice(`${updated.size} ürün "${name}" deposuna ayarlandı.`);
+      }
+    } catch (err) {
+      setNotice(err instanceof Error ? err.message : "Kaydedilemedi.");
+    } finally {
+      if (rowKey) setBusyRow(null);
+      else setBulkBusy(false);
     }
   }
 
@@ -267,6 +304,55 @@ export function BizimHesapMappingManager() {
         {notice ? <p className="mt-3 text-sm text-slate-700">{notice}</p> : null}
       </Card>
 
+      {warehouses.length ? (
+        <Card className="p-5">
+          <div className="flex items-start gap-3">
+            <Warehouse className="mt-0.5 size-5 shrink-0 text-slate-500" />
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-semibold text-slate-900">Satış deposu</p>
+              <p className="mt-0.5 text-xs text-slate-500">
+                Onaylanan siparişte her ürün seçtiğiniz BizimHesap deposundan fişlenir. Seçilmeyen ürünler BizimHesap&apos;taki
+                varsayılan depodan çıkar. Bir kategorinin (alt kategorileri dahil) tüm ürünlerine tek seferde depo atayabilir,
+                aşağıdaki listeden ürün ürün değiştirebilirsiniz.
+              </p>
+              <div className="mt-3 flex flex-col gap-2 md:flex-row">
+                <select
+                  value={bulkCategory}
+                  onChange={(event) => setBulkCategory(event.target.value)}
+                  className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm md:w-64"
+                >
+                  <option value="">Kategori seçin</option>
+                  {categoryOptions(categories).map((option) => (
+                    <option key={option.id} value={option.id}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+                <select
+                  value={bulkWarehouse}
+                  onChange={(event) => setBulkWarehouse(event.target.value)}
+                  className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm md:w-64"
+                >
+                  <option value="">Varsayılan depo (BizimHesap)</option>
+                  {warehouses.map((w) => (
+                    <option key={w.id} value={w.id}>
+                      {w.title}
+                    </option>
+                  ))}
+                </select>
+                <Button
+                  onClick={() => void setWarehouse({ categoryId: bulkCategory }, bulkWarehouse || null)}
+                  disabled={!bulkCategory || bulkBusy}
+                >
+                  {bulkBusy ? <Loader2 className="size-4 animate-spin" /> : <Warehouse className="size-4" />}
+                  Kategoriye uygula
+                </Button>
+              </div>
+            </div>
+          </div>
+        </Card>
+      ) : null}
+
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div className="flex flex-wrap gap-1.5">
           {filters.map((entry) => (
@@ -318,8 +404,10 @@ export function BizimHesapMappingManager() {
               busy={busyRow === key}
               index={index}
               bhProducts={bhProducts}
+              warehouses={warehouses}
               onToggle={() => setOpenRow((current) => (current === key ? null : key))}
               onSelect={(id) => void setMapping(item, id)}
+              onWarehouse={(warehouseId) => void setWarehouse({ productId: item.productId }, warehouseId, key)}
             />
           );
         })}
@@ -350,16 +438,20 @@ function MappingRow({
   busy,
   index,
   bhProducts,
+  warehouses,
   onToggle,
   onSelect,
+  onWarehouse,
 }: {
   item: MappingItem;
   open: boolean;
   busy: boolean;
   index: ReturnType<typeof buildBizimHesapIndex>;
   bhProducts: BhOption[];
+  warehouses: WarehouseOption[];
   onToggle: () => void;
   onSelect: (id: string | null) => void;
+  onWarehouse: (warehouseId: string | null) => void;
 }) {
   const [search, setSearch] = useState("");
   const candidates = useMemo(() => {
@@ -402,6 +494,29 @@ function MappingRow({
                 Bu BizimHesap kartı şunlara da bağlı: {item.sharedWith.slice(0, 3).join(", ")}
                 {item.sharedWith.length > 3 ? "…" : ""}. Doğru mu kontrol edin.
               </p>
+            ) : null}
+            {warehouses.length ? (
+              <label className="mt-1 flex items-center gap-1.5 text-xs text-slate-500">
+                <Warehouse className="size-3.5 shrink-0" />
+                <span className="shrink-0">Depo:</span>
+                <select
+                  value={item.warehouseId ?? ""}
+                  onChange={(event) => onWarehouse(event.target.value || null)}
+                  disabled={busy}
+                  title={item.variantName ? "Depo ürünün tüm modellerine uygulanır" : undefined}
+                  className={cn(
+                    "h-7 max-w-[14rem] rounded-md border bg-white px-1.5 text-xs",
+                    item.warehouseId ? "border-indigo-200 font-medium text-indigo-700" : "border-slate-200 text-slate-600",
+                  )}
+                >
+                  <option value="">Varsayılan</option>
+                  {warehouses.map((w) => (
+                    <option key={w.id} value={w.id}>
+                      {w.title}
+                    </option>
+                  ))}
+                </select>
+              </label>
             ) : null}
           </div>
         </div>
@@ -524,4 +639,23 @@ function MappingRow({
       ) : null}
     </div>
   );
+}
+
+/** Kategori seçeneği: alt kategoriler üst kategorinin altında girintili. */
+function categoryOptions(categories: CategoryOption[]) {
+  const children = new Map<string | null, CategoryOption[]>();
+  for (const category of categories) {
+    const list = children.get(category.parentId) ?? [];
+    list.push(category);
+    children.set(category.parentId, list);
+  }
+  const result: Array<{ id: string; label: string }> = [];
+  const walk = (parentId: string | null, depth: number) => {
+    for (const category of children.get(parentId) ?? []) {
+      result.push({ id: category.id, label: `${"— ".repeat(depth)}${category.name}` });
+      walk(category.id, depth + 1);
+    }
+  };
+  walk(null, 0);
+  return result;
 }

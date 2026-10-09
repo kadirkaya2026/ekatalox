@@ -117,6 +117,31 @@ export async function fetchBizimHesapProducts(firmId: string): Promise<BizimHesa
   }
 }
 
+export type BizimHesapWarehouse = { id: string; title: string };
+
+/** BizimHesap depoları (eşleştirme ekranındaki depo seçimi için). */
+export async function fetchBizimHesapWarehouses(firmId: string): Promise<BizimHesapWarehouse[] | null> {
+  if (!apiKey()) return null;
+  try {
+    const { status, json } = await callBizimHesap("warehouses", firmId);
+    if (status !== 200) return null;
+    const data = json?.data as { warehouses?: unknown } | undefined;
+    const list = Array.isArray(data?.warehouses) ? (data.warehouses as Array<Record<string, unknown>>) : [];
+    return list
+      .map((w) => ({ id: String(w.id ?? ""), title: String(w.title ?? "").trim() }))
+      .filter((w) => w.id && w.title);
+  } catch {
+    return null;
+  }
+}
+
+// BizimHesap satış fişinde satır deposunu taşıyan alan (API belgesinde yok; uygulamanın
+// kendi fiş kaydından alındı). Depo seçilmemişse alan gönderilmez → varsayılan depo.
+const WAREHOUSE_DETAIL_FIELD = "warehouseId";
+function warehouseField(warehouseId: string | undefined) {
+  return warehouseId ? { [WAREHOUSE_DETAIL_FIELD]: warehouseId } : {};
+}
+
 type OrderItem = {
   variant_id?: string | null;
   original_price?: number | null;
@@ -312,13 +337,16 @@ export async function sendOrderToBizimHesap(
     const bizimhesapIdByProduct = new Map<string, string>();
     const bizimhesapIdByVariant = new Map<string, string>();
     const skuByProduct = new Map<string, string | null>();
+    // Ürünün satıldığı BizimHesap deposu (0168); boşsa BizimHesap varsayılanı.
+    const warehouseByProduct = new Map<string, string>();
     if (productIds.length) {
       const { data: mapped } = await supabase
         .from("products")
-        .select("id, sku_code, bizimhesap_product_id")
+        .select("id, sku_code, bizimhesap_product_id, bizimhesap_warehouse_id")
         .in("id", productIds);
       for (const row of mapped ?? []) {
         skuByProduct.set(row.id, row.sku_code ?? null);
+        if (row.bizimhesap_warehouse_id) warehouseByProduct.set(row.id, row.bizimhesap_warehouse_id);
         if (row.bizimhesap_product_id) bizimhesapIdByProduct.set(row.id, row.bizimhesap_product_id);
       }
     }
@@ -494,6 +522,8 @@ export async function sendOrderToBizimHesap(
         note: item.is_gift ? "Hediye" : "",
         // Kart barkodla tanınıyorsa (fişte kod görünmesin diye Ürün Kodu boş) barkod da gider.
         barcode: mappedCard?.barcode?.trim() ?? "",
+        // Satırın deposu (0168). Alan adı: BizimHesap satış fişi ekranının gönderdiği ad.
+        ...warehouseField(item.product_id ? warehouseByProduct.get(item.product_id) : undefined),
         taxRate: plain(rate),
         quantity,
         unitPrice: plain(unitList / divisor),

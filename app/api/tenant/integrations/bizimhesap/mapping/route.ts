@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { getSessionContext } from "@/lib/auth/session";
-import { bizimhesapCardKey, fetchBizimHesapProducts, isBizimHesapBusinessAllowed } from "@/lib/integrations/bizimhesap";
+import { bizimhesapCardKey, fetchBizimHesapProducts, fetchBizimHesapWarehouses, isBizimHesapBusinessAllowed } from "@/lib/integrations/bizimhesap";
+import { getDescendantCategoryIds } from "@/lib/categories/tree";
+import type { Category } from "@/lib/types";
 import { autoMatch, buildBizimHesapIndex, type BizimHesapProduct } from "@/lib/integrations/bizimhesap-matching";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { ensureTenantAdminResponse, ensureTenantPlanFeatureResponse } from "@/lib/tenancy/guards";
@@ -10,7 +12,7 @@ import { ensureTenantAdminResponse, ensureTenantPlanFeatureResponse } from "@/li
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
-type ProductRow = { id: string; sku_code: string | null; product_name: string; image_url: string | null; bizimhesap_product_id: string | null };
+type ProductRow = { id: string; sku_code: string | null; product_name: string; image_url: string | null; bizimhesap_product_id: string | null; bizimhesap_warehouse_id: string | null; category_id: string | null };
 type MappingItem = {
   kind: "product" | "variant";
   id: string;
@@ -29,6 +31,8 @@ type MappingItem = {
   codeMissing: boolean;
   /** Aynı BizimHesap kartı FARKLI stok kodlu başka ürün(ler)e de bağlı. */
   sharedWith: string[];
+  /** Satışın fişleneceği BizimHesap deposu (ürün düzeyi, 0168); boşsa varsayılan depo. */
+  warehouseId: string | null;
 };
 type VariantRow = { id: string; product_id: string; model_name: string | null; bizimhesap_product_id: string | null };
 
@@ -54,7 +58,7 @@ async function loadCatalog(supabase: NonNullable<Awaited<ReturnType<typeof creat
   for (let from = 0; ; from += 1000) {
     const { data } = await supabase
       .from("products")
-      .select("id, sku_code, product_name, image_url, bizimhesap_product_id")
+      .select("id, sku_code, product_name, image_url, bizimhesap_product_id, bizimhesap_warehouse_id, category_id")
       .eq("tenant_id", tenantId)
       .order("sku_code", { ascending: true })
       .range(from, from + 999);
@@ -82,7 +86,11 @@ function label(product: BizimHesapProduct) {
 export async function GET() {
   const ctx = await loadContext();
   if ("error" in ctx) return ctx.error;
-  const bh = await fetchBizimHesapProducts(ctx.firmId);
+  const [bh, warehouses, { data: categoryRows }] = await Promise.all([
+    fetchBizimHesapProducts(ctx.firmId),
+    fetchBizimHesapWarehouses(ctx.firmId),
+    ctx.supabase.from("categories").select("id, name, parent_id").eq("tenant_id", ctx.tenantId).order("display_order", { ascending: true }),
+  ]);
   if (!bh) return NextResponse.json({ error: "BizimHesap ürün listesi alınamadı." }, { status: 502 });
   const index = buildBizimHesapIndex(bh);
   const byId = new Map(bh.map((p) => [p.id, p]));
@@ -96,7 +104,7 @@ export async function GET() {
 
   const items = products.flatMap((product): MappingItem[] => {
     const own = variantsByProduct.get(product.id) ?? [];
-    const base = { productId: product.id, code: product.sku_code, name: product.product_name, imageUrl: product.image_url };
+    const base = { productId: product.id, code: product.sku_code, name: product.product_name, imageUrl: product.image_url, warehouseId: product.bizimhesap_warehouse_id };
     const productMapped = product.bizimhesap_product_id ? byId.get(product.bizimhesap_product_id) : undefined;
     if (!own.length) {
       const suggestion = productMapped ? null : autoMatch(index, { code: product.sku_code, name: product.product_name });
@@ -169,6 +177,8 @@ export async function GET() {
 
   return NextResponse.json({
     cardStats: { mappedCards: mappedCardIds.size, codedCards },
+    warehouses: warehouses ?? [],
+    categories: (categoryRows ?? []).map((c) => ({ id: c.id, name: c.name, parentId: c.parent_id })),
     bhProducts: bh.filter((p) => p.isActive).map((p) => ({ id: p.id, code: p.code, barcode: p.barcode, title: p.title, variantName: p.variantName, label: label(p) })),
     items,
   });
@@ -178,7 +188,40 @@ export async function GET() {
 export async function PATCH(request: Request) {
   const ctx = await loadContext();
   if ("error" in ctx) return ctx.error;
-  const body = (await request.json().catch(() => null)) as { kind?: unknown; id?: unknown; bizimhesapProductId?: unknown } | null;
+  const body = (await request.json().catch(() => null)) as
+    | { kind?: unknown; id?: unknown; productId?: unknown; bizimhesapProductId?: unknown; warehouseId?: unknown; categoryId?: unknown }
+    | null;
+  // Depo seçimi (0168): ürün düzeyinde; tek ürün (productId) ya da kategori + alt kategorileri.
+  if (body && "warehouseId" in body) {
+    const warehouseId = typeof body.warehouseId === "string" && body.warehouseId.trim() ? body.warehouseId.trim() : null;
+    if (warehouseId) {
+      const warehouses = await fetchBizimHesapWarehouses(ctx.firmId);
+      if (!warehouses) return NextResponse.json({ error: "BizimHesap depo listesi alınamadı." }, { status: 502 });
+      if (!warehouses.some((w) => w.id === warehouseId)) return NextResponse.json({ error: "Depo BizimHesap'ta bulunamadı." }, { status: 400 });
+    }
+    if (typeof body.categoryId === "string" && body.categoryId) {
+      const { data: categories } = await ctx.supabase.from("categories").select("id, name, parent_id").eq("tenant_id", ctx.tenantId);
+      const ids = [...getDescendantCategoryIds((categories ?? []) as Category[], body.categoryId)];
+      if (!ids.length) return NextResponse.json({ error: "Kategori bulunamadı." }, { status: 400 });
+      const { data: updated, error } = await ctx.supabase
+        .from("products")
+        .update({ bizimhesap_warehouse_id: warehouseId })
+        .eq("tenant_id", ctx.tenantId)
+        .in("category_id", ids)
+        .select("id");
+      if (error) return NextResponse.json({ error: "Kaydedilemedi." }, { status: 400 });
+      return NextResponse.json({ ok: true, updated: (updated ?? []).map((row) => row.id) });
+    }
+    const productId = typeof body.productId === "string" ? body.productId : "";
+    if (!productId) return NextResponse.json({ error: "Geçersiz istek." }, { status: 400 });
+    const { error } = await ctx.supabase
+      .from("products")
+      .update({ bizimhesap_warehouse_id: warehouseId })
+      .eq("tenant_id", ctx.tenantId)
+      .eq("id", productId);
+    if (error) return NextResponse.json({ error: "Kaydedilemedi." }, { status: 400 });
+    return NextResponse.json({ ok: true, updated: [productId] });
+  }
   const kind = body?.kind === "variant" ? "variant" : body?.kind === "product" ? "product" : null;
   const id = typeof body?.id === "string" ? body.id : "";
   const value = typeof body?.bizimhesapProductId === "string" && body.bizimhesapProductId.trim() ? body.bizimhesapProductId.trim() : null;
