@@ -124,16 +124,6 @@ function HeaderActions({
           <OrderTrackingBadge count={unseenOrderUpdates} />
         </a>
       ) : null}
-      {props.accountHref ? (
-        <a
-          href={props.accountHref}
-          className={cn(theme.headerIconButton, "relative size-11 lg:size-12")}
-          aria-label="Hesabım"
-          title="Hesabım"
-        >
-          <UserRound className="size-5" />
-        </a>
-      ) : null}
       <StorefrontLanguageSwitcher />
       {props.storefrontSettings.is_theme_toggle_visible !== false ? (
         <StorefrontThemeToggle />
@@ -185,6 +175,17 @@ function HeaderActions({
         </AnimatePresence>
       </button>
       )}
+      {/* Hesabım en sağda, sepetin hemen sağında (9 Eki 2026, kullanıcı isteği). */}
+      {props.accountHref ? (
+        <a
+          href={props.accountHref}
+          className={cn(theme.headerIconButton, "relative size-11 lg:size-12")}
+          aria-label="Hesabım"
+          title="Hesabım"
+        >
+          <UserRound className="size-5" />
+        </a>
+      ) : null}
     </div>
   );
 }
