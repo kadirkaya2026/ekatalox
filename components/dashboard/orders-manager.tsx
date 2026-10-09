@@ -232,17 +232,18 @@ export function OrdersManager({
     setPending(null);
   }
 
-  async function bulkDelete(ids: string[]) {
+  async function runBulk(kind: "cancel" | "delete", ids: string[]) {
     setBulkConfirm(false);
     setPending("bulk");
     setError(null);
-    const response = await fetch("/api/tenant/orders/bulk-delete", {
+    const response = await fetch(kind === "delete" ? "/api/tenant/orders/bulk-delete" : "/api/tenant/orders/bulk-cancel", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ ids }),
     });
     const result = await response.json().catch(() => ({}));
-    if (!response.ok) setError(result.error ?? "Siparişler silinemedi.");
+    if (!response.ok) setError(result.error ?? (kind === "delete" ? "Siparişler silinemedi." : "Siparişler iptal edilemedi."));
+    else if (kind === "cancel" && result.skipped) setError(`${result.skipped} sipariş iptal edilemedi (durumu değişmiş olabilir).`);
     setBulkIds(new Set());
     await load();
     router.refresh();
@@ -333,19 +334,38 @@ export function OrdersManager({
   ) : null;
 
   // Toplu seçim yalnız toptancıda İptal sekmesinde; seçim sayfadaki siparişlerle sınırlı.
-  const bulkMode = isWholesale && status === "cancelled";
-  const bulkSelected = bulkMode ? page.orders.filter((o) => o.status === "cancelled" && bulkIds.has(o.id)).map((o) => o.id) : [];
+  // Toplu seçim (toptancı): İptal sekmesinde kalıcı silme, Tümü/Yeni/Onaylandı'da iptal.
+  const bulkKind: "cancel" | "delete" | null = !isWholesale
+    ? null
+    : status === "cancelled"
+      ? "delete"
+      : status === "delivered" || status === "credit"
+        ? null
+        : "cancel";
+  const bulkMode = bulkKind !== null;
+  const isBulkSelectable = (o: StorefrontOrder) =>
+    bulkKind === "delete" ? o.status === "cancelled" : bulkKind === "cancel" ? o.status !== "cancelled" && o.status !== "delivered" : false;
+  const bulkSelectable = bulkMode ? page.orders.filter(isBulkSelectable) : [];
+  const bulkSelected = bulkSelectable.filter((o) => bulkIds.has(o.id)).map((o) => o.id);
   const bulkDialog = bulkConfirm && bulkSelected.length ? (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm" role="dialog" aria-modal="true">
       <div className="w-full max-w-sm rounded-2xl bg-white p-5 shadow-2xl">
-        <p className="text-base font-semibold text-slate-900">{bulkSelected.length} sipariş kalıcı olarak silinecektir</p>
-        <p className="mt-1.5 text-sm text-slate-600">Emin misiniz? Bu işlem geri alınamaz; siparişler hiçbir listede görünmez.</p>
+        <p className="text-base font-semibold text-slate-900">
+          {bulkKind === "delete"
+            ? `${bulkSelected.length} sipariş kalıcı olarak silinecektir`
+            : `${bulkSelected.length} sipariş iptal edilecektir`}
+        </p>
+        <p className="mt-1.5 text-sm text-slate-600">
+          {bulkKind === "delete"
+            ? "Emin misiniz? Bu işlem geri alınamaz; siparişler hiçbir listede görünmez."
+            : "Emin misiniz? Siparişler İptal sekmesine taşınır; gerekirse oradan iptal geri alınabilir."}
+        </p>
         <div className="mt-5 flex justify-end gap-2">
           <Button variant="secondary" onClick={() => setBulkConfirm(false)}>
             Vazgeç
           </Button>
-          <Button onClick={() => void bulkDelete(bulkSelected)} className="bg-rose-600 hover:bg-rose-700">
-            Evet, sil
+          <Button onClick={() => bulkKind && void runBulk(bulkKind, bulkSelected)} className="bg-rose-600 hover:bg-rose-700">
+            {bulkKind === "delete" ? "Evet, sil" : "Evet, iptal et"}
           </Button>
         </div>
       </div>
@@ -930,31 +950,32 @@ export function OrdersManager({
         </Card>
       ) : null}
 
-      {bulkMode && page.orders.length ? (
+      {bulkMode && bulkSelectable.length ? (
         <div className="flex flex-wrap items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-2.5">
           <label className="flex cursor-pointer items-center gap-2 text-sm font-medium text-slate-700">
             <input
               type="checkbox"
               className="size-4 accent-rose-600"
-              checked={bulkSelected.length > 0 && bulkSelected.length === page.orders.length}
+              checked={bulkSelected.length > 0 && bulkSelected.length === bulkSelectable.length}
               ref={(el) => {
-                if (el) el.indeterminate = bulkSelected.length > 0 && bulkSelected.length < page.orders.length;
+                if (el) el.indeterminate = bulkSelected.length > 0 && bulkSelected.length < bulkSelectable.length;
               }}
               onChange={(event) =>
-                setBulkIds(event.target.checked ? new Set(page.orders.map((o) => o.id)) : new Set())
+                setBulkIds(event.target.checked ? new Set(bulkSelectable.map((o) => o.id)) : new Set())
               }
             />
             Tümünü seç
           </label>
-          <span className="text-xs text-slate-500">{bulkSelected.length ? `${bulkSelected.length} seçili` : "Silmek için siparişleri işaretleyin"}</span>
+          <span className="text-xs text-slate-500">{bulkSelected.length ? `${bulkSelected.length} seçili` : bulkKind === "delete" ? "Silmek için siparişleri işaretleyin" : "İptal etmek için siparişleri işaretleyin"}</span>
           <Button
             variant="secondary"
             disabled={!bulkSelected.length || pending === "bulk"}
             onClick={() => setBulkConfirm(true)}
             className="ml-auto h-9 text-rose-700"
           >
-            {pending === "bulk" ? <Loader2 className="size-4 animate-spin" /> : <Trash2 className="size-4" />}
-            Seçilenleri sil{bulkSelected.length ? ` (${bulkSelected.length})` : ""}
+            {pending === "bulk" ? <Loader2 className="size-4 animate-spin" /> : bulkKind === "delete" ? <Trash2 className="size-4" /> : <XCircle className="size-4" />}
+            {bulkKind === "delete" ? "Seçilenleri sil" : "Seçilenleri iptal et"}
+            {bulkSelected.length ? ` (${bulkSelected.length})` : ""}
           </Button>
         </div>
       ) : null}
@@ -981,7 +1002,7 @@ export function OrdersManager({
                   className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1 px-4 py-3 md:grid-cols-[200px_minmax(0,1fr)_150px_110px_300px_44px]"
                 >
                   <div className="flex min-w-0 items-center gap-2">
-                    {bulkMode ? (
+                    {bulkMode && isBulkSelectable(order) ? (
                       <input
                         type="checkbox"
                         aria-label={`${formatOrderNo(order)} seç`}
@@ -996,6 +1017,8 @@ export function OrdersManager({
                           })
                         }
                       />
+                    ) : bulkMode ? (
+                      <span className="size-4 shrink-0" aria-hidden />
                     ) : null}
                     <button type="button" onClick={() => void openOrder(order)} className="flex items-center gap-2 text-left">
                     <span className="text-sm font-semibold text-slate-900">{formatOrderNo(order)}</span>
