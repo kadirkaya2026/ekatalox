@@ -167,6 +167,14 @@ function renderVariantCountBadge(product: Product) {
   return <Badge className="bg-blue-50 text-blue-700">{variantCount} model</Badge>;
 }
 
+// Liste küçük resimleri: kendi depomuzdaki görseller Next görsel küçültmesinden
+// geçer (56-80 px). Eskiden orijinal (2000+ px) dosyalar iniyordu; 100 ürünlük
+// sayfada iPhone Safari belleği taşıp sayfayı çökertiyordu (Börü Tech, 9 Eki).
+// Dış adresler ve SVG olduğu gibi kalır (remotePatterns dışı olabilir).
+function isThumbnailOptimizable(url: string) {
+  return url.includes(".supabase.co/storage/v1/object/public/") && !/\.svg($|\?)/i.test(url);
+}
+
 export function ProductsTable({
   highlightedProductId = null,
   isTekel = false,
@@ -353,7 +361,7 @@ export function ProductsTable({
                           fill
                           className="object-cover"
                           sizes="56px"
-                          unoptimized
+                          unoptimized={!isThumbnailOptimizable(product.image_url)}
                         />
                       ) : (
                         <ProductImagePlaceholder
@@ -539,7 +547,7 @@ export function ProductsTable({
                     fill
                     className="object-cover"
                     sizes="80px"
-                    unoptimized
+                    unoptimized={!isThumbnailOptimizable(product.image_url)}
                   />
                 ) : (
                   <ProductImagePlaceholder
