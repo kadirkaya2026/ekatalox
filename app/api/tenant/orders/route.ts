@@ -16,6 +16,6 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "Geçersiz sorgu." }, { status: 400 });
   }
 
-  const page = await getTenantOrdersPage(tenant.id, parsed.data);
+  const page = await getTenantOrdersPage(tenant.id, parsed.data, { hideCancelledInAll: tenant.business_type !== "market" });
   return NextResponse.json(page);
 }

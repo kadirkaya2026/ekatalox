@@ -73,6 +73,8 @@ export interface OrdersPage {
 export async function getTenantOrdersPage(
   tenantId: string,
   params: { status?: string; q?: string; from?: string; to?: string; page?: number; pageSize?: number; credit?: string },
+  // Toptancı (10 Eki 2026, Lucatech): iptaller "Tümü"nde görünmez, yalnız "İptal" sekmesinde.
+  options: { hideCancelledInAll?: boolean } = {},
 ): Promise<OrdersPage> {
   const page = Math.max(1, params.page ?? 1);
   const pageSize = Math.min(50, Math.max(1, params.pageSize ?? 25));
@@ -88,7 +90,7 @@ export async function getTenantOrdersPage(
       const needle = params.q.replace(/[%,()]/g, " ").trim();
       if (needle) {
         q = q.or(
-          `order_number.ilike.%${needle}%,customer_name.ilike.%${needle}%,customer_phone.ilike.%${needle}%`,
+          `order_number.ilike.%${needle}%,customer_name.ilike.%${needle}%,customer_phone.ilike.%${needle}%,bizimhesap_customer_title.ilike.%${needle}%`,
         );
       }
     }
@@ -98,6 +100,7 @@ export async function getTenantOrdersPage(
   const from = (page - 1) * pageSize;
   let listQuery = applyFilters(supabase.from("orders").select(ORDER_SELECT, { count: "exact" }));
   if (params.status && params.status !== "all") listQuery = listQuery.eq("status", params.status);
+  else if (options.hideCancelledInAll && params.credit !== "open") listQuery = listQuery.neq("status", "cancelled");
   if (params.credit === "open") {
     listQuery = listQuery.not("credit_marked_at", "is", null).is("credit_paid_at", null);
   }
@@ -122,7 +125,7 @@ export async function getTenantOrdersPage(
   ORDER_STATUSES.forEach((status, i) => {
     counts[status] = countResults[i]?.count ?? 0;
   });
-  counts.all = ORDER_STATUSES.reduce((t, s) => t + counts[s], 0);
+  counts.all = ORDER_STATUSES.reduce((t, s) => (options.hideCancelledInAll && s === "cancelled" ? t : t + counts[s]), 0);
   const creditOpenCount = creditCountResult?.count ?? 0;
 
   const [withMagnets, reach] = await Promise.all([

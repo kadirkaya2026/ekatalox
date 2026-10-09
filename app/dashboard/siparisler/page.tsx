@@ -14,7 +14,7 @@ export default async function TenantOrdersPage() {
   const session = await requireTenantAdminPage();
   const tenant = session.tenant!;
 
-  const initialPage = await getTenantOrdersPage(tenant.id, { status: "all", page: 1 });
+  const initialPage = await getTenantOrdersPage(tenant.id, { status: "all", page: 1 }, { hideCancelledInAll: tenant.business_type !== "market" });
   // BizimHesap aktarım şeridi (0166): bağlı ve açıksa sipariş detayında durum gösterilir.
   const supabase = createSupabaseAdminClient();
   const { data: bizimhesap } = supabase

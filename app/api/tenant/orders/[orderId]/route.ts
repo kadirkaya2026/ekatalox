@@ -102,3 +102,35 @@ export async function PATCH(request: Request, ctx: { params: Promise<{ orderId: 
 
   return NextResponse.json({ order });
 }
+
+// İptal edilmiş siparişi kalıcı silme (10 Eki 2026, Lucatech isteği): yalnız toptancı
+// mağazada ve yalnız "İptal" durumundaki sipariş. Stok iptalde zaten geri yüklendi
+// (0153); durum geçmişi cascade silinir, magnet/kupon/bildirim bağlantıları boşalır.
+export async function DELETE(_request: Request, ctx: { params: Promise<{ orderId: string }> }) {
+  const guard = await ensureTenantAdminResponse({ blockDemoWrite: true });
+  if (guard) return guard;
+  const session = await getSessionContext();
+  const tenant = session.tenant!;
+  if (tenant.business_type === "market") {
+    return NextResponse.json({ error: "Bu mağazada sipariş silme kapalı." }, { status: 403 });
+  }
+  const { orderId } = await ctx.params;
+  const supabase = createSupabaseAdminClient();
+  if (!supabase) return NextResponse.json({ error: "Sunucu yapılandırması eksik." }, { status: 500 });
+
+  const { data, error } = await supabase
+    .from("orders")
+    .delete()
+    .eq("tenant_id", tenant.id)
+    .eq("id", orderId)
+    .eq("status", "cancelled")
+    .select("id");
+  if (error) {
+    console.error("[orders] delete failed:", error);
+    return NextResponse.json({ error: "Sipariş silinemedi." }, { status: 500 });
+  }
+  if (!data?.length) {
+    return NextResponse.json({ error: "Yalnız iptal edilmiş siparişler silinebilir." }, { status: 409 });
+  }
+  return NextResponse.json({ ok: true });
+}

@@ -271,6 +271,8 @@ export interface StorefrontOrder {
   delivered_at: string | null;
   cancelled_at: string | null;
   cancel_reason: string | null;
+  /** Onayda seçilen BizimHesap carisi (0167); isimsiz siparişte listede ad olarak gösterilir. */
+  bizimhesap_customer_title?: string | null;
   coupon_id?: string | null;
   coupon_discount?: number;
   cost_total: number | null;

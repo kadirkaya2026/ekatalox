@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { OrderBizimHesapStrip } from "@/components/dashboard/order-bizimhesap-strip";
 import { BizimHesapApproveDialog } from "@/components/dashboard/bizimhesap-approve-dialog";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ArrowLeft, BellRing, FileDown, Loader2, MessageCircle, NotebookText, Pencil, Printer, Search, Trash2 } from "lucide-react";
+import { ArrowLeft, BellRing, FileDown, Loader2, MessageCircle, NotebookText, Pencil, Printer, RotateCcw, Search, Trash2, XCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -81,6 +81,8 @@ export function OrdersManager({
   // BizimHesap "onaylanınca" modunda Onayla önce cari/ürün seçim penceresini açar (0167).
   const [approveOrder, setApproveOrder] = useState<StorefrontOrder | null>(null);
   const [cancelOpen, setCancelOpen] = useState(false);
+  // Toptancı hızlı işlemleri (10 Eki 2026): İptal (onay kutusuyla) ve iptal edileni kalıcı Sil.
+  const [confirmAction, setConfirmAction] = useState<{ kind: "cancel" | "delete"; order: StorefrontOrder } | null>(null);
   const [cancelReason, setCancelReason] = useState("");
   const [creditReminderPending, setCreditReminderPending] = useState<string | null>(null);
   const [creditMsg, setCreditMsg] = useState<string | null>(null);
@@ -212,6 +214,29 @@ export function OrdersManager({
     setPending(null);
   }
 
+  async function deleteOrder(order: StorefrontOrder) {
+    setPending(order.id);
+    setError(null);
+    const response = await fetch(`/api/tenant/orders/${order.id}`, { method: "DELETE" });
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      setError(result.error ?? "Sipariş silinemedi.");
+    } else {
+      if (selected?.order.id === order.id) setSelected(null);
+      await load();
+      router.refresh();
+    }
+    setPending(null);
+  }
+
+  async function runConfirmedAction() {
+    if (!confirmAction) return;
+    const { kind, order } = confirmAction;
+    setConfirmAction(null);
+    if (kind === "cancel") await transition(order, "cancelled", "Panelden iptal edildi");
+    else await deleteOrder(order);
+  }
+
   function requestTransition(order: StorefrontOrder, toStatus: OrderStatus) {
     if (toStatus === "confirmed" && bizimhesapSendOn === "confirmed" && order.currency !== "CATALOG") {
       setApproveOrder(order);
@@ -263,6 +288,30 @@ export function OrdersManager({
 
   const pageCount = Math.max(1, Math.ceil(page.total / page.pageSize));
 
+  const confirmDialog = confirmAction ? (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm" role="dialog" aria-modal="true">
+      <div className="w-full max-w-sm rounded-2xl bg-white p-5 shadow-2xl">
+        <p className="text-base font-semibold text-slate-900">
+          {confirmAction.kind === "cancel" ? "Sipariş iptal edilecektir" : "Sipariş kalıcı olarak silinecektir"}
+        </p>
+        <p className="mt-1.5 text-sm text-slate-600">
+          {formatOrderNo(confirmAction.order)} · {customerLabel(confirmAction.order)}.{" "}
+          {confirmAction.kind === "cancel"
+            ? "Emin misiniz? Sipariş İptal sekmesine taşınır; gerekirse oradan tekrar onaylanabilir."
+            : "Emin misiniz? Bu işlem geri alınamaz; sipariş hiçbir listede görünmez."}
+        </p>
+        <div className="mt-5 flex justify-end gap-2">
+          <Button variant="secondary" onClick={() => setConfirmAction(null)}>
+            Vazgeç
+          </Button>
+          <Button onClick={() => void runConfirmedAction()} className="bg-rose-600 hover:bg-rose-700">
+            {confirmAction.kind === "cancel" ? "Evet, iptal et" : "Evet, sil"}
+          </Button>
+        </div>
+      </div>
+    </div>
+  ) : null;
+
   const approveDialog = approveOrder ? (
     <BizimHesapApproveDialog
       orderId={approveOrder.id}
@@ -303,6 +352,7 @@ export function OrdersManager({
     return (
       <>
       {approveDialog}
+      {confirmDialog}
       <Card className="overflow-hidden p-0">
         {/* Üst şerit: geri + araçlar */}
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 px-4 py-3">
@@ -371,7 +421,7 @@ export function OrdersManager({
           {/* Müşteri */}
           <div className="rounded-xl bg-slate-50 px-4 py-3 text-sm">
             <p className="flex flex-wrap items-center gap-2 font-semibold text-slate-900">
-              {order.customer_name || "İsimsiz müşteri"}
+              {customerLabel(order)}
               {order.has_push ? (
                 <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-semibold text-emerald-800">
                   <BellRing className="size-3" /> Bildirim açık
@@ -609,6 +659,23 @@ export function OrdersManager({
             <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
               <p className="font-semibold">Sipariş iptal edildi</p>
               {order.cancel_reason ? <p className="mt-0.5">Sebep: {order.cancel_reason}</p> : null}
+              {isWholesale ? (
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <Button disabled={pending === order.id} onClick={() => requestTransition(order, "confirmed")}>
+                    {pending === order.id ? <Loader2 className="size-4 animate-spin" /> : <RotateCcw className="size-4" />}
+                    Tekrar onayla
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    disabled={pending === order.id}
+                    onClick={() => setConfirmAction({ kind: "delete", order })}
+                    className="text-rose-700"
+                  >
+                    <Trash2 className="size-4" />
+                    Sil
+                  </Button>
+                </div>
+              ) : null}
             </div>
           ) : order.status === "delivered" ? (
             <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800">
@@ -699,6 +766,7 @@ export function OrdersManager({
   return (
     <div className="space-y-4">
       {approveDialog}
+      {confirmDialog}
       <InlineAlert tone="error" message={error} />
 
       <div className="flex flex-wrap items-center gap-2">
@@ -787,7 +855,7 @@ export function OrdersManager({
                 const key = o.customer_phone || o.id;
                 const g =
                   groups.get(key) ??
-                  { key, name: o.customer_name || "İsimsiz müşteri", phone: o.customer_phone ?? "", customerId: o.customer_id, count: 0, total: 0, currency: o.currency };
+                  { key, name: customerLabel(o), phone: o.customer_phone ?? "", customerId: o.customer_id, count: 0, total: 0, currency: o.currency };
                 g.count += 1;
                 if (o.currency === g.currency) g.total += o.total_amount;
                 if (!g.customerId && o.customer_id) g.customerId = o.customer_id;
@@ -825,7 +893,7 @@ export function OrdersManager({
           <p className="p-6 text-sm text-slate-600">Bu süzgeçte sipariş yok.</p>
         ) : (
           <div className="divide-y divide-slate-100">
-            <div className="hidden grid-cols-[200px_minmax(0,1fr)_150px_110px_210px_44px] items-center gap-3 bg-slate-50 px-4 py-2 text-[11px] font-semibold uppercase tracking-wide text-slate-500 md:grid">
+            <div className="hidden grid-cols-[200px_minmax(0,1fr)_150px_110px_300px_44px] items-center gap-3 bg-slate-50 px-4 py-2 text-[11px] font-semibold uppercase tracking-wide text-slate-500 md:grid">
               <span>Sipariş</span><span>Müşteri</span><span>Tarih</span><span className="text-right">Tutar</span><span>İşlem</span><span />
             </div>
             {page.orders.map((order) => {
@@ -839,7 +907,7 @@ export function OrdersManager({
               return (
                 <div
                   key={order.id}
-                  className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1 px-4 py-3 md:grid-cols-[200px_minmax(0,1fr)_150px_110px_210px_44px]"
+                  className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1 px-4 py-3 md:grid-cols-[200px_minmax(0,1fr)_150px_110px_300px_44px]"
                 >
                   <button type="button" onClick={() => void openOrder(order)} className="flex items-center gap-2 text-left">
                     <span className="text-sm font-semibold text-slate-900">{formatOrderNo(order)}</span>
@@ -861,7 +929,7 @@ export function OrdersManager({
                         <title>Bildirim açık</title>
                       </BellRing>
                     ) : null}
-                    {order.customer_name || "İsimsiz müşteri"}
+                    {customerLabel(order)}
                     {order.customer_phone ? <span className="text-slate-400"> · {order.customer_phone}</span> : null}
                     {order.magnet_mismatch ? (
                       <span
@@ -898,7 +966,40 @@ export function OrdersManager({
                         Düzelt
                       </Button>
                     ) : null}
-                    {next && nextLabel ? null : (
+                    {isWholesale && order.status === "new" ? (
+                      <Button
+                        variant="secondary"
+                        disabled={pending === order.id}
+                        onClick={() => setConfirmAction({ kind: "cancel", order })}
+                        title="Siparişi iptal et"
+                        className="h-9 shrink-0 justify-center px-3 text-rose-700"
+                      >
+                        <XCircle className="size-4" />
+                        İptal
+                      </Button>
+                    ) : null}
+                    {isWholesale && order.status === "cancelled" ? (
+                      <>
+                        <Button
+                          variant="secondary"
+                          disabled={pending === order.id}
+                          onClick={() => requestTransition(order, "confirmed")}
+                          className="h-9 shrink-0 justify-center px-3"
+                        >
+                          {pending === order.id ? <Loader2 className="size-4 animate-spin" /> : <RotateCcw className="size-4" />}
+                          Tekrar onayla
+                        </Button>
+                        <Button
+                          variant="secondary"
+                          disabled={pending === order.id}
+                          onClick={() => setConfirmAction({ kind: "delete", order })}
+                          className="h-9 shrink-0 justify-center px-3 text-rose-700"
+                        >
+                          <Trash2 className="size-4" />
+                          Sil
+                        </Button>
+                      </>
+                    ) : next && nextLabel ? null : isWholesale && order.status === "cancelled" ? null : (
                       <span className="text-xs text-slate-400 md:pl-1">{order.status === "cancelled" ? "İptal edildi" : "Tamamlandı"}</span>
                     )}
                   </div>
@@ -949,4 +1050,9 @@ export function OrdersManager({
       ) : null}
     </div>
   );
+}
+
+/** Listede/detayda müşteri adı: sepette ad yoksa onayda seçilen BizimHesap carisi (0167). */
+function customerLabel(order: StorefrontOrder) {
+  return order.customer_name?.trim() || order.bizimhesap_customer_title?.trim() || "İsimsiz müşteri";
 }
