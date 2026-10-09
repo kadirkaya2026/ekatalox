@@ -16,6 +16,12 @@ import { SectorBrandLogo } from "@/components/storefront/sector-design/sector-br
 import { setAkimDayMode, useAkimDayMode } from "@/lib/storefront/akim-mode";
 import { SectorBannerSlider } from "@/components/storefront/sector-design/sector-banner-slider";
 
+// Mobilde (≤700px) ürünleri tek sütun listeleyen mağazalar (9 Eki 2026, Autovale isteği).
+// Masaüstü ve tablet düzeni aynı kalır; kural electronics.module.css'te.
+const MOBILE_ONE_COLUMN_TENANT_IDS: ReadonlySet<string> = new Set([
+  "322f69d3-0e11-4e28-b274-dea1fe347b51", // Autovale
+]);
+
 export type SectorStorefrontProps = {
   tenantId: string; subdomain?: string;
   design: DesignDocument; settings: TenantStorefrontSettings; title: string; products: StorefrontProduct[];
@@ -89,7 +95,7 @@ export function ElectronicsStorefront(p: SectorStorefrontProps) {
   const heroImage = c.heroImage || heroProduct?.image_url || null;
   const heroCopy = <div className={styles.heroCopy}><span className={styles.heroKicker}>{wholesale ? labels.wholesale : labels.retail}</span><h1>{c.heroTitle}</h1><p>{c.heroBody}</p><button className={styles.primary} onClick={browseHero}>{c.buttonLabel || labels.discover}<ArrowUpRight size={19} /></button></div>;
   const photo = <div className={styles.heroPhoto}><ProductPhoto src={heroImage} alt={c.heroImage ? c.heroTitle : heroProduct?.product_name ?? ""} priority /></div>;
-  return <div className={`${styles.root} ${styles[variant]} ${p.detailOpen ? styles.detailHeader : ""} ${(theme.isDark || variant === "akim") && !akimDay ? styles.dark : ""} ${akimDay ? styles.akimDay : ""}`} style={{...rootStyle,...paletteStyle(p.design, theme.isDark, akimDay)}} data-image-fit={c.imageFit||c.imagePosition?true:undefined} data-sector-design={p.design.themeId}>
+  return <div className={`${styles.root} ${styles[variant]} ${p.detailOpen ? styles.detailHeader : ""} ${(theme.isDark || variant === "akim") && !akimDay ? styles.dark : ""} ${akimDay ? styles.akimDay : ""}`} style={{...rootStyle,...paletteStyle(p.design, theme.isDark, akimDay)}} data-image-fit={c.imageFit||c.imagePosition?true:undefined} data-sector-design={p.design.themeId} data-mobile-one-column={MOBILE_ONE_COLUMN_TENANT_IDS.has(p.tenantId) ? true : undefined}>
     {c.announcement && <div data-theme-area="general" className={styles.announcement}>{c.announcement}</div>}
     <header className={styles.header}>
       <button data-theme-area="brand" className={styles.wordmark} onClick={p.onHome} aria-label={`${p.title} — ${labels.all}`}>
