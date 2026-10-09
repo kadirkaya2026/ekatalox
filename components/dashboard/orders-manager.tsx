@@ -308,6 +308,8 @@ export function OrdersManager({
   }
 
   const pageCount = Math.max(1, Math.ceil(page.total / page.pageSize));
+  // Liste satırı düğmeleri toptancıda küçük (10 Eki 2026, Lucatech: "göz yoruyor").
+  const rowBtn = isWholesale ? "h-7 gap-1 rounded-md px-2.5 py-0 text-xs font-medium" : "";
 
   const confirmDialog = confirmAction ? (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm" role="dialog" aria-modal="true">
@@ -985,7 +987,7 @@ export function OrdersManager({
           <p className="p-6 text-sm text-slate-600">Bu süzgeçte sipariş yok.</p>
         ) : (
           <div className="divide-y divide-slate-100">
-            <div className="hidden grid-cols-[200px_minmax(0,1fr)_150px_110px_300px_44px] items-center gap-3 bg-slate-50 px-4 py-2 text-[11px] font-semibold uppercase tracking-wide text-slate-500 md:grid">
+            <div className="hidden grid-cols-[200px_minmax(0,1fr)_150px_110px_250px_44px] items-center gap-3 bg-slate-50 px-4 py-2 text-[11px] font-semibold uppercase tracking-wide text-slate-500 md:grid">
               <span>Sipariş</span><span>Müşteri</span><span>Tarih</span><span className="text-right">Tutar</span><span>İşlem</span><span />
             </div>
             {page.orders.map((order) => {
@@ -999,7 +1001,7 @@ export function OrdersManager({
               return (
                 <div
                   key={order.id}
-                  className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1 px-4 py-3 md:grid-cols-[200px_minmax(0,1fr)_150px_110px_300px_44px]"
+                  className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1 px-4 py-3 md:grid-cols-[200px_minmax(0,1fr)_150px_110px_250px_44px]"
                 >
                   <div className="flex min-w-0 items-center gap-2">
                     {bulkMode && isBulkSelectable(order) ? (
@@ -1054,15 +1056,15 @@ export function OrdersManager({
                   </button>
                   <span className="hidden text-sm tabular-nums text-slate-500 md:block">{formatDateTime(order.created_at)}</span>
                   <span className="hidden text-right text-sm font-semibold tabular-nums text-slate-900 md:block">{formatOrderTotal(order)}</span>
-                  <div className="col-span-2 flex items-center gap-2 md:col-span-1">
+                  <div className={cn("col-span-2 flex items-center md:col-span-1", isWholesale ? "gap-1.5" : "gap-2")}>
                     {next && nextLabel ? (
                       <Button
                         variant={next === "delivered" ? "primary" : "secondary"}
                         disabled={pending === order.id}
                         onClick={() => requestTransition(order, next)}
-                        className="h-9 w-full justify-center md:w-auto"
+                        className={cn("h-9 w-full justify-center md:w-auto", rowBtn)}
                       >
-                        {pending === order.id ? <Loader2 className="size-4 animate-spin" /> : null}
+                        {pending === order.id ? <Loader2 className="size-3.5 animate-spin" /> : null}
                         {nextLabel}
                       </Button>
                     ) : null}
@@ -1072,9 +1074,9 @@ export function OrdersManager({
                         disabled={pending === order.id}
                         onClick={() => void openOrder(order, { openEditor: true })}
                         title="Adetleri değiştir, ürün ekle/çıkar"
-                        className="h-9 shrink-0 justify-center px-3"
+                        className={cn("h-9 shrink-0 justify-center px-3", rowBtn)}
                       >
-                        <Pencil className="size-4" />
+                        <Pencil className="size-3.5" />
                         Düzelt
                       </Button>
                     ) : null}
@@ -1084,9 +1086,9 @@ export function OrdersManager({
                         disabled={pending === order.id}
                         onClick={() => setConfirmAction({ kind: "cancel", order })}
                         title="Siparişi iptal et"
-                        className="h-9 shrink-0 justify-center px-3 text-rose-700"
+                        className={cn("h-9 shrink-0 justify-center px-3 text-rose-700", rowBtn)}
                       >
-                        <XCircle className="size-4" />
+                        <XCircle className="size-3.5" />
                         İptal
                       </Button>
                     ) : null}
@@ -1096,18 +1098,18 @@ export function OrdersManager({
                           variant="secondary"
                           disabled={pending === order.id}
                           onClick={() => void transition(order, "new")}
-                          className="h-9 shrink-0 justify-center px-3"
+                          className={cn("h-9 shrink-0 justify-center px-3", rowBtn)}
                         >
-                          {pending === order.id ? <Loader2 className="size-4 animate-spin" /> : <RotateCcw className="size-4" />}
+                          {pending === order.id ? <Loader2 className="size-3.5 animate-spin" /> : <RotateCcw className="size-3.5" />}
                           İptali geri al
                         </Button>
                         <Button
                           variant="secondary"
                           disabled={pending === order.id}
                           onClick={() => setConfirmAction({ kind: "delete", order })}
-                          className="h-9 shrink-0 justify-center px-3 text-rose-700"
+                          className={cn("h-9 shrink-0 justify-center px-3 text-rose-700", rowBtn)}
                         >
-                          <Trash2 className="size-4" />
+                          <Trash2 className="size-3.5" />
                           Sil
                         </Button>
                       </>
