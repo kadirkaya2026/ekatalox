@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { CheckCircle2, CircleAlert, Loader2, RefreshCw, Search, Sparkles, UserRound, Warehouse, X } from "lucide-react";
+import { CheckCircle2, CircleAlert, Loader2, Pencil, RefreshCw, Search, Sparkles, UserRound, Warehouse, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { matchKey } from "@/lib/integrations/bizimhesap-matching";
@@ -47,12 +47,15 @@ export function BizimHesapApproveDialog({
   orderLabel,
   onClose,
   onApprove,
+  onEdit,
 }: {
   orderId: string;
   orderLabel: string;
   onClose: () => void;
   /** Seçimler kaydedildikten sonra siparişi Onaylandı'ya geçirir (gönderim sunucuda). */
   onApprove: () => Promise<void>;
+  /** "Düzelt": pencereyi kapatıp siparişin fiş düzenleyicisini açar (adet, ürün ekle/çıkar). */
+  onEdit?: () => void;
 }) {
   const [data, setData] = useState<Prepared | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -359,6 +362,12 @@ export function BizimHesapApproveDialog({
           <Button variant="secondary" onClick={onClose} disabled={saving}>
             Vazgeç
           </Button>
+          {onEdit ? (
+            <Button variant="secondary" onClick={onEdit} disabled={saving}>
+              <Pencil className="size-4" />
+              Düzelt
+            </Button>
+          ) : null}
           <Button onClick={() => void submit()} disabled={!data || saving || loading || blocked}>
             {saving ? <Loader2 className="size-4 animate-spin" /> : <CheckCircle2 className="size-4" />}
             Onayla ve BizimHesap&apos;a gönder

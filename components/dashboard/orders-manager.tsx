@@ -169,7 +169,7 @@ export function OrdersManager({
     if (fresh) setSelected((curr) => (curr ? { ...curr, order: fresh } : curr));
   }, [page.orders, selected?.order.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  async function openOrder(order: StorefrontOrder, options?: { openCancel?: boolean }) {
+  async function openOrder(order: StorefrontOrder, options?: { openCancel?: boolean; openEditor?: boolean }) {
     setError(null);
     const response = await fetch(`/api/tenant/orders/${order.id}`);
     const result = await response.json().catch(() => ({}));
@@ -181,9 +181,15 @@ export function OrdersManager({
     setCancelOpen(Boolean(options?.openCancel));
     setCancelReason("");
     setEditQty(null);
-    setEditorOpen(false);
+    // "Düzelt" (9 Eki 2026, Lucatech): onaydan önce fişi düzenlemek için doğrudan düzenleyiciyle açılır.
+    setEditorOpen(Boolean(options?.openEditor));
+    setEditMsg(null);
     setUpdatedWaHref(null);
   }
+
+  /** Sipariş fişi düzenlenebilir mi (toptancı ya da order_edit_enabled; teslim/iptal değil). */
+  const canFixOrder = (order: StorefrontOrder) =>
+    (isWholesale || orderEditEnabled) && order.status !== "delivered" && order.status !== "cancelled";
 
   async function transition(order: StorefrontOrder, toStatus: OrderStatus, reason?: string) {
     setPending(order.id);
@@ -263,6 +269,15 @@ export function OrdersManager({
       orderLabel={formatOrderNo(approveOrder)}
       onClose={() => setApproveOrder(null)}
       onApprove={() => transition(approveOrder, "confirmed")}
+      onEdit={
+        canFixOrder(approveOrder)
+          ? () => {
+              const target = approveOrder;
+              setApproveOrder(null);
+              void openOrder(target, { openEditor: true });
+            }
+          : undefined
+      }
     />
   ) : null;
 
@@ -617,6 +632,21 @@ export function OrdersManager({
                     {actionLabel(primaryNext)}
                   </Button>
                 ) : null}
+                {canFixOrder(order) && !editorOpen ? (
+                  <Button
+                    variant="secondary"
+                    disabled={pending === order.id}
+                    onClick={() => {
+                      setEditMsg(null);
+                      setUpdatedWaHref(null);
+                      setEditorOpen(true);
+                    }}
+                    className="h-11 px-5 text-base"
+                  >
+                    <Pencil className="size-4" />
+                    Düzelt
+                  </Button>
+                ) : null}
                 {otherNext.map((s) => (
                   <Button key={s} variant="secondary" disabled={pending === order.id} onClick={() => requestTransition(order, s)}>
                     {actionLabel(s)}
@@ -795,7 +825,7 @@ export function OrdersManager({
           <p className="p-6 text-sm text-slate-600">Bu süzgeçte sipariş yok.</p>
         ) : (
           <div className="divide-y divide-slate-100">
-            <div className="hidden grid-cols-[200px_minmax(0,1fr)_150px_110px_170px_44px] items-center gap-3 bg-slate-50 px-4 py-2 text-[11px] font-semibold uppercase tracking-wide text-slate-500 md:grid">
+            <div className="hidden grid-cols-[200px_minmax(0,1fr)_150px_110px_210px_44px] items-center gap-3 bg-slate-50 px-4 py-2 text-[11px] font-semibold uppercase tracking-wide text-slate-500 md:grid">
               <span>Sipariş</span><span>Müşteri</span><span>Tarih</span><span className="text-right">Tutar</span><span>İşlem</span><span />
             </div>
             {page.orders.map((order) => {
@@ -809,7 +839,7 @@ export function OrdersManager({
               return (
                 <div
                   key={order.id}
-                  className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1 px-4 py-3 md:grid-cols-[200px_minmax(0,1fr)_150px_110px_170px_44px]"
+                  className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1 px-4 py-3 md:grid-cols-[200px_minmax(0,1fr)_150px_110px_210px_44px]"
                 >
                   <button type="button" onClick={() => void openOrder(order)} className="flex items-center gap-2 text-left">
                     <span className="text-sm font-semibold text-slate-900">{formatOrderNo(order)}</span>
@@ -855,7 +885,20 @@ export function OrdersManager({
                         {pending === order.id ? <Loader2 className="size-4 animate-spin" /> : null}
                         {nextLabel}
                       </Button>
-                    ) : (
+                    ) : null}
+                    {next && nextLabel && canFixOrder(order) ? (
+                      <Button
+                        variant="secondary"
+                        disabled={pending === order.id}
+                        onClick={() => void openOrder(order, { openEditor: true })}
+                        title="Adetleri değiştir, ürün ekle/çıkar"
+                        className="h-9 shrink-0 justify-center px-3"
+                      >
+                        <Pencil className="size-4" />
+                        Düzelt
+                      </Button>
+                    ) : null}
+                    {next && nextLabel ? null : (
                       <span className="text-xs text-slate-400 md:pl-1">{order.status === "cancelled" ? "İptal edildi" : "Tamamlandı"}</span>
                     )}
                   </div>
