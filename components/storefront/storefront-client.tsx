@@ -4649,6 +4649,7 @@ export function StorefrontClient({
                   // zaten yapıyordu; enjeksiyonu kapatınca burada da
                   // vermezsek kutucuklar yatay kaydırıcıya dönüşüyor.
                   layout={usesMarketMobileOrder ? "grid4" : undefined}
+                  tapCue={enhancedNavCues}
                 />
               ) : null;
             }
@@ -4800,6 +4801,7 @@ export function StorefrontClient({
                       categoryRepresentativeImages={categoryRepresentativeImages}
                       onCategoryChange={handleCategoryChange}
                       layout="grid4"
+                      tapCue={enhancedNavCues}
                     />
                   </div>
                 ) : null}

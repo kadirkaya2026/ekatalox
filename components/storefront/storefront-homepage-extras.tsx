@@ -14,6 +14,7 @@ import { StorefrontFloatingCartAction } from "@/components/storefront/storefront
 import { motion } from "framer-motion";
 import { BorderTrace, useCartAddFeedback } from "@/components/storefront/border-trace";
 import type { StorefrontTheme } from "@/lib/storefront/themes";
+import { CategoryTapCue } from "@/components/storefront/enhanced-nav-cues";
 
 const CLUSTER_GRADIENTS = [
   "linear-gradient(135deg, #0f172a 0%, #1e293b 100%)",
@@ -343,6 +344,7 @@ export function StorefrontCategoryTiles({
   categoryRepresentativeImages = {},
   onCategoryChange,
   layout = "scroll",
+  tapCue = false,
 }: {
   categories: CategoryNode[];
   flatCategories: Category[];
@@ -356,6 +358,8 @@ export function StorefrontCategoryTiles({
   categoryRepresentativeImages?: Record<string, string>;
   onCategoryChange: (categoryId: string) => void;
   layout?: "scroll" | "grid4";
+  /** Mobilde ismin altında "dokun" eli (İsego denemesi, bkz. hasEnhancedNavCues). */
+  tapCue?: boolean;
 }) {
   const theme = useStorefrontTheme();
 
@@ -443,6 +447,7 @@ export function StorefrontCategoryTiles({
             >
               {category.name}
             </span>
+            {tapCue ? <CategoryTapCue index={index} /> : null}
           </button>
         ))}
       </div>

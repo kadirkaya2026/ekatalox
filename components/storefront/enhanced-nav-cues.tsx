@@ -1,8 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { ChevronLeft, ChevronRight, Hand, ShoppingCart } from "lucide-react";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
+import { ChevronLeft, ChevronRight, Hand, Pointer, ShoppingCart } from "lucide-react";
 
 // Belirgin gezinme işaretleri (8 Eki 2026, İsego isteği; beğenilirse tüm
 // mağazalara açılacak — bkz. hasEnhancedNavCues): kalın "Daha fazla ürün
@@ -208,5 +208,43 @@ export function CategoryScrollFrame({
         ) : null}
       </AnimatePresence>
     </div>
+  );
+}
+
+/**
+ * Kategori kutucuğunun altındaki "dokun" eli (9 Eki 2026, İsego isteği ve örnek
+ * görseli): turuncu işaret parmağı + üstünde parlama çizgileri, hafifçe
+ * dokunur gibi iner-kalkar. Yalnız mobil; kutucuklar sırayla değil, aynı anda
+ * ama faz kaydırmalı oynar ki ızgara dalgalansın, göz yorulmasın.
+ */
+export function CategoryTapCue({ index = 0 }: { index?: number }) {
+  const reduceMotion = useReducedMotion();
+  const delay = (index % 4) * 0.18;
+  return (
+    <span className="relative flex h-9 w-9 items-start justify-center text-[#ff5a12] sm:hidden" aria-hidden>
+      <motion.svg
+        viewBox="0 0 36 14"
+        className="absolute -top-0.5 left-1/2 h-3.5 w-9 -translate-x-1/2"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth={2.4}
+        strokeLinecap="round"
+        animate={reduceMotion ? undefined : { opacity: [0.35, 1, 0.35] }}
+        transition={{ duration: 1.3, repeat: Infinity, ease: "easeInOut", delay }}
+      >
+        <path d="M6 11 3 9" />
+        <path d="M11 6.5 9.5 3.5" />
+        <path d="M18 5V1.5" />
+        <path d="M25 6.5l1.5-3" />
+        <path d="M30 11l3-2" />
+      </motion.svg>
+      <motion.span
+        className="mt-2.5 block drop-shadow-[0_2px_4px_rgba(255,90,18,0.45)]"
+        animate={reduceMotion ? undefined : { y: [0, 2.5, 0], scale: [1, 0.9, 1] }}
+        transition={{ duration: 1.3, repeat: Infinity, ease: "easeInOut", delay }}
+      >
+        <Pointer className="size-6" strokeWidth={2.3} />
+      </motion.span>
+    </span>
   );
 }
