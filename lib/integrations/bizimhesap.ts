@@ -135,8 +135,9 @@ export async function fetchBizimHesapWarehouses(firmId: string): Promise<BizimHe
   }
 }
 
-// BizimHesap satış fişinde satır deposunu taşıyan alan (API belgesinde yok; uygulamanın
-// kendi fiş kaydından alındı). Depo seçilmemişse alan gönderilmez → varsayılan depo.
+// Satır deposu: API belgesinde yok ama addinvoice satırda "warehouseId" (warehouses
+// servisindeki depo kimliği) kabul ediyor — 9 Eki 2026 Lucatech test fişiyle doğrulandı
+// (Tahtakale istendi, taslakta Tahtakale geldi). Depo seçilmemişse alan gönderilmez → varsayılan depo.
 const WAREHOUSE_DETAIL_FIELD = "warehouseId";
 function warehouseField(warehouseId: string | undefined) {
   return warehouseId ? { [WAREHOUSE_DETAIL_FIELD]: warehouseId } : {};
