@@ -10,3 +10,10 @@ export function parseStorefrontProductSort(value: string | null | undefined): St
     ? (value as StorefrontProductSort)
     : "featured";
 }
+
+// Kategoriye girilince varsayılan sıralama "fiyat artan" olan mağazalar
+// (9 Eki 2026, Lucatech isteği). Anasayfa ("Tümü") ve arama sonuçları yine
+// bayinin sırasıyla gelir; müşteri sıralama menüsünden seçim yaparsa o geçerli.
+export const CATEGORY_PRICE_ASC_TENANT_IDS: ReadonlySet<string> = new Set([
+  "ebeeec82-7cd9-4ab8-bea9-f3dc2a5bfe0c", // Lucatech
+]);

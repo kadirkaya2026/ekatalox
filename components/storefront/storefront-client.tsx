@@ -127,7 +127,11 @@ import {
   isHomepageBlockVisible,
 } from "@/lib/storefront/homepage-blocks";
 import { StorefrontBottomNav } from "@/components/storefront/storefront-bottom-nav";
-import { STOREFRONT_PRODUCT_SORTS, type StorefrontProductSort } from "@/lib/storefront/product-sort";
+import {
+  CATEGORY_PRICE_ASC_TENANT_IDS,
+  STOREFRONT_PRODUCT_SORTS,
+  type StorefrontProductSort,
+} from "@/lib/storefront/product-sort";
 import { StorefrontCampaignsSheet } from "@/components/storefront/storefront-campaigns-sheet";
 import { StorefrontSearchSheet } from "@/components/storefront/storefront-search-sheet";
 import { hasAccountPage, hasEnhancedNavCues, hasOrderTracking, isMarketOrTekelTenant } from "@/lib/storefront/white-label";
@@ -1145,6 +1149,8 @@ export function StorefrontClient({
   // gösterilir; SSR ilk sayfa "featured" gelir, değişince 1. sayfa yeniden
   // çekilir (kullanıcı isteği, 6 Eyl 2026).
   const [productSort, setProductSort] = useState<StorefrontProductSort>("featured");
+  // Müşteri sıralama menüsüne dokunduysa mağazanın kategori varsayılanı devre dışı.
+  const [isProductSortChosen, setIsProductSortChosen] = useState(false);
   const [shareLocation, setShareLocation] = useState(false);
   // Konum alınamayınca müşteriye NEDENİNİ söylüyoruz (kullanıcı isteği, 7 Eyl 2026):
   // denied = site izni yok, services_off = izin var ama telefonun Konum
@@ -3291,6 +3297,16 @@ export function StorefrontClient({
   }, [activeAnnouncement, closeAnnouncementModal, isAnnouncementEligible]);
 
   const productsRequestSeqRef = useRef(0);
+  // Geçerli sıralama: bazı mağazalarda kategoriye girilince fiyat artan
+  // (bkz. CATEGORY_PRICE_ASC_TENANT_IDS); anasayfa ve arama etkilenmez.
+  const effectiveProductSort: StorefrontProductSort =
+    !isProductSortChosen &&
+    selectedCategoryId !== "all" &&
+    !debouncedSearchTerm.trim() &&
+    CATEGORY_PRICE_ASC_TENANT_IDS.has(tenant.id)
+      ? "price_asc"
+      : productSort;
+
   const fetchProductsPage = useCallback(
     async (targetPage: number, mode: "replace" | "append") => {
       if (!analyticsSubdomain && !previewMode) {
@@ -3320,8 +3336,8 @@ export function StorefrontClient({
           params.set("matchCategoryIds", matchCategoryIds.join(","));
         }
 
-        if (productSort !== "featured") {
-          params.set("sort", productSort);
+        if (effectiveProductSort !== "featured") {
+          params.set("sort", effectiveProductSort);
         }
 
         const response = await fetch(`${productsEndpoint}${params.toString()}`);
@@ -3341,7 +3357,7 @@ export function StorefrontClient({
         if (requestId === productsRequestSeqRef.current) setIsLoadingProducts(false);
       }
     },
-    [analyticsSubdomain, debouncedSearchTerm, isDiscountCategorySelected, selectedCategoryIds, matchCategoryIds, productSort, previewMode, productsEndpoint],
+    [analyticsSubdomain, debouncedSearchTerm, isDiscountCategorySelected, selectedCategoryIds, matchCategoryIds, effectiveProductSort, previewMode, productsEndpoint],
   );
 
   useEffect(() => {
@@ -3384,7 +3400,7 @@ export function StorefrontClient({
 
     void fetchProductsPage(1, "replace");
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [debouncedSearchTerm, selectedCategoryId, productSort]);
+  }, [debouncedSearchTerm, selectedCategoryId, effectiveProductSort]);
 
   const handleLoadMoreProducts = useCallback(() => {
     if (sectionMode) {
@@ -4937,12 +4953,15 @@ export function StorefrontClient({
                           )}
                         >
                           {STOREFRONT_PRODUCT_SORTS.map((sortKey) => {
-                            const isActive = productSort === sortKey;
+                            const isActive = effectiveProductSort === sortKey;
                             return (
                               <button
                                 key={sortKey}
                                 type="button"
-                                onClick={() => setProductSort(sortKey)}
+                                onClick={() => {
+                                  setProductSort(sortKey);
+                                  setIsProductSortChosen(true);
+                                }}
                                 aria-pressed={isActive}
                                 className={cn(
                                   "whitespace-nowrap rounded-full px-3.5 py-1.5 text-sm font-semibold transition",
