@@ -297,7 +297,7 @@ export function OrdersManager({
         <p className="mt-1.5 text-sm text-slate-600">
           {formatOrderNo(confirmAction.order)} · {customerLabel(confirmAction.order)}.{" "}
           {confirmAction.kind === "cancel"
-            ? "Emin misiniz? Sipariş İptal sekmesine taşınır; gerekirse oradan tekrar onaylanabilir."
+            ? "Emin misiniz? Sipariş İptal sekmesine taşınır; gerekirse oradan iptal geri alınabilir."
             : "Emin misiniz? Bu işlem geri alınamaz; sipariş hiçbir listede görünmez."}
         </p>
         <div className="mt-5 flex justify-end gap-2">
@@ -661,9 +661,9 @@ export function OrdersManager({
               {order.cancel_reason ? <p className="mt-0.5">Sebep: {order.cancel_reason}</p> : null}
               {isWholesale ? (
                 <div className="mt-3 flex flex-wrap gap-2">
-                  <Button disabled={pending === order.id} onClick={() => requestTransition(order, "confirmed")}>
+                  <Button disabled={pending === order.id} onClick={() => void transition(order, "new")}>
                     {pending === order.id ? <Loader2 className="size-4 animate-spin" /> : <RotateCcw className="size-4" />}
-                    Tekrar onayla
+                    İptali geri al
                   </Button>
                   <Button
                     variant="secondary"
@@ -983,11 +983,11 @@ export function OrdersManager({
                         <Button
                           variant="secondary"
                           disabled={pending === order.id}
-                          onClick={() => requestTransition(order, "confirmed")}
+                          onClick={() => void transition(order, "new")}
                           className="h-9 shrink-0 justify-center px-3"
                         >
                           {pending === order.id ? <Loader2 className="size-4 animate-spin" /> : <RotateCcw className="size-4" />}
-                          Tekrar onayla
+                          İptali geri al
                         </Button>
                         <Button
                           variant="secondary"
