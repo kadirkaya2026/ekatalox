@@ -83,6 +83,9 @@ export function OrdersManager({
   const [cancelOpen, setCancelOpen] = useState(false);
   // Toptancı hızlı işlemleri (10 Eki 2026): İptal (onay kutusuyla) ve iptal edileni kalıcı Sil.
   const [confirmAction, setConfirmAction] = useState<{ kind: "cancel" | "delete"; order: StorefrontOrder } | null>(null);
+  // İptal sekmesinde toplu silme seçimi (yalnız silme için).
+  const [bulkIds, setBulkIds] = useState<Set<string>>(() => new Set());
+  const [bulkConfirm, setBulkConfirm] = useState(false);
   const [cancelReason, setCancelReason] = useState("");
   const [creditReminderPending, setCreditReminderPending] = useState<string | null>(null);
   const [creditMsg, setCreditMsg] = useState<string | null>(null);
@@ -229,6 +232,23 @@ export function OrdersManager({
     setPending(null);
   }
 
+  async function bulkDelete(ids: string[]) {
+    setBulkConfirm(false);
+    setPending("bulk");
+    setError(null);
+    const response = await fetch("/api/tenant/orders/bulk-delete", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ids }),
+    });
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok) setError(result.error ?? "Siparişler silinemedi.");
+    setBulkIds(new Set());
+    await load();
+    router.refresh();
+    setPending(null);
+  }
+
   async function runConfirmedAction() {
     if (!confirmAction) return;
     const { kind, order } = confirmAction;
@@ -312,6 +332,26 @@ export function OrdersManager({
     </div>
   ) : null;
 
+  // Toplu seçim yalnız toptancıda İptal sekmesinde; seçim sayfadaki siparişlerle sınırlı.
+  const bulkMode = isWholesale && status === "cancelled";
+  const bulkSelected = bulkMode ? page.orders.filter((o) => o.status === "cancelled" && bulkIds.has(o.id)).map((o) => o.id) : [];
+  const bulkDialog = bulkConfirm && bulkSelected.length ? (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm" role="dialog" aria-modal="true">
+      <div className="w-full max-w-sm rounded-2xl bg-white p-5 shadow-2xl">
+        <p className="text-base font-semibold text-slate-900">{bulkSelected.length} sipariş kalıcı olarak silinecektir</p>
+        <p className="mt-1.5 text-sm text-slate-600">Emin misiniz? Bu işlem geri alınamaz; siparişler hiçbir listede görünmez.</p>
+        <div className="mt-5 flex justify-end gap-2">
+          <Button variant="secondary" onClick={() => setBulkConfirm(false)}>
+            Vazgeç
+          </Button>
+          <Button onClick={() => void bulkDelete(bulkSelected)} className="bg-rose-600 hover:bg-rose-700">
+            Evet, sil
+          </Button>
+        </div>
+      </div>
+    </div>
+  ) : null;
+
   const approveDialog = approveOrder ? (
     <BizimHesapApproveDialog
       orderId={approveOrder.id}
@@ -353,6 +393,7 @@ export function OrdersManager({
       <>
       {approveDialog}
       {confirmDialog}
+      {bulkDialog}
       <Card className="overflow-hidden p-0">
         {/* Üst şerit: geri + araçlar */}
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 px-4 py-3">
@@ -767,6 +808,7 @@ export function OrdersManager({
     <div className="space-y-4">
       {approveDialog}
       {confirmDialog}
+      {bulkDialog}
       <InlineAlert tone="error" message={error} />
 
       <div className="flex flex-wrap items-center gap-2">
@@ -888,6 +930,35 @@ export function OrdersManager({
         </Card>
       ) : null}
 
+      {bulkMode && page.orders.length ? (
+        <div className="flex flex-wrap items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-2.5">
+          <label className="flex cursor-pointer items-center gap-2 text-sm font-medium text-slate-700">
+            <input
+              type="checkbox"
+              className="size-4 accent-rose-600"
+              checked={bulkSelected.length > 0 && bulkSelected.length === page.orders.length}
+              ref={(el) => {
+                if (el) el.indeterminate = bulkSelected.length > 0 && bulkSelected.length < page.orders.length;
+              }}
+              onChange={(event) =>
+                setBulkIds(event.target.checked ? new Set(page.orders.map((o) => o.id)) : new Set())
+              }
+            />
+            Tümünü seç
+          </label>
+          <span className="text-xs text-slate-500">{bulkSelected.length ? `${bulkSelected.length} seçili` : "Silmek için siparişleri işaretleyin"}</span>
+          <Button
+            variant="secondary"
+            disabled={!bulkSelected.length || pending === "bulk"}
+            onClick={() => setBulkConfirm(true)}
+            className="ml-auto h-9 text-rose-700"
+          >
+            {pending === "bulk" ? <Loader2 className="size-4 animate-spin" /> : <Trash2 className="size-4" />}
+            Seçilenleri sil{bulkSelected.length ? ` (${bulkSelected.length})` : ""}
+          </Button>
+        </div>
+      ) : null}
+
       <Card className="overflow-hidden p-0">
         {page.orders.length === 0 ? (
           <p className="p-6 text-sm text-slate-600">Bu süzgeçte sipariş yok.</p>
@@ -909,7 +980,24 @@ export function OrdersManager({
                   key={order.id}
                   className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1 px-4 py-3 md:grid-cols-[200px_minmax(0,1fr)_150px_110px_300px_44px]"
                 >
-                  <button type="button" onClick={() => void openOrder(order)} className="flex items-center gap-2 text-left">
+                  <div className="flex min-w-0 items-center gap-2">
+                    {bulkMode ? (
+                      <input
+                        type="checkbox"
+                        aria-label={`${formatOrderNo(order)} seç`}
+                        className="size-4 shrink-0 accent-rose-600"
+                        checked={bulkIds.has(order.id)}
+                        onChange={(event) =>
+                          setBulkIds((current) => {
+                            const next = new Set(current);
+                            if (event.target.checked) next.add(order.id);
+                            else next.delete(order.id);
+                            return next;
+                          })
+                        }
+                      />
+                    ) : null}
+                    <button type="button" onClick={() => void openOrder(order)} className="flex items-center gap-2 text-left">
                     <span className="text-sm font-semibold text-slate-900">{formatOrderNo(order)}</span>
                     <StatusBadge status={order.status} isTekel={isTekel} />
                     {order.credit_marked_at && !order.credit_paid_at ? (
@@ -921,7 +1009,8 @@ export function OrdersManager({
                         aria-label="Veresiye — tahsil edilmedi"
                       />
                     ) : null}
-                  </button>
+                    </button>
+                  </div>
                   <span className="text-right text-sm font-semibold tabular-nums text-slate-900 md:hidden">{formatOrderTotal(order)}</span>
                   <button type="button" onClick={() => void openOrder(order)} className="col-span-2 min-w-0 truncate text-left text-sm text-slate-700 hover:underline md:col-span-1">
                     {order.has_push ? (
