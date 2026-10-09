@@ -5,6 +5,8 @@ import { PanelVisitTracker } from "@/components/dashboard/panel-visit-tracker";
 import { Sidebar } from "@/components/dashboard/sidebar";
 import { TrialExpiredModal } from "@/components/dashboard/trial-expired-modal";
 import { FeatureAnnouncementModal } from "@/components/dashboard/feature-announcement-modal";
+import { TenantNewsModal } from "@/components/dashboard/tenant-news-modal";
+import { hasTenantNews } from "@/lib/dashboard/tenant-news";
 import { isMarketOrTekelTenant } from "@/lib/storefront/white-label";
 import { VisitorQuotaBanner } from "@/components/dashboard/visitor-quota-banner";
 import { getSessionContext, requireTenantAdminPage } from "@/lib/auth/session";
@@ -124,7 +126,10 @@ export default async function DashboardLayout({
         {tenant ? <PanelVisitTracker /> : null}
       </main>
       {/* Yenilik penceresi (8 Eki 2026, Hesabım): yalnız toptancılar, market/tekel hariç. */}
-      {tenant && !trialExpired && !isMarketOrTekelTenant(tenant) ? (
+      {/* Mağazaya özel yenilikler (10 Eki 2026, Lucatech); varsa genel duyuru yerine o açılır. */}
+      {tenant && !trialExpired && hasTenantNews(tenant.id) ? (
+        <TenantNewsModal tenantId={tenant.id} />
+      ) : tenant && !trialExpired && !isMarketOrTekelTenant(tenant) ? (
         <FeatureAnnouncementModal hasPersonalCodes={hasPlanFeature(tenant.plan, "kurumsal_site")} />
       ) : null}
       {trialExpired && tenant ? (
