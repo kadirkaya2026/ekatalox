@@ -1056,7 +1056,7 @@ export function OrdersManager({
                   </button>
                   <span className="hidden text-sm tabular-nums text-slate-500 md:block">{formatDateTime(order.created_at)}</span>
                   <span className="hidden text-right text-sm font-semibold tabular-nums text-slate-900 md:block">{formatOrderTotal(order)}</span>
-                  <div className={cn("col-span-2 flex items-center md:col-span-1", isWholesale ? "gap-1.5" : "gap-2")}>
+                  <div className={cn("col-span-2 flex items-center md:col-span-1", isWholesale ? "gap-1.5 md:justify-end" : "gap-2")}>
                     {next && nextLabel ? (
                       <Button
                         variant={next === "delivered" ? "primary" : "secondary"}
