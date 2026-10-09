@@ -258,10 +258,15 @@ export async function fetchBizimHesapCustomers(firmId: string) {
 /** Bayi → cari hafızası anahtarı: kişiye özel şifre, yoksa telefon, yoksa ad. */
 export function bizimhesapCustomerLinkKey(order: {
   access_code_id?: string | null;
+  /** Şifre kişiye özel mi (access_codes.is_personal). Ortak liste şifresi bayiyi tanımlamaz. */
+  access_code_is_personal?: boolean | null;
   customer_phone?: string | null;
   customer_name?: string | null;
 }) {
-  if (order.access_code_id) return `kod:${order.access_code_id}`;
+  // Yalnız KİŞİYE ÖZEL şifre bayiyi tanımlar. Ortak liste şifresiyle (Lucatech: herkes
+  // 1.Liste şifresiyle giriyor) anahtar olursa o listedeki tüm bayiler aynı cariye
+  // bağlanıyordu (10 Eki 2026 hatası) → ortak şifrede telefon/ad kullanılır.
+  if (order.access_code_id && order.access_code_is_personal) return `kod:${order.access_code_id}`;
   const phone = phone10(order.customer_phone);
   if (phone.length === 10) return `tel:${phone}`;
   const name = normalizeTitle(order.customer_name ?? "");

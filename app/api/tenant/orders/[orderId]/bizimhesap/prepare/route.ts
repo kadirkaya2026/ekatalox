@@ -56,7 +56,13 @@ async function loadContext(orderId: string) {
     .eq("id", orderId)
     .maybeSingle();
   if (!order) return { error: NextResponse.json({ error: "Sipariş bulunamadı." }, { status: 404 }) };
-  return { supabase, tenantId, firmId: config.firm_id as string, policy: resolveBizimHesapPolicy(tenantId, config), order };
+  // Cari hafızası anahtarı için şifrenin kişiye özel olup olmadığı gerekir.
+  let accessCodeIsPersonal = false;
+  if (order.access_code_id) {
+    const { data: code } = await supabase.from("access_codes").select("is_personal").eq("id", order.access_code_id).maybeSingle();
+    accessCodeIsPersonal = Boolean(code?.is_personal);
+  }
+  return { supabase, tenantId, firmId: config.firm_id as string, policy: resolveBizimHesapPolicy(tenantId, config), order, accessCodeIsPersonal };
 }
 
 export async function GET(_request: Request, ctx: { params: Promise<{ orderId: string }> }) {
@@ -126,7 +132,7 @@ export async function GET(_request: Request, ctx: { params: Promise<{ orderId: s
   // Cari: bu siparişte seçilmiş olan, yoksa bayi hafızası.
   let selectedCustomerId: string | null = c.order.bizimhesap_customer_id ?? null;
   if (!selectedCustomerId) {
-    const key = bizimhesapCustomerLinkKey(c.order);
+    const key = bizimhesapCustomerLinkKey({ ...c.order, access_code_is_personal: c.accessCodeIsPersonal });
     if (key) {
       const { data: link } = await c.supabase
         .from("bizimhesap_customer_links")
@@ -218,7 +224,7 @@ export async function PUT(request: Request, ctx: { params: Promise<{ orderId: st
     .eq("tenant_id", c.tenantId)
     .eq("id", orderId);
 
-  const key = bizimhesapCustomerLinkKey(c.order);
+  const key = bizimhesapCustomerLinkKey({ ...c.order, access_code_is_personal: c.accessCodeIsPersonal });
   if (key && customerId) {
     await c.supabase.from("bizimhesap_customer_links").upsert(
       { tenant_id: c.tenantId, link_key: key, bh_customer_id: customerId, bh_customer_title: customerTitle, updated_at: new Date().toISOString() },
