@@ -510,7 +510,8 @@ export function ProductsTable({
                 : undefined
             }
             className={cn(
-              "p-4",
+              // Ekran dışındaki kartlar çizilmez (100 kartlık mobil listede iOS bellek yükü).
+              "p-4 [content-visibility:auto] [contain-intrinsic-size:auto_560px]",
               product.id === highlightedProductId &&
                 "bg-amber-50 ring-2 ring-amber-400 dark:bg-amber-900/20",
             )}

@@ -369,8 +369,13 @@ section[id] {
 /* Kart görünümü Card bileşenindeki değişkenlerden gelir; sayfanın verdiği
    özel sınıflar (renkli uyarı kenarlığı vb.) yine önceliklidir. */
 .panel-theme [data-ui="card"] {
-  animation: panel-card-in 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  /* backwards: bitince son hali tutulmaz, iOS kart başına açtığı katmanı bırakır. */
+  animation: panel-card-in 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
 }
+/* Uzun listelerde (ürünler sayfası mobilde 100 kart) yalnız ilk 12 kart
+   animasyonlu: hepsi birden canlandırılınca iPhone Safari grafik belleği
+   taşıp sayfa "birçok kez sorun oluştu" ile açılmıyordu (9 Eki 2026). */
+.panel-theme * > [data-ui="card"]:nth-child(n + 13) { animation: none; }
 /* Aynı ızgaradaki kartlar sırayla gelsin */
 .panel-theme :is(.grid, .space-y-6) > [data-ui="card"]:nth-child(2) { animation-delay: 0.06s; }
 .panel-theme :is(.grid, .space-y-6) > [data-ui="card"]:nth-child(3) { animation-delay: 0.12s; }
