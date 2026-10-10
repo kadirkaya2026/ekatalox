@@ -11,6 +11,7 @@ export const metadata = marketingMetadata(
 );
 
 const TOPICS = [
+  { title: "Video eğitimler", desc: "Ürün yüklemeden sipariş yönetimine her işin kısa, adım adım videosu.", href: "/video-egitimler" },
   { title: "Başlarken", desc: "Kayıt, Excel ile ürün yükleme ve ilk siparişe kadar olan yol.", href: "/nasil-calisir" },
   { title: "Bayi şifreleri ve fiyat listeleri", desc: "Şifre nasıl verilir, kim hangi fiyatı görür.", href: "/ozellikler#katalog" },
   { title: "Sipariş alma", desc: "Sepet, WhatsApp'a düşen PDF, sipariş formu alanları.", href: "/ozellikler#siparis" },
