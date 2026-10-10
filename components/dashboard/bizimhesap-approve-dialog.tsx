@@ -48,6 +48,7 @@ export function BizimHesapApproveDialog({
   onClose,
   onApprove,
   onEdit,
+  mode = "approve",
 }: {
   orderId: string;
   orderLabel: string;
@@ -56,7 +57,10 @@ export function BizimHesapApproveDialog({
   onApprove: () => Promise<void>;
   /** "Düzelt": pencereyi kapatıp siparişin fiş düzenleyicisini açar (adet, ürün ekle/çıkar). */
   onEdit?: () => void;
+  /** "send": sipariş zaten onaylı, pencere yalnız cari/ürün seçip BizimHesap'a gönderir. */
+  mode?: "approve" | "send";
 }) {
+  const actionLabel = mode === "send" ? "BizimHesap'a gönder" : "Onayla ve BizimHesap'a gönder";
   const [data, setData] = useState<Prepared | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -152,7 +156,7 @@ export function BizimHesapApproveDialog({
         <div className="flex items-start justify-between gap-3 border-b border-slate-100 px-5 py-4">
           <div>
             <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Sipariş {orderLabel}</p>
-            <h2 className="mt-0.5 text-lg font-semibold text-slate-900">Onayla ve BizimHesap&apos;a gönder</h2>
+            <h2 className="mt-0.5 text-lg font-semibold text-slate-900">{actionLabel}</h2>
           </div>
           <div className="flex items-center gap-1">
             <button
@@ -370,7 +374,7 @@ export function BizimHesapApproveDialog({
           ) : null}
           <Button onClick={() => void submit()} disabled={!data || saving || loading || blocked}>
             {saving ? <Loader2 className="size-4 animate-spin" /> : <CheckCircle2 className="size-4" />}
-            Onayla ve BizimHesap&apos;a gönder
+            {actionLabel}
           </Button>
         </div>
       </div>

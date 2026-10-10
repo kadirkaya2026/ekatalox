@@ -60,7 +60,7 @@ const GATE_BRANDING: Record<string, GateBranding> = {
         tagline:
           "Kulaklıktan powerbank'e, şarj aletinden hoparlöre; Lucatech ürünlerinin güncel toptan fiyat listesi bayilerimize özel.",
         chips: ["Kulaklık", "Hoparlör", "Powerbank", "Şarj Aleti", "Kablo", "2 Yıl Garanti"],
-        helpLine: "Şifreniz yok mu? info@lucatech.com.tr",
+        helpLine: "Şifreniz yok mu? Whatsapp'tan Bize Yazın, Gönderelim.",
       },
       en: {
         eyebrow: "Dealer Portal",
@@ -68,7 +68,7 @@ const GATE_BRANDING: Record<string, GateBranding> = {
         tagline:
           "From headphones to power banks, chargers to speakers; the current wholesale price list of Lucatech products, exclusively for our dealers.",
         chips: ["Headphones", "Speakers", "Power Banks", "Chargers", "Cables", "2-Year Warranty"],
-        helpLine: "No password? info@lucatech.com.tr",
+        helpLine: "No password? Message us on WhatsApp and we'll send it.",
       },
       de: {
         eyebrow: "Händlerportal",
@@ -76,7 +76,7 @@ const GATE_BRANDING: Record<string, GateBranding> = {
         tagline:
           "Von Kopfhörern bis Powerbanks, von Ladegeräten bis Lautsprechern; die aktuelle Großhandelspreisliste von Lucatech, exklusiv für unsere Händler.",
         chips: ["Kopfhörer", "Lautsprecher", "Powerbanks", "Ladegeräte", "Kabel", "2 Jahre Garantie"],
-        helpLine: "Kein Passwort? info@lucatech.com.tr",
+        helpLine: "Kein Passwort? Schreiben Sie uns auf WhatsApp, wir schicken es Ihnen.",
       },
       ru: {
         eyebrow: "Портал дилера",
@@ -84,7 +84,7 @@ const GATE_BRANDING: Record<string, GateBranding> = {
         tagline:
           "От наушников до пауэрбанков, от зарядных устройств до колонок; актуальный оптовый прайс-лист Lucatech только для наших дилеров.",
         chips: ["Наушники", "Колонки", "Пауэрбанки", "Зарядные устройства", "Кабели", "Гарантия 2 года"],
-        helpLine: "Нет пароля? info@lucatech.com.tr",
+        helpLine: "Нет пароля? Напишите нам в WhatsApp, и мы его отправим.",
       },
     },
   },

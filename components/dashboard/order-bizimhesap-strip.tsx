@@ -19,10 +19,13 @@ export function OrderBizimHesapStrip({
   order,
   sendOn,
   onOrderUpdated,
+  onSend,
 }: {
   order: StorefrontOrder & BizimHesapFields;
   sendOn: "order" | "confirmed";
   onOrderUpdated: (order: StorefrontOrder) => void;
+  /** Verilirse gönder düğmeleri cari/ürün seçilen onay penceresini açar (doğrudan göndermez). */
+  onSend?: () => void;
 }) {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -30,6 +33,19 @@ export function OrderBizimHesapStrip({
   const failed = !sent && Boolean(order.bizimhesap_error);
   const waitingForApproval = !sent && !failed && sendOn === "confirmed" && order.status === "new";
   const pending = !sent && !failed && !waitingForApproval && order.status !== "cancelled";
+  // Arka plan aktarımı birkaç saniye sürer; 1 dakikadan eski ve hâlâ gitmemişse
+  // "aktarılıyor" yerine açıkça "gönderilmedi" denir (10 Eki 2026: yayın
+  // kesintisinde onaylanan siparişler sonsuz "aktarılıyor"da kalmıştı).
+  const startedAt = sendOn === "confirmed" ? order.confirmed_at : order.created_at;
+  const [now, setNow] = useState(() => Date.now());
+  const stale = pending && (!startedAt || now - new Date(startedAt).getTime() > 60_000);
+
+  // Pencere açıkken 1 dakika dolarsa "gönderilmedi"ye geçsin.
+  useEffect(() => {
+    if (!pending || stale) return;
+    const timer = window.setTimeout(() => setNow(Date.now()), 61_000);
+    return () => window.clearTimeout(timer);
+  }, [pending, stale]);
 
   async function refresh() {
     const response = await fetch(`/api/tenant/orders/${order.id}`, { cache: "no-store" });
@@ -40,7 +56,7 @@ export function OrderBizimHesapStrip({
 
   // Onaydan hemen sonra aktarım arka planda sürer: 4 sn sonra bir kez yenile.
   useEffect(() => {
-    if (!pending) return;
+    if (!pending || stale) return;
     const timer = window.setTimeout(() => void refresh(), 4000);
     return () => window.clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -92,7 +108,7 @@ export function OrderBizimHesapStrip({
               <a href="/products/bizimhesap">Ürünleri eşleştir</a>
             </Button>
           ) : null}
-          <Button onClick={() => void resend()} disabled={busy}>
+          <Button onClick={() => (onSend ? onSend() : void resend())} disabled={busy}>
             {busy ? <Loader2 className="size-4 animate-spin" /> : <RefreshCw className="size-4" />}
             Tekrar gönder
           </Button>
@@ -112,11 +128,20 @@ export function OrderBizimHesapStrip({
   return (
     <div className="flex flex-wrap items-center justify-between gap-2 border-b border-amber-100 bg-amber-50 px-4 py-2.5 text-sm text-amber-800">
       <span className="flex items-center gap-2">
-        <Loader2 className="size-4 animate-spin" /> BizimHesap&apos;a aktarılıyor…
+        {stale ? (
+          <>
+            <CircleAlert className="size-4" /> BizimHesap&apos;a gönderilmedi.
+          </>
+        ) : (
+          <>
+            <Loader2 className="size-4 animate-spin" /> BizimHesap&apos;a aktarılıyor…
+          </>
+        )}
+        {message ? <span className="text-amber-900">{message}</span> : null}
       </span>
-      <Button variant="secondary" onClick={() => void resend()} disabled={busy}>
+      <Button variant={stale ? "primary" : "secondary"} onClick={() => (onSend ? onSend() : void resend())} disabled={busy}>
         {busy ? <Loader2 className="size-4 animate-spin" /> : <RefreshCw className="size-4" />}
-        Şimdi gönder
+        {stale ? "BizimHesap'a gönder" : "Şimdi gönder"}
       </Button>
     </div>
   );

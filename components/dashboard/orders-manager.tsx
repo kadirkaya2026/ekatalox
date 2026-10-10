@@ -80,6 +80,8 @@ export function OrdersManager({
   const [pending, setPending] = useState<string | null>(null);
   // BizimHesap "onaylanınca" modunda Onayla önce cari/ürün seçim penceresini açar (0167).
   const [approveOrder, setApproveOrder] = useState<StorefrontOrder | null>(null);
+  // Onaylı ama BizimHesap'a gitmemiş sipariş: aynı pencere, onaylamadan yalnız gönderir.
+  const [sendOrder, setSendOrder] = useState<StorefrontOrder | null>(null);
   const [cancelOpen, setCancelOpen] = useState(false);
   // Toptancı hızlı işlemleri (10 Eki 2026): İptal (onay kutusuyla) ve iptal edileni kalıcı Sil.
   const [confirmAction, setConfirmAction] = useState<{ kind: "cancel" | "delete"; order: StorefrontOrder } | null>(null);
@@ -392,6 +394,22 @@ export function OrdersManager({
     />
   ) : null;
 
+  const sendDialog = sendOrder ? (
+    <BizimHesapApproveDialog
+      mode="send"
+      orderId={sendOrder.id}
+      orderLabel={formatOrderNo(sendOrder)}
+      onClose={() => setSendOrder(null)}
+      onApprove={async () => {
+        const target = sendOrder;
+        const response = await fetch(`/api/tenant/orders/${target.id}/bizimhesap`, { method: "POST" });
+        const json = await response.json().catch(() => ({}));
+        await openOrder(target);
+        if (!response.ok || !json.ok) throw new Error(json.error ?? "BizimHesap'a gönderilemedi.");
+      }}
+    />
+  ) : null;
+
   if (selected) {
     const order = selected.order;
     const trackingUrl = buildTrackingUrl(storefrontOrigin, order.tracking_token);
@@ -414,6 +432,7 @@ export function OrdersManager({
     return (
       <>
       {approveDialog}
+      {sendDialog}
       {confirmDialog}
       {bulkDialog}
       <Card className="overflow-hidden p-0">
@@ -460,6 +479,7 @@ export function OrdersManager({
             order={order}
             sendOn={bizimhesapSendOn}
             onOrderUpdated={(next) => setSelected((current) => (current ? { ...current, order: next } : current))}
+            onSend={bizimhesapSendOn === "confirmed" ? () => setSendOrder(order) : undefined}
           />
         ) : null}
 
@@ -829,6 +849,7 @@ export function OrdersManager({
   return (
     <div className="space-y-4">
       {approveDialog}
+      {sendDialog}
       {confirmDialog}
       {bulkDialog}
       <InlineAlert tone="error" message={error} />
