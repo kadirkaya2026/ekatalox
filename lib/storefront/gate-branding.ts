@@ -17,6 +17,9 @@ export type GateBranding = {
   logoMark: string;
   wordmark: string;
   accentColor: string;
+  // İsteğe bağlı döngü arka plan videosu (sessiz, kısa). backgroundImage
+  // video yüklenene kadar ve hareket azaltma/veri tasarrufunda gösterilir.
+  backgroundVideo?: { src: string; mobileSrc?: string };
   copy: Partial<Record<StorefrontLocale, GateBrandingCopy>> & { tr: GateBrandingCopy };
 };
 
@@ -123,6 +126,32 @@ const GATE_BRANDING: Record<string, GateBranding> = {
           "От зарядных устройств до кабелей, от наушников до пауэрбанков; наш актуальный оптовый прайс-лист только для наших дилеров.",
         chips: ["Зарядные устройства", "Кабели", "Наушники", "Пауэрбанки", "Колонки", "Гарантия"],
         helpLine: "Нет пароля? Напишите нам в WhatsApp.",
+      },
+    },
+  },
+  // 10 Eki 2026: Genax — müşterinin verdiği mor dalga animasyonu kapıda döngü video.
+  genax: {
+    backgroundImage: "/gate/genax/poster.jpg",
+    backgroundVideo: { src: "/gate/genax/bg.mp4", mobileSrc: "/gate/genax/bg-mobile.mp4" },
+    logoMark: "/gate/genax/logo-mark.png",
+    wordmark: "GENAX",
+    accentColor: "#C81E85",
+    copy: {
+      tr: {
+        eyebrow: "Bayi Portalı",
+        headline: "Feel The Power.",
+        tagline:
+          "Şarj cihazından kabloya, powerbank'ten kulaklığa; Genax ürünlerinin güncel toptan fiyat listesi bayilerimize özel.",
+        chips: ["Şarj Cihazı", "Şarj Kablosu", "Powerbank", "Kulaklık", "Araç Şarjı", "Telefon Tutucu"],
+        helpLine: "Şifreniz yok mu? WhatsApp'tan bize yazın.",
+      },
+      en: {
+        eyebrow: "Dealer Portal",
+        headline: "Feel The Power.",
+        tagline:
+          "From chargers to cables, power banks to earbuds; the current wholesale price list of Genax products, exclusively for our dealers.",
+        chips: ["Chargers", "Cables", "Power Banks", "Earbuds", "Car Chargers", "Phone Holders"],
+        helpLine: "No password? Message us on WhatsApp.",
       },
     },
   },

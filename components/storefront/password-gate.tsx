@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type { StorefrontThemeKey } from "@/lib/types";
@@ -23,6 +23,52 @@ const DEMO_GATE_PASSWORDS: Record<string, string> = {
   [new URL(SITE.demoUrl).hostname.split(".")[0]]: SITE.demoPassword,
   "demo-giyim": SITE.demoPassword,
 };
+
+// Markalı kapı arka plan videosu. Kasmaması için: kaynak istemcide seçilir
+// (telefonda dikey 540p), hareket azaltma / veri tasarrufunda hiç yüklenmez
+// (poster görseli kalır), sekme gizlenince durur; videoya filtre/blur yok.
+function GateBackgroundVideo({ video }: { video: NonNullable<GateBranding["backgroundVideo"]> }) {
+  const ref = useRef<HTMLVideoElement>(null);
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const saveData = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection?.saveData;
+    if (reduceMotion || saveData) return;
+
+    // Dikey ekranda (telefon) 9:16 kurgulanmış hafif sürüm.
+    const portrait = window.matchMedia("(orientation: portrait) and (max-width: 1023px)").matches;
+    el.src = portrait && video.mobileSrc ? video.mobileSrc : video.src;
+    el.play().catch(() => {});
+
+    const onVisibility = () => {
+      if (document.hidden) el.pause();
+      else el.play().catch(() => {});
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => document.removeEventListener("visibilitychange", onVisibility);
+  }, [video.src, video.mobileSrc]);
+
+  return (
+    <video
+      ref={ref}
+      aria-hidden
+      muted
+      loop
+      playsInline
+      autoPlay
+      preload="auto"
+      disablePictureInPicture
+      onPlaying={() => setReady(true)}
+      className={cn(
+        "pointer-events-none absolute inset-0 -z-20 h-full w-full object-cover transition-opacity duration-700",
+        ready ? "opacity-100" : "opacity-0",
+      )}
+    />
+  );
+}
 
 function PasswordGateForm({
   subdomain,
@@ -130,9 +176,16 @@ function PasswordGateForm({
         className="absolute inset-0 -z-20 bg-cover bg-[position:72%_center] lg:bg-[position:right_center]"
         style={{ backgroundImage: `url(${branding.backgroundImage})` }}
       />
+      {branding.backgroundVideo ? <GateBackgroundVideo video={branding.backgroundVideo} /> : null}
       <div
         aria-hidden
-        className="absolute inset-0 -z-10 bg-[linear-gradient(90deg,rgba(6,6,7,0.96)_0%,rgba(6,6,7,0.88)_30%,rgba(6,6,7,0.55)_50%,rgba(6,6,7,0.08)_72%,rgba(6,6,7,0.2)_100%)]"
+        className={cn(
+          "absolute inset-0 -z-10",
+          // Video zaten koyu; ürün fotoğrafı için yazılan sert karartma onu boğuyor.
+          branding.backgroundVideo
+            ? "max-lg:bg-black/25 lg:bg-[linear-gradient(90deg,rgba(6,6,7,0.78)_0%,rgba(6,6,7,0.55)_35%,rgba(6,6,7,0.15)_65%,rgba(6,6,7,0.1)_100%)]"
+            : "bg-[linear-gradient(90deg,rgba(6,6,7,0.96)_0%,rgba(6,6,7,0.88)_30%,rgba(6,6,7,0.55)_50%,rgba(6,6,7,0.08)_72%,rgba(6,6,7,0.2)_100%)]",
+        )}
       />
       <div
         aria-hidden
