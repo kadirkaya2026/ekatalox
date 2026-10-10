@@ -59,8 +59,8 @@ export default async function ArticlePage({ params }: Props) {
         <article className="min-w-0 max-w-[70ch]">
           {post.sections.map((section) => <section key={section.id} id={section.id} className="mb-12 scroll-mt-28 last:mb-0">
             <h2 className="text-2xl font-semibold leading-snug tracking-tight text-brand-navy">{section.title}</h2>
-            {section.paragraphs.map((paragraph) => <p key={paragraph} className="mt-5 text-[17px] leading-[1.85] text-brand-muted">{paragraph}</p>)}
-            {section.bullets && <ul className="mt-5 list-disc space-y-3 pl-5 text-[17px] leading-relaxed text-brand-muted">{section.bullets.map((item) => <li key={item}>{item}</li>)}</ul>}
+            {section.paragraphs.map((paragraph) => <p key={paragraph} className="mt-5 text-[17px] leading-[1.85] text-brand-muted"><InlineLinks text={paragraph} /></p>)}
+            {section.bullets && <ul className="mt-5 list-disc space-y-3 pl-5 text-[17px] leading-relaxed text-brand-muted">{section.bullets.map((item) => <li key={item}><InlineLinks text={item} /></li>)}</ul>}
             {section.images && <div className={section.images.length > 1 ? "mt-6 grid gap-4 sm:grid-cols-2" : "mt-6"}>{section.images.map((image) => <figure key={image.src} className="overflow-hidden rounded-2xl border border-brand-line bg-brand-paper">
               <Image src={image.src} alt={image.alt} width={image.width} height={image.height} sizes="(min-width: 1024px) 560px, 100vw" className="h-auto w-full" />
               {image.caption && <figcaption className="px-4 py-3 text-sm leading-relaxed text-brand-muted">{image.caption}</figcaption>}
@@ -80,4 +80,24 @@ export default async function ArticlePage({ params }: Props) {
     </Section>
     {related.length > 0 && <Section><Container><h2 className="text-2xl font-semibold text-brand-navy">İlgili rehberler</h2><div className="mt-6 grid gap-5 md:grid-cols-3">{related.map((item) => <Link key={item.slug} href={`/blog/${item.slug}`} className="rounded-2xl border border-brand-line bg-white p-6 hover:border-brand-green"><h3 className="font-semibold text-brand-navy">{item.title}</h3><p className="mt-3 text-sm leading-relaxed text-brand-muted">{item.description}</p></Link>)}</div></Container></Section>}
   </>;
+}
+
+// Metin içi bağlantı (10 Eki 2026, iç linkleme): "[metin](/adres)" → site içi Link.
+// Yalnız "/" ile başlayan adresler; dış adres yazılırsa düz metin kalır.
+function InlineLinks({ text }: { text: string }) {
+  const parts: React.ReactNode[] = [];
+  const pattern = /\[([^\]]+)\]\((\/[^)\s]*)\)/g;
+  let last = 0;
+  for (const match of text.matchAll(pattern)) {
+    const index = match.index ?? 0;
+    if (index > last) parts.push(text.slice(last, index));
+    parts.push(
+      <Link key={index} href={match[2]} className="font-medium text-brand-green underline decoration-brand-green/30 underline-offset-2 hover:decoration-brand-green">
+        {match[1]}
+      </Link>,
+    );
+    last = index + match[0].length;
+  }
+  if (last < text.length) parts.push(text.slice(last));
+  return <>{parts}</>;
 }

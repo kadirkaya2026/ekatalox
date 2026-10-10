@@ -60,7 +60,7 @@ const posts: BlogPost[] = [
         id: "bayi-fiyatlari",
         title: "Bayi fiyatlarını nasıl sunabilirsiniz?",
         paragraphs: [
-          "Bayi, perakende ve özel müşteri gruplarına farklı fiyatlarla çalışıyorsanız her grup için ayrı PDF hazırlamak takip yükünü artırabilir. Şifreli fiyat listeleri kullanan bir katalogda, müşterinin giriş yaptığı listeye ait fiyatlar gösterilir. Ürün bilgileri ise aynı katalog üzerinden yönetilir.",
+          "Bayi, perakende ve özel müşteri gruplarına farklı fiyatlarla çalışıyorsanız her grup için ayrı PDF hazırlamak takip yükünü artırabilir. Şifreli [fiyat listeleri](/ozellikler/bayi-fiyat-listeleri) kullanan bir katalogda, müşterinin giriş yaptığı listeye ait fiyatlar gösterilir. Ürün bilgileri ise aynı katalog üzerinden yönetilir.",
           "eKatalox’ta fiyat listelerini ve giriş şifrelerini panelden yönetebilirsiniz. Kataloğu tamamen şifreli kullanabilir veya şifresiz ziyaretçilere ürünleri fiyatsız gösterebilirsiniz. Herkese açık kurumsal ürün sayfaları bayi fiyatlarını yayınlamaz. Açık açıklamalara veya görsellere ayrıca fiyat yazarsanız bunların da ziyaretçiler tarafından görülebileceğini göz önünde bulundurun.",
         ],
       },
@@ -69,14 +69,14 @@ const posts: BlogPost[] = [
         title: "Katalogdan WhatsApp siparişine geçiş",
         paragraphs: [
           "Sipariş özelliği olan bir katalogda müşteri ürünlerini seçip sepet hazırlayabilir. Adet veya koli bilgileri, seçilen ürünler ve tutarlar aynı siparişte toplanır. Böylece işletmenin farklı mesajlardan ürün kodlarını ve miktarları bir araya getirmesi kolaylaşır.",
-          "eKatalox’ta oluşan siparişler Siparişlerim sayfasında takip edilir. Müşteri PDF sipariş fişi bağlantısıyla WhatsApp’a geçer ve mesajı göndererek paylaşır. İşletme isterse kayıtlı WhatsApp numarasını alıcı olarak kullanır; isterse müşterinin göndereceği kişiyi seçmesine izin verir. PDF sipariş fişi, ürünlerin tamamını tanıtan bir PDF katalogdan farklıdır.",
+          "eKatalox’ta oluşan siparişler Siparişlerim sayfasında takip edilir. Müşteri PDF sipariş fişi bağlantısıyla [WhatsApp’a](/ozellikler/whatsapp-siparis) geçer ve mesajı göndererek paylaşır. İşletme isterse kayıtlı WhatsApp numarasını alıcı olarak kullanır; isterse müşterinin göndereceği kişiyi seçmesine izin verir. PDF sipariş fişi, ürünlerin tamamını tanıtan bir PDF katalogdan farklıdır.",
         ],
       },
       {
         id: "baslangic-kontrol-listesi",
         title: "İlk kataloğunuzu hazırlarken neleri kontrol etmelisiniz?",
         paragraphs: [
-          "Önce ürün verilerinizi düzenleyin. Tutarlı ürün kodları, anlaşılır isimler ve doğru fotoğraflar hem müşterinin ürün bulmasını hem de sizin güncelleme yapmanızı kolaylaştırır. Mevcut Excel listeniz varsa aktarım şablonuyla eşleştirin; önce küçük bir ürün grubuyla sonuçları kontrol edin.",
+          "Önce ürün verilerinizi düzenleyin. Tutarlı ürün kodları, anlaşılır isimler ve doğru fotoğraflar hem müşterinin ürün bulmasını hem de sizin güncelleme yapmanızı kolaylaştırır. Mevcut [Excel](/ozellikler/toplu-urun-yukleme) listeniz varsa aktarım şablonuyla eşleştirin; önce küçük bir ürün grubuyla sonuçları kontrol edin.",
         ],
         bullets: [
           "Ürün kodu, ad, kategori, birim ve koli içi adet bilgilerini hazırlayın.",
@@ -100,6 +100,7 @@ const posts: BlogPost[] = [
       { href: "/ozellikler/bayi-fiyat-listeleri", label: "Şifreli bayi fiyat listeleri" },
       { href: "/ozellikler/whatsapp-siparis", label: "WhatsApp sipariş akışı" },
       { href: "/ozellikler/toplu-urun-yukleme", label: "Excel’den ürün ve görsel yükleme" },
+      { href: "/egitim", label: "Adım adım video anlatımlar (Eğitim Merkezi)" },
     ],
   },
 {
@@ -115,7 +116,7 @@ const posts: BlogPost[] = [
       "title": "Önce kataloğun ne yapacağını belirleyin",
       "paragraphs": [
         "Ücretsiz dijital katalog oluşturmak için ilk adım ürün fotoğraflarını yerleştirmek değildir. Kimin kataloğa gireceğini, fiyatların herkese açık olup olmayacağını ve müşterinin siparişi nasıl ileteceğini belirleyin. Bu kararlar, ürün listesini nasıl hazırlayacağınızı da etkiler.",
-        "Örneğin yalnız ürünlerini tanıtmak isteyen bir üreticiyle, her gün farklı bayi fiyatlarıyla sipariş alan bir toptancının ihtiyacı aynı olmayabilir. eKatalox’ta şifreli fiyat listeleri ve WhatsApp sipariş akışıyla başlayabilirsiniz. Müşteriniz kataloğu tarayıcıdan açar; uygulama indirmesi gerekmez."
+        "Örneğin yalnız ürünlerini tanıtmak isteyen bir üreticiyle, her gün farklı bayi fiyatlarıyla sipariş alan bir toptancının ihtiyacı aynı olmayabilir. eKatalox’ta şifreli [fiyat listeleri](/ozellikler/bayi-fiyat-listeleri) ve WhatsApp sipariş akışıyla başlayabilirsiniz. Müşteriniz kataloğu tarayıcıdan açar; uygulama indirmesi gerekmez."
       ]
     },
     {
@@ -135,7 +136,7 @@ const posts: BlogPost[] = [
       "bullets": [
         "Firma adı ve logonuzu hazırlayın.",
         "Ürün adı, kodu, kategori, birim ve koli içi adet bilgilerini kontrol edin.",
-        "Ürünleri panelden ekleyin veya Excel/CSV şablonuyla aktarın.",
+        "Ürünleri panelden ekleyin veya [Excel](/ozellikler/toplu-urun-yukleme)/CSV şablonuyla aktarın.",
         "Toplu fotoğraf yükleyecekseniz model/SKU eşleşmelerini hazırlayın."
       ]
     },
@@ -152,7 +153,7 @@ const posts: BlogPost[] = [
       "title": "Bağlantıyı dağıtmadan önce deneyin",
       "paragraphs": [
         "Kataloğu telefonda müşteri gibi açın. Doğru fiyat listesini gördüğünüzü, aramada ürün kodunu bulabildiğinizi ve adet/koli seçiminin beklediğiniz gibi çalıştığını kontrol edin. Test siparişini gerçek müşteri siparişiyle karışmayacak biçimde adlandırın.",
-        "Sipariş oluştuğunda Siparişlerim sayfasını kontrol edin. WhatsApp’a geçince mesajı müşterinin gönderdiğini unutmayın: bağlantının açılması, mesajın gönderildiği anlamına gelmez. Test tamamlandığında katalog bağlantısını ve ilgili şifreyi bayilerinizle paylaşabilirsiniz."
+        "Sipariş oluştuğunda Siparişlerim sayfasını kontrol edin. [WhatsApp’a](/ozellikler/whatsapp-siparis) geçince mesajı müşterinin gönderdiğini unutmayın: bağlantının açılması, mesajın gönderildiği anlamına gelmez. Test tamamlandığında katalog bağlantısını ve ilgili şifreyi bayilerinizle paylaşabilirsiniz."
       ]
     }
   ],
@@ -169,7 +170,8 @@ const posts: BlogPost[] = [
     {
       "href": "/fiyatlandirma",
       "label": "Ücretsiz plan ve paket sınırları"
-    }
+    },
+    { href: "/egitim", label: "Adım adım video anlatımlar (Eğitim Merkezi)" },
   ]
 },
 {
@@ -201,7 +203,7 @@ const posts: BlogPost[] = [
       "title": "Bayi grupları ve fiyat gizliliği",
       "paragraphs": [
         "Farklı müşteri grupları için ayrı PDF’ler hazırlayabilirsiniz; ancak bu dosyaların doğru kişilere gönderilmesi ve eski sürümlerin takip edilmesi gerekir. Müşterinin indirdiği dosyayı daha sonra geri almak veya tüm kopyalarını güncellemek mümkün olmayabilir.",
-        "Şifreli online katalogda fiyat listeleri giriş erişimiyle ayrılır. eKatalox’ta şifresiz ziyaretçilere fiyatsız ürün gösterimi de kullanılabilir. Bununla birlikte liste şifresini bilen kişi o listeye erişebilir; şifre paylaşımını işletmenizin politikasına göre yönetmelisiniz."
+        "Şifreli online katalogda [fiyat listeleri](/ozellikler/bayi-fiyat-listeleri) giriş erişimiyle ayrılır. eKatalox’ta şifresiz ziyaretçilere fiyatsız ürün gösterimi de kullanılabilir. Bununla birlikte liste şifresini bilen kişi o listeye erişebilir; şifre paylaşımını işletmenizin politikasına göre yönetmelisiniz."
       ]
     },
     {
@@ -209,7 +211,7 @@ const posts: BlogPost[] = [
       "title": "İnternet erişimi ve sipariş toplama",
       "paragraphs": [
         "İndirilmiş bir PDF internet olmadan okunabilir. Online kataloğun güncel içeriğine ulaşmak ise internet bağlantısı gerektirir. Saha ziyareti veya bağlantının zayıf olduğu ortamlarda bu farkı hesaba katın.",
-        "PDF’den sipariş alan bir işletmede müşteri ürün kodlarını mesajla iletebilir. Siparişli online katalogda ise müşteri ürünleri seçip sepet hazırlayabilir. eKatalox’ta PDF sipariş fişi bağlantısı WhatsApp üzerinden müşteri tarafından paylaşılır ve sipariş panelde takip edilir. Bu fiş, tüm ürünlerin yer aldığı PDF katalog değildir."
+        "PDF’den sipariş alan bir işletmede müşteri ürün kodlarını mesajla iletebilir. Siparişli online katalogda ise müşteri ürünleri seçip sepet hazırlayabilir. eKatalox’ta PDF sipariş fişi bağlantısı [WhatsApp](/ozellikler/whatsapp-siparis) üzerinden müşteri tarafından paylaşılır ve sipariş panelde takip edilir. Bu fiş, tüm ürünlerin yer aldığı PDF katalog değildir."
       ]
     },
     {
@@ -240,7 +242,8 @@ const posts: BlogPost[] = [
     {
       "href": "/ozellikler/whatsapp-siparis",
       "label": "Katalogdan sipariş toplama"
-    }
+    },
+    { href: "/egitim", label: "Adım adım video anlatımlar (Eğitim Merkezi)" },
   ]
 },
 {
@@ -311,7 +314,8 @@ const posts: BlogPost[] = [
     {
       "href": "/nasil-calisir",
       "label": "Online katalog akışını inceleyin"
-    }
+    },
+    { href: "/egitim", label: "Adım adım video anlatımlar (Eğitim Merkezi)" },
   ]
 },
 {
@@ -326,7 +330,7 @@ const posts: BlogPost[] = [
       "id": "duzenli-siparis",
       "title": "Önce sipariş bilgisini standartlaştırın",
       "paragraphs": [
-        "WhatsApp üzerinden toptan sipariş toplarken en sık yaşanan zorluklardan biri, ürün ve miktar bilgisinin farklı mesajlara dağılmasıdır. Bir müşteri ürün kodunu, diğeri fotoğrafı, başka biri de sesli mesajı kullanabilir. Hazırlık sırasında hangi ürünün kaç adet istendiğini yeniden sormanız gerekebilir.",
+        "[WhatsApp](/ozellikler/whatsapp-siparis) üzerinden toptan sipariş toplarken en sık yaşanan zorluklardan biri, ürün ve miktar bilgisinin farklı mesajlara dağılmasıdır. Bir müşteri ürün kodunu, diğeri fotoğrafı, başka biri de sesli mesajı kullanabilir. Hazırlık sırasında hangi ürünün kaç adet istendiğini yeniden sormanız gerekebilir.",
         "Müşteriye ortak bir ürün listesi ve sipariş biçimi sunmak bu karışıklığı azaltır. Siparişli katalogda ürün kodu, birim ve miktar sepetten gelir. Formdaki müşteri alanları da işletmenizin ihtiyaç duyduğu bilgileri toplar."
       ]
     },
@@ -334,7 +338,7 @@ const posts: BlogPost[] = [
       "id": "urun-secimi",
       "title": "1. Müşteri kendi fiyatıyla ürün seçer",
       "paragraphs": [
-        "Bayinize katalog bağlantısını ve ilgili fiyat listesine ait giriş bilgisini gönderin. Müşteri tarayıcıdan kataloğa girer, ürünleri kategori veya aramayla bulur ve sepete ekler. Uygulama indirmesi gerekmez.",
+        "Bayinize katalog bağlantısını ve ilgili [fiyat listesi](/ozellikler/bayi-fiyat-listeleri)ne ait giriş bilgisini gönderin. Müşteri tarayıcıdan kataloğa girer, ürünleri kategori veya aramayla bulur ve sepete ekler. Uygulama indirmesi gerekmez.",
         "Koliyle satılan üründe koli içi adedi net gösterin. Örneğin bir koli 12 adet içeriyorsa müşteri 2 koli seçtiğinde 24 adet istediğini anlamalıdır. Ürün adı ve kodu doğru olduğunda hazırlayan kişi de sipariş fişindeki kalemi daha kolay eşleştirir."
       ]
     },
@@ -382,7 +386,8 @@ const posts: BlogPost[] = [
     {
       "href": "/ozellikler/online-odeme",
       "label": "Katalogdan online ödeme"
-    }
+    },
+    { href: "/egitim", label: "Adım adım video anlatımlar (Eğitim Merkezi)" },
   ]
 },
 {
@@ -397,7 +402,7 @@ const posts: BlogPost[] = [
       "id": "gruplari-belirleyin",
       "title": "Müşteri gruplarını tanımlayın",
       "paragraphs": [
-        "Bayiye özel fiyat listesi hazırlarken önce fiyat farkının nedenini belirleyin. Perakende, düzenli bayi veya özel anlaşmalı müşteri gibi gruplar aynı ürün için farklı fiyatla çalışabilir. Her müşteri için yeni liste açmak yerine ortak kurallarla çalışan grupları belirlemek yönetimi kolaylaştırır.",
+        "[Bayiye özel fiyat listesi](/ozellikler/bayi-fiyat-listeleri) hazırlarken önce fiyat farkının nedenini belirleyin. Perakende, düzenli bayi veya özel anlaşmalı müşteri gibi gruplar aynı ürün için farklı fiyatla çalışabilir. Her müşteri için yeni liste açmak yerine ortak kurallarla çalışan grupları belirlemek yönetimi kolaylaştırır.",
         "Örneğin üç grubunuz varsa listeleri “Bayi”, “Perakende” ve “Özel” diye adlandırabilirsiniz. Liste adlarının anlaşılır olması, daha sonra fiyat güncellerken yanlış grupta işlem yapma ihtimalini azaltır. Bu adlandırma bir örnektir; kendi ticari düzeninize göre uyarlayın."
       ]
     },
@@ -427,7 +432,7 @@ const posts: BlogPost[] = [
         "Doğru şifre doğru fiyat listesine mi bağlı?",
         "Fiyatın para birimi ve satış birimi doğru mu?",
         "Aynı ürünün kodu tüm listelerde tutarlı mı?",
-        "Kampanya veya indirim varsa müşteri ekranındaki sonuç beklediğiniz gibi mi?",
+        "[Kampanya](/ozellikler/kampanya-bildirimleri) veya indirim varsa müşteri ekranındaki sonuç beklediğiniz gibi mi?",
         "Eski erişimi değiştirdiyseniz ilgili müşterilere güncel bilgiyi ilettiniz mi?"
       ]
     },
@@ -436,7 +441,7 @@ const posts: BlogPost[] = [
       "title": "Liste sayısını ihtiyaca göre seçin",
       "paragraphs": [
         "eKatalox’ta ücretsiz plan 2, Başlangıç 3, Profesyonel 15 fiyat listesi sunar; Kurumsal pakette fiyat listesi sınırı yoktur. Paket seçmeden önce kaç ayrı fiyat düzenine gerçekten ihtiyacınız olduğunu çıkarın ve güncel koşulları fiyatlandırma sayfasından inceleyin.",
-        "Liste sayısının artması tek başına daha iyi bayi yönetimi sağlamaz. Net grup adları, düzenli fiyat kontrolü ve doğru erişim paylaşımı günlük işi kolaylaştırır. Başlangıç ve üzeri paketlerde il–fiyat listesi giriş raporlarıyla katalog kullanımını da inceleyebilirsiniz."
+        "Liste sayısının artması tek başına daha iyi bayi yönetimi sağlamaz. Net grup adları, düzenli fiyat kontrolü ve doğru erişim paylaşımı günlük işi kolaylaştırır. Başlangıç ve üzeri paketlerde il–fiyat listesi giriş [raporlarıyla](/ozellikler/raporlar) katalog kullanımını da inceleyebilirsiniz."
       ]
     }
   ],
@@ -453,7 +458,8 @@ const posts: BlogPost[] = [
     {
       "href": "/ozellikler/raporlar",
       "label": "İl ve liste giriş raporları"
-    }
+    },
+    { href: "/egitim", label: "Adım adım video anlatımlar (Eğitim Merkezi)" },
   ]
 },
 {
@@ -468,7 +474,7 @@ const posts: BlogPost[] = [
       "id": "sablon",
       "title": "Panelin şablonuyla başlayın",
       "paragraphs": [
-        "Excel’den ürün kataloğu oluştururken ilk iş, elinizdeki dosyanın sütunlarını aktarım şablonuyla eşleştirmektir. eKatalox panelindeki şablonu indirin ve güncel alanları inceleyin. Farklı bir sistemden aldığınız Excel dosyasının doğrudan aynı düzende olduğunu varsaymayın.",
+        "[Excel’den](/ozellikler/toplu-urun-yukleme) ürün kataloğu oluştururken ilk iş, elinizdeki dosyanın sütunlarını aktarım şablonuyla eşleştirmektir. eKatalox panelindeki şablonu indirin ve güncel alanları inceleyin. Farklı bir sistemden aldığınız Excel dosyasının doğrudan aynı düzende olduğunu varsaymayın.",
         "Ürün kodu, ad, kategori, fiyat, birim ve koli içi adet gibi bilgileri ayrı sütunlarda tutun. Bir hücreye “Kablo / 12’li koli / 100 TL” yazmak yerine bilgileri ilgili alanlara ayırın. Dosya XLSX veya CSV olarak aktarılabilir; sütun adları için paneldeki güncel şablonu esas alın."
       ]
     },
@@ -525,7 +531,8 @@ const posts: BlogPost[] = [
     {
       "href": "/ozellikler/bayi-fiyat-listeleri",
       "label": "Bayi fiyatlarını düzenleyin"
-    }
+    },
+    { href: "/egitim", label: "Adım adım video anlatımlar (Eğitim Merkezi)" },
   ]
 },
 {
@@ -572,7 +579,7 @@ const posts: BlogPost[] = [
       "id": "iletisim-ve-saatler",
       "title": "Alıcıyı, çalışma saatlerini ve duyuruyu birlikte düşünün",
       "paragraphs": [
-        "WhatsApp siparişi kayıtlı numaranıza yönlendirebilir veya müşterinin alıcıyı seçmesine izin verebilirsiniz. İkinci seçenek, müşterinin siparişi kendi toptancısına iletmek istediği akışlarda kullanılabilir. Mesajı müşterinin WhatsApp üzerinden gönderdiğini açıkça anlatın.",
+        "[WhatsApp siparişi](/ozellikler/whatsapp-siparis) kayıtlı numaranıza yönlendirebilir veya müşterinin alıcıyı seçmesine izin verebilirsiniz. İkinci seçenek, müşterinin siparişi kendi toptancısına iletmek istediği akışlarda kullanılabilir. Mesajı müşterinin WhatsApp üzerinden gönderdiğini açıkça anlatın.",
         "Çalışma gün ve saatlerinizi belirleyin; kapalı olduğunuzda mağaza kapalı mesajını kullanın. Teslimat günü değişikliği gibi bilgileri açılış duyurusunda belirtin. Birbirini tamamlayan kısa açıklamalar, müşterinin sipariş vermeden önce ne beklemesi gerektiğini anlamasına yardımcı olur."
       ]
     },
@@ -604,7 +611,8 @@ const posts: BlogPost[] = [
     {
       "href": "/ozellikler/kampanya-bildirimleri",
       "label": "Duyuru ve çalışma saatleri"
-    }
+    },
+    { href: "/egitim", label: "Adım adım video anlatımlar (Eğitim Merkezi)" },
   ]
 },
   // ---------------------------------------------------------------------
@@ -623,15 +631,15 @@ const posts: BlogPost[] = [
         id: "lucatech-kimdir",
         title: "Lucatech kimdir, ne arıyordu?",
         paragraphs: [
-          "Lucatech; şarj aleti, kablo, kulaklık, powerbank, hoparlör ve telefon tutucu gibi telefon aksesuarları satan bir marka. Ürünlerini Türkiye'nin farklı şehirlerindeki bayilere toptan satıyor. Ürün sayısı arttıkça fiyat listesini güncel tutmak ve siparişleri tek bir düzende toplamak zorlaştı.",
-          "Lucatech'in istediği basitti: bayi telefondan kataloğu açsın, kendi fiyatını görsün, sepetini doldursun ve siparişi WhatsApp'tan göndersin. Fiyatlar ise bayi olmayan birinin göremeyeceği şekilde kapalı kalsın.",
+          "Lucatech; şarj aleti, kablo, kulaklık, powerbank, hoparlör ve telefon tutucu gibi telefon aksesuarları satan bir marka. Ürünlerini Türkiye'nin farklı şehirlerindeki bayilere toptan satıyor. Ürün sayısı arttıkça [fiyat listesi](/ozellikler/bayi-fiyat-listeleri)ni güncel tutmak ve siparişleri tek bir düzende toplamak zorlaştı.",
+          "Lucatech'in istediği basitti: bayi telefondan kataloğu açsın, kendi fiyatını görsün, sepetini doldursun ve siparişi [WhatsApp'tan](/ozellikler/whatsapp-siparis) göndersin. Fiyatlar ise bayi olmayan birinin göremeyeceği şekilde kapalı kalsın.",
         ],
       },
       {
         id: "ilk-gun",
         title: "İlk gün: mağaza sabah açıldı, ürünler akşam tek seferde geldi",
         paragraphs: [
-          "Lucatech mağazasını 26 Mayıs 2026'da açtı. Aynı akşam ürün listesini eKatalox'un Excel şablonuna aktardı ve Toplu Ürün Ekleme sayfasından yükledi. Sistem kayıtlarına göre 109 ürünün tamamı aynı dakika içinde kataloğa eklendi.",
+          "Lucatech mağazasını 26 Mayıs 2026'da açtı. Aynı akşam ürün listesini eKatalox'un [Excel](/ozellikler/toplu-urun-yukleme) şablonuna aktardı ve Toplu Ürün Ekleme sayfasından yükledi. Sistem kayıtlarına göre 109 ürünün tamamı aynı dakika içinde kataloğa eklendi.",
           "Şablonda her ürün için kategori, model kodu, ürün adı, para birimi, liste fiyatları, stok durumu ve paket/koli adedi bulunuyor. Görseller ister model koduyla adlandırılıp toplu, ister ürün sayfasından tek tek eklenebiliyor.",
         ],
         bullets: [
@@ -663,7 +671,7 @@ const posts: BlogPost[] = [
         id: "google-ve-yeni-bayi",
         title: "Fiyatlar kapalı, marka Google'da açık",
         paragraphs: [
-          "Şifreli katalog Google'a kapalıdır; bu, fiyatların aramalarda görünmemesi için bilerek böyle yapılır. Lucatech'in Google'daki yüzü ise kurumsal sitesi: ürün grupları, marka bilgisi ve iletişim burada fiyatsız olarak yer alıyor.",
+          "Şifreli katalog Google'a kapalıdır; bu, fiyatların aramalarda görünmemesi için bilerek böyle yapılır. Lucatech'in Google'daki yüzü ise [kurumsal sitesi](/ozellikler/kurumsal-site): ürün grupları, marka bilgisi ve iletişim burada fiyatsız olarak yer alıyor.",
           "Bayilik başvuruları da bu siteden geliyor ve panelde tek yerde toplanıyor.",
         ],
         images: [
@@ -689,6 +697,7 @@ const posts: BlogPost[] = [
       { href: "/ozellikler/toplu-urun-yukleme", label: "Toplu ürün yüklemeyi inceleyin" },
       { href: "/ozellikler/bayi-fiyat-listeleri", label: "Bayi fiyat listeleri" },
       { href: "/ozellikler/kurumsal-site", label: "Kurumsal site ve kendi alan adı" },
+      { href: "/egitim", label: "Adım adım video anlatımlar (Eğitim Merkezi)" },
     ],
   },
   {
@@ -703,14 +712,14 @@ const posts: BlogPost[] = [
         id: "genax-kimdir",
         title: "Genax kimdir?",
         paragraphs: [
-          "Genax, şarj aleti ve kablo ağırlıklı telefon aksesuarları satan bir toptancı. Ürünleri bayilere çoğunlukla paket ya da koli halinde satılıyor. Bir bayinin \"3 koli kablo\" demesiyle \"3 adet kablo\" demesi arasındaki fark, toptanda yanlış sevkiyatın en sık sebeplerinden biri.",
+          "Genax, şarj aleti ve kablo ağırlıklı [telefon aksesuarları](/sektorler/elektronik-aksesuar) satan bir toptancı. Ürünleri bayilere çoğunlukla paket ya da koli halinde satılıyor. Bir bayinin \"3 koli kablo\" demesiyle \"3 adet kablo\" demesi arasındaki fark, toptanda yanlış sevkiyatın en sık sebeplerinden biri.",
         ],
       },
       {
         id: "katalog-kurulumu",
         title: "Katalog bir öğlen arasında kuruldu",
         paragraphs: [
-          "Genax ürünlerini Excel şablonuyla tek seferde yükledi; ürünlerin tamamı aynı dakika içinde kataloğa eklendi.",
+          "Genax ürünlerini [Excel](/ozellikler/toplu-urun-yukleme) şablonuyla tek seferde yükledi; ürünlerin tamamı aynı dakika içinde kataloğa eklendi.",
           "Şablondaki Paket Adedi ve Koli Adedi sütunları burada belirleyici oldu. Örneğin bir pakette 20, bir kolide 200 adet olan bir ürün için bu bilgiler bir kez giriliyor; bayi sipariş verirken birimi seçiyor, adedi sistem hesaplıyor.",
         ],
       },
@@ -719,10 +728,10 @@ const posts: BlogPost[] = [
         title: "Bayi siparişi nasıl veriyor?",
         paragraphs: [
           "Bayi kendisine verilen şifreyle kataloğa giriyor ve ürünü seçiyor. Sepete eklerken adet, paket veya koli birimlerinden birini seçip miktarı yazıyor. Sepette toplam adet ve tutar görünüyor.",
-          "Siparişi tamamladığında PDF sipariş fişinin bağlantısı WhatsApp mesajına ekleniyor ve bayi mesajı Genax'a gönderiyor. Fişte ürün kodları, birimler ve miktarlar açıkça yazdığı için siparişi hazırlayan kişi mesajlardan ürün toplamak zorunda kalmıyor.",
+          "Siparişi tamamladığında PDF sipariş fişinin bağlantısı [WhatsApp](/ozellikler/whatsapp-siparis) mesajına ekleniyor ve bayi mesajı Genax'a gönderiyor. Fişte ürün kodları, birimler ve miktarlar açıkça yazdığı için siparişi hazırlayan kişi mesajlardan ürün toplamak zorunda kalmıyor.",
         ],
         bullets: [
-          "Şifreyle giriş: bayi yalnız kendi fiyat listesini görür.",
+          "Şifreyle giriş: bayi yalnız kendi [fiyat listesi](/ozellikler/bayi-fiyat-listeleri)ni görür.",
           "Birim seçimi: adet, paket veya koli.",
           "Sepet: toplam adet ve tutar tek ekranda.",
           "WhatsApp: PDF sipariş fişi bağlantısıyla gönderim.",
@@ -756,6 +765,7 @@ const posts: BlogPost[] = [
     featureLinks: [
       { href: "/ozellikler/whatsapp-siparis", label: "WhatsApp sipariş akışı" },
       { href: "/ozellikler/toplu-urun-yukleme", label: "Excel ile toplu ürün yükleme" },
+      { href: "/egitim", label: "Adım adım video anlatımlar (Eğitim Merkezi)" },
     ],
   },
   {
@@ -770,7 +780,7 @@ const posts: BlogPost[] = [
         id: "sorun",
         title: "Fiyat listesi neden elden ele dolaşır?",
         paragraphs: [
-          "PDF ya da Excel fiyat listesi bir bayiye gönderildiği anda kopyalanabilir hale gelir. Bayi dosyayı bir çalışanına, o da bir başkasına iletebilir. Bir süre sonra listenin rakip bir firmada olup olmadığını bilmenin yolu kalmaz.",
+          "PDF ya da Excel [fiyat listesi](/ozellikler/bayi-fiyat-listeleri) bir bayiye gönderildiği anda kopyalanabilir hale gelir. Bayi dosyayı bir çalışanına, o da bir başkasına iletebilir. Bir süre sonra listenin rakip bir firmada olup olmadığını bilmenin yolu kalmaz.",
           "Üstelik eski dosyalar silinmez. Fiyat güncellediğinizde, eski listeyi saklayan bayi ya da ona ulaşan rakip hâlâ eski fiyatları görür.",
         ],
       },
@@ -819,6 +829,7 @@ const posts: BlogPost[] = [
     featureLinks: [
       { href: "/ozellikler/bayi-fiyat-listeleri", label: "Şifreli bayi fiyat listeleri" },
       { href: "/fiyatlandirma", label: "Paketlerde fiyat listesi sayıları" },
+      { href: "/egitim", label: "Adım adım video anlatımlar (Eğitim Merkezi)" },
     ],
   },
   {
@@ -921,6 +932,7 @@ const posts: BlogPost[] = [
     relatedSlugs: ["excelden-urun-katalogu", "ucretsiz-dijital-katalog-olusturma", "toptan-fiyat-listesi-excel-sablonu"],
     featureLinks: [
       { href: "/ozellikler/toplu-urun-yukleme", label: "Toplu görsel yükleme" },
+      { href: "/egitim", label: "Adım adım video anlatımlar (Eğitim Merkezi)" },
     ],
   },
   {
@@ -935,7 +947,7 @@ const posts: BlogPost[] = [
         id: "neden-form",
         title: "Bayilik talepleri neden kaybolur?",
         paragraphs: [
-          "Bayilik talepleri farklı yerlerden gelir: telefon, WhatsApp, fuar kartvizitleri, sitedeki iletişim formu. Hangisine dönüldüğü, kime hangi fiyatın verildiği çoğu zaman bir deftere ya da bir kişinin hafızasına kalır. Talep sayısı arttıkça bazıları cevapsız kalır.",
+          "Bayilik talepleri farklı yerlerden gelir: telefon, [WhatsApp](/ozellikler/whatsapp-siparis), fuar kartvizitleri, sitedeki iletişim formu. Hangisine dönüldüğü, kime hangi fiyatın verildiği çoğu zaman bir deftere ya da bir kişinin hafızasına kalır. Talep sayısı arttıkça bazıları cevapsız kalır.",
           "Tek bir başvuru formu bu dağınıklığı toplar. Her başvuru aynı bilgilerle gelir ve aynı ekranda bekler.",
         ],
       },
@@ -956,8 +968,8 @@ const posts: BlogPost[] = [
         id: "ekataloxta-akis",
         title: "eKatalox'ta başvuru akışı",
         paragraphs: [
-          "Kurumsal pakette kurumsal sitenizde bir Bayimiz Olun formu bulunur. Gelen başvurular panelde Bayi Başvuruları sayfasında toplanır. Başvuruyu açtığınızda bayinin bilgilerini görürsünüz.",
-          "Onaylarken bayiyi bir fiyat listesine bağlar ve ona özel bir giriş şifresi belirlersiniz. Onaydan sonra çıkan Şifreyi WhatsApp'tan gönder düğmesi, şifreyi ve katalog bağlantısını içeren mesajı bayinin numarasına hazırlar; siz yalnız gönderirsiniz. Onaylanan bayi Müşteriler sayfasında listelenir.",
+          "Kurumsal pakette [kurumsal sitenizde](/ozellikler/kurumsal-site) bir Bayimiz Olun formu bulunur. Gelen başvurular panelde Bayi Başvuruları sayfasında toplanır. Başvuruyu açtığınızda bayinin bilgilerini görürsünüz.",
+          "Onaylarken bayiyi bir [fiyat listesi](/ozellikler/bayi-fiyat-listeleri)ne bağlar ve ona özel bir giriş şifresi belirlersiniz. Onaydan sonra çıkan Şifreyi WhatsApp'tan gönder düğmesi, şifreyi ve katalog bağlantısını içeren mesajı bayinin numarasına hazırlar; siz yalnız gönderirsiniz. Onaylanan bayi Müşteriler sayfasında listelenir.",
         ],
         bullets: [
           "Kurumsal sitedeki form → Bayi Başvuruları sayfası",
@@ -994,6 +1006,7 @@ const posts: BlogPost[] = [
     featureLinks: [
       { href: "/ozellikler/kurumsal-site", label: "Kurumsal site ve Bayimiz Olun formu" },
       { href: "/fiyatlandirma", label: "Kurumsal paketi inceleyin" },
+      { href: "/egitim", label: "Adım adım video anlatımlar (Eğitim Merkezi)" },
     ],
   },
   {
@@ -1036,7 +1049,7 @@ const posts: BlogPost[] = [
         id: "sik-hatalar",
         title: "Sık yapılan hatalar",
         paragraphs: [
-          "Fiyat listesindeki hataların çoğu ürün bilgisinden değil, hücrelerin dolduruluş biçiminden kaynaklanır. Aşağıdaki maddeleri dosyayı paylaşmadan ya da yüklemeden önce bir kez kontrol edin.",
+          "[Fiyat listesi](/ozellikler/bayi-fiyat-listeleri)ndeki hataların çoğu ürün bilgisinden değil, hücrelerin dolduruluş biçiminden kaynaklanır. Aşağıdaki maddeleri dosyayı paylaşmadan ya da yüklemeden önce bir kez kontrol edin.",
         ],
         bullets: [
           "Fiyat hücresine \"150 TL\" yazmak: Hücreye yalnız sayı yazın, para birimi kendi sütununda.",
@@ -1050,7 +1063,7 @@ const posts: BlogPost[] = [
         id: "ipuclari",
         title: "Şablonu doldururken işinizi kolaylaştıracak ipuçları",
         paragraphs: [
-          "Fiyatları başka bir dosyadan formülle hesaplıyorsanız şablona formül değil değer yapıştırın. Excel'de Özel Yapıştır > Değerler seçeneği bunu yapar. Formül başka bir dosyaya bağlıysa dosya açıldığı yerde fiyatlar boş ya da hatalı görünebilir.",
+          "Fiyatları başka bir dosyadan formülle hesaplıyorsanız şablona formül değil değer yapıştırın. [Excel'de](/ozellikler/toplu-urun-yukleme) Özel Yapıştır > Değerler seçeneği bunu yapar. Formül başka bir dosyaya bağlıysa dosya açıldığı yerde fiyatlar boş ya da hatalı görünebilir.",
           "KDV dahil mi hariç mi fiyat verdiğinize bir kez karar verin ve bütün listelerde aynı kuralı kullanın. Bayiye ilk gönderimde bunu açıkça yazın; aynı listede iki kuralın karışması en çok tartışma çıkaran hatalardan biridir.",
           "Döviz bazlı çalışıyorsanız ürünü kendi para biriminde bırakın: USD fiyatlı bir ürünü TL'ye çevirip yazmak, kur her değiştiğinde bütün listeyi yeniden hesaplamanız anlamına gelir.",
         ],
@@ -1073,7 +1086,7 @@ const posts: BlogPost[] = [
         id: "dosyadan-kataloga",
         title: "Dosyayı göndermek yerine kataloğa dönüştürün",
         paragraphs: [
-          "Excel dosyasını bayilere göndermek hızlıdır ama dosya kopyalanır, eski sürümler dolaşır ve fiyatlar herkesin elinde kalır. Bu şablonun sütunları eKatalox'un toplu yükleme şablonuyla aynıdır. Dosyayı Ürünler > Toplu Ürün Ekleme sayfasından olduğu gibi yüklerseniz ürünleriniz şifreli bir online kataloğa dönüşür; her bayi kendi listesinin fiyatını görür ve siparişini WhatsApp'tan gönderir.",
+          "Excel dosyasını bayilere göndermek hızlıdır ama dosya kopyalanır, eski sürümler dolaşır ve fiyatlar herkesin elinde kalır. Bu şablonun sütunları eKatalox'un toplu yükleme şablonuyla aynıdır. Dosyayı Ürünler > Toplu Ürün Ekleme sayfasından olduğu gibi yüklerseniz ürünleriniz şifreli bir online kataloğa dönüşür; her bayi kendi listesinin fiyatını görür ve siparişini [WhatsApp'tan](/ozellikler/whatsapp-siparis) gönderir.",
           "Daha sonra fiyat güncellerken aynı dosyayı yeniden yükleyebilirsiniz: aynı model numaralı ürünler güncellenir, yeni kodlar yeni ürün olarak eklenir.",
         ],
         images: [
@@ -1085,6 +1098,7 @@ const posts: BlogPost[] = [
     featureLinks: [
       { href: "/ozellikler/toplu-urun-yukleme", label: "Excel ile toplu ürün yükleme" },
       { href: "/basvuru", label: "Ücretsiz katalog açın" },
+      { href: "/egitim", label: "Adım adım video anlatımlar (Eğitim Merkezi)" },
     ],
   },
   {
@@ -1099,14 +1113,14 @@ const posts: BlogPost[] = [
         id: "ikilem",
         title: "Görünmek isteyip fiyatı göstermek istememek",
         paragraphs: [
-          "Toptancı iki şey ister: yeni bayiler kendisini Google'da bulsun, ama fiyat listesi herkesin önüne düşmesin. Bu ikisi çelişmez. Çözüm, fiyatlı kataloğu ve firmayı tanıtan sayfaları birbirinden ayırmaktır.",
+          "Toptancı iki şey ister: yeni bayiler kendisini Google'da bulsun, ama [fiyat listesi](/ozellikler/bayi-fiyat-listeleri) herkesin önüne düşmesin. Bu ikisi çelişmez. Çözüm, fiyatlı kataloğu ve firmayı tanıtan sayfaları birbirinden ayırmaktır.",
         ],
       },
       {
         id: "iki-katman",
         title: "İki katman: şifreli katalog ve açık kurumsal site",
         paragraphs: [
-          "Şifreli bayi kataloğu arama motorlarına kapalıdır; fiyatlar bu yüzden aramalarda çıkmaz. Firmanızın Google'daki yüzü ise fiyat içermeyen bir kurumsal site olmalıdır: ürün grupları, ürün adları ve kodları, firma bilgisi, iletişim ve bayilik başvurusu.",
+          "Şifreli bayi kataloğu arama motorlarına kapalıdır; fiyatlar bu yüzden aramalarda çıkmaz. Firmanızın Google'daki yüzü ise fiyat içermeyen bir [kurumsal site](/ozellikler/kurumsal-site) olmalıdır: ürün grupları, ürün adları ve kodları, firma bilgisi, iletişim ve bayilik başvurusu.",
           "Bayi adayı ürün kodunu ya da ürün grubunu arayıp kurumsal sitenize gelir, başvurur. Onaylandıktan sonra fiyatları şifreli katalogda görür.",
         ],
         images: [
@@ -1145,7 +1159,7 @@ const posts: BlogPost[] = [
         id: "isletme-profili",
         title: "Google İşletme Profili'ni unutmayın",
         paragraphs: [
-          "\"Yakınımdaki telefon aksesuarı toptancısı\" gibi aramalarda harita sonuçları öne çıkar. Ücretsiz bir Google İşletme Profili açıp adresinizi, çalışma saatlerinizi, fotoğraflarınızı ve web sitenizi ekleyin. Kategori olarak \"toptancı\" ile başlayan en uygun seçeneği seçin.",
+          "\"Yakınımdaki [telefon aksesuarı](/sektorler/elektronik-aksesuar) toptancısı\" gibi aramalarda harita sonuçları öne çıkar. Ücretsiz bir Google İşletme Profili açıp adresinizi, çalışma saatlerinizi, fotoğraflarınızı ve web sitenizi ekleyin. Kategori olarak \"toptancı\" ile başlayan en uygun seçeneği seçin.",
         ],
       },
       {
@@ -1184,6 +1198,7 @@ const posts: BlogPost[] = [
     relatedSlugs: ["toptan-fiyatlari-rakiplerden-koruma", "yeni-bayi-basvurusu-alma", "lucatech-bayi-katalogu-nasil-acildi"],
     featureLinks: [
       { href: "/ozellikler/kurumsal-site", label: "Kurumsal site ve kendi alan adı" },
+      { href: "/egitim", label: "Adım adım video anlatımlar (Eğitim Merkezi)" },
     ],
   },
   {
@@ -1198,7 +1213,7 @@ const posts: BlogPost[] = [
         id: "sorun",
         title: "Duyuru yapmak kolay, okutmak zor",
         paragraphs: [
-          "Yeni bir ürün geldiğinde ya da bir kampanya başladığında ilk akla gelen, bütün bayilere WhatsApp'tan mesaj atmaktır. İlk birkaç mesaj okunur; sonra bayi her mesajı açmaz, bazıları sizi sessize alır. Duyuru sayısı arttıkça etkisi azalır.",
+          "Yeni bir ürün geldiğinde ya da bir kampanya başladığında ilk akla gelen, bütün bayilere [WhatsApp'tan](/ozellikler/whatsapp-siparis) mesaj atmaktır. İlk birkaç mesaj okunur; sonra bayi her mesajı açmaz, bazıları sizi sessize alır. Duyuru sayısı arttıkça etkisi azalır.",
           "Daha iyi yol, duyuruyu bayinin zaten baktığı yere koymak ve yalnız gerçekten önemli olanı mesaj ya da bildirimle göndermektir.",
         ],
       },
@@ -1206,7 +1221,7 @@ const posts: BlogPost[] = [
         id: "katalog-ici",
         title: "Katalogun içinde duyurun",
         paragraphs: [
-          "Bayi sipariş vermek için kataloğu açtığında ilk gördüğü yer ana sayfanın üstüdür. Yeni ürünü ya da kampanyayı buraya bir banner olarak koyun. Kampanya kartları ve indirimli ürünler bölümü, bayinin sepetini doldururken kampanyayı görmesini sağlar. Ürün listesinde Yeni Eklenenler sıralaması da son gelen ürünleri öne çıkarır.",
+          "Bayi sipariş vermek için kataloğu açtığında ilk gördüğü yer ana sayfanın üstüdür. Yeni ürünü ya da [kampanyayı](/ozellikler/kampanya-bildirimleri) buraya bir banner olarak koyun. Kampanya kartları ve indirimli ürünler bölümü, bayinin sepetini doldururken kampanyayı görmesini sağlar. Ürün listesinde Yeni Eklenenler sıralaması da son gelen ürünleri öne çıkarır.",
           "Bu yöntemler bütün paketlerde vardır ve bayiyi rahatsız etmez; bayi duyuruyu sipariş verirken görür.",
         ],
         bullets: [
@@ -1253,6 +1268,7 @@ const posts: BlogPost[] = [
     featureLinks: [
       { href: "/ozellikler/kampanya-bildirimleri", label: "Kampanya ve bildirimler" },
       { href: "/fiyatlandirma", label: "Bildirim hangi pakette?" },
+      { href: "/egitim", label: "Adım adım video anlatımlar (Eğitim Merkezi)" },
     ],
   },
   {
@@ -1305,7 +1321,7 @@ const posts: BlogPost[] = [
         title: "Stoğu güncel tutmanın pratik yolları",
         bullets: [
           "Mal girişinde ilgili ürünleri hemen \"stokta\" yapın.",
-          "Toplu değişikliklerde Excel dosyasındaki Stok Durumu sütununu (Var/Yok) güncelleyip aynı dosyayı yeniden yükleyin.",
+          "Toplu değişikliklerde [Excel](/ozellikler/toplu-urun-yukleme) dosyasındaki Stok Durumu sütununu (Var/Yok) güncelleyip aynı dosyayı yeniden yükleyin.",
           "Haftada bir, en çok satan ürünlerin stok adedini sayıp girin.",
           "Stoka yeniden giren aranan ürünü bayilere duyurun.",
         ],
@@ -1317,6 +1333,7 @@ const posts: BlogPost[] = [
     relatedSlugs: ["toptan-siparis-kurallari", "bayi-siparisi-duzenleme", "bayilere-kampanya-duyurma"],
     featureLinks: [
       { href: "/ozellikler/whatsapp-siparis", label: "Sipariş akışını inceleyin" },
+      { href: "/egitim", label: "Adım adım video anlatımlar (Eğitim Merkezi)" },
     ],
   },
   {
@@ -1338,7 +1355,7 @@ const posts: BlogPost[] = [
         id: "onayla-iptal",
         title: "Önce onaylayın ya da iptal edin",
         paragraphs: [
-          "eKatalox'ta toptancı mağazalarında gelen her sipariş Siparişler sayfasında bekler. Siparişi kontrol ettikten sonra Onayla ya da İptal ile karar verirsiniz. Onaylanan sipariş raporlarda satış olarak sayılır ve stok takibi açık ürünlerde stok düşer.",
+          "eKatalox'ta toptancı mağazalarında gelen her sipariş Siparişler sayfasında bekler. Siparişi kontrol ettikten sonra Onayla ya da İptal ile karar verirsiniz. Onaylanan sipariş [raporlarda](/ozellikler/raporlar) satış olarak sayılır ve stok takibi açık ürünlerde stok düşer.",
         ],
       },
       {
@@ -1346,7 +1363,7 @@ const posts: BlogPost[] = [
         title: "Siparişi düzenleyin",
         paragraphs: [
           "Siparişin Düzenle ekranında ürün ekleyebilir, ürün çıkarabilir, adetleri ve fiyatları değiştirebilir, bayinin bilgilerini düzeltebilirsiniz. Düzenleme sipariş onaylandıktan sonra da yapılabilir.",
-          "Siparişe eklediğiniz yeni ürünün fiyatı, siparişin verildiği fiyat listesinden gelir. Bayi 2. liste fiyatlarıyla sipariş verdiyse eklenen ürün de 2. liste fiyatıyla girer; listeyi elle kontrol etmeniz gerekmez.",
+          "Siparişe eklediğiniz yeni ürünün fiyatı, siparişin verildiği [fiyat listesi](/ozellikler/bayi-fiyat-listeleri)nden gelir. Bayi 2. liste fiyatlarıyla sipariş verdiyse eklenen ürün de 2. liste fiyatıyla girer; listeyi elle kontrol etmeniz gerekmez.",
         ],
         bullets: [
           "Ürün ekle: fiyat siparişin fiyat listesinden.",
@@ -1359,7 +1376,7 @@ const posts: BlogPost[] = [
         id: "guncel-fis",
         title: "Güncel fişi bayiye gönderin",
         paragraphs: [
-          "Düzenlemeden sonra Güncel fişi WhatsApp'tan gönder düğmesi, siparişin son halini içeren fiş bağlantısını bayiye gönderilecek mesaja ekler. Fiş her açılışta siparişin o anki haliyle yeniden oluşturulur; bayinin elindeki bağlantı hep güncel kalır.",
+          "Düzenlemeden sonra Güncel fişi [WhatsApp'tan](/ozellikler/whatsapp-siparis) gönder düğmesi, siparişin son halini içeren fiş bağlantısını bayiye gönderilecek mesaja ekler. Fiş her açılışta siparişin o anki haliyle yeniden oluşturulur; bayinin elindeki bağlantı hep güncel kalır.",
           "Böylece bayi \"ne değişti?\" diye sormadan son tutarı ve ürünleri görür, siz de aynı belge üzerinden hazırlık yaparsınız.",
         ],
         images: [
@@ -1382,6 +1399,7 @@ const posts: BlogPost[] = [
     featureLinks: [
       { href: "/ozellikler/whatsapp-siparis", label: "Sipariş ve PDF fişi" },
       { href: "/ozellikler/raporlar", label: "Satış raporları" },
+      { href: "/egitim", label: "Adım adım video anlatımlar (Eğitim Merkezi)" },
     ],
   },
 ];
@@ -1402,7 +1420,7 @@ export function getRelatedPosts(post: BlogPost) {
   return [...others.filter((item) => post.relatedSlugs.includes(item.slug)), ...others.filter((item) => !post.relatedSlugs.includes(item.slug))].slice(0, 3);
 }
 export function readingMinutes(post: BlogPost) {
-  const text = post.sections.map((section) => [section.title, ...section.paragraphs, ...(section.bullets ?? [])].join(" ")).join(" ");  return Math.max(1, Math.ceil(text.split(/\s+/).length / 200));
+  const text = post.sections.map((section) => [section.title, ...section.paragraphs, ...(section.bullets ?? [])].join(" ")).join(" ").replace(/\[([^\]]+)\]\([^)]*\)/g, "$1");  return Math.max(1, Math.ceil(text.split(/\s+/).length / 200));
 }
 export function blogDate(date: string) {
   return new Intl.DateTimeFormat("tr-TR", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" }).format(new Date(`${date}T00:00:00Z`));
