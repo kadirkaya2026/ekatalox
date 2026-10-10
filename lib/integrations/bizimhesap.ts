@@ -582,7 +582,7 @@ export async function sendOrderToBizimHesap(
       address: order.customer_address?.trim() || "Adres belirtilmedi",
     };
     // Sabit cari (0166, Lucatech): tüm siparişler tek unvanlı cariye (ör. "eKatalox")
-    // taslak düşer; gerçek bayiyi personel BizimHesap'ta seçer. Bayi bilgisi açıklamada.
+    // taslak düşer; gerçek bayiyi personel onay penceresinde ya da BizimHesap'ta seçer.
     const fixedTitle = policy.fixedCustomerTitle;
     // Onay penceresinde seçilen cari (0167) her şeyden önce gelir.
     let existing: BizimHesapCustomer | null = null;
@@ -618,11 +618,9 @@ export async function sendOrderToBizimHesap(
       // Panelde görünen sipariş numarasıyla eşleşsin: EKX-100003 (iç kod okunaksızdı).
       invoiceNo: policy.omitInvoiceNo ? "" : orderInvoiceNo,
       invoiceType: 3,
+      // Fiş açıklamasına "eKatalox siparişi #… — Bayi: …" yazılmaz (10 Eki 2026,
+      // kullanıcı isteği); yalnız ödeme yöntemi ve bayinin kendi sipariş notu.
       note: [
-        `eKatalox siparişi${order.order_no ? ` #${order.order_no}` : ""}`,
-        fixedTitle
-          ? `Bayi: ${[order.customer_name, order.customer_phone, order.customer_address].map((v) => v?.trim()).filter(Boolean).join(" · ") || "belirtilmedi"}`
-          : null,
         order.payment_method ? `Ödeme: ${formatPaymentMethod(order.payment_method)}` : null,
         order.note,
       ]
