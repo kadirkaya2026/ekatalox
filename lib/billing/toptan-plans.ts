@@ -93,6 +93,7 @@ export const TOPTAN_PLANS: ToptanPlan[] = [
       "Kendi alan adınız (katalog.firmaniz.com)",
       "Pakete dahil SEO uyumlu kurumsal site ve Bayimiz ol formu",
       "İyzico/Paytr ile katalogdan ödeme",
+      "BizimHesap entegrasyonu (sipariş → satış fişi)",
       "Satış ve kârlılık raporu",
       "Öncelikli destek hattı",
       "Aylık 50.000 ziyaretçi",

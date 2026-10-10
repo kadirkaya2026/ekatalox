@@ -23,7 +23,7 @@ export function PlanCards({ compact = false, dark = false, audience }: { compact
           free: { tagline: "Marketinizin dijital kataloğunu açıp müşterilerinizden sipariş almaya başlayın.", features: plan.features.map(item => item.startsWith("Şifreli bayi") ? "Marketinize özel katalog adresi (marketiniz.ekatalox.com)" : item) },
           starter: { tagline: "Ürün çeşidi büyüyen, reklamsız katalog ve müşteri ilgisini gösteren raporlar isteyen marketler için.", features: plan.features },
           professional: { tagline: "İzin veren müşterilerine kampanya bildirimleri göndermek isteyen marketler için.", features: plan.features.map(item => item.startsWith("Bayilere anlık") ? "İzin veren müşterilere ürün ve kampanya bildirimleri" : item) },
-          corporate: { tagline: "Kendi alan adı, kurumsal site ve katalogdan ödeme ile marketini büyütmek isteyenler için.", features: plan.features.map(item => item.includes("Bayimiz ol") ? "Pakete dahil SEO uyumlu kurumsal site" : item) },
+          corporate: { tagline: "Kendi alan adı, kurumsal site ve katalogdan ödeme ile marketini büyütmek isteyenler için.", features: plan.features.filter(item => !item.startsWith("BizimHesap")).map(item => item.includes("Bayimiz ol") ? "Pakete dahil SEO uyumlu kurumsal site" : item) },
         }[plan.slug];
         const copy = market ? marketCopy : plan;
         const isFree = plan.yearlyPrice === 0;

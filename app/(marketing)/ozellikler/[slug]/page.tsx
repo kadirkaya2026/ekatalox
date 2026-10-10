@@ -23,6 +23,11 @@ export async function generateMetadata({ params }: Props) {
 export default async function FeaturePage({ params }: Props) {
   const feature = await getFeature(params);
   const payment = feature.slug === "online-odeme";
+  const cta = feature.cta ?? (payment ? { href: "/iletisim", label: "Entegrasyon için görüşelim" } : { href: "/basvuru", label: "Ücretsiz başla" });
+  const faqLd = feature.faq?.length ? {
+    "@context": "https://schema.org", "@type": "FAQPage",
+    mainEntity: feature.faq.map((item) => ({ "@type": "Question", name: item.q, acceptedAnswer: { "@type": "Answer", text: item.a } })),
+  } : null;
   const breadcrumb = {
     "@context": "https://schema.org", "@type": "BreadcrumbList",
     itemListElement: [
@@ -33,6 +38,7 @@ export default async function FeaturePage({ params }: Props) {
   };
   return <>
     <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumb).replace(/</g, "\\u003c") }} />
+    {faqLd ? <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqLd).replace(/</g, "\\u003c") }} /> : null}
     <Section tone="navy" glow className="py-12 sm:py-16">
       <Container>
         <nav aria-label="Sayfa yolu" className="mb-8 text-sm text-white/70">
@@ -46,7 +52,7 @@ export default async function FeaturePage({ params }: Props) {
         <p className="mt-5 max-w-3xl text-lg leading-relaxed text-white/75">{feature.lead}</p>
         <p className="mt-5 max-w-3xl text-sm font-medium text-brand-neon">{feature.plan}</p>
         <div className="mt-8 flex flex-wrap gap-3">
-          <ButtonLink href={payment ? "/iletisim" : "/basvuru"}>{payment ? "Entegrasyon için görüşelim" : "Ücretsiz başla"}</ButtonLink>
+          <ButtonLink href={cta.href}>{cta.label}</ButtonLink>
           <ButtonLink href="/fiyatlandirma" tone="outline-dark">Paketleri karşılaştır</ButtonLink>
         </div>
       </Container>
@@ -66,6 +72,17 @@ export default async function FeaturePage({ params }: Props) {
         </aside>
       </Container>
     </Section>
+    {feature.faq?.length ? <Section tone="white" className="pt-0">
+      <Container className="max-w-3xl">
+        <h2 className="text-2xl font-semibold tracking-tight text-brand-navy">Sık sorulanlar</h2>
+        <div className="mt-6 divide-y divide-brand-line rounded-2xl border border-brand-line bg-white">
+          {feature.faq.map((item) => <details key={item.q} className="group p-5 sm:p-6">
+            <summary className="cursor-pointer list-none font-semibold text-brand-navy marker:hidden">{item.q}</summary>
+            <p className="mt-3 leading-relaxed text-brand-muted">{item.a}</p>
+          </details>)}
+        </div>
+      </Container>
+    </Section> : null}
     <Section>
       <Container>
         <h2 className="text-2xl font-semibold text-brand-navy">Birlikte kullanabileceğiniz özellikler</h2>

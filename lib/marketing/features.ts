@@ -4,6 +4,10 @@ export interface MarketingFeature {
   seoTitle: string; metaDescription: string;
   sections: { title: string; body: string }[];
   example: string; related: string[];
+  /** Sayfa sonunda sık sorulanlar (FAQPage verisiyle birlikte). */
+  faq?: { q: string; a: string }[];
+  /** Üst bölümdeki ana düğme; yoksa "Ücretsiz başla". */
+  cta?: { href: string; label: string };
 }
 
 export const MARKETING_FEATURES: MarketingFeature[] = [
@@ -222,6 +226,71 @@ export const MARKETING_FEATURES: MarketingFeature[] = [
     "related": [
       "whatsapp-siparis",
       "kurumsal-site"
+    ]
+  },
+  {
+    "slug": "bizimhesap-entegrasyonu",
+    "seoTitle": "BizimHesap Entegrasyonu: Siparişler Otomatik Satış Fişi",
+    "metaDescription": "Bayi siparişlerini BizimHesap'a elle girmeyin. Onayladığınız sipariş doğru cari, doğru stok kartı ve doğru depoyla BizimHesap'a satış fişi olarak aktarılır.",
+    "title": "BizimHesap entegrasyonu: sipariş otomatik satış fişi olur",
+    "lead": "Bayinizin katalogdan verdiği siparişi onayladığınızda BizimHesap'a satış fişi olarak aktarılır. Cari, ürün ve depo seçimi bir kez yapılır; sonraki siparişlerde sistem hatırlar.",
+    "plan": "Kurumsal paket · Toptancı mağazalar için",
+    "cta": {
+      "href": "/iletisim",
+      "label": "Kurulum için görüşelim"
+    },
+    "sections": [
+      {
+        "title": "Siparişi BizimHesap'a ikinci kez yazmayın",
+        "body": "Katalogdan gelen siparişi BizimHesap'a satır satır yeniden girmek hem zaman alır hem de yanlış ürün ya da adet riskini taşır. Entegrasyon açıkken sipariş BizimHesap'a taslak satış fişi olarak düşer: ürünler, adetler, birim fiyatlar ve KDV oranı fişe yazılır, bayinin adı, telefonu ve adresi belgenin açıklamasında yer alır. Fişi BizimHesap'ta kontrol edip kaydettiğinizde stoklarınız oradan düşer."
+      },
+      {
+        "title": "Ne zaman aktarılacağına siz karar verin",
+        "body": "İki çalışma şekli vardır: sipariş gelir gelmez aktarım veya siz Siparişler sayfasında Onayla dediğinizde aktarım. Onaylı çalışmada Onayla düğmesi bir pencere açar. Bu pencerede BizimHesap'taki carileriniz ve ürünleriniz canlı listelenir; fişi göndermeden önce cariyi, ürünleri ve depoları son kez kontrol edersiniz."
+      },
+      {
+        "title": "Bayiniz doğru cariye bağlanır",
+        "body": "Onay penceresinde siparişi BizimHesap'taki carisiyle eşleştirirsiniz. Sistem bu seçimi hatırlar: aynı bayi kendisine özel şifresiyle veya aynı telefon numarasıyla tekrar sipariş verdiğinde cari kendiliğinden seçili gelir. Eşleştirilen siparişler Siparişler sayfasında da bayinin cari adıyla listelenir. Cari seçmediğiniz siparişler belirlediğiniz sabit cariye (örneğin eKatalox) yazılır, gerçek cariyi BizimHesap'ta seçersiniz."
+      },
+      {
+        "title": "Her ürün doğru stok kartına gider",
+        "body": "Ürünler > BizimHesap Eşleştirme ekranında her ürününüzün ve varyantınızın BizimHesap'taki karşılığını bir kez seçersiniz; ekran benzer isimleri öneri olarak getirir. Aktarım, BizimHesap kartındaki ürün kodu veya barkodla yapılır; bu sayede BizimHesap'ta yeni ve gereksiz ürün kartı açılmaz. Eşleşmemiş ürün içeren siparişin gönderilmemesini de seçebilirsiniz."
+      },
+      {
+        "title": "Satırı hangi depodan sattığınızı seçin",
+        "body": "BizimHesap'ta satış fişi girerken her satırın deposunu seçtiğiniz gibi, eKatalox'ta da her ürün için bir satış deposu belirleyebilirsiniz. Bir kategoriye toptan depo atamak da mümkündür; örneğin cam ürünleri cam deposundan, diğer ürünleri ana depodan fişlenir. Gerekirse onay penceresinde tek bir siparişin deposunu değiştirebilirsiniz."
+      },
+      {
+        "title": "Eksik stokta siparişi düzeltip öyle gönderin",
+        "body": "Bayinin istediği adet stokta yoksa ya da telefonda ürün değiştirdiyseniz, siparişi Düzelt ile onaydan önce düzenleyin: adet değiştirin, ürün ekleyin veya çıkarın. BizimHesap'a düzeltilmiş hali gider. Vazgeçilen siparişi İptal ile ayırın; iptali geri alabilir, gerekirse iptal edilenleri topluca silebilirsiniz."
+      }
+    ],
+    "example": "Kurulum dört adımdır: Ayarlar > BizimHesap'ta firma kimliğinizi girin, aktarım zamanını seçin; Ürünler > BizimHesap Eşleştirme'de ürünlerinizi BizimHesap kartlarıyla eşleştirin; gerekiyorsa ürün veya kategori bazında satış deposu seçin; ardından bir test siparişini onaylayıp fişi BizimHesap'ta kontrol edin.",
+    "faq": [
+      {
+        "q": "BizimHesap'taki fiyatlarım veya fiyat listem değişir mi?",
+        "a": "Hayır. Fişe, bayinin katalogda gördüğü ve siparişte yer alan fiyat yazılır. BizimHesap'taki ürün kartlarınıza, fiyat listelerinize ve carilerinize dokunulmaz."
+      },
+      {
+        "q": "BizimHesap'ta yeni ürün kartı açılır mı?",
+        "a": "Eşleştirdiğiniz ürünler BizimHesap'taki mevcut kartın ürün kodu veya barkoduyla gönderilir, yeni kart açılmaz. Bunun için eşlediğiniz kartta ürün kodu ya da barkod dolu olmalıdır; eksikse eşleştirme ekranı uyarır."
+      },
+      {
+        "q": "Yanlış giden bir fişi nasıl silerim?",
+        "a": "Aktarılan fiş BizimHesap'ta taslak olarak durur. Silmek veya değiştirmek gerekirse bunu BizimHesap'ın kendi ekranından yaparsınız; BizimHesap entegrasyon arayüzü belge silmeye izin vermez."
+      },
+      {
+        "q": "Firma kimliğimi nereden bulurum, güvende mi?",
+        "a": "Firma kimliği BizimHesap hesabınızdaki B2B API bilgisidir. Panelde bir kez girilir, kaydedildikten sonra ekranda bir daha gösterilmez; yalnız son dört hanesini görürsünüz."
+      },
+      {
+        "q": "Hangi paketlerde var?",
+        "a": "BizimHesap entegrasyonu toptancı mağazalar için Kurumsal pakette yer alır. Kurulumda ürün eşleştirmesine birlikte bakabiliriz."
+      }
+    ],
+    "related": [
+      "whatsapp-siparis",
+      "bayi-fiyat-listeleri"
     ]
   }
 ];

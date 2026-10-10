@@ -30,6 +30,7 @@ const COMPARISON: Row[] = [
   { label: "Raporlar (arama, sepete ekleme, il–fiyat listesi)", cells: [false, true, true, true] },
   { label: "Kurumsal site ve Bayimiz ol formu", cells: [false, false, false, "Pakete dahil"] },
   { label: "İyzico/Paytr ile online ödeme", cells: [false, false, false, true] },
+  { label: "BizimHesap entegrasyonu (sipariş → satış fişi)", cells: [false, false, false, true] },
   { label: "Kendi alan adınız", cells: [false, false, false, true] },
   { label: "Bayilere bildirim gönderme", cells: [false, false, true, true] },
   { label: "Ödeme ve vade ayarları", cells: [false, false, true, true] },
@@ -40,6 +41,7 @@ const COMPARISON: Row[] = [
 const FAQ = [
   { q: "Kurumsal site için ayrıca ücret öder miyim?", a: "Kurumsal tanıtım sitesi ve Bayimiz ol formu Kurumsal pakete dahildir; ayrıca kurumsal site paket ücreti yoktur. Alan adı satın alma/yenileme giderleri ve varsa özel hizmet kapsamı ayrıca netleştirilir." },
   { q: "Katalogdan ödeme alabilir miyim?", a: "İyzico/Paytr entegrasyonuyla kataloğunuzdan ödeme alın. Kurumsal pakette sağlayıcı başvurusu, entegrasyon kapsamı ve varsa ek kurulum hizmeti birlikte netleştirilir; sağlayıcı işlem ücretleri paket bedeline dahil değildir." },
+  { q: "Ön muhasebe programımla çalışır mı?", a: "BizimHesap kullanıyorsanız Kurumsal pakette onayladığınız siparişler BizimHesap'a satış fişi olarak aktarılır; cari, ürün ve depo eşleştirmesi bir kez yapılır. Ayrıntılar BizimHesap entegrasyonu sayfasında." },
   {
     q: "Ücretsiz planın süresi var mı?",
     a: "Süre sınırı yoktur. 250 ürün, 2 fiyat listesi ve aylık 1.000 ziyaretçi limitiyle kullanılır. Kart bilgisi istenmez; kataloğunuzda eKatalox tanıtımları görünür. Ücretli paketlerin 14 günlük denemesinden ayrıdır.",
@@ -93,13 +95,13 @@ function CellValue({ value }: { value: Cell }) {
 export function PricingContent({ initialAudience }: { initialAudience: PlanAudience }) {
   const [audience, setAudience] = useState(initialAudience);
   const market = audience === "market";
-  const comparison = COMPARISON.map(row => ({ ...row, label: market ? ({
+  const comparison = COMPARISON.filter(row => !(market && row.label.startsWith("BizimHesap"))).map(row => ({ ...row, label: market ? ({
     "Şifreli bayi girişi": "Şifreli katalog erişimi (isteğe bağlı)",
     "Bayilere bildirim gönderme": "İzin veren müşterilere kampanya bildirimi",
     "Kurumsal site ve Bayimiz ol formu": "Kurumsal tanıtım sitesi",
   }[row.label] ?? row.label) : row.label }));
   if (market) comparison.push({ label: "Market işletmelerine QR magnet hediyesi", cells: [false, false, false, "200 adet"] });
-  const faq = market ? [{ q: "200 adet magnet hangi pakette hediye?", a: "Market işletmelerine Kurumsal pakette 200 adet QR kodlu magnet hediye edilir. Müşterileriniz magneti okutarak kataloğunuza ulaşır ve sipariş oluşturur." }, ...FAQ.filter(item => !item.q.startsWith("Kurumsal site"))] : FAQ;
+  const faq = market ? [{ q: "200 adet magnet hangi pakette hediye?", a: "Market işletmelerine Kurumsal pakette 200 adet QR kodlu magnet hediye edilir. Müşterileriniz magneti okutarak kataloğunuza ulaşır ve sipariş oluşturur." }, ...FAQ.filter(item => !item.q.startsWith("Kurumsal site") && !item.q.startsWith("Ön muhasebe"))] : FAQ;
   return (
     <>
       <Section tone="white" className="border-b border-brand-line">

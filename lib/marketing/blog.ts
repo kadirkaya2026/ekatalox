@@ -28,6 +28,87 @@ function istanbulToday() {
 // Editorial dates are explicit: builds must not make an old article look new.
 const posts: BlogPost[] = [
   {
+    slug: "bizimhesap-siparis-aktarimi",
+    title: "Toptan siparişleri BizimHesap'a elle girmeyi bırakın",
+    description: "Bayi siparişini önce katalogda, sonra BizimHesap'ta iki kez yazmayın. Onaylanan siparişin doğru cari, doğru stok kartı ve doğru depoyla satış fişine dönüşmesinin adımları.",
+    category: "Sipariş yönetimi",
+    publishedAt: "2026-10-10",
+    status: "published",
+    sections: [
+      {
+        id: "iki-kez-yazmak",
+        title: "Aynı siparişi iki kez yazmanın bedeli",
+        paragraphs: [
+          "Bayi siparişi WhatsApp'tan, telefondan ya da katalogdan gelir; ardından biri bu siparişi BizimHesap'ta satış fişine satır satır yeniden yazar. Günde birkaç siparişte bu iş idare edilir. Sipariş sayısı arttıkça hem zaman alır hem de yanlış ürün kartı, eksik adet veya yanlış cari gibi hatalar başlar. Bu hatalar çoğu zaman stok sayımında ya da bayinin ekstresinde ortaya çıkar.",
+          "Çözüm, siparişi bir kez doğru almak ve onu muhasebe programına aynı haliyle aktarmaktır. Bayiniz siparişi [kendi fiyat listesiyle](/ozellikler/bayi-fiyat-listeleri) katalogdan verdiğinde ürünler, adetler ve fiyatlar zaten düzenlidir. Geriye kalan iş, bu siparişi BizimHesap'taki doğru kayıtlarla eşleştirmektir.",
+        ],
+      },
+      {
+        id: "akis",
+        title: "Katalogdan BizimHesap'a akış nasıl işler?",
+        paragraphs: [
+          "eKatalox'un [BizimHesap entegrasyonunda](/ozellikler/bizimhesap-entegrasyonu) sipariş Siparişler sayfasına düşer. Siz Onayla dediğinizde açılan pencerede BizimHesap'taki carileriniz ve ürünleriniz canlı listelenir. Cariyi, ürünleri ve depoları kontrol edip onayladığınızda sipariş BizimHesap'a taslak satış fişi olarak gider. Fişi BizimHesap'ta kontrol edip kaydettiğinizde stok oradan düşer.",
+          "İsterseniz onay beklemeden her siparişin geldiği anda aktarılmasını da seçebilirsiniz. Ancak bayi siparişinde stok ve adet kontrolü yapıyorsanız onaylı çalışma daha güvenlidir.",
+        ],
+        bullets: [
+          "Bayi katalogdan siparişi verir.",
+          "Siparişler sayfasında gerekirse Düzelt ile adetleri günceller, ürün ekler veya çıkarırsınız.",
+          "Onayla penceresinde cari, ürün ve depo seçimini kontrol edersiniz.",
+          "Fiş BizimHesap'a taslak olarak düşer; kontrol edip kaydedersiniz.",
+        ],
+      },
+      {
+        id: "dogru-urun-karti",
+        title: "Doğru ürün kartı: eşleştirmeyi bir kez yapın",
+        paragraphs: [
+          "Aktarımın en önemli kısmı her ürünün BizimHesap'taki doğru stok kartına gitmesidir. Bunun için Ürünler > BizimHesap Eşleştirme ekranında ürünlerinizi ve varyantlarınızı BizimHesap kartlarıyla bir kez eşleştirirsiniz. Ekran benzer isimleri öneri olarak getirir; siz kabul eder ya da değiştirirsiniz.",
+          "Gönderim, eşlediğiniz kartın ürün kodu veya barkoduyla yapılır. Bu yüzden BizimHesap'taki kartlarınızda bu iki alandan birinin dolu olması gerekir. Doluysa BizimHesap'ta gereksiz yeni ürün kartı açılmaz. Eşleşmemiş ürün içeren siparişin hiç gönderilmemesini de ayarlardan seçebilirsiniz.",
+        ],
+        bullets: [
+          "Kodu veya barkodu boş kartları önce BizimHesap'ta doldurun.",
+          "Aynı ada sahip birden fazla kart varsa eskisini temizleyip tek karta eşleyin.",
+          "Yeni ürün eklediğinizde eşleştirme ekranında onu da eşlemeyi unutmayın.",
+        ],
+      },
+      {
+        id: "dogru-cari",
+        title: "Doğru cari: bayi bir kez seçilir, sonra hatırlanır",
+        paragraphs: [
+          "Onay penceresinde siparişi BizimHesap'taki carisiyle eşleştirirsiniz. Sistem bu seçimi hatırlar: aynı bayi kendisine özel şifresiyle ya da aynı telefon numarasıyla tekrar sipariş verdiğinde cari kendiliğinden seçili gelir. Eşleştirilen sipariş Siparişler sayfasında da bayinin cari adıyla görünür.",
+          "Tüm bayileriniz aynı liste şifresiyle giriyorsa şifre kimin sipariş verdiğini göstermez; bu durumda telefon numarası ve ad üzerinden hatırlanır. Bayiye [kişiye özel şifre](/ozellikler/kurumsal-site) vermek cari eşleşmesini en sağlam hale getirir. Cari seçmediğiniz siparişler ayarlarda belirlediğiniz sabit cariye yazılır; gerçek cariyi BizimHesap'ta siz seçersiniz.",
+        ],
+      },
+      {
+        id: "dogru-depo",
+        title: "Doğru depo: satırı hangi depodan sattığınızı seçin",
+        paragraphs: [
+          "Birden fazla deponuz varsa BizimHesap'ta satış fişi girerken her satırın deposunu seçersiniz. Aynısını eKatalox'ta önceden tanımlayabilirsiniz: her ürün için bir satış deposu seçebilir ya da bir kategorinin tamamına aynı depoyu atayabilirsiniz. Örneğin cam ürünleriniz ayrı bir depodan çıkıyorsa o kategoriye cam deposunu atarsınız; diğer ürünler ana depodan fişlenir.",
+          "Tek bir siparişte farklı depodan çıkış yapacaksanız onay penceresinde o satırın deposunu değiştirmeniz yeterlidir. Bu değişiklik yalnız o siparişi etkiler, ürünün varsayılan deposu aynı kalır.",
+        ],
+      },
+      {
+        id: "baslamadan-once",
+        title: "Başlamadan önce kontrol listesi",
+        paragraphs: [
+          "BizimHesap entegrasyonu toptancı mağazalar için [Kurumsal pakette](/fiyatlandirma) yer alır. Kuruluma başlamadan önce aşağıdaki maddeleri hazırlamak ilk siparişin sorunsuz geçmesini sağlar.",
+        ],
+        bullets: [
+          "BizimHesap hesabınızdaki B2B API firma kimliği (panelde bir kez girilir, sonra gösterilmez).",
+          "Ürün kodu veya barkodu dolu, tekrarsız BizimHesap ürün kartları.",
+          "Hangi kategorinin hangi depodan satıldığı bilgisi.",
+          "Aktarım zamanı kararı: sipariş gelince mi, onaylayınca mı?",
+          "İlk gün bir test siparişi: onaylayın, fişi BizimHesap'ta kontrol edin, sonra gerçek siparişlere geçin.",
+        ],
+      },
+    ],
+    relatedSlugs: ["whatsapp-toptan-siparis", "toptan-siparis-kurallari", "bayiye-ozel-fiyat-listesi"],
+    featureLinks: [
+      { href: "/ozellikler/bizimhesap-entegrasyonu", label: "BizimHesap entegrasyonu" },
+      { href: "/ozellikler/whatsapp-siparis", label: "Sipariş ve PDF fişi" },
+      { href: "/egitim", label: "Adım adım video anlatımlar (Eğitim Merkezi)" },
+    ],
+  },
+  {
     slug: "dijital-katalog-nedir",
     title: "Dijital katalog nedir? Toptancılar için kullanım rehberi",
     description: "PDF katalog, online ürün kataloğu ve siparişli katalog arasındaki farkları öğrenin. Bayi fiyatları, ürün güncelleme ve WhatsApp sipariş akışını inceleyin.",
