@@ -10,7 +10,7 @@ const PRODUCT_LINKS = [
   { href: "/fiyatlandirma", label: "Fiyatlandırma" },
   { href: "/sss", label: "Sık sorulan sorular" },
   { href: "/blog", label: "Blog ve rehberler" },
-  { href: "/video-egitimler", label: "Video eğitimler" },
+  { href: "/egitim", label: "Eğitim merkezi" },
   { href: SITE.demoUrl, label: "Demo katalog" },
 ];
 

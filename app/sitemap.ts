@@ -24,7 +24,7 @@ const STATIC: Array<[string, MetadataRoute.Sitemap[number]["changeFrequency"], n
   ["/hakkimizda", "monthly", 0.5],
   ["/iletisim", "monthly", 0.6],
   ["/yardim", "monthly", 0.5],
-  ["/video-egitimler", "monthly", 0.7],
+  ["/egitim", "monthly", 0.7],
   ["/yenilikler", "weekly", 0.5],
   ["/kullanim-sartlari", "yearly", 0.3],
   ["/gizlilik-ve-kvkk", "yearly", 0.3],

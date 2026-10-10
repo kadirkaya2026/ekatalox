@@ -1,5 +1,5 @@
 // YouTube "nasıl yapılır" videoları (10 Eki 2026'da hepsi yayına alındı). Sayfa:
-// /video-egitimler. Süreler kaynak dosyalardan (saniye).
+// /egitim (Eğitim Merkezi). Süreler kaynak dosyalardan (saniye).
 export type TutorialVideo = { id: string; title: string; description: string; seconds: number };
 export type TutorialGroup = { slug: string; title: string; lead: string; videos: TutorialVideo[] };
 
@@ -80,3 +80,6 @@ export const TUTORIAL_GROUPS: TutorialGroup[] = [
 ];
 
 export const TUTORIAL_VIDEOS: TutorialVideo[] = TUTORIAL_GROUPS.flatMap((group) => group.videos);
+
+/** "Buradan başlayın": yeni müşterinin sırayla izleyeceği videolar. */
+export const START_HERE_IDS = ["W93pKNK77_Q", "axypdnQLEio", "rmfIQJIpIX0", "N7SrwblbMFA", "uTPYgkv-vrI"];

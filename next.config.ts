@@ -50,6 +50,7 @@ const nextConfig: NextConfig = {
       },
       // 8 Eyl 2026 yeniden konumlandırma: eski kayıt ve tema sayfaları
       { source: "/kayit", destination: "/basvuru", permanent: true },
+      { source: "/video-egitimler", destination: "/egitim", permanent: true },
       // 20 Eyl 2026 toptancı konumlandırması: esnaf sektör sayfaları ve magnet
       // programı kaldırıldı (tekel/market işi mahalleden.net'e devredildi).
       ...["market", "tekel", "manav", "kasap", "cicekci", "petshop", "kirtasiye", "magnet"].map((slug) => ({
