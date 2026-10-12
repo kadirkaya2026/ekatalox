@@ -4,7 +4,7 @@ import { PlanFeatureGate } from "@/components/dashboard/plan-feature-gate";
 import { BizimHesapSettingsForm } from "@/components/dashboard/bizimhesap-settings-form";
 import { requireTenantAdminPage } from "@/lib/auth/session";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
-import { isBizimHesapBusinessAllowed, resolveBizimHesapPolicy } from "@/lib/integrations/bizimhesap";
+import { isBizimHesapBusinessAllowed, resolveBizimHesapPolicy, fetchBizimHesapWarehouses } from "@/lib/integrations/bizimhesap";
 
 export const metadata = { title: "BizimHesap" };
 
@@ -18,12 +18,14 @@ export default async function BizimHesapSettingsPage() {
   const { data } = supabase
     ? await supabase
         .from("tenant_bizimhesap")
-        .select("firm_id, vat_rate, is_enabled, send_on, fixed_customer_title, require_product_match")
+        .select("firm_id, vat_rate, is_enabled, send_on, fixed_customer_title, require_product_match, default_warehouse_id")
         .eq("tenant_id", session.tenant!.id)
         .maybeSingle()
     : { data: null };
 
   const policy = resolveBizimHesapPolicy(session.tenant!.id, data);
+  // Varsayılan depo seçimi için depo listesi (0172); liste alınamazsa seçim gizlenir.
+  const warehouses = data?.firm_id ? (await fetchBizimHesapWarehouses(String(data.firm_id))) ?? [] : [];
 
   return (
     <div className="space-y-6">
@@ -43,6 +45,8 @@ export default async function BizimHesapSettingsPage() {
           fixedCustomerTitle: policy.fixedCustomerTitle ?? "",
           requireProductMatch: policy.requireProductMatch,
           rulesLocked: policy.locked,
+          warehouses,
+          defaultWarehouseId: (data?.default_warehouse_id as string | null) ?? null,
         }}
       />
       </PlanFeatureGate>

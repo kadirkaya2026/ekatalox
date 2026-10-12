@@ -32,6 +32,8 @@ type Line = {
 };
 type Prepared = {
   warehouses: Array<{ id: string; title: string }>;
+  /** Mağazanın varsayılan deposu (0172); satırlar bununla dolu gelir. */
+  defaultWarehouseId: string | null;
   customers: Customer[];
   products: BhProduct[];
   lines: Line[];
@@ -325,7 +327,7 @@ export function BizimHesapApproveDialog({
                               warehouseChoices[line.key] ? "border-indigo-200 font-medium text-indigo-700" : "border-slate-200 text-slate-600",
                             )}
                           >
-                            <option value="">Varsayılan depo</option>
+                            <option value="">BizimHesap varsayılanı</option>
                             {data.warehouses.map((w) => (
                               <option key={w.id} value={w.id}>
                                 {w.title}

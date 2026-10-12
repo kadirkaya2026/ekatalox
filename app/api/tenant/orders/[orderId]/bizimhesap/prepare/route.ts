@@ -43,7 +43,7 @@ async function loadContext(orderId: string) {
   if (!supabase) return { error: NextResponse.json({ error: "Veritabanı yapılandırması eksik." }, { status: 500 }) };
   const { data: config } = await supabase
     .from("tenant_bizimhesap")
-    .select("firm_id, is_enabled, send_on, fixed_customer_title, require_product_match")
+    .select("firm_id, is_enabled, send_on, fixed_customer_title, require_product_match, default_warehouse_id")
     .eq("tenant_id", tenantId)
     .maybeSingle();
   if (!config?.firm_id || !config.is_enabled) {
@@ -62,7 +62,7 @@ async function loadContext(orderId: string) {
     const { data: code } = await supabase.from("access_codes").select("is_personal").eq("id", order.access_code_id).maybeSingle();
     accessCodeIsPersonal = Boolean(code?.is_personal);
   }
-  return { supabase, tenantId, firmId: config.firm_id as string, policy: resolveBizimHesapPolicy(tenantId, config), order, accessCodeIsPersonal };
+  return { supabase, tenantId, firmId: config.firm_id as string, policy: resolveBizimHesapPolicy(tenantId, config), order, accessCodeIsPersonal, defaultWarehouseId: (config.default_warehouse_id as string | null) || null };
 }
 
 export async function GET(_request: Request, ctx: { params: Promise<{ orderId: string }> }) {
@@ -108,8 +108,8 @@ export async function GET(_request: Request, ctx: { params: Promise<{ orderId: s
         (item.variant_id ? null : autoMatch(index, { code, name: item.product_name ?? "" }));
     return {
       key: `${item.position}`,
-      // Bu siparişte seçilen depo; yoksa ürünün varsayılan deposu ("" = BizimHesap varsayılanı).
-      warehouseId: (item.position.toString() in lineWarehouses ? lineWarehouses[item.position.toString()] : product?.bizimhesap_warehouse_id) || null,
+      // Bu siparişte seçilen depo > ürünün deposu > mağazanın varsayılan deposu (0172); hepsi boşsa BizimHesap varsayılanı.
+      warehouseId: (item.position.toString() in lineWarehouses ? lineWarehouses[item.position.toString()] : product?.bizimhesap_warehouse_id) || c.defaultWarehouseId,
       // Varyant satırı varyanta, düz ürün ürüne eşlenir.
       kind: item.variant_id ? ("variant" as const) : ("product" as const),
       id: item.variant_id ?? item.product_id!,
@@ -153,6 +153,7 @@ export async function GET(_request: Request, ctx: { params: Promise<{ orderId: s
       phone: cu.phone ?? null,
     })),
     warehouses: warehouses ?? [],
+    defaultWarehouseId: c.defaultWarehouseId,
     products: active.map((p) => ({ id: p.id, code: p.code, barcode: p.barcode, title: p.title, variantName: p.variantName, label: productLabel(p) })),
     lines,
     selectedCustomerId,

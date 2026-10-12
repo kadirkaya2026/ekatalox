@@ -17,7 +17,7 @@ export const TENANT_NEWS: Record<string, TenantNews> = {
       { icon: Pencil, title: "Düzelt", body: "Gelen siparişte adetleri değiştirebilir, ürün ekleyip çıkarabilirsiniz. Bayinin yeniden sipariş vermesine gerek yok." },
       { icon: XCircle, title: "İptal", body: "Siparişler onay sorusuyla iptal edilir ve İptal sekmesine taşınır. Oradan iptali geri alabilir ya da siparişi kalıcı olarak silebilirsiniz." },
       { icon: Layers, title: "Toplu işlem", body: "Tümünü seçerek ya da tek tek işaretleyerek siparişleri topluca iptal edebilir veya silebilirsiniz." },
-      { icon: Warehouse, title: "Depo seçimi", body: "Camlar varsayılan olarak Kırılmaz Cam Bahçelievler deposundan fişlenir. Onay ekranında her ürünün deposunu o sipariş için değiştirebilirsiniz. Ürünlerin varsayılan deposu Ürünler > BizimHesap Eşleştirme ekranından ayarlanır." },
+      { icon: Warehouse, title: "Depo seçimi", body: "Camlar Kırılmaz Cam Bahçelievler, diğer ürünler Ayarlar > BizimHesap'taki varsayılan depodan fişlenir. Onay ekranında her ürünün deposunu o sipariş için değiştirebilirsiniz. Ürün bazında depo Ürünler > BizimHesap Eşleştirme ekranından ayarlanır." },
       { icon: UserRound, title: "Cari", body: "BizimHesap'ta seçilen cari, siparişler listesinde müşteri adı olarak görünür." },
       { icon: Trash2, title: "Fiş numarası", body: "BizimHesap fişlerinde artık EKX- ile başlayan sipariş numarası yazmaz." },
     ],

@@ -17,6 +17,9 @@ type View = {
   requireProductMatch: boolean;
   /** Kurallar mağazaya sabit (Lucatech): seçenekler gösterilir ama değiştirilemez. */
   rulesLocked: boolean;
+  /** BizimHesap depoları ve mağazanın varsayılan deposu (0172). */
+  warehouses: Array<{ id: string; title: string }>;
+  defaultWarehouseId: string | null;
 };
 
 export function BizimHesapSettingsForm({ initial }: { initial: View }) {
@@ -27,6 +30,7 @@ export function BizimHesapSettingsForm({ initial }: { initial: View }) {
   const [useFixedCustomer, setUseFixedCustomer] = useState(Boolean(initial.fixedCustomerTitle));
   const [fixedCustomerTitle, setFixedCustomerTitle] = useState(initial.fixedCustomerTitle || "eKatalox");
   const [requireProductMatch, setRequireProductMatch] = useState(initial.requireProductMatch);
+  const [defaultWarehouseId, setDefaultWarehouseId] = useState(initial.defaultWarehouseId ?? "");
   const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null);
   const [pending, startTransition] = useTransition();
 
@@ -49,6 +53,7 @@ export function BizimHesapSettingsForm({ initial }: { initial: View }) {
       setUseFixedCustomer(Boolean(result.fixedCustomerTitle));
       setFixedCustomerTitle(result.fixedCustomerTitle || "eKatalox");
       setRequireProductMatch(result.requireProductMatch);
+      setDefaultWarehouseId(result.defaultWarehouseId ?? "");
       setFirmId("");
       setMessage({ ok: true, text: okText });
     });
@@ -209,6 +214,31 @@ export function BizimHesapSettingsForm({ initial }: { initial: View }) {
         </div>
       ) : null}
 
+      {view.connected && view.warehouses.length ? (
+        <div className="space-y-2 rounded-xl border border-slate-200 p-4">
+          <p className="text-sm font-semibold text-slate-900">Varsayılan depo</p>
+          <p className="text-xs text-slate-500">
+            Deposu ayrıca belirlenmemiş ürünler bu depodan fişlenir. Ürün bazında depo{" "}
+            <a href="/products/bizimhesap" className="font-medium text-primary underline">
+              BizimHesap Eşleştirme
+            </a>{" "}
+            sayfasından, sipariş bazında onay penceresinden değiştirilir. Boş bırakılırsa BizimHesap satıra bir önceki satırın deposunu uygulayabilir.
+          </p>
+          <select
+            value={defaultWarehouseId}
+            onChange={(event) => setDefaultWarehouseId(event.target.value)}
+            className="h-9 max-w-xs rounded-lg border border-slate-200 bg-white px-2 text-sm"
+          >
+            <option value="">BizimHesap varsayılanı (önerilmez)</option>
+            {view.warehouses.map((w) => (
+              <option key={w.id} value={w.id}>
+                {w.title}
+              </option>
+            ))}
+          </select>
+        </div>
+      ) : null}
+
       {message ? (
         <p className={message.ok ? "text-sm text-emerald-700" : "text-sm text-rose-700"}>{message.text}</p>
       ) : null}
@@ -220,6 +250,7 @@ export function BizimHesapSettingsForm({ initial }: { initial: View }) {
               {
                 firmId,
                 vatRate: Number(vatRate),
+                ...(view.connected ? { defaultWarehouseId } : {}),
                 ...(view.connected && !view.rulesLocked
                   ? {
                       sendOn,

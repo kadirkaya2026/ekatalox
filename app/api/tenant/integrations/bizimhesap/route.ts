@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSessionContext } from "@/lib/auth/session";
-import { resolveBizimHesapPolicy, testBizimHesapConnection, isBizimHesapBusinessAllowed } from "@/lib/integrations/bizimhesap";
+import { resolveBizimHesapPolicy, testBizimHesapConnection, isBizimHesapBusinessAllowed, fetchBizimHesapWarehouses } from "@/lib/integrations/bizimhesap";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { ensureTenantAdminResponse, ensureTenantPlanFeatureResponse } from "@/lib/tenancy/guards";
 
@@ -13,7 +13,7 @@ async function loadConfig(tenantId: string) {
   if (!supabase) return { supabase: null, config: null };
   const { data } = await supabase
     .from("tenant_bizimhesap")
-    .select("firm_id, vat_rate, is_enabled, send_on, fixed_customer_title, require_product_match, updated_at")
+    .select("firm_id, vat_rate, is_enabled, send_on, fixed_customer_title, require_product_match, default_warehouse_id, updated_at")
     .eq("tenant_id", tenantId)
     .maybeSingle();
   return { supabase, config: data };
@@ -26,12 +26,17 @@ type ConfigRow = {
   send_on?: string | null;
   fixed_customer_title?: string | null;
   require_product_match?: boolean | null;
+  default_warehouse_id?: string | null;
   updated_at: string;
 };
 
-function publicView(tenantId: string, config: ConfigRow | null) {
+async function publicView(tenantId: string, config: ConfigRow | null) {
   const policy = resolveBizimHesapPolicy(tenantId, config);
+  // Depo listesi (varsayılan depo seçimi için); bağlantı yoksa boş.
+  const warehouses = config?.firm_id ? (await fetchBizimHesapWarehouses(config.firm_id)) ?? [] : [];
   return {
+    warehouses,
+    defaultWarehouseId: config?.default_warehouse_id ?? null,
     connected: Boolean(config?.firm_id),
     firmIdHint: config?.firm_id ? config.firm_id.slice(-4) : null,
     vatRate: config ? Number(config.vat_rate) : 20,
@@ -50,7 +55,7 @@ export async function GET() {
   const session = await getSessionContext();
   if (!isBizimHesapBusinessAllowed(session.tenant!)) return NextResponse.json({ error: "BizimHesap entegrasyonu yalnız toptancı mağazalarda kullanılabilir." }, { status: 403 });
   const { config } = await loadConfig(session.tenant!.id);
-  return NextResponse.json(publicView(session.tenant!.id, config));
+  return NextResponse.json(await publicView(session.tenant!.id, config));
 }
 
 export async function PUT(request: Request) {
@@ -68,13 +73,14 @@ export async function PUT(request: Request) {
     sendOn?: unknown;
     fixedCustomerTitle?: unknown;
     requireProductMatch?: unknown;
+    defaultWarehouseId?: unknown;
   };
   const { supabase, config } = await loadConfig(session.tenant!.id);
   if (!supabase) return NextResponse.json({ error: "Veritabanı yapılandırması eksik." }, { status: 500 });
 
   if (body.disconnect === true) {
     await supabase.from("tenant_bizimhesap").delete().eq("tenant_id", session.tenant!.id);
-    return NextResponse.json(publicView(session.tenant!.id, null));
+    return NextResponse.json(await publicView(session.tenant!.id, null));
   }
 
   const firmId = typeof body.firmId === "string" ? body.firmId.trim() : "";
@@ -97,6 +103,18 @@ export async function PUT(request: Request) {
     if (!test.ok) {
       return NextResponse.json({ error: `BizimHesap bağlantısı kurulamadı: ${test.message}` }, { status: 400 });
     }
+  }
+
+  // Varsayılan depo (0172): BizimHesap'ta var olan bir depo ya da boş (eski davranış).
+  let defaultWarehouseId: string | null | undefined;
+  if ("defaultWarehouseId" in body) {
+    const wanted = typeof body.defaultWarehouseId === "string" ? body.defaultWarehouseId.trim() : "";
+    if (wanted) {
+      const known = await fetchBizimHesapWarehouses(nextFirmId);
+      if (!known) return NextResponse.json({ error: "BizimHesap depo listesi alınamadı; tekrar deneyin." }, { status: 502 });
+      if (!known.some((w) => w.id === wanted)) return NextResponse.json({ error: "Seçilen depo BizimHesap'ta bulunamadı." }, { status: 400 });
+    }
+    defaultWarehouseId = wanted || null;
   }
 
   const { data, error } = await supabase
@@ -122,14 +140,15 @@ export async function PUT(request: Request) {
           : typeof body.requireProductMatch === "boolean"
             ? body.requireProductMatch
             : Boolean(config?.require_product_match),
+        default_warehouse_id: defaultWarehouseId !== undefined ? defaultWarehouseId : (config?.default_warehouse_id ?? null),
         updated_at: new Date().toISOString(),
       },
       { onConflict: "tenant_id" },
     )
-    .select("firm_id, vat_rate, is_enabled, send_on, fixed_customer_title, require_product_match, updated_at")
+    .select("firm_id, vat_rate, is_enabled, send_on, fixed_customer_title, require_product_match, default_warehouse_id, updated_at")
     .single();
   if (error) return NextResponse.json({ error: "Ayar kaydedilemedi." }, { status: 400 });
-  return NextResponse.json(publicView(session.tenant!.id, data));
+  return NextResponse.json(await publicView(session.tenant!.id, data));
 }
 
 export async function POST() {

@@ -144,7 +144,10 @@ export async function fetchBizimHesapWarehouses(firmId: string): Promise<BizimHe
 
 // Satır deposu: API belgesinde yok ama addinvoice satırda "warehouseId" (warehouses
 // servisindeki depo kimliği) kabul ediyor — 9 Eki 2026 Lucatech test fişiyle doğrulandı
-// (Tahtakale istendi, taslakta Tahtakale geldi). Depo seçilmemişse alan gönderilmez → varsayılan depo.
+// (Tahtakale istendi, taslakta Tahtakale geldi).
+// 12 Eki 2026 DÜZELTME: alan gönderilmeyen satıra BizimHesap BİR ÖNCEKİ SATIRIN deposunu
+// uyguluyor (camdan sonraki ürünler cam deposuna düşüyordu). Bu yüzden depo çözülebildiği
+// sürece HER satıra açık depo gönderilir; mağazanın varsayılan deposu (0172) son çare.
 const WAREHOUSE_DETAIL_FIELD = "warehouseId";
 function warehouseField(warehouseId: string | undefined) {
   return warehouseId ? { [WAREHOUSE_DETAIL_FIELD]: warehouseId } : {};
@@ -315,7 +318,7 @@ export async function sendOrderToBizimHesap(
 
     const { data: config } = await supabase
       .from("tenant_bizimhesap")
-      .select("firm_id, vat_rate, is_enabled, send_on, fixed_customer_title, require_product_match")
+      .select("firm_id, vat_rate, is_enabled, send_on, fixed_customer_title, require_product_match, default_warehouse_id")
       .eq("tenant_id", order.tenant_id)
       .maybeSingle();
     if (!config?.is_enabled || !config.firm_id) return { ok: false, error: "BizimHesap bağlantısı kapalı." };
@@ -507,14 +510,16 @@ export async function sendOrderToBizimHesap(
     const divisor = 1 + rate / 100;
     const items = orderItems;
 
-    // Satır deposu: onay penceresinde bu sipariş için seçilen (0169), yoksa ürünün deposu (0168).
+    // Satır deposu: onay penceresinde bu sipariş için seçilen (0169) > ürünün deposu (0168) >
+    // mağazanın varsayılan deposu (0172) > alan gönderilmez (BizimHesap varsayılanı).
     const lineWarehouses = (order.bizimhesap_line_warehouses ?? {}) as Record<string, string>;
+    const defaultWarehouse = (config.default_warehouse_id as string | null) || undefined;
     const warehouseFor = (item: OrderItem, position: number) =>
-      String(position) in lineWarehouses
-        ? lineWarehouses[String(position)] || undefined
+      (String(position) in lineWarehouses
+        ? lineWarehouses[String(position)]
         : item.product_id
           ? warehouseByProduct.get(item.product_id)
-          : undefined;
+          : undefined) || defaultWarehouse;
     const details = items.map((item, position) => {
       const quantity = Number(item.quantity ?? 0) || 0;
       const unitGross = Number(item.price ?? 0) || 0; // KDV dahil
