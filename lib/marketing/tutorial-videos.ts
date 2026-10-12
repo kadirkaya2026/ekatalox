@@ -3,7 +3,9 @@
 export type TutorialVideo = { id: string; title: string; description: string; seconds: number };
 export type TutorialGroup = { slug: string; title: string; lead: string; videos: TutorialVideo[] };
 
-export const TUTORIAL_PUBLISHED_AT = "2026-10-10";
+// Google VideoObject.uploadDate saat dilimli tam ISO 8601 ister; yalnız tarih
+// yazılınca Search Console "zaman dilimi eksik / geçersiz datetime" uyarısı verdi.
+export const TUTORIAL_PUBLISHED_AT = "2026-10-10T09:00:00+03:00";
 
 export const TUTORIAL_GROUPS: TutorialGroup[] = [
   {
