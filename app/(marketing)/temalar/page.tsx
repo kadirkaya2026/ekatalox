@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { DESIGNS, designSector } from "@/lib/storefront/sector-design/config";
-import { TOPTAN_SECTOR_OPTIONS } from "@/lib/billing/toptan-plans";
+import { MARKET_SIGNUP_SECTOR, TOPTAN_SECTOR_OPTIONS } from "@/lib/billing/toptan-plans";
 import { Container } from "@/components/marketing/ui";
 import { Accent, PageHero, pastelStyle } from "@/components/marketing/home-v2/page-kit";
 
@@ -32,6 +32,25 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ s
             <section key={s.value} className="mb-16">
               <h2 className="mb-6 text-3xl font-extrabold tracking-[-0.03em] text-brand-navy">{s.label}</h2>
               <div className="grid gap-6 md:grid-cols-3">
+                {s.value === MARKET_SIGNUP_SECTOR ? (
+                  /* Market sektörünün hazır teması: MarketGo demo mağazası (14 Eki 2026). */
+                  <article className="flex flex-col overflow-hidden rounded-[24px] border border-brand-line bg-white shadow-[0_24px_50px_-36px_rgba(18,40,74,0.4)]">
+                    <a href="https://marketgo.ekatalox.com" target="_blank" rel="noopener noreferrer" className="block p-3 pb-0">
+                      <div className="overflow-hidden rounded-[16px] p-3 pb-0" style={pastelStyle(si)}>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img loading="lazy" src="/temalar/marketgo-desktop.png" alt="MarketGo market teması: kampanya bannerı, görselli kategoriler ve sepet" className="aspect-video w-full rounded-t-lg object-cover object-top shadow-md" />
+                      </div>
+                    </a>
+                    <div className="flex flex-1 flex-col gap-4 p-6">
+                      <h3 className="text-xl font-extrabold tracking-[-0.02em] text-brand-navy">MarketGo</h3>
+                      <p className="flex-1 text-sm leading-6 text-brand-muted">Koyu zeminli market vitrini. Kampanya bannerı, görselli kategori şeridi, mobilde altta sabit sepet ve konumlu WhatsApp siparişi.</p>
+                      <div className="flex flex-wrap gap-2">
+                        <a className="rounded-full bg-brand-dark px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-navy" href="https://marketgo.ekatalox.com" target="_blank" rel="noopener noreferrer">Canlı demoyu aç</a>
+                        <Link className="rounded-full border border-brand-line px-4 py-2.5 text-sm font-semibold text-brand-navy hover:border-brand-navy" href={`/basvuru?sektor=${s.value}`}>Bu temayı seç</Link>
+                      </div>
+                    </div>
+                  </article>
+                ) : null}
                 {DESIGNS.filter((d) => designSector(d.id) === s.value).map((d, di) => (
                   <article key={d.id} className="flex flex-col overflow-hidden rounded-[24px] border border-brand-line bg-white shadow-[0_24px_50px_-36px_rgba(18,40,74,0.4)]">
                     <Link href={`/tema-demo/${d.id}`} className="block p-3 pb-0">
