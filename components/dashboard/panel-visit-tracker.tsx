@@ -3,7 +3,8 @@
 import { useEffect } from "react";
 import { usePathname } from "next/navigation";
 
-const HEARTBEAT_MS = 5 * 60_000;
+// 60 sn: süper admin "şu an panelde" bilgisini dakika hassasiyetinde görsün (14 Eki 2026).
+const HEARTBEAT_MS = 60_000;
 
 function ping(path: string, heartbeat: boolean) {
   fetch("/api/tenant/panel-ping", {
@@ -15,7 +16,7 @@ function ping(path: string, heartbeat: boolean) {
 }
 
 // Panelin HER sayfasında çalışır (layout'ta). Sayfa değişiminde ve panel açık
-// kaldıkça 5 dk'da bir ziyaret kaydı atar; süper admin "son panel ziyareti"ni
+// kaldıkça dakikada bir ziyaret kaydı atar; süper admin "son panel ziyareti"ni
 // buradan görür (açık kalan oturumla girenler de dahil).
 export function PanelVisitTracker() {
   const pathname = usePathname();

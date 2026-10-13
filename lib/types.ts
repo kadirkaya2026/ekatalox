@@ -485,16 +485,34 @@ export interface TenantMembership {
   created_at: string;
 }
 
+/** Tek panel ziyareti (0157): 30 dk'dan uzun ara yeni ziyaret sayılır. */
+export interface AdminPanelVisit {
+  id: string;
+  started_at: string;
+  last_seen_at: string;
+  page_views: number;
+  last_path: string | null;
+  device: string | null;
+}
+
 export interface AdminLoginLogEntry {
   user_id: string;
   email: string;
   full_name: string | null;
   role: UserRole;
+  tenant_id: string | null;
   tenant_name: string | null;
   tenant_subdomain: string | null;
   last_sign_in_at: string | null;
   /** Panelin en son açık görüldüğü an (0157); açık oturumla girişler dahil. */
   last_panel_seen_at: string | null;
+  /** Son ziyarette en son açık olan panel sayfası. */
+  last_path: string | null;
+  last_device: string | null;
+  /** Son 30 günün ziyaretleri, en yeni en üstte (en çok 20). */
+  visits: AdminPanelVisit[];
+  visit_count_7d: number;
+  visit_count_30d: number;
   created_at: string;
 }
 

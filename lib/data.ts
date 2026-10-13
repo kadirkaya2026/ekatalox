@@ -32,6 +32,7 @@ import { normalizeBrandPalette } from "@/lib/storefront/brand-palette";
 import type {
   AccessCode,
   AdminLoginLogEntry,
+  AdminPanelVisit,
   PanelVisit,
   BusinessHours,
   Category,
@@ -383,10 +384,16 @@ export async function getAdminLoginLogs(): Promise<AdminLoginLogEntry[]> {
         email: `${profile.id}@demo.ekatalox.com`,
         full_name: profile.full_name,
         role: profile.role,
+        tenant_id: tenant?.id ?? null,
         tenant_name: tenant?.company_name ?? null,
         tenant_subdomain: tenant?.subdomain ?? null,
         last_sign_in_at: new Date().toISOString(),
         last_panel_seen_at: null,
+        last_path: null,
+        last_device: null,
+        visits: [],
+        visit_count_7d: 0,
+        visit_count_30d: 0,
         created_at: profile.created_at,
       } satisfies AdminLoginLogEntry;
     });
@@ -400,10 +407,13 @@ export async function getAdminLoginLogs(): Promise<AdminLoginLogEntry[]> {
       supabase.from("profiles").select("*"),
       supabase.from("tenant_memberships").select("*"),
       supabase.from("tenants").select("id, company_name, subdomain"),
-      // Kullanıcı başına son panel ziyareti (0157); açık oturumla girişleri de yakalar.
+      // Son 30 günün panel ziyaretleri (0157); açık oturumla girişleri de yakalar.
+      // Şifreli giriş tarihi (auth.last_sign_in_at) oturum açık kaldıkça değişmez,
+      // gerçek "ne zaman girdi / şu an panelde mi" bilgisi bu tablodan okunur.
       supabase
         .from("panel_visits")
-        .select("user_id, last_seen_at")
+        .select("id, user_id, started_at, last_seen_at, page_views, last_path, user_agent")
+        .gte("last_seen_at", new Date(Date.now() - 30 * 24 * 60 * 60_000).toISOString())
         .order("last_seen_at", { ascending: false })
         .limit(5000),
     ]);
@@ -420,40 +430,98 @@ export async function getAdminLoginLogs(): Promise<AdminLoginLogEntry[]> {
   const profileById = new Map(profiles.map((p) => [p.id, p]));
   const membershipByUserId = new Map(memberships.map((m) => [m.user_id, m]));
   const tenantById = new Map(tenants.map((t) => [t.id, t]));
-  const lastPanelSeenByUserId = new Map<string, string>();
-  for (const visit of (visitsResult.data as Array<{ user_id: string; last_seen_at: string }> | null) ?? []) {
-    if (!lastPanelSeenByUserId.has(visit.user_id)) {
-      lastPanelSeenByUserId.set(visit.user_id, visit.last_seen_at);
-    }
+  type VisitRow = {
+    id: string;
+    user_id: string;
+    started_at: string;
+    last_seen_at: string;
+    page_views: number;
+    last_path: string | null;
+    user_agent: string | null;
+  };
+  const visitsByUserId = new Map<string, AdminPanelVisit[]>();
+  for (const visit of (visitsResult.data as VisitRow[] | null) ?? []) {
+    const list = visitsByUserId.get(visit.user_id) ?? [];
+    list.push({
+      id: visit.id,
+      started_at: visit.started_at,
+      last_seen_at: visit.last_seen_at,
+      page_views: visit.page_views,
+      last_path: visit.last_path,
+      device: describeDevice(visit.user_agent),
+    });
+    visitsByUserId.set(visit.user_id, list);
   }
+  const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60_000;
 
   const entries = users.map((user) => {
     const profile = profileById.get(user.id);
     const membership = membershipByUserId.get(user.id);
     const tenant = membership ? tenantById.get(membership.tenant_id) : null;
 
+    const visits = visitsByUserId.get(user.id) ?? [];
+    const latest = visits[0] ?? null;
+
     return {
       user_id: user.id,
       email: user.email ?? "-",
       full_name: profile?.full_name ?? null,
       role: profile?.role ?? "tenant_admin",
+      tenant_id: tenant?.id ?? null,
       tenant_name: tenant?.company_name ?? null,
       tenant_subdomain: tenant?.subdomain ?? null,
       last_sign_in_at: user.last_sign_in_at ?? null,
-      last_panel_seen_at: lastPanelSeenByUserId.get(user.id) ?? null,
+      last_panel_seen_at: latest?.last_seen_at ?? null,
+      last_path: latest?.last_path ?? null,
+      last_device: latest?.device ?? null,
+      visits: visits.slice(0, 20),
+      visit_count_7d: visits.filter((v) => new Date(v.started_at).getTime() >= sevenDaysAgo).length,
+      visit_count_30d: visits.length,
       created_at: user.created_at,
     } satisfies AdminLoginLogEntry;
   });
 
-  // En son giriş yapan en üstte; hiç giriş yapmamışlar sona
-  return entries.sort((a, b) => {
-    if (!a.last_sign_in_at) return 1;
-    if (!b.last_sign_in_at) return -1;
-    return (
-      new Date(b.last_sign_in_at).getTime() -
-      new Date(a.last_sign_in_at).getTime()
+  // En son panelde görülen en üstte; panel kaydı olmayanlar şifreli giriş
+  // tarihine göre, hiç giriş yapmamışlar en sona.
+  const activityOf = (e: AdminLoginLogEntry) =>
+    Math.max(
+      e.last_panel_seen_at ? new Date(e.last_panel_seen_at).getTime() : 0,
+      e.last_sign_in_at ? new Date(e.last_sign_in_at).getTime() : 0,
     );
-  });
+  return entries.sort((a, b) => activityOf(b) - activityOf(a));
+}
+
+// Tarayıcı kimliğinden kısa cihaz adı: "iPhone · Safari", "Windows · Chrome".
+function describeDevice(userAgent: string | null): string | null {
+  if (!userAgent) return null;
+  const ua = userAgent;
+  const os = /iPhone/.test(ua)
+    ? "iPhone"
+    : /iPad/.test(ua)
+      ? "iPad"
+      : /Android/.test(ua)
+        ? "Android"
+        : /Windows/.test(ua)
+          ? "Windows"
+          : /Macintosh|Mac OS X/.test(ua)
+            ? "Mac"
+            : /Linux/.test(ua)
+              ? "Linux"
+              : null;
+  const browser = /Edg\//.test(ua)
+    ? "Edge"
+    : /OPR\//.test(ua)
+      ? "Opera"
+      : /SamsungBrowser/.test(ua)
+        ? "Samsung"
+        : /Chrome\//.test(ua) && !/Chromium/.test(ua)
+          ? "Chrome"
+          : /Firefox\//.test(ua)
+            ? "Firefox"
+            : /Safari\//.test(ua)
+              ? "Safari"
+              : null;
+  return [os, browser].filter(Boolean).join(" · ") || null;
 }
 
 export async function getTenantsOverview(): Promise<TenantWithRelations[]> {

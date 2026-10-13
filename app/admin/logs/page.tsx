@@ -14,10 +14,10 @@ export default async function AdminLogsPage() {
       <Header
         eyebrow="Loglar"
         title="Giriş logları"
-        description="Tenant adminlerinin ve süper adminlerin en son ne zaman giriş yaptığını görüntüleyin."
+        description="Kim şu an panelde, kim en son ne zaman girdi, hangi sayfadaydı. Panel açıkken dakikada bir kayıt düşer; 30 dakikadan uzun ara yeni ziyaret sayılır."
       />
 
-      <AdminLoginLogsPanel entries={entries} />
+      <AdminLoginLogsPanel entries={entries} loadedAt={new Date().toISOString()} />
     </div>
   );
 }
