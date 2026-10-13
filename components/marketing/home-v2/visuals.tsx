@@ -109,7 +109,7 @@ export function GateMock() {
       </div>
       <p className="mt-5 text-xs font-semibold uppercase tracking-[0.14em] text-brand-green">Bayi girişi</p>
       <div className="mt-2 flex items-center justify-between rounded-xl border border-brand-line bg-brand-paper px-4 py-3">
-        <span className="font-mono text-lg tracking-[0.4em] text-brand-navy">1111</span>
+        <span className="font-plex-mono text-lg tracking-[0.4em] text-brand-navy">1111</span>
         <Lock className="size-4 text-brand-muted" />
       </div>
       <div className="mt-3 rounded-xl bg-brand-neon py-3 text-center text-sm font-semibold text-brand-dark">Mağazaya gir</div>
@@ -187,7 +187,7 @@ export function PriceListMock() {
         <div key={r.label} className={cn("flex items-center justify-between rounded-xl px-4 py-2.5 shadow-[0_12px_30px_-18px_rgba(18,40,74,0.4)]", r.tone)}>
           <span className="flex items-center gap-2 text-sm font-medium">
             <KeyRound className="size-4 opacity-70" />
-            {r.label} <span className="font-mono text-xs opacity-60">· {r.code}</span>
+            {r.label} <span className="font-plex-mono text-xs opacity-60">· {r.code}</span>
           </span>
           <span className="text-base font-bold tabular-nums">{r.price}</span>
         </div>
