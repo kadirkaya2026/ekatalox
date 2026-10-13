@@ -3,6 +3,18 @@ import { getStatusDescription, getStatusLabel } from "@/lib/orders/status";
 import { normalizeCustomerPhone } from "@/lib/storefront/customer-phone";
 import { formatOrderNo } from "@/lib/orders/format";
 
+// Telefonlu siparişte doğrudan müşterinin numarasına, telefonsuz siparişte
+// (toptancı/genel tenant, 0127) numarasız wa.me linki: WhatsApp açılır, bayi
+// kişiyi kendisi seçer (vitrindeki sipariş gönderimiyle aynı yöntem, 14 Eki 2026).
+function buildWaHref(phone: string | null, text: string): string {
+  const encoded = encodeURIComponent(text);
+  if (!phone) return `https://wa.me/?text=${encoded}`;
+  const digits = normalizeCustomerPhone(phone);
+  // TR yerel biçim (05xx…) → uluslararası (905xx…)
+  const intl = digits.startsWith("0") ? `9${digits}` : digits.startsWith("90") ? digits : `90${digits}`;
+  return `https://wa.me/${intl}?text=${encoded}`;
+}
+
 // Bayinin tek tıkla göndereceği durum mesajı. WhatsApp Business API yok;
 // otomatik gönderim yapılamaz, bu yüzden hazır metinle wa.me linki.
 export function buildOrderStatusWhatsAppHref(params: {
@@ -12,12 +24,7 @@ export function buildOrderStatusWhatsAppHref(params: {
   isTekel: boolean;
   isWholesale?: boolean;
   trackingUrl: string | null;
-}): string | null {
-  // Telefonsuz sipariş (0127): gönderilecek numara yok.
-  if (!params.order.customer_phone) return null;
-  const digits = normalizeCustomerPhone(params.order.customer_phone);
-  // TR yerel biçim (05xx…) → uluslararası (905xx…)
-  const intl = digits.startsWith("0") ? `9${digits}` : digits.startsWith("90") ? digits : `90${digits}`;
+}): string {
   const ad = params.order.customer_name.trim().split(/\s+/)[0] || "";
   const lines = [
     `Merhaba ${ad}, ${params.tenantName} — ${formatOrderNo(params.order)} numaralı siparişiniz:`,
@@ -29,11 +36,12 @@ export function buildOrderStatusWhatsAppHref(params: {
   }
   // Takip linki mesaja eklenmiyor (kullanıcı kararı, 29 Ağu 2026); müşteri
   // vitrindeki "Sipariş Takip" ikonundan numarasıyla ulaşıyor.
-  return `https://wa.me/${intl}?text=${encodeURIComponent(lines.join("\n"))}`;
+  return buildWaHref(params.order.customer_phone, lines.join("\n"));
 }
 
 // Fiş düzenlendikten sonra müşteriye gönderilecek güncel fiş (0154): kalemler,
-// adetler ve toplam metin olarak. Otomatik gitmez; bayi wa.me ile gönderir.
+// adetler ve toplam metin olarak + güncel fişin linki (takip sayfası DB'den
+// okur, düzenlenmiş hâli gösterir). Otomatik gitmez; bayi wa.me ile gönderir.
 export function buildOrderUpdatedWhatsAppHref(params: {
   order: Pick<
     StorefrontOrder,
@@ -41,10 +49,8 @@ export function buildOrderUpdatedWhatsAppHref(params: {
   >;
   tenantName: string;
   formatMoney: (value: number) => string;
-}): string | null {
-  if (!params.order.customer_phone) return null;
-  const digits = normalizeCustomerPhone(params.order.customer_phone);
-  const intl = digits.startsWith("0") ? `9${digits}` : digits.startsWith("90") ? digits : `90${digits}`;
+  trackingUrl?: string | null;
+}): string {
   const ad = params.order.customer_name.trim().split(/\s+/)[0] || "";
   const priced = params.order.currency !== "CATALOG";
   const lines = [
@@ -58,5 +64,6 @@ export function buildOrderUpdatedWhatsAppHref(params: {
     }),
   ];
   if (priced) lines.push("", `Toplam: ${params.formatMoney(params.order.total_amount)}`);
-  return `https://wa.me/${intl}?text=${encodeURIComponent(lines.join("\n"))}`;
+  if (params.trackingUrl) lines.push("", `Güncel fişinizi buradan görebilirsiniz: ${params.trackingUrl}`);
+  return buildWaHref(params.order.customer_phone, lines.join("\n"));
 }

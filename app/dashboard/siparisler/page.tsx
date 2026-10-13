@@ -5,6 +5,7 @@ import { requireTenantAdminPage } from "@/lib/auth/session";
 import { getTenantOrdersPage } from "@/lib/orders/data";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { resolveBizimHesapPolicy } from "@/lib/integrations/bizimhesap";
+import { getTenantStorefrontOrigin } from "@/lib/push/send-tenant-broadcast-push";
 
 export const metadata = { title: "Siparişler" };
 
@@ -39,6 +40,7 @@ export default async function TenantOrdersPage() {
         tenantName={tenant.company_name}
         isTekel={Boolean(tenant.is_tekel)}
         isWholesale={tenant.business_type !== "market"}
+        storefrontOrigin={getTenantStorefrontOrigin(tenant)}
         orderEditEnabled={Boolean(tenant.order_edit_enabled)}
         bizimhesapSendOn={bizimhesapSendOn}
       />

@@ -427,7 +427,7 @@ export function OrdersManager({
       }
     };
     const payment = formatPaymentMethod(order.payment_method);
-    // Telefonsuz siparişte (toptancı/genel tenant, 0127) WhatsApp düğmesi yok.
+    // Telefonsuz siparişte (toptancı/genel tenant, 0127) numarasız wa.me linki: bayi kişiyi WhatsApp'ta seçer.
     const waHref = buildOrderStatusWhatsAppHref({ order, status: order.status, tenantName, isTekel, isWholesale, trackingUrl });
     return (
       <>
@@ -553,6 +553,7 @@ export function OrdersManager({
                     order: updated,
                     tenantName,
                     formatMoney: (value) => formatCurrency(value, updated.currency as CurrencyCode),
+                    trackingUrl,
                   }),
                 );
                 void load();
@@ -574,6 +575,18 @@ export function OrdersManager({
             const editEvents = selected.events.filter(
               (ev) => ev.from_status === ev.to_status && ev.reason?.startsWith(ORDER_EDIT_EVENT_PREFIX),
             );
+            // Daha önce düzenlenmiş siparişte de "Güncel fişi gönder" dursun (qoop, 14 Eki 2026):
+            // bayi düzenleyip sayfadan çıkınca düğme kaybolmasın.
+            const sendUpdatedHref =
+              updatedWaHref ??
+              (editEvents.length > 0
+                ? buildOrderUpdatedWhatsAppHref({
+                    order,
+                    tenantName,
+                    formatMoney: (value) => formatCurrency(value, order.currency as CurrencyCode),
+                    trackingUrl,
+                  })
+                : null);
             return (
               <div className="space-y-2">
                 <div className={cn("overflow-hidden rounded-xl border", editing ? "border-amber-300" : "border-slate-200")}>
@@ -669,9 +682,9 @@ export function OrdersManager({
                   </button>
                 ) : null}
                 {editMsg ? <p className="text-xs font-medium text-emerald-700">{editMsg}</p> : null}
-                {updatedWaHref ? (
+                {sendUpdatedHref ? (
                   <Button asChild variant="secondary">
-                    <a href={updatedWaHref} target="_blank" rel="noreferrer">
+                    <a href={sendUpdatedHref} target="_blank" rel="noreferrer">
                       <MessageCircle className="size-4" />
                       Güncel fişi WhatsApp&apos;tan gönder
                     </a>
