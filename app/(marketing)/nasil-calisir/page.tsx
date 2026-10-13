@@ -24,7 +24,7 @@ const STEPS = [
     no: "02",
     duration: "Excel ile",
     title: "Ürün yükleme",
-    body: "Panelde Excel şablonunu indirin, ürün kodu, ad, koli içi adet ve fiyatları doldurup yükleyin. Fotoğrafları model/SKU kodlarıyla eşleştirerek toplu yükleyin. Mevcut PDF veya Excel listenizin aktarımı için destek isterseniz bize ulaşın.",
+    body: "İsterseniz biz yükleriz: PDF kataloğunuzu, web sitenizin adresini ya da Excel listenizi WhatsApp'tan gönderin; ürünleri, görselleri ve fiyat listelerini biz kuralım, ücretsiz planda bile. Kendiniz yüklemek isterseniz panelde Excel şablonunu doldurup fotoğrafları model/SKU koduyla eşleştirerek toplu yükleyin.",
     detail: ["Excel şablonu: kod, ad, birim, koli içi, fiyat", "Varyant: renk, beden, model", "Kategori ve alt kategori düzeni"],
   },
   {

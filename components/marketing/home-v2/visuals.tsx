@@ -237,6 +237,57 @@ export function BizimHesapMock() {
   );
 }
 
+/* ---------- 6. Bildirim: bayinin telefonuna kampanya ---------- */
+export function NotifyMock() {
+  return (
+    <div className="space-y-3">
+      <div className="rounded-2xl bg-white p-4 shadow-[0_30px_60px_-30px_rgba(18,40,74,0.45)]">
+        <p className="text-xs font-semibold uppercase tracking-wide text-brand-muted">Panel · Bildirim gönder</p>
+        <p className="mt-2 text-sm font-semibold text-brand-navy">Yeni sezon kabloları geldi, bayi fiyatı bu hafta %10 indirimli.</p>
+        <div className="mt-3 flex flex-wrap gap-1.5 text-[11px] font-semibold">
+          <span className="rounded-full bg-brand-green text-white px-2 py-0.5">Bayi listesi · 48 kişi</span>
+          <span className="rounded-full bg-brand-paper text-brand-navy px-2 py-0.5">Kategori: Kablolar</span>
+        </div>
+      </div>
+      <div className="ml-auto w-[88%] rounded-2xl border border-brand-line bg-[#F2F2F7] p-3 text-[13px] shadow-md">
+        <div className="flex items-center gap-2">
+          <span className="flex size-7 items-center justify-center rounded-lg bg-brand-dark text-[10px] font-bold text-white">DT</span>
+          <span className="font-semibold text-brand-navy">Demotoptan</span>
+          <span className="ml-auto text-[11px] text-brand-muted">şimdi</span>
+        </div>
+        <p className="mt-1.5 text-brand-ink">Yeni sezon kabloları geldi, bayi fiyatı bu hafta %10 indirimli.</p>
+      </div>
+    </div>
+  );
+}
+
+/* ---------- 7. Raporlar: en çok aranan ve sepete eklenen ---------- */
+export function ReportMock() {
+  const rows = [
+    ["usb c 20w", 142, 88],
+    ["lightning kablo", 97, 60],
+    ["wifi adaptör", 64, 41],
+    ["100w kablo", 51, 34],
+  ] as const;
+  return (
+    <div className="rounded-2xl bg-white p-4 shadow-[0_30px_60px_-30px_rgba(18,40,74,0.45)]">
+      <div className="flex items-center justify-between text-xs">
+        <span className="font-semibold uppercase tracking-wide text-brand-muted">En çok aranan · 30 gün</span>
+        <span className="text-brand-muted">arama / sepet</span>
+      </div>
+      <div className="mt-3 space-y-2">
+        {rows.map(([term, s, c]) => (
+          <div key={term} className="text-sm">
+            <div className="flex justify-between"><span className="font-medium text-brand-navy">{term}</span><span className="tabular-nums text-brand-muted">{s} / {c}</span></div>
+            <div className="mt-1 h-2 w-full overflow-hidden rounded-full bg-brand-paper"><div className="h-full rounded-full bg-brand-green" style={{ width: `${Math.round((s / 142) * 100)}%` }} /></div>
+          </div>
+        ))}
+      </div>
+      <p className="mt-3 text-xs text-brand-muted">Sonuçsuz arama: &quot;type c hub&quot; · 23 kez → kataloğa ekleyin</p>
+    </div>
+  );
+}
+
 /* ---------- 4. Panel: sipariş satırları ---------- */
 export function OrdersMock() {
   const rows = [

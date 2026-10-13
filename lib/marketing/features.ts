@@ -292,5 +292,54 @@ export const MARKETING_FEATURES: MarketingFeature[] = [
       "whatsapp-siparis",
       "bayi-fiyat-listeleri"
     ]
+  },
+  {
+    "slug": "kurulum-destegi",
+    "seoTitle": "Ürün Yükleme ve Kurulum Desteği: Kataloğunuzu Biz Kuralım",
+    "metaDescription": "PDF kataloğunuzu, web sitenizi ya da Excel listenizi gönderin; ürünleri, görselleri, fiyat listelerini ve katalog tasarımını biz kuralım. Ücretsiz planda da geçerli.",
+    "title": "Ürünlerinizi biz yükleyelim, kataloğunuzu biz kuralım",
+    "lead": "Elinizde ne varsa onu gönderin: PDF katalog, web sitenizin adresi ya da Excel listesi. Ürünleri, görselleri, kategorileri, fiyat listelerini ve kataloğun görünümünü biz hazırlarız. Ücretsiz pakette de geçerlidir.",
+    "plan": "Tüm paketlerde · ücretsiz planda da",
+    "cta": {
+      "href": "https://wa.me/905354172510?text=Merhaba%2C%20katalo%C4%9Fumu%20kurmak%20istiyorum.%20Listemi%20g%C3%B6nderiyorum.",
+      "label": "Listemi WhatsApp'tan göndereyim"
+    },
+    "sections": [
+      {
+        "title": "Ne gönderirseniz onunla başlarız",
+        "body": "Düzenli bir Excel şart değil. Eski PDF kataloğunuz, mevcut web sitenizin adresi, hatta fotoğraflı bir fiyat listesi bile yeterli. Dosyayı WhatsApp ya da e-postayla gönderirsiniz; biz ürün adlarını, kodları, fiyatları ve görselleri çıkarıp kataloğa yükleriz. Eksik görsel varsa ürün koduyla eşleştirip sorarız."
+      },
+      {
+        "title": "Kataloğun görünümünü de biz ayarlarız",
+        "body": "Sektörünüze uygun temayı seçer, logonuzu ve marka renklerinizi uygularız. Şifre kapısını, fiyat listelerini (bayi, perakende, özel) ve kategori düzenini kurarız. Siz kataloğu hazır hâliyle görür, değişiklik istediğiniz yerleri söylersiniz; panelden sonradan her şeyi kendiniz de değiştirebilirsiniz."
+      },
+      {
+        "title": "Süre ve kapsam baştan belli",
+        "body": "Listenizi aldığımızda ürün sayısına ve görsel durumuna bakıp süreyi söyleriz; çoğu katalog 1-3 iş gününde hazır olur. Yüzlerce ürünlük büyük listelerde kapsamı ve varsa ek işi başlamadan önce birlikte netleştiririz, sürpriz çıkmaz."
+      },
+      {
+        "title": "Ücretsiz planda da geçerli",
+        "body": "Kurulum desteği paket şartına bağlı değildir. Ücretsiz planla açtığınız katalog için de listenizi gönderebilirsiniz; 250 ürün sınırı içinde ürünlerinizi yükler, kataloğu kurarız. Büyüyünce paket değiştirmeniz yeterli, yüklenen ürünler olduğu gibi kalır."
+      }
+    ],
+    "example": "Bir telefon aksesuarı toptancısı 1.400 ürünlük eski PDF kataloğunu WhatsApp'tan gönderdi. Ürün kodları ve fiyatlar PDF'den çıkarıldı, görseller kodla eşleştirildi, bayi ve perakende fiyat listeleri kuruldu, sektör teması logoyla uygulandı. İki iş günü sonra bayilere şifre gönderildi.",
+    "related": [
+      "toplu-urun-yukleme",
+      "bayi-fiyat-listeleri"
+    ],
+    "faq": [
+      {
+        "q": "Kurulum desteği ücretli mi?",
+        "a": "Standart kurulum (ürünler, görseller, fiyat listeleri, tema) ücretsiz planda da dahildir. Çok büyük listelerde ya da özel istekli işlerde kapsamı ve varsa ücreti başlamadan önce söyleriz."
+      },
+      {
+        "q": "Görsellerim yoksa ne olur?",
+        "a": "Web sitenizden ya da PDF'ten alabildiğimiz görselleri kullanırız. Görseli olmayan ürünleri kod listesiyle size bildiririz; fotoğrafları sonradan panelden toplu yükleyebilirsiniz."
+      },
+      {
+        "q": "Yüklendikten sonra kendim değiştirebilir miyim?",
+        "a": "Evet. Katalog panelden tamamen sizin kontrolünüzde: fiyat, stok, ürün ekleme, tema ve şifreler. Biz yalnız başlangıcı kurarız."
+      }
+    ]
   }
 ];

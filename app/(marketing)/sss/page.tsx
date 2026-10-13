@@ -137,7 +137,7 @@ const GROUPS: FaqGroup[] = [
     items: [
       {
         q: "Ürünleri kim yükler?",
-        a: "Panelde Excel şablonunu doldurup ürünlerinizi yükleyebilir, fotoğrafları ekleyebilirsiniz. Mevcut PDF veya Excel listenizin aktarımı için destek isterseniz bize ulaşın; listenizi inceleyip işin kapsamını birlikte netleştirelim.",
+        a: "İsterseniz biz yükleriz, ücretsiz planda bile. PDF kataloğunuzu, web sitenizin adresini ya da Excel listenizi WhatsApp'tan gönderirsiniz; ürünleri, görselleri, fiyat listelerini ve kataloğun tasarımını biz kurarız, çoğu katalog 1-3 iş gününde hazır olur. Dilerseniz panelden Excel şablonuyla kendiniz de yükleyebilirsiniz.",
       },
       {
         q: "Fiyatları nasıl güncellerim?",

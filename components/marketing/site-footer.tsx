@@ -12,7 +12,19 @@ const PRODUCT_LINKS = [
   { href: "/blog", label: "Blog ve rehberler" },
   { href: "/egitim", label: "Eğitim merkezi" },
   { href: "/ozellikler/bizimhesap-entegrasyonu", label: "BizimHesap entegrasyonu" },
+  { href: "/ozellikler/kurulum-destegi", label: "Ürünlerinizi biz yükleyelim" },
   { href: SITE.demoUrl, label: "Demo katalog" },
+];
+
+// Sektör sütunu (14 Eki 2026): her sektör sayfası alt bilgiden de bağlı.
+const SECTOR_LINKS = [
+  { href: "/sektorler/tekstil-giyim", label: "Tekstil & Giyim" },
+  { href: "/sektorler/elektronik-aksesuar", label: "Elektronik & Aksesuar" },
+  { href: "/sektorler/mobilya-dekorasyon", label: "Mobilya & Dekorasyon" },
+  { href: "/sektorler/otomotiv-yedek-parca", label: "Otomotiv Yedek Parça" },
+  { href: "/sektorler/gida-toptancilari", label: "Gıda Toptan" },
+  { href: "/sektorler/kozmetik-temizlik", label: "Kozmetik & Temizlik" },
+  { href: "/sektorler/market-bakkal", label: "Market & Bakkallar" },
 ];
 
 const COMPANY_LINKS = [
@@ -34,7 +46,7 @@ export function SiteFooter() {
   const hasLegal = Boolean(company.legalName || company.address);
   return (
     <footer className="border-t border-brand-dark-line bg-brand-dark">
-      <div className="mx-auto grid w-full max-w-6xl gap-10 px-5 py-14 sm:px-8 md:grid-cols-[1.6fr_1fr_1fr_1fr]">
+      <div className="mx-auto grid w-full max-w-6xl gap-10 px-5 py-14 sm:px-8 md:grid-cols-2 lg:grid-cols-[1.5fr_1fr_1fr_1fr_0.8fr]">
         <div>
           <EkataloxLogo variant="dark" alt="eKatalox" className="h-8 w-[132px]" />
           <p className="mt-4 max-w-xs text-sm leading-relaxed text-white/60">
@@ -47,6 +59,7 @@ export function SiteFooter() {
           </div>
         </div>
         <FooterColumn title="Ürün" links={PRODUCT_LINKS} />
+        <FooterColumn title="Sektörler" links={SECTOR_LINKS} />
         <FooterColumn title="Şirket" links={COMPANY_LINKS} />
         <FooterColumn title="Yasal" links={LEGAL_LINKS} />
       </div>

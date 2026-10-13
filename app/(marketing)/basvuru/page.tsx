@@ -15,7 +15,7 @@ function first(v: string | string[] | undefined) {
   return Array.isArray(v) ? v[0] : v;
 }
 
-const POINTS = ["250 ürünle ücretsiz", "Kart istenmez", "Sipariş komisyonu yok", "3 dakikada hazır"];
+const POINTS = ["250 ürünle ücretsiz", "Kart istenmez", "Sipariş komisyonu yok", "Ürünlerinizi biz yükleriz"];
 
 export default async function Page({ searchParams }: { searchParams: Promise<Params> }) {
   const params = await searchParams;

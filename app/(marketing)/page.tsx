@@ -25,6 +25,7 @@ import { BizimHesapMock, GateMock, GradientPanel, HeroCollage, OrdersMock, Price
 import { PlanTagCards } from "@/components/marketing/home-v2/plan-tag-cards";
 import { CustomerMarquee } from "@/components/marketing/home-v2/page-kit";
 import { Sparkles } from "lucide-react";
+import { BeforeAfter, IntegrationMap, ResultCards, TrustTrio, WeUploadSection } from "@/components/marketing/home-v2/blocks";
 import { TOPTAN_PLANS } from "@/lib/billing/toptan-plans";
 import { CUSTOMER_NAMES, SITE } from "@/lib/marketing/site";
 
@@ -136,7 +137,24 @@ const FEATURES = [
   { icon: CreditCard, title: "Kataloğunuzdan ödeme alın", body: "İyzico/Paytr entegrasyonuyla kataloğunuzdan ödeme alın.", href: "/ozellikler/online-odeme", plan: "Kurumsal" },
 ];
 
+// İtiraz odaklı SSS (14 Eki 2026): toptancının "ama…" dediği yerler.
 const FAQ = [
+  {
+    q: "Bayilerim uygulama kullanmaz, bu onlara zor gelmez mi?",
+    a: "Uygulama yok, üyelik yok. Bayinize WhatsApp'tan katalog adresini ve şifreyi gönderirsiniz; tarayıcıda açar, şifreyi yazar, ürünü seçer, siparişi yine WhatsApp'tan gönderir. Zaten her gün kullandığı iki şey: tarayıcı ve WhatsApp. İsterse ana ekranına ekler, uygulama gibi açılır.",
+  },
+  {
+    q: "Ürünlerim Excel'de bile düzenli değil, nasıl yükleyeceğim?",
+    a: "Yüklemeyeceksiniz, biz yükleriz; ücretsiz planda bile. Eski PDF kataloğunuzu, web sitenizin adresini ya da dağınık Excel'inizi WhatsApp'tan gönderin. Ürünleri, kodları, görselleri ve fiyat listelerini biz kurarız, çoğu katalog 1-3 iş gününde hazır olur.",
+  },
+  {
+    q: "Fiyatlarım rakibe ya da perakendeciye görünür mü?",
+    a: "Hayır. Fiyatlar şifrenin arkasındadır; her bayi grubu ayrı şifre ve ayrı fiyat listesiyle girer, kim hangi şifreyle girdiyse yalnız kendi fiyatını görür. Herkese açık kurumsal sayfalarda bayi fiyatı yayınlanmaz. Gerekirse şifreyi anında değiştirir, şüpheli IP'yi engellersiniz.",
+  },
+  {
+    q: "Zaten BizimHesap kullanıyorum, siparişi iki yere mi gireceğim?",
+    a: "Hayır. Kurumsal pakette onayladığınız sipariş BizimHesap'a taslak satış fişi olarak düşer; cari, ürün ve depo eşleşmesini bir kez yaparsınız. Fişi BizimHesap'ta kaydettiğinizde stok oradan düşer.",
+  },
   {
     q: "Ücretsiz plan gerçekten ücretsiz mi?",
     a: "Evet. Kart bilgisi istemeyiz, süre sınırı yoktur. 250 ürün, 2 fiyat listesi ve aylık 1.000 ziyaretçi sınırıyla kataloğunuzu yayınlar, WhatsApp'tan sipariş alırsınız. Karşılığında kataloğunuzda küçük eKatalox reklamları görünür.",
@@ -147,7 +165,7 @@ const FAQ = [
   },
   {
     q: "Ürünleri kim yükler?",
-    a: "Ürünlerinizi panelden veya Excel şablonuyla kendiniz ekleyebilirsiniz. PDF ya da Excel listenizin aktarımı için destek isterseniz WhatsApp'tan bize ulaşın; listenizi inceleyip yapılacak işi ve kapsamını birlikte netleştirelim.",
+    a: "İsterseniz biz yükleriz, ücretsiz planda bile. PDF kataloğunuzu, web sitenizin adresini ya da Excel listenizi WhatsApp'tan gönderirsiniz; ürünleri, görselleri, fiyat listelerini ve kataloğun tasarımını biz kurarız, çoğu katalog 1-3 iş gününde hazır olur. Dilerseniz panelden Excel şablonuyla kendiniz de yükleyebilirsiniz.",
   },
   {
     q: "Bayim nasıl girer, uygulama indirmesi gerekir mi?",
@@ -374,6 +392,12 @@ export default function HomePage() {
         </Container>
       </section>
 
+      {/* 3b. Ürünlerinizi biz yükleyelim */}
+      <WeUploadSection />
+
+      {/* 3c. Önce / sonra */}
+      <BeforeAfter rows={BEFORE_AFTER} />
+
       {/* 4. Siyah blok: yapay zekâ görünürlüğü */}
       <section className="bg-white pb-20 sm:pb-28">
         <Container>
@@ -430,6 +454,9 @@ export default function HomePage() {
         </Container>
       </section>
 
+      {/* 6b. Bağlantı haritası */}
+      <IntegrationMap />
+
       {/* 7. Tek büyük alıntı */}
       <section className="bg-white pb-20 sm:pb-28">
         <Container>
@@ -468,15 +495,27 @@ export default function HomePage() {
               </figure>
             ))}
           </div>
+          {/* Rakamlı sonuç kartları: yalnız izinli müşteriler, gerçek veriler (Eki 2026). */}
+          <div className="mx-auto mt-6 max-w-5xl">
+            <ResultCards
+              items={[
+                { company: "Lucatech", stat: "274", statLabel: "varyantlı ürün tek katalogda", body: "163 ürün, 43'ü renk ve model seçenekli. Bayiler şifreyle girip kendi listesini görüyor; onaylanan sipariş BizimHesap'a satış fişi olarak düşüyor, ikinci kez yazılmıyor.", href: "/ozellikler/bizimhesap-entegrasyonu", index: 1 },
+                { company: "Genax", stat: "1 koli = 200", statLabel: "adet, paket ve koli ile sipariş", body: "69 ürün; bayi adet, paket (20) ya da koli (200) seçiyor, tutar kendiliğinden hesaplanıyor. Bayiler kataloğu ana ekrana ekleyip kampanya bildirimi alıyor.", href: "/ozellikler/whatsapp-siparis", index: 3 },
+              ]}
+            />
+          </div>
         </Container>
       </section>
 
-      {/* 8. SSS (kısaltılmış) */}
+      {/* 7b. Güven üçlüsü */}
+      <TrustTrio />
+
+      {/* 8. SSS (itiraz odaklı) */}
       <Section tone="paper">
         <Container>
           <SectionHeading title="Aklınıza takılanlar" />
           <dl className="mt-10 divide-y divide-brand-line border-y border-brand-line">
-            {FAQ.slice(0, 4).map((f) => (
+            {FAQ.slice(0, 6).map((f) => (
               <div key={f.q} className="grid gap-3 py-6 md:grid-cols-[1fr_1.6fr] md:gap-10">
                 <dt className="text-lg font-semibold text-brand-navy">{f.q}</dt>
                 <dd className="leading-relaxed text-brand-muted">{f.a}</dd>

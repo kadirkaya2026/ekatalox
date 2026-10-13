@@ -50,7 +50,7 @@ export default async function FeaturePage({ params }: Props) {
       eyebrow={feature.plan}
       title={feature.title}
       lead={feature.lead}
-      actions={<><ButtonLink href={cta.href} tone="navy" size="lg" className="px-9">{cta.label}</ButtonLink><ButtonLink href="/fiyatlandirma" tone="outline" size="lg">Paketleri karşılaştır</ButtonLink></>}
+      actions={<><ButtonLink href={cta.href} tone="navy" size="lg" className="px-9" external={cta.href.startsWith("http")}>{cta.label}</ButtonLink><ButtonLink href="/fiyatlandirma" tone="outline" size="lg">Paketleri karşılaştır</ButtonLink></>}
     />
 
     <section className="bg-white pb-16 sm:pb-20">

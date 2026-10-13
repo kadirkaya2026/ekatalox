@@ -6,6 +6,8 @@ import { ArrowRight } from "lucide-react";
 import { ButtonLink, Container, Section, SectionHeading } from "@/components/marketing/ui";
 import { SITE } from "@/lib/marketing/site";
 import { Accent, BandCard, CustomerMarquee, PageHero, TintBox, pastelStyle } from "@/components/marketing/home-v2/page-kit";
+import { FeatureTabs } from "@/components/marketing/home-v2/feature-tabs";
+import { BizimHesapMock, GateMock, NotifyMock, OrdersMock, PriceListMock, ReportMock, WhatsAppMock } from "@/components/marketing/home-v2/visuals";
 
 export const metadata = marketingMetadata(
   "/ozellikler",
@@ -125,6 +127,28 @@ export default function OzelliklerPage() {
           işaretli özellikler o paket ve üstünde bulunur.
         </p>
       </PageHero>
+
+      {/* Sol sekmeli özellik turu (14 Eki 2026): bir bakışta ürünün yaptığı 7 iş. */}
+      <Section tone="white" className="pb-10 pt-0 sm:pb-14 sm:pt-0">
+        <Container>
+          <h2 className="mx-auto max-w-3xl text-balance text-center text-3xl font-extrabold leading-[1.05] tracking-[-0.03em] text-brand-navy sm:text-5xl">
+            Katalog, sipariş, fiyat, bildirim ve muhasebe için <Accent>tek panel.</Accent>
+          </h2>
+          <div className="mt-10">
+            <FeatureTabs
+              tabs={[
+                { key: "gate", label: "Şifreli bayi kataloğu", description: "Ürünler herkese açık, fiyatlar şifrenin arkasında. Bayi firmaniz.ekatalox.com adresini açar, şifresini yazar, kendi fiyatını görür. Uygulama yok, üyelik yok.", href: "/ozellikler/bayi-fiyat-listeleri", from: "#DDF6E7", to: "#8FD9AF", visual: <GateMock /> },
+                { key: "wa", label: "WhatsApp'tan PDF sipariş fişi", description: "Bayi sepetini doldurur, tek dokunuşla WhatsApp'a geçer; ürün kodu, adet, koli ve tutarı olan PDF fişin linki mesajda hazır gelir.", href: "/ozellikler/whatsapp-siparis", from: "#FFE9C7", to: "#FFB173", visual: <WhatsAppMock /> },
+                { key: "price", label: "Her bayiye kendi fiyat listesi", description: "Bayi, perakende, özel müşteri: aynı katalog, ayrı şifre, ayrı liste. Fiyat değişince panelde bir kez düzeltirsiniz, herkes o an güncel fiyatı görür.", href: "/ozellikler/bayi-fiyat-listeleri", from: "#EAE4FF", to: "#B9A6FF", visual: <PriceListMock /> },
+                { key: "orders", label: "Panelden sipariş yönetimi", description: "Gelen siparişi onaylayın, adet ve fiyatı düzeltin, güncel fişi WhatsApp'tan geri gönderin. Yeni sipariş geldiğinde telefonunuza bildirim düşer.", href: "/ozellikler/whatsapp-siparis", from: "#DCEBFF", to: "#8FBDFF", visual: <OrdersMock /> },
+                { key: "notify", label: "Bayilere anlık bildirim", description: "Yeni ürün, kampanya ya da stok haberi bildirim açan bayilerin telefonuna düşer; kişi, ürün ya da kategoriye göre hedefleyin.", href: "/ozellikler/kampanya-bildirimleri", from: "#FFE1EE", to: "#FFA3C7", visual: <NotifyMock /> },
+                { key: "reports", label: "Arama ve sepet raporları", description: "En çok aranan ve sepete eklenen ürünler, sonuçsuz aramalar, il ve fiyat listesi girişleri. Kataloğunuzu bayinin aradığı şeye göre düzenleyin.", href: "/ozellikler/raporlar", from: "#DDF6E7", to: "#8FD9AF", visual: <ReportMock /> },
+                { key: "bizimhesap", label: "BizimHesap'a otomatik satış fişi", description: "Onayladığınız sipariş BizimHesap'a taslak satış fişi olarak düşer; cari, ürün ve depo eşleşmesi bir kez yapılır, stok BizimHesap'tan düşer.", href: "/ozellikler/bizimhesap-entegrasyonu", from: "#FFE9C7", to: "#FFB173", visual: <BizimHesapMock /> },
+              ]}
+            />
+          </div>
+        </Container>
+      </Section>
 
       {GROUPS.map((g, i) => (
         <Section key={g.id} id={g.id} tone="white" className="scroll-mt-20 py-8 sm:py-10">
