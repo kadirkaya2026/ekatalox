@@ -7,6 +7,7 @@ import { ButtonLink, Container, Section, SectionHeading } from "@/components/mar
 import { formatTry, TOPTAN_PLANS } from "@/lib/billing/toptan-plans";
 import { SITE } from "@/lib/marketing/site";
 import { cn } from "@/lib/utils";
+import { ClosingCta } from "@/components/marketing/home-v2/page-kit";
 
 type Cell = string | boolean;
 type Row = { label: string; cells: Cell[] };
@@ -104,15 +105,15 @@ export function PricingContent({ initialAudience }: { initialAudience: PlanAudie
   const faq = market ? [{ q: "200 adet magnet hangi pakette hediye?", a: "Market işletmelerine Kurumsal pakette 200 adet QR kodlu magnet hediye edilir. Müşterileriniz magneti okutarak kataloğunuza ulaşır ve sipariş oluşturur." }, ...FAQ.filter(item => !item.q.startsWith("Kurumsal site") && !item.q.startsWith("Ön muhasebe"))] : FAQ;
   return (
     <>
-      <Section tone="white" className="border-b border-brand-line">
+      <Section tone="white" className="border-b border-brand-line pt-14 sm:pt-24">
         <Container>
           <SectionHeading
             eyebrow="Fiyatlandırma"
             as="h1"
-            title="İşletmenize uygun paketi seçin."
+            title="En iyi toptancı araçları, en düşük fiyatla."
             lead="İlk kataloğunuz için süresiz ücretsiz plan; daha fazla ürün, rapor ve müşteri yönetimi için ücretli paketler. Ücretli paketleri 14 gün deneyin. Yıllık fiyatlar KDV hariçtir; sipariş komisyonu yoktur."
           />
-          <div className="mt-10">
+          <div className="mt-12">
             <PlanAudienceSelector value={audience} onChange={setAudience} />
             <PlanCards audience={audience} />
           </div>
@@ -122,7 +123,7 @@ export function PricingContent({ initialAudience }: { initialAudience: PlanAudie
       <Section>
         <Container>
           <SectionHeading eyebrow="Karşılaştırma" title="Paketlerde ne var, ne yok" />
-          <div className="mt-8 overflow-x-auto rounded-lg border border-brand-line bg-white">
+          <div className="mt-8 overflow-x-auto rounded-[24px] border border-brand-line bg-white shadow-[0_24px_50px_-36px_rgba(18,40,74,0.4)]">
             <table className="w-full min-w-[720px] text-sm">
               <thead>
                 <tr className="border-b border-brand-line text-left">
@@ -169,26 +170,16 @@ export function PricingContent({ initialAudience }: { initialAudience: PlanAudie
         </Container>
       </Section>
 
-      <Section tone="navy">
-        <Container className="grid items-center gap-8 lg:grid-cols-[1.4fr_1fr]">
-          <div>
-            <h2 className="text-balance text-3xl font-bold leading-[1.1] tracking-[-0.02em] sm:text-4xl">
-              Hangi paket size uyar, emin değil misiniz?
-            </h2>
-            <p className="mt-4 max-w-xl text-lg text-white/75">
-              Ürün sayınıza ve ihtiyaç duyduğunuz özelliklere göre seçim yapın. Ücretsiz başlayabilir veya paket seçimi için bize ulaşabilirsiniz.
-            </p>
-          </div>
-          <div className="flex flex-col gap-4 lg:items-end">
-            <ButtonLink href="/basvuru" tone="white" size="lg">
-              Ücretsiz başla
-            </ButtonLink>
-            <a href={SITE.phoneHref} className="font-plex-mono text-lg text-white/85 hover:text-white">
-              {SITE.phone}
-            </a>
-          </div>
-        </Container>
-      </Section>
+      <ClosingCta
+        title="Hangi paket size uyar, emin değil misiniz?"
+        lead="Ürün sayınıza ve ihtiyaç duyduğunuz özelliklere göre seçin. Ücretsiz başlayın ya da arayın, birlikte bakalım."
+        index={2}
+        secondary={
+          <a href={SITE.phoneHref} className="inline-flex items-center justify-center rounded-full bg-white px-7 py-4 font-plex-mono text-base font-semibold text-brand-navy hover:bg-brand-paper">
+            {SITE.phone}
+          </a>
+        }
+      />
     </>
   );
 }

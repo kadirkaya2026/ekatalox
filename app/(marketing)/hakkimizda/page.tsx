@@ -2,6 +2,7 @@ import { marketingMetadata } from "@/lib/marketing/metadata";
 
 import { SITE } from "@/lib/marketing/site";
 import { ButtonLink, CheckList, Container, Eyebrow, Section, SectionHeading } from "@/components/marketing/ui";
+import { Accent, PageHero } from "@/components/marketing/home-v2/page-kit";
 
 export const metadata = marketingMetadata(
   "/hakkimizda",
@@ -15,21 +16,12 @@ export const metadata = marketingMetadata(
 export default function Page() {
   return (
     <>
-      <Section tone="white" className="border-b border-brand-line">
-        <Container>
-          <div className="max-w-3xl">
-            <Eyebrow>Hakkımızda</Eyebrow>
-            <h1 className="mt-3 text-balance text-4xl font-bold leading-[1.05] tracking-[-0.02em] text-brand-navy sm:text-5xl">
-              Toptancının kataloğunu PDF&apos;ten kurtarmak için çalışıyoruz.
-            </h1>
-            <p className="mt-5 text-lg leading-relaxed text-brand-muted">
-              eKatalox, toptancı, üretici ve distribütörlerin bayilerine gönderdiği PDF kataloğu şifreli, canlı bir sipariş
-              sayfasına çevirir. Komisyon almayız, aracı olmayız; bayi sizin bayiniz olarak kalır, sipariş sizin
-              WhatsApp&apos;ınıza gelir.
-            </p>
-          </div>
-        </Container>
-      </Section>
+      <PageHero
+        eyebrow="Hakkımızda"
+        title={<>Toptancının kataloğunu <Accent>PDF&apos;ten kurtarmak</Accent> için çalışıyoruz.</>}
+        lead="eKatalox, toptancı, üretici ve distribütörlerin bayilerine gönderdiği PDF kataloğu şifreli, canlı bir sipariş sayfasına çevirir. Komisyon almayız, aracı olmayız; bayi sizin bayiniz olarak kalır, sipariş sizin WhatsApp'ınıza gelir."
+        className="border-b border-brand-line"
+      />
 
       <Section>
         <Container className="grid gap-10 lg:grid-cols-2 lg:gap-16">

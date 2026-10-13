@@ -4,6 +4,7 @@ import { MARKETING_WHATSAPP_HREF, WhatsAppGlyph } from "@/components/marketing/c
 import { PhoneFrame } from "@/components/marketing/phone-frame";
 import { ButtonLink, CheckList, Container, Section, SectionHeading } from "@/components/marketing/ui";
 import { SITE } from "@/lib/marketing/site";
+import { Accent, BandCard, ClosingCta, PageHero } from "@/components/marketing/home-v2/page-kit";
 
 export const metadata = marketingMetadata(
   "/nasil-calisir",
@@ -73,39 +74,36 @@ const WE_NEED = [
 export default function NasilCalisirPage() {
   return (
     <>
-      <Section tone="navy" glow className="pb-14 pt-12 sm:pb-20 sm:pt-20">
-        <Container>
-          <h1 className="max-w-3xl text-balance text-4xl font-bold leading-[1.05] tracking-[-0.025em] text-white sm:text-5xl">
-            Kayıttan ilk siparişe dört adım
-          </h1>
-          <p className="mt-5 max-w-2xl text-lg leading-relaxed text-white/70">
-            Hesabınızı açın, ürünlerinizi ekleyin ve katalog bağlantınızı bayilerinizle paylaşın. Ücretsiz planda kart bilgisi ve süre sınırı yoktur.
-          </p>
-          <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-            <ButtonLink href="/basvuru" size="lg">
-              Ücretsiz başla
-            </ButtonLink>
-            <ButtonLink href={SITE.demoUrl} tone="outline-dark" size="lg" external>
-              Demoyu incele
-            </ButtonLink>
-          </div>
-        </Container>
-      </Section>
+      <PageHero
+        eyebrow="Nasıl çalışır"
+        title={<>Kayıttan ilk siparişe <Accent>dört adım.</Accent></>}
+        lead="Hesabınızı açın, ürünlerinizi ekleyin ve katalog bağlantınızı bayilerinizle paylaşın. Ücretsiz planda kart bilgisi ve süre sınırı yoktur."
+        actions={
+          <>
+            <ButtonLink href="/basvuru" tone="navy" size="lg" className="px-9">Ücretsiz başla</ButtonLink>
+            <ButtonLink href={SITE.demoUrl} tone="outline" size="lg" external>Demoyu incele · şifre 1111</ButtonLink>
+          </>
+        }
+      />
 
-      <Section>
+      <Section tone="white" className="pt-0 sm:pt-0">
         <Container>
           <ol className="grid gap-6 md:grid-cols-2">
             {STEPS.map((s, i) => (
-              <li key={s.no} className="flex flex-col rounded-2xl border border-brand-line bg-white p-6 sm:p-8">
-                <div className="flex items-center justify-between">
-                  <span className="flex size-8 items-center justify-center rounded-full bg-brand-neon text-sm font-bold text-brand-dark">
-                    {i + 1}
-                  </span>
-                  <span className="rounded-full bg-brand-paper px-3 py-1 text-xs font-medium text-brand-muted">{s.duration}</span>
-                </div>
-                <h2 className="mt-4 text-2xl font-semibold text-brand-navy">{s.title}</h2>
-                <p className="mt-3 leading-relaxed text-brand-muted">{s.body}</p>
-                <CheckList items={s.detail} className="mt-5 text-[15px]" />
+              <li key={s.no}>
+                <BandCard
+                  index={i}
+                  band={
+                    <div className="flex w-full items-end justify-between">
+                      <span className="text-6xl font-extrabold leading-none tracking-[-0.04em] text-brand-navy">{s.no}</span>
+                      <span className="rounded-full bg-white/70 px-3 py-1 text-xs font-semibold text-brand-navy">{s.duration}</span>
+                    </div>
+                  }
+                >
+                  <h2 className="text-2xl font-extrabold tracking-[-0.02em] text-brand-navy">{s.title}</h2>
+                  <p className="mt-3 leading-relaxed text-brand-muted">{s.body}</p>
+                  <CheckList items={s.detail} className="mt-5 text-[15px]" />
+                </BandCard>
               </li>
             ))}
           </ol>
@@ -160,25 +158,15 @@ export default function NasilCalisirPage() {
         </Container>
       </Section>
 
-      <Section tone="navy" glow>
-        <Container className="grid items-center gap-8 lg:grid-cols-[1.4fr_1fr]">
-          <div>
-            <h2 className="text-balance text-3xl font-bold leading-[1.1] tracking-[-0.02em] sm:text-4xl">
-              Kataloğunuzu kurun, bayilerinize paylaşın.
-            </h2>
-            <p className="mt-4 max-w-xl text-lg text-white/75">Sorunuz varsa WhatsApp&apos;tan yazın; ilk yüklemeyi birlikte planlarız.</p>
-          </div>
-          <div className="flex flex-col gap-3 sm:flex-row lg:flex-col lg:items-end">
-            <ButtonLink href="/basvuru" size="lg">
-              Ücretsiz başla
-            </ButtonLink>
-            <ButtonLink href={MARKETING_WHATSAPP_HREF} tone="outline-dark" size="lg" external>
-              <WhatsAppGlyph className="size-5 text-[#25D366]" />
-              WhatsApp&apos;tan yazın
-            </ButtonLink>
-          </div>
-        </Container>
-      </Section>
+      <ClosingCta
+        title="Kataloğunuzu kurun, bayilerinize paylaşın."
+        lead="Sorunuz varsa WhatsApp'tan yazın; ilk yüklemeyi birlikte planlarız."
+        secondary={
+          <ButtonLink href={MARKETING_WHATSAPP_HREF} tone="white" size="lg" external>
+            <WhatsAppGlyph className="size-5 text-[#25D366]" /> WhatsApp&apos;tan yazın
+          </ButtonLink>
+        }
+      />
     </>
   );
 }

@@ -3,6 +3,7 @@ import { marketingMetadata } from "@/lib/marketing/metadata";
 import { SITE } from "@/lib/marketing/site";
 import { ContactForm } from "@/components/marketing/contact-form";
 import { ButtonLink, Container, Eyebrow, Section } from "@/components/marketing/ui";
+import { Accent, PageHero } from "@/components/marketing/home-v2/page-kit";
 
 export const metadata = marketingMetadata(
   "/iletisim",
@@ -23,19 +24,12 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
   const subject = Array.isArray(konu) ? konu[0] : konu;
   return (
     <>
-      <Section tone="white" className="border-b border-brand-line">
-        <Container>
-          <div className="max-w-3xl">
-            <Eyebrow>İletişim</Eyebrow>
-            <h1 className="mt-3 text-balance text-4xl font-bold leading-[1.05] tracking-[-0.02em] text-brand-navy sm:text-5xl">
-              Konuşalım.
-            </h1>
-            <p className="mt-4 text-lg leading-relaxed text-brand-muted">
-              Demo, fiyat teklifi ya da destek. Telefonla hemen, formla bir iş günü içinde.
-            </p>
-          </div>
-        </Container>
-      </Section>
+      <PageHero
+        eyebrow="İletişim"
+        title={<><Accent>Konuşalım.</Accent></>}
+        lead="Demo, fiyat teklifi ya da destek. Telefonla hemen, formla bir iş günü içinde."
+        className="border-b border-brand-line"
+      />
 
       <Section>
         <Container className="grid gap-10 lg:grid-cols-[1fr_1.4fr] lg:gap-16">

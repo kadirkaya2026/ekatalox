@@ -23,27 +23,33 @@ export function Section({
   glow?: boolean;
   children: ReactNode;
 }) {
+  // TASLAK (14 Eki 2026, Beacons tarzı): koyu bölümler tam genişlik yerine
+  // beyaz sayfa içinde yuvarlak köşeli koyu kart olarak çizilir.
+  if (tone === "navy") {
+    return (
+      <section id={id} className={cn("bg-white py-6 sm:py-8", className)}>
+        <div className="mx-auto w-full max-w-6xl px-5 sm:px-8">
+          <div className="relative overflow-hidden rounded-[32px] bg-brand-dark py-12 text-white sm:py-16">
+            {glow ? (
+              <>
+                <div aria-hidden className="pointer-events-none absolute inset-0 bg-grid opacity-30" />
+                <div
+                  aria-hidden
+                  className="pointer-events-none absolute left-1/2 top-0 h-[420px] w-[720px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-brand-neon/25 blur-[120px]"
+                />
+              </>
+            ) : null}
+            <div className="relative">{children}</div>
+          </div>
+        </div>
+      </section>
+    );
+  }
   return (
     <section
       id={id}
-      className={cn(
-        "relative py-16 sm:py-24",
-        tone === "paper" && "bg-brand-paper",
-        tone === "white" && "bg-white",
-        tone === "navy" && "bg-brand-dark text-white",
-        tone === "navy" && "overflow-hidden",
-        className,
-      )}
+      className={cn("relative py-16 sm:py-24", tone === "paper" && "bg-brand-paper", tone === "white" && "bg-white", className)}
     >
-      {tone === "navy" && glow ? (
-        <>
-          <div aria-hidden className="pointer-events-none absolute inset-0 bg-grid opacity-40" />
-          <div
-            aria-hidden
-            className="pointer-events-none absolute left-1/2 top-0 h-[520px] w-[820px] -translate-x-1/2 -translate-y-1/3 rounded-full bg-brand-neon/20 blur-[120px]"
-          />
-        </>
-      ) : null}
       <div className="relative">{children}</div>
     </section>
   );
@@ -82,18 +88,19 @@ export function SectionHeading({
   as?: "h1" | "h2";
 }) {
   return (
-    <div className={cn("max-w-3xl", align === "center" && "mx-auto text-center", className)}>
+    <div className={cn("max-w-3xl", (align === "center" || Heading === "h1") && "mx-auto text-center", Heading === "h1" && "max-w-4xl", className)}>
       {eyebrow ? <Eyebrow dark={dark}>{eyebrow}</Eyebrow> : null}
       <Heading
         className={cn(
-          "mt-3 text-balance text-3xl font-bold leading-[1.1] tracking-[-0.02em] sm:text-4xl",
-          dark && "text-white",
+          "mt-3 text-balance font-extrabold leading-[1.05] tracking-[-0.03em]",
+          Heading === "h1" ? "text-[2.6rem] leading-[1.0] sm:text-6xl lg:text-[4.6rem]" : "text-3xl sm:text-[2.6rem]",
+          dark ? "text-white" : "text-brand-navy",
         )}
       >
         {title}
       </Heading>
       {lead ? (
-        <p className={cn("mt-4 text-lg leading-relaxed", dark ? "text-white/70" : "text-brand-muted")}>{lead}</p>
+        <p className={cn("mt-5 text-lg leading-relaxed", Heading === "h1" && "mx-auto max-w-2xl sm:text-xl", dark ? "text-white/70" : "text-brand-muted")}>{lead}</p>
       ) : null}
     </div>
   );
@@ -104,7 +111,7 @@ type ButtonTone = "primary" | "navy" | "outline" | "outline-dark" | "ghost" | "w
 const buttonTones: Record<ButtonTone, string> = {
   primary:
     "bg-brand-neon text-brand-dark shadow-[0_0_0_0_rgba(34,197,94,0)] hover:bg-[#1ea952] hover:shadow-[0_0_32px_-6px_rgba(34,197,94,0.6)]",
-  navy: "bg-brand-navy text-white hover:bg-[#0E2039]",
+  navy: "bg-brand-dark text-white hover:bg-brand-navy",
   outline: "border border-brand-line bg-white text-brand-ink hover:border-brand-navy",
   "outline-dark": "border border-white/20 bg-white/5 text-white backdrop-blur-sm hover:border-white/40 hover:bg-white/10",
   ghost: "text-brand-ink hover:bg-brand-navy-soft",

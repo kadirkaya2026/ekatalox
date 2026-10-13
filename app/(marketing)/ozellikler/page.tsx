@@ -5,6 +5,7 @@ import { MARKETING_FEATURES } from "@/lib/marketing/features";
 import { ArrowRight } from "lucide-react";
 import { ButtonLink, Container, Section, SectionHeading } from "@/components/marketing/ui";
 import { SITE } from "@/lib/marketing/site";
+import { Accent, BandCard, PageHero, TintBox, pastelStyle } from "@/components/marketing/home-v2/page-kit";
 
 export const metadata = marketingMetadata(
   "/ozellikler",
@@ -106,39 +107,39 @@ const GROUPS: FeatureGroup[] = [
 export default function OzelliklerPage() {
   return (
     <>
-      <Section tone="white" className="pb-10 sm:pb-14">
-        <Container>
-          <SectionHeading
-            eyebrow="Özellikler"
-            as="h1"
-            title="Toptan satışın gerektirdiği kadar, fazlası değil"
-            lead="Bayi fiyatlarından sipariş kurallarına, raporlardan kurumsal sitenize kadar işletmenizin günlük işlerini tek yerden yönetin. Etiketsiz özellikler Ücretsiz planda da var."
-          />
-          <nav aria-label="Özellik grupları" className="mt-8 flex flex-wrap gap-2">
-            {GROUPS.map((g) => (
-              <a key={g.id} href={`#${g.id}`} className="rounded-full border border-brand-line bg-white px-4 py-2 text-sm font-medium text-brand-ink hover:border-brand-navy">
-                {g.eyebrow}
-              </a>
-            ))}
-          </nav>
-          <p className="mt-6 text-sm text-brand-muted">
-            <span className="mr-2 inline-block rounded-sm bg-brand-navy-soft px-2 py-0.5 text-xs font-semibold text-brand-navy">Paket adı</span>
-            işaretli özellikler o paket ve üstünde bulunur.
-          </p>
-        </Container>
-      </Section>
+      <PageHero
+        eyebrow="Özellikler"
+        title={<>Toptan satışın gerektirdiği kadar, <Accent>fazlası değil.</Accent></>}
+        lead="Bayi fiyatlarından sipariş kurallarına, raporlardan kurumsal sitenize kadar işletmenizin günlük işlerini tek yerden yönetin. Etiketsiz özellikler Ücretsiz planda da var."
+      >
+        <nav aria-label="Özellik grupları" className="mt-10 flex flex-wrap justify-center gap-2">
+          {GROUPS.map((g, i) => (
+            <a key={g.id} href={`#${g.id}`} className="rounded-full px-5 py-2.5 text-sm font-semibold text-brand-navy shadow-sm transition hover:-translate-y-0.5" style={pastelStyle(i)}>
+              {g.eyebrow}
+            </a>
+          ))}
+        </nav>
+        <p className="mt-6 text-center text-sm text-brand-muted">
+          <span className="mr-2 inline-block rounded-full bg-brand-dark px-2.5 py-0.5 text-xs font-semibold text-white">Paket adı</span>
+          işaretli özellikler o paket ve üstünde bulunur.
+        </p>
+      </PageHero>
 
       {GROUPS.map((g, i) => (
-        <Section key={g.id} id={g.id} tone={i % 2 === 0 ? "paper" : "white"} className="scroll-mt-20">
-          <Container className="grid gap-10 lg:grid-cols-[1fr_1.6fr] lg:gap-16">
-            <SectionHeading eyebrow={g.eyebrow} title={g.title} lead={g.lead} />
-            <dl className="divide-y divide-brand-line border-y border-brand-line">
+        <Section key={g.id} id={g.id} tone="white" className="scroll-mt-20 py-8 sm:py-10">
+          <Container className="grid gap-8 lg:grid-cols-[1fr_1.6fr] lg:gap-12">
+            <TintBox index={i} className="self-start lg:sticky lg:top-24">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-brand-navy/60">{g.eyebrow}</p>
+              <h2 className="mt-3 text-balance text-3xl font-extrabold leading-[1.05] tracking-[-0.03em] text-brand-navy sm:text-4xl">{g.title}</h2>
+              <p className="mt-4 leading-relaxed text-brand-navy/70">{g.lead}</p>
+            </TintBox>
+            <dl className="divide-y divide-brand-line">
               {g.features.map((f) => (
                 <div key={f.title} className="grid gap-2 py-5 sm:grid-cols-[1fr_1.4fr] sm:gap-8">
                   <dt className="flex flex-wrap items-center gap-2 font-semibold text-brand-navy">
                     {f.title}
                     {f.from ? (
-                      <span className="rounded-sm bg-brand-navy-soft px-2 py-0.5 text-xs font-semibold text-brand-navy">{f.from}</span>
+                      <span className="rounded-full bg-brand-dark px-2.5 py-0.5 text-xs font-semibold text-white">{f.from}</span>
                     ) : null}
                   </dt>
                   <dd className="text-[15px] leading-relaxed text-brand-muted">{f.body}</dd>
@@ -153,10 +154,10 @@ export default function OzelliklerPage() {
         <Container>
           <SectionHeading title="İşinize nasıl uyduğunu ayrıntılarıyla görün" lead="Kullanım örnekleri, paket kapsamı ve kurulum bilgileri." />
           <div className="mt-8 grid gap-5 sm:grid-cols-2">
-            {MARKETING_FEATURES.map((feature) => <Link key={feature.slug} href={`/ozellikler/${feature.slug}`} className="rounded-2xl border border-brand-line p-6 hover:border-brand-green">
-              <h3 className="font-semibold text-brand-navy">{feature.title} →</h3>
-              <p className="mt-2 text-sm leading-relaxed text-brand-muted">{feature.lead}</p>
-            </Link>)}
+            {MARKETING_FEATURES.map((feature, i) => <BandCard key={feature.slug} index={i} href={`/ozellikler/${feature.slug}`} band={<h3 className="text-2xl font-extrabold tracking-[-0.02em] text-brand-navy">{feature.title}</h3>}>
+              <p className="text-[15px] leading-relaxed text-brand-muted">{feature.lead}</p>
+              <span className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-brand-green">Ayrıntıları inceleyin <ArrowRight className="size-4" aria-hidden /></span>
+            </BandCard>)}
           </div>
         </Container>
       </Section>
