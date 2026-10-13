@@ -25,6 +25,10 @@ const GROUPS: FaqGroup[] = [
   "title": "Sipariş kuralları ve takip",
   "items": [
     {
+      "q": "BizimHesap kullanıyorum, siparişler oraya aktarılır mı?",
+      "a": "Evet. Kurumsal pakette onayladığınız sipariş BizimHesap'a taslak satış fişi olarak düşer: ürünler, adetler, birim fiyatlar ve KDV fişe yazılır. Cari, ürün ve depo eşleşmesini bir kez yaparsınız; sonraki siparişlerde sistem hatırlar. Fişi BizimHesap'ta kaydettiğinizde stok oradan düşer. Ayrıntılar BizimHesap entegrasyonu sayfasında."
+    },
+    {
       "q": "Minimum sepet tutarı belirleyebilir miyim?",
       "a": "Evet. Minimum sepet tutarını panelden belirleyebilirsiniz. Bu kontrol tek para birimli sepetlerde uygulanır; birden fazla para birimi içeren sepetlerde uygulanmaz."
     },

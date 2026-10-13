@@ -84,6 +84,7 @@ const GROUPS: FeatureGroup[] = [
       { title: "İl ve fiyat listesi raporu", body: "Hangi illerden hangi fiyat listelerine giriş yapıldığını inceleyin. Bölgesel ilgiye ve bayi gruplarınıza göre aksiyon alın.", from: "Başlangıç" },
       { title: "Satış ve kârlılık", body: "Alış fiyatı girin; ciro, kâr ve marj raporunu görün.", from: "Kurumsal" },
       { title: "Çalışma saatleri ve kapalı modu", body: "Çalışma gün ve saatlerinizi belirleyin. Gerektiğinde mağazayı manuel kapatın; “Mağazamız şu an kapalıdır” mesajıyla müşterilerinizi bilgilendirin." },
+      { title: "BizimHesap entegrasyonu", body: "Onayladığınız sipariş BizimHesap'a taslak satış fişi olarak düşer; cari, ürün ve depo eşleşmesi bir kez yapılır, sonraki siparişlerde sistem hatırlar. Siparişi ikinci kez yazmazsınız, stok BizimHesap'tan düşer.", from: "Kurumsal" },
       { title: "IP engelleme ve şifre yönetimi", body: "Giriş şifrelerinizi ve erişimleri yönetin; gerektiğinde şifreyi değiştirin veya şüpheli IP’yi engelleyin." },
     ],
   },

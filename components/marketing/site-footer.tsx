@@ -11,6 +11,7 @@ const PRODUCT_LINKS = [
   { href: "/sss", label: "Sık sorulan sorular" },
   { href: "/blog", label: "Blog ve rehberler" },
   { href: "/egitim", label: "Eğitim merkezi" },
+  { href: "/ozellikler/bizimhesap-entegrasyonu", label: "BizimHesap entegrasyonu" },
   { href: SITE.demoUrl, label: "Demo katalog" },
 ];
 

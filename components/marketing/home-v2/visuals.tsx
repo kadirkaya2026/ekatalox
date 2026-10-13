@@ -196,6 +196,47 @@ export function PriceListMock() {
   );
 }
 
+/* ---------- 5. BizimHesap: onaylanan sipariş → taslak satış fişi ---------- */
+export function BizimHesapMock() {
+  return (
+    <div className="relative">
+      <div className="rounded-2xl bg-white p-4 shadow-[0_30px_60px_-30px_rgba(18,40,74,0.45)]">
+        <div className="flex items-center justify-between text-xs">
+          <span className="font-semibold uppercase tracking-wide text-brand-muted">Sipariş #100277</span>
+          <span className="rounded-full bg-emerald-100 px-2 py-0.5 font-semibold text-emerald-800">Onaylandı</span>
+        </div>
+        <div className="mt-3 space-y-2 text-sm">
+          {[
+            ["Cari", "Autovale Malatya"],
+            ["Ürün eşleşmesi", "12 / 12 barkodla"],
+            ["Depo", "Bahçelievler"],
+          ].map(([k, v]) => (
+            <div key={k} className="flex items-center justify-between rounded-lg bg-brand-paper px-3 py-2">
+              <span className="text-brand-muted">{k}</span>
+              <span className="font-semibold text-brand-navy">{v}</span>
+            </div>
+          ))}
+        </div>
+        <div className="mt-3 flex items-center gap-2 text-xs text-brand-muted">
+          <span className="h-px flex-1 bg-brand-line" />
+          aktarılıyor
+          <span className="h-px flex-1 bg-brand-line" />
+        </div>
+        <div className="mt-3 rounded-xl border border-brand-line p-3">
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-bold text-brand-navy">BizimHesap</span>
+            <span className="rounded-full bg-brand-dark px-2 py-0.5 text-[11px] font-semibold text-white">Taslak satış fişi</span>
+          </div>
+          <p className="mt-1 text-xs text-brand-muted">Ürün, adet, birim fiyat ve KDV fişe yazıldı. Kaydedince stok düşer.</p>
+        </div>
+      </div>
+      <div className="absolute -right-3 -top-5 flex items-center gap-1.5 rounded-full bg-[#25D366] px-3 py-2 text-xs font-semibold text-white shadow-lg sm:-right-8">
+        <Check className="size-3.5" /> İkinci kez yazılmadı
+      </div>
+    </div>
+  );
+}
+
 /* ---------- 4. Panel: sipariş satırları ---------- */
 export function OrdersMock() {
   const rows = [

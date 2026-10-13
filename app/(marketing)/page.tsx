@@ -21,7 +21,7 @@ import { PhoneFrame } from "@/components/marketing/phone-frame";
 import { PlanCards } from "@/components/marketing/plan-cards";
 import { ButtonLink, Container, Section, SectionHeading } from "@/components/marketing/ui";
 import { RotatingWord } from "@/components/marketing/home-v2/rotating-word";
-import { GateMock, GradientPanel, HeroCollage, OrdersMock, PriceListMock, WhatsAppMock } from "@/components/marketing/home-v2/visuals";
+import { BizimHesapMock, GateMock, GradientPanel, HeroCollage, OrdersMock, PriceListMock, WhatsAppMock } from "@/components/marketing/home-v2/visuals";
 import { PlanTagCards } from "@/components/marketing/home-v2/plan-tag-cards";
 import { CustomerMarquee } from "@/components/marketing/home-v2/page-kit";
 import { Sparkles } from "lucide-react";
@@ -291,6 +291,16 @@ const PILLARS = [
     visual: <OrdersMock />,
     href: "/ozellikler/whatsapp-siparis",
   },
+  {
+    key: "bizimhesap",
+    accent: "BizimHesap",
+    rest: "'a tek tıkla.",
+    body: "Onayladığınız sipariş BizimHesap'a taslak satış fişi olarak düşer: cari, ürün ve depo eşleşmesi bir kez yapılır, sonraki siparişlerde sistem hatırlar. Siparişi ikinci kez yazmazsınız, stok BizimHesap'tan düşer.",
+    from: "#FFE1EE",
+    to: "#FFA3C7",
+    visual: <BizimHesapMock />,
+    href: "/ozellikler/bizimhesap-entegrasyonu",
+  },
 ];
 
 const AI_CHIPS = ["llms.txt otomatik", "İşletme kartı", "Google ve Bing", "Sektör sayfaları", "Vitrin araması", "Kurumsal site"];
@@ -426,21 +436,38 @@ export default function HomePage() {
           <h2 className="mx-auto max-w-2xl text-balance text-center text-4xl font-extrabold leading-[1.05] tracking-[-0.03em] text-brand-navy sm:text-5xl">
             Siparişini düzene sokan toptancılar eKatalox&apos;u seviyor.
           </h2>
-          <figure className="relative mx-auto mt-12 max-w-4xl rounded-[32px] border-2 border-brand-green/40 bg-brand-paper px-8 py-12 text-center sm:px-16 sm:py-16">
-            <span className="absolute left-6 top-5 rounded-full bg-brand-amber-soft px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-brand-amber">
-              Taslak · gerçek alıntıyla değişecek
-            </span>
-            <blockquote className="text-balance text-2xl font-medium leading-snug text-brand-navy sm:text-[2rem]">
-              “Eskiden her bayiye ayrı PDF atıyordum, fiyat değişince hepsini yeniden yapıyordum. Şimdi fiyatı panelde değiştiriyorum, sipariş WhatsApp&apos;a fiş olarak geliyor. İlk haftada 17 sipariş aldım.”
-            </blockquote>
-            <figcaption className="mt-8 flex items-center justify-center gap-3">
-              <span className="flex size-12 items-center justify-center rounded-full bg-brand-dark text-base font-bold text-white">YÇ</span>
-              <span className="text-left">
-                <span className="block font-semibold text-brand-navy">Yusuf Çoltu</span>
-                <span className="block text-sm text-brand-muted">qoop · tekstil aksesuar toptancısı</span>
-              </span>
-            </figcaption>
-          </figure>
+          {/* Gerçek müşteri alıntıları: yalnız izin veren firmalar (Lucatech, Genax), metinler 14 Eki 2026 onaylı. */}
+          <div className="mx-auto mt-12 grid max-w-5xl gap-6 lg:grid-cols-2">
+            {[
+              {
+                quote: "Bayilerimiz artık fiyat listesi istemiyor; şifreyle giriyor, kendi fiyatını görüyor, siparişi fiş olarak gönderiyor. Onayladığımız sipariş doğrudan BizimHesap'a düşüyor, ikinci kez yazmıyoruz.",
+                name: "Şerafettin",
+                company: "Lucatech · ses ve şarj aksesuarı markası",
+                initials: "Ş",
+                from: "#DDF6E7",
+                to: "#8FD9AF",
+              },
+              {
+                quote: "Bayimiz ürünü seçiyor, paket mi koli mi belirliyor, tutar kendiliğinden hesaplanıyor. Sipariş WhatsApp'a fiş olarak geliyor, 'şundan kaç tane' diye sormuyoruz.",
+                name: "Harun",
+                company: "Genax · şarj aksesuarı toptancısı",
+                initials: "H",
+                from: "#EAE4FF",
+                to: "#B9A6FF",
+              },
+            ].map((t) => (
+              <figure key={t.name} className="flex flex-col rounded-[32px] px-8 py-10 sm:px-10" style={{ backgroundImage: `linear-gradient(135deg, ${t.from} 0%, ${t.to} 100%)` }}>
+                <blockquote className="flex-1 text-balance text-xl font-medium leading-snug text-brand-navy sm:text-2xl">“{t.quote}”</blockquote>
+                <figcaption className="mt-8 flex items-center gap-3">
+                  <span className="flex size-12 items-center justify-center rounded-full bg-brand-dark text-base font-bold text-white">{t.initials}</span>
+                  <span className="text-left">
+                    <span className="block font-semibold text-brand-navy">{t.name}</span>
+                    <span className="block text-sm text-brand-navy/70">{t.company}</span>
+                  </span>
+                </figcaption>
+              </figure>
+            ))}
+          </div>
         </Container>
       </section>
 
