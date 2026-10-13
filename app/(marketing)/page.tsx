@@ -23,6 +23,7 @@ import { ButtonLink, Container, Section, SectionHeading } from "@/components/mar
 import { RotatingWord } from "@/components/marketing/home-v2/rotating-word";
 import { GateMock, GradientPanel, HeroCollage, OrdersMock, PriceListMock, WhatsAppMock } from "@/components/marketing/home-v2/visuals";
 import { PlanTagCards } from "@/components/marketing/home-v2/plan-tag-cards";
+import { CustomerMarquee } from "@/components/marketing/home-v2/page-kit";
 import { Sparkles } from "lucide-react";
 import { TOPTAN_PLANS } from "@/lib/billing/toptan-plans";
 import { CUSTOMER_NAMES, SITE } from "@/lib/marketing/site";
@@ -324,7 +325,7 @@ export default function HomePage() {
                 Ücretsiz başla
               </ButtonLink>
               <ButtonLink href={SITE.demoUrl} tone="outline" size="lg" external>
-                Demoyu incele · şifre 1111
+                Demoyu incele
               </ButtonLink>
             </div>
           </div>
@@ -332,23 +333,8 @@ export default function HomePage() {
         </Container>
       </section>
 
-      {/* 2. Müşteri şeridi (mevcut) */}
-      {CUSTOMER_NAMES.length > 0 ? (
-        <section className="border-y border-brand-line bg-white py-8">
-          <p className="text-center text-sm font-semibold uppercase tracking-[0.14em] text-brand-muted">Siparişlerini eKatalox&apos;tan alan firmalar</p>
-          <div className="group relative mt-5 overflow-hidden [mask-image:linear-gradient(to_right,transparent,black_12%,black_88%,transparent)]" aria-label={`Müşterilerimiz: ${CUSTOMER_NAMES.join(", ")}`}>
-            <div className="flex w-max animate-[customer-marquee_75s_linear_infinite] group-hover:[animation-play-state:paused] motion-reduce:animate-none">
-              {[0, 1].map((copy) => (
-                <ul key={copy} aria-hidden className="flex shrink-0 items-center">
-                  {Array.from({ length: Math.ceil(8 / CUSTOMER_NAMES.length) }, () => CUSTOMER_NAMES).flat().map((name, i) => (
-                    <li key={`${copy}-${i}`} className="whitespace-nowrap px-8 text-xl font-semibold tracking-[-0.01em] text-brand-navy/70 sm:px-12 sm:text-2xl">{name}</li>
-                  ))}
-                </ul>
-              ))}
-            </div>
-          </div>
-        </section>
-      ) : null}
+      {/* 2. Müşteri şeridi */}
+      <CustomerMarquee />
 
       {/* 3. Dört sütun: her biri pastel panel + tek vurgulu kelime */}
       <section className="bg-white py-20 sm:py-28" id="ozellikler">

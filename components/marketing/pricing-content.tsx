@@ -7,7 +7,7 @@ import { ButtonLink, Container, Section, SectionHeading } from "@/components/mar
 import { formatTry, TOPTAN_PLANS } from "@/lib/billing/toptan-plans";
 import { SITE } from "@/lib/marketing/site";
 import { cn } from "@/lib/utils";
-import { ClosingCta } from "@/components/marketing/home-v2/page-kit";
+import { ClosingCta, CustomerMarquee } from "@/components/marketing/home-v2/page-kit";
 
 type Cell = string | boolean;
 type Row = { label: string; cells: Cell[] };
@@ -170,6 +170,7 @@ export function PricingContent({ initialAudience }: { initialAudience: PlanAudie
         </Container>
       </Section>
 
+      <CustomerMarquee />
       <ClosingCta
         title="Hangi paket size uyar, emin değil misiniz?"
         lead="Ürün sayınıza ve ihtiyaç duyduğunuz özelliklere göre seçin. Ücretsiz başlayın ya da arayın, birlikte bakalım."

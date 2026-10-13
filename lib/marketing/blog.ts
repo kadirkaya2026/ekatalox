@@ -105,7 +105,7 @@ const posts: BlogPost[] = [
     featureLinks: [
       { href: "/ozellikler/bizimhesap-entegrasyonu", label: "BizimHesap entegrasyonu" },
       { href: "/ozellikler/whatsapp-siparis", label: "Sipariş ve PDF fişi" },
-      { href: "/egitim", label: "Adım adım video anlatımlar (Eğitim Merkezi)" },
+      { href: "/egitim", label: "Adım adım video anlatımlar (Eğitim merkezi)" },
     ],
   },
   {
@@ -181,7 +181,7 @@ const posts: BlogPost[] = [
       { href: "/ozellikler/bayi-fiyat-listeleri", label: "Şifreli bayi fiyat listeleri" },
       { href: "/ozellikler/whatsapp-siparis", label: "WhatsApp sipariş akışı" },
       { href: "/ozellikler/toplu-urun-yukleme", label: "Excel’den ürün ve görsel yükleme" },
-      { href: "/egitim", label: "Adım adım video anlatımlar (Eğitim Merkezi)" },
+      { href: "/egitim", label: "Adım adım video anlatımlar (Eğitim merkezi)" },
     ],
   },
 {
@@ -252,7 +252,7 @@ const posts: BlogPost[] = [
       "href": "/fiyatlandirma",
       "label": "Ücretsiz plan ve paket sınırları"
     },
-    { href: "/egitim", label: "Adım adım video anlatımlar (Eğitim Merkezi)" },
+    { href: "/egitim", label: "Adım adım video anlatımlar (Eğitim merkezi)" },
   ]
 },
 {
@@ -324,7 +324,7 @@ const posts: BlogPost[] = [
       "href": "/ozellikler/whatsapp-siparis",
       "label": "Katalogdan sipariş toplama"
     },
-    { href: "/egitim", label: "Adım adım video anlatımlar (Eğitim Merkezi)" },
+    { href: "/egitim", label: "Adım adım video anlatımlar (Eğitim merkezi)" },
   ]
 },
 {
@@ -396,7 +396,7 @@ const posts: BlogPost[] = [
       "href": "/nasil-calisir",
       "label": "Online katalog akışını inceleyin"
     },
-    { href: "/egitim", label: "Adım adım video anlatımlar (Eğitim Merkezi)" },
+    { href: "/egitim", label: "Adım adım video anlatımlar (Eğitim merkezi)" },
   ]
 },
 {
@@ -468,7 +468,7 @@ const posts: BlogPost[] = [
       "href": "/ozellikler/online-odeme",
       "label": "Katalogdan online ödeme"
     },
-    { href: "/egitim", label: "Adım adım video anlatımlar (Eğitim Merkezi)" },
+    { href: "/egitim", label: "Adım adım video anlatımlar (Eğitim merkezi)" },
   ]
 },
 {
@@ -540,7 +540,7 @@ const posts: BlogPost[] = [
       "href": "/ozellikler/raporlar",
       "label": "İl ve liste giriş raporları"
     },
-    { href: "/egitim", label: "Adım adım video anlatımlar (Eğitim Merkezi)" },
+    { href: "/egitim", label: "Adım adım video anlatımlar (Eğitim merkezi)" },
   ]
 },
 {
@@ -613,7 +613,7 @@ const posts: BlogPost[] = [
       "href": "/ozellikler/bayi-fiyat-listeleri",
       "label": "Bayi fiyatlarını düzenleyin"
     },
-    { href: "/egitim", label: "Adım adım video anlatımlar (Eğitim Merkezi)" },
+    { href: "/egitim", label: "Adım adım video anlatımlar (Eğitim merkezi)" },
   ]
 },
 {
@@ -693,7 +693,7 @@ const posts: BlogPost[] = [
       "href": "/ozellikler/kampanya-bildirimleri",
       "label": "Duyuru ve çalışma saatleri"
     },
-    { href: "/egitim", label: "Adım adım video anlatımlar (Eğitim Merkezi)" },
+    { href: "/egitim", label: "Adım adım video anlatımlar (Eğitim merkezi)" },
   ]
 },
   // ---------------------------------------------------------------------
@@ -778,7 +778,7 @@ const posts: BlogPost[] = [
       { href: "/ozellikler/toplu-urun-yukleme", label: "Toplu ürün yüklemeyi inceleyin" },
       { href: "/ozellikler/bayi-fiyat-listeleri", label: "Bayi fiyat listeleri" },
       { href: "/ozellikler/kurumsal-site", label: "Kurumsal site ve kendi alan adı" },
-      { href: "/egitim", label: "Adım adım video anlatımlar (Eğitim Merkezi)" },
+      { href: "/egitim", label: "Adım adım video anlatımlar (Eğitim merkezi)" },
     ],
   },
   {
@@ -846,7 +846,7 @@ const posts: BlogPost[] = [
     featureLinks: [
       { href: "/ozellikler/whatsapp-siparis", label: "WhatsApp sipariş akışı" },
       { href: "/ozellikler/toplu-urun-yukleme", label: "Excel ile toplu ürün yükleme" },
-      { href: "/egitim", label: "Adım adım video anlatımlar (Eğitim Merkezi)" },
+      { href: "/egitim", label: "Adım adım video anlatımlar (Eğitim merkezi)" },
     ],
   },
   {
@@ -910,7 +910,7 @@ const posts: BlogPost[] = [
     featureLinks: [
       { href: "/ozellikler/bayi-fiyat-listeleri", label: "Şifreli bayi fiyat listeleri" },
       { href: "/fiyatlandirma", label: "Paketlerde fiyat listesi sayıları" },
-      { href: "/egitim", label: "Adım adım video anlatımlar (Eğitim Merkezi)" },
+      { href: "/egitim", label: "Adım adım video anlatımlar (Eğitim merkezi)" },
     ],
   },
   {
@@ -1013,7 +1013,7 @@ const posts: BlogPost[] = [
     relatedSlugs: ["excelden-urun-katalogu", "ucretsiz-dijital-katalog-olusturma", "toptan-fiyat-listesi-excel-sablonu"],
     featureLinks: [
       { href: "/ozellikler/toplu-urun-yukleme", label: "Toplu görsel yükleme" },
-      { href: "/egitim", label: "Adım adım video anlatımlar (Eğitim Merkezi)" },
+      { href: "/egitim", label: "Adım adım video anlatımlar (Eğitim merkezi)" },
     ],
   },
   {
@@ -1087,7 +1087,7 @@ const posts: BlogPost[] = [
     featureLinks: [
       { href: "/ozellikler/kurumsal-site", label: "Kurumsal site ve Bayimiz Olun formu" },
       { href: "/fiyatlandirma", label: "Kurumsal paketi inceleyin" },
-      { href: "/egitim", label: "Adım adım video anlatımlar (Eğitim Merkezi)" },
+      { href: "/egitim", label: "Adım adım video anlatımlar (Eğitim merkezi)" },
     ],
   },
   {
@@ -1179,7 +1179,7 @@ const posts: BlogPost[] = [
     featureLinks: [
       { href: "/ozellikler/toplu-urun-yukleme", label: "Excel ile toplu ürün yükleme" },
       { href: "/basvuru", label: "Ücretsiz katalog açın" },
-      { href: "/egitim", label: "Adım adım video anlatımlar (Eğitim Merkezi)" },
+      { href: "/egitim", label: "Adım adım video anlatımlar (Eğitim merkezi)" },
     ],
   },
   {
@@ -1279,7 +1279,7 @@ const posts: BlogPost[] = [
     relatedSlugs: ["toptan-fiyatlari-rakiplerden-koruma", "yeni-bayi-basvurusu-alma", "lucatech-bayi-katalogu-nasil-acildi"],
     featureLinks: [
       { href: "/ozellikler/kurumsal-site", label: "Kurumsal site ve kendi alan adı" },
-      { href: "/egitim", label: "Adım adım video anlatımlar (Eğitim Merkezi)" },
+      { href: "/egitim", label: "Adım adım video anlatımlar (Eğitim merkezi)" },
     ],
   },
   {
@@ -1349,7 +1349,7 @@ const posts: BlogPost[] = [
     featureLinks: [
       { href: "/ozellikler/kampanya-bildirimleri", label: "Kampanya ve bildirimler" },
       { href: "/fiyatlandirma", label: "Bildirim hangi pakette?" },
-      { href: "/egitim", label: "Adım adım video anlatımlar (Eğitim Merkezi)" },
+      { href: "/egitim", label: "Adım adım video anlatımlar (Eğitim merkezi)" },
     ],
   },
   {
@@ -1414,7 +1414,7 @@ const posts: BlogPost[] = [
     relatedSlugs: ["toptan-siparis-kurallari", "bayi-siparisi-duzenleme", "bayilere-kampanya-duyurma"],
     featureLinks: [
       { href: "/ozellikler/whatsapp-siparis", label: "Sipariş akışını inceleyin" },
-      { href: "/egitim", label: "Adım adım video anlatımlar (Eğitim Merkezi)" },
+      { href: "/egitim", label: "Adım adım video anlatımlar (Eğitim merkezi)" },
     ],
   },
   {
@@ -1480,7 +1480,7 @@ const posts: BlogPost[] = [
     featureLinks: [
       { href: "/ozellikler/whatsapp-siparis", label: "Sipariş ve PDF fişi" },
       { href: "/ozellikler/raporlar", label: "Satış raporları" },
-      { href: "/egitim", label: "Adım adım video anlatımlar (Eğitim Merkezi)" },
+      { href: "/egitim", label: "Adım adım video anlatımlar (Eğitim merkezi)" },
     ],
   },
 ];

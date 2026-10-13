@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { PhoneFrame } from "@/components/marketing/phone-frame";
-import { ButtonLink, Container, Section, SectionHeading } from "@/components/marketing/ui";
+import { ButtonLink, Container } from "@/components/marketing/ui";
+import { Accent, ClosingCta, CustomerMarquee, GradientPanelLite, PageHero } from "@/components/marketing/home-v2/page-kit";
 import { SITE } from "@/lib/marketing/site";
 
 // Gerçek referans (firma adı, alıntı, fotoğraf) gelene kadar bu sayfa
@@ -11,40 +12,36 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
+const SCREENS = [
+  { src: "/site/toptan-giris-v2.png", alt: "Şifreli bayi girişi", title: "Bayi girişi", text: "Bayi şifreyi yazar, kendi fiyat listesiyle kataloğa girer." },
+  { src: "/site/toptan-katalog-v2.png", alt: "Örnek toptan katalog", title: "Katalog", text: "Kategoriler, ürün kartları ve bayinin kendi fiyatı." },
+  { src: "/site/toptan-sepet-v2.png", alt: "Sepet ve sipariş özeti", title: "Sepet ve sipariş", text: "Adet ve koli seçimi, cari adı, not; sipariş PDF fiş olarak WhatsApp'a gider." },
+];
+
 export default function CustomersPage() {
   return (
     <>
-      <Section tone="white">
-        <Container className="grid items-center gap-12 lg:grid-cols-2">
-          <div>
-            <SectionHeading eyebrow="Canlı örnek" title="Bayinizin göreceği ekran tam olarak bu." lead={`Demo kataloğu telefonunuzda açın, ürünlere bakın, sepete atın. Sizin kataloğunuz kendi logonuz ve ürünlerinizle aynı şekilde kurulur.`} />
-            <div className="mt-8 flex flex-wrap gap-3">
-              <ButtonLink href={SITE.demoUrl} external>Demo kataloğu aç</ButtonLink>
-              <ButtonLink href="/basvuru" tone="outline">Ücretsiz kur</ButtonLink>
-            </div>
-          </div>
-          <PhoneFrame src="/site/toptan-katalog-v2.png" alt="Örnek toptan katalog, telefon görünümü" priority />
-        </Container>
-      </Section>
-      <Section>
+      <PageHero
+        eyebrow="Canlı örnek"
+        title={<>Bayinizin göreceği ekran <Accent>tam olarak bu.</Accent></>}
+        lead="Demo kataloğu telefonunuzda açın, ürünlere bakın, sepete atın. Sizin kataloğunuz kendi logonuz ve ürünlerinizle aynı şekilde kurulur."
+        actions={<><ButtonLink href={SITE.demoUrl} tone="navy" size="lg" external>Demo kataloğu aç</ButtonLink><ButtonLink href="/basvuru" tone="outline" size="lg">Ücretsiz kur</ButtonLink></>}
+      />
+      <section className="bg-white pb-8">
         <Container>
-          <SectionHeading title="Sipariş akışından iki ekran" />
-          <div className="mt-8 grid gap-6 sm:grid-cols-2">
-            {[
-              { src: "/site/toptan-giris-v2.png", alt: "Şifreli bayi girişi", title: "Bayi girişi", text: "Bayi şifreyi yazar, kendi fiyat listesiyle kataloğa girer." },
-              { src: "/site/toptan-sepet-v2.png", alt: "Sepet ve sipariş özeti", title: "Sepet ve sipariş", text: "Adet ve koli seçimi, cari adı, not; sipariş size PDF olarak düşer." },
-            ].map((s) => (
-              <figure key={s.src} className="rounded-lg border border-brand-line bg-white p-5">
-                <PhoneFrame src={s.src} alt={s.alt} className="w-56 sm:w-56" />
-                <figcaption className="mt-4">
-                  <p className="font-semibold">{s.title}</p>
-                  <p className="mt-1 text-sm text-brand-muted">{s.text}</p>
-                </figcaption>
-              </figure>
+          <div className="grid gap-6 sm:grid-cols-3">
+            {SCREENS.map((s, i) => (
+              <GradientPanelLite key={s.src} index={i}>
+                <PhoneFrame src={s.src} alt={s.alt} className="w-[200px] sm:w-[200px]" />
+                <p className="mt-6 text-xl font-extrabold tracking-[-0.02em] text-brand-navy">{s.title}</p>
+                <p className="mt-1 text-sm leading-relaxed text-brand-navy/70">{s.text}</p>
+              </GradientPanelLite>
             ))}
           </div>
         </Container>
-      </Section>
+      </section>
+      <CustomerMarquee />
+      <ClosingCta title="Aynısını kendi ürünlerinizle kurun." lead="250 ürünle ücretsiz, kart istenmez, komisyon yok." index={2} />
     </>
   );
 }

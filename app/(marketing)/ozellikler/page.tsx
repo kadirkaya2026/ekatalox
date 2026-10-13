@@ -5,7 +5,7 @@ import { MARKETING_FEATURES } from "@/lib/marketing/features";
 import { ArrowRight } from "lucide-react";
 import { ButtonLink, Container, Section, SectionHeading } from "@/components/marketing/ui";
 import { SITE } from "@/lib/marketing/site";
-import { Accent, BandCard, PageHero, TintBox, pastelStyle } from "@/components/marketing/home-v2/page-kit";
+import { Accent, BandCard, CustomerMarquee, PageHero, TintBox, pastelStyle } from "@/components/marketing/home-v2/page-kit";
 
 export const metadata = marketingMetadata(
   "/ozellikler",
@@ -162,6 +162,7 @@ export default function OzelliklerPage() {
         </Container>
       </Section>
 
+      <CustomerMarquee />
       <Section tone="navy">
         <Container className="grid items-center gap-8 lg:grid-cols-[1.4fr_1fr]">
           <div>

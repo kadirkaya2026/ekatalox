@@ -2,6 +2,7 @@ import { marketingMetadata } from "@/lib/marketing/metadata";
 
 import { ButtonLink, Container, Section, SectionHeading } from "@/components/marketing/ui";
 import { SITE } from "@/lib/marketing/site";
+import { ClosingCta } from "@/components/marketing/home-v2/page-kit";
 
 export const metadata = marketingMetadata(
   "/sss",
@@ -248,26 +249,7 @@ export default function SssPage() {
         </Container>
       </Section>
 
-      <Section tone="navy">
-        <Container className="grid items-center gap-8 lg:grid-cols-[1.4fr_1fr]">
-          <div>
-            <h2 className="text-balance text-3xl font-bold leading-[1.1] tracking-[-0.02em] sm:text-4xl">
-              Sorunuz kaldıysa arayın, birlikte bakalım.
-            </h2>
-            <p className="mt-4 max-w-xl text-lg text-white/75">
-              Hafta içi mesai saatlerinde telefon ve WhatsApp üzerinden ulaşabilirsiniz.
-            </p>
-          </div>
-          <div className="flex flex-col gap-4 lg:items-end">
-            <ButtonLink href="/basvuru" tone="white" size="lg">
-              Ücretsiz başla
-            </ButtonLink>
-            <a href={SITE.phoneHref} className="font-plex-mono text-lg text-white/85 hover:text-white">
-              {SITE.phone}
-            </a>
-          </div>
-        </Container>
-      </Section>
+      <ClosingCta title="Sorunuz kalmadıysa kataloğunuzu açın." lead="250 ürünle ücretsiz başlayın. Kalan sorularınız için telefon ve WhatsApp açık." index={1} secondary={<a href={SITE.phoneHref} className="inline-flex items-center justify-center rounded-full bg-white px-7 py-4 font-plex-mono text-base font-semibold text-brand-navy hover:bg-brand-paper">{SITE.phone}</a>} />
     </>
   );
 }

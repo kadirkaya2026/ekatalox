@@ -34,7 +34,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
       <Section>
         <Container className="grid gap-10 lg:grid-cols-[1fr_1.4fr] lg:gap-16">
           <div className="space-y-8">
-            <div className="rounded-lg border border-brand-line bg-white p-6">
+            <div className="rounded-[24px] border border-brand-line bg-white p-6 shadow-[0_24px_50px_-36px_rgba(18,40,74,0.4)] sm:p-7">
               <p className="text-xs font-semibold uppercase tracking-[0.12em] text-brand-muted">Telefon ve WhatsApp</p>
               <a href={SITE.phoneHref} className="mt-2 block font-plex-mono text-2xl font-medium text-brand-navy">
                 {SITE.phone}
@@ -50,7 +50,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
               </div>
             </div>
 
-            <ul className="divide-y divide-brand-line rounded-lg border border-brand-line bg-white">
+            <ul className="divide-y divide-brand-line overflow-hidden rounded-[24px] border border-brand-line bg-white">
               {DEPARTMENTS.map((d) => (
                 <li key={d.name} className="px-6 py-4">
                   <p className="font-semibold text-brand-navy">{d.name}</p>

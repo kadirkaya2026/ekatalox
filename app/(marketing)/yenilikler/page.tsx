@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { marketingMetadata } from "@/lib/marketing/metadata";
 import { Container, Section, SectionHeading } from "@/components/marketing/ui";
+import { pastelStyle } from "@/components/marketing/home-v2/page-kit";
 
 export const metadata = marketingMetadata(
   "/yenilikler", "Yenilikler ve Güncellemeler",
@@ -33,10 +34,10 @@ export default function UpdatesPage() {
     <Section>
       <Container className="max-w-4xl">
         <p className="mb-8 text-sm text-brand-muted">İçerik güncellemesi · <time dateTime="2026-09-27">27 Eylül 2026</time></p>
-        <div className="space-y-6">{updates.map((update) => <article key={update.href} className="rounded-2xl border border-brand-line bg-white p-6 sm:p-8">
-          <h2 className="text-2xl font-semibold text-brand-navy">{update.title}</h2>
-          <p className="mt-4 leading-relaxed text-brand-muted">{update.description}</p>
-          <Link href={update.href} className="mt-5 inline-block font-semibold text-brand-green hover:underline">{update.link} →</Link>
+        <div className="space-y-6">{updates.map((update, i) => <article key={update.href} className="rounded-[24px] p-7 sm:p-9" style={pastelStyle(i)}>
+          <h2 className="text-3xl font-extrabold tracking-[-0.03em] text-brand-navy">{update.title}</h2>
+          <p className="mt-4 leading-relaxed text-brand-navy/70">{update.description}</p>
+          <Link href={update.href} className="mt-6 inline-flex rounded-full bg-brand-dark px-5 py-2.5 text-sm font-semibold text-white hover:bg-brand-navy">{update.link} →</Link>
         </article>)}</div>
         <p className="mt-8 text-brand-muted">Bir öneriniz mi var? <Link href="/iletisim" className="font-semibold text-brand-green hover:underline">Bize yazın.</Link></p>
       </Container>

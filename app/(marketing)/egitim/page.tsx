@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { ButtonLink, Container, Section, SectionHeading } from "@/components/marketing/ui";
+import { Container, Section, SectionHeading } from "@/components/marketing/ui";
+import { ClosingCta } from "@/components/marketing/home-v2/page-kit";
 import { TrainingCenter } from "@/components/marketing/training-center";
 import { marketingMetadata } from "@/lib/marketing/metadata";
 import { SITE } from "@/lib/marketing/site";
@@ -46,16 +47,16 @@ export default function TrainingCenterPage() {
 
       <Section tone="white" className="pb-14 sm:pb-20">
         <Container>
-          <nav aria-label="Konum" className="mb-4 text-sm text-brand-muted">
+          <nav aria-label="Konum" className="mb-6 text-center text-sm text-brand-muted">
             <Link href="/yardim" className="hover:text-brand-navy">
               Yardım merkezi
             </Link>
             <span className="mx-1.5">/</span>
-            <span className="text-brand-navy">Eğitim Merkezi</span>
+            <span className="text-brand-navy">Eğitim merkezi</span>
           </nav>
           <SectionHeading
             as="h1"
-            eyebrow="Eğitim Merkezi"
+            eyebrow="Eğitim merkezi"
             title="eKatalox'u adım adım öğrenin"
             lead={`${TUTORIAL_VIDEOS.length} kısa video, her biri tek bir işi baştan sona gösterir. Türkçe altyazılı, ortalama 2 dakika.`}
           />
@@ -65,24 +66,13 @@ export default function TrainingCenterPage() {
         </Container>
       </Section>
 
-      <Section className="pt-0">
-        <Container>
-          <div className="mt-12 rounded-lg border border-brand-line bg-white p-6 sm:flex sm:items-center sm:justify-between">
-            <div>
-              <p className="font-semibold">Aradığınızı bulamadınız mı?</p>
-              <p className="mt-1 text-sm text-brand-muted">
-                <a href={SITE.phoneHref} className="font-plex-mono font-medium text-brand-navy">
-                  {SITE.phone}
-                </a>{" "}
-                · <Link href="/yardim">Yardım merkezi</Link>
-              </p>
-            </div>
-            <ButtonLink href="/basvuru" tone="navy" className="mt-4 sm:mt-0">
-              Ücretsiz katalog açın
-            </ButtonLink>
-          </div>
-        </Container>
-      </Section>
+      <ClosingCta
+        title="Aradığınızı bulamadınız mı?"
+        lead={<>Telefon ve WhatsApp: {SITE.phone}. Kataloğunuzu açtıktan sonra ilk yüklemeyi birlikte yaparız.</>}
+        primaryLabel="Ücretsiz katalog açın"
+        index={1}
+        secondary={<Link href="/yardim" className="inline-flex items-center justify-center rounded-full bg-white px-7 py-4 text-base font-semibold text-brand-navy hover:bg-brand-paper">Yardım merkezi</Link>}
+      />
     </>
   );
 }

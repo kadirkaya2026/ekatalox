@@ -1,7 +1,7 @@
 import { marketingMetadata } from "@/lib/marketing/metadata";
-
-import Link from "next/link";
-import { ButtonLink, Container, Section, SectionHeading } from "@/components/marketing/ui";
+import { ArrowRight } from "lucide-react";
+import { Container } from "@/components/marketing/ui";
+import { Accent, BandCard, ClosingCta, PageHero } from "@/components/marketing/home-v2/page-kit";
 import { SITE } from "@/lib/marketing/site";
 
 export const metadata = marketingMetadata(
@@ -11,7 +11,7 @@ export const metadata = marketingMetadata(
 );
 
 const TOPICS = [
-  { title: "Eğitim Merkezi", desc: "Ürün yüklemeden sipariş yönetimine her işin kısa, adım adım videosu.", href: "/egitim" },
+  { title: "Eğitim merkezi", desc: "Ürün yüklemeden sipariş yönetimine her işin kısa, adım adım videosu.", href: "/egitim" },
   { title: "Başlarken", desc: "Kayıt, Excel ile ürün yükleme ve ilk siparişe kadar olan yol.", href: "/nasil-calisir" },
   { title: "Bayi şifreleri ve fiyat listeleri", desc: "Şifre nasıl verilir, kim hangi fiyatı görür.", href: "/ozellikler#katalog" },
   { title: "Sipariş alma", desc: "Sepet, WhatsApp'a düşen PDF, sipariş formu alanları.", href: "/ozellikler#siparis" },
@@ -23,32 +23,27 @@ const TOPICS = [
 export default function HelpPage() {
   return (
     <>
-      <Section tone="white" className="pb-8 sm:pb-10">
+      <PageHero eyebrow="Destek" title={<>Yardım <Accent>merkezi.</Accent></>} lead="Aradığınızı bulamazsanız telefonla ya da e-postayla ulaşın; sorunuzu genelde aynı gün çözeriz." />
+      <section className="bg-white pb-8">
         <Container>
-          <SectionHeading as="h1" eyebrow="Destek" title="Yardım merkezi" lead="Aradığınızı bulamazsanız telefonla ya da e-postayla ulaşın; sorunuzu genelde aynı gün çözeriz." />
-        </Container>
-      </Section>
-      <Section className="pt-0">
-        <Container>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {TOPICS.map((t) => (
-              <Link key={t.title} href={t.href} className="rounded-lg border border-brand-line bg-white p-5 transition-colors hover:border-brand-navy">
-                <h2 className="font-semibold text-brand-navy">{t.title}</h2>
-                <p className="mt-1.5 text-sm text-brand-muted">{t.desc}</p>
-              </Link>
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {TOPICS.map((t, i) => (
+              <BandCard key={t.title} index={i} href={t.href} band={<h2 className="text-2xl font-extrabold leading-tight tracking-[-0.02em] text-brand-navy">{t.title}</h2>}>
+                <p className="flex-1 text-[15px] leading-relaxed text-brand-muted">{t.desc}</p>
+                <span className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-brand-green">Aç <ArrowRight className="size-4" aria-hidden /></span>
+              </BandCard>
             ))}
           </div>
-          <div className="mt-12 rounded-lg border border-brand-line bg-white p-6 sm:flex sm:items-center sm:justify-between">
-            <div>
-              <p className="font-semibold">Destek hattı</p>
-              <p className="mt-1 text-sm text-brand-muted">
-                <a href={SITE.phoneHref} className="font-plex-mono font-medium text-brand-navy">{SITE.phone}</a> · <a href={`mailto:${SITE.supportEmail}`}>{SITE.supportEmail}</a>
-              </p>
-            </div>
-            <ButtonLink href="/iletisim" tone="navy" className="mt-4 sm:mt-0">İletişim formu</ButtonLink>
-          </div>
         </Container>
-      </Section>
+      </section>
+      <ClosingCta
+        title="Destek hattı her zaman açık."
+        lead={<>Telefon ve WhatsApp: {SITE.phone} · {SITE.supportEmail}</>}
+        primaryHref="/iletisim"
+        primaryLabel="İletişim formu"
+        index={3}
+        secondary={<a href={SITE.phoneHref} className="inline-flex items-center justify-center rounded-full bg-white px-7 py-4 font-plex-mono text-base font-semibold text-brand-navy hover:bg-brand-paper">{SITE.phone}</a>}
+      />
     </>
   );
 }

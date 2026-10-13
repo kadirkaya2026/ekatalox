@@ -14,12 +14,12 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ k
   return (
     <Section>
       <Container className="max-w-lg text-center">
-        <h1 className="text-3xl font-bold tracking-[-0.02em] text-brand-navy">Bu mağaza yakında burada</h1>
+        <h1 className="text-balance text-4xl font-extrabold leading-[1.05] tracking-[-0.03em] text-brand-navy sm:text-5xl">Bu mağaza <span className="text-brand-green">yakında</span> burada.</h1>
         <p className="mt-4 text-brand-muted">
           Bu adres henüz bir kataloğa bağlanmadı. Firma kataloğunu yayına aldığında aynı adres doğrudan oraya açılacak; adresi saklayın, daha sonra yeniden deneyin.
         </p>
         {kod ? (
-          <div className="mt-8 inline-flex flex-col items-center gap-1 rounded-lg border border-brand-line bg-white px-6 py-4">
+          <div className="mt-8 inline-flex flex-col items-center gap-1 rounded-[20px] border border-brand-line bg-white px-6 py-4 shadow-sm">
             <span className="text-[11px] uppercase tracking-[0.2em] text-brand-muted">Kod</span>
             <span className="font-plex-mono text-xl tracking-[0.3em] text-brand-navy">{kod.toUpperCase()}</span>
           </div>

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { ButtonLink, Container } from "@/components/marketing/ui";
+import { CUSTOMER_NAMES } from "@/lib/marketing/site";
 import { cn } from "@/lib/utils";
 
 /** Sayfalar arasında dönen pastel degrade çiftleri (yeşil, turuncu, mor, mavi, pembe). */
@@ -124,5 +125,36 @@ export function BandCard({ index, href, band, children, className }: { index: nu
     </Link>
   ) : (
     <div className={classes}>{inner}</div>
+  );
+}
+
+/** Kayan müşteri şeridi: yalnız gerçek müşteriler (lib/marketing/site CUSTOMER_NAMES). */
+export function CustomerMarquee({ title = "Siparişlerini eKatalox'tan alan firmalar", className }: { title?: string | null; className?: string }) {
+  if (CUSTOMER_NAMES.length === 0) return null;
+  const names = Array.from({ length: Math.ceil(8 / CUSTOMER_NAMES.length) }, () => CUSTOMER_NAMES).flat();
+  return (
+    <section className={cn("border-y border-brand-line bg-white py-8", className)}>
+      {title ? <p className="text-center text-sm font-semibold uppercase tracking-[0.14em] text-brand-muted">{title}</p> : null}
+      <div className="group relative mt-5 overflow-hidden [mask-image:linear-gradient(to_right,transparent,black_12%,black_88%,transparent)]" aria-label={`Müşterilerimiz: ${CUSTOMER_NAMES.join(", ")}`}>
+        <div className="flex w-max animate-[customer-marquee_75s_linear_infinite] group-hover:[animation-play-state:paused] motion-reduce:animate-none">
+          {[0, 1].map((copy) => (
+            <ul key={copy} aria-hidden className="flex shrink-0 items-center">
+              {names.map((name, i) => (
+                <li key={`${copy}-${i}`} className="whitespace-nowrap px-8 text-xl font-semibold tracking-[-0.01em] text-brand-navy/70 sm:px-12 sm:text-2xl">{name}</li>
+              ))}
+            </ul>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/** Pastel zeminli, ortalı içerik kutusu (telefon görseli vb.). */
+export function GradientPanelLite({ index, children, className }: { index: number; children: ReactNode; className?: string }) {
+  return (
+    <div className={cn("flex flex-col items-center rounded-[28px] p-8 text-center", className)} style={pastelStyle(index)}>
+      {children}
+    </div>
   );
 }

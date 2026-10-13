@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight, Play, Search, X } from "lucide-react";
 import type { TutorialGroup, TutorialVideo } from "@/lib/marketing/tutorial-videos";
+import { sentenceCaseTr } from "@/lib/marketing/sentence-case";
 
 // Eğitim Merkezi (10 Eki 2026): arama, "Buradan başlayın" yolu, konu menüsü ve
 // büyük kartlar. Video sayfada küçük karede değil, ekranı kaplayan oynatıcıda açılır
@@ -93,7 +94,7 @@ export function TrainingCenter({ groups, startHere }: { groups: TutorialGroup[];
                     <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-brand-green text-xs font-bold text-white">
                       {i + 1}
                     </span>
-                    <span className="text-sm font-semibold leading-snug text-brand-navy">{video.title}</span>
+                    <span className="text-sm font-semibold leading-snug text-brand-navy">{sentenceCaseTr(video.title)}</span>
                   </span>
                 </button>
               </li>
@@ -139,7 +140,7 @@ export function TrainingCenter({ groups, startHere }: { groups: TutorialGroup[];
                   >
                     <Thumb video={video} />
                     <span className="p-4">
-                      <span className="block font-semibold leading-snug text-brand-navy">{video.title}</span>
+                      <span className="block font-semibold leading-snug text-brand-navy">{sentenceCaseTr(video.title)}</span>
                       <span className="mt-1.5 line-clamp-2 block text-sm text-brand-muted">{video.description}</span>
                     </span>
                   </button>
@@ -155,7 +156,7 @@ export function TrainingCenter({ groups, startHere }: { groups: TutorialGroup[];
           className="fixed inset-0 z-[100] flex flex-col bg-black/90 backdrop-blur-sm"
           role="dialog"
           aria-modal="true"
-          aria-label={playing.title}
+          aria-label={sentenceCaseTr(playing.title)}
           onClick={() => setPlaying(null)}
         >
           <div className="flex items-center justify-between gap-3 px-4 py-3 text-white sm:px-6" onClick={(e) => e.stopPropagation()}>

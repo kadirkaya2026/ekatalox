@@ -4,7 +4,7 @@ import { MARKETING_WHATSAPP_HREF, WhatsAppGlyph } from "@/components/marketing/c
 import { PhoneFrame } from "@/components/marketing/phone-frame";
 import { ButtonLink, CheckList, Container, Section, SectionHeading } from "@/components/marketing/ui";
 import { SITE } from "@/lib/marketing/site";
-import { Accent, BandCard, ClosingCta, PageHero } from "@/components/marketing/home-v2/page-kit";
+import { Accent, BandCard, ClosingCta, CustomerMarquee, PageHero } from "@/components/marketing/home-v2/page-kit";
 
 export const metadata = marketingMetadata(
   "/nasil-calisir",
@@ -81,7 +81,7 @@ export default function NasilCalisirPage() {
         actions={
           <>
             <ButtonLink href="/basvuru" tone="navy" size="lg" className="px-9">Ücretsiz başla</ButtonLink>
-            <ButtonLink href={SITE.demoUrl} tone="outline" size="lg" external>Demoyu incele · şifre 1111</ButtonLink>
+            <ButtonLink href={SITE.demoUrl} tone="outline" size="lg" external>Demoyu incele</ButtonLink>
           </>
         }
       />
@@ -158,6 +158,7 @@ export default function NasilCalisirPage() {
         </Container>
       </Section>
 
+      <CustomerMarquee />
       <ClosingCta
         title="Kataloğunuzu kurun, bayilerinize paylaşın."
         lead="Sorunuz varsa WhatsApp'tan yazın; ilk yüklemeyi birlikte planlarız."

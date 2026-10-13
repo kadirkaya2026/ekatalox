@@ -2,7 +2,7 @@ import { marketingMetadata } from "@/lib/marketing/metadata";
 
 import { SITE } from "@/lib/marketing/site";
 import { ButtonLink, CheckList, Container, Eyebrow, Section, SectionHeading } from "@/components/marketing/ui";
-import { Accent, PageHero } from "@/components/marketing/home-v2/page-kit";
+import { Accent, CustomerMarquee, PageHero } from "@/components/marketing/home-v2/page-kit";
 
 export const metadata = marketingMetadata(
   "/hakkimizda",
@@ -20,8 +20,8 @@ export default function Page() {
         eyebrow="Hakkımızda"
         title={<>Toptancının kataloğunu <Accent>PDF&apos;ten kurtarmak</Accent> için çalışıyoruz.</>}
         lead="eKatalox, toptancı, üretici ve distribütörlerin bayilerine gönderdiği PDF kataloğu şifreli, canlı bir sipariş sayfasına çevirir. Komisyon almayız, aracı olmayız; bayi sizin bayiniz olarak kalır, sipariş sizin WhatsApp'ınıza gelir."
-        className="border-b border-brand-line"
       />
+      <CustomerMarquee />
 
       <Section>
         <Container className="grid gap-10 lg:grid-cols-2 lg:gap-16">
@@ -66,7 +66,7 @@ export default function Page() {
             title="Bize doğrudan ulaşın"
             lead="Satış ve destek için tek hat. Hafta içi mesai saatlerinde telefonla, her zaman WhatsApp ve e-posta ile."
           />
-          <div className="rounded-lg border border-brand-line bg-white p-6">
+          <div className="rounded-[24px] border border-brand-line bg-white p-6 shadow-[0_24px_50px_-36px_rgba(18,40,74,0.4)] sm:p-8">
             <dl className="space-y-4 text-sm">
               <div>
                 <dt className="text-brand-muted">Telefon ve WhatsApp</dt>

@@ -4,6 +4,7 @@ import { marketingMetadata } from "@/lib/marketing/metadata";
 import { ButtonLink, Container, Section, SectionHeading } from "@/components/marketing/ui";
 import { SITE } from "@/lib/marketing/site";
 import { SORU_GRUPLARI, TUM_SORULAR } from "@/lib/marketing/sorular";
+import { ClosingCta } from "@/components/marketing/home-v2/page-kit";
 
 // /sorular (30 Eyl 2026): toptancıların Google'a yazdığı "nasıl yapılır / nedir"
 // sorularına rehber. /sss ürün SSS'sidir; burası arama niyetine yönelik içeriktir.
@@ -49,7 +50,7 @@ export default function SorularPage() {
         <Container className="space-y-14">
           {SORU_GRUPLARI.map((g) => (
             <div key={g.slug} id={g.slug} className="grid gap-6 lg:grid-cols-[1fr_2.2fr] lg:gap-16">
-              <h2 className="text-xl font-semibold text-brand-navy lg:sticky lg:top-24 lg:self-start">{g.title}</h2>
+              <h2 className="text-3xl font-extrabold tracking-[-0.03em] text-brand-navy lg:sticky lg:top-24 lg:self-start">{g.title}</h2>
               <div className="divide-y divide-brand-line border-y border-brand-line">
                 {g.items.map((f) => (
                   <details key={f.q} className="group py-4">
@@ -82,26 +83,7 @@ export default function SorularPage() {
         </Container>
       </Section>
 
-      <Section tone="navy">
-        <Container className="grid items-center gap-8 lg:grid-cols-[1.4fr_1fr]">
-          <div>
-            <h2 className="text-balance text-3xl font-bold leading-[1.1] tracking-[-0.02em] sm:text-4xl">
-              Kataloğunuzu bugün kurun, bayilere bağlantıyı gönderin.
-            </h2>
-            <p className="mt-4 max-w-xl text-lg text-white/75">
-              Ücretsiz planla başlayın; Excel listenizi yükleyin, şifreleri verin. Sorunuz olursa telefon ve WhatsApp üzerinden yardımcı oluruz.
-            </p>
-          </div>
-          <div className="flex flex-col gap-4 lg:items-end">
-            <ButtonLink href="/basvuru" tone="white" size="lg">
-              Ücretsiz başla
-            </ButtonLink>
-            <a href={SITE.phoneHref} className="font-plex-mono text-lg text-white/85 hover:text-white">
-              {SITE.phone}
-            </a>
-          </div>
-        </Container>
-      </Section>
+      <ClosingCta title="Kataloğunuzu bugün kurun, bayilere bağlantıyı gönderin." lead="Ücretsiz planla başlayın; Excel listenizi yükleyin, şifreleri verin. Sorunuz olursa telefon ve WhatsApp üzerinden yardımcı oluruz." index={1} secondary={<a href={SITE.phoneHref} className="inline-flex items-center justify-center rounded-full bg-white px-7 py-4 font-plex-mono text-base font-semibold text-brand-navy hover:bg-brand-paper">{SITE.phone}</a>} />
     </>
   );
 }

@@ -149,7 +149,7 @@ const Page = () => {
     <>
       <Section tone="white" className="pb-8 sm:pb-10">
         <Container>
-          <SectionHeading as="h1" eyebrow="Yasal" title="Kullanım Şartları" lead={`eKatalox'u kullanmadan önce lütfen bu şartları dikkatlice okuyun. Son güncelleme: ${TERMS_VERSION_LABEL}.`} />
+          <SectionHeading as="h1" eyebrow="Yasal" title="Kullanım şartları" lead={`eKatalox'u kullanmadan önce lütfen bu şartları dikkatlice okuyun. Son güncelleme: ${TERMS_VERSION_LABEL}.`} />
         </Container>
       </Section>
       <Section className="pt-0">

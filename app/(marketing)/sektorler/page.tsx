@@ -3,7 +3,7 @@ import { Store, ArrowRight, Shirt, Cable, Armchair, Wrench, Package, Sparkles } 
 import { Container, Section, SectionHeading } from "@/components/marketing/ui";
 import { marketingMetadata } from "@/lib/marketing/metadata";
 import { WHOLESALE_SECTORS } from "@/lib/marketing/sectors";
-import { Accent, BandCard, PageHero, pastelStyle } from "@/components/marketing/home-v2/page-kit";
+import { Accent, BandCard, ClosingCta, CustomerMarquee, PageHero, pastelStyle } from "@/components/marketing/home-v2/page-kit";
 
 export const metadata = marketingMetadata("/sektorler", "Sektörlere Göre Toptan Katalog ve Sipariş", "Tekstil, elektronik, mobilya, otomotiv, gıda, kozmetik ve marketler için eKatalox çözümleri. Sektörünüze uygun dijital katalog ve sipariş akışını keşfedin.");
 const icons = [Shirt, Cable, Armchair, Wrench, Package, Sparkles];
@@ -21,5 +21,7 @@ export default function SectorsPage() {
         <span className="flex size-16 shrink-0 items-center justify-center rounded-2xl bg-white/80 text-brand-navy"><Store className="size-8" aria-hidden /></span><div className="flex-1"><h2 className="text-3xl font-extrabold tracking-[-0.03em] text-brand-navy">Market & Bakkallar</h2><p className="mt-3 max-w-2xl leading-relaxed text-brand-navy/70">Konumlu WhatsApp siparişi, mobil alt sepet ve müşteri bildirimleri. Kurumsal pakette 200 adet QR magnet hediyesi.</p></div><span className="inline-flex shrink-0 items-center gap-2 rounded-full bg-brand-dark px-5 py-3 text-sm font-semibold text-white">MarketGo ile keşfet <ArrowRight className="size-4" aria-hidden /></span>
       </Link>
     </Container></Section>
+    <CustomerMarquee />
+    <ClosingCta title="Sektörünüz ne olursa olsun, ilk katalog ücretsiz." lead="250 ürünle başlayın, bayilerinize şifreyi gönderin. Fiyat listesi, sipariş fişi ve panel her sektörde aynı." index={2} />
   </>;
 }
