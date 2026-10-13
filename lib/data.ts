@@ -1,3 +1,4 @@
+import { describeDevice } from "@/lib/admin/panel-visit-format";
 import { hasPlanFeature } from "@/lib/billing/plans";
 import { cache } from "react";
 import { unstable_cache } from "next/cache";
@@ -491,38 +492,6 @@ export async function getAdminLoginLogs(): Promise<AdminLoginLogEntry[]> {
   return entries.sort((a, b) => activityOf(b) - activityOf(a));
 }
 
-// Tarayıcı kimliğinden kısa cihaz adı: "iPhone · Safari", "Windows · Chrome".
-function describeDevice(userAgent: string | null): string | null {
-  if (!userAgent) return null;
-  const ua = userAgent;
-  const os = /iPhone/.test(ua)
-    ? "iPhone"
-    : /iPad/.test(ua)
-      ? "iPad"
-      : /Android/.test(ua)
-        ? "Android"
-        : /Windows/.test(ua)
-          ? "Windows"
-          : /Macintosh|Mac OS X/.test(ua)
-            ? "Mac"
-            : /Linux/.test(ua)
-              ? "Linux"
-              : null;
-  const browser = /Edg\//.test(ua)
-    ? "Edge"
-    : /OPR\//.test(ua)
-      ? "Opera"
-      : /SamsungBrowser/.test(ua)
-        ? "Samsung"
-        : /Chrome\//.test(ua) && !/Chromium/.test(ua)
-          ? "Chrome"
-          : /Firefox\//.test(ua)
-            ? "Firefox"
-            : /Safari\//.test(ua)
-              ? "Safari"
-              : null;
-  return [os, browser].filter(Boolean).join(" · ") || null;
-}
 
 export async function getTenantsOverview(): Promise<TenantWithRelations[]> {
   const supabase = createSupabaseAdminClient();

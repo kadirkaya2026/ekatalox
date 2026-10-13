@@ -1,9 +1,11 @@
+import { ArrowLeft } from "lucide-react";
 import { notFound } from "next/navigation";
 import { AdminTenantDetailPanel } from "@/components/admin/admin-tenant-detail-panel";
 import { CustomersManager } from "@/components/dashboard/customers-manager";
 import { Header } from "@/components/dashboard/header";
 import { OnlinePresenceCard } from "@/components/dashboard/online-presence-card";
 import { ReportsPanel } from "@/components/dashboard/reports-panel";
+import { Button } from "@/components/ui/button";
 import { getTenantOnlinePresence } from "@/lib/analytics/presence";
 import { getTenantAnalyticsReport } from "@/lib/analytics/queries";
 import { getTenantCustomersOverview } from "@/lib/customers/data";
@@ -21,53 +23,46 @@ export default async function AdminTenantDetailPage({
     notFound();
   }
 
+  const loadedAt = new Date().toISOString();
   const [report, presence, customers, panelVisits] = await Promise.all([
     getTenantAnalyticsReport(tenant.id, "daily"),
     getTenantOnlinePresence(tenant.id),
     tenant.business_type === "market" ? getTenantCustomersOverview(tenant.id) : Promise.resolve([]),
-    getTenantPanelVisits(tenant.id),
+    getTenantPanelVisits(tenant.id, 30),
   ]);
 
+  // Sunucuda hazırlanan bölümler sekmelere yerleşir (14 Eki 2026 düzeni):
+  // özet kartı + sekmeler; raporlar ve müşteriler alt alta yığılmaz.
   return (
     <div className="space-y-6">
       <Header
         eyebrow="Tenant Detayı"
         title={tenant.company_name}
-        description="Paket, kapasite, üyelik ve erişim şifrelerini bu sayfadan yönetin."
+        description="Paket, üyelik, erişim şifreleri, panel ziyaretleri ve raporlar tek sayfada."
+        action={
+          <Button asChild variant="secondary" href="/admin" className="h-10 px-4 py-0 text-sm">
+            <ArrowLeft className="size-4" />
+            Tenant listesi
+          </Button>
+        }
       />
 
-      <AdminTenantDetailPanel tenant={tenant} />
-
-      <AdminPanelVisitsCard visits={panelVisits} />
-
-      <Header
-        eyebrow="Raporlar"
-        title="Mağaza Raporları"
-        description="Bu müşterinin ziyaretçi, sipariş PDF, arama ve trafik verilerini paketinden bağımsız olarak görüntüleyin."
+      <AdminTenantDetailPanel
+        tenant={tenant}
+        slots={{
+          visits: <AdminPanelVisitsCard visits={panelVisits} loadedAt={loadedAt} />,
+          reports: (
+            <div className="space-y-4">
+              <OnlinePresenceCard initialPresence={presence} endpoint={`/api/admin/tenants/${tenant.id}/presence`} />
+              <ReportsPanel initialReport={report} endpoint={`/api/admin/tenants/${tenant.id}/reports`} />
+            </div>
+          ),
+          customers:
+            tenant.business_type === "market" ? (
+              <CustomersManager initialCustomers={customers} ordersEndpointBase={`/api/admin/tenants/${tenant.id}/customers`} />
+            ) : undefined,
+        }}
       />
-
-      <OnlinePresenceCard
-        initialPresence={presence}
-        endpoint={`/api/admin/tenants/${tenant.id}/presence`}
-      />
-      <ReportsPanel
-        initialReport={report}
-        endpoint={`/api/admin/tenants/${tenant.id}/reports`}
-      />
-
-      {tenant.business_type === "market" ? (
-        <>
-          <Header
-            eyebrow="Raporlar"
-            title="Müşteriler"
-            description="Bu market'in müşteri isim, adres, telefon ve sipariş geçmişi verileri."
-          />
-          <CustomersManager
-            initialCustomers={customers}
-            ordersEndpointBase={`/api/admin/tenants/${tenant.id}/customers`}
-          />
-        </>
-      ) : null}
     </div>
   );
 }

@@ -6,8 +6,9 @@ import { ChevronDown, Clock3, KeyRound, Monitor, Radio, Search, Users } from "lu
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import type { AdminLoginLogEntry, AdminPanelVisit } from "@/lib/types";
+import type { AdminLoginLogEntry } from "@/lib/types";
 import { cn, formatTimeAgo } from "@/lib/utils";
+import { formatVisitDuration, panelPageLabel as pageLabel } from "@/lib/admin/panel-visit-format";
 
 // Panel açıkken dakikada bir ping gelir (panel-visit-tracker); 2,5 dk içinde
 // görülen "şu an panelde", 30 dk içinde görülen "az önce ayrıldı" sayılır.
@@ -25,36 +26,6 @@ const FILTERS: { key: Filter; label: string }[] = [
   { key: "never", label: "Hiç girmemiş" },
 ];
 
-const PAGE_LABELS: [string, string][] = [
-  ["/products/add", "Ürün Ekle"],
-  ["/products/bulk", "Toplu Ürün Ekleme"],
-  ["/products/market-catalog", "Master Katalog"],
-  ["/products/stock-import", "Stok İçe Aktarma"],
-  ["/products/showcase", "Vitrin"],
-  ["/products/best-sellers", "Çok Satanlar"],
-  ["/products/suggestions", "Ürün Önerileri"],
-  ["/products/bizimhesap", "BizimHesap"],
-  ["/products", "Ürünler"],
-  ["/categories", "Kategoriler"],
-  ["/access-codes", "Fiyat Listeleri"],
-  ["/basvurular", "Başvurular"],
-  ["/customers", "Müşteriler"],
-  ["/siparisler", "Siparişler"],
-  ["/reports/iller", "İller Raporu"],
-  ["/reports/satis", "Satış Raporu"],
-  ["/reports", "Raporlar"],
-  ["/magnetler", "Magnetler"],
-  ["/settings", "Ayarlar"],
-];
-
-function pageLabel(path: string | null) {
-  if (!path) return null;
-  const clean = path.replace(/^\/dashboard/, "") || "/";
-  if (clean === "/") return "Genel Bakış";
-  const hit = PAGE_LABELS.find(([prefix]) => clean === prefix || clean.startsWith(`${prefix}/`));
-  return hit ? hit[1] : clean;
-}
-
 function formatDateTime(value: string | null) {
   if (!value) return "—";
   return new Intl.DateTimeFormat("tr-TR", { dateStyle: "medium", timeStyle: "short", timeZone: "Europe/Istanbul" }).format(
@@ -70,13 +41,6 @@ function formatDay(value: string) {
   return new Intl.DateTimeFormat("tr-TR", { day: "numeric", month: "short", weekday: "short", timeZone: "Europe/Istanbul" }).format(
     new Date(value),
   );
-}
-
-function formatDuration(visit: AdminPanelVisit) {
-  const minutes = Math.round((new Date(visit.last_seen_at).getTime() - new Date(visit.started_at).getTime()) / 60_000);
-  if (minutes < 1) return "< 1 dk";
-  if (minutes < 60) return `${minutes} dk`;
-  return `${Math.floor(minutes / 60)} sa ${minutes % 60} dk`;
 }
 
 function startOfTodayIstanbul(now: number) {
@@ -419,7 +383,7 @@ function LogRow({
                     <span className="w-28 tabular-nums text-slate-900">
                       {formatTime(visit.started_at)} – {live ? "devam ediyor" : formatTime(visit.last_seen_at)}
                     </span>
-                    <span className="w-20 text-xs text-slate-500">{formatDuration(visit)}</span>
+                    <span className="w-20 text-xs text-slate-500">{formatVisitDuration(visit.started_at, visit.last_seen_at)}</span>
                     <span className="w-24 text-xs text-slate-500">{visit.page_views} sayfa</span>
                     <span className="min-w-0 flex-1 truncate text-xs text-slate-600">
                       Son sayfa: {pageLabel(visit.last_path) ?? "—"}
