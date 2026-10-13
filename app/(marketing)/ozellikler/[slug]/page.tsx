@@ -1,9 +1,11 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { ArrowRight } from "lucide-react";
 import { MARKETING_FEATURES } from "@/lib/marketing/features";
 import { marketingMetadata } from "@/lib/marketing/metadata";
 import { SITE } from "@/lib/marketing/site";
-import { ButtonLink, Container, Section } from "@/components/marketing/ui";
+import { ButtonLink, Container } from "@/components/marketing/ui";
+import { BandCard, Breadcrumb, ClosingCta, CustomerMarquee, FaqList, PageHero, TintBox } from "@/components/marketing/home-v2/page-kit";
 
 type Props = { params: Promise<{ slug: string }> };
 export const dynamicParams = false;
@@ -20,6 +22,8 @@ export async function generateMetadata({ params }: Props) {
   const feature = await getFeature(params);
   return marketingMetadata(`/ozellikler/${feature.slug}`, feature.seoTitle, feature.metaDescription);
 }
+
+// TASLAK (14 Eki 2026): özellik alt sayfası Beacons dilinde; veri ve şema aynı.
 export default async function FeaturePage({ params }: Props) {
   const feature = await getFeature(params);
   const payment = feature.slug === "online-odeme";
@@ -36,66 +40,59 @@ export default async function FeaturePage({ params }: Props) {
       { "@type": "ListItem", position: 3, name: feature.title, item: `${SITE.url}/ozellikler/${feature.slug}` },
     ],
   };
+  const index = Math.max(0, MARKETING_FEATURES.findIndex((f) => f.slug === feature.slug));
   return <>
     <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumb).replace(/</g, "\\u003c") }} />
     {faqLd ? <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqLd).replace(/</g, "\\u003c") }} /> : null}
-    <Section tone="navy" glow className="py-12 sm:py-16">
-      <Container>
-        <nav aria-label="Sayfa yolu" className="mb-8 text-sm text-white/70">
-          <ol className="flex flex-wrap gap-x-2 gap-y-1">
-            <li><Link href="/" className="hover:underline">Ana sayfa</Link><span aria-hidden> /</span></li>
-            <li><Link href="/ozellikler" className="hover:underline">Özellikler</Link><span aria-hidden> /</span></li>
-            <li aria-current="page">{feature.title}</li>
-          </ol>
-        </nav>
-        <h1 className="max-w-3xl text-balance text-4xl font-bold leading-tight tracking-tight sm:text-5xl">{feature.title}</h1>
-        <p className="mt-5 max-w-3xl text-lg leading-relaxed text-white/75">{feature.lead}</p>
-        <p className="mt-5 max-w-3xl text-sm font-medium text-brand-neon">{feature.plan}</p>
-        <div className="mt-8 flex flex-wrap gap-3">
-          <ButtonLink href={cta.href}>{cta.label}</ButtonLink>
-          <ButtonLink href="/fiyatlandirma" tone="outline-dark">Paketleri karşılaştır</ButtonLink>
-        </div>
-      </Container>
-    </Section>
-    <Section tone="white">
-      <Container className="grid gap-10 lg:grid-cols-[1.7fr_1fr] lg:gap-16">
-        <div className="space-y-10">
-          {feature.sections.map((section) => <section key={section.title}>
-            <h2 className="text-2xl font-semibold tracking-tight text-brand-navy">{section.title}</h2>
-            <p className="mt-3 leading-relaxed text-brand-muted">{section.body}</p>
+
+    <PageHero
+      breadcrumb={<Breadcrumb items={[{ href: "/", label: "Ana sayfa" }, { href: "/ozellikler", label: "Özellikler" }, { label: feature.title }]} />}
+      eyebrow={feature.plan}
+      title={feature.title}
+      lead={feature.lead}
+      actions={<><ButtonLink href={cta.href} tone="navy" size="lg" className="px-9">{cta.label}</ButtonLink><ButtonLink href="/fiyatlandirma" tone="outline" size="lg">Paketleri karşılaştır</ButtonLink></>}
+    />
+
+    <section className="bg-white pb-16 sm:pb-20">
+      <Container className="grid gap-8 lg:grid-cols-[1fr_1.5fr] lg:gap-12">
+        <TintBox index={index} className="self-start lg:sticky lg:top-24">
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-brand-navy/60">İşletmenizde nasıl kullanırsınız?</p>
+          <p className="mt-4 text-lg leading-relaxed text-brand-navy">{feature.example}</p>
+          <Link href="/nasil-calisir" className="mt-6 inline-flex items-center gap-1.5 rounded-full bg-brand-dark px-5 py-2.5 text-sm font-semibold text-white hover:bg-brand-navy">
+            Kurulum adımları <ArrowRight className="size-4" aria-hidden />
+          </Link>
+        </TintBox>
+        <div className="divide-y divide-brand-line">
+          {feature.sections.map((section) => <section key={section.title} className="py-8 first:pt-0 last:pb-0">
+            <h2 className="text-2xl font-extrabold leading-snug tracking-[-0.02em] text-brand-navy sm:text-3xl">{section.title}</h2>
+            <p className="mt-3 text-[17px] leading-relaxed text-brand-muted">{section.body}</p>
           </section>)}
         </div>
-        <aside className="self-start rounded-2xl border border-brand-line bg-brand-paper p-6 sm:p-8 lg:sticky lg:top-24">
-          <h2 className="text-xl font-semibold text-brand-navy">İşletmenizde nasıl kullanırsınız?</h2>
-          <p className="mt-4 leading-relaxed text-brand-muted">{feature.example}</p>
-          <Link href="/nasil-calisir" className="mt-6 inline-block font-semibold text-brand-green hover:underline">Kurulum adımlarını inceleyin →</Link>
-        </aside>
       </Container>
-    </Section>
-    {feature.faq?.length ? <Section tone="white" className="pt-0">
-      <Container className="max-w-3xl">
-        <h2 className="text-2xl font-semibold tracking-tight text-brand-navy">Sık sorulanlar</h2>
-        <div className="mt-6 divide-y divide-brand-line rounded-2xl border border-brand-line bg-white">
-          {feature.faq.map((item) => <details key={item.q} className="group p-5 sm:p-6">
-            <summary className="cursor-pointer list-none font-semibold text-brand-navy marker:hidden">{item.q}</summary>
-            <p className="mt-3 leading-relaxed text-brand-muted">{item.a}</p>
-          </details>)}
-        </div>
+    </section>
+
+    {feature.faq?.length ? <section className="bg-white pb-16 sm:pb-20">
+      <Container className="max-w-4xl">
+        <h2 className="text-center text-3xl font-extrabold tracking-[-0.03em] text-brand-navy sm:text-4xl">Sık sorulanlar</h2>
+        <div className="mt-8"><FaqList items={feature.faq} /></div>
       </Container>
-    </Section> : null}
-    <Section>
+    </section> : null}
+
+    <section className="bg-white pb-8">
       <Container>
-        <h2 className="text-2xl font-semibold text-brand-navy">Birlikte kullanabileceğiniz özellikler</h2>
-        <div className="mt-6 grid gap-5 sm:grid-cols-2">
-          {feature.related.map((slug) => {
+        <h2 className="text-center text-3xl font-extrabold tracking-[-0.03em] text-brand-navy sm:text-4xl">Birlikte kullanabileceğiniz özellikler</h2>
+        <div className="mt-8 grid gap-6 sm:grid-cols-2">
+          {feature.related.map((slug, i) => {
             const item = MARKETING_FEATURES.find((f) => f.slug === slug)!;
-            return <Link key={slug} href={`/ozellikler/${slug}`} className="rounded-2xl border border-brand-line bg-white p-6 transition-colors hover:border-brand-green">
-              <h3 className="font-semibold text-brand-navy">{item.title} →</h3>
-              <p className="mt-2 text-sm leading-relaxed text-brand-muted">{item.lead}</p>
-            </Link>;
+            return <BandCard key={slug} index={index + i + 1} href={`/ozellikler/${slug}`} band={<h3 className="text-2xl font-extrabold leading-tight tracking-[-0.02em] text-brand-navy">{item.title}</h3>}>
+              <p className="flex-1 text-[15px] leading-relaxed text-brand-muted">{item.lead}</p>
+              <span className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-brand-green">Ayrıntıları inceleyin <ArrowRight className="size-4" aria-hidden /></span>
+            </BandCard>;
           })}
         </div>
       </Container>
-    </Section>
+    </section>
+    <CustomerMarquee />
+    <ClosingCta title="Ücretsiz planla başlayın, gerisini kullanırken görün." lead="250 ürün, 2 fiyat listesi, WhatsApp'ta PDF fiş. Kart istenmez, komisyon yok." primaryHref={cta.href} primaryLabel={cta.label} index={index} secondary={<Link href="/fiyatlandirma" className="inline-flex items-center justify-center rounded-full bg-white px-7 py-4 text-base font-semibold text-brand-navy hover:bg-brand-paper">Paketleri karşılaştır</Link>} />
   </>;
 }

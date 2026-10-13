@@ -158,3 +158,38 @@ export function GradientPanelLite({ index, children, className }: { index: numbe
     </div>
   );
 }
+
+/** Ortalı küçük sayfa yolu. */
+export function Breadcrumb({ items }: { items: Array<{ href?: string; label: string }> }) {
+  return (
+    <nav aria-label="Sayfa yolu">
+      <ol className="flex flex-wrap justify-center gap-x-2 gap-y-1 text-sm text-brand-muted">
+        {items.map((item, i) => (
+          <li key={`${item.label}-${i}`} className="flex items-center gap-2">
+            {item.href ? <Link href={item.href} className="hover:text-brand-navy hover:underline">{item.label}</Link> : <span aria-current="page" className="text-brand-navy">{item.label}</span>}
+            {i < items.length - 1 ? <span aria-hidden>/</span> : null}
+          </li>
+        ))}
+      </ol>
+    </nav>
+  );
+}
+
+/** Açılır-kapanır SSS listesi, yuvarlak kart. */
+export function FaqList({ items }: { items: Array<{ q: string; a: string }> }) {
+  return (
+    <div className="divide-y divide-brand-line overflow-hidden rounded-[24px] border border-brand-line bg-white">
+      {items.map((item) => (
+        <details key={item.q} className="group px-6 py-5">
+          <summary className="flex cursor-pointer list-none items-start justify-between gap-6 text-left text-base font-semibold text-brand-navy [&::-webkit-details-marker]:hidden">
+            <span>{item.q}</span>
+            <span aria-hidden className="mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full bg-brand-paper text-brand-muted transition-transform group-open:rotate-45">
+              <svg viewBox="0 0 20 20" className="size-3.5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M10 4v12M4 10h12" /></svg>
+            </span>
+          </summary>
+          <p className="mt-3 max-w-3xl leading-relaxed text-brand-muted">{item.a}</p>
+        </details>
+      ))}
+    </div>
+  );
+}

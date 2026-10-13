@@ -5,6 +5,7 @@ import { getBlogPost, getBlogPosts, getRelatedPosts, readingMinutes, blogDate } 
 import { marketingMetadata } from "@/lib/marketing/metadata";
 import { SITE } from "@/lib/marketing/site";
 import { ButtonLink, Container, Section } from "@/components/marketing/ui";
+import { BandCard, Breadcrumb, PageHero, TintBox, pastelStyle } from "@/components/marketing/home-v2/page-kit";
 
 type Props = { params: Promise<{ slug: string }> };
 // İleri tarihli yazılar (publishedAt) o gün gelince yeniden yayın gerekmeden açılsın: saatlik yenileme.
@@ -41,20 +42,25 @@ export default async function ArticlePage({ params }: Props) {
   ] };
   return <>
     <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schema).replace(/</g, "\\u003c") }} />
-    <Section tone="navy" glow className="py-12 sm:py-16">
-      <Container>
-        <nav aria-label="Sayfa yolu" className="text-sm text-white/65"><ol className="flex flex-wrap gap-2"><li><Link href="/" className="hover:underline">Ana sayfa</Link><span aria-hidden> /</span></li><li><Link href="/blog" className="hover:underline">Blog</Link><span aria-hidden> /</span></li><li aria-current="page">{post.title}</li></ol></nav>
-        <p className="mt-8 text-sm font-semibold text-brand-neon">{post.category}</p>
-        <h1 className="mt-4 max-w-4xl text-balance text-3xl font-bold leading-tight tracking-tight sm:text-5xl">{post.title}</h1>
-        <p className="mt-5 max-w-3xl text-lg leading-relaxed text-white/75">{post.description}</p>
-        <div className="mt-7 flex flex-wrap gap-x-4 gap-y-2 text-sm text-white/65"><span>Yazar: <Link href="/hakkimizda" rel="author" className="text-white hover:underline">Kadir Kaya</Link></span><span>Yayın: <time dateTime={post.publishedAt}>{blogDate(post.publishedAt)}</time></span>{post.updatedAt && <span>Güncelleme: <time dateTime={post.updatedAt}>{blogDate(post.updatedAt)}</time></span>}<span>{readingMinutes(post)} dk okuma</span></div>
-      </Container>
-    </Section>
-    <Section tone="white">
+    <PageHero
+      breadcrumb={<Breadcrumb items={[{ href: "/", label: "Ana sayfa" }, { href: "/blog", label: "Blog" }, { label: post.category }]} />}
+      eyebrow={post.category}
+      title={post.title}
+      lead={post.description}
+      className="pb-8 sm:pb-10"
+    >
+      <div className="mt-7 flex flex-wrap justify-center gap-2 text-sm text-brand-muted">
+        <span className="rounded-full border border-brand-line bg-white px-3 py-1.5">Yazar: <Link href="/hakkimizda" rel="author" className="font-semibold text-brand-navy hover:underline">Kadir Kaya</Link></span>
+        <span className="rounded-full border border-brand-line bg-white px-3 py-1.5">Yayın: <time dateTime={post.publishedAt}>{blogDate(post.publishedAt)}</time></span>
+        {post.updatedAt && <span className="rounded-full border border-brand-line bg-white px-3 py-1.5">Güncelleme: <time dateTime={post.updatedAt}>{blogDate(post.updatedAt)}</time></span>}
+        <span className="rounded-full border border-brand-line bg-white px-3 py-1.5">{readingMinutes(post)} dk okuma</span>
+      </div>
+    </PageHero>
+    <Section tone="white" className="pt-0 sm:pt-0">
       <Container className="grid items-start gap-10 lg:grid-cols-[250px_minmax(0,1fr)] lg:gap-16">
-        <nav aria-label="İçindekiler" className="rounded-2xl border border-brand-line bg-brand-paper p-5 lg:sticky lg:top-24">
-          <h2 className="font-semibold text-brand-navy">Bu rehberde</h2>
-          <ol className="mt-4 space-y-3 text-sm leading-relaxed">{post.sections.map((section, index) => <li key={section.id}><a href={`#${section.id}`} className="text-brand-muted hover:text-brand-green">{index + 1}. {section.title}</a></li>)}</ol>
+        <nav aria-label="İçindekiler" className="rounded-[24px] p-5 lg:sticky lg:top-24" style={pastelStyle(0)}>
+          <h2 className="text-xs font-semibold uppercase tracking-[0.16em] text-brand-navy/60">Bu rehberde</h2>
+          <ol className="mt-4 space-y-3 text-sm leading-relaxed">{post.sections.map((section, index) => <li key={section.id}><a href={`#${section.id}`} className="font-medium text-brand-navy/80 hover:text-brand-navy hover:underline">{index + 1}. {section.title}</a></li>)}</ol>
         </nav>
         <article className="min-w-0 max-w-[70ch]">
           {post.sections.map((section) => <section key={section.id} id={section.id} className="mb-12 scroll-mt-28 last:mb-0">
@@ -70,15 +76,15 @@ export default async function ArticlePage({ params }: Props) {
               {section.download.note && <p className="mt-2 text-sm leading-relaxed text-brand-muted">{section.download.note}</p>}
             </div>}
           </section>)}
-          <aside className="mt-12 rounded-2xl border border-brand-line bg-brand-paper p-6">
-            <h2 className="text-xl font-semibold text-brand-navy">Kendi kataloğunuzda uygulayın</h2>
-            <ul className="mt-4 space-y-3">{post.featureLinks.map((link) => <li key={link.href}><Link href={link.href} className="font-medium text-brand-green hover:underline">{link.label} →</Link></li>)}</ul>
-            <div className="mt-6 flex flex-wrap gap-3"><ButtonLink href="/basvuru">Ücretsiz başla</ButtonLink><ButtonLink href="/fiyatlandirma" tone="outline">Paketleri incele</ButtonLink></div>
-          </aside>
+          <TintBox index={2} className="mt-12">
+            <h2 className="text-2xl font-extrabold tracking-[-0.02em] text-brand-navy">Kendi kataloğunuzda uygulayın</h2>
+            <ul className="mt-4 space-y-2">{post.featureLinks.map((link) => <li key={link.href}><Link href={link.href} className="font-semibold text-brand-navy underline underline-offset-4 hover:no-underline">{link.label} →</Link></li>)}</ul>
+            <div className="mt-6 flex flex-wrap gap-3"><ButtonLink href="/basvuru" tone="navy">Ücretsiz başla</ButtonLink><ButtonLink href="/fiyatlandirma" tone="white">Paketleri incele</ButtonLink></div>
+          </TintBox>
         </article>
       </Container>
     </Section>
-    {related.length > 0 && <Section><Container><h2 className="text-2xl font-semibold text-brand-navy">İlgili rehberler</h2><div className="mt-6 grid gap-5 md:grid-cols-3">{related.map((item) => <Link key={item.slug} href={`/blog/${item.slug}`} className="rounded-2xl border border-brand-line bg-white p-6 hover:border-brand-green"><h3 className="font-semibold text-brand-navy">{item.title}</h3><p className="mt-3 text-sm leading-relaxed text-brand-muted">{item.description}</p></Link>)}</div></Container></Section>}
+    {related.length > 0 && <section className="bg-white pb-20"><Container><h2 className="text-center text-3xl font-extrabold tracking-[-0.03em] text-brand-navy sm:text-4xl">İlgili rehberler</h2><div className="mt-8 grid gap-6 md:grid-cols-3">{related.map((item, i) => <BandCard key={item.slug} index={i + 1} href={`/blog/${item.slug}`} band={<span className="rounded-full bg-white/80 px-3 py-1 text-xs font-semibold text-brand-navy">{item.category}</span>}><h3 className="text-xl font-extrabold leading-snug tracking-[-0.02em] text-brand-navy">{item.title}</h3><p className="mt-3 flex-1 text-sm leading-relaxed text-brand-muted">{item.description}</p></BandCard>)}</div></Container></section>}
   </>;
 }
 
