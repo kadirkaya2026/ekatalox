@@ -563,6 +563,9 @@ export function OrdersManager({
                   if (response.ok && result) setSelected(result);
                 })();
               }}
+              // Genax (14 Eki 2026): düzenleyip kaydetmeden "Siparişi onayla"ya basılınca
+              // BizimHesap'a fişin ilk hâli gidiyordu. Onay artık yalnız kayıttan sonra.
+              onSavedApprove={primaryNext === "confirmed" ? (updated) => requestTransition(updated, "confirmed") : undefined}
             />
           ) : (() => {
             const canEdit = orderEditEnabled && ORDER_EDITABLE_STATUSES.includes(order.status);
@@ -785,7 +788,12 @@ export function OrdersManager({
                     ✓ Onaylandı{order.confirmed_at ? ` · ${formatDateTime(order.confirmed_at)}` : ""}
                   </span>
                 ) : null}
-                {primaryNext ? (
+                {editorOpen && (primaryNext || otherNext.length) ? (
+                  <span className="text-sm text-amber-800">
+                    Düzenleme açık: önce yukarıdan <b>Kaydet</b>{primaryNext === "confirmed" ? <> ya da <b>Kaydet ve onayla</b></> : null}; kaydedilmeyen değişiklik onaya/BizimHesap&apos;a gitmez.
+                  </span>
+                ) : null}
+                {primaryNext && !editorOpen ? (
                   <Button
                     disabled={pending === order.id}
                     onClick={() => requestTransition(order, primaryNext)}
@@ -810,7 +818,7 @@ export function OrdersManager({
                     Düzelt
                   </Button>
                 ) : null}
-                {otherNext.map((s) => (
+                {editorOpen ? null : otherNext.map((s) => (
                   <Button key={s} variant="secondary" disabled={pending === order.id} onClick={() => requestTransition(order, s)}>
                     {actionLabel(s)}
                   </Button>

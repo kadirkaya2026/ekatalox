@@ -21,10 +21,13 @@ export function OrderEditor({
   order,
   onCancel,
   onSaved,
+  onSavedApprove,
 }: {
   order: StorefrontOrder;
   onCancel: () => void;
   onSaved: (order: StorefrontOrder, changesNote: string | null) => void;
+  /** Verilirse "Kaydet ve onayla" düğmesi: önce fiş kaydedilir, sonra onay akışı başlar. */
+  onSavedApprove?: (order: StorefrontOrder) => void;
 }) {
   const priced = order.currency !== "CATALOG";
   const money = (value: number) => formatCurrency(value, order.currency as CurrencyCode);
@@ -91,7 +94,7 @@ export function OrderEditor({
     setResults([]);
   }
 
-  async function save() {
+  async function save(approve = false) {
     if (!lines.length) {
       setError("Fişte en az bir ürün kalmalı; tamamını kaldırmak için siparişi iptal edin.");
       return;
@@ -116,6 +119,7 @@ export function OrderEditor({
       return;
     }
     onSaved(result.order as StorefrontOrder, null);
+    if (approve) onSavedApprove?.(result.order as StorefrontOrder);
   }
 
   return (
@@ -237,10 +241,16 @@ export function OrderEditor({
         <Button variant="ghost" onClick={onCancel} disabled={saving}>
           Vazgeç
         </Button>
-        <Button onClick={() => void save()} disabled={saving}>
+        <Button variant={onSavedApprove ? "secondary" : "primary"} onClick={() => void save()} disabled={saving}>
           {saving ? <Loader2 className="size-4 animate-spin" /> : null}
           Kaydet
         </Button>
+        {onSavedApprove ? (
+          <Button onClick={() => void save(true)} disabled={saving}>
+            {saving ? <Loader2 className="size-4 animate-spin" /> : null}
+            Kaydet ve onayla
+          </Button>
+        ) : null}
       </div>
     </div>
   );
