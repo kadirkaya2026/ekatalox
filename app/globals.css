@@ -1,5 +1,10 @@
 @import "tailwindcss";
 
+/* dark: sınıfları next-themes'in <html class="dark"> işaretine bağlı (14 Eki 2026).
+   Tailwind v4 varsayılanı işletim sisteminin karanlık modudur: panelde "Gece modu"
+   kapalıyken bile Mac karanlıktaysa tablo başlıkları/kutular koyu boyanıyordu. */
+@custom-variant dark (&:where(.dark, .dark *));
+
 /* 22 MB'lık ürün verisini tarama: Tailwind v4 kaynak taraması bu dosyada
    bozuk sınıf adları üretip CSS derlemesini kırıyor. */
 @source not "../data";
