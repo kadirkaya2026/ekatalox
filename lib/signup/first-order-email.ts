@@ -12,7 +12,7 @@ export async function sendFirstOrderEmailIfNeeded(
 ) {
   const { data: tenant } = await supabase
     .from("tenants")
-    .select("company_name, contact_email, contact_full_name, first_order_email_sent_at")
+    .select("company_name, business_type, contact_email, contact_full_name, first_order_email_sent_at")
     .eq("id", tenantId)
     .maybeSingle();
   if (!tenant?.contact_email || tenant.first_order_email_sent_at) return;
@@ -26,6 +26,7 @@ export async function sendFirstOrderEmailIfNeeded(
 
   const mail = buildFirstOrderEmail({
     businessName: tenant.company_name,
+    businessType: tenant.business_type ?? null,
     contactName: tenant.contact_full_name ?? null,
     orderNumber: order.orderNumber,
     orderNo: order.orderNo,

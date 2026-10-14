@@ -6,7 +6,7 @@ import {
   Building2, Clock, ClipboardList, CreditCard, Globe, ImageIcon, LayoutTemplate,
   Megaphone, PackageX, PanelBottom, Palette, Receipt, ShieldCheck, Store, Ticket, Truck,
   UserCircle, PlugZap, type LucideIcon,
-  Lock,
+  Lock, Mail,
 } from "lucide-react";
 import {
   getMinimumPlanForFeature,
@@ -33,6 +33,7 @@ type Tab = {
 
 const TABS: Tab[] = [
   { href: "/settings", label: "Hesap ve Üyelik", icon: UserCircle, group: "Hesap" },
+  { href: "/settings/email", label: "E-posta Bildirimleri", icon: Mail, group: "Hesap" },
   { href: "/settings/domain", label: "Özel Alan Adı", icon: Globe, group: "Hesap", requiredFeature: "custom_domain" },
   { href: "/settings/theme", label: "Tema & Marka Renkleri", icon: Palette, group: "Marka & Görünüm" },
   { href: "/settings/identity", label: "Mağaza Kimliği", icon: Store, group: "Marka & Görünüm" },

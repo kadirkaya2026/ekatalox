@@ -131,6 +131,8 @@ export interface Tenant {
   billing_address?: TenantBillingAddress | null;
   signup_source?: TenantSignupSource | null;
   first_order_email_sent_at?: string | null;
+  /** Ücretli planda her siparişte e-posta (0173); varsayılan açık. */
+  order_email_enabled?: boolean | null;
   trial_reminder_sent_at?: string | null;
   /** Kurulum sihirbazı kapatıldı/bitirildi (0126). null = ilk girişte otomatik açılır. */
   onboarding_dismissed_at?: string | null;

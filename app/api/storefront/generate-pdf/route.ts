@@ -1,5 +1,5 @@
 import { NextResponse, after } from "next/server";
-import { sendFirstOrderEmailIfNeeded } from "@/lib/signup/first-order-email";
+import { sendOrderEmail } from "@/lib/orders/order-email";
 import { sendDealerOrderPush } from "@/lib/push/send-dealer-push";
 import { findActiveCouponForPhone } from "@/lib/coupons/data";
 import { cookies } from "next/headers";
@@ -400,6 +400,22 @@ export async function POST(request: Request) {
           },
         }).catch((err) => console.error("[dealer-push] hata:", err)),
       );
+      after(() =>
+        sendOrderEmail(supabase, tenant.id, {
+          orderNo: rec.orderNo,
+          orderNumber,
+          orderDate,
+          customerName: parsed.data.customer_reference_name,
+          customerPhone: parsed.data.customer_phone,
+          customerAddress: parsed.data.customer_address,
+          note: parsed.data.note,
+          paymentLabel: catalogPaymentMethodLabel,
+          currency: "CATALOG",
+          items,
+          totals: [],
+          finalTotal: 0,
+        }).catch((err) => console.error("[order-email] hata:", err)),
+      );
     }
 
     try {
@@ -608,16 +624,34 @@ export async function POST(request: Request) {
   }
   if (recorded) {
     const rec = recorded;
-    // İlk sipariş e-postası (kayıtta verilen iletişim adresine, bir kez)
+    // Sipariş e-postası: ücretli planda her siparişte, değilse ilk siparişte bir kez
+    // (kayıtta verilen / panelden değiştirilen contact_email'e; bkz. lib/orders/order-email.ts).
+    const s = paymentSummary;
+    const totals = [
+      { label: "Ara toplam", amount: s.subtotal },
+      ...(s.discountAmount > 0 ? [{ label: "Ödeme indirimi", amount: -s.discountAmount }] : []),
+      ...(s.campaignDiscountAmount > 0 ? [{ label: "Kampanya indirimi", amount: -s.campaignDiscountAmount }] : []),
+      ...(s.couponDiscountAmount > 0 ? [{ label: "Kupon indirimi", amount: -s.couponDiscountAmount }] : []),
+      ...(s.surchargeAmount > 0 ? [{ label: "Vade farkı", amount: s.surchargeAmount }] : []),
+      ...(s.deliveryFeeAmount > 0 ? [{ label: "Getirme ücreti", amount: s.deliveryFeeAmount }] : []),
+    ];
     after(() =>
-      sendFirstOrderEmailIfNeeded(supabase, tenant.id, {
-        orderNumber,
+      sendOrderEmail(supabase, tenant.id, {
         orderNo: rec.orderNo,
+        orderNumber,
+        orderDate,
         customerName: parsed.data.customer_reference_name,
-        itemCount: items.length,
-        totalAmount: paymentSummary.finalTotal,
-        currency: paymentSummary.currency,
-      }).catch((err) => console.error("[first-order-email] hata:", err)),
+        customerPhone: parsed.data.customer_phone,
+        customerAddress: parsed.data.customer_address,
+        note: parsed.data.note,
+        paymentLabel: paymentMethod
+          ? buildPaymentMethodLabel({ paymentMethod, selectedInstallment, zeroCommissionApplied: s.zeroCommissionApplied })
+          : null,
+        currency: s.currency,
+        items,
+        totals,
+        finalTotal: s.finalTotal,
+      }).catch((err) => console.error("[order-email] hata:", err)),
     );
   }
 

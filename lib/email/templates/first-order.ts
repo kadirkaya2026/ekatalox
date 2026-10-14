@@ -1,5 +1,6 @@
 // "İlk siparişiniz geldi" — tenant contact_email'e bir kez gönderilir.
 import { formatCurrency } from "@/lib/utils";
+import { orderActionsText } from "@/lib/email/templates/new-order";
 import {
   button,
   dataRow,
@@ -13,6 +14,7 @@ import {
 
 export interface FirstOrderEmailParams {
   businessName: string;
+  businessType?: string | null;
   contactName: string | null;
   orderNumber: string;
   orderNo: number | null;
@@ -32,7 +34,7 @@ export function buildFirstOrderEmail(params: FirstOrderEmailParams) {
   const bodyHtml = [
     heading("İlk siparişiniz geldi"),
     paragraph(
-      `${escapeHtml(greeting)} <strong>${escapeHtml(params.businessName)}</strong> mağazanıza ilk sipariş düştü. Sipariş WhatsApp'ınıza da PDF olarak iletildi; panelden "hazırlanıyor" ve "yola çıktı" bildirimlerini tek tuşla gönderebilirsiniz.`,
+      `${escapeHtml(greeting)} <strong>${escapeHtml(params.businessName)}</strong> mağazanıza ilk sipariş düştü. Sipariş WhatsApp'ınıza da PDF olarak iletildi. ${orderActionsText(params.businessType)}`,
     ),
     dataTable(
       [

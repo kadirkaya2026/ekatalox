@@ -161,7 +161,7 @@ Bir sorunuz mu var? Size bir mesaj kadar yakınız.<br>
 </td></tr>
 <tr><td bgcolor="${DARK}" style="background:${DARK};padding:24px 32px;font-family:${FONT_STACK};font-size:12px;line-height:1.8;color:#8D9AAD;">
 <a href="mailto:${SITE.supportEmail}" style="color:#D6DEE8;text-decoration:none;">${SITE.supportEmail}</a> &nbsp;·&nbsp; <a href="${SITE.phoneHref}" style="color:#D6DEE8;text-decoration:none;">${SITE.phone}</a><br>
-<a href="${SITE.url}" style="color:${NEON};text-decoration:none;font-weight:600;">${SITE.domain}</a> &nbsp;·&nbsp; Toptancılar için şifreli bayi kataloğu ve WhatsApp sipariş<br>
+<a href="${SITE.url}" style="color:${NEON};text-decoration:none;font-weight:600;">${SITE.domain}</a> &nbsp;·&nbsp; Yeni Nesil Dijital Katalog.<br>
 <span style="color:#5E6B7E;">© ${year} eKatalox</span>
 </td></tr>
 </table>
