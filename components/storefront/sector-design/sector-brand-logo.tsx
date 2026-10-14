@@ -28,13 +28,18 @@ export function SectorBrandLogo({
         <img
           src={logoUrl}
           alt=""
+          // Çok geniş logo (Autovale ~7:1) dar ekranda sabit yükseklikle başlık
+          // ikonlarının üstüne taşıyordu (14 Eki 2026): yükseklik üst sınır,
+          // genişlik kapsayıcıya göre küçülür.
           style={{
-            height: "clamp(38px, 5.5vw, 56px)",
+            height: "auto",
+            maxHeight: "clamp(38px, 5.5vw, 56px)",
             width: "auto",
-            maxWidth: "min(320px, 62vw)",
+            maxWidth: "min(100%, 320px, 62vw)",
+            minWidth: 0,
             objectFit: "contain",
             borderRadius: 6,
-            flexShrink: 0,
+            flexShrink: 1,
           }}
         />
         <span className="sr-only">{title}</span>
