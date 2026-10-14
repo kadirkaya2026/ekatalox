@@ -32,7 +32,8 @@ export function PlanTagCards() {
   const pro = TOPTAN_PLANS.find((p) => p.slug === "professional")!;
   return (
     <div className="grid gap-10 md:grid-cols-2 md:gap-8">
-      <div className="rotate-[-3deg] rounded-[28px] border border-brand-line bg-brand-paper p-2 shadow-[0_40px_80px_-40px_rgba(18,40,74,0.35)] transition-transform hover:rotate-0">
+      {/* Eğim yalnız geniş ekranda; telefonda kart kenarı kesilmesin. */}
+      <div className="rounded-[28px] border border-brand-line bg-brand-paper p-2 shadow-[0_40px_80px_-40px_rgba(18,40,74,0.35)] transition-transform md:rotate-[-3deg] md:hover:rotate-0">
         <div className="rounded-[22px] bg-[#E6EBF1] px-6 pb-4 pt-6 text-center">
           <span className="rounded-full bg-brand-dark px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-white">Başlamak için</span>
           <h3 className="mt-3 text-3xl font-extrabold tracking-tight text-brand-navy">Sonsuza kadar ücretsiz</h3>
@@ -44,14 +45,14 @@ export function PlanTagCards() {
               <p className="text-5xl font-extrabold tracking-tight text-brand-navy">0 ₺</p>
               <p className="text-sm text-brand-muted">Kataloğunuzda küçük eKatalox reklamı görünür</p>
             </div>
-            <Link href="/basvuru?plan=free" className="rounded-full bg-brand-dark px-5 py-3 text-sm font-semibold text-white hover:bg-brand-navy">
+            <Link href="/basvuru?plan=free" className="shrink-0 whitespace-nowrap rounded-full bg-brand-dark px-5 py-3 text-sm font-semibold text-white hover:bg-brand-navy">
               Ücretsiz başla
             </Link>
           </div>
         </div>
       </div>
 
-      <div className="rotate-[3deg] rounded-[28px] bg-brand-dark p-2 text-white shadow-[0_40px_80px_-40px_rgba(0,0,0,0.7)] transition-transform hover:rotate-0">
+      <div className="rounded-[28px] bg-brand-dark p-2 text-white shadow-[0_40px_80px_-40px_rgba(0,0,0,0.7)] transition-transform md:rotate-[3deg] md:hover:rotate-0">
         <div className="rounded-[22px] bg-white/5 px-6 pb-4 pt-6 text-center">
           <span className="rounded-full bg-brand-neon px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-brand-dark">En çok seçilen</span>
           <h3 className="mt-3 text-3xl font-extrabold tracking-tight">{pro.name}</h3>
@@ -65,7 +66,7 @@ export function PlanTagCards() {
               </p>
               <p className="text-sm text-white/60">KDV hariç · sipariş komisyonu yok</p>
             </div>
-            <Link href="/basvuru?plan=professional" className="rounded-full bg-brand-neon px-5 py-3 text-sm font-semibold text-brand-dark hover:bg-[#1ea952]">
+            <Link href="/basvuru?plan=professional" className="shrink-0 whitespace-nowrap rounded-full bg-brand-neon px-5 py-3 text-sm font-semibold text-brand-dark hover:bg-[#1ea952]">
               14 gün dene
             </Link>
           </div>
