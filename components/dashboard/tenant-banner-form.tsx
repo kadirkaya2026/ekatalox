@@ -337,7 +337,7 @@ export function TenantBannerForm({
             type="button"
             variant="secondary"
             onClick={addBanner}
-            disabled={bannerItems.length >= 6}
+            disabled={bannerItems.length >= 12}
           >
             <Plus className="size-4" />
             Banner ekle

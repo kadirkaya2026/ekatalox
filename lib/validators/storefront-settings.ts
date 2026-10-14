@@ -280,7 +280,7 @@ export const storefrontSettingsSchema = z
     homepage_blocks: homepageBlocksSchema,
     banner_items: z
       .array(bannerItemSchema)
-      .max(6, "En fazla 6 banner ekleyebilirsiniz.")
+      .max(12, "En fazla 12 banner ekleyebilirsiniz.")
       .default([]),
     hero_cluster_items: z
       .array(bannerItemSchema)
