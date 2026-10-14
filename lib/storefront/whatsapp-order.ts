@@ -1,3 +1,5 @@
+import { toWhatsAppDigits } from "@/lib/storefront/customer-phone";
+
 export interface WhatsAppOrderHandoff {
   href: string;
   message: string;
@@ -13,7 +15,7 @@ export function buildWhatsAppOrderHref(params: {
   const text = encodeURIComponent(params.message);
 
   if (params.directToRegisteredNumber) {
-    const digits = params.phone.replace(/\D/g, "");
+    const digits = toWhatsAppDigits(params.phone) ?? params.phone.replace(/\D/g, "");
     return `https://wa.me/${digits}?text=${text}`;
   }
 

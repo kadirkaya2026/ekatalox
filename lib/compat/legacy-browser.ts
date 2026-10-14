@@ -1,3 +1,5 @@
+import { toWhatsAppDigits } from "@/lib/storefront/customer-phone";
+
 // Eski iOS Safari kapısı.
 //
 // Next.js 16 kendi dokümanında (node_modules/next/dist/docs/03-architecture/
@@ -79,17 +81,8 @@ function escapeHtml(value: string): string {
   });
 }
 
-// wa.me ve tel: için sadece rakam. Numara başında 0 varsa Türkiye kodu
-// eklenir; zaten 90 ile başlıyorsa dokunulmaz.
-function normalizePhone(raw: string | null | undefined): string | null {
-  if (!raw) return null;
-  let digits = raw.replace(/\D/g, "");
-  if (!digits) return null;
-  if (digits.startsWith("00")) digits = digits.slice(2);
-  if (digits.length === 10 && digits.startsWith("5")) digits = `90${digits}`;
-  else if (digits.length === 11 && digits.startsWith("0")) digits = `90${digits.slice(1)}`;
-  return digits.length >= 10 ? digits : null;
-}
+// wa.me ve tel: için sadece rakam; TR numarasına 90 eklenir (ortak kural).
+const normalizePhone = toWhatsAppDigits;
 
 export function renderLegacyBrowserNotice({
   companyName,

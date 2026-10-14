@@ -1,3 +1,4 @@
+import { toWhatsAppDigits } from "@/lib/storefront/customer-phone";
 import type { TenantStorefrontSettings } from "@/lib/types";
 
 export type FooterSocialPlatform =
@@ -33,7 +34,7 @@ export function normalizeWhatsappHref(value: string | null | undefined): string 
       const url = new URL(trimmed);
 
       if (url.hostname.includes("wa.me") || url.hostname.includes("whatsapp.com")) {
-        const digits = normalizeDigits(url.pathname.replace(/^\/+/, ""));
+        const digits = toWhatsAppDigits(url.pathname.replace(/^\/+/, "")) ?? "";
 
         if (digits.length >= 10) {
           return `https://wa.me/${digits}`;
@@ -44,7 +45,7 @@ export function normalizeWhatsappHref(value: string | null | undefined): string 
     }
   }
 
-  const digits = normalizeDigits(trimmed);
+  const digits = toWhatsAppDigits(trimmed) ?? "";
 
   if (digits.length < 10) {
     return null;

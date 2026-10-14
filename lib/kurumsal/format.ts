@@ -1,6 +1,8 @@
 // Kurumsal site görünüm yardımcıları. İstemci ve sunucu tarafında ortak
 // (sihirbaz önizlemesi de aynı hesapları kullanır); veri çekmez.
 
+import { toWhatsAppDigits } from "@/lib/storefront/customer-phone";
+
 export function titleCaseTr(value: string) {
   return value
     .toLocaleLowerCase("tr-TR")
@@ -10,7 +12,7 @@ export function titleCaseTr(value: string) {
 }
 
 export function whatsappLink(number: string | null | undefined, text: string) {
-  const digits = (number ?? "").replace(/\D/g, "");
+  const digits = toWhatsAppDigits(number);
   if (!digits) return null;
   // wa.me yönlendirmesi 4 baytlık karakterleri bozabiliyor; doğrudan api adresi.
   return `https://api.whatsapp.com/send?phone=${digits}&text=${encodeURIComponent(text)}`;

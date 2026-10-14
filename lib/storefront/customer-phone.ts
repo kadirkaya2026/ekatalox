@@ -37,3 +37,17 @@ export function validateCustomerPhoneInput(phone: string): string | null {
 
   return null;
 }
+
+// wa.me / api.whatsapp.com için uluslararası biçim: TR numarası 0 ile
+// (05374297996) ya da ülke kodsuz (5374297996) yazılmışsa başına 90 eklenir.
+// wa.me başı 0'lı numarayı tanımıyor, sipariş WhatsApp'a ulaşmıyordu
+// (14 Eki 2026, Autovale/qoop). 90 ile başlayan ve yabancı numaraya dokunulmaz.
+export function toWhatsAppDigits(raw: string | null | undefined): string | null {
+  if (!raw) return null;
+  let digits = raw.replace(/\D/g, "");
+  if (!digits) return null;
+  if (digits.startsWith("00")) digits = digits.slice(2);
+  if (digits.length === 10 && digits.startsWith("5")) digits = `90${digits}`;
+  else if (digits.length === 11 && digits.startsWith("0")) digits = `90${digits.slice(1)}`;
+  return digits.length >= 10 ? digits : null;
+}
