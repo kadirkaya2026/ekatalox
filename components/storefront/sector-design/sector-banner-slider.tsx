@@ -22,6 +22,11 @@ export function SectorBannerSlider({ items }: { items: BannerItem[] }) {
   const [index, setIndex] = useState(0);
   const trackRef = useRef<HTMLDivElement>(null);
   const pausedUntil = useRef(0);
+  // Okla/noktayla/otomatik geçişte kaydırmayı kod başlatır; kaydırmanın ilk
+  // karelerinde şerit hâlâ eski banner'da olduğu için onScroll index'i geri
+  // çekiyordu (oklar çalışmıyordu, 14 Eki 2026). Kod kaydırırken onScroll susar.
+  const programmaticScroll = useRef(false);
+  const scrollEndTimer = useRef<number | null>(null);
 
   useEffect(() => {
     const query = window.matchMedia("(max-width: 700px)");
@@ -48,6 +53,8 @@ export function SectorBannerSlider({ items }: { items: BannerItem[] }) {
   useEffect(() => {
     const track = trackRef.current;
     if (!track) return;
+    if (Math.round(track.scrollLeft / (track.clientWidth || 1)) === index) return;
+    programmaticScroll.current = true;
     track.scrollTo({ left: track.clientWidth * index, behavior: "smooth" });
   }, [index]);
 
@@ -64,10 +71,13 @@ export function SectorBannerSlider({ items }: { items: BannerItem[] }) {
       <div
         ref={trackRef}
         className={styles.track}
-        onPointerDown={() => { pausedUntil.current = Date.now() + AUTOPLAY_MS * 2; }}
+        onPointerDown={() => { pausedUntil.current = Date.now() + AUTOPLAY_MS * 2; programmaticScroll.current = false; }}
         onScroll={(event) => {
           const el = event.currentTarget;
-          if (!el.clientWidth) return;
+          // Kaydırma durunca kod kaydırması bayrağı düşer.
+          if (scrollEndTimer.current !== null) window.clearTimeout(scrollEndTimer.current);
+          scrollEndTimer.current = window.setTimeout(() => { programmaticScroll.current = false; scrollEndTimer.current = null; }, 150);
+          if (programmaticScroll.current || !el.clientWidth) return;
           const next = Math.round(el.scrollLeft / el.clientWidth);
           if (next !== safeIndex && Date.now() < pausedUntil.current) setIndex(next);
         }}
