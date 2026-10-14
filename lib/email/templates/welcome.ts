@@ -5,18 +5,17 @@ import { PAID_PLAN_TRIAL_DAYS } from "@/lib/billing/plan-trial";
 import { formatTry } from "@/lib/billing/toptan-plans";
 import { SITE } from "@/lib/marketing/site";
 import {
-  bulletList,
   button,
   dataRow,
   dataTable,
   escapeHtml,
   formatDateTr,
-  heading,
   linkRow,
   noteBox,
   paragraph,
   renderEmailLayout,
   renderEmailText,
+  stepList,
   subheading,
 } from "@/lib/email/layout";
 
@@ -38,7 +37,6 @@ export function buildWelcomeEmail(params: WelcomeEmailParams) {
   const planLabel = paidRequested ? `${params.requestedPlanName} paketiyle` : "Ücretsiz planla";
 
   const bodyHtml = [
-    heading(`Kataloğunuz hazır, ${escapeHtml(params.fullName)}!`),
     paragraph(
       `<strong>${escapeHtml(params.businessName)}</strong> için online kataloğunuz ${escapeHtml(planLabel)} açıldı${paidRequested ? ` (${PAID_PLAN_TRIAL_DAYS} gün deneme)` : ""}. Bayileriniz aşağıdaki adresten şifreyle girip sipariş verebilir.`,
     ),
@@ -54,7 +52,7 @@ export function buildWelcomeEmail(params: WelcomeEmailParams) {
       `Panele kayıt sırasında belirlediğiniz şifreyle giriş yapın. Şifrenizi unutursanız giriş ekranındaki <strong>“Şifremi unuttum”</strong> bağlantısını kullanabilirsiniz.`,
     ),
     subheading("İlk üç adım"),
-    bulletList([
+    stepList([
       `<strong>Ürünlerinizi biz yükleyelim.</strong> PDF kataloğunuzu, web sitenizin adresini ya da Excel listenizi bu e-postaya yanıt olarak ya da <a href="${SITE.whatsappHref}?text=${encodeURIComponent(`Merhaba, kataloğumu açtım (${params.storeUrl}). Ürünlerimin yüklenmesini istiyorum.`)}" style="color:#157A5B;">WhatsApp'tan</a> gönderin; ürünleri, görselleri ve fiyat listelerini biz kuralım, ücretsiz planda da. Dilerseniz panelde Ürünler &gt; Excel ile yükle'den kendiniz de ekleyebilirsiniz.`,
       `<strong>Bayi şifrenizi belirleyin.</strong> Fiyat Listeleri sayfası. Şifreyi ve katalog adresini bayilerinize WhatsApp'tan gönderin.`,
       `<strong>Siparişleri WhatsApp'tan alın.</strong> Bayi sepetini doldurup gönderdiğinde sipariş fişi PDF olarak WhatsApp numaranıza düşer.`,
@@ -95,6 +93,11 @@ export function buildWelcomeEmail(params: WelcomeEmailParams) {
     html: renderEmailLayout({
       title: "Kataloğunuz hazır",
       preheader: `${params.storeUrl} adresinde kataloğunuz açıldı.`,
+      hero: {
+        eyebrow: "Hoş geldiniz",
+        title: `Kataloğunuz hazır, ${params.fullName}!`,
+        subtitle: `${params.businessName} artık online. Bayileriniz şifreyle girip sipariş verebilir.`,
+      },
       bodyHtml,
     }),
     text,

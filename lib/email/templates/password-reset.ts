@@ -2,7 +2,6 @@
 import {
   button,
   escapeHtml,
-  heading,
   noteBox,
   paragraph,
   renderEmailLayout,
@@ -15,7 +14,6 @@ export function buildPasswordResetEmail(params: { resetUrl: string; fullName?: s
   const greeting = params.fullName ? `Merhaba ${params.fullName},` : "Merhaba,";
 
   const bodyHtml = [
-    heading("Şifrenizi yenileyin"),
     paragraph(escapeHtml(greeting)),
     paragraph(
       "eKatalox hesabınız için şifre yenileme isteği aldık. Yeni şifrenizi belirlemek için aşağıdaki düğmeye tıklayın.",
@@ -41,7 +39,12 @@ export function buildPasswordResetEmail(params: { resetUrl: string; fullName?: s
 
   return {
     subject: "eKatalox şifre yenileme bağlantınız",
-    html: renderEmailLayout({ title: "Şifrenizi yenileyin", bodyHtml }),
+    html: renderEmailLayout({
+      title: "Şifrenizi yenileyin",
+      preheader: `Yeni şifre bağlantınız ${PASSWORD_RESET_TTL_MINUTES} dakika geçerli.`,
+      hero: { eyebrow: "Hesap güvenliği", title: "Şifrenizi yenileyin", subtitle: "Tek tıkla yeni şifrenizi belirleyin." },
+      bodyHtml,
+    }),
     text,
   };
 }
