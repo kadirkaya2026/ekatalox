@@ -41,7 +41,7 @@ export default function CustomersPage() {
         </Container>
       </section>
       <CustomerMarquee />
-      <ClosingCta title="Aynısını kendi ürünlerinizle kurun." lead="250 ürünle ücretsiz, kart istenmez, komisyon yok." index={2} />
+      <ClosingCta title="Aynısını kendi ürünlerinizle kurun." lead="Kart Yok, Komisyon Yok, Ücretsiz Başla." index={2} />
     </>
   );
 }

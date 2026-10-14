@@ -351,7 +351,7 @@ export default function HomePage() {
               <RotatingWord words={ROTATING} className="text-brand-green" />
             </h1>
             <p className="mx-auto mt-7 max-w-2xl text-lg leading-relaxed text-brand-muted sm:text-xl">
-              Bayiniz şifreyle girer, kendi fiyatını görür, sepetini WhatsApp&apos;tan sipariş fişi olarak gönderir. 250 ürünle ücretsiz, kart istenmez, komisyon yok.
+              Bayiniz şifreyle girer, kendi fiyatını görür, sepetini WhatsApp&apos;tan sipariş fişi olarak gönderir. Kart Yok, Komisyon Yok, Ücretsiz Başla.
             </p>
             <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
               <ButtonLink href="/basvuru" tone="navy" size="lg" className="bg-brand-dark px-9 hover:bg-brand-navy">

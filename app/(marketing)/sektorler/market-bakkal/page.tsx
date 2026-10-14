@@ -133,6 +133,6 @@ export default function MarketPage() {
       </Container>
     </section>
     <CustomerMarquee />
-    <ClosingCta title="Marketinizi bugün açın, ilk siparişi bu hafta alın." lead="250 ürünle ücretsiz, kart istenmez, komisyon yok." primaryHref="/basvuru?sektor=market-bakkal" primaryLabel="Marketinizi ücretsiz açın" index={0} />
+    <ClosingCta title="Marketinizi bugün açın, ilk siparişi bu hafta alın." lead="Kart Yok, Komisyon Yok, Ücretsiz Başla." primaryHref="/basvuru?sektor=market-bakkal" primaryLabel="Marketinizi ücretsiz açın" index={0} />
   </>;
 }
