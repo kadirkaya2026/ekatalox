@@ -25,7 +25,13 @@ export function SectorBannerSlider({ items }: { items: BannerItem[] }) {
     return () => query.removeEventListener("change", update);
   }, []);
 
-  const banners = items.filter((item) => item.image_url && (!isMobile || item.is_visible_on_mobile !== false));
+  // Görselsiz banner da gösterilir (başlık/açıklama + kendi rengi): müşteri yazıyla
+  // banner ekleyip vitrinde göremeyince anlamıyordu (14 Eki 2026, Autovale).
+  const banners = items.filter(
+    (item) =>
+      (item.image_url || item.title?.trim() || item.description?.trim()) &&
+      (!isMobile || item.is_visible_on_mobile !== false),
+  );
   const count = banners.length;
 
   useEffect(() => {
@@ -66,7 +72,15 @@ export function SectorBannerSlider({ items }: { items: BannerItem[] }) {
       >
         {banners.map((banner, i) => {
           const href = banner.cta_href?.trim() || null;
-          const image = <StorefrontImage src={banner.image_url!} alt={banner.title ?? `Banner ${i + 1}`} sizes="(max-width: 700px) 100vw, 1296px" className={styles.image} priority={i === 0} />;
+          const image = banner.image_url ? (
+            <StorefrontImage src={banner.image_url} alt={banner.title ?? `Banner ${i + 1}`} sizes="(max-width: 700px) 100vw, 1296px" className={styles.image} priority={i === 0} />
+          ) : (
+            <div className={styles.textBanner} style={{ background: banner.background_color || undefined }}>
+              {banner.title?.trim() && <strong>{banner.title}</strong>}
+              {banner.description?.trim() && <p>{banner.description}</p>}
+              {href && banner.cta_label?.trim() && <span className={styles.cta}>{banner.cta_label}</span>}
+            </div>
+          );
           return (
             <div key={banner.id} className={styles.slide} aria-hidden={i !== safeIndex}>
               {href ? <a href={href} className={styles.link}>{image}</a> : image}
