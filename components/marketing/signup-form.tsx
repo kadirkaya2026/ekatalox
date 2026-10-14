@@ -735,6 +735,22 @@ function SuccessScreen({ data, email }: { data: Success; email: string }) {
         <LinkRow label="Katalog adresi" href={data.storeUrl} />
         <LinkRow label="Yönetim paneli" href={data.panelUrl} />
       </dl>
+      {/* Kayıt sonrası boşluk (CEO notu, 14 Eki 2026): boş katalogla kalmasın,
+          listesini hemen göndersin; biz yükleriz, ücretsiz planda da. */}
+      <div className="mt-6 rounded-2xl border border-brand-green/30 bg-brand-green-soft/60 p-5">
+        <p className="text-base font-bold text-brand-navy">Ürünlerinizi biz yükleyelim mi?</p>
+        <p className="mt-1 text-sm leading-relaxed text-brand-muted">
+          PDF kataloğunuzu, web sitenizin adresini ya da Excel listenizi gönderin; ürünleri, görselleri ve fiyat listelerini biz kuralım. Ücretsiz planda da geçerli, çoğu katalog 1-3 iş gününde hazır.
+        </p>
+        <a
+          href={`${SITE.whatsappHref}?text=${encodeURIComponent(`Merhaba, kataloğumu açtım (${data.storeUrl}). Ürünlerimin yüklenmesini istiyorum.`)}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-4 inline-flex items-center justify-center gap-2 rounded-full bg-brand-dark px-6 py-3 text-sm font-semibold text-white hover:bg-brand-navy"
+        >
+          Dosyanızı WhatsApp&apos;tan gönderin
+        </a>
+      </div>
       {paidRequested && requested ? (
         <div className="mt-6 rounded-md border border-brand-line bg-brand-paper px-4 py-3 text-sm leading-relaxed">
           <strong className="text-brand-navy">{requested.name} paketinde {PAID_PLAN_TRIAL_DAYS} günlük denemeniz başladı.</strong> Ödeme yapılmazsa deneme sonunda Ücretsiz plana geçersiniz. Devam etmek için temsilcimizle görüşebilirsiniz.
@@ -742,7 +758,7 @@ function SuccessScreen({ data, email }: { data: Success; email: string }) {
       ) : null}
       <h3 className="mt-8 text-lg font-bold text-brand-navy">Sırada ne var</h3>
       <ol className="mt-3 list-decimal space-y-2 pl-5 text-base leading-relaxed">
-        <li>Panele girin, Ürünler bölümünden ilk ürününüzü ekleyin veya Excel ile toplu yükleyin. Aktarım desteği için bize ulaşabilirsiniz.</li>
+        <li>Listenizi WhatsApp&apos;tan gönderin, ürünleri biz yükleyelim; ya da panele girip Ürünler bölümünden kendiniz ekleyin / Excel ile toplu yükleyin.</li>
         <li>Fiyat Listeleri sayfasından bayi şifrenizi belirleyin; adresi ve şifreyi bayilerinize WhatsApp&apos;tan gönderin.</li>
         <li>Kataloğu bayi gibi açıp ürün ve fiyatları kontrol edin. Bayiniz sipariş verdiğinde PDF fişinin bağlantısını WhatsApp üzerinden size gönderir; sipariş panelde de görünür.</li>
       </ol>

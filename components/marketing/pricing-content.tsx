@@ -113,6 +113,20 @@ export function PricingContent({ initialAudience }: { initialAudience: PlanAudie
             title="En iyi toptancı araçları, en düşük fiyatla."
             lead="İlk kataloğunuz için süresiz ücretsiz plan; daha fazla ürün, rapor ve müşteri yönetimi için ücretli paketler. Ücretli paketleri 14 gün deneyin. Yıllık fiyatlar KDV hariçtir; sipariş komisyonu yoktur."
           />
+          {/* Karar kolaylaştırıcı (CEO notu, 14 Eki 2026): üç satırda hangi paket. */}
+          <div className="mx-auto mt-10 grid max-w-4xl gap-3 sm:grid-cols-3">
+            {[
+              { who: "20'den az bayiniz varsa", plan: "Başlangıç", why: "reklamsız katalog + raporlar", bg: "linear-gradient(135deg,#DDF6E7,#8FD9AF)" },
+              { who: "Bayilere kampanya bildirimi istiyorsanız", plan: "Profesyonel", why: "15 fiyat listesi + anlık bildirim", bg: "linear-gradient(135deg,#EAE4FF,#B9A6FF)" },
+              { who: "BizimHesap ya da kendi alan adınız varsa", plan: "Kurumsal", why: "satış fişi aktarımı + kurumsal site", bg: "linear-gradient(135deg,#DCEBFF,#8FBDFF)" },
+            ].map((g) => (
+              <div key={g.plan} className="rounded-[20px] p-5" style={{ backgroundImage: g.bg }}>
+                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-brand-navy/60">{g.who}</p>
+                <p className="mt-2 text-2xl font-extrabold tracking-[-0.02em] text-brand-navy">{g.plan}</p>
+                <p className="mt-1 text-sm text-brand-navy/70">{g.why}</p>
+              </div>
+            ))}
+          </div>
           <div className="mt-12">
             <PlanAudienceSelector value={audience} onChange={setAudience} />
             <PlanCards audience={audience} />

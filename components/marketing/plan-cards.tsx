@@ -72,7 +72,7 @@ export function PlanCards({ compact = false, dark = false, audience }: { compact
               <span className={cn("text-sm", dark ? "text-white/50" : "text-brand-muted")}>{isFree ? "süresiz" : "/ yıl"}</span>
             </div>
             <p className={cn("mt-1 text-xs", dark ? "text-white/45" : "text-brand-muted")}>
-              {isFree ? "Kart bilgisi gerekmez · eKatalox reklamlı" : "Yıllık peşin ödeme · KDV hariç · reklamsız"}
+              {isFree ? "Kart bilgisi gerekmez · eKatalox reklamlı" : `Ayda yaklaşık ${formatTry(Math.round(plan.yearlyPrice / 12))} · yıllık peşin · KDV hariç · reklamsız`}
             </p>
             <CheckList items={(compact ? copy.features.slice(0, 4) : copy.features).filter((feature) => !/^Aylık .* ziyaretçi$/.test(feature))} className="mt-5 text-sm" dark={dark} />
             <p className={cn("mt-3 text-xs", dark ? "text-white/70" : "text-brand-muted")}>

@@ -1,5 +1,6 @@
 import { marketingMetadata } from "@/lib/marketing/metadata";
 
+import Image from "next/image";
 import Link from "next/link";
 import {
   ArrowRight,
@@ -266,7 +267,8 @@ const structuredData = {
 
 
 // ---- TASLAK (14 Eki 2026): Beacons tarzı ana sayfa; worktree taslak/anasayfa-beacons ----
-const ROTATING = ["bayinizin cebinde.", "WhatsApp'ta.", "her zaman güncel.", "şifreyle korunur.", "tek linkte."];
+// İlk kelime her zaman asıl vaat: sesli mesaj yerine düzenli sipariş fişi (CEO notu, 14 Eki 2026).
+const ROTATING = ["sipariş fişi olarak gelir.", "WhatsApp'ta.", "şifreyle korunur.", "her zaman güncel.", "bayinizin cebinde."];
 
 const PILLARS = [
   {
@@ -479,16 +481,18 @@ export default function HomePage() {
               {
                 quote: "Bayilerimiz artık fiyat listesi istemiyor; şifreyle giriyor, kendi fiyatını görüyor, siparişi fiş olarak gönderiyor. Onayladığımız sipariş doğrudan BizimHesap'a düşüyor, ikinci kez yazmıyoruz.",
                 name: "Şerafettin",
-                company: "Lucatech · ses ve şarj aksesuarı markası",
+                company: "Lucatech · Teknoloji Firması",
                 initials: "Ş",
+                logo: "/gate/lucatech/logo-mark.png",
                 from: "#DDF6E7",
                 to: "#8FD9AF",
               },
               {
                 quote: "Bayimiz ürünü seçiyor, paket mi koli mi belirliyor, tutar kendiliğinden hesaplanıyor. Sipariş WhatsApp'a fiş olarak geliyor, 'şundan kaç tane' diye sormuyoruz.",
                 name: "Harun",
-                company: "Genax · şarj aksesuarı toptancısı",
+                company: "Genax · Cep Telefon Aksesuarları Üreticisi",
                 initials: "H",
+                logo: "/gate/genax/logo-mark.png",
                 from: "#EAE4FF",
                 to: "#B9A6FF",
               },
@@ -496,7 +500,9 @@ export default function HomePage() {
               <figure key={t.name} className="flex flex-col rounded-[32px] px-8 py-10 sm:px-10" style={{ backgroundImage: `linear-gradient(135deg, ${t.from} 0%, ${t.to} 100%)` }}>
                 <blockquote className="flex-1 text-balance text-xl font-medium leading-snug text-brand-navy sm:text-2xl">“{t.quote}”</blockquote>
                 <figcaption className="mt-8 flex items-center gap-3">
-                  <span className="flex size-12 items-center justify-center rounded-full bg-brand-dark text-base font-bold text-white">{t.initials}</span>
+                  <span className="flex size-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-white p-2 shadow-sm" title={t.name}>
+                    <Image src={t.logo} alt={`${t.company.split(" · ")[0]} logosu`} width={48} height={48} className="h-10 w-auto object-contain" />
+                  </span>
                   <span className="text-left">
                     <span className="block font-semibold text-brand-navy">{t.name}</span>
                     <span className="block text-sm text-brand-navy/70">{t.company}</span>
@@ -509,7 +515,7 @@ export default function HomePage() {
           <div className="mx-auto mt-6 max-w-5xl">
             <ResultCards
               items={[
-                { company: "Lucatech", stat: "274", statLabel: "varyantlı ürün tek katalogda", body: "163 ürün, 43'ü renk ve model seçenekli. Bayiler şifreyle girip kendi listesini görüyor; onaylanan sipariş BizimHesap'a satış fişi olarak düşüyor, ikinci kez yazılmıyor.", href: "/ozellikler/bizimhesap-entegrasyonu", index: 1 },
+                { company: "Lucatech", stat: "274", statLabel: "varyantlı ürün tek katalogda", body: "163 ürün, 43'ü renk ve model seçenekli. Bayiler şifreyle girip kendi listesini görüyor; onaylanan sipariş BizimHesap'a satış fişi olarak düşüyor, ikinci kez yazılmıyor.", href: "/musteriler/lucatech", index: 1 },
                 { company: "Genax", stat: "1 koli = 200", statLabel: "adet, paket ve koli ile sipariş", body: "69 ürün; bayi adet, paket (20) ya da koli (200) seçiyor, tutar kendiliğinden hesaplanıyor. Bayiler kataloğu ana ekrana ekleyip kampanya bildirimi alıyor.", href: "/ozellikler/whatsapp-siparis", index: 3 },
               ]}
             />
