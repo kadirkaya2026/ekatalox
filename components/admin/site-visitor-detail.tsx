@@ -2,7 +2,7 @@ import Link from "next/link";
 import { ArrowLeft, MousePointerClick, Eye, LogOut } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import { formatDateTime, formatDuration } from "@/components/admin/site-analytics-panel";
+import { formatDateTime, formatDuration } from "@/lib/site-analytics/format";
 import type { SiteSessionDetail, SiteVisitorDetail } from "@/lib/site-analytics/types";
 
 function formatTime(value: string) {

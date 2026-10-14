@@ -23,6 +23,7 @@ import { Select } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { FUNNEL_EVENTS, FUNNEL_LABELS } from "@/lib/site-analytics/funnel";
 import { CHANNEL_INFO, classifySiteSource, groupByChannel, prettySourceName } from "@/lib/site-analytics/channels";
+import { formatDateTime, formatDuration } from "@/lib/site-analytics/format";
 import { formatBucketLabel, getIstanbulToday, shiftIsoDate } from "@/lib/dates/istanbul";
 import { SALES_PRESET_LABELS, resolvePreset, type SalesPreset } from "@/lib/sales/presets";
 import type {
@@ -54,24 +55,6 @@ function resolveRange(preset: PresetKey) {
   if (preset === "last_7") return { from: shiftIsoDate(today, -6), to: today };
   const r = resolvePreset(preset, today);
   return { from: r.from, to: r.to };
-}
-
-export function formatDuration(ms: number) {
-  const s = Math.round(ms / 1000);
-  if (s < 60) return `${s} sn`;
-  const m = Math.floor(s / 60);
-  const rest = s % 60;
-  if (m < 60) return rest ? `${m} dk ${rest} sn` : `${m} dk`;
-  const h = Math.floor(m / 60);
-  return `${h} sa ${m % 60} dk`;
-}
-
-export function formatDateTime(value: string) {
-  return new Intl.DateTimeFormat("tr-TR", {
-    dateStyle: "short",
-    timeStyle: "short",
-    timeZone: "Europe/Istanbul",
-  }).format(new Date(value));
 }
 
 function formatDay(iso: string) {
