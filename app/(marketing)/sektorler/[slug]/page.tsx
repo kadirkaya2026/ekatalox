@@ -42,12 +42,12 @@ export default async function SectorPage({ params }: Props) {
     <PageHero
       breadcrumb={<Breadcrumb items={[{ href: "/sektorler", label: "Sektörler" }, { label: sector.shortName }]} />}
       eyebrow={sector.name}
-      title={sector.title}
+      title={<><span className="mb-4 block text-base font-medium leading-normal tracking-normal text-brand-muted sm:text-lg">{sector.seoTitle}</span>{sector.title}</>}
       lead={sector.problem}
       actions={<><ButtonLink href={`/basvuru?sektor=${sector.registration}`} tone="navy" size="lg" className="px-9">Kataloğunu oluştur</ButtonLink><ButtonLink href="/fiyatlandirma?gorunum=toptanci" tone="outline" size="lg">Paketleri karşılaştır</ButtonLink></>}
       className="pb-6 sm:pb-8"
     >
-      <p className="mt-6 text-center text-sm text-brand-muted">{sector.seoTitle} · Ortak paket fiyatları</p>
+      <p className="mt-6 text-center text-sm text-brand-muted">Ortak paket fiyatları · işletmenize uygun kullanım örnekleri</p>
     </PageHero>
 
     <section className="bg-white pb-16 sm:pb-20">

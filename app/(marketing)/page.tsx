@@ -339,8 +339,13 @@ export default function HomePage() {
       <section className="bg-white pb-10 pt-14 sm:pt-24">
         <Container>
           <div className="mx-auto max-w-4xl text-center">
-            <p className="text-sm font-semibold uppercase tracking-[0.16em] text-brand-green">Toptancılar için WhatsApp sipariş ve bayi kataloğu</p>
-            <h1 className="mt-5 text-balance text-[2.9rem] font-extrabold leading-[0.98] tracking-[-0.035em] text-brand-navy sm:text-7xl lg:text-[6rem]">
+            {/* Anahtar kelimeli satır H1'in İÇİNDE kalır (SEO, canlıdaki gibi): arama
+                motorları sayfayı "toptancılar için WhatsApp sipariş ve bayi kataloğu
+                programı" olarak eşleştirsin; görünüm küçük yeşil üst satır. */}
+            <h1 className="text-balance text-[2.9rem] font-extrabold leading-[0.98] tracking-[-0.035em] text-brand-navy sm:text-7xl lg:text-[6rem]">
+              <span className="mb-5 block text-sm font-semibold uppercase leading-normal tracking-[0.16em] text-brand-green">
+                Toptancılar için WhatsApp sipariş ve bayi kataloğu programı
+              </span>
               Kataloğunuz
               <br />
               <RotatingWord words={ROTATING} className="text-brand-green" />
@@ -389,6 +394,11 @@ export default function HomePage() {
               </div>
             ))}
           </div>
+          <p className="mt-14 text-center">
+            <Link href="/ozellikler" className="inline-flex items-center gap-1.5 rounded-full border border-brand-line bg-white px-6 py-3 text-sm font-semibold text-brand-navy hover:border-brand-navy">
+              Tüm özellikleri inceleyin <ArrowRight className="size-4" aria-hidden />
+            </Link>
+          </p>
         </Container>
       </section>
 
