@@ -7,6 +7,7 @@ import {
   Montserrat,
   Playfair_Display,
   Plus_Jakarta_Sans,
+  Poppins,
   Source_Sans_3,
 } from "next/font/google";
 import { SiteAnalyticsTracker } from "@/components/site-analytics/site-analytics-tracker";
@@ -60,8 +61,17 @@ const plexMono = IBM_Plex_Mono({
   weight: ["500"],
 });
 
+// Pazarlama sitesi taslağı (14 Eki 2026, Beacons tarzı): başlık ve gövde
+// Poppins. Yalnız (marketing) kabuğu kullanır; panel/vitrin etkilenmez.
+const poppins = Poppins({
+  variable: "--font-poppins",
+  subsets: ["latin", "latin-ext"],
+  weight: ["400", "500", "600", "700", "800"],
+});
+
 const fontVariables = [
   inter.variable,
+  poppins.variable,
   plexSans.variable,
   plexMono.variable,
   dmSans.variable,

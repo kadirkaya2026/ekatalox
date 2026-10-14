@@ -41,6 +41,7 @@
   --color-brand-neon-soft: rgba(34, 197, 94, 0.14);
   --font-plex: var(--font-plex-sans);
   --font-plex-mono: var(--font-plex-mono);
+  --font-poppins: var(--font-poppins);
 }
 
 .dark {

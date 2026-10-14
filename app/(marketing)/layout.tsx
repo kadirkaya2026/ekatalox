@@ -40,7 +40,7 @@ export const metadata: Metadata = {
 
 export default function MarketingLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="font-plex min-h-screen bg-brand-paper text-brand-ink antialiased">
+    <div className="font-poppins min-h-screen bg-brand-paper text-brand-ink antialiased">
       <SiteHeader />
       <main>{children}</main>
       <SiteFooter />
