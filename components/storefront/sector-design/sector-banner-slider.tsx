@@ -84,7 +84,7 @@ export function SectorBannerSlider({ items }: { items: BannerItem[] }) {
             </div>
           );
           return (
-            <div key={banner.id} className={styles.slide} aria-hidden={i !== safeIndex}>
+            <div key={banner.id} className={banner.image_url ? styles.slide : `${styles.slide} ${styles.slideText}`} aria-hidden={i !== safeIndex}>
               {href ? <a href={href} className={styles.link}>{image}</a> : image}
             </div>
           );

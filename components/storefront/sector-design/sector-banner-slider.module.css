@@ -17,4 +17,4 @@
 .dots{display:flex;justify-content:center;gap:8px;margin-top:12px}
 .dots button{width:9px;height:9px;border-radius:9px;background:var(--line,#555);transition:width .2s}
 .dots button[aria-current=true]{width:28px;background:var(--accent,#ffc400)}
-@media(max-width:700px){.slider{padding:0 16px;margin-top:10px}.slide{aspect-ratio:5/2}.arrow{display:none}.textBanner{gap:6px;padding:0 20px}.cta{padding:7px 14px;font-size:13px}}
+@media(max-width:700px){.slider{padding:0 16px;margin-top:10px}.slideText{aspect-ratio:5/2}.arrow{display:none}.textBanner{gap:6px;padding:0 20px}.cta{padding:7px 14px;font-size:13px}}
