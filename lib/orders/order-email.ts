@@ -59,11 +59,10 @@ export async function sendOrderEmail(supabase: SupabaseClient, tenantId: string,
     .maybeSingle();
   if (!tenant) return;
 
-  const enabled = tenant.order_email_enabled !== false;
-  if (!enabled) return;
-
-  if (!tenant.contact_email || !canReceiveOrderEmails(tenant.plan as TenantPlan)) {
-    // Ücretsiz plan (ya da adres yok): eski "ilk sipariş" e-postası, bir kez.
+  // Her sipariş e-postası yalnız ücretli planda ve toptancı açtıysa (varsayılan kapalı, 0174).
+  const enabled = tenant.order_email_enabled === true;
+  if (!enabled || !tenant.contact_email || !canReceiveOrderEmails(tenant.plan as TenantPlan)) {
+    // Diğer durumlar: eski "ilk sipariş" e-postası, bir kez.
     await sendFirstOrderEmailIfNeeded(supabase, tenantId, {
       orderNumber: order.orderNumber,
       orderNo: order.orderNo,

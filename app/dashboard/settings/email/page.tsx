@@ -30,7 +30,7 @@ export default async function TenantEmailSettingsPage() {
       />
       <TenantEmailSettingsForm
         initialEmail={data?.contact_email ?? ""}
-        initialOrderEmailEnabled={data?.order_email_enabled !== false}
+        initialOrderEmailEnabled={data?.order_email_enabled === true}
         paidPlan={canReceiveOrderEmails(plan)}
         planName={getPlanLabel(plan)}
         loginEmail={loginEmail}
