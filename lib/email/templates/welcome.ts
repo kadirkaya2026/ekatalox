@@ -55,7 +55,7 @@ export function buildWelcomeEmail(params: WelcomeEmailParams) {
     ),
     subheading("İlk üç adım"),
     bulletList([
-      `<strong>Ürünlerinizi yükleyin.</strong> Panelde Ürünler &gt; Excel ile yükle. Mevcut PDF ya da Excel kataloğunuzu bu e-postaya yanıt olarak gönderirseniz ilk yüklemeyi biz yaparız.`,
+      `<strong>Ürünlerinizi biz yükleyelim.</strong> PDF kataloğunuzu, web sitenizin adresini ya da Excel listenizi bu e-postaya yanıt olarak ya da <a href="${SITE.whatsappHref}?text=${encodeURIComponent(`Merhaba, kataloğumu açtım (${params.storeUrl}). Ürünlerimin yüklenmesini istiyorum.`)}" style="color:#157A5B;">WhatsApp'tan</a> gönderin; ürünleri, görselleri ve fiyat listelerini biz kuralım, ücretsiz planda da. Dilerseniz panelde Ürünler &gt; Excel ile yükle'den kendiniz de ekleyebilirsiniz.`,
       `<strong>Bayi şifrenizi belirleyin.</strong> Fiyat Listeleri sayfası. Şifreyi ve katalog adresini bayilerinize WhatsApp'tan gönderin.`,
       `<strong>Siparişleri WhatsApp'tan alın.</strong> Bayi sepetini doldurup gönderdiğinde sipariş fişi PDF olarak WhatsApp numaranıza düşer.`,
     ]),
