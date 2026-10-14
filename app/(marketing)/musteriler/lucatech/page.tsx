@@ -81,7 +81,7 @@ export default function LucatechStoryPage() {
               “Bayilerimiz artık fiyat listesi istemiyor; şifreyle giriyor, kendi fiyatını görüyor, siparişi fiş olarak gönderiyor. Onayladığımız sipariş doğrudan BizimHesap&apos;a düşüyor, ikinci kez yazmıyoruz.”
             </blockquote>
             <figcaption className="mt-6 flex items-center gap-3">
-              <span className="flex size-14 items-center justify-center overflow-hidden rounded-2xl bg-white p-2 shadow-sm"><Image src="/gate/lucatech/logo-mark.png" alt="Lucatech logosu" width={48} height={48} className="h-10 w-auto object-contain" /></span>
+              <span className="flex size-14 items-center justify-center overflow-hidden rounded-2xl bg-brand-dark p-2 shadow-sm"><Image src="/gate/lucatech/logo-mark.png" alt="Lucatech logosu" width={48} height={48} className="h-10 w-auto object-contain" /></span>
               <span><span className="block font-semibold text-brand-navy">Şerafettin</span><span className="block text-sm text-brand-navy/70">Lucatech · Teknoloji Firması</span></span>
             </figcaption>
           </TintBox>

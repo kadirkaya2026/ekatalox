@@ -500,7 +500,7 @@ export default function HomePage() {
               <figure key={t.name} className="flex flex-col rounded-[32px] px-8 py-10 sm:px-10" style={{ backgroundImage: `linear-gradient(135deg, ${t.from} 0%, ${t.to} 100%)` }}>
                 <blockquote className="flex-1 text-balance text-xl font-medium leading-snug text-brand-navy sm:text-2xl">“{t.quote}”</blockquote>
                 <figcaption className="mt-8 flex items-center gap-3">
-                  <span className="flex size-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-white p-2 shadow-sm" title={t.name}>
+                  <span className={`flex size-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl p-2 shadow-sm ${t.logo.includes("lucatech") ? "bg-brand-dark" : "bg-white"}`} title={t.name}>
                     <Image src={t.logo} alt={`${t.company.split(" · ")[0]} logosu`} width={48} height={48} className="h-10 w-auto object-contain" />
                   </span>
                   <span className="text-left">
