@@ -14,7 +14,7 @@ import { StorefrontLogoutButton } from "@/components/storefront/storefront-logou
 import styles from "./electronics.module.css";
 import { SectorBrandLogo } from "@/components/storefront/sector-design/sector-brand-logo";
 import { setAkimDayMode, useAkimDayMode } from "@/lib/storefront/akim-mode";
-import { SectorBannerSlider } from "@/components/storefront/sector-design/sector-banner-slider";
+import { SectorBannerSlider, hasBannerContent } from "@/components/storefront/sector-design/sector-banner-slider";
 
 // Mobil ve tablette (≤1023px) ürünleri tek sütun listeleyen mağazalar (9 Eki 2026, Autovale isteği).
 // Bilgisayar düzeni aynı kalır; kural electronics.module.css'te.
@@ -74,6 +74,8 @@ export function ElectronicsStorefront(p: SectorStorefrontProps) {
   const featuredId = (c as AkimContent).featureProductId;
   const featured = featuredId ? p.initialProducts.find(x => x.id === featuredId) : heroProduct;
   const showLanding = !p.detailOpen && p.selectedCategory === "all" && !p.search.trim();
+  // Akım: banner eklenmişse büyük tanıtım alanı gizlenir, banner onun yerini alır (14 Eki 2026, Autovale).
+  const akimHasBanner = (p.settings.banner_items ?? []).some(hasBannerContent);
   const primaryCategories = p.categories.filter(x => !x.parent_id);
   const categoryName = p.categories.find(x => x.id === p.selectedCategory)?.name ?? c.catalogTitle;
   const rootStyle = { "--merchant-accent": p.settings.brand_primary_color || undefined } as CSSProperties;
@@ -117,7 +119,7 @@ export function ElectronicsStorefront(p: SectorStorefrontProps) {
     {p.detailOpen ? null : <>
       {variant === "forma" && showLanding && c.heroVisible && <section data-theme-area="heroVisible" className={styles.formaHero}>{heroCopy}{photo}<span className={styles.heroSideNote}>{p.title} / {labels.discover}</span></section>}
       {variant === "akim" && showLanding && <SectorBannerSlider items={p.settings.banner_items ?? []} />}
-      {variant === "akim" && showLanding && c.heroVisible && <section data-theme-area="heroVisible" className={styles.akimHero}><div className={styles.akimWord} aria-hidden="true">{p.title.toLocaleUpperCase("tr")}</div>{heroCopy}{photo}<div className={styles.akimCaption}>{heroProduct?.product_name}<ArrowUpRight size={25} /></div></section>}
+      {variant === "akim" && showLanding && c.heroVisible && !akimHasBanner && <section data-theme-area="heroVisible" className={styles.akimHero}><div className={styles.akimWord} aria-hidden="true">{p.title.toLocaleUpperCase("tr")}</div>{heroCopy}{photo}<div className={styles.akimCaption}>{heroProduct?.product_name}<ArrowUpRight size={25} /></div></section>}
       {variant === "modul" && <div className={styles.modulLanding}>
         <aside className={styles.sidebar}><h2><Grid2X2 size={19} />{labels.categories}</h2>{nav}</aside>
         {showLanding && c.heroVisible ? <section data-theme-area="heroVisible" className={styles.modulHero}>{heroCopy}{photo}</section> : <div className={styles.modulIntro}><h1>{categoryName}</h1><p>{wholesale ? labels.wholesale : labels.retail}</p></div>}

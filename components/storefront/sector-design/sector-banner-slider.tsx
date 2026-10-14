@@ -11,6 +11,12 @@ import styles from "./sector-banner-slider.module.css";
 // veri): 3:1 görsel, 5 sn'de bir geçiş, parmakla kaydırma, noktalar ve oklar.
 const AUTOPLAY_MS = 5000;
 
+// Görselsiz banner da gösterilir (başlık/açıklama + kendi rengi): müşteri yazıyla
+// banner ekleyip vitrinde göremeyince anlamıyordu (14 Eki 2026, Autovale).
+export function hasBannerContent(item: BannerItem) {
+  return Boolean(item.image_url || item.title?.trim() || item.description?.trim());
+}
+
 export function SectorBannerSlider({ items }: { items: BannerItem[] }) {
   const [isMobile, setIsMobile] = useState(false);
   const [index, setIndex] = useState(0);
@@ -25,12 +31,8 @@ export function SectorBannerSlider({ items }: { items: BannerItem[] }) {
     return () => query.removeEventListener("change", update);
   }, []);
 
-  // Görselsiz banner da gösterilir (başlık/açıklama + kendi rengi): müşteri yazıyla
-  // banner ekleyip vitrinde göremeyince anlamıyordu (14 Eki 2026, Autovale).
   const banners = items.filter(
-    (item) =>
-      (item.image_url || item.title?.trim() || item.description?.trim()) &&
-      (!isMobile || item.is_visible_on_mobile !== false),
+    (item) => hasBannerContent(item) && (!isMobile || item.is_visible_on_mobile !== false),
   );
   const count = banners.length;
 
