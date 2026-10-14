@@ -301,8 +301,8 @@ export const MARKETING_FEATURES: MarketingFeature[] = [
     "lead": "Elinizde ne varsa onu gönderin: PDF katalog, web sitenizin adresi ya da Excel listesi. Ürünleri, görselleri, kategorileri, fiyat listelerini ve kataloğun görünümünü biz hazırlarız. Ücretsiz pakette de geçerlidir.",
     "plan": "Tüm paketlerde · ücretsiz planda da",
     "cta": {
-      "href": "https://wa.me/905354172510?text=Merhaba%2C%20katalo%C4%9Fumu%20kurmak%20istiyorum.%20Listemi%20g%C3%B6nderiyorum.",
-      "label": "Listemi WhatsApp'tan göndereyim"
+      "href": "https://wa.me/905354172510?text=Merhaba%2C%20%C3%9Cr%C3%BCnlerimin%20Y%C3%BCklenmesini%20istiyorum.",
+      "label": "Dosyanızı WhatsApp'tan gönderin"
     },
     "sections": [
       {

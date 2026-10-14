@@ -3,7 +3,11 @@
 // bağlantı haritası. Sunucu bileşenleri; sayılar yalnız gerçek müşteri verisi.
 import Link from "next/link";
 import { AlertCircle, ArrowRight, Check, FileSpreadsheet, FileText, Globe, Headset, Languages, ShieldCheck, Sparkles } from "lucide-react";
-import { MARKETING_WHATSAPP_HREF, WhatsAppGlyph } from "@/components/marketing/contact-dock";
+import { WhatsAppGlyph } from "@/components/marketing/contact-dock";
+import { SITE } from "@/lib/marketing/site";
+
+// "Dosyanızı WhatsApp'tan gönderin": sohbet hazır mesajla açılır (kullanıcı isteği, 14 Eki 2026).
+export const UPLOAD_WHATSAPP_HREF = `${SITE.whatsappHref}?text=${encodeURIComponent("Merhaba, Ürünlerimin Yüklenmesini istiyorum.")}`;
 import { ButtonLink, Container } from "@/components/marketing/ui";
 import { cn } from "@/lib/utils";
 import { pastelStyle } from "@/components/marketing/home-v2/page-kit";
@@ -38,7 +42,7 @@ export function WeUploadSection() {
               ))}
             </ul>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <ButtonLink href={MARKETING_WHATSAPP_HREF} tone="navy" size="lg" external>
+              <ButtonLink href={UPLOAD_WHATSAPP_HREF} tone="navy" size="lg" external>
                 <WhatsAppGlyph className="size-5 text-[#25D366]" /> Dosyanızı WhatsApp&apos;tan gönderin
               </ButtonLink>
               <ButtonLink href="/ozellikler/kurulum-destegi" tone="white" size="lg">Nasıl işliyor?</ButtonLink>
