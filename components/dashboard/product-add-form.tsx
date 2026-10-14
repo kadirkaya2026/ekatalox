@@ -317,7 +317,7 @@ export function ProductAddForm({
                 <Field label="Paket adedi">
                   <Input
                     type="number"
-                    min="1"
+                    min="0"
                     step="1"
                     placeholder="Örn. 10"
                     aria-label="Paket adedi"
@@ -328,7 +328,7 @@ export function ProductAddForm({
                 <Field label="Koli adedi">
                   <Input
                     type="number"
-                    min="1"
+                    min="0"
                     step="1"
                     placeholder="Örn. 200"
                     aria-label="Koli adedi"

@@ -33,7 +33,12 @@ const optionalPositiveIntegerSchema = z
 
     const parsedValue = Number(normalized);
 
-    if (!Number.isInteger(parsedValue) || parsedValue <= 0) {
+    // 0 = girilmemiş sayılır (vitrinde gösterilmez)
+    if (parsedValue === 0) {
+      return null;
+    }
+
+    if (!Number.isInteger(parsedValue) || parsedValue < 0) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         message: "Paket ve koli adetleri pozitif tam sayı olmalıdır.",

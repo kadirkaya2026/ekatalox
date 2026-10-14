@@ -219,7 +219,7 @@ export function ProductVariantMatrixModal({
                   <td className="px-3 py-3">
                     <Input
                       type="number"
-                      min="1"
+                      min="0"
                       step="1"
                       value={row.package_quantity}
                       onChange={(event) =>
@@ -231,7 +231,7 @@ export function ProductVariantMatrixModal({
                   <td className="px-3 py-3">
                     <Input
                       type="number"
-                      min="1"
+                      min="0"
                       step="1"
                       value={row.carton_quantity}
                       onChange={(event) =>

@@ -176,7 +176,7 @@ export function ProductEditModal({
           <div className="grid gap-3 md:grid-cols-2">
             <Input
               type="number"
-              min="1"
+              min="0"
               step="1"
               placeholder="Paket adedi"
               value={form.package_quantity}
@@ -184,7 +184,7 @@ export function ProductEditModal({
             />
             <Input
               type="number"
-              min="1"
+              min="0"
               step="1"
               placeholder="Koli adedi"
               value={form.carton_quantity}
