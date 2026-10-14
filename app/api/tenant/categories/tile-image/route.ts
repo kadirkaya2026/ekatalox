@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { isAcceptableUploadRatio } from "@/lib/images/prepare-upload-image";
 import { getSessionContext } from "@/lib/auth/session";
 import { shouldAllowDemoFallback } from "@/lib/env";
 import { revalidateStorefrontCache } from "@/lib/storefront/cache";
@@ -232,13 +233,16 @@ export async function POST(request: Request) {
     );
   }
 
+  // Panel görseli kare kırpıp küçültür; sunucu yalnız oranı denetler (15 Eki 2026).
   if (
-    dimensions.width !== requiredCategoryTileWidth ||
-    dimensions.height !== requiredCategoryTileHeight
+    !isAcceptableUploadRatio(dimensions, {
+      width: requiredCategoryTileWidth,
+      height: requiredCategoryTileHeight,
+    })
   ) {
     return NextResponse.json(
       {
-        error: `Görsel tam olarak ${requiredCategoryTileWidth}x${requiredCategoryTileHeight}px olmalıdır.`,
+        error: "Kutucuk görseli kare olmalıdır (ör. 1200x1200px).",
       },
       { status: 400 },
     );

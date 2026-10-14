@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { isAcceptableUploadRatio } from "@/lib/images/prepare-upload-image";
 import { getSessionContext } from "@/lib/auth/session";
 import { shouldAllowDemoFallback } from "@/lib/env";
 import { revalidateStorefrontCache } from "@/lib/storefront/cache";
@@ -222,13 +223,16 @@ export async function POST(request: Request) {
     );
   }
 
+  // Panel görseli 3:1'e kırpıp küçültür; sunucu yalnız oranı denetler (15 Eki 2026).
   if (
-    dimensions.width !== requiredBannerWidth ||
-    dimensions.height !== requiredBannerHeight
+    !isAcceptableUploadRatio(dimensions, {
+      width: requiredBannerWidth,
+      height: requiredBannerHeight,
+    })
   ) {
     return NextResponse.json(
       {
-        error: `Banner görseli tam olarak ${requiredBannerWidth}x${requiredBannerHeight}px olmalıdır.`,
+        error: "Banner görseli 3:1 oranında olmalıdır (ör. 2400x800px).",
       },
       { status: 400 },
     );

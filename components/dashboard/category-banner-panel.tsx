@@ -15,25 +15,11 @@ import {
   requiredCategoryTileHeight,
   requiredCategoryTileWidth,
 } from "@/lib/validators/storefront-settings";
-
-function loadImageDimensions(file: File) {
-  return new Promise<{ width: number; height: number }>((resolve, reject) => {
-    const objectUrl = URL.createObjectURL(file);
-    const image = new window.Image();
-
-    image.onload = () => {
-      resolve({ width: image.naturalWidth, height: image.naturalHeight });
-      URL.revokeObjectURL(objectUrl);
-    };
-
-    image.onerror = () => {
-      reject(new Error("Banner görselinin çözünürlüğü okunamadı."));
-      URL.revokeObjectURL(objectUrl);
-    };
-
-    image.src = objectUrl;
-  });
-}
+import {
+  describePreparedImage,
+  prepareUploadImage,
+  type PreparedUploadImage,
+} from "@/lib/images/prepare-upload-image";
 
 function createEmptyCategoryBanner(categoryId: string): BannerItem {
   return {
@@ -88,23 +74,14 @@ export function CategoryBannerPanel({
       return;
     }
 
-    if (file.size > maxBannerFileSizeBytes) {
-      setUploadMessage("Banner görseli en fazla 2MB olabilir.");
-      return;
-    }
-
+    // Her boyut kabul edilir; 3:1'e kırpılıp küçültülür (15 Eki 2026).
+    let prepared: PreparedUploadImage;
     try {
-      const dimensions = await loadImageDimensions(file);
-
-      if (
-        dimensions.width !== requiredBannerWidth ||
-        dimensions.height !== requiredBannerHeight
-      ) {
-        setUploadMessage(
-          `Banner görseli tam olarak ${requiredBannerWidth}x${requiredBannerHeight}px olmalıdır.`,
-        );
-        return;
-      }
+      prepared = await prepareUploadImage(
+        file,
+        { width: requiredBannerWidth, height: requiredBannerHeight },
+        maxBannerFileSizeBytes,
+      );
     } catch (error) {
       setUploadMessage(
         error instanceof Error
@@ -118,7 +95,7 @@ export function CategoryBannerPanel({
     setUploadMessage(null);
 
     const formData = new FormData();
-    formData.set("image", file);
+    formData.set("image", prepared.file);
     formData.set("category_id", category.id);
     if (banner.image_url) {
       formData.set("previous_image_url", banner.image_url);
@@ -138,7 +115,7 @@ export function CategoryBannerPanel({
     }
 
     updateBannerField("image_url", result.image_url as string);
-    setUploadMessage("Banner görseli yüklendi.");
+    setUploadMessage(describePreparedImage(prepared) ?? "Banner görseli yüklendi.");
   }
 
   async function handleTileFileChange(file: File | null) {
@@ -149,23 +126,13 @@ export function CategoryBannerPanel({
       return;
     }
 
-    if (file.size > maxBannerFileSizeBytes) {
-      setTileUploadMessage("Görsel en fazla 2MB olabilir.");
-      return;
-    }
-
+    let prepared: PreparedUploadImage;
     try {
-      const dimensions = await loadImageDimensions(file);
-
-      if (
-        dimensions.width !== requiredCategoryTileWidth ||
-        dimensions.height !== requiredCategoryTileHeight
-      ) {
-        setTileUploadMessage(
-          `Görsel tam olarak ${requiredCategoryTileWidth}x${requiredCategoryTileHeight}px olmalıdır.`,
-        );
-        return;
-      }
+      prepared = await prepareUploadImage(
+        file,
+        { width: requiredCategoryTileWidth, height: requiredCategoryTileHeight },
+        maxBannerFileSizeBytes,
+      );
     } catch (error) {
       setTileUploadMessage(
         error instanceof Error ? error.message : "Görselin çözünürlüğü okunamadı.",
@@ -177,7 +144,7 @@ export function CategoryBannerPanel({
     setTileUploadMessage(null);
 
     const formData = new FormData();
-    formData.set("image", file);
+    formData.set("image", prepared.file);
     formData.set("category_id", category.id);
 
     const response = await fetch("/api/tenant/categories/tile-image", {
@@ -194,7 +161,7 @@ export function CategoryBannerPanel({
     }
 
     setTileImageUrl(result.category.tile_image_url as string);
-    setTileUploadMessage("Kutucuk görseli yüklendi.");
+    setTileUploadMessage(describePreparedImage(prepared) ?? "Kutucuk görseli yüklendi.");
     onSaved(result.category as Category);
     router.refresh();
   }
@@ -319,7 +286,7 @@ export function CategoryBannerPanel({
           </p>
           <p className="mt-1 text-xs text-slate-600">
             Bu kategoriye tıklandığında vitrinde gösterilir; ayrıca açıksa anasayfadaki kategori
-            kutucuğunun görseli olarak da kullanılır. Zorunlu ölçü: 1200x400 px • Maksimum 2MB
+            kutucuğunun görseli olarak da kullanılır. Önerilen ölçü: 2400x800 px (3:1) • Farklı ölçüler otomatik ayarlanır
           </p>
         </div>
         {hasSavedBanner ? (
@@ -367,7 +334,7 @@ export function CategoryBannerPanel({
                 />
               ) : (
                 <div className="flex h-full items-center justify-center text-center text-xs text-slate-400">
-                  1200x400 önizleme
+                  3:1 önizleme
                 </div>
               )}
             </div>
@@ -402,8 +369,8 @@ export function CategoryBannerPanel({
             </p>
             <p className="mt-1 text-xs text-slate-600">
               Anasayfadaki kategori kutucuğunda bu kare görsel kullanılır — yukarıdaki geniş
-              banner kırpılmadan, ayrı olarak yüklenir. Zorunlu ölçü: {requiredCategoryTileWidth}
-              x{requiredCategoryTileHeight} px • Maksimum 2MB
+              banner kırpılmadan, ayrı olarak yüklenir. Önerilen ölçü: {requiredCategoryTileWidth * 2}
+              x{requiredCategoryTileHeight * 2} px (kare) • Farklı ölçüler otomatik ayarlanır
             </p>
           </div>
           {tileImageUrl ? (

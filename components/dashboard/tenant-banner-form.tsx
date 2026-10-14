@@ -17,25 +17,11 @@ import {
   requiredBannerHeight,
   requiredBannerWidth,
 } from "@/lib/validators/storefront-settings";
-
-function loadImageDimensions(file: File) {
-  return new Promise<{ width: number; height: number }>((resolve, reject) => {
-    const objectUrl = URL.createObjectURL(file);
-    const image = new window.Image();
-
-    image.onload = () => {
-      resolve({ width: image.naturalWidth, height: image.naturalHeight });
-      URL.revokeObjectURL(objectUrl);
-    };
-
-    image.onerror = () => {
-      reject(new Error("Banner görselinin çözünürlüğü okunamadı."));
-      URL.revokeObjectURL(objectUrl);
-    };
-
-    image.src = objectUrl;
-  });
-}
+import {
+  describePreparedImage,
+  prepareUploadImage,
+  type PreparedUploadImage,
+} from "@/lib/images/prepare-upload-image";
 
 function createEmptyBanner(index: number): BannerItem {
   return {
@@ -228,27 +214,14 @@ export function TenantBannerForm({
       return;
     }
 
-    if (file.size > maxBannerFileSizeBytes) {
-      setBannerUploadStatus(bannerId, {
-        pending: false,
-        message: "Banner görseli en fazla 2MB olabilir.",
-      });
-      return;
-    }
-
+    // Her boyut kabul edilir; 3:1'e kırpılıp küçültülür (15 Eki 2026).
+    let prepared: PreparedUploadImage;
     try {
-      const dimensions = await loadImageDimensions(file);
-
-      if (
-        dimensions.width !== requiredBannerWidth ||
-        dimensions.height !== requiredBannerHeight
-      ) {
-        setBannerUploadStatus(bannerId, {
-          pending: false,
-          message: `Banner görseli tam olarak ${requiredBannerWidth}x${requiredBannerHeight}px olmalıdır.`,
-        });
-        return;
-      }
+      prepared = await prepareUploadImage(
+        file,
+        { width: requiredBannerWidth, height: requiredBannerHeight },
+        maxBannerFileSizeBytes,
+      );
     } catch (error) {
       setBannerUploadStatus(bannerId, {
         pending: false,
@@ -266,7 +239,7 @@ export function TenantBannerForm({
     setBannerUploadStatus(bannerId, { pending: true, message: null });
 
     const formData = new FormData();
-    formData.set("image", file);
+    formData.set("image", prepared.file);
     if (previousImageUrl) {
       formData.set("previous_image_url", previousImageUrl);
     }
@@ -287,7 +260,10 @@ export function TenantBannerForm({
     }
 
     updateBannerField(bannerId, "image_url", result.image_url as string);
-    setBannerUploadStatus(bannerId, { pending: false, message: "Banner görseli yüklendi." });
+    setBannerUploadStatus(bannerId, {
+      pending: false,
+      message: describePreparedImage(prepared) ?? "Banner görseli yüklendi.",
+    });
   }
 
   function save(event: React.FormEvent<HTMLFormElement>) {
@@ -396,7 +372,7 @@ export function TenantBannerForm({
                         ) : null}
                       </p>
                       <p className="text-xs text-slate-500">
-                        Zorunlu ölçü: 1200x400 px • Maksimum dosya boyutu: 2MB
+                        Önerilen ölçü: 2400x800 px (3:1) • Farklı ölçüler otomatik kırpılıp küçültülür
                         {banner.is_visible_on_mobile === false ? (
                           <span className="ml-2 rounded-full bg-amber-100 px-2 py-0.5 font-medium text-amber-700">
                             Mobilde gizli
@@ -460,7 +436,7 @@ export function TenantBannerForm({
                           />
                         ) : (
                           <div className="flex h-full items-center justify-center text-center text-xs text-slate-400">
-                            1200x400 önizleme
+                            3:1 önizleme
                           </div>
                         )}
                       </div>
@@ -471,7 +447,7 @@ export function TenantBannerForm({
                             : "Banner görselini bilgisayarınızdan yükleyin"}
                         </p>
                         <p className="mt-1 text-sm text-slate-500">
-                          Sadece 1200x400 px • PNG, JPEG veya WEBP • Maksimum 2MB
+                          Önerilen 2400x800 px (3:1) • Farklı ölçüler otomatik ayarlanır • PNG, JPEG veya WEBP
                         </p>
                         {bannerUploadState[banner.id]?.message ? (
                           <p className="mt-2 text-sm text-emerald-700">

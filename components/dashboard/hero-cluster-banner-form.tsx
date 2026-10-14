@@ -18,6 +18,11 @@ import {
   requiredHeroClusterSideHeight,
   requiredHeroClusterSideWidth,
 } from "@/lib/validators/storefront-settings";
+import {
+  describePreparedImage,
+  prepareUploadImage,
+  type PreparedUploadImage,
+} from "@/lib/images/prepare-upload-image";
 
 type Slot = "large" | "side";
 
@@ -31,25 +36,6 @@ function requiredDimensionsForSlot(slot: Slot) {
   return slot === "large"
     ? { width: requiredHeroClusterLargeWidth, height: requiredHeroClusterLargeHeight }
     : { width: requiredHeroClusterSideWidth, height: requiredHeroClusterSideHeight };
-}
-
-function loadImageDimensions(file: File) {
-  return new Promise<{ width: number; height: number }>((resolve, reject) => {
-    const objectUrl = URL.createObjectURL(file);
-    const image = new window.Image();
-
-    image.onload = () => {
-      resolve({ width: image.naturalWidth, height: image.naturalHeight });
-      URL.revokeObjectURL(objectUrl);
-    };
-
-    image.onerror = () => {
-      reject(new Error("Görselin çözünürlüğü okunamadı."));
-      URL.revokeObjectURL(objectUrl);
-    };
-
-    image.src = objectUrl;
-  });
 }
 
 function createEmptyHeroClusterItem(index: number): BannerItem {
@@ -141,23 +127,11 @@ export function HeroClusterBannerForm({
       return;
     }
 
-    if (file.size > maxBannerFileSizeBytes) {
-      setUploadStatus(index, { pending: false, message: "Görsel en fazla 2MB olabilir." });
-      return;
-    }
-
+    // Her boyut kabul edilir; yuvanın oranına kırpılıp küçültülür (15 Eki 2026).
     const required = requiredDimensionsForSlot(slot);
-
+    let prepared: PreparedUploadImage;
     try {
-      const dimensions = await loadImageDimensions(file);
-
-      if (dimensions.width !== required.width || dimensions.height !== required.height) {
-        setUploadStatus(index, {
-          pending: false,
-          message: `Görsel tam olarak ${required.width}x${required.height}px olmalıdır.`,
-        });
-        return;
-      }
+      prepared = await prepareUploadImage(file, required, maxBannerFileSizeBytes);
     } catch (error) {
       setUploadStatus(index, {
         pending: false,
@@ -170,7 +144,7 @@ export function HeroClusterBannerForm({
     setUploadStatus(index, { pending: true, message: null });
 
     const formData = new FormData();
-    formData.set("image", file);
+    formData.set("image", prepared.file);
     formData.set("slot", slot);
     if (previousImageUrl) {
       formData.set("previous_image_url", previousImageUrl);
@@ -189,7 +163,7 @@ export function HeroClusterBannerForm({
     }
 
     updateField(index, "image_url", result.image_url as string);
-    setUploadStatus(index, { pending: false, message: "Görsel yüklendi." });
+    setUploadStatus(index, { pending: false, message: describePreparedImage(prepared) ?? "Görsel yüklendi." });
   }
 
   function save(event: React.FormEvent<HTMLFormElement>) {
@@ -280,7 +254,7 @@ export function HeroClusterBannerForm({
                         ) : null}
                       </p>
                       <p className="text-xs text-slate-500">
-                        Zorunlu ölçü: {required.width}x{required.height}px
+                        Önerilen ölçü: {required.width * 2}x{required.height * 2}px • otomatik ayarlanır
                       </p>
                     </div>
                     <ChevronDown
@@ -353,8 +327,8 @@ export function HeroClusterBannerForm({
                             : "Görseli bilgisayarınızdan yükleyin"}
                         </p>
                         <p className="mt-1 text-sm text-slate-500">
-                          Sadece {required.width}x{required.height} px • PNG, JPEG veya WEBP •
-                          Maksimum 2MB
+                          Önerilen {required.width * 2}x{required.height * 2} px • Farklı ölçüler otomatik
+                          ayarlanır • PNG, JPEG veya WEBP
                         </p>
                         {uploadState[index]?.message ? (
                           <p className="mt-2 text-sm text-emerald-700">

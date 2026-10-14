@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { isAcceptableUploadRatio } from "@/lib/images/prepare-upload-image";
 import { getSessionContext } from "@/lib/auth/session";
 import { shouldAllowDemoFallback } from "@/lib/env";
 import { revalidateStorefrontCache } from "@/lib/storefront/cache";
@@ -203,10 +204,11 @@ export async function POST(request: Request) {
     );
   }
 
-  if (dimensions.width !== required.width || dimensions.height !== required.height) {
+  // Panel görseli orana kırpıp küçültür; sunucu yalnız oranı denetler (15 Eki 2026).
+  if (!isAcceptableUploadRatio(dimensions, required)) {
     return NextResponse.json(
       {
-        error: `Görsel tam olarak ${required.width}x${required.height}px olmalıdır.`,
+        error: `Görsel oranı ${required.width}:${required.height} olmalıdır (ör. ${required.width * 2}x${required.height * 2}px).`,
       },
       { status: 400 },
     );
