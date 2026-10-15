@@ -6,15 +6,9 @@ import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 // eKatalox'un genel tanıtım kartını gösteriyordu. Kart mağazanın adı, logosu ve
 // marka rengiyle üretilir.
 
-// Önizleme çeken botlar (iMessage "facebookexternalhit … Twitterbot" ile gelir).
-const PREVIEW_BOT =
-  /WhatsApp|facebookexternalhit|Facebot|Twitterbot|TelegramBot|Slackbot|LinkedInBot|Discordbot|SkypeUriPreview|Pinterest|Googlebot|bingbot|Applebot|redditbot|Viber|vkShare|Embedly/i;
+export { isLinkPreviewBot } from "@/lib/storefront/link-preview-bot";
 
-export function isLinkPreviewBot(userAgent: string | null) {
-  return Boolean(userAgent && PREVIEW_BOT.test(userAgent));
-}
-
-export type ShareCardTenant = { name: string; logoUrl: string | null; accent: string };
+export type ShareCardTenant = { name: string; title: string | null; description: string | null; logoUrl: string | null; accent: string };
 
 export async function loadShareCardTenant(tenantId: string): Promise<ShareCardTenant | null> {
   const supabase = createSupabaseAdminClient();
@@ -23,7 +17,7 @@ export async function loadShareCardTenant(tenantId: string): Promise<ShareCardTe
     supabase.from("tenants").select("company_name").eq("id", tenantId).maybeSingle(),
     supabase
       .from("tenant_storefront_settings")
-      .select("logo_url, brand_primary_color, brand_accent_color, brand_palette")
+      .select("logo_url, storefront_title, storefront_description, brand_primary_color, brand_accent_color, brand_palette")
       .eq("tenant_id", tenantId)
       .maybeSingle(),
   ]);
@@ -35,6 +29,8 @@ export async function loadShareCardTenant(tenantId: string): Promise<ShareCardTe
   });
   return {
     name: tenant.company_name?.trim() || "Mağaza",
+    title: settings?.storefront_title?.trim() || null,
+    description: settings?.storefront_description?.trim() || null,
     // Kart üreticisi (satori) webp okuyamıyor; o durumda logo yerine ad yazılır.
     logoUrl: settings?.logo_url && !/\.webp(\?|$)/i.test(settings.logo_url) ? settings.logo_url : null,
     accent: palette.addToCart ?? palette.headerCart ?? "#0f172a",
@@ -45,7 +41,7 @@ const escapeHtml = (value: string) =>
   value.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
 
 /** Botlara verilen küçük sayfa: önizleme etiketleri + hedefe yönlendirme. */
-export function shareCardHtml(params: { title: string; description: string; imageUrl: string; pageUrl: string; targetUrl: string; siteName: string }) {
+export function shareCardHtml(params: { title: string; description: string; imageUrl: string; pageUrl: string; targetUrl: string; siteName: string; imageIsCard?: boolean }) {
   const t = escapeHtml(params.title);
   const d = escapeHtml(params.description);
   const target = escapeHtml(params.targetUrl);
@@ -59,9 +55,9 @@ export function shareCardHtml(params: { title: string; description: string; imag
 <meta property="og:description" content="${d}">
 <meta property="og:url" content="${escapeHtml(params.pageUrl)}">
 <meta property="og:image" content="${escapeHtml(params.imageUrl)}">
-<meta property="og:image:type" content="image/png">
+${params.imageIsCard === false ? "" : `<meta property="og:image:type" content="image/png">
 <meta property="og:image:width" content="1200">
-<meta property="og:image:height" content="630">
+<meta property="og:image:height" content="630">`}
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="${t}">
 <meta name="twitter:description" content="${d}">

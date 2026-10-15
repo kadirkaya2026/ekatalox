@@ -1,3 +1,4 @@
+import { isLinkPreviewBot } from "@/lib/storefront/link-preview-bot";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { getStorefrontTenant, getTenantByCustomDomain } from "@/lib/data";
@@ -564,6 +565,21 @@ export async function proxy(request: NextRequest) {
     // /siparislerim: telefon numarasıyla sipariş listesi — aynı gerekçe.
     // /bildirim: tek-link bildirim daveti — ana ekran uygulamasında çerez
     // olmayabilir, sayfa şifre kapısını kendisi gösterir/çözer.
+    // Link önizleme botu (WhatsApp vb.): mağaza/ürün/takip linkinde eKatalox'un
+    // genel kartı yerine mağazaya özel kart (bkz. app/store/[subdomain]/onizleme).
+    if (
+      (pathname === "/" || /^\/urun\/[^/]+$/.test(pathname) || pathname.startsWith("/siparis/")) &&
+      isLinkPreviewBot(request.headers.get("user-agent"))
+    ) {
+      const previewUrl = request.nextUrl.clone();
+      previewUrl.pathname = `/store/${hostResolution.subdomain}/onizleme`;
+      previewUrl.search = "";
+      previewUrl.searchParams.set("p", pathname);
+      const previewResponse = NextResponse.rewrite(previewUrl);
+      previewResponse.headers.set("X-Robots-Tag", "noindex, nofollow");
+      return previewResponse;
+    }
+
     if (pathname.startsWith("/siparis/") || pathname === "/siparislerim" || pathname === "/bildirim") {
       const trackUrl = request.nextUrl.clone();
       trackUrl.pathname = `/store/${hostResolution.subdomain}${pathname}`;
