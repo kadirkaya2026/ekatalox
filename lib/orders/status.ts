@@ -29,6 +29,19 @@ export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
 };
 
 // Tekel (gel-al) bayide "yola çıktı" yerine "hazır" — kurye yok.
+// Toptancı carisine gösterilen durum (16 Eki 2026, kullanıcı isteği): yalnız
+// Onay bekliyor / Onaylandı / İptal edildi. Hazırlanıyor, yola çıktı ve teslim
+// edildi müşteriye "Onaylandı" görünür.
+export type WholesaleCustomerStatus = "new" | "confirmed" | "cancelled";
+export function toWholesaleCustomerStatus(status: OrderStatus): WholesaleCustomerStatus {
+  return status === "new" || status === "cancelled" ? status : "confirmed";
+}
+export const WHOLESALE_CUSTOMER_STATUS_LABELS: Record<WholesaleCustomerStatus, string> = {
+  new: "Onay bekliyor",
+  confirmed: "Onaylandı",
+  cancelled: "İptal edildi",
+};
+
 export function getStatusLabel(status: OrderStatus, options?: { isTekel?: boolean }) {
   if (options?.isTekel && status === "shipped") return "Hazır, teslim alınabilir";
   return ORDER_STATUS_LABELS[status];
@@ -46,13 +59,10 @@ export function getStatusDescription(
       case "new":
         return "Siparişiniz alındı, en kısa sürede onaylanacak.";
       case "confirmed":
-        return "Siparişiniz onaylandı, hazırlığa alınıyor.";
       case "preparing":
-        return "Siparişiniz hazırlanıyor.";
       case "shipped":
-        return "Siparişiniz yola çıktı.";
       case "delivered":
-        return "Siparişiniz teslim edildi. Teşekkür ederiz.";
+        return "Siparişiniz onaylandı.";
       case "cancelled":
         return "Siparişiniz iptal edildi. Sorunuz için bizimle iletişime geçebilirsiniz.";
     }

@@ -25,7 +25,7 @@ import {
 import { StorefrontImage } from "@/components/storefront/storefront-image";
 import { StorefrontSubpageShell } from "@/components/storefront/storefront-subpage-shell";
 import { formatDealerAddress, PRIMARY_DEALER_ADDRESS_ID, type DealerAddress } from "@/lib/kurumsal/dealer-profile";
-import { getStatusLabel } from "@/lib/orders/status";
+import { toWholesaleCustomerStatus, WHOLESALE_CUSTOMER_STATUS_LABELS, type WholesaleCustomerStatus } from "@/lib/orders/status";
 import type { CurrencyCode } from "@/lib/products/constants";
 import {
   StorefrontThemeProvider,
@@ -82,21 +82,17 @@ type Tab = "overview" | "orders" | "info" | "addresses";
 
 const TAB_HASH: Record<Tab, string> = { overview: "", orders: "#siparislerim", info: "#bilgilerim", addresses: "#adreslerim" };
 
-const STATUS_PILL: Record<OrderStatus, string> = {
+// Hesabım yalnız toptancı mağazalarda: cariye Onay bekliyor / Onaylandı / İptal
+// edildi gösterilir (hazırlanıyor/yola çıktı yok; 16 Eki 2026).
+const STATUS_PILL: Record<WholesaleCustomerStatus, string> = {
   new: "bg-amber-100 text-amber-800",
-  confirmed: "bg-sky-100 text-sky-800",
-  preparing: "bg-indigo-100 text-indigo-800",
-  shipped: "bg-violet-100 text-violet-800",
-  delivered: "bg-emerald-100 text-emerald-800",
+  confirmed: "bg-emerald-100 text-emerald-800",
   cancelled: "bg-rose-100 text-rose-800",
 };
 
-const PROGRESS_STEPS: Array<{ status: OrderStatus; label: string }> = [
+const PROGRESS_STEPS: Array<{ status: WholesaleCustomerStatus; label: string }> = [
   { status: "new", label: "Alındı" },
   { status: "confirmed", label: "Onaylandı" },
-  { status: "preparing", label: "Hazırlanıyor" },
-  { status: "shipped", label: "Yola çıktı" },
-  { status: "delivered", label: "Teslim edildi" },
 ];
 
 function displayNo(order: Pick<AccountOrder, "order_no" | "order_number">) {
@@ -283,9 +279,10 @@ function Thumb({ src, alt, className }: { src: string | null; alt: string; class
 }
 
 function StatusPill({ status }: { status: OrderStatus }) {
+  const shown = toWholesaleCustomerStatus(status);
   return (
-    <span className={cn("inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold", STATUS_PILL[status])}>
-      {getStatusLabel(status)}
+    <span className={cn("inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold", STATUS_PILL[shown])}>
+      {WHOLESALE_CUSTOMER_STATUS_LABELS[shown]}
     </span>
   );
 }
@@ -295,9 +292,9 @@ function OrderProgress({ status }: { status: OrderStatus }) {
   if (status === "cancelled") {
     return <p className={cn("text-sm font-medium", theme.dangerText)}>Bu sipariş iptal edildi.</p>;
   }
-  const current = PROGRESS_STEPS.findIndex((step) => step.status === status);
+  const current = PROGRESS_STEPS.findIndex((step) => step.status === toWholesaleCustomerStatus(status));
   return (
-    <ol className="grid grid-cols-5 gap-1.5" aria-label="Sipariş durumu">
+    <ol className="grid grid-cols-2 gap-1.5" aria-label="Sipariş durumu">
       {PROGRESS_STEPS.map((step, index) => {
         const done = index <= current;
         return (

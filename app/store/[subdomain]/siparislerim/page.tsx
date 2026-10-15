@@ -8,7 +8,7 @@ import { MyOrdersView } from "@/components/storefront/my-orders-view";
 import { getStorefrontTenantCached, getTenantStorefrontSettings } from "@/lib/data";
 import { getAppearanceFromSettings } from "@/lib/storefront/appearance";
 import { StorefrontLocaleProvider } from "@/lib/storefront/locale-context";
-import { buildStorefrontIcons, buildStorefrontTitle } from "@/lib/storefront/white-label";
+import { buildStorefrontIcons, buildStorefrontTitle, hasOrderTracking } from "@/lib/storefront/white-label";
 
 type MyOrdersPageProps = { params: Promise<{ subdomain: string }> };
 
@@ -27,7 +27,7 @@ export async function generateMetadata(props: MyOrdersPageProps): Promise<Metada
 export default async function MyOrdersPage(props: MyOrdersPageProps) {
   const { subdomain } = await props.params;
   const tenant = await getStorefrontTenantCached(subdomain);
-  if (!tenant || tenant.status !== "active") notFound();
+  if (!tenant || tenant.status !== "active" || !hasOrderTracking(tenant)) notFound();
   const settings = await getTenantStorefrontSettings(tenant.id);
 
   return (

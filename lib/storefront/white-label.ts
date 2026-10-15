@@ -43,7 +43,9 @@ export function hasEnhancedNavCues(tenant: { subdomain: string }) {
   return ENHANCED_NAV_CUE_SUBDOMAINS.has(tenant.subdomain);
 }
 
-const ORDER_TRACKING_SUBDOMAINS = new Set(["nailport"]);
+// 16 Eki 2026: Nailport çıkarıldı — toptancı carisi siparişlerini yalnız kişiye özel
+// şifreyle "Hesabım"da görür (numarayla sorgu başkasının siparişini gösteriyordu).
+const ORDER_TRACKING_SUBDOMAINS = new Set<string>([]);
 
 export function hasOrderTracking(
   tenant: Pick<Tenant, "business_type" | "is_tekel" | "subdomain"> | null | undefined,

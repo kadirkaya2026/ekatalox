@@ -10,7 +10,7 @@ import {
 import { cn, formatCurrency } from "@/lib/utils";
 import type { CurrencyCode } from "@/lib/products/constants";
 import type { OrderStatus } from "@/lib/types";
-import { getStatusDescription, getStatusLabel } from "@/lib/orders/status";
+import { getStatusDescription, getStatusLabel, toWholesaleCustomerStatus } from "@/lib/orders/status";
 import { buildWhatsAppOrderHref } from "@/lib/storefront/whatsapp-order";
 import { markSeen } from "@/lib/storefront/tracking-phone";
 import { StorefrontSubpageShell } from "@/components/storefront/storefront-subpage-shell";
@@ -126,7 +126,11 @@ function TrackingCard({
   }, [token]);
 
   const cancelled = snap.status === "cancelled";
-  const activeIndex = STEPS.indexOf(snap.status);
+  // Toptancı carisine yalnız Alındı → Onaylandı (16 Eki 2026); hazırlanıyor/yola
+  // çıktı/teslim edildi "Onaylandı" sayılır.
+  const steps: OrderStatus[] = isMarketTenant ? STEPS : ["new", "confirmed"];
+  const shownStatus = isMarketTenant ? snap.status : toWholesaleCustomerStatus(snap.status);
+  const activeIndex = steps.indexOf(shownStatus);
   const waHref = buildWhatsAppOrderHref({
     phone: whatsappNumber,
     message: `Merhaba, ${displayNo(snap)} numaralı siparişim hakkında bilgi almak istiyorum.`,
@@ -196,10 +200,13 @@ function TrackingCard({
           <div className={theme.panelSurface}>
             <p className={sectionLabelCls}>Sipariş Durumu</p>
             <ol className="mt-3 space-y-4">
-              {STEPS.map((step, i) => {
+              {steps.map((step, i) => {
                 const done = i < activeIndex;
                 const current = i === activeIndex;
-                const at = snap.events.filter((e) => e.status === step).at(-1)?.at;
+                const at = (isMarketTenant || step !== "confirmed"
+                  ? snap.events.filter((e) => e.status === step)
+                  : snap.events.filter((e) => e.status !== "new" && e.status !== "cancelled")
+                ).at(isMarketTenant ? -1 : 0)?.at;
                 return (
                   <li key={step} className="flex items-start gap-3">
                     <span
