@@ -46,7 +46,11 @@ export async function GET(request: Request, ctx: { params: Promise<{ subdomain: 
       );
       if (product) {
         page = {
-          title: [product.sku_code, product.product_name].filter(Boolean).join(" · "),
+          // Ürün adı kodu zaten içeriyorsa (Lucatech: "Model: LP-505 | …") kod tekrarlanmaz.
+          title:
+            product.product_name && String(product.product_name).toLowerCase().includes(String(product.sku_code ?? "").toLowerCase())
+              ? String(product.product_name)
+              : [product.sku_code, product.product_name].filter(Boolean).join(" · "),
           description: `${tenant.name} · Ürünü görmek ve sipariş vermek için dokunun.`,
           imageUrl: product.image_url || cardUrl("store"),
           imageIsCard: !product.image_url,
