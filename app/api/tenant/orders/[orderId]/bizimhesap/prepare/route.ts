@@ -31,6 +31,18 @@ type OrderItem = {
 
 const productLabel = (p: BizimHesapProduct) => [p.code, p.title, p.variantName].filter(Boolean).join(" · ");
 
+// Fişe yazılabilecek fiyat listeleri (0175): fiyatsız katalog listesi hariç.
+async function loadPriceLists(supabase: NonNullable<ReturnType<typeof createSupabaseAdminClient>>, tenantId: string) {
+  const { data } = await supabase
+    .from("price_lists")
+    .select("id, name")
+    .eq("tenant_id", tenantId)
+    .eq("is_catalog_only", false)
+    .order("sort_order")
+    .order("created_at");
+  return (data ?? []) as Array<{ id: string; name: string }>;
+}
+
 async function loadContext(orderId: string) {
   const guard = await ensureTenantAdminResponse({ blockDemoWrite: true });
   if (guard) return { error: guard };
@@ -51,18 +63,20 @@ async function loadContext(orderId: string) {
   }
   const { data: order } = await supabase
     .from("orders")
-    .select("id, status, items, access_code_id, customer_name, customer_phone, bizimhesap_customer_id, bizimhesap_guid, bizimhesap_line_warehouses")
+    .select("id, status, items, access_code_id, customer_name, customer_phone, bizimhesap_customer_id, bizimhesap_guid, bizimhesap_line_warehouses, bizimhesap_price_list_id")
     .eq("tenant_id", tenantId)
     .eq("id", orderId)
     .maybeSingle();
   if (!order) return { error: NextResponse.json({ error: "Sipariş bulunamadı." }, { status: 404 }) };
   // Cari hafızası anahtarı için şifrenin kişiye özel olup olmadığı gerekir.
   let accessCodeIsPersonal = false;
+  let orderPriceListId: string | null = null;
   if (order.access_code_id) {
-    const { data: code } = await supabase.from("access_codes").select("is_personal").eq("id", order.access_code_id).maybeSingle();
+    const { data: code } = await supabase.from("access_codes").select("is_personal, price_list_id").eq("id", order.access_code_id).maybeSingle();
     accessCodeIsPersonal = Boolean(code?.is_personal);
+    orderPriceListId = code?.price_list_id ?? null;
   }
-  return { supabase, tenantId, firmId: config.firm_id as string, policy: resolveBizimHesapPolicy(tenantId, config), order, accessCodeIsPersonal, defaultWarehouseId: (config.default_warehouse_id as string | null) || null };
+  return { supabase, tenantId, firmId: config.firm_id as string, policy: resolveBizimHesapPolicy(tenantId, config), order, accessCodeIsPersonal, orderPriceListId, defaultWarehouseId: (config.default_warehouse_id as string | null) || null };
 }
 
 export async function GET(_request: Request, ctx: { params: Promise<{ orderId: string }> }) {
@@ -70,10 +84,11 @@ export async function GET(_request: Request, ctx: { params: Promise<{ orderId: s
   const c = await loadContext(orderId);
   if ("error" in c) return c.error;
 
-  const [customers, bhProducts, warehouses] = await Promise.all([
+  const [customers, bhProducts, warehouses, priceLists] = await Promise.all([
     fetchBizimHesapCustomers(c.firmId),
     fetchBizimHesapProducts(c.firmId),
     fetchBizimHesapWarehouses(c.firmId),
+    loadPriceLists(c.supabase, c.tenantId),
   ]);
   const lineWarehouses = (c.order.bizimhesap_line_warehouses ?? {}) as Record<string, string>;
   if (!customers || !bhProducts) {
@@ -153,6 +168,10 @@ export async function GET(_request: Request, ctx: { params: Promise<{ orderId: s
       phone: cu.phone ?? null,
     })),
     warehouses: warehouses ?? [],
+    // Fiş fiyat listesi isteğe bağlı: seçilmezse (null) siparişteki fiyat gider.
+    priceLists,
+    selectedPriceListId: priceLists.some((pl) => pl.id === c.order.bizimhesap_price_list_id) ? c.order.bizimhesap_price_list_id : null,
+    orderPriceListName: priceLists.find((pl) => pl.id === c.orderPriceListId)?.name ?? null,
     defaultWarehouseId: c.defaultWarehouseId,
     products: active.map((p) => ({ id: p.id, code: p.code, barcode: p.barcode, title: p.title, variantName: p.variantName, label: productLabel(p) })),
     lines,
@@ -171,6 +190,7 @@ export async function PUT(request: Request, ctx: { params: Promise<{ orderId: st
     customerId?: unknown;
     lines?: Array<{ kind?: unknown; id?: unknown; bizimhesapProductId?: unknown }>;
     warehouses?: Record<string, unknown>;
+    priceListId?: unknown;
   } | null;
 
   const customerId = typeof body?.customerId === "string" && body.customerId.trim() ? body.customerId.trim() : null;
@@ -199,6 +219,15 @@ export async function PUT(request: Request, ctx: { params: Promise<{ orderId: st
       .eq("id", id);
   }
 
+  // Fiş fiyat listesi (0175): alan gönderilmediyse dokunulmaz, null/boş = siparişteki fiyat.
+  let priceListId: string | null | undefined;
+  if (body && "priceListId" in body) {
+    priceListId = typeof body.priceListId === "string" && body.priceListId.trim() ? body.priceListId.trim() : null;
+    if (priceListId && !(await loadPriceLists(c.supabase, c.tenantId)).some((pl) => pl.id === priceListId)) {
+      return NextResponse.json({ error: "Seçilen fiyat listesi bulunamadı; sayfayı yenileyin." }, { status: 400 });
+    }
+  }
+
   // Satır depoları (0169): yalnız bu siparişin satırları ve BizimHesap'ta var olan depolar.
   let lineWarehouses: Record<string, string> | undefined;
   if (body?.warehouses && typeof body.warehouses === "object") {
@@ -221,6 +250,7 @@ export async function PUT(request: Request, ctx: { params: Promise<{ orderId: st
       bizimhesap_customer_id: customerId,
       bizimhesap_customer_title: customerTitle,
       ...(lineWarehouses ? { bizimhesap_line_warehouses: lineWarehouses } : {}),
+      ...(priceListId !== undefined ? { bizimhesap_price_list_id: priceListId } : {}),
     })
     .eq("tenant_id", c.tenantId)
     .eq("id", orderId);

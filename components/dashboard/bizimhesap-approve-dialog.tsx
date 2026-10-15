@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { CheckCircle2, CircleAlert, Loader2, Pencil, RefreshCw, Search, Sparkles, UserRound, Warehouse, X } from "lucide-react";
+import { CheckCircle2, CircleAlert, Loader2, Tags, Pencil, RefreshCw, Search, Sparkles, UserRound, Warehouse, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { matchKey } from "@/lib/integrations/bizimhesap-matching";
@@ -38,6 +38,11 @@ type Prepared = {
   products: BhProduct[];
   lines: Line[];
   selectedCustomerId: string | null;
+  /** Fiş fiyat listesi (0175), isteğe bağlı: null = siparişteki fiyat aynen gider. */
+  priceLists: Array<{ id: string; name: string }>;
+  selectedPriceListId: string | null;
+  /** Bayinin sipariş verdiği liste (şifreden); yalnız bilgi için. */
+  orderPriceListName: string | null;
   fallbackCustomerTitle: string | null;
   requireProductMatch: boolean;
   alreadySent: boolean;
@@ -72,6 +77,7 @@ export function BizimHesapApproveDialog({
   const [choices, setChoices] = useState<Record<string, Choice | null>>({});
   const [openLine, setOpenLine] = useState<string | null>(null);
   const [warehouseChoices, setWarehouseChoices] = useState<Record<string, string>>({});
+  const [priceListId, setPriceListId] = useState<string | null | undefined>(undefined);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -83,6 +89,7 @@ export function BizimHesapApproveDialog({
       const prepared = json as Prepared;
       setData(prepared);
       setCustomerId((current) => current ?? prepared.selectedCustomerId);
+      setPriceListId((current) => (current === undefined ? prepared.selectedPriceListId : current));
       setChoices((current) => {
         const next: Record<string, Choice | null> = {};
         for (const line of prepared.lines) {
@@ -139,7 +146,7 @@ export function BizimHesapApproveDialog({
       const response = await fetch(`/api/tenant/orders/${orderId}/bizimhesap/prepare`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ customerId, lines: changed, warehouses: warehouseChoices }),
+        body: JSON.stringify({ customerId, lines: changed, warehouses: warehouseChoices, priceListId: priceListId ?? null }),
       });
       const json = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(json.error ?? "Kaydedilemedi.");
@@ -251,9 +258,42 @@ export function BizimHesapApproveDialog({
               )}
             </section>
 
+            {data.priceLists.length ? (
+              <section>
+                <h3 className="text-sm font-semibold text-slate-900">
+                  2. Fiş fiyatı <span className="font-normal text-slate-500">(isteğe bağlı)</span>
+                </h3>
+                <label className="mt-2 flex flex-col gap-1.5 sm:flex-row sm:items-center sm:gap-3">
+                  <span className="flex items-center gap-2 text-xs text-slate-500">
+                    <Tags className="size-3.5 shrink-0" /> Fiyat listesi:
+                  </span>
+                  <select
+                    value={priceListId ?? ""}
+                    onChange={(event) => setPriceListId(event.target.value || null)}
+                    className={cn(
+                      "h-9 min-w-0 rounded-lg border bg-white px-2 text-sm sm:max-w-xs",
+                      priceListId ? "border-indigo-200 font-medium text-indigo-700" : "border-slate-200 text-slate-700",
+                    )}
+                  >
+                    <option value="">Siparişteki fiyat (değiştirme)</option>
+                    {data.priceLists.map((pl) => (
+                      <option key={pl.id} value={pl.id}>
+                        {pl.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <p className="mt-1.5 text-xs text-slate-500">
+                  {priceListId
+                    ? "Fiş BizimHesap'a seçilen listenin fiyatlarıyla gider; listede fiyatı olmayan ürün ve hediyeler siparişteki fiyatta kalır. eKatalox'taki sipariş değişmez."
+                    : `Fiş siparişteki fiyatlarla gider${data.orderPriceListName ? ` (bayi ${data.orderPriceListName} ile sipariş verdi)` : ""}.`}
+                </p>
+              </section>
+            ) : null}
+
             <section>
               <div className="flex items-center justify-between gap-2">
-                <h3 className="text-sm font-semibold text-slate-900">2. Ürünler</h3>
+                <h3 className="text-sm font-semibold text-slate-900">{data.priceLists.length ? "3" : "2"}. Ürünler</h3>
                 <span className={cn("text-xs font-medium", unmatched.length || codeless.length ? "text-rose-600" : "text-emerald-700")}>
                   {lines.length - unmatched.length - codeless.length} / {lines.length} hazır
                 </span>

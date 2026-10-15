@@ -308,7 +308,7 @@ export async function sendOrderToBizimHesap(
     const { data: order } = await supabase
       .from("orders")
       .select(
-        "id, tenant_id, status, order_number, order_no, customer_name, customer_phone, customer_address, currency, total_amount, coupon_discount, items, note, payment_method, bizimhesap_guid, bizimhesap_customer_id, bizimhesap_line_warehouses, access_code_id",
+        "id, tenant_id, status, order_number, order_no, customer_name, customer_phone, customer_address, currency, total_amount, coupon_discount, items, note, payment_method, bizimhesap_guid, bizimhesap_customer_id, bizimhesap_line_warehouses, bizimhesap_price_list_id, access_code_id",
       )
       .eq("id", orderId)
       .maybeSingle();
@@ -506,6 +506,52 @@ export async function sendOrderToBizimHesap(
       return list && discounted !== undefined && Math.abs((Number(item.price) || 0) - discounted) < 0.005 ? list : 0;
     };
 
+    // Fiş fiyat listesi (0175, Lucatech 15 Eki 2026): onay penceresinde liste seçildiyse
+    // satırlar o listenin fiyatıyla fişlenir (aynı siparişi yüksek fiyatlı cariye kesmek
+    // için). Seçilmediyse siparişteki fiyat aynen gider. Hediye satırı ve listede fiyatı
+    // olmayan ürün siparişteki fiyatında kalır. Sipariş kaydı değişmez, yalnız fiş.
+    const overrideByPosition = new Map<number, { unit: number; list: number }>();
+    if (order.bizimhesap_price_list_id) {
+      const overrideList = order.bizimhesap_price_list_id as string;
+      const pricedProductIds = [...new Set(orderItems.filter((i) => i.product_id && !i.is_gift).map((i) => i.product_id!))];
+      const pricedVariantIds = [
+        ...new Set(orderItems.filter((i) => i.variant_id && !i.is_gift).map((i) => i.variant_id!)),
+      ];
+      if (pricedProductIds.length) {
+        const [{ data: listPrices }, { data: variantPrices }, { data: discountFlags }] = await Promise.all([
+          supabase
+            .from("product_prices")
+            .select("product_id, price, discount_price")
+            .eq("price_list_id", overrideList)
+            .in("product_id", pricedProductIds),
+          pricedVariantIds.length
+            ? supabase
+                .from("product_variant_prices")
+                .select("variant_id, price")
+                .eq("price_list_id", overrideList)
+                .in("variant_id", pricedVariantIds)
+            : Promise.resolve({ data: [] as Array<{ variant_id: string; price: number }> }),
+          supabase.from("products").select("id, is_discount_active").in("id", pricedProductIds),
+        ]);
+        const productPrice = new Map((listPrices ?? []).map((row) => [row.product_id, row]));
+        const variantPrice = new Map((variantPrices ?? []).map((row) => [row.variant_id, Number(row.price)]));
+        const discountActive = new Set((discountFlags ?? []).filter((p) => p.is_discount_active).map((p) => p.id));
+        orderItems.forEach((item, position) => {
+          if (!item.product_id || item.is_gift) return;
+          const row = productPrice.get(item.product_id);
+          // Vitrinle aynı kural: varyantın kendi fiyatı, yoksa ürünün liste fiyatı.
+          const list = (item.variant_id ? variantPrice.get(item.variant_id) : undefined) ?? (row ? Number(row.price) : undefined);
+          if (list === undefined || !(list > 0)) return;
+          const discounted = row?.discount_price === null || row?.discount_price === undefined ? null : Number(row.discount_price);
+          if (discountActive.has(item.product_id) && discounted !== null && discounted >= 0 && discounted < list) {
+            overrideByPosition.set(position, { unit: discounted, list });
+          } else {
+            overrideByPosition.set(position, { unit: list, list: 0 });
+          }
+        });
+      }
+    }
+
     const rate = Number(config.vat_rate ?? 20);
     const divisor = 1 + rate / 100;
     const items = orderItems;
@@ -522,12 +568,13 @@ export async function sendOrderToBizimHesap(
           : undefined) || defaultWarehouse;
     const details = items.map((item, position) => {
       const quantity = Number(item.quantity ?? 0) || 0;
-      const unitGross = Number(item.price ?? 0) || 0; // KDV dahil
+      const override = overrideByPosition.get(position);
+      const unitGross = override ? override.unit : Number(item.price ?? 0) || 0; // KDV dahil
       const lineTotal = round2(unitGross * quantity);
       const lineNet = round2(lineTotal / divisor);
       // Liste indirimi (Vedat Bey isteği, 7 Eki 2026): birim fiyat listenin indirimsiz
       // (perakende) fiyatı, aradaki fark satır iskontosu olarak gider.
-      const listGross = listPriceFor(item);
+      const listGross = override ? override.list : listPriceFor(item);
       const unitList = listGross > unitGross ? listGross : unitGross;
       const lineGross = round2((unitList * quantity) / divisor);
       const lineDiscount = Math.max(0, round2(lineGross - lineNet));
@@ -569,7 +616,14 @@ export async function sendOrderToBizimHesap(
     const linesNet = details.reduce((sum, line) => sum + line._net, 0);
     const linesGross = details.reduce((sum, line) => sum + line._gross, 0);
     const linesDiscount = details.reduce((sum, line) => sum + line._discount, 0);
-    const finalTotal = round2(Number(order.total_amount ?? linesTotal));
+    // Liste değiştirildiyse sipariş toplamı geçersizdir: kupon/kargo farkı korunup yeni satır
+    // toplamına uygulanır.
+    const orderLinesTotal = round2(
+      orderItems.reduce((sum, item) => sum + round2((Number(item.price ?? 0) || 0) * (Number(item.quantity ?? 0) || 0)), 0),
+    );
+    const finalTotal = overrideByPosition.size
+      ? Math.max(0, round2(linesTotal + (Number(order.total_amount ?? orderLinesTotal) - orderLinesTotal)))
+      : round2(Number(order.total_amount ?? linesTotal));
     // Kupon vb. sipariş indirimi: KDV dahil fark net'e oranlanır.
     const finalNet = round2(finalTotal / divisor);
     const discountNet = Math.max(0, round2(linesNet - finalNet));
