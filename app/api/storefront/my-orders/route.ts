@@ -3,6 +3,7 @@ import { z } from "zod";
 import { getStorefrontTenant } from "@/lib/data";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { normalizeCustomerPhone } from "@/lib/storefront/customer-phone";
+import { hasOrderTracking } from "@/lib/storefront/white-label";
 import type { OrderStatus, StorefrontOrderItemSnapshot } from "@/lib/types";
 
 // Müşteri, sipariş verirken yazdığı telefon numarasıyla siparişlerini listeler.
@@ -23,6 +24,9 @@ export async function POST(request: Request) {
 
   const tenant = await getStorefrontTenant(parsed.data.subdomain);
   if (!tenant || tenant.status !== "active") return NextResponse.json({ error: "Bulunamadı." }, { status: 404 });
+  // Sipariş Takip ekranı kapalı mağazada (ör. Lucatech: bayi siparişlerini şifreyle
+  // "Hesabım"da görür) numarayla sorgu da kapalı (16 Eki 2026, Vedat Bey uyarısı).
+  if (!hasOrderTracking(tenant)) return NextResponse.json({ error: "Bulunamadı." }, { status: 404 });
 
   const supabase = createSupabaseAdminClient();
   if (!supabase) return NextResponse.json({ error: "Sunucu yapılandırması eksik." }, { status: 500 });
