@@ -62,3 +62,15 @@ export async function resolveShortLink(code: string): Promise<string | null> {
   if (error || !data?.target_url) return null;
   return data.target_url;
 }
+
+/** Kısa linkin hedefi + sahibi (önizleme kartı için mağaza bilgisi gerekir). */
+export async function resolveShortLinkRecord(
+  code: string,
+): Promise<{ targetUrl: string; tenantId: string; kind: string } | null> {
+  if (!/^[a-z2-9]{4,16}$/.test(code)) return null;
+  const supabase = createSupabaseAdminClient();
+  if (!supabase) return null;
+  const { data } = await supabase.from("short_links").select("target_url, tenant_id, kind").eq("code", code).maybeSingle();
+  if (!data?.target_url) return null;
+  return { targetUrl: data.target_url, tenantId: data.tenant_id, kind: data.kind ?? "order_pdf" };
+}
