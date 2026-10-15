@@ -87,6 +87,12 @@ export function OrderBizimHesapStrip({
             · {new Date(order.bizimhesap_sent_at).toLocaleString("tr-TR", { dateStyle: "short", timeStyle: "short" })}
           </span>
         ) : null}
+        {/* Fiş BizimHesap'ta silindiyse (ör. iptal → geri al → yeniden onay) yeniden gönderim. */}
+        {onSend && order.status !== "cancelled" ? (
+          <button type="button" onClick={onSend} className="ml-auto text-xs font-medium text-emerald-800 underline">
+            Yeniden gönder
+          </button>
+        ) : null}
       </div>
     );
   }

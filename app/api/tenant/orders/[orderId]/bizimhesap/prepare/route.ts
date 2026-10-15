@@ -191,6 +191,7 @@ export async function PUT(request: Request, ctx: { params: Promise<{ orderId: st
     lines?: Array<{ kind?: unknown; id?: unknown; bizimhesapProductId?: unknown }>;
     warehouses?: Record<string, unknown>;
     priceListId?: unknown;
+    resend?: unknown;
   } | null;
 
   const customerId = typeof body?.customerId === "string" && body.customerId.trim() ? body.customerId.trim() : null;
@@ -251,6 +252,9 @@ export async function PUT(request: Request, ctx: { params: Promise<{ orderId: st
       bizimhesap_customer_title: customerTitle,
       ...(lineWarehouses ? { bizimhesap_line_warehouses: lineWarehouses } : {}),
       ...(priceListId !== undefined ? { bizimhesap_price_list_id: priceListId } : {}),
+      // "Önceki fişi sildim, yeniden gönder" (15 Eki 2026, #100378): gönderim işareti
+      // temizlenir; yoksa iptal → geri al → onay sonrası "zaten gönderildi" diye atlanıyordu.
+      ...(body?.resend === true ? { bizimhesap_guid: null, bizimhesap_sent_at: null, bizimhesap_error: null } : {}),
     })
     .eq("tenant_id", c.tenantId)
     .eq("id", orderId);

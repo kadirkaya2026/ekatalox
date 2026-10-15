@@ -78,6 +78,7 @@ export function BizimHesapApproveDialog({
   const [openLine, setOpenLine] = useState<string | null>(null);
   const [warehouseChoices, setWarehouseChoices] = useState<Record<string, string>>({});
   const [priceListId, setPriceListId] = useState<string | null | undefined>(undefined);
+  const [resend, setResend] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -146,7 +147,7 @@ export function BizimHesapApproveDialog({
       const response = await fetch(`/api/tenant/orders/${orderId}/bizimhesap/prepare`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ customerId, lines: changed, warehouses: warehouseChoices, priceListId: priceListId ?? null }),
+        body: JSON.stringify({ customerId, lines: changed, warehouses: warehouseChoices, priceListId: priceListId ?? null, resend: Boolean(data.alreadySent && resend) }),
       });
       const json = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(json.error ?? "Kaydedilemedi.");
@@ -197,9 +198,21 @@ export function BizimHesapApproveDialog({
         ) : (
           <div className="space-y-6 px-5 py-5">
             {data.alreadySent ? (
-              <p className="rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-800">
-                Bu sipariş daha önce BizimHesap&apos;a gönderilmiş; onaylamak yeniden göndermez.
-              </p>
+              <div className="rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                <p>Bu sipariş daha önce BizimHesap&apos;a gönderilmiş; işaretlemezseniz yeniden gönderilmez.</p>
+                <label className="mt-2 flex items-start gap-2 font-medium">
+                  <input
+                    type="checkbox"
+                    checked={resend}
+                    onChange={(event) => setResend(event.target.checked)}
+                    className="mt-0.5 size-4 shrink-0 accent-amber-600"
+                  />
+                  Önceki fişi BizimHesap&apos;tan sildim, yeniden gönder
+                </label>
+                {resend ? (
+                  <p className="mt-1 text-xs text-amber-700">Eski fiş BizimHesap&apos;ta duruyorsa ikinci bir fiş açılır.</p>
+                ) : null}
+              </div>
             ) : null}
 
             <section>
