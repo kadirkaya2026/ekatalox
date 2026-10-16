@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { createPortal } from "react-dom";
-import { ArrowRight, Check, ChevronDown, ChevronLeft, ChevronRight, SlidersHorizontal, X } from "lucide-react";
+import { ArrowRight, ArrowUpDown, Check, ChevronDown, ChevronLeft, ChevronRight, SlidersHorizontal, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   EMPTY_REFINE,
@@ -797,5 +797,93 @@ export function FilterSheet({
       </div>
     </div>,
     document.body,
+  );
+}
+
+// ---------------------------------------------------------------- Sıralama menüsü
+
+// Trendyol'daki "Önerilen Sıralama ⇅" gibi tek açılır menü (17 Eki 2026);
+// eski yan yana sıralama düğmelerinin yerine.
+export function SortMenu<K extends string>({
+  options,
+  value,
+  onChange,
+  accent,
+  label,
+  className,
+}: {
+  options: Array<{ key: K; label: string }>;
+  value: K;
+  onChange: (key: K) => void;
+  accent: string;
+  /** Erişilebilirlik adı (ör. "Sıralama"). */
+  label: string;
+  className?: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const rootRef = useRef<HTMLDivElement>(null);
+  const current = options.find((option) => option.key === value) ?? options[0];
+
+  useEffect(() => {
+    if (!open) return;
+    const onPointer = (event: PointerEvent) => {
+      if (!rootRef.current?.contains(event.target as Node)) setOpen(false);
+    };
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("pointerdown", onPointer);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("pointerdown", onPointer);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+
+  return (
+    <div ref={rootRef} className={cn("relative", className)} style={{ "--sf-accent": accent } as CSSProperties}>
+      <button
+        type="button"
+        onClick={() => setOpen((current) => !current)}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        aria-label={label}
+        className="inline-flex h-10 w-full items-center justify-between gap-3 rounded-lg border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-900"
+      >
+        <span className="truncate">{current?.label}</span>
+        <ArrowUpDown className="size-4 shrink-0 text-[var(--sf-accent)]" />
+      </button>
+      {open ? (
+        <ul
+          role="listbox"
+          aria-label={label}
+          className="absolute right-0 z-40 mt-1.5 min-w-full overflow-hidden rounded-lg border border-slate-200 bg-white py-1 shadow-xl sm:w-60"
+        >
+          {options.map((option) => {
+            const active = option.key === value;
+            return (
+              <li key={option.key}>
+                <button
+                  type="button"
+                  role="option"
+                  aria-selected={active}
+                  onClick={() => {
+                    setOpen(false);
+                    if (!active) onChange(option.key);
+                  }}
+                  className={cn(
+                    "flex w-full items-center justify-between gap-3 px-4 py-2.5 text-left text-sm text-slate-800 hover:bg-slate-50",
+                    active && "font-semibold text-[var(--sf-accent)]",
+                  )}
+                >
+                  {option.label}
+                  {active ? <Check className="size-4" strokeWidth={2.5} /> : null}
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      ) : null}
+    </div>
   );
 }

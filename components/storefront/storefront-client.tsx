@@ -168,6 +168,7 @@ import {
   FilterPills,
   FilterSheet,
   FilterSidebar,
+  SortMenu,
   countFilterSelections,
   hasFilterOptions,
   type FilterCategoryOption,
@@ -5219,44 +5220,34 @@ export function StorefrontClient({
                       </h2>
                     </div>
                     <div className="flex flex-wrap items-center gap-2.5 sm:gap-3">
-                      {showFilterUi ? (
-                        <FilterButton
-                          className="lg:hidden"
-                          count={filterSelectionCount}
-                          accent={filterAccent}
-                          onClick={() => setIsFilterSheetOpen(true)}
-                        />
-                      ) : null}
-                      {!isMarketTenant && !sectionMode ? (
-                        <div
-                          role="group"
-                          aria-label={t("catalog.sortLabel")}
-                          className={cn(
-                            "scrollbar-hide flex max-w-full items-center gap-1 overflow-x-auto rounded-full p-1 shadow-sm",
-                            theme.border,
-                            theme.surface,
-                          )}
-                        >
-                          {STOREFRONT_PRODUCT_SORTS.map((sortKey) => {
-                            const isActive = effectiveProductSort === sortKey;
-                            return (
-                              <button
-                                key={sortKey}
-                                type="button"
-                                onClick={() => {
-                                  setProductSort(sortKey);
-                                  setIsProductSortChosen(true);
-                                }}
-                                aria-pressed={isActive}
-                                className={cn(
-                                  "whitespace-nowrap rounded-full px-3.5 py-1.5 text-sm font-semibold transition",
-                                  isActive ? theme.primaryButton : cn("bg-transparent", theme.textMuted),
-                                )}
-                              >
-                                {t(`catalog.sort.${sortKey}`)}
-                              </button>
-                            );
-                          })}
+                      {/* Telefonda "Sırala | Filtrele" yan yana; masaüstünde sıralama
+                          tek açılır menü (Trendyol düzeni, 17 Eki 2026). */}
+                      {(!isMarketTenant && !sectionMode) || showFilterUi ? (
+                        <div className="order-last grid w-full grid-cols-2 gap-2 sm:order-none sm:flex sm:w-auto">
+                          {!isMarketTenant && !sectionMode ? (
+                            <SortMenu
+                              className={cn("sm:w-64", !showFilterUi && "col-span-2")}
+                              label={t("catalog.sortLabel")}
+                              accent={filterAccent}
+                              value={effectiveProductSort}
+                              options={STOREFRONT_PRODUCT_SORTS.map((sortKey) => ({
+                                key: sortKey,
+                                label: t(`catalog.sort.${sortKey}`),
+                              }))}
+                              onChange={(sortKey) => {
+                                setProductSort(sortKey);
+                                setIsProductSortChosen(true);
+                              }}
+                            />
+                          ) : null}
+                          {showFilterUi ? (
+                            <FilterButton
+                              className={cn("lg:hidden", (isMarketTenant || sectionMode) && "col-span-2")}
+                              count={filterSelectionCount}
+                              accent={filterAccent}
+                              onClick={() => setIsFilterSheetOpen(true)}
+                            />
+                          ) : null}
                         </div>
                       ) : null}
                       <div className={cn("rounded-full px-4 py-2.5 text-sm shadow-sm", theme.border, theme.surface, theme.textMuted)}>
