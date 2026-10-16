@@ -86,6 +86,7 @@ export function toStorefrontProduct(
     image_url: product.image_url,
     image_url_2: product.image_url_2,
     image_url_3: product.image_url_3,
+    extra_image_urls: product.extra_image_urls ?? null,
     model_3d_url: product.model_3d_url ?? null,
     is_in_stock: product.is_in_stock,
     is_recommended: product.is_recommended,

@@ -4447,6 +4447,7 @@ export function StorefrontClient({
       previewProduct.image_url,
       previewProduct.image_url_2,
       previewProduct.image_url_3,
+      ...(previewProduct.extra_image_urls ?? []),
     ].filter((url): url is string => Boolean(url));
     const activePreviewImage =
       previewImages[activePreviewImageIndex] ?? previewImages[0] ?? null;

@@ -394,6 +394,8 @@ export interface Product {
   image_url: string | null;
   image_url_2: string | null;
   image_url_3: string | null;
+  /** 4. ve sonraki görseller (0177). */
+  extra_image_urls?: string[] | null;
   /** Ürün sayfası galerisindeki 3D kare için .glb adresi (0150). */
   model_3d_url?: string | null;
   currency: CurrencyCode;
@@ -737,6 +739,8 @@ export interface StorefrontProduct {
   image_url: string | null;
   image_url_2: string | null;
   image_url_3: string | null;
+  /** 4. ve sonraki görseller (0177). */
+  extra_image_urls?: string[] | null;
   /** Ürün sayfası galerisindeki 3D kare için .glb adresi (0150). */
   model_3d_url?: string | null;
   is_in_stock: boolean;

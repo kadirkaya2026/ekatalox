@@ -47,12 +47,13 @@ export async function POST(request: Request) {
     image_url: string | null;
     image_url_2: string | null;
     image_url_3: string | null;
+    extra_image_urls: string[] | null;
   }> = [];
 
   for (const idsChunk of chunkArray(parsed.data.productIds, ID_CHUNK_SIZE)) {
     const { data, error: productsError } = await supabase
       .from("products")
-      .select("id, image_url, image_url_2, image_url_3")
+      .select("id, image_url, image_url_2, image_url_3, extra_image_urls")
       .eq("tenant_id", tenant.id)
       .in("id", idsChunk);
 
@@ -74,7 +75,12 @@ export async function POST(request: Request) {
   // hatası ürün silmeyi engellemez; en kötü ihtimalle sahipsiz dosya kalır.
   const imagePaths = await filterRemovableProductImagePaths(supabase, {
     tenantId: tenant.id,
-    urls: products.flatMap((product) => [product.image_url, product.image_url_2, product.image_url_3]),
+    urls: products.flatMap((product) => [
+      product.image_url,
+      product.image_url_2,
+      product.image_url_3,
+      ...(product.extra_image_urls ?? []),
+    ]),
     excludeProductIds: deletableIds,
   });
 

@@ -248,7 +248,7 @@ async function loadKurumsalProduct(tenantId: string, productId: string): Promise
     id: product.id,
     name: product.product_name,
     sku: product.sku_code,
-    images: [product.image_url, product.image_url_2, product.image_url_3].filter(
+    images: [product.image_url, product.image_url_2, product.image_url_3, ...(product.extra_image_urls ?? [])].filter(
       (url): url is string => Boolean(url),
     ),
     isInStock: product.is_in_stock,

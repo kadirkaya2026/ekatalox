@@ -269,7 +269,7 @@ export async function DELETE(
 
   const { data: product, error: productError } = await supabase
     .from("products")
-    .select("id, image_url, image_url_2, image_url_3")
+    .select("id, image_url, image_url_2, image_url_3, extra_image_urls")
     .eq("id", id)
     .eq("tenant_id", tenant.id)
     .maybeSingle();
@@ -284,7 +284,7 @@ export async function DELETE(
 
   const imagePaths = await filterRemovableProductImagePaths(supabase, {
     tenantId: tenant.id,
-    urls: [product.image_url, product.image_url_2, product.image_url_3],
+    urls: [product.image_url, product.image_url_2, product.image_url_3, ...(product.extra_image_urls ?? [])],
     excludeProductIds: [product.id],
   });
 

@@ -189,7 +189,7 @@ export async function DELETE(
 
   const [{ data: productRows, error: productsError }, { data: membershipRows, error: membershipsError }] =
     await Promise.all([
-      supabase.from("products").select("image_url, image_url_2, image_url_3").eq("tenant_id", id),
+      supabase.from("products").select("image_url, image_url_2, image_url_3, extra_image_urls").eq("tenant_id", id),
       supabase.from("tenant_memberships").select("user_id").eq("tenant_id", id),
     ]);
 
@@ -205,8 +205,13 @@ export async function DELETE(
   const imagePaths = await filterRemovableProductImagePaths(supabase, {
     tenantId: id,
     urls: (
-      (productRows as Array<{ image_url: string | null; image_url_2: string | null; image_url_3: string | null }> | null) ?? []
-    ).flatMap((product) => [product.image_url, product.image_url_2, product.image_url_3]),
+      (productRows as Array<{
+        image_url: string | null;
+        image_url_2: string | null;
+        image_url_3: string | null;
+        extra_image_urls: string[] | null;
+      }> | null) ?? []
+    ).flatMap((product) => [product.image_url, product.image_url_2, product.image_url_3, ...(product.extra_image_urls ?? [])]),
     ignoreOwnTenantReferences: true,
   });
 

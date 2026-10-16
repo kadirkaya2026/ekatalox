@@ -129,8 +129,11 @@ export function StorefrontProductDetailView({
   const theme = useStorefrontTheme();
   const { t } = useStorefrontLocale();
   const images = useMemo(
-    () => [product.image_url, product.image_url_2, product.image_url_3].filter((url): url is string => Boolean(url)),
-    [product.image_url, product.image_url_2, product.image_url_3],
+    () =>
+      [product.image_url, product.image_url_2, product.image_url_3, ...(product.extra_image_urls ?? [])].filter(
+        (url): url is string => Boolean(url),
+      ),
+    [product.image_url, product.image_url_2, product.image_url_3, product.extra_image_urls],
   );
   const [imageIndex, setImageIndex] = useState(0);
   // 3D kare (1 Eki 2026): model_3d_url dolu ürünlerde görsellerden sonra
