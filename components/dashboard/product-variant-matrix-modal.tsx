@@ -8,11 +8,21 @@ import { Modal } from "@/components/ui/modal";
 import { getPriceListDisplayName } from "@/lib/price-lists/constants";
 import { buildVariantListPriceFormState } from "@/lib/products/price-form";
 import { sanitizePrice } from "@/lib/products/parse-price-input";
+import {
+  MAX_VARIANT_AXES,
+  VARIANT_AXIS_SUGGESTIONS,
+  cleanVariantAttributes,
+  resolveVariantAttributes,
+} from "@/lib/products/variant-attributes";
 import type { PriceList, Product, ProductVariant } from "@/lib/types";
 
 interface VariantMatrixRow {
   id?: string;
   model_name: string;
+  /** Başlık (Beden/Renk…) → değer; vitrin filtresi bunları listeler (0176). */
+  values: Record<string, string>;
+  /** Değerler değişince varyant adı değerlerden yeniden yazılır. */
+  autoName: boolean;
   package_quantity: string;
   carton_quantity: string;
   listPrices: Record<string, string>;
@@ -23,6 +33,8 @@ interface VariantMatrixRow {
 function emptyVariantRow(display_order: number, priceLists: PriceList[]): VariantMatrixRow {
   return {
     model_name: "",
+    values: {},
+    autoName: true,
     package_quantity: "",
     carton_quantity: "",
     listPrices: buildVariantListPriceFormState(priceLists),
@@ -39,6 +51,8 @@ function variantToMatrixRow(
   return {
     id: variant.id,
     model_name: variant.model_name,
+    values: resolveVariantAttributes(variant),
+    autoName: false,
     package_quantity: variant.package_quantity ? String(variant.package_quantity) : "",
     carton_quantity: variant.carton_quantity ? String(variant.carton_quantity) : "",
     listPrices: buildVariantListPriceFormState(priceLists, variant),
@@ -47,10 +61,29 @@ function variantToMatrixRow(
   };
 }
 
-function normalizeVariantRows(rows: VariantMatrixRow[]) {
+// Satırlarda ilk görülen sırayla başlıklar (en çok 2): kayıtlı ya da addan
+// tahmin edilen özelliklerden gelir; panelde değiştirilebilir.
+function initialAxes(rows: VariantMatrixRow[]) {
+  const axes: string[] = [];
+  for (const row of rows) {
+    for (const axis of Object.keys(row.values)) {
+      if (!axes.includes(axis) && axes.length < MAX_VARIANT_AXES) axes.push(axis);
+    }
+  }
+  return axes;
+}
+
+function composeName(row: VariantMatrixRow, axes: string[]) {
+  return axes.map((axis) => (row.values[axis] ?? "").trim()).filter(Boolean).join(" / ");
+}
+
+function normalizeVariantRows(rows: VariantMatrixRow[], axes: string[]) {
   return rows.map((row, index) => ({
     id: row.id ?? "",
     model_name: row.model_name.trim(),
+    attributes: cleanVariantAttributes(
+      Object.fromEntries(axes.map((axis) => [axis, row.values[axis] ?? ""])),
+    ),
     package_quantity: row.package_quantity.trim() ? Number(row.package_quantity) : null,
     carton_quantity: row.carton_quantity.trim() ? Number(row.carton_quantity) : null,
     is_available_for_sale: row.is_available_for_sale,
@@ -86,6 +119,7 @@ export function ProductVariantMatrixModal({
         )
       : [emptyVariantRow(1, priceLists)],
   );
+  const [axes, setAxes] = useState<string[]>(() => initialAxes(variantRows));
   const [variantMessage, setVariantMessage] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
@@ -96,6 +130,63 @@ export function ProductVariantMatrixModal({
   ) {
     setVariantRows((current) =>
       current.map((row, rowIndex) => (rowIndex !== index ? row : { ...row, [key]: value })),
+    );
+  }
+
+  function updateVariantRowValue(index: number, axis: string, value: string) {
+    setVariantRows((current) =>
+      current.map((row, rowIndex) => {
+        if (rowIndex !== index) return row;
+        const next = { ...row, values: { ...row.values, [axis]: value }, autoName: true };
+        return { ...next, model_name: composeName(next, axes) };
+      }),
+    );
+  }
+
+  function setAxisName(position: number, name: string) {
+    const previous = axes[position];
+    const nextAxes = axes.map((axis, index) => (index === position ? name : axis));
+    setAxes(nextAxes);
+    if (previous === undefined || previous === name) return;
+    // Başlık adı değişince satırlardaki değerler yeni ada taşınır.
+    setVariantRows((current) =>
+      current.map((row) => {
+        const values = { ...row.values };
+        if (previous in values) {
+          values[name] = values[previous];
+          delete values[previous];
+        }
+        return { ...row, values };
+      }),
+    );
+  }
+
+  function addAxis(name = "") {
+    if (axes.length >= MAX_VARIANT_AXES) return;
+    const nextAxes = [...axes, name];
+    setAxes(nextAxes);
+    // Tek başlıklı ürüne ilk başlık eklenirken mevcut adlar değer olarak alınır.
+    if (axes.length === 0 && name) {
+      setVariantRows((current) =>
+        current.map((row) => ({
+          ...row,
+          values: row.values[name] ? row.values : { [name]: row.model_name.trim() },
+        })),
+      );
+    }
+  }
+
+  function removeAxis(position: number) {
+    const removed = axes[position];
+    const nextAxes = axes.filter((_, index) => index !== position);
+    setAxes(nextAxes);
+    setVariantRows((current) =>
+      current.map((row) => {
+        const values = { ...row.values };
+        delete values[removed];
+        const next = { ...row, values };
+        return row.autoName && nextAxes.length ? { ...next, model_name: composeName(next, nextAxes) } : next;
+      }),
     );
   }
 
@@ -126,6 +217,15 @@ export function ProductVariantMatrixModal({
   }
 
   function handleSave() {
+    const namedAxes = axes.map((axis) => axis.trim());
+    if (namedAxes.some((axis) => !axis)) {
+      setVariantMessage("Başlık adı boş olamaz (örn. Beden, Renk). Kullanmayacaksanız başlığı kaldırın.");
+      return;
+    }
+    if (new Set(namedAxes.map((axis) => axis.toLocaleLowerCase("tr-TR"))).size !== namedAxes.length) {
+      setVariantMessage("Aynı başlık iki kez girilmiş.");
+      return;
+    }
     const hasEmptyModelName = variantRows.some((row) => !row.model_name.trim());
 
     if (hasEmptyModelName) {
@@ -147,7 +247,7 @@ export function ProductVariantMatrixModal({
       const response = await fetch(`/api/tenant/products/${product.id}/variants`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ variants: normalizeVariantRows(variantRows) }),
+        body: JSON.stringify({ variants: normalizeVariantRows(variantRows, namedAxes) }),
       });
 
       const result = await response.json();
@@ -184,6 +284,51 @@ export function ProductVariantMatrixModal({
           </Button>
         </div>
 
+        <div className="rounded-xl border border-border bg-muted/30 p-4">
+          <p className="text-sm font-semibold text-foreground">Varyant başlıkları</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Varyantlar neyi gösteriyor? Örn. giyimde Beden, aksesuarda Renk. Vitrindeki filtrede bu başlıklar ayrı
+            ayrı listelenir. Başlık seçmezseniz varyant adı olduğu gibi kalır.
+          </p>
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            {axes.map((axis, position) => (
+              <div key={position} className="flex items-center gap-1">
+                <Input
+                  value={axis}
+                  onChange={(event) => setAxisName(position, event.target.value)}
+                  placeholder="Başlık"
+                  className="h-9 w-36"
+                  aria-label={`${position + 1}. başlık`}
+                />
+                <Button
+                  variant="secondary"
+                  className="h-9 px-2"
+                  onClick={() => removeAxis(position)}
+                  aria-label="Başlığı kaldır"
+                >
+                  <Trash2 className="size-4" />
+                </Button>
+              </div>
+            ))}
+            {axes.length < MAX_VARIANT_AXES
+              ? VARIANT_AXIS_SUGGESTIONS.filter(
+                  (name) => !axes.some((axis) => axis.toLocaleLowerCase("tr-TR") === name.toLocaleLowerCase("tr-TR")),
+                ).map((name) => (
+                  <Button key={name} variant="secondary" className="h-9" onClick={() => addAxis(name)}>
+                    <Plus className="size-4" />
+                    {name}
+                  </Button>
+                ))
+              : null}
+            {axes.length < MAX_VARIANT_AXES ? (
+              <Button variant="secondary" className="h-9" onClick={() => addAxis("")}>
+                <Plus className="size-4" />
+                Başka başlık
+              </Button>
+            ) : null}
+          </div>
+        </div>
+
         {variantMessage ? (
           <div className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-800">
             {variantMessage}
@@ -194,6 +339,11 @@ export function ProductVariantMatrixModal({
           <table className="min-w-full border-collapse">
             <thead className="bg-muted/60 text-left text-xs uppercase tracking-[0.14em] text-muted-foreground">
               <tr>
+                {axes.map((axis, position) => (
+                  <th key={position} className="px-3 py-3 whitespace-nowrap">
+                    {axis.trim() || "Başlık"}
+                  </th>
+                ))}
                 <th className="px-3 py-3">Varyant Adı</th>
                 <th className="px-3 py-3">Paket İçi</th>
                 <th className="px-3 py-3">Koli İçi</th>
@@ -209,6 +359,16 @@ export function ProductVariantMatrixModal({
             <tbody>
               {variantRows.map((row, index) => (
                 <tr key={row.id ?? `variant-row-${index}`} className="border-t border-border">
+                  {axes.map((axis, position) => (
+                    <td key={position} className="px-3 py-3">
+                      <Input
+                        value={row.values[axis] ?? ""}
+                        onChange={(event) => updateVariantRowValue(index, axis, event.target.value)}
+                        placeholder={axis.trim().toLocaleLowerCase("tr-TR") === "beden" ? "Örn: M" : axis.trim().toLocaleLowerCase("tr-TR") === "renk" ? "Örn: Siyah" : ""}
+                        className="min-w-[6.5rem]"
+                      />
+                    </td>
+                  ))}
                   <td className="px-3 py-3">
                     <Input
                       value={row.model_name}

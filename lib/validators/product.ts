@@ -267,6 +267,8 @@ export const productVariantBulkUpdateSchema = z.object({
       carton_quantity: optionalPositiveIntegerSchema,
       is_available_for_sale: booleanSchema.optional().default(true),
       display_order: z.coerce.number().int().min(1).optional(),
+      // Vitrin filtresi başlıkları (0176), örn. {"Beden":"M"}; yoksa boş.
+      attributes: z.record(z.string(), z.string()).optional(),
       prices: productPricesSchema.optional(),
     }),
   ).min(1, "En az bir varyant girin."),

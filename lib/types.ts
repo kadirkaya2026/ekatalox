@@ -434,6 +434,8 @@ export interface ProductVariant {
   carton_quantity: number | null;
   is_available_for_sale: boolean;
   display_order: number;
+  /** Vitrin filtresi özellikleri (0176), örn. {"Beden":"M"}; boşsa addan tahmin. */
+  attributes?: Record<string, string> | null;
   created_at: string;
   updated_at: string;
   prices?: ProductVariantPrice[];
@@ -764,6 +766,8 @@ export interface StorefrontProductVariant {
   is_available_for_sale: boolean;
   is_purchasable: boolean;
   display_order: number;
+  /** Beden/Renk gibi filtre özellikleri (0176); boşsa addan tahmin edilir. */
+  attributes?: Record<string, string> | null;
   price: number | null;
   original_price?: number | null;
   discount_percentage?: number | null;

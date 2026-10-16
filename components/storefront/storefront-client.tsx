@@ -31,6 +31,7 @@ import {
   buildCategoryTree,
   getCategoryLineage,
   getDescendantCategoryIds,
+  getHiddenStorefrontCategoryIds,
   sortCategoriesByOrder,
 } from "@/lib/categories/tree";
 import { supportedCurrencyCodes, formatProductModelNo } from "@/lib/products/constants";
@@ -161,6 +162,29 @@ import {
 import type { StorefrontAdsConfig } from "@/lib/ads/config";
 import { earliestDeliveryDate, formatDeliveryDate, resolveRetailConfig, slugify } from "@/lib/storefront/retail-config";
 import { StorefrontInfoSections } from "@/components/storefront/storefront-info-sections";
+import {
+  EMPTY_FILTER_SELECTION,
+  FilterButton,
+  FilterPills,
+  FilterSheet,
+  FilterSidebar,
+  countFilterSelections,
+  hasFilterOptions,
+  type FilterCategoryOption,
+  type FilterPanelData,
+  type FilterSelection,
+} from "@/components/storefront/storefront-filters";
+import {
+  clearRefineFromUrl,
+  isRefineActive,
+  readRefineFromUrl,
+  serializeRefine,
+  writeRefineToUrl,
+  type StorefrontFacets,
+  type StorefrontRefine,
+} from "@/lib/storefront/refine";
+import { resolveBrandPalette } from "@/lib/storefront/brand-palette";
+import { textilePalettes } from "@/components/storefront/sector-design/palette";
 
 function getCartStorageKey(tenantId: string) {
   return `ekatalox_cart_${tenantId}`;
@@ -1843,6 +1867,128 @@ export function StorefrontClient({
       .map((category) => category.id);
     return [...new Set(matchedRootIds.flatMap((id) => getDescendantCategoryIds(categories, id)))];
   }, [categories, debouncedSearchTerm]);
+
+  // Vitrin filtresi (17 Eki 2026, Trendyol düzeni; bkz. storefront-filters.tsx
+  // ve lib/storefront/refine.ts): kategori sayfasında ve aramada alt kategori,
+  // marka, fiyat aralığı, indirim ve varyant özellikleri (Beden/Renk). Süzme
+  // sunucuda yapılır. Market düzeninde, önizlemede ve gömülü/bölüm modunda kapalı.
+  const [filterSelection, setFilterSelection] = useState<FilterSelection>(EMPTY_FILTER_SELECTION);
+  const [filterFacetsState, setFilterFacetsState] = useState<{ scope: string; facets: StorefrontFacets | null }>({ scope: "", facets: null });
+  const [isFilterSheetOpen, setIsFilterSheetOpen] = useState(false);
+  // Adresten gelen özellik (beden=m) anahtarları seçenekler gelene dek bekler:
+  // başlıklar bilinmeden ilgisiz parametreler (ör. kampanya kodları) süzgece girmesin.
+  const pendingUrlAttrsRef = useRef<Record<string, string[]> | null>(null);
+  const writtenAttrAxesRef = useRef<string[]>([]);
+  const filterEnabled = !previewMode && !sectionMode && !inlineProductNavigation && !isMarketTenant;
+  const filterScopeActive =
+    filterEnabled && (selectedCategoryId !== "all" || Boolean(debouncedSearchTerm.trim()));
+  const buildRefine = useCallback(
+    (selection: FilterSelection): StorefrontRefine => ({
+      ...selection.refine,
+      sub: [...new Set(selection.subSelected.flatMap((id) => getDescendantCategoryIds(categories, id)))],
+    }),
+    [categories],
+  );
+  const refineParam = useMemo(() => {
+    if (!filterScopeActive) return "";
+    const refine = buildRefine(filterSelection);
+    return isRefineActive(refine) ? serializeRefine(refine) : "";
+  }, [filterScopeActive, filterSelection, buildRefine]);
+  const facetScopeQuery = useMemo(() => {
+    if (!filterScopeActive || !analyticsSubdomain) return "";
+    const params = new URLSearchParams();
+    params.set("subdomain", analyticsSubdomain);
+    if (debouncedSearchTerm.trim()) params.set("q", debouncedSearchTerm.trim());
+    if (isDiscountCategorySelected) params.set("discountOnly", "1");
+    else if (selectedCategoryIds) params.set("categoryIds", [...selectedCategoryIds].join(","));
+    if (matchCategoryIds.length) params.set("matchCategoryIds", matchCategoryIds.join(","));
+    return params.toString();
+  }, [filterScopeActive, analyticsSubdomain, debouncedSearchTerm, isDiscountCategorySelected, selectedCategoryIds, matchCategoryIds]);
+  const loadFilterFacets = useCallback(
+    async (selection: FilterSelection) => {
+      if (!facetScopeQuery) return null;
+      const params = new URLSearchParams(facetScopeQuery);
+      const refine = buildRefine(selection);
+      if (isRefineActive(refine)) params.set("refine", serializeRefine(refine));
+      try {
+        const response = await fetch(`/api/storefront/facets?${params.toString()}`);
+        return response.ok ? ((await response.json()) as StorefrontFacets) : null;
+      } catch {
+        return null;
+      }
+    },
+    [facetScopeQuery, buildRefine],
+  );
+  useEffect(() => {
+    if (!facetScopeQuery) return;
+    let cancelled = false;
+    void loadFilterFacets(filterSelection).then((facets) => {
+      if (cancelled) return;
+      setFilterFacetsState({ scope: facetScopeQuery, facets });
+      const pending = pendingUrlAttrsRef.current;
+      if (pending && facets) {
+        pendingUrlAttrsRef.current = null;
+        const known = new Set(facets.attributes.map((axis) => axis.key));
+        const attrs = Object.fromEntries(Object.entries(pending).filter(([axis]) => known.has(axis)));
+        writtenAttrAxesRef.current = Object.keys(attrs);
+        if (Object.keys(attrs).length) {
+          setFilterSelection((current) => ({ ...current, refine: { ...current.refine, attrs } }));
+        }
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [facetScopeQuery, refineParam]);
+  // Kapsam değişince (başka kategori/arama) eski seçenekler gösterilmez.
+  const filterFacets = filterFacetsState.scope === facetScopeQuery ? filterFacetsState.facets : null;
+  const filterAccent = useMemo(() => {
+    const palette = resolveBrandPalette({
+      brand_primary_color: storefrontSettings.brand_primary_color,
+      brand_accent_color: storefrontSettings.brand_accent_color,
+      brand_palette: storefrontSettings.brand_palette,
+    });
+    const design = readDesignDocument(storefrontSettings.sector_design, tenant.sector);
+    const sectorAccent = design
+      ? getDesignContent(design).accentColor ??
+        (textilePalettes as Record<string, readonly string[]>)[design.themeId]?.[0]
+      : null;
+    const color = palette.activeCategory ?? palette.addToCart ?? sectorAccent ?? "#0f172a";
+    // Çok açık renkler (ör. Akım'ın limonu) beyaz zeminde okunmaz: koyuya düş.
+    const hex = /^#[0-9a-f]{6}$/i.test(color) ? color : "#0f172a";
+    const [r, g, b] = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
+    return (r * 299 + g * 587 + b * 114) / 1000 > 175 ? "#111827" : hex;
+  }, [storefrontSettings.brand_primary_color, storefrontSettings.brand_accent_color, storefrontSettings.brand_palette, storefrontSettings.sector_design, tenant.sector]);
+  // Alt kategori satırları: seçili kategorinin doğrudan alt dalları (aramada
+  // ana kategoriler); sayı, alt dallardaki ürünlerin toplamı.
+  const buildFilterSubOptions = useCallback(
+    (facets: StorefrontFacets | null): FilterCategoryOption[] => {
+      if (!facets) return [];
+      const parentId = selectedCategoryId === "all" ? null : selectedCategoryId;
+      const hidden = new Set(getHiddenStorefrontCategoryIds(categories));
+      return categories
+        .filter((category) => (category.parent_id ?? null) === parentId && !hidden.has(category.id) && !category.is_discount_category)
+        .map((category) => ({
+          id: category.id,
+          name: category.name,
+          count: getDescendantCategoryIds(categories, category.id).reduce((sum, id) => sum + (facets.categories[id] ?? 0), 0),
+        }))
+        .filter((option) => option.count > 0);
+    },
+    [categories, selectedCategoryId],
+  );
+  const filterPanelData: FilterPanelData = useMemo(() => {
+    const currency = initialProducts[0]?.currency;
+    return {
+      facets: filterFacets,
+      subOptions: buildFilterSubOptions(filterFacets),
+      showPrice: !isCatalogOnly,
+      currencySymbol: currency === "USD" ? "$" : currency === "EUR" ? "€" : "₺",
+    };
+  }, [filterFacets, buildFilterSubOptions, isCatalogOnly, initialProducts]);
+  const showFilterUi = filterScopeActive && hasFilterOptions(filterPanelData, filterSelection);
+  const filterSelectionCount = countFilterSelections(filterSelection);
   const selectedCategoryLineage = useMemo(
     () =>
       selectedCategoryId === "all" ? [] : getCategoryLineage(categories, selectedCategoryId),
@@ -2309,6 +2455,7 @@ export function StorefrontClient({
       if (params.get("kampanya") === "1") setIsCampaignsSheetOpen(true);
       const kategoriId = kategori ? categoryIdFromParam(kategori) : null;
       if (kategoriId) handleCategoryChange(kategoriId);
+      applyFilterFromUrl(params);
       // İlk adres uygulandıktan sonra liste durumu adrese yazılmaya başlar.
       listUrlReadyRef.current = true;
     }, 0);
@@ -2422,7 +2569,22 @@ export function StorefrontClient({
     setSearchInput(q);
     setCommittedSearch(q);
     setSelectedCategoryId((kategori && categoryIdFromParam(kategori)) || "all");
+    applyFilterFromUrl(params);
   };
+  // Adresteki filtre (?marka=…&fiyat=…&alt=…&beden=…); kategori/arama yoksa yok sayılır.
+  function applyFilterFromUrl(params: URLSearchParams) {
+    if (!filterEnabled || (!params.get("kategori") && !params.get("q")?.trim())) {
+      pendingUrlAttrsRef.current = null;
+      setFilterSelection(EMPTY_FILTER_SELECTION);
+      return;
+    }
+    const { subSlugs, refine } = readRefineFromUrl(params);
+    pendingUrlAttrsRef.current = Object.keys(refine.attrs).length ? refine.attrs : null;
+    setFilterSelection({
+      refine: { ...refine, attrs: {} },
+      subSelected: subSlugs.map((slug) => categoryIdFromParam(slug)).filter((id): id is string => Boolean(id)),
+    });
+  }
   useEffect(() => {
     if (!listUrlEnabled || !listUrlReadyRef.current || detailProduct) return;
     const url = new URL(window.location.href);
@@ -2430,6 +2592,20 @@ export function StorefrontClient({
     for (const key of ["kategori", "q", "urun", "kampanya", "bildirim", "tekrar"]) url.searchParams.delete(key);
     if (selectedCategoryId !== "all") url.searchParams.set("kategori", categoryParamFor(selectedCategoryId));
     if (committedSearch.trim()) url.searchParams.set("q", committedSearch.trim());
+    if (pendingUrlAttrsRef.current) {
+      // Adresten gelen özellikler henüz uygulanmadı: adreste olduğu gibi kalsın.
+    } else if (filterScopeActive) {
+      writeRefineToUrl(
+        url.searchParams,
+        filterSelection.refine,
+        filterSelection.subSelected.map((id) => categoryParamFor(id)),
+        writtenAttrAxesRef.current,
+      );
+      writtenAttrAxesRef.current = Object.keys(filterSelection.refine.attrs);
+    } else {
+      clearRefineFromUrl(url.searchParams, writtenAttrAxesRef.current);
+      writtenAttrAxesRef.current = [];
+    }
     const next = url.pathname + url.search + url.hash;
     const current = window.location.pathname + window.location.search + window.location.hash;
     const mode = listUrlModeRef.current;
@@ -2438,7 +2614,7 @@ export function StorefrontClient({
     if (mode === "push") window.history.pushState({}, "", next);
     else window.history.replaceState(window.history.state, "", next);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedCategoryId, committedSearch, detailProduct, listUrlEnabled]);
+  }, [selectedCategoryId, committedSearch, detailProduct, listUrlEnabled, filterSelection, filterScopeActive]);
 
   function closeDetailToList(pushHome: boolean) {
     if (!detailProduct) return;
@@ -3396,6 +3572,10 @@ export function StorefrontClient({
           params.set("sort", effectiveProductSort);
         }
 
+        if (refineParam) {
+          params.set("refine", refineParam);
+        }
+
         const response = await fetch(`${productsEndpoint}${params.toString()}`);
 
         if (!response.ok || requestId !== productsRequestSeqRef.current) {
@@ -3413,7 +3593,7 @@ export function StorefrontClient({
         if (requestId === productsRequestSeqRef.current) setIsLoadingProducts(false);
       }
     },
-    [analyticsSubdomain, debouncedSearchTerm, isDiscountCategorySelected, selectedCategoryIds, matchCategoryIds, effectiveProductSort, previewMode, productsEndpoint],
+    [analyticsSubdomain, debouncedSearchTerm, isDiscountCategorySelected, selectedCategoryIds, matchCategoryIds, effectiveProductSort, previewMode, productsEndpoint, refineParam],
   );
 
   useEffect(() => {
@@ -3456,7 +3636,7 @@ export function StorefrontClient({
 
     void fetchProductsPage(1, "replace");
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [debouncedSearchTerm, selectedCategoryId, effectiveProductSort]);
+  }, [debouncedSearchTerm, selectedCategoryId, effectiveProductSort, refineParam]);
 
   const handleLoadMoreProducts = useCallback(() => {
     if (sectionMode) {
@@ -3469,6 +3649,9 @@ export function StorefrontClient({
   function handleCategoryChange(categoryId: string) {
     listUrlModeRef.current = "push";
     if (detailProduct) closeDetailToList(true);
+    // Başka kategoriye geçince filtre sıfırlanır (seçenekler kategoriye özel).
+    setFilterSelection(EMPTY_FILTER_SELECTION);
+    pendingUrlAttrsRef.current = null;
     setSelectedCategoryId(categoryId);
     setHoveredCategoryId(null);
   }
@@ -3535,7 +3718,17 @@ export function StorefrontClient({
   function handleSearchSubmit() {
     listUrlModeRef.current = "push";
     if (detailProduct) closeDetailToList(true);
+    if (searchInput.trim() !== committedSearch) {
+      setFilterSelection(EMPTY_FILTER_SELECTION);
+      pendingUrlAttrsRef.current = null;
+    }
     setCommittedSearch(searchInput.trim());
+  }
+
+  function handleFilterChange(next: FilterSelection) {
+    listUrlModeRef.current = "push";
+    pendingUrlAttrsRef.current = null;
+    setFilterSelection(next);
   }
 
   // Market/tekel alt-menü arama sayfası: yazarken canlı sonuç (eski davranış).
@@ -4512,6 +4705,18 @@ export function StorefrontClient({
     <StorefrontLayoutProvider layoutKey={storefrontSettings.layout_key ?? "classic-grid"}>
     <div className={electronicsDesign ? commerceRootClass(electronicsDesign.themeId, theme.isDark, akimDay) : "contents"} style={electronicsDesign ? paletteStyle(electronicsDesign, theme.isDark, akimDay) : undefined} data-commerce-design={electronicsDesign?.themeId}>
       {isClosedNow ? <StoreClosedOverlay nextOpening={closedNowNextOpening} /> : null}
+      {filterEnabled ? (
+        <FilterSheet
+          open={isFilterSheetOpen && filterScopeActive}
+          onClose={() => setIsFilterSheetOpen(false)}
+          data={filterPanelData}
+          buildSubOptions={buildFilterSubOptions}
+          selection={filterSelection}
+          onApply={handleFilterChange}
+          loadFacets={loadFilterFacets}
+          accent={filterAccent}
+        />
+      ) : null}
       {electronicsDesign ? <SectorStorefront key={electronicsDesign.themeId}
         design={electronicsDesign} settings={storefrontSettings} title={storefrontTitle}
         products={products} initialProducts={[...initialProducts, ...recommendationPool]} categories={categories}
@@ -4523,6 +4728,18 @@ export function StorefrontClient({
         onDetail={handleOpenProductDetail} onAdd={handleQuickAddOrOpenModal} onDecrease={handleDecreaseCartItem}
         onMore={handleLoadMoreProducts} onHome={handleGoHome}
         orderTrackingHref={orderTrackingEnabled && !previewMode ? "/siparislerim" : undefined}
+        filterBar={showFilterUi ? (
+          <div className="mb-4 flex flex-wrap items-center gap-2">
+            <FilterButton count={filterSelectionCount} accent={filterAccent} onClick={() => setIsFilterSheetOpen(true)} />
+            <FilterPills
+              data={filterPanelData}
+              selection={filterSelection}
+              onChange={handleFilterChange}
+              onClearAll={() => handleFilterChange(EMPTY_FILTER_SELECTION)}
+              accent={filterAccent}
+            />
+          </div>
+        ) : null}
       /> : <StorefrontHeader
         orderTrackingHref={orderTrackingEnabled ? "/siparislerim" : undefined}
         accountHref={accountEnabled ? "/hesabim" : undefined}
@@ -5002,6 +5219,14 @@ export function StorefrontClient({
                       </h2>
                     </div>
                     <div className="flex flex-wrap items-center gap-2.5 sm:gap-3">
+                      {showFilterUi ? (
+                        <FilterButton
+                          className="lg:hidden"
+                          count={filterSelectionCount}
+                          accent={filterAccent}
+                          onClick={() => setIsFilterSheetOpen(true)}
+                        />
+                      ) : null}
                       {!isMarketTenant && !sectionMode ? (
                         <div
                           role="group"
@@ -5045,6 +5270,28 @@ export function StorefrontClient({
                     </div>
                   </div>
 
+                  {showFilterUi ? (
+                    <FilterPills
+                      className="mb-5"
+                      data={filterPanelData}
+                      selection={filterSelection}
+                      onChange={handleFilterChange}
+                      onClearAll={() => handleFilterChange(EMPTY_FILTER_SELECTION)}
+                      accent={filterAccent}
+                    />
+                  ) : null}
+
+                  <div className={cn(showFilterUi && "lg:grid lg:grid-cols-[15rem_minmax(0,1fr)] lg:items-start lg:gap-8")}>
+                  {showFilterUi ? (
+                    <FilterSidebar
+                      className="hidden lg:sticky lg:top-28 lg:block lg:max-h-[calc(100vh-8rem)] lg:overflow-y-auto lg:pr-1"
+                      data={filterPanelData}
+                      selection={filterSelection}
+                      onChange={handleFilterChange}
+                      accent={filterAccent}
+                    />
+                  ) : null}
+                  <div className="min-w-0">
                   {productTotal ? (
                     <StorefrontProductListing
                       products={visibleProducts}
@@ -5102,6 +5349,8 @@ export function StorefrontClient({
                       )}
                     </div>
                   ) : null}
+                  </div>
+                  </div>
                 </section>
               ) : null;
             }

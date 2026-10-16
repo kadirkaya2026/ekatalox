@@ -2,7 +2,7 @@
 import { paletteStyle } from "./palette";
 
 import { ArrowRight, ArrowUpRight, Search, ShoppingBag, Plus, Minus, Grid2X2, List, SlidersHorizontal, Package, Bell, X, ChevronRight, ChevronDown, LayoutGrid, Moon, Sun, PackageSearch } from "lucide-react";
-import { useEffect, useRef, useState, type CSSProperties } from "react";
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import type { Category, StorefrontProduct, TenantStorefrontSettings } from "@/lib/types";
 import { type DesignDocument, type FormaContent, type AkimContent, type ModulContent, getDesignContent } from "@/lib/storefront/sector-design/config";
 import { useStorefrontLocale } from "@/lib/storefront/locale-context";
@@ -31,6 +31,8 @@ export type SectorStorefrontProps = {
   onAdd: (id: string) => void; onDecrease: (id: string) => void; onMore: () => void; onHome: () => void;
   /** Sipariş Takip (/siparislerim) açıksa başlıkta ikon (bkz. hasOrderTracking; 7 Eki 2026). */
   orderTrackingHref?: string;
+  /** Vitrin filtresi satırı ("Filtrele" + seçili etiketler); kategori/arama sayfasında dolu (17 Eki 2026). */
+  filterBar?: ReactNode;
 };
 export const sectorUi = {
   tr: { trackOrders: "Siparişlerim", allCategories: "Tüm kategoriler", all: "Tüm ürünler", categories: "Kategoriler", discover: "Keşfet", search: "Ürün veya model ara", cart: "Sepetim", campaigns: "Kampanyalar", retail: "Ürün kataloğu", wholesale: "Toptan sipariş", products: "ürün", add: "Sepete ekle", remove: "Adedi azalt", detail: "Ürünü incele", catalog: "Kataloğa dön", more: "Daha fazla ürün", empty: "Aradığınız ürün bulunamadı.", emptyBody: "Başka bir arama yapın veya tüm ürünlere göz atın.", stock: "Stokta yok", package: "Paket", carton: "Koli", units: "adet", grid: "Izgara görünümü", list: "Liste görünümü", loading: "Ürünler yükleniyor", close: "Kapat" },
@@ -129,6 +131,7 @@ export function ElectronicsStorefront(p: SectorStorefrontProps) {
       {variant === "modul" && showLanding && (c as ModulContent).promoVisible && <section data-theme-area="promoVisible" className={styles.promos}><button onClick={() => choose((c as ModulContent).promoCategoryId || "all")}><>{(c as ModulContent).promoImage && <ProductPhoto src={(c as ModulContent).promoImage ?? null} alt=""/>}</><span><strong>{(c as ModulContent).promoTitle}</strong><small>{(c as ModulContent).promoBody}</small></span><ArrowUpRight size={25} /></button><button onClick={() => choose((c as ModulContent).secondCategoryId || "all")}><>{(c as ModulContent).secondImage && <ProductPhoto src={(c as ModulContent).secondImage ?? null} alt=""/>}</><span><strong>{(c as ModulContent).secondTitle}</strong><small>{(c as ModulContent).secondBody}</small></span><ArrowUpRight size={25} /></button></section>}
       <section id="sector-catalog" className={styles.catalog} aria-busy={p.loading}>
         <div className={styles.catalogHeading}><div><p>{wholesale ? labels.wholesale : labels.retail}</p><h2 data-theme-area="general">{categoryName || labels.all}</h2></div><div className={styles.catalogControls}><span aria-live="polite">{p.total} {labels.products}</span><button onClick={() => setMenuOpen(!menuOpen)} className={styles.filter} aria-label={labels.categories} aria-expanded={menuOpen}><SlidersHorizontal size={19} /></button><button onClick={() => setView("grid")} aria-label={labels.grid} aria-pressed={!listView}><Grid2X2 size={19} /></button><button onClick={() => setView("list")} aria-label={labels.list} aria-pressed={listView}><List size={19} /></button></div></div>
+        {p.filterBar}
         {menuOpen && <div className={styles.filterPanel}><button className={styles.filterClose} onClick={() => setMenuOpen(false)} aria-label={labels.close}><X size={20} /></button>{p.categories.map(cat => <button key={cat.id} aria-pressed={p.selectedCategory === cat.id} onClick={() => choose(cat.id)}>{cat.parent_id ? "↳ " : ""}{cat.name}<ChevronRight size={16} /></button>)}<button onClick={() => choose("all")}>{labels.all}</button></div>}
         <div className={`${styles.products} ${listView ? styles.listProducts : ""}`}>
           {p.products.map(product => { const quantity = (product.has_variants ? p.variantCounts : p.quantities).get(product.id) ?? 0; return <article className={styles.product} key={product.id}>

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getStorefrontProductsPage, getStorefrontTenant, getTenantCategories } from "@/lib/data";
 import { getHiddenStorefrontCategoryIds } from "@/lib/categories/tree";
 import { parseStorefrontProductSort } from "@/lib/storefront/product-sort";
+import { parseRefine } from "@/lib/storefront/refine";
 import { isTrialExpired } from "@/lib/billing/trial";
 import {
   isStorefrontPriceListStateValid,
@@ -39,6 +40,7 @@ export async function GET(request: Request) {
   const matchCategoryIds = url.searchParams.get("matchCategoryIds")?.split(",").filter(Boolean);
   const discountOnly = url.searchParams.get("discountOnly") === "1";
   const sort = parseStorefrontProductSort(url.searchParams.get("sort"));
+  const refine = parseRefine(url.searchParams.get("refine"));
 
   const categories = await getTenantCategories(tenant.id);
   const excludeCategoryIds = getHiddenStorefrontCategoryIds(categories);
@@ -54,6 +56,7 @@ export async function GET(request: Request) {
     excludeCategoryIds,
     discountOnly,
     sort,
+    refine,
   });
 
   return NextResponse.json({ products, total });

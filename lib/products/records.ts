@@ -151,6 +151,7 @@ export function toStorefrontVariant(
       variant,
     }),
     display_order: variant.display_order,
+    attributes: variant.attributes ?? null,
     price: pricing.price,
     original_price: pricing.original_price,
     discount_percentage: pricing.discount_percentage,

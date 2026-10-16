@@ -1,3 +1,4 @@
+import { cleanVariantAttributes } from "@/lib/products/variant-attributes";
 import { randomUUID } from "node:crypto";
 import { revalidateStorefrontCache } from "@/lib/storefront/cache";
 import { NextResponse } from "next/server";
@@ -309,6 +310,7 @@ export async function POST(
       carton_quantity: variant.carton_quantity,
       is_available_for_sale: variant.is_available_for_sale,
       display_order: variant.display_order ?? index + 1,
+      attributes: cleanVariantAttributes(variant.attributes),
       updated_at: now,
       prices: variant.prices,
     };

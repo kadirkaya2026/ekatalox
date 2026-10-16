@@ -1,3 +1,10 @@
+import {
+  EMPTY_REFINE,
+  computeStorefrontFacets,
+  isRefineActive,
+  matchesRefine,
+  type StorefrontRefine,
+} from "@/lib/storefront/refine";
 import { describeDevice } from "@/lib/admin/panel-visit-format";
 import { hasPlanFeature } from "@/lib/billing/plans";
 import { cache } from "react";
@@ -1624,7 +1631,7 @@ async function getCachedStorefrontProductRowsPage(
 // 2095→2000 indirimli ürün 2200 ile 2095 arasına gelmişti). Varyantlar tam
 // satır: fiyat çözümlemesi vitrin kartıyla birebir aynı veriyi görsün.
 const storefrontPricingRowSelect =
-  "id, tenant_id, category_id, display_order, product_name, currency, is_in_stock, is_discount_active, discount_price, hidden_price_list_ids, created_at, variants:product_variants(*, prices:product_variant_prices(price_list_id, price)), product_prices(price_list_id, price, discount_price)";
+  "id, tenant_id, category_id, brand, display_order, product_name, currency, is_in_stock, is_discount_active, discount_price, hidden_price_list_ids, created_at, variants:product_variants(*, prices:product_variant_prices(price_list_id, price)), product_prices(price_list_id, price, discount_price)";
 
 async function getCachedStorefrontPricingRows(
   filter: StorefrontProductRowFilter,
@@ -1714,7 +1721,7 @@ async function getCachedStorefrontPricingRows(
   );
 }
 
-async function getStorefrontProductsPageSortedByPrice(params: {
+interface StorefrontListParams {
   tenantId: string;
   priceListId: string;
   isCatalogOnly: boolean;
@@ -1724,31 +1731,61 @@ async function getStorefrontProductsPageSortedByPrice(params: {
   matchCategoryIds?: string[];
   excludeCategoryIds?: string[];
   discountOnly?: boolean;
-  sort: "price_asc" | "price_desc";
-}): Promise<{ products: StorefrontProduct[]; total: number }> {
+  sort?: StorefrontProductSort;
+  /** Vitrin filtresi (marka, fiyat aralığı, Beden/Renk…), bkz. lib/storefront/refine.ts. */
+  refine?: StorefrontRefine;
+}
+
+// İnce satırlar ziyaretçinin fiyat listesiyle vitrin ürününe çevrilir; fiyat
+// sıralaması ve filtre (fiyat aralığı, indirim, marka, varyant özellikleri)
+// bu listede yapılır. created_at "yeni eklenenler" için yanında taşınır.
+async function getStorefrontPricedRows(params: StorefrontListParams) {
   const rows = await getCachedStorefrontPricingRows(params);
-  const direction = params.sort === "price_asc" ? 1 : -1;
+  return rows
+    .filter((product) => isVisibleForPriceList(product, params.priceListId))
+    .map((product) => ({
+      row: product,
+      product: toStorefrontProduct(product, params.priceListId, params.isCatalogOnly),
+    }));
+}
+
+// Fiyat sıralaması ve/veya filtre: eşleşen tüm ürünler ince satırlarla
+// sıralanır/süzülür, yalnız istenen sayfanın tam satırları çekilir.
+async function getStorefrontProductsPageRanked(
+  params: StorefrontListParams,
+): Promise<{ products: StorefrontProduct[]; total: number }> {
+  const priced = await getStorefrontPricedRows(params);
+  const refine = params.refine;
+  const matched = refine && isRefineActive(refine)
+    ? priced.filter((entry) => matchesRefine(entry.product, refine))
+    : priced;
+  const sort = params.sort ?? "featured";
 
   // Fiyat, vitrin kartıyla birebir aynı yoldan hesaplanır (indirim, varyant
   // minimumu, liste fiyatı). Fiyatı olmayanlar (null = katalog modu, 0 =
   // bu listeye fiyat girilmemiş) her iki yönde de en sona: "en ucuz"
   // sıralamasında 0 TL'lik fiyatsız ürünlerin başa dolması müşteriyi yanıltır.
-  const ranked = rows
-    .map((product) => {
-      const price = toStorefrontProduct(product, params.priceListId, params.isCatalogOnly).price;
-      return { product, price: price !== null && price > 0 ? price : null };
+  const ranked = matched
+    .map((entry) => {
+      const price = entry.product.price;
+      return { ...entry, price: price !== null && price > 0 ? price : null };
     })
     .sort((a, b) => {
-      if (a.price === null && b.price === null) return a.product.display_order - b.product.display_order;
-      if (a.price === null) return 1;
-      if (b.price === null) return -1;
-      if (a.price !== b.price) return (a.price - b.price) * direction;
-      return a.product.display_order - b.product.display_order;
+      if (sort === "price_asc" || sort === "price_desc") {
+        const direction = sort === "price_asc" ? 1 : -1;
+        if (a.price === null && b.price !== null) return 1;
+        if (b.price === null && a.price !== null) return -1;
+        if (a.price !== null && b.price !== null && a.price !== b.price) return (a.price - b.price) * direction;
+      } else if (sort === "newest") {
+        const diff = Date.parse(b.row.created_at) - Date.parse(a.row.created_at);
+        if (diff) return diff;
+      }
+      return a.row.display_order - b.row.display_order;
     });
 
   const page = Math.max(1, params.page);
   const from = (page - 1) * STOREFRONT_PRODUCTS_PAGE_SIZE;
-  const pageIds = ranked.slice(from, from + STOREFRONT_PRODUCTS_PAGE_SIZE).map((entry) => entry.product.id);
+  const pageIds = ranked.slice(from, from + STOREFRONT_PRODUCTS_PAGE_SIZE).map((entry) => entry.row.id);
   const fullRows = await getStorefrontProductsByIds({
     tenantId: params.tenantId,
     priceListId: params.priceListId,
@@ -1762,20 +1799,15 @@ async function getStorefrontProductsPageSortedByPrice(params: {
   return { products, total: ranked.length };
 }
 
-export async function getStorefrontProductsPage(params: {
-  tenantId: string;
-  priceListId: string;
-  isCatalogOnly: boolean;
-  page: number;
-  search?: string;
-  categoryIds?: string[];
-  matchCategoryIds?: string[];
-  excludeCategoryIds?: string[];
-  discountOnly?: boolean;
-  sort?: StorefrontProductSort;
-}): Promise<{ products: StorefrontProduct[]; total: number }> {
-  if (params.sort === "price_asc" || params.sort === "price_desc") {
-    return getStorefrontProductsPageSortedByPrice({ ...params, sort: params.sort });
+export async function getStorefrontProductsPage(
+  params: StorefrontListParams,
+): Promise<{ products: StorefrontProduct[]; total: number }> {
+  if (
+    params.sort === "price_asc" ||
+    params.sort === "price_desc" ||
+    (params.refine && isRefineActive(params.refine))
+  ) {
+    return getStorefrontProductsPageRanked(params);
   }
 
   const { products, total } = await getCachedStorefrontProductRowsPage(params);
@@ -1786,6 +1818,15 @@ export async function getStorefrontProductsPage(params: {
       .map((product) => toStorefrontProduct(product, params.priceListId, params.isCatalogOnly)),
     total,
   };
+}
+
+/** Filtre panelindeki seçenekler ve sayıları (kategori/arama kapsamında). */
+export async function getStorefrontFacets(params: Omit<StorefrontListParams, "page" | "sort">) {
+  const priced = await getStorefrontPricedRows({ ...params, page: 1 });
+  return computeStorefrontFacets(
+    priced.map((entry) => entry.product),
+    params.refine ?? EMPTY_REFINE,
+  );
 }
 
 // Sepet çekmecesindeki "Bunlar da ilginizi çekebilir" önerileri artık tüm
