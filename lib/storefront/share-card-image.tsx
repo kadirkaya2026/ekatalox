@@ -53,7 +53,7 @@ export function renderShareCardImage(tenant: ShareCardTenant, badge: string, foo
         { name: "Roboto", data: regular, weight: 400, style: "normal" },
         { name: "Roboto", data: bold, weight: 700, style: "normal" },
       ],
-      headers: { "Cache-Control": "public, max-age=86400", "X-Robots-Tag": "noindex" },
+      headers: { "Cache-Control": "public, max-age=86400, stale-while-revalidate=604800", "X-Robots-Tag": "noindex" },
     },
   );
 }

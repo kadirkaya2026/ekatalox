@@ -1,3 +1,4 @@
+import { createHash } from "crypto";
 import { NextResponse } from "next/server";
 import { resolveShortLinkRecord } from "@/lib/storage/short-links";
 import { getRequestHost } from "@/lib/tenancy/request-host";
@@ -51,11 +52,15 @@ export async function GET(
     const tenant = await loadShareCardTenant(record.tenantId);
     if (tenant) {
       const origin = `https://${getRequestHost(_request)}`;
+      // Kart siparişe özel değil: mağaza başına sabit adres (önbellekten anında
+      // gelir, ilk gönderimde WhatsApp'ın görseli beklemeden düşürmesi biter).
+      // v: logo/renk/ad değişince yeni adres.
+      const version = createHash("sha1").update(`${tenant.name}|${tenant.logoUrl ?? ""}|${tenant.accent}`).digest("hex").slice(0, 8);
       return new NextResponse(
         shareCardHtml({
           title: `${tenant.name} · Sipariş Fişi`,
           description: "Siparişinizin fişini görüntülemek için dokunun.",
-          imageUrl: `${origin}/f/${code}/kart`,
+          imageUrl: `${origin}/api/storefront/share-card?tenant=${record.tenantId}&k=receipt&v=${version}`,
           pageUrl: `${origin}/f/${code}`,
           targetUrl: target,
           siteName: tenant.name,
