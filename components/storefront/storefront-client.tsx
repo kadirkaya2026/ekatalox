@@ -1135,6 +1135,9 @@ export function StorefrontClient({
   // Her sepet güncellemesinde stok sınırı (0153) uygulanır ve kademeli fiyat (0142) yeniden hesaplanır.
   const stockLimitRef = useRef<{ name: string; count: number } | null>(null);
   const [stockLimitNotice, setStockLimitNotice] = useState<{ name: string; count: number } | null>(null);
+  // Arka plandaki stok kontrolü olumsuz dönüp sepet geri alındıysa kısa uyarı.
+  const [cartRevertNotice, setCartRevertNotice] = useState<{ name: string; message: string } | null>(null);
+  const cartRevertTimerRef = useRef<number | null>(null);
   const setCart = useCallback((update: React.SetStateAction<CartItem[]>) => {
     setCartState((prev) => {
       const clamped = clampCartToStock(typeof update === "function" ? update(prev) : update);
@@ -4004,26 +4007,34 @@ export function StorefrontClient({
 
       setQuantityError(null);
 
-      void (async () => {
-        const validation = await validateVariantSelections(selectedProduct, selections);
+      // Sepete hemen eklenir, pencere hemen kapanır (17 Eki 2026: "sepete ekle'de
+      // takılma" — sunucu stok onayı ~0,4-0,6 sn bekletiyordu). Stok yerelde
+      // zaten kontrol edildi; sunucu kontrolü arkada yapılır, olumsuz dönerse
+      // ürünün sepetteki eski satırları geri yüklenir ve uyarı gösterilir.
+      const product = selectedProduct;
+      const previousLines = cartRef.current.filter((item) => item.product_id === product.id);
+      setCart((current) => {
+        const withoutProduct = current.filter((item) => item.product_id !== product.id);
+        return addVariantSelectionsToCart(withoutProduct, product, selections);
+      });
+      if (analyticsSubdomain) {
+        trackStorefrontCartAdd(analyticsSubdomain, product.id);
+      }
+      closeAddToCartModal();
+      runCartFlight(product.id, true);
 
-        if (!validation.ok) {
-          setQuantityError(validation.error);
-          return;
-        }
-
-        setCart((current) => {
-          const withoutProduct = current.filter(
-            (item) => item.product_id !== selectedProduct.id,
-          );
-          return addVariantSelectionsToCart(withoutProduct, selectedProduct, selections);
+      void validateVariantSelections(product, selections)
+        .catch(() => ({ ok: true as const }))
+        .then((validation) => {
+          if (validation.ok) return;
+          setCart((current) => [
+            ...current.filter((item) => item.product_id !== product.id),
+            ...previousLines,
+          ]);
+          setCartRevertNotice({ name: product.product_name, message: validation.error });
+          if (cartRevertTimerRef.current) window.clearTimeout(cartRevertTimerRef.current);
+          cartRevertTimerRef.current = window.setTimeout(() => setCartRevertNotice(null), 5000);
         });
-        if (analyticsSubdomain) {
-          trackStorefrontCartAdd(analyticsSubdomain, selectedProduct.id);
-        }
-        closeAddToCartModal();
-        runCartFlight(selectedProduct.id, true);
-      })();
       return;
     }
 
@@ -4694,6 +4705,15 @@ export function StorefrontClient({
 
   return (
     <>
+    {cartRevertNotice ? (
+      <div
+        role="alert"
+        className="fixed bottom-24 left-1/2 z-[80] w-[min(92vw,420px)] -translate-x-1/2 rounded-2xl bg-red-700 px-4 py-3 text-center text-sm font-medium text-white shadow-xl"
+      >
+        <span className="block truncate text-xs text-white/75">{cartRevertNotice.name}</span>
+        {cartRevertNotice.message}
+      </div>
+    ) : null}
     {stockLimitNotice ? (
       <div
         role="status"
