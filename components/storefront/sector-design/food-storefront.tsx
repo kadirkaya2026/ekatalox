@@ -12,6 +12,7 @@ import { ProductPrice } from "@/components/storefront/storefront-product-card";
 import { StorefrontImage } from "@/components/storefront/storefront-image";
 import s from "./food.module.css";
 import { SectorBrandLogo } from "@/components/storefront/sector-design/sector-brand-logo";
+import { SectorBannerSlider } from "@/components/storefront/sector-design/sector-banner-slider";
 
 function Photo({src,alt,priority=false}:{src?:string|null;alt:string;priority?:boolean}) {
   if (!src || (!/^https:\/\//i.test(src) && !/^\/(?!\/)/.test(src))) return <Package size={38} aria-hidden="true" />;
@@ -48,6 +49,7 @@ export function FoodStorefront(p:SectorStorefrontProps) {
     </header><div className={s.mobileSearch}>{search}</div>
     {variant==="hasat" && navigation}
     {!p.detailOpen && <>
+      {landing && <SectorBannerSlider items={p.settings.banner_items ?? []} />}
       {variant==="hasat" && landing && c.heroVisible && <section data-theme-area="heroVisible" className={s.hasatHero}>{heroCopy}<div className={s.harvestImage}><Photo src={image} alt={c.heroImage?c.heroTitle:heroProduct?.product_name??""} priority/></div></section>}
       {variant==="mahalle" && <><div className={s.mahalleCategories}>{categoryTiles}</div>{landing && c.heroVisible && <section data-theme-area="heroVisible" className={s.mahalleHero}>{heroCopy}<div className={s.marketImage}><Photo src={image} alt={c.heroImage?c.heroTitle:heroProduct?.product_name??""} priority/></div></section>}{landing && promos.promoVisible && <section data-theme-area="promoVisible" className={s.promos}><button onClick={()=>choose(promos.promoCategoryId || "all")}><>{promos.promoImage && <Photo src={promos.promoImage} alt=""/>}</><span><strong>{promos.promoTitle}</strong><small>{promos.promoBody}</small></span><ArrowRight size={24}/></button><button onClick={()=>choose(promos.secondCategoryId || "all")}><>{promos.secondImage && <Photo src={promos.secondImage} alt=""/>}</><span><strong>{promos.secondTitle}</strong><small>{promos.secondBody}</small></span><ArrowRight size={24}/></button></section>}</>}
       {variant==="hasat" && landing && categoryTiles}

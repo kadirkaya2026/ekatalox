@@ -117,8 +117,9 @@ export function ElectronicsStorefront(p: SectorStorefrontProps) {
     <div className={styles.mobileSearch}>{search}</div>
     {variant !== "modul" && nav}
     {p.detailOpen ? null : <>
+      {/* Panel → Anasayfa Banner'ı: Akım'da 30 Eyl'den beri, 17 Eki 2026'dan itibaren tüm sektör temalarında. */}
+      {showLanding && <SectorBannerSlider items={p.settings.banner_items ?? []} />}
       {variant === "forma" && showLanding && c.heroVisible && <section data-theme-area="heroVisible" className={styles.formaHero}>{heroCopy}{photo}<span className={styles.heroSideNote}>{p.title} / {labels.discover}</span></section>}
-      {variant === "akim" && showLanding && <SectorBannerSlider items={p.settings.banner_items ?? []} />}
       {variant === "akim" && showLanding && c.heroVisible && !akimHasBanner && <section data-theme-area="heroVisible" className={styles.akimHero}><div className={styles.akimWord} aria-hidden="true">{p.title.toLocaleUpperCase("tr")}</div>{heroCopy}{photo}<div className={styles.akimCaption}>{heroProduct?.product_name}<ArrowUpRight size={25} /></div></section>}
       {variant === "modul" && <div className={styles.modulLanding}>
         <aside className={styles.sidebar}><h2><Grid2X2 size={19} />{labels.categories}</h2>{nav}</aside>

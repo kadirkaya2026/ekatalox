@@ -12,6 +12,7 @@ import { StorefrontImage } from "@/components/storefront/storefront-image";
 import { paletteStyle } from "./palette";
 import s from "./hardware.module.css";
 import { SectorBrandLogo } from "@/components/storefront/sector-design/sector-brand-logo";
+import { SectorBannerSlider } from "@/components/storefront/sector-design/sector-banner-slider";
 
 function Photo({src,alt,priority=false}:{src?:string|null;alt:string;priority?:boolean}) {
   if (!src || (!/^https:\/\//i.test(src) && !/^\/(?!\/)/.test(src))) return <Package size={38} aria-hidden="true" />;
@@ -51,6 +52,7 @@ export function HardwareStorefront(p:SectorStorefrontProps) {
     </header><div className={s.mobileSearch}>{search}</div>
     {variant!=="depo" && navigation}
     {!p.detailOpen && <>
+      {landing && <SectorBannerSlider items={p.settings.banner_items ?? []} />}
       {variant==="usta" && landing && c.heroVisible && <section data-theme-area="heroVisible" className={s.ustaHero}>{heroCopy}<div className={s.equipmentStage}><span className={s.stageCode}>{heroProduct?.sku_code}</span>{look}<span className={s.stageCaption}>{heroProduct?.product_name}</span></div></section>}
       {variant==="yapi" && <>{landing && c.heroVisible && <section data-theme-area="heroVisible" className={s.yapiHero}><div className={s.yapiHeadline}>{heroCopy}</div><div className={s.yapiLooks}>{look}<span className={s.stageCaption}>{heroProduct?.product_name}</span></div></section>}{landing && promos.promoVisible && <section data-theme-area="promoVisible" className={s.promos}><button onClick={()=>choose(promos.promoCategoryId || "all")}><>{promos.promoImage && <Photo src={promos.promoImage} alt=""/>}</><span><strong>{promos.promoTitle}</strong><small>{promos.promoBody}</small></span><ArrowUpRight size={26}/></button><button onClick={()=>choose(promos.secondCategoryId || "all")}><>{promos.secondImage && <Photo src={promos.secondImage} alt=""/>}</><span><strong>{promos.secondTitle}</strong><small>{promos.secondBody}</small></span><ArrowUpRight size={26}/></button></section>}</>}
       {(variant==="usta" || variant==="yapi") && landing && categoryTiles}

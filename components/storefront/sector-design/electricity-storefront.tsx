@@ -12,6 +12,7 @@ import { StorefrontImage } from "@/components/storefront/storefront-image";
 import { paletteStyle } from "./palette";
 import s from "./electricity.module.css";
 import { SectorBrandLogo } from "@/components/storefront/sector-design/sector-brand-logo";
+import { SectorBannerSlider } from "@/components/storefront/sector-design/sector-banner-slider";
 
 function Photo({src,alt,priority=false,sizes="(max-width:640px) 46vw, 440px"}:{src?:string|null;alt:string;priority?:boolean;sizes?:string}) {
   if (!src || (!/^https:\/\//i.test(src) && !/^\/(?!\/)/.test(src))) return <Package size={38} aria-hidden="true" />;
@@ -51,6 +52,7 @@ export function ElectricityStorefront(p:SectorStorefrontProps) {
     </header><div className={s.mobileSearch}>{search}</div>
     <div className={s.navBand}>{navigation}</div>
     {!p.detailOpen && <>
+      {landing && <SectorBannerSlider items={p.settings.banner_items ?? []} />}
       
       {variant==="lumen" && landing && c.heroVisible && retailBanner}
       {variant==="volt" && landing && c.heroVisible && retailBanner}
