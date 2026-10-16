@@ -177,10 +177,12 @@ import {
 } from "@/components/storefront/storefront-filters";
 import {
   clearRefineFromUrl,
+  computeStorefrontFacets,
   isRefineActive,
   readRefineFromUrl,
   serializeRefine,
   writeRefineToUrl,
+  type StorefrontFacetIndex,
   type StorefrontFacets,
   type StorefrontRefine,
 } from "@/lib/storefront/refine";
@@ -1429,6 +1431,9 @@ export function StorefrontClient({
   const [productTotal, setProductTotal] = useState(initialProductTotal);
   const [productPage, setProductPage] = useState(1);
   const [isLoadingProducts, setIsLoadingProducts] = useState(false);
+  // Liste baştan yenilenirken (filtre/sıralama) ürünler soluklaşır: tıklamanın
+  // tuttuğu hemen görünsün. "Devamını göster" eklemesinde soluklaşmaz.
+  const [isReplacingProducts, setIsReplacingProducts] = useState(false);
   const isFirstProductFetch = useRef(true);
   const [hoveredCategoryId, setHoveredCategoryId] = useState<string | null>(null);
   const [activeBannerIndex, setActiveBannerIndex] = useState(0);
@@ -1874,7 +1879,7 @@ export function StorefrontClient({
   // marka, fiyat aralığı, indirim ve varyant özellikleri (Beden/Renk). Süzme
   // sunucuda yapılır. Market düzeninde, önizlemede ve gömülü/bölüm modunda kapalı.
   const [filterSelection, setFilterSelection] = useState<FilterSelection>(EMPTY_FILTER_SELECTION);
-  const [filterFacetsState, setFilterFacetsState] = useState<{ scope: string; facets: StorefrontFacets | null }>({ scope: "", facets: null });
+  const [filterIndexState, setFilterIndexState] = useState<{ scope: string; index: StorefrontFacetIndex | null }>({ scope: "", index: null });
   const [isFilterSheetOpen, setIsFilterSheetOpen] = useState(false);
   // Adresten gelen özellik (beden=m) anahtarları seçenekler gelene dek bekler:
   // başlıklar bilinmeden ilgisiz parametreler (ör. kampanya kodları) süzgece girmesin.
@@ -1905,45 +1910,40 @@ export function StorefrontClient({
     if (matchCategoryIds.length) params.set("matchCategoryIds", matchCategoryIds.join(","));
     return params.toString();
   }, [filterScopeActive, analyticsSubdomain, debouncedSearchTerm, isDiscountCategorySelected, selectedCategoryIds, matchCategoryIds]);
-  const loadFilterFacets = useCallback(
-    async (selection: FilterSelection) => {
-      if (!facetScopeQuery) return null;
-      const params = new URLSearchParams(facetScopeQuery);
-      const refine = buildRefine(selection);
-      if (isRefineActive(refine)) params.set("refine", serializeRefine(refine));
-      try {
-        const response = await fetch(`/api/storefront/facets?${params.toString()}`);
-        return response.ok ? ((await response.json()) as StorefrontFacets) : null;
-      } catch {
-        return null;
-      }
-    },
-    [facetScopeQuery, buildRefine],
-  );
+  // Seçenek dizini kategori/arama başına bir kez gelir; sayılar her seçimde
+  // istemcide anında hesaplanır (17 Eki 2026: mobilde seçim geç yansıyordu).
   useEffect(() => {
     if (!facetScopeQuery) return;
     let cancelled = false;
-    void loadFilterFacets(filterSelection).then((facets) => {
-      if (cancelled) return;
-      setFilterFacetsState({ scope: facetScopeQuery, facets });
-      const pending = pendingUrlAttrsRef.current;
-      if (pending && facets) {
-        pendingUrlAttrsRef.current = null;
-        const known = new Set(facets.attributes.map((axis) => axis.key));
-        const attrs = Object.fromEntries(Object.entries(pending).filter(([axis]) => known.has(axis)));
-        writtenAttrAxesRef.current = Object.keys(attrs);
-        if (Object.keys(attrs).length) {
-          setFilterSelection((current) => ({ ...current, refine: { ...current.refine, attrs } }));
+    void fetch(`/api/storefront/facets?${facetScopeQuery}`)
+      .then((response) => (response.ok ? (response.json() as Promise<StorefrontFacetIndex>) : null))
+      .catch(() => null)
+      .then((index) => {
+        if (cancelled) return;
+        setFilterIndexState({ scope: facetScopeQuery, index });
+        const pending = pendingUrlAttrsRef.current;
+        if (pending && index) {
+          pendingUrlAttrsRef.current = null;
+          const known = new Set(index.axes.map((axis) => axis.key));
+          const attrs = Object.fromEntries(Object.entries(pending).filter(([axis]) => known.has(axis)));
+          writtenAttrAxesRef.current = Object.keys(attrs);
+          if (Object.keys(attrs).length) {
+            setFilterSelection((current) => ({ ...current, refine: { ...current.refine, attrs } }));
+          }
         }
-      }
-    });
+      });
     return () => {
       cancelled = true;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [facetScopeQuery, refineParam]);
-  // Kapsam değişince (başka kategori/arama) eski seçenekler gösterilmez.
-  const filterFacets = filterFacetsState.scope === facetScopeQuery ? filterFacetsState.facets : null;
+  }, [facetScopeQuery]);
+  // Kapsam değişince (başka kategori/arama) eski dizin kullanılmaz.
+  const filterIndex = filterIndexState.scope === facetScopeQuery ? filterIndexState.index : null;
+  const computeFilterFacets = useCallback(
+    (selection: FilterSelection) =>
+      filterIndex ? computeStorefrontFacets(filterIndex, buildRefine(selection)) : null,
+    [filterIndex, buildRefine],
+  );
+  const filterFacets = useMemo(() => computeFilterFacets(filterSelection), [computeFilterFacets, filterSelection]);
   const filterAccent = useMemo(() => {
     const palette = resolveBrandPalette({
       brand_primary_color: storefrontSettings.brand_primary_color,
@@ -1988,7 +1988,12 @@ export function StorefrontClient({
       currencySymbol: currency === "USD" ? "$" : currency === "EUR" ? "€" : "₺",
     };
   }, [filterFacets, buildFilterSubOptions, isCatalogOnly, initialProducts]);
-  const showFilterUi = filterScopeActive && hasFilterOptions(filterPanelData, filterSelection);
+  // "Filtrele" düğmesi kategoriye girer girmez görünür (seçenekler arkada
+  // yüklenir, liste kaymaz); masaüstü sol panel yüklenirken yer tutucu gösterir,
+  // seçenek çıkmazsa kapanır.
+  const showFilterUi = filterScopeActive;
+  const showFilterSidebar =
+    filterScopeActive && (!filterFacets || hasFilterOptions(filterPanelData, filterSelection));
   const filterSelectionCount = countFilterSelections(filterSelection);
   const selectedCategoryLineage = useMemo(
     () =>
@@ -3550,6 +3555,7 @@ export function StorefrontClient({
       // gelen cevabı yeni listenin üstüne yazmasın.
       const requestId = ++productsRequestSeqRef.current;
       setIsLoadingProducts(true);
+      if (mode === "replace") setIsReplacingProducts(true);
       try {
         const params = new URLSearchParams();
         params.set("subdomain", analyticsSubdomain);
@@ -3591,7 +3597,10 @@ export function StorefrontClient({
         setProductTotal(result.total);
         setProductPage(targetPage);
       } finally {
-        if (requestId === productsRequestSeqRef.current) setIsLoadingProducts(false);
+        if (requestId === productsRequestSeqRef.current) {
+          setIsLoadingProducts(false);
+          setIsReplacingProducts(false);
+        }
       }
     },
     [analyticsSubdomain, debouncedSearchTerm, isDiscountCategorySelected, selectedCategoryIds, matchCategoryIds, effectiveProductSort, previewMode, productsEndpoint, refineParam],
@@ -4714,7 +4723,7 @@ export function StorefrontClient({
           buildSubOptions={buildFilterSubOptions}
           selection={filterSelection}
           onApply={handleFilterChange}
-          loadFacets={loadFilterFacets}
+          computeFacets={computeFilterFacets}
           accent={filterAccent}
         />
       ) : null}
@@ -5272,8 +5281,8 @@ export function StorefrontClient({
                     />
                   ) : null}
 
-                  <div className={cn(showFilterUi && "lg:grid lg:grid-cols-[15rem_minmax(0,1fr)] lg:items-start lg:gap-8")}>
-                  {showFilterUi ? (
+                  <div className={cn(showFilterSidebar && "lg:grid lg:grid-cols-[15rem_minmax(0,1fr)] lg:items-start lg:gap-8")}>
+                  {showFilterSidebar ? (
                     <FilterSidebar
                       className="hidden lg:sticky lg:top-28 lg:block lg:max-h-[calc(100vh-8rem)] lg:overflow-y-auto lg:pr-1"
                       data={filterPanelData}
@@ -5282,7 +5291,10 @@ export function StorefrontClient({
                       accent={filterAccent}
                     />
                   ) : null}
-                  <div className="min-w-0">
+                  <div
+                    className={cn("min-w-0 transition-opacity duration-150", isReplacingProducts && "pointer-events-none opacity-50")}
+                    aria-busy={isReplacingProducts}
+                  >
                   {productTotal ? (
                     <StorefrontProductListing
                       products={visibleProducts}

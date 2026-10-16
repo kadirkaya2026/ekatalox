@@ -1,8 +1,7 @@
 import {
-  EMPTY_REFINE,
-  computeStorefrontFacets,
+  buildFacetIndex,
   isRefineActive,
-  matchesRefine,
+  matchFacetIndex,
   type StorefrontRefine,
 } from "@/lib/storefront/refine";
 import { describeDevice } from "@/lib/admin/panel-visit-format";
@@ -1756,9 +1755,11 @@ async function getStorefrontProductsPageRanked(
 ): Promise<{ products: StorefrontProduct[]; total: number }> {
   const priced = await getStorefrontPricedRows(params);
   const refine = params.refine;
-  const matched = refine && isRefineActive(refine)
-    ? priced.filter((entry) => matchesRefine(entry.product, refine))
-    : priced;
+  let matched = priced;
+  if (refine && isRefineActive(refine)) {
+    const hits = matchFacetIndex(buildFacetIndex(priced.map((entry) => entry.product)), refine);
+    matched = priced.filter((_, i) => hits[i]);
+  }
   const sort = params.sort ?? "featured";
 
   // Fiyat, vitrin kartıyla birebir aynı yoldan hesaplanır (indirim, varyant
@@ -1820,13 +1821,10 @@ export async function getStorefrontProductsPage(
   };
 }
 
-/** Filtre panelindeki seçenekler ve sayıları (kategori/arama kapsamında). */
-export async function getStorefrontFacets(params: Omit<StorefrontListParams, "page" | "sort">) {
+/** Filtre seçenek dizini (kategori/arama kapsamı); sayıları istemci hesaplar. */
+export async function getStorefrontFacetIndex(params: Omit<StorefrontListParams, "page" | "sort" | "refine">) {
   const priced = await getStorefrontPricedRows({ ...params, page: 1 });
-  return computeStorefrontFacets(
-    priced.map((entry) => entry.product),
-    params.refine ?? EMPTY_REFINE,
-  );
+  return buildFacetIndex(priced.map((entry) => entry.product));
 }
 
 // Sepet çekmecesindeki "Bunlar da ilginizi çekebilir" önerileri artık tüm

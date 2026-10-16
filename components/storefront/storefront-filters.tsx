@@ -535,6 +535,23 @@ export function FilterSidebar({
   const [open, setOpen] = useState<Record<string, boolean>>({});
   const isOpen = (key: string, index: number) => open[key] ?? index < 3;
 
+  if (!data.facets) {
+    // Seçenekler gelene dek yer tutucu: liste sağa kaymasın.
+    return (
+      <aside className={cn("w-full", className)} aria-busy="true">
+        {[0, 1, 2].map((row) => (
+          <div key={row} className="border-b border-slate-200 py-3">
+            <div className="h-4 w-24 animate-pulse rounded bg-slate-200" />
+            <div className="mt-3 space-y-2">
+              <div className="h-3.5 w-36 animate-pulse rounded bg-slate-100" />
+              <div className="h-3.5 w-28 animate-pulse rounded bg-slate-100" />
+            </div>
+          </div>
+        ))}
+      </aside>
+    );
+  }
+
   return (
     <aside className={cn("w-full text-slate-900", className)} style={{ "--sf-accent": accent } as CSSProperties}>
       {sections.map((section, index) => (
@@ -620,7 +637,7 @@ export function FilterSheet({
   buildSubOptions,
   selection,
   onApply,
-  loadFacets,
+  computeFacets,
   accent,
 }: {
   open: boolean;
@@ -630,22 +647,19 @@ export function FilterSheet({
   buildSubOptions: (facets: StorefrontFacets | null) => FilterCategoryOption[];
   selection: FilterSelection;
   onApply: (next: FilterSelection) => void;
-  /** Taslak seçime göre seçenekler/sayılar (altta "Ürünleri Listele (N)"). */
-  loadFacets: (draft: FilterSelection) => Promise<StorefrontFacets | null>;
+  /** Taslak seçime göre seçenekler/sayılar; dizinden anında (null = yükleniyor). */
+  computeFacets: (draft: FilterSelection) => StorefrontFacets | null;
   accent: string;
 }) {
   const [draft, setDraft] = useState<FilterSelection>(selection);
-  const [draftFacets, setDraftFacets] = useState<StorefrontFacets | null>(data.facets);
   const [view, setView] = useState<string | null>(null);
   const [wasOpen, setWasOpen] = useState(false);
-  const seq = useRef(0);
 
   // Her açılışta canlı seçimden başla.
   if (open !== wasOpen) {
     setWasOpen(open);
     if (open) {
       setDraft(selection);
-      setDraftFacets(data.facets);
       setView(null);
     }
   }
@@ -661,14 +675,8 @@ export function FilterSheet({
 
   if (!open || typeof document === "undefined") return null;
 
-  function change(next: FilterSelection) {
-    setDraft(next);
-    const id = ++seq.current;
-    void loadFacets(next).then((facets) => {
-      if (id === seq.current && facets) setDraftFacets(facets);
-    });
-  }
-
+  const change = setDraft;
+  const draftFacets = computeFacets(draft);
   const draftData: FilterPanelData = { ...data, facets: draftFacets, subOptions: buildSubOptions(draftFacets) };
   const sections = buildSections(draftData, draft);
   const current = view ? sections.find((section) => section.key === view) ?? null : null;
@@ -775,7 +783,9 @@ export function FilterSheet({
                 count={draftFacets?.discounted ?? 0}
                 onToggle={() => change({ ...draft, refine: { ...draft.refine, discounted: !draft.refine.discounted } })}
               />
-              {!sections.length && !(draftFacets?.discounted ?? 0) && !draft.refine.discounted ? (
+              {!draftFacets ? (
+                <p className="px-4 py-8 text-center text-sm text-slate-500">Seçenekler yükleniyor…</p>
+              ) : !sections.length && !draftFacets.discounted && !draft.refine.discounted ? (
                 <p className="px-4 py-8 text-center text-sm text-slate-500">Bu listede filtrelenecek seçenek yok.</p>
               ) : null}
             </>
