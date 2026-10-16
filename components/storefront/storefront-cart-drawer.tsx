@@ -288,6 +288,11 @@ export function StorefrontCartDrawer({
   //   3) sipariş bilgileri (ödeme yöntemi, isim/adres/telefon, not) + "Siparişi Ver"
   // Toptancı/genel tipte eski tek sayfalı düzen korunur.
   const useStepFlow = isMarketTenant;
+  // Toptancı/genel tipte iki adım (17 Eki 2026, kullanıcı isteği): önce yalnız
+  // ürünler + en altta öneriler, altta "Siparişi Ver" ve "Sepeti Boşalt";
+  // "Siparişi Ver" ödeme yöntemi + ad/adres/not adımına geçer, oradan
+  // "WhatsApp ile Siparişi Tamamla". Adım değerleri market akışıyla ortak (1 ve 3).
+  const twoStepFlow = !isMarketTenant;
   const [step, setStep] = useState<1 | 2 | 3>(1);
 
   // Çekmece her AÇILDIĞINDA baştan başlat (kapalı -> açık geçişinde, render
@@ -325,6 +330,7 @@ export function StorefrontCartDrawer({
             : null;
     target?.scrollIntoView({ behavior: "smooth", block: "center" });
   }, [
+    step,
     checkoutValidationNonce,
     paymentMethodError,
     customerReferenceNameError,
@@ -414,6 +420,17 @@ export function StorefrontCartDrawer({
       setStep(3);
     }
   }
+  // Eksik alanla sipariş denenirse (ör. dışarıdan tetiklenen doğrulama) bilgi
+  // adımına geçilir ki alan görünsün.
+  const hasCheckoutFieldError = Boolean(
+    paymentMethodError || customerReferenceNameError || customerAddressError || customerPhoneError,
+  );
+  const [prevFieldError, setPrevFieldError] = useState(hasCheckoutFieldError);
+  if (hasCheckoutFieldError !== prevFieldError) {
+    setPrevFieldError(hasCheckoutFieldError);
+    if (hasCheckoutFieldError && twoStepFlow && step !== 3) setStep(3);
+  }
+
   function goBack() {
     // 3 -> 2'ye dönerken donmuş liste korunur (yeniden snapshot alınmaz).
     if (step === 3) setStep(frozenSuggestions.length ? 2 : 1);
@@ -1632,7 +1649,9 @@ cartFormConfig.customer_address.is_visible ? (
 
   // Adımlı akışın başlığı hangi adımda olduğumuza göre değişir.
   const stepHeaderTitle =
-    useStepFlow && cart.length > 0 && !sentOrder
+    twoStepFlow && cart.length > 0 && !sentOrder && step === 3
+      ? t("cart.step.infoTitle")
+      : useStepFlow && cart.length > 0 && !sentOrder
       ? step === 1
         ? t(isTekel ? "cart.titlePickup" : "cart.title")
         : step === 2
@@ -1641,7 +1660,7 @@ cartFormConfig.customer_address.is_visible ? (
       : t(isTekel ? "cart.titlePickup" : "cart.title");
 
   const showStepBackButton =
-    useStepFlow && cart.length > 0 && !sentOrder && !whatsappHandoff && step > 1;
+    (useStepFlow || twoStepFlow) && cart.length > 0 && !sentOrder && !whatsappHandoff && step > 1;
 
   return (
     <AnimatePresence>
@@ -1696,7 +1715,7 @@ cartFormConfig.customer_address.is_visible ? (
                     ) : null}
                     <div className="flex min-w-0 items-baseline gap-2.5">
                       <h2 className={theme.cartDrawerTitle}>{stepHeaderTitle}</h2>
-                      {!useStepFlow || !cart.length || sentOrder || step === 1 ? (
+                      {(!useStepFlow && !twoStepFlow) || !cart.length || sentOrder || step === 1 ? (
                         <p
                           className={cn(
                             "truncate text-xs font-medium sm:text-sm",
@@ -1749,20 +1768,26 @@ cartFormConfig.customer_address.is_visible ? (
 {renderOrderNotePanel()}
                       </div>
                     )
-                  ) : (
+                  ) : step !== 3 ? (
+                    // İki adımlı akış, 1. adım: ürünler + en altta öneriler.
                     theme.commerceDesign ? <div data-commerce-slot="cart-content">
                       <div data-commerce-slot="cart-lines">{renderCampaignBars()}{renderItemsList()}</div>
-                      <div data-commerce-slot="cart-fields">{renderPaymentPanel()}{renderDeliveryDatePanel()}
-{renderOrderNotePanel()}</div>
                       {/* Öneriler klasik düzendeki gibi en altta (30 Eyl 2026, Autovale). */}
                       {renderInlineSuggestions()}
                     </div> : <div className="space-y-4">
                       {renderCampaignBars()}
                       {renderItemsList()}
+                      {renderInlineSuggestions()}
+                    </div>
+                  ) : (
+                    // 2. adım: ödeme yöntemi + ad/adres + not.
+                    theme.commerceDesign ? <div data-commerce-slot="cart-content">
+                      <div data-commerce-slot="cart-fields">{renderPaymentPanel()}{renderDeliveryDatePanel()}
+{renderOrderNotePanel()}</div>
+                    </div> : <div className="space-y-4">
                       {renderPaymentPanel()}
                       {renderDeliveryDatePanel()}
 {renderOrderNotePanel()}
-                      {renderInlineSuggestions()}
                     </div>
                   )
                 ) : sentOrder ? (
@@ -1871,7 +1896,24 @@ cartFormConfig.customer_address.is_visible ? (
                       <div data-commerce-slot="cart-summary">{renderSummaryBox()}</div>
                       {renderFooterNotices()}
 
-                      {useStepFlow &&
+                      {twoStepFlow &&
+                      cart.length > 0 &&
+                      !sentOrder &&
+                      !whatsappHandoff &&
+                      step !== 3 ? (
+                        <Button
+                          type="button"
+                          onClick={() => setStep(3)}
+                          disabled={!canAdvanceFromCart}
+                          className={cn(
+                            "mt-3 h-11 w-full rounded-full px-5 text-base font-bold shadow-none sm:h-12",
+                            stickyCartButtonClassName,
+                            !canAdvanceFromCart && "pointer-events-none opacity-50",
+                          )}
+                        >
+                          {t("cart.step.placeOrder")}
+                        </Button>
+                      ) : useStepFlow &&
                       cart.length > 0 &&
                       !sentOrder &&
                       !whatsappHandoff &&
@@ -1897,7 +1939,7 @@ cartFormConfig.customer_address.is_visible ? (
 
                       {/* "Sepeti Boşalt" market'te gösterilmiyor (kullanıcı
                           isteği, 4 Eyl 2026); toptancı/genel tipte kalıyor. */}
-                      {!useStepFlow && cart.length > 0 && (
+                      {!useStepFlow && cart.length > 0 && step !== 3 && !whatsappHandoff && (
                         <button
                           type="button"
                           onClick={clearCart}

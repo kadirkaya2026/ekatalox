@@ -20,7 +20,7 @@ import {
   useSyncExternalStore,
 } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { ChevronDown, ChevronLeft, ChevronRight, CreditCard, Megaphone, Minus, Plus, Search, ShoppingCart, Sparkles, X } from "lucide-react";
+import { ChevronDown, ChevronLeft, ChevronRight, CreditCard, Megaphone, Minus, Plus, Search, Sparkles, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -1149,7 +1149,6 @@ export function StorefrontClient({
   cartRef.current = cart;
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isCategoryDrawerOpen, setIsCategoryDrawerOpen] = useState(false);
-  const [isStickyCartBarDismissed, setIsStickyCartBarDismissed] = useState(false);
   const [isSearchSheetOpen, setIsSearchSheetOpen] = useState(false);
   const [isCampaignsSheetOpen, setIsCampaignsSheetOpen] = useState(false);
   // Müşteriye özel kupon (telefona bağlı). Sepette numara yazılınca lookup'tan
@@ -3198,7 +3197,6 @@ export function StorefrontClient({
     () => cart.reduce((total, item) => total + item.quantity, 0),
     [cart],
   );
-  const previousCartItemCountRef = useRef(cartItemCount);
 
 
   useEffect(() => {
@@ -3206,19 +3204,6 @@ export function StorefrontClient({
     if (pendingFlightsRef.current === 0) setBadgeCartCount(cartItemCount);
   }, [cartItemCount]);
 
-  useEffect(() => {
-    if (!cart.length) {
-      setIsStickyCartBarDismissed(false);
-      previousCartItemCountRef.current = 0;
-      return;
-    }
-
-    if (cartItemCount > previousCartItemCountRef.current) {
-      setIsStickyCartBarDismissed(false);
-    }
-
-    previousCartItemCountRef.current = cartItemCount;
-  }, [cartItemCount, cart.length]);
 
   const selectedTotalQuantity = useMemo(() => {
     if (!selectedProduct) {
@@ -3668,47 +3653,6 @@ export function StorefrontClient({
     setSelectedCategoryId(categoryId);
     setHoveredCategoryId(null);
   }
-
-  // Sepet tutarı bloğu iki yerde gösteriliyor: eski sabit sepet barı
-  // (masaüstü/diğer bayiler) ve yeni mobil alt navigasyon. İndirim,
-  // kampanya ve çoklu para birimi kuralları tek yerde kalsın diye hazır
-  // düğüm olarak üretiliyor.
-  const cartSummaryNode = (
-    <div className="space-y-0.5">
-      {cartPaymentSummary && cartPaymentSummary.finalTotal !== cartPaymentSummary.subtotal ? (
-        <>
-          <p className="truncate text-[11px] font-medium leading-tight text-slate-300 line-through">
-            {formatCurrency(cartPaymentSummary.subtotal, cartPaymentSummary.currency)}
-          </p>
-          <p className={cn("truncate text-[13px] font-semibold leading-tight", theme.stickyCartText)}>
-            {formatCurrency(cartPaymentSummary.finalTotal, cartPaymentSummary.currency)}
-          </p>
-        </>
-      ) : cartDiscountSummary?.isQualified ? (
-        <>
-          <p className="truncate text-[11px] font-medium leading-tight text-slate-300 line-through">
-            {formatCurrency(cartDiscountSummary.subtotal, cartDiscountSummary.currency)}
-          </p>
-          <p className={cn("truncate text-[13px] font-semibold leading-tight", theme.stickyCartText)}>
-            {formatCurrency(cartDiscountSummary.totalAfterDiscount, cartDiscountSummary.currency)}
-          </p>
-        </>
-      ) : cartTotalEntries.length ? (
-        cartTotalEntries.map(({ currency, total }) => (
-          <p
-            key={currency}
-            className={cn("truncate text-[13px] font-semibold leading-tight", theme.stickyCartText)}
-          >
-            {currency}: {formatCurrency(total, currency)}
-          </p>
-        ))
-      ) : (
-        <p className={cn("truncate text-[13px] font-semibold leading-tight", theme.stickyCartText)}>
-          {formatCurrency(cartTotal, cartCurrency)}
-        </p>
-      )}
-    </div>
-  );
 
   function handleSearchChange(value: string) {
     setSearchInput(value);
@@ -5409,62 +5353,7 @@ export function StorefrontClient({
         ) : null}
       </AnimatePresence>
 
-      <AnimatePresence>
-        {isMounted && !electronicsDesign?.themeId.startsWith("food-") && !usesBottomNav && cart.length && !isStickyCartBarDismissed && !isCartOpen && !detailProduct ? (
-          <motion.div
-            initial={{ opacity: 0, y: 18, scale: 0.96 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 18, scale: 0.96 }}
-            transition={{ duration: 0.24, ease: "easeOut" }}
-            className="fixed safe-bottom-offset left-4 right-4 z-40 mx-auto max-w-lg xl:hidden"
-          >
-          <div className="relative">
-            <div
-              className={cn(
-                theme.stickyCart,
-                "!static w-full rounded-[1.5rem] px-3 py-2.5 text-left shadow-[0_18px_44px_rgba(15,23,42,0.22)]",
-              )}
-            >
-              <button type="button" onClick={openCartDrawer} className="w-full text-left">
-                <div className="flex items-center gap-3">
-                  <div className={cn("flex size-9 shrink-0 items-center justify-center rounded-xl", theme.surfaceMuted)}>
-                    <ShoppingCart className="size-4" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-[13px] font-semibold tracking-tight text-white">
-                      {t("cart.orderSummary")}
-                    </p>
-                  </div>
-                  <div className="min-w-0 text-right">{cartSummaryNode}</div>
-                  <span
-                    className={cn(
-                      theme.stickyCartButton,
-                      "shrink-0 rounded-full px-4 py-2 text-sm font-semibold shadow-[0_8px_24px_rgba(16,185,129,0.22)]",
-                    )}
-                  >
-                    {t("stickyCart.continue")}
-                  </span>
-                </div>
-              </button>
-            </div>
-            <button
-              type="button"
-              aria-label={t("stickyCart.closeAria")}
-              onClick={(event) => {
-                event.stopPropagation();
-                setIsStickyCartBarDismissed(true);
-              }}
-              className={cn(
-                "absolute -right-2 -top-2.5 z-10 flex size-8 items-center justify-center",
-                theme.cartDrawerCloseButton,
-              )}
-            >
-              <X className="size-4" />
-            </button>
-          </div>
-          </motion.div>
-        ) : null}
-      </AnimatePresence>
+      {/* Telefonda gezerken çıkan "Sipariş Özeti" şeridi kaldırıldı (17 Eki 2026, kullanıcı isteği); sepete sepet ikonundan girilir. */}
 
       {isMounted && usesBottomNav ? (
         <StorefrontBottomNav
