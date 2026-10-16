@@ -1,5 +1,6 @@
 "use client";
 
+import { useOverlayHistory } from "@/lib/storefront/overlay-history";
 import { Fragment, useEffect, useRef, useState, type Dispatch, ReactNode, SetStateAction } from "react";
 import { LOCATION_ERROR_STATUSES, type StorefrontLocationStatus } from "@/components/storefront/storefront-client";
 import { useCommerceDialogFocus } from "@/lib/hooks/use-commerce-dialog-focus";
@@ -432,10 +433,22 @@ export function StorefrontCartDrawer({
   }
 
   function goBack() {
+    // İki adımlı akışta bilgi adımından doğrudan ürünlere.
+    if (twoStepFlow) {
+      setStep(1);
+      return;
+    }
     // 3 -> 2'ye dönerken donmuş liste korunur (yeniden snapshot alınmaz).
     if (step === 3) setStep(frozenSuggestions.length ? 2 : 1);
     else setStep(1);
   }
+
+  // Telefonun geri tuşu sonraki adımlardayken bir önceki adıma döner
+  // (sepeti kapatmaz; ilk adımda sepet kapanır — bkz. overlay-history).
+  useOverlayHistory(
+    isOpen && (useStepFlow || twoStepFlow) && cart.length > 0 && step > 1 && !whatsappHandoff && !sentOrder,
+    goBack,
+  );
 
   // ─── Ortak render parçaları ──────────────────────────────────────────────
 

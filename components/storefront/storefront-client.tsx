@@ -162,6 +162,7 @@ import {
 import type { StorefrontAdsConfig } from "@/lib/ads/config";
 import { earliestDeliveryDate, formatDeliveryDate, resolveRetailConfig, slugify } from "@/lib/storefront/retail-config";
 import { StorefrontInfoSections } from "@/components/storefront/storefront-info-sections";
+import { consumeOverlayPop, overlayHistory, useOverlayHistory } from "@/lib/storefront/overlay-history";
 import {
   EMPTY_FILTER_SELECTION,
   FilterButton,
@@ -1890,6 +1891,15 @@ export function StorefrontClient({
   const filterEnabled = !previewMode && !sectionMode && !inlineProductNavigation && !isMarketTenant;
   const filterScopeActive =
     filterEnabled && (selectedCategoryId !== "all" || Boolean(debouncedSearchTerm.trim()));
+
+  // Geri tuşu: açık sepet / filtre / model seçimi önce kapanır (bkz. useOverlayHistory).
+  useOverlayHistory(isCartOpen && !previewMode, () => {
+    setIsCartOpen(false);
+    setCartOpensAtInfoStep(false);
+    setCartSuggestionsSnapshot([]);
+  });
+  useOverlayHistory(isFilterSheetOpen && filterScopeActive, () => setIsFilterSheetOpen(false));
+  useOverlayHistory(Boolean(selectedProduct) && !previewMode, () => closeAddToCartModal());
   const buildRefine = useCallback(
     (selection: FilterSelection): StorefrontRefine => ({
       ...selection.refine,
@@ -2526,6 +2536,8 @@ export function StorefrontClient({
       window.history.replaceState({ ...(window.history.state ?? {}), ekUrun: initialDetailProduct.id }, "");
     }
     const onPop = (event: PopStateEvent) => {
+      // Katman (sepet/filtre) geçmiş kaydı: o katmanın dinleyicisi işler.
+      if (consumeOverlayPop(event) || overlayHistory.depth > 0) return;
       const id = (event.state as { ekUrun?: string } | null)?.ekUrun;
       if (id) {
         const product = productsByIdRef.current.get(id);
