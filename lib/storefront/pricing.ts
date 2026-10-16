@@ -75,6 +75,10 @@ export function toStorefrontProduct(
     toStorefrontVariant(variant, product, priceListId, isCatalogOnly),
   );
   const pricing = resolveVariantProductCardPricing(product, priceListId, isCatalogOnly);
+  // Bütün varyantları satışa kapalı ürün vitrinde "stokta yok" görünür (17 Eki
+  // 2026, Lucatech LB-1004: ürün stokta işaretli ama Siyah/Beyaz kapalıydı;
+  // kartta sepete ekle çıkıyor, pencerede hiçbir model seçilemiyordu).
+  const allVariantsClosed = variants.length > 0 && !variants.some((variant) => variant.is_purchasable);
 
   return {
     id: product.id,
@@ -88,7 +92,7 @@ export function toStorefrontProduct(
     image_url_3: product.image_url_3,
     extra_image_urls: product.extra_image_urls ?? null,
     model_3d_url: product.model_3d_url ?? null,
-    is_in_stock: product.is_in_stock,
+    is_in_stock: product.is_in_stock && !allVariantsClosed,
     is_recommended: product.is_recommended,
     currency: product.currency,
     price: pricing.price,
