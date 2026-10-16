@@ -6,6 +6,7 @@ import { Sidebar } from "@/components/dashboard/sidebar";
 import { TrialExpiredModal } from "@/components/dashboard/trial-expired-modal";
 import { FeatureAnnouncementModal } from "@/components/dashboard/feature-announcement-modal";
 import { TenantNewsModal } from "@/components/dashboard/tenant-news-modal";
+import { PlanTrialReminderModal } from "@/components/dashboard/plan-trial-reminder-modal";
 import { hasTenantNews } from "@/lib/dashboard/tenant-news";
 import { isMarketOrTekelTenant } from "@/lib/storefront/white-label";
 import { VisitorQuotaBanner } from "@/components/dashboard/visitor-quota-banner";
@@ -127,7 +128,18 @@ export default async function DashboardLayout({
       </main>
       {/* Yenilik penceresi (8 Eki 2026, Hesabım): yalnız toptancılar, market/tekel hariç. */}
       {/* Mağazaya özel yenilikler (10 Eki 2026, Lucatech); varsa genel duyuru yerine o açılır. */}
-      {tenant && !trialExpired && hasTenantNews(tenant.id) ? (
+      {/* Ücretli paket denemesi sürerken her gün ilk girişte hatırlatma (17 Eki 2026);
+          o sürede diğer duyuru pencereleri açılmaz. */}
+      {tenant && tenant.plan_trial_ends_at && planTrialDaysLeft !== null ? (
+        <PlanTrialReminderModal
+          tenantId={tenant.id}
+          companyName={tenant.company_name}
+          planName={getToptanPlan(tenant.plan)?.name ?? "Paket"}
+          daysLeft={planTrialDaysLeft}
+          endsAt={tenant.plan_trial_ends_at}
+          whatsappHref={SITE.whatsappHref}
+        />
+      ) : tenant && !trialExpired && hasTenantNews(tenant.id) ? (
         <TenantNewsModal tenantId={tenant.id} />
       ) : tenant && !trialExpired && !isMarketOrTekelTenant(tenant) ? (
         <FeatureAnnouncementModal hasPersonalCodes={hasPlanFeature(tenant.plan, "kurumsal_site")} />
