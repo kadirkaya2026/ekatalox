@@ -159,7 +159,7 @@ import {
   StorefrontAdProductCard,
 } from "@/components/storefront/storefront-ads";
 import type { StorefrontAdsConfig } from "@/lib/ads/config";
-import { earliestDeliveryDate, formatDeliveryDate, resolveRetailConfig } from "@/lib/storefront/retail-config";
+import { earliestDeliveryDate, formatDeliveryDate, resolveRetailConfig, slugify } from "@/lib/storefront/retail-config";
 import { StorefrontInfoSections } from "@/components/storefront/storefront-info-sections";
 
 function getCartStorageKey(tenantId: string) {
@@ -2284,14 +2284,20 @@ export function StorefrontClient({
   // Bildirim derin bağlantıları (lib/push/send-tenant-broadcast-push.ts üretir):
   //   ?kampanya=1            Kampanyalar panelini aç
   //   ?bildirim=<b64url>     panelin üstünde duyuru kartı ({t,b})
-  //   ?kategori=<id>         o kategoriyi seç
+  //   ?kategori=<id|ad-slug> o kategoriyi seç (liste adresi de bunu yazar)
+  //   ?q=<arama>             aramayı uygula (liste adresi, 17 Eki 2026)
   //   ?urun=<id>             ürün detayını aç (katalogda yüklü değilse çek)
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const raw = params.get("bildirim");
     const kategori = params.get("kategori");
+    const aranan = params.get("q")?.trim() ?? "";
     const urun = params.get("urun");
     const timer = window.setTimeout(() => {
+      if (aranan) {
+        setSearchInput(aranan);
+        setCommittedSearch(aranan);
+      }
       if (raw) {
         try {
           // atob ham bayt dizisi döner; Türkçe karakterler için UTF-8 çözümü şart.
@@ -2301,7 +2307,10 @@ export function StorefrontClient({
         } catch { /* bozuk parametre: yok say */ }
       }
       if (params.get("kampanya") === "1") setIsCampaignsSheetOpen(true);
-      if (kategori) handleCategoryChange(kategori);
+      const kategoriId = kategori ? categoryIdFromParam(kategori) : null;
+      if (kategoriId) handleCategoryChange(kategoriId);
+      // İlk adres uygulandıktan sonra liste durumu adrese yazılmaya başlar.
+      listUrlReadyRef.current = true;
     }, 0);
     return () => window.clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -2374,6 +2383,8 @@ export function StorefrontClient({
         return;
       }
       setDetailProduct(null);
+      // Liste adresi (?kategori/?q) geri/ileri tuşuyla geri yüklenir (17 Eki 2026).
+      applyListUrlRef.current();
       scrollWindowAfterRender(listScrollYRef.current);
     };
     window.addEventListener("popstate", onPop);
@@ -2383,6 +2394,51 @@ export function StorefrontClient({
 
   const productsByIdRef = useRef(productsById);
   productsByIdRef.current = productsById;
+
+  // Vitrin liste adresi (17 Eki 2026, "vitrin adresleri" Aşama 1): seçili kategori
+  // ve arama adres çubuğuna yazılır → link paylaşılabilir, geri tuşu önceki
+  // listeye döner, sayfa yenilenince aynı liste açılır. Kategori adı tekilse
+  // okunur slug (?kategori=sarj-aletleri), değilse id. Önizleme/bölüm/gömülü
+  // modda adres değişmez.
+  const listUrlEnabled = !previewMode && !sectionMode && !inlineProductNavigation;
+  const listUrlReadyRef = useRef(false);
+  const listUrlModeRef = useRef<"push" | "replace">("replace");
+  function categoryParamFor(categoryId: string) {
+    const category = categories.find((c) => c.id === categoryId);
+    if (!category) return categoryId;
+    const slug = slugify(category.name);
+    return slug && categories.filter((c) => slugify(c.name) === slug).length === 1 ? slug : categoryId;
+  }
+  function categoryIdFromParam(value: string) {
+    const v = value.trim();
+    return categories.find((c) => c.id === v)?.id ?? categories.find((c) => slugify(c.name) === v.toLowerCase())?.id ?? null;
+  }
+  const applyListUrlRef = useRef<() => void>(() => undefined);
+  applyListUrlRef.current = () => {
+    if (!listUrlEnabled) return;
+    const params = new URLSearchParams(window.location.search);
+    const q = params.get("q")?.trim() ?? "";
+    const kategori = params.get("kategori");
+    setSearchInput(q);
+    setCommittedSearch(q);
+    setSelectedCategoryId((kategori && categoryIdFromParam(kategori)) || "all");
+  };
+  useEffect(() => {
+    if (!listUrlEnabled || !listUrlReadyRef.current || detailProduct) return;
+    const url = new URL(window.location.href);
+    // Tek seferlik derin bağlantı parametreleri liste adresinde taşınmaz.
+    for (const key of ["kategori", "q", "urun", "kampanya", "bildirim", "tekrar"]) url.searchParams.delete(key);
+    if (selectedCategoryId !== "all") url.searchParams.set("kategori", categoryParamFor(selectedCategoryId));
+    if (committedSearch.trim()) url.searchParams.set("q", committedSearch.trim());
+    const next = url.pathname + url.search + url.hash;
+    const current = window.location.pathname + window.location.search + window.location.hash;
+    const mode = listUrlModeRef.current;
+    listUrlModeRef.current = "replace";
+    if (next === current) return;
+    if (mode === "push") window.history.pushState({}, "", next);
+    else window.history.replaceState(window.history.state, "", next);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedCategoryId, committedSearch, detailProduct, listUrlEnabled]);
 
   function closeDetailToList(pushHome: boolean) {
     if (!detailProduct) return;
@@ -3411,6 +3467,7 @@ export function StorefrontClient({
   }, [fetchProductsPage, productPage, sectionMode]);
 
   function handleCategoryChange(categoryId: string) {
+    listUrlModeRef.current = "push";
     if (detailProduct) closeDetailToList(true);
     setSelectedCategoryId(categoryId);
     setHoveredCategoryId(null);
@@ -3476,6 +3533,7 @@ export function StorefrontClient({
   }
 
   function handleSearchSubmit() {
+    listUrlModeRef.current = "push";
     if (detailProduct) closeDetailToList(true);
     setCommittedSearch(searchInput.trim());
   }
