@@ -247,6 +247,14 @@ export function StorefrontCartDrawer({
   useCommerceDialogFocus(isOpen, Boolean(theme.commerceDesign), commercePanelRef, onClose);
   const { t } = useStorefrontLocale();
   const [copyFeedback, setCopyFeedback] = useState<string | null>(null);
+  const [handoffHelpOpen, setHandoffHelpOpen] = useState(false);
+  const handoffWatchRef = useRef<number | null>(null);
+  // Yeni bir gönderim ekranı açılınca yardım düğmeleri yine gizli başlar.
+  const [prevHandoff, setPrevHandoff] = useState(whatsappHandoff);
+  if (whatsappHandoff !== prevHandoff) {
+    setPrevHandoff(whatsappHandoff);
+    setHandoffHelpOpen(false);
+  }
   // Mağazaya özel teslimat bölgesi (0147): il/ilçe sabit, mahalle listeden,
   // kalan adres elle. Mahalle seçilmezse adres boş kalır → zorunlu adres
   // kontrolü siparişi durdurur.
@@ -1562,6 +1570,27 @@ cartFormConfig.customer_address.is_visible ? (
     ) : null;
 
   // Handoff kutusu VEYA birincil sipariş butonu. `label`/`onCta` adıma göre değişir.
+  // "Mesajı kopyala" ve "Yeniden hazırla" yalnız sorun olunca (17 Eki 2026,
+  // kullanıcı isteği): PDF oluşturulamadıysa, "WhatsApp'tan Gönder"e basılıp
+  // WhatsApp açılmadıysa (sayfa birkaç saniye sonra hâlâ önde) ya da müşteri
+  // "WhatsApp açılmadı mı?" dediyse.
+  const showHandoffHelp = Boolean(orderPdfError) || handoffHelpOpen;
+
+  function watchWhatsAppOpen() {
+    if (handoffWatchRef.current) window.clearTimeout(handoffWatchRef.current);
+    let leftPage = false;
+    const markLeft = () => {
+      leftPage = true;
+    };
+    window.addEventListener("blur", markLeft, { once: true });
+    document.addEventListener("visibilitychange", markLeft, { once: true });
+    handoffWatchRef.current = window.setTimeout(() => {
+      window.removeEventListener("blur", markLeft);
+      document.removeEventListener("visibilitychange", markLeft);
+      if (!leftPage && document.visibilityState === "visible") setHandoffHelpOpen(true);
+    }, 2500);
+  }
+
   const renderHandoffOrCta = (opts: { label: string; onCta: () => void }) =>
     whatsappHandoff ? (
       <div className="mt-3 space-y-2">
@@ -1579,7 +1608,10 @@ cartFormConfig.customer_address.is_visible ? (
             // Gezinme (wa.me) engellenmez. Sepet yalnız market/tekelde
             // sıfırlanır; toptancıda müşteri (bayi) aynı sepetle
             // çalışmaya devam eder (kullanıcı kararı, 3 Eyl 2026).
-            if (!isMarketTenant) return;
+            if (!isMarketTenant) {
+              watchWhatsAppOpen();
+              return;
+            }
             setSentOrder({ trackingUrl: whatsappHandoff.trackingUrl ?? null });
             setCopyFeedback(null);
             clearCart();
@@ -1596,20 +1628,20 @@ cartFormConfig.customer_address.is_visible ? (
           // 4 Eyl 2026) — müşteri gerekirse ürünleri tek tek siler.
           null
         ) : (
+          // "Sipariş durumunu takip et" toptancı/genel tipte gösterilmez (17 Eki 2026).
+          !showHandoffHelp ? (
+            <button
+              type="button"
+              onClick={() => setHandoffHelpOpen(true)}
+              className={cn(
+                "w-full text-center text-[11px] font-medium underline underline-offset-2 transition hover:opacity-80",
+                theme.textMuted,
+              )}
+            >
+              {t("cart.whatsappNotOpened")}
+            </button>
+          ) : (
           <>
-            {whatsappHandoff.trackingUrl ? (
-              <a
-                href={whatsappHandoff.trackingUrl}
-                target="_blank"
-                rel="noreferrer"
-                className={cn(
-                  "block w-full text-center text-xs font-semibold underline underline-offset-2 transition hover:opacity-80",
-                  theme.textMuted,
-                )}
-              >
-                {t("cart.trackOrder")}
-              </a>
-            ) : null}
             <button
               type="button"
               onClick={copyOrderMessage}
@@ -1639,6 +1671,7 @@ cartFormConfig.customer_address.is_visible ? (
               {t("cart.startOver")}
             </button>
           </>
+          )
         )}
       </div>
     ) : (
