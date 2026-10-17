@@ -43,6 +43,7 @@ import type { CartItem } from "@/lib/types";
 import { hasStoreMembership, readMemberForTenant, saveFirstOrderAddress } from "@/lib/storefront/member";
 import { resolveStorefrontAds } from "@/lib/ads/server";
 import { getOnlinePaymentProblems } from "@/lib/payments/readiness";
+import { buildReceiptPayload } from "@/lib/payments/paid-receipt";
 import {
   findMissingRequiredCartFields,
   resolveCartFormConfig,
@@ -60,7 +61,7 @@ function buildPaymentMethodLabel(params: {
     return "Havale / EFT";
   }
   if (params.paymentMethod === "online") {
-    return "Online Ödeme (Kredi Kartı)";
+    return "Online Ödeme - ödeme bekleniyor";
   }
 
   if (!params.selectedInstallment) {
@@ -732,6 +733,28 @@ export async function POST(request: Request) {
         finalTotal: s.finalTotal,
       }).catch((err) => console.error("[order-email] hata:", err)),
     );
+  }
+
+  if (recorded && paymentMethod === "online") {
+    // Ödeme onaylanınca "ÖDENDİ" fişi aynı girdilerle yeniden üretilir (0186).
+    await supabase
+      .from("orders")
+      .update({
+        receipt_payload: buildReceiptPayload({
+          tenantName: tenantDisplayName,
+          customerReferenceName: parsed.data.customer_reference_name,
+          customerPhone: parsed.data.customer_phone,
+          customerAddress: parsed.data.customer_address,
+          orderNumber,
+          orderNo: recorded.orderNo ?? null,
+          orderDate,
+          items,
+          paymentSummary,
+          note: parsed.data.note,
+          footerLine: adFooterLine,
+        }),
+      })
+      .eq("id", recorded.orderId);
   }
 
   try {

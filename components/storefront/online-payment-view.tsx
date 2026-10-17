@@ -3,7 +3,11 @@
 import { useCallback, useEffect, useState } from "react";
 import { CheckCircle2, CreditCard, Loader2, Lock, MessageCircle, XCircle } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
-import { readOnlinePaymentWhatsAppHref, takeOnlinePaymentFrame } from "@/lib/storefront/online-payment-handoff";
+import {
+  prependWhatsAppLine,
+  readOnlinePaymentWhatsAppHref,
+  takeOnlinePaymentFrame,
+} from "@/lib/storefront/online-payment-handoff";
 import { isValidTcKimlik } from "@/lib/payments/identity";
 
 type PaymentStatus = "awaiting" | "paid" | "failed";
@@ -144,7 +148,10 @@ export function OnlinePaymentView({ subdomain, token, storeName, returnedFromPro
         </p>
         {whatsappHref ? (
           <a
-            href={whatsappHref}
+            href={prependWhatsAppLine(
+              whatsappHref,
+              `✅ Online ödeme alındı: ${total} (kredi kartı)${order.orderNo ? ` - Sipariş #${order.orderNo}` : ""}`,
+            )}
             className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white"
           >
             <MessageCircle className="size-4" /> Siparişi WhatsApp&apos;tan mağazaya bildir

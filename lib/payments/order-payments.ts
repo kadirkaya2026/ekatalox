@@ -3,6 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { sendDealerOrderPush } from "@/lib/push/send-dealer-push";
 import { sendOrderToBizimHesap } from "@/lib/integrations/bizimhesap";
 import type { PaymentProvider } from "@/lib/payments/providers";
+import { regeneratePaidReceipt } from "@/lib/payments/paid-receipt";
 
 // Online ödeme denemeleri (0185, order_payment_attempts). Her "Öde" bir
 // deneme satırı açar; sağlayıcının bildirimi (callback) referansla denemeyi
@@ -122,6 +123,9 @@ export async function settlePaymentAttempt(
         },
       }),
       sendOrderToBizimHesap(supabase, order.id as string),
+      regeneratePaidReceipt(supabase, order.id as string).catch((error) =>
+        console.error("[online-payment] ödendi fişi üretilemedi", { orderId: order.id, error: String(error) }),
+      ),
     ]);
   }
   return "paid" as const;

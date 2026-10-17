@@ -516,6 +516,13 @@ export function OrdersManager({
               <p className="text-2xl font-semibold tabular-nums text-slate-900">{formatOrderTotal(order)}</p>
               {payment ? <p className="text-sm text-slate-500">{payment}</p> : null}
               <OnlinePaymentBadge status={formatOnlinePaymentStatus(order)} />
+              {order.payment_status === "paid" && order.paid_at ? (
+                <p className="mt-1 text-xs text-emerald-700">
+                  {formatOrderTotal({ ...order, total_amount: Number(order.paid_amount ?? order.total_amount) })} ·{" "}
+                  {formatDateTime(order.paid_at)}
+                  {order.payment_provider ? ` · ${order.payment_provider}` : ""}
+                </p>
+              ) : null}
             </div>
           </div>
 

@@ -43,3 +43,12 @@ export function takeOnlinePaymentFrame(token: string) {
     return null;
   }
 }
+
+/** Ödeme sonrası mesajın en başına "online ödeme alındı" satırı ekler. */
+export function prependWhatsAppLine(href: string, line: string) {
+  // wa.me "+" işaretini boşluk saymayabilir; metin encodeURIComponent ile yazılır.
+  const [base, query = ""] = href.split("?");
+  const params = new URLSearchParams(query);
+  const text = params.get("text") ?? "";
+  return `${base}?text=${encodeURIComponent(text ? `${line}\n\n${text}` : line)}`;
+}
