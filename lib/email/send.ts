@@ -1,6 +1,7 @@
 // Tek gönderim noktası. ASLA fırlatmaz: SMTP yoksa/patlarsa console.error ile
 // loglar ve false döner; kayıt/sipariş akışı e-posta yüzünden hiç bozulmaz.
 import { getEmailTransport, getSenderAddress, getStoreSenderAddress } from "@/lib/email/transport";
+import { SITE } from "@/lib/marketing/site";
 
 export interface SendEmailParams {
   to: string | string[];
@@ -34,7 +35,9 @@ export async function sendEmail(params: SendEmailParams): Promise<boolean> {
       subject: params.subject,
       html: params.html,
       text: params.text,
-      ...(params.replyTo ? { replyTo: params.replyTo } : {}),
+      // bildirim@ adresi gelen kutusu değil: yanıt adresi yoksa platform
+      // e-postaları info@ekatalox.com'a yanıtlanır (mağaza e-postaları mağazaya).
+      ...(params.replyTo ? { replyTo: params.replyTo } : params.store ? {} : { replyTo: SITE.supportEmail }),
     });
     return true;
   } catch (error) {

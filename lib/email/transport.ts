@@ -31,10 +31,16 @@ export function getEmailTransport(): Transporter | null {
   return cached;
 }
 
+/** Tüm e-postaların gönderen adresi (kullanıcı kararı 17 Eki 2026). */
+export const DEFAULT_SENDER_ADDRESS = "bildirim@ekatalox.com";
+
 export function getSenderAddress() {
-  // Resend SMTP'de kullanıcı adı "resend" olduğu için gönderen ayrı ayarlanır
-  // (ör. info@ekatalox.com); yoksa eski davranış: SMTP kullanıcısı (Gmail).
-  return process.env.EMAIL_FROM?.trim() || process.env.SMTP_USER || "";
+  // Resend SMTP'de (smtp.resend.com, kullanıcı "resend") gönderen her zaman
+  // bildirim@ekatalox.com; Gmail SMTP'de Gmail gönderen adresi hesabın adresiyle
+  // değiştirdiği için eski davranış (SMTP kullanıcısı) korunur.
+  if (process.env.EMAIL_FROM?.trim()) return process.env.EMAIL_FROM.trim();
+  const smtpUser = process.env.SMTP_USER ?? "";
+  return smtpUser.includes("@") ? smtpUser : DEFAULT_SENDER_ADDRESS;
 }
 
 /**
