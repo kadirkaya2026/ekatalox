@@ -1,20 +1,37 @@
 // Üyeye sipariş durumu e-postası (0182, 17 Eki 2026). Telefonda bildirim
 // (push) ulaşmadıysa ve üye Hesabım > Bildirimler'de e-posta bildirimini
-// açtıysa gider. Gönderen adı mağazanın adı, yanıtlar mağazanın kayıtlı
-// e-postasına (contact_email) düşer; adres alan adı doğrulaması gerektirdiği
-// için gönderen adres platformun adresi kalır. Asla fırlatmaz.
+// açtıysa gider. Tasarım tüm mağazalarda ortak (lib/email/store-layout.ts),
+// yalnız mağazanın logosu ve adı değişir; gönderen adı mağazanın adı,
+// yanıtlar mağazanın e-postasına düşer. Asla fırlatmaz.
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { sendEmail } from "@/lib/email/send";
-import { button, escapeHtml, paragraph, renderEmailLayout, renderEmailText } from "@/lib/email/layout";
+import { buildStoreOrderStatusEmail, type StoreBrand } from "@/lib/email/store-layout";
 import { getStatusDescription, getStatusLabel } from "@/lib/orders/status";
 import type { OrderStatus } from "@/lib/types";
 
 const EMAIL_STATUSES: OrderStatus[] = ["confirmed", "preparing", "shipped", "delivered", "cancelled"];
 
+export function orderStatusEmailTitle(status: OrderStatus, isTekel: boolean) {
+  switch (status) {
+    case "new":
+      return "Siparişiniz alındı";
+    case "confirmed":
+      return "Siparişiniz onaylandı";
+    case "preparing":
+      return "Siparişiniz hazırlanıyor";
+    case "shipped":
+      return isTekel ? "Siparişiniz hazır" : "Siparişiniz yola çıktı";
+    case "delivered":
+      return "Siparişiniz teslim edildi";
+    case "cancelled":
+      return "Siparişiniz iptal edildi";
+  }
+}
+
 export async function sendOrderStatusEmail(params: {
   supabase: SupabaseClient;
   memberId: string | null | undefined;
-  tenantName: string;
+  brand: StoreBrand;
   replyTo: string | null | undefined;
   orderNo: string;
   status: OrderStatus;
@@ -31,38 +48,24 @@ export async function sendOrderStatusEmail(params: {
       .maybeSingle();
     if (!member?.email || !member.email_notifications) return false;
 
-    const label = getStatusLabel(params.status, { isTekel: params.isTekel });
-    const description = getStatusDescription(params.status, { isTekel: params.isTekel });
-    const greeting = member.full_name ? `Merhaba ${member.full_name},` : "Merhaba,";
-    const reason = params.status === "cancelled" && params.cancelReason ? `İptal sebebi: ${params.cancelReason}` : null;
-
+    const email = buildStoreOrderStatusEmail({
+      brand: params.brand,
+      customerName: member.full_name || null,
+      orderNo: params.orderNo,
+      status: params.status,
+      statusLabel: getStatusLabel(params.status, { isTekel: params.isTekel }),
+      statusTitle: orderStatusEmailTitle(params.status, params.isTekel),
+      description: getStatusDescription(params.status, { isTekel: params.isTekel }),
+      isTekel: params.isTekel,
+      trackingUrl: params.trackingUrl,
+      cancelReason: params.cancelReason,
+    });
     return await sendEmail({
       to: member.email,
-      fromName: params.tenantName,
+      fromName: params.brand.name,
+      store: true,
       replyTo: params.replyTo?.trim() || undefined,
-      subject: `Siparişiniz ${params.orderNo}: ${label}`,
-      html: renderEmailLayout({
-        title: `Sipariş ${params.orderNo} · ${label}`,
-        preheader: description,
-        hero: { eyebrow: params.tenantName, title: label, subtitle: `Sipariş ${params.orderNo}` },
-        bodyHtml: [
-          paragraph(escapeHtml(greeting)),
-          paragraph(escapeHtml(description)),
-          reason ? paragraph(escapeHtml(reason)) : "",
-          params.trackingUrl ? button(params.trackingUrl, "Siparişi takip et") : "",
-          paragraph(
-            `Bu e-postayı ${escapeHtml(params.tenantName)} üyeliğinizde e-posta bildirimini açtığınız için aldınız. Hesabım &gt; Bildirimler'den kapatabilirsiniz.`,
-          ),
-        ].join(""),
-      }),
-      text: renderEmailText([
-        greeting,
-        "",
-        `Sipariş ${params.orderNo}: ${label}`,
-        description,
-        ...(reason ? [reason] : []),
-        ...(params.trackingUrl ? ["", `Takip: ${params.trackingUrl}`] : []),
-      ]),
+      ...email,
     });
   } catch (error) {
     console.error("[order-status-email] hata:", error);

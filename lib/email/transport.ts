@@ -1,6 +1,7 @@
 // Tek nodemailer taşıyıcısı. Env: SMTP_HOST / SMTP_PORT / SMTP_SECURE /
 // SMTP_USER / SMTP_PASS (app/api/contact ve /api/register ile aynı değişkenler).
-// Gönderen adresi SMTP_USER; satış bildirimlerinin alıcısı CONTACT_RECIPIENT.
+// Gönderen adresi EMAIL_FROM (yoksa SMTP_USER); mağaza adına gidenler
+// STORE_EMAIL_FROM; satış bildirimlerinin alıcısı CONTACT_RECIPIENT.
 import nodemailer from "nodemailer";
 import type { Transporter } from "nodemailer";
 
@@ -31,7 +32,19 @@ export function getEmailTransport(): Transporter | null {
 }
 
 export function getSenderAddress() {
-  return process.env.SMTP_USER ?? "";
+  // Resend SMTP'de kullanıcı adı "resend" olduğu için gönderen ayrı ayarlanır
+  // (ör. info@ekatalox.com); yoksa eski davranış: SMTP kullanıcısı (Gmail).
+  return process.env.EMAIL_FROM?.trim() || process.env.SMTP_USER || "";
+}
+
+/**
+ * Mağaza adına giden müşteri e-postalarının gönderen adresi (ör.
+ * bildirim@ekatalox.com). SMTP Gmail iken Gmail bunu hesabın adresiyle
+ * değiştirir; doğrulanmış alan adıyla (Resend SMTP) çalışır. Ayar yoksa
+ * platform adresi kullanılır.
+ */
+export function getStoreSenderAddress() {
+  return process.env.STORE_EMAIL_FROM?.trim() || getSenderAddress();
 }
 
 /** Satış/kayıt bildirimlerinin gittiği adres. */
