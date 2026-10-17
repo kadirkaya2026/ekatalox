@@ -33,6 +33,12 @@ function useVisualViewportAnchor(ref: React.RefObject<HTMLDivElement | null>) {
     if (typeof window === "undefined" || !ref.current) return;
     // Yalnız dokunmatik cihazlar: masaüstünde bar zaten gizli, gereksiz iş yok.
     if (!(navigator.maxTouchPoints > 0)) return;
+    // Ana ekrana eklenmiş uygulamada tarayıcı çubuğu yok, fixed bottom doğru
+    // duruyor; açılışta görsel viewport bayat ölçülüp barı ortaya taşıyordu.
+    const standalone =
+      window.matchMedia?.("(display-mode: standalone)").matches ||
+      (navigator as Navigator & { standalone?: boolean }).standalone === true;
+    if (standalone) return;
 
     const vv = window.visualViewport;
     let frame = 0;

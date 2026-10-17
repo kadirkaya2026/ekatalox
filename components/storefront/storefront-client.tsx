@@ -5453,7 +5453,8 @@ export function StorefrontClient({
         </div>
       ) : null}
 
-      {isMounted && usesBottomNav ? (
+      {/* Ürün sayfası açıkken alt bar gizli: "Sepete ekle" barı aynı yerde (17 Eki 2026). */}
+      {isMounted && usesBottomNav && !detailProduct ? (
         <StorefrontBottomNav
           cartItemCount={badgeCartCount}
           isTekel={isTekel}

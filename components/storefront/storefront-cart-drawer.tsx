@@ -2084,6 +2084,9 @@ cartFormConfig.customer_address.is_visible ? (
               </div>
 
               <div
+                // Ana ekrana eklenmiş uygulamada (tarayıcı çubuğu yok) düğmeler
+                // iPhone'un ana ekran çizgisinin altına kaymasın (17 Eki 2026).
+                style={{ paddingBottom: "max(0.5rem, env(safe-area-inset-bottom))" }}
                 className={cn(
                   "shrink-0 sm:px-5 lg:px-6",
                   // Market/tekelde özet alanı olabildiğince derli toplu.

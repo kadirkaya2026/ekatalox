@@ -154,6 +154,12 @@ button:focus-visible {
   @apply rounded-2xl border border-slate-200 bg-card text-card-foreground shadow-sm dark:border-slate-800;
 }
 
+/* Çift dokunarak yakınlaştırma kapalı (17 Eki 2026): sepette "+"ya hızlı iki kez
+   basınca iPhone ekranı büyütüp düzeni kaydırıyordu. İki parmakla büyütme açık. */
+html {
+  touch-action: manipulation;
+}
+
 .sticky-safe-bottom {
   padding-bottom: calc(env(safe-area-inset-bottom) + 5rem);
 }
