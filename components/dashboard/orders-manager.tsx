@@ -23,8 +23,10 @@ const ONLINE_PAYMENT_TONE = {
   failed: "bg-red-50 text-red-700 ring-red-200",
 } as const;
 
+// Yalnız online ödemesi ALINMIŞ siparişte rozet (kullanıcı isteği, 17 Eki):
+// "ödeme bekleniyor / başarısız" listede gösterilmez, dar sütunda taşıyordu.
 function OnlinePaymentBadge({ status }: { status: ReturnType<typeof formatOnlinePaymentStatus> }) {
-  if (!status) return null;
+  if (status?.tone !== "paid") return null;
   return (
     <span
       className={`inline-flex shrink-0 items-center rounded-full px-2 py-0.5 text-[11px] font-semibold ring-1 ${ONLINE_PAYMENT_TONE[status.tone]}`}
