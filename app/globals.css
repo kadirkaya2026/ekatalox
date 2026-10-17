@@ -277,6 +277,12 @@ section[id] {
 ::-webkit-scrollbar-thumb { background: var(--color-muted); border-radius: 4px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--color-muted-foreground); }
 
+/* Tam sayfa geçişinde üstte akan ilerleme çizgisi (storefront-bottom-nav.tsx). */
+@keyframes ekx-nav-progress {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(300%); }
+}
+
 @keyframes ek-homepage-shimmer {
   0% {
     background-position: -200% 0;

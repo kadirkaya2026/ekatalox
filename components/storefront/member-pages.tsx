@@ -25,7 +25,11 @@ import { AddressForm, useMemberAddresses, type MemberAddress } from "@/component
 import { PushInviteCard } from "@/components/storefront/push-invite-view";
 import { MemberAuthForm, type StoreMemberProfile } from "@/components/storefront/member-auth";
 import { OrderSections, type OrderRow } from "@/components/storefront/my-orders-view";
-import { StorefrontBottomNav } from "@/components/storefront/storefront-bottom-nav";
+import {
+  NavigationProgressBar,
+  StorefrontBottomNav,
+  useLinkNavigationProgress,
+} from "@/components/storefront/storefront-bottom-nav";
 import { StorefrontLanguageSwitcher } from "@/components/storefront/storefront-language-switcher";
 import { useUnseenOrderUpdates } from "@/components/storefront/order-tracking-badge";
 import { useStorefrontTheme } from "@/lib/storefront/theme-context";
@@ -50,6 +54,7 @@ type BaseProps = Omit<ShellProps, "title" | "backHref" | "children" | "accountAc
 const LOCALE_NAMES: Record<string, string> = { tr: "Türkçe", de: "Deutsch", en: "English", ru: "Русский" };
 
 function goBack(fallback: string) {
+  window.dispatchEvent(new Event("ekx-nav-start"));
   const sameOrigin = document.referrer.startsWith(window.location.origin);
   if (sameOrigin && window.history.length > 1) window.history.back();
   else window.location.href = fallback;
@@ -79,9 +84,11 @@ export function MemberShell({ subdomain, tenantId, isTekel, title, backHref, acc
   const { t } = useStorefrontLocale();
   const cartCount = useStoredCartCount(tenantId);
   const updates = useUnseenOrderUpdates(subdomain);
+  const navigating = useLinkNavigationProgress();
 
   return (
     <div data-storefront className={cn(theme.page, "flex min-h-svh flex-col")}>
+      {navigating ? <NavigationProgressBar /> : null}
       <header className="sticky top-0 z-30 bg-orange-600 text-white shadow-sm">
         <div className="mx-auto grid h-14 max-w-xl grid-cols-[3rem_1fr_3rem] items-center px-2">
           <button
@@ -212,7 +219,7 @@ function MenuRow({
       {danger ? null : <ChevronRight className="size-5 text-orange-600" />}
     </>
   );
-  const cls = "flex w-full items-center gap-3 px-4 py-4 text-left transition hover:opacity-80";
+  const cls = "flex w-full touch-manipulation items-center gap-3 px-4 py-4 text-left transition hover:opacity-80 active:bg-orange-50";
   return href ? (
     <a href={href} className={cls}>
       {inner}
@@ -273,7 +280,7 @@ export function MemberProfilePage(props: MemberProps & { whatsapp: string | null
             target={tile.external ? "_blank" : undefined}
             rel={tile.external ? "noreferrer" : undefined}
             className={cn(
-              "flex flex-col items-center gap-2 rounded-2xl border px-2 py-4 text-center shadow-sm transition hover:opacity-90",
+              "flex touch-manipulation flex-col items-center gap-2 rounded-2xl border px-2 py-4 text-center shadow-sm transition hover:opacity-90 active:scale-95",
               theme.border,
               theme.surface,
             )}

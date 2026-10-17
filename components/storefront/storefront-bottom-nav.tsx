@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Gift, House, Search, ShoppingCart, UserRound } from "lucide-react";
 import { useStorefrontLocale } from "@/lib/storefront/locale-context";
 import { cn } from "@/lib/utils";
@@ -144,13 +144,28 @@ export function StorefrontBottomNav({
   const { t } = useStorefrontLocale();
   const shellRef = useRef<HTMLDivElement | null>(null);
   useVisualViewportAnchor(shellRef);
-  const go = (handler: (() => void) | undefined, href: string) => () => {
-    if (handler) handler();
-    else window.location.href = href;
+  // Sayfa değiştiren sekme (Hesabım, alt sayfalardan Ana sayfa…) basıldığı an
+  // turuncu yanar ve üstte ilerleme çizgisi çıkar; tam sayfa geçişi sürerken
+  // "dokundum mu?" belirsizliği kalmasın (17 Eki 2026, kullanıcı geri bildirimi).
+  const [pendingTab, setPendingTab] = useState<string | null>(null);
+  useEffect(() => {
+    // Geri tuşuyla önbellekten (bfcache) dönülünce bekleme durumu temizlenir.
+    const reset = () => setPendingTab(null);
+    window.addEventListener("pageshow", reset);
+    return () => window.removeEventListener("pageshow", reset);
+  }, []);
+  const go = (key: string, handler: (() => void) | undefined, href: string) => () => {
+    if (handler) {
+      handler();
+      return;
+    }
+    setPendingTab(key);
+    window.location.href = href;
   };
 
   return (
     <div ref={shellRef} className="bottom-nav-shell fixed inset-x-0 bottom-0 z-40 sm:hidden">
+      {pendingTab ? <NavigationProgressBar /> : null}
       <nav
         aria-label={t("bottomNav.ariaLabel")}
         // Bar bilerek temadan bağımsız: koyu temalarda (noir) tema yüzeyi
@@ -161,28 +176,41 @@ export function StorefrontBottomNav({
           accountHref ? "grid-cols-5" : "grid-cols-4",
         )}
       >
-        <BottomNavButton label={t("bottomNav.home")} icon={<House className="size-6" />} isActive={isHomeActive} onClick={go(onGoHome, "/")} />
-        <BottomNavButton label={t("bottomNav.search")} icon={<Search className="size-6" />} isActive={isSearchOpen} onClick={go(onOpenSearch, "/?ara=1")} />
+        <BottomNavButton
+          label={t("bottomNav.home")}
+          icon={<House className="size-6" />}
+          isActive={pendingTab ? pendingTab === "home" : isHomeActive}
+          onClick={go("home", onGoHome, "/")}
+        />
+        <BottomNavButton
+          label={t("bottomNav.search")}
+          icon={<Search className="size-6" />}
+          isActive={pendingTab ? pendingTab === "search" : isSearchOpen}
+          onClick={go("search", onOpenSearch, "/?ara=1")}
+        />
         <BottomNavButton
           label={t(isTekel ? "bottomNav.cartPickup" : "bottomNav.cart")}
           icon={<ShoppingCart className="size-[26px]" />}
           isActive={false}
           badge={cartItemCount || null}
           emphasized
-          onClick={go(onOpenCart, "/?sepet=1")}
+          onClick={go("cart", onOpenCart, "/?sepet=1")}
         />
         {accountHref ? (
           <BottomNavButton
             label={t("bottomNav.account")}
             icon={<UserRound className="size-6" />}
-            isActive={isAccountActive}
+            isActive={pendingTab ? pendingTab === "account" : isAccountActive}
             dot={accountBadge}
-            onClick={() => {
-              window.location.href = accountHref;
-            }}
+            onClick={go("account", undefined, accountHref)}
           />
         ) : null}
-        <BottomNavButton label={t("bottomNav.campaigns")} icon={<Gift className="size-6" />} isActive={isCampaignsOpen} onClick={go(onOpenCampaigns, "/?kampanyalar=1")} />
+        <BottomNavButton
+          label={t("bottomNav.campaigns")}
+          icon={<Gift className="size-6" />}
+          isActive={pendingTab ? pendingTab === "campaigns" : isCampaignsOpen}
+          onClick={go("campaigns", onOpenCampaigns, "/?kampanyalar=1")}
+        />
       </nav>
     </div>
   );
@@ -216,7 +244,8 @@ function BottomNavButton({
       title={label}
       aria-current={isActive ? "true" : undefined}
       className={cn(
-        "flex min-h-[3.25rem] items-center justify-center pb-1 transition",
+        // touch-manipulation: dokunmada gecikme yok; active: basılınca hafif küçülür.
+        "flex min-h-[3.25rem] touch-manipulation select-none items-center justify-center pb-1 transition active:scale-90",
         emphasized ? "-mt-7 items-start" : "pt-1",
         isActive ? "text-orange-600" : "text-slate-400",
       )}
@@ -244,4 +273,42 @@ function BottomNavButton({
       </span>
     </button>
   );
+}
+
+/** Tam sayfa geçişi sürerken ekranın en üstünde akan ince turuncu çizgi. */
+export function NavigationProgressBar() {
+  return (
+    <div className="pointer-events-none fixed inset-x-0 top-0 z-[100] h-[3px] overflow-hidden bg-orange-100">
+      <div className="h-full w-1/3 animate-[ekx-nav-progress_1s_ease-in-out_infinite] rounded-full bg-orange-600" />
+    </div>
+  );
+}
+
+/**
+ * Vitrin dışı sayfalarda (Hesabım vb.) iç bağlantıya basılınca ilerleme çizgisi:
+ * menü satırları ve geri tuşu tam sayfa geçişi yapar.
+ */
+export function useLinkNavigationProgress() {
+  const [active, setActive] = useState(false);
+  useEffect(() => {
+    const onClick = (event: MouseEvent) => {
+      if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey) return;
+      const anchor = (event.target as Element | null)?.closest?.("a[href]") as HTMLAnchorElement | null;
+      if (!anchor || anchor.target === "_blank") return;
+      const href = anchor.getAttribute("href") ?? "";
+      if (!href.startsWith("/") || href.startsWith("//")) return;
+      setActive(true);
+    };
+    const reset = () => setActive(false);
+    const start = () => setActive(true);
+    document.addEventListener("click", onClick);
+    window.addEventListener("pageshow", reset);
+    window.addEventListener("ekx-nav-start", start);
+    return () => {
+      document.removeEventListener("click", onClick);
+      window.removeEventListener("pageshow", reset);
+      window.removeEventListener("ekx-nav-start", start);
+    };
+  }, []);
+  return active;
 }
