@@ -20,6 +20,8 @@ export type GateBranding = {
   // İsteğe bağlı döngü arka plan videosu (sessiz, kısa). backgroundImage
   // video yüklenene kadar ve hareket azaltma/veri tasarrufunda gösterilir.
   backgroundVideo?: { src: string; mobileSrc?: string };
+  // Mobilde (lg altı) arka plan odağı; yoksa "72% center".
+  mobileBackgroundPosition?: string;
   copy: Partial<Record<StorefrontLocale, GateBrandingCopy>> & { tr: GateBrandingCopy };
 };
 
@@ -276,6 +278,33 @@ const GATE_BRANDING: Record<string, GateBranding> = {
           "От платьев до жакетов и костюмов, от верхней одежды до брюк; актуальный оптовый прайс-лист женской коллекции VELIRA только для наших дилеров.",
         chips: ["Платья", "Жакеты", "Костюмы", "Брюки", "Верхняя одежда", "3 уровня цен"],
         helpLine: "Нет пароля? Напишите нам в WhatsApp.",
+      },
+    },
+  },
+  // 17 Eki 2026: Nailport (Vedat Aba, profesyonel tırnak bakım toptancısı) — arka plan
+  // kendi ürünlerinden (gold UV LED lamba + nail art fırçaları), işaret logodaki noktalı O.
+  nailport: {
+    backgroundImage: "/gate/nailport/bg.jpg",
+    mobileBackgroundPosition: "82% center",
+    logoMark: "/gate/nailport/logo-mark.png",
+    wordmark: "NAILPORT",
+    accentColor: "#FF7F00",
+    copy: {
+      tr: {
+        eyebrow: "Bayi Portalı",
+        headline: "Profesyonelin Tercihi.",
+        tagline:
+          "UV LED lambadan freze uçlarına, Staleks makas ve cımbızdan nail art ürünlerine; güncel toptan fiyat listemiz bayilerimize özel.",
+        chips: ["UV LED Lamba", "Freze Uçları", "Staleks", "Tırnak Sticker", "Stamping Plaka", "Nail Art"],
+        helpLine: "Şifreniz yok mu? WhatsApp'tan bize yazın.",
+      },
+      en: {
+        eyebrow: "Dealer Portal",
+        headline: "The Professional's Choice.",
+        tagline:
+          "From UV LED lamps to drill bits, Staleks scissors and tweezers to nail art supplies; our current wholesale price list, exclusively for our dealers.",
+        chips: ["UV LED Lamps", "Drill Bits", "Staleks", "Nail Stickers", "Stamping Plates", "Nail Art"],
+        helpLine: "No password? Message us on WhatsApp.",
       },
     },
   },

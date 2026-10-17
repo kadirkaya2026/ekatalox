@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition, type CSSProperties } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type { StorefrontThemeKey } from "@/lib/types";
@@ -173,8 +173,13 @@ function PasswordGateForm({
     <div className="relative isolate flex flex-1 flex-col overflow-hidden bg-[#0a0a0a] text-white">
       <div
         aria-hidden
-        className="absolute inset-0 -z-20 bg-cover bg-[position:72%_center] lg:bg-[position:right_center]"
-        style={{ backgroundImage: `url(${branding.backgroundImage})` }}
+        className="absolute inset-0 -z-20 bg-cover bg-[position:var(--gate-bg-pos,72%_center)] lg:bg-[position:right_center]"
+        style={{
+          backgroundImage: `url(${branding.backgroundImage})`,
+          ...(branding.mobileBackgroundPosition
+            ? ({ "--gate-bg-pos": branding.mobileBackgroundPosition } as CSSProperties)
+            : {}),
+        }}
       />
       {branding.backgroundVideo ? <GateBackgroundVideo video={branding.backgroundVideo} /> : null}
       <div
