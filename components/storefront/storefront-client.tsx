@@ -3267,10 +3267,11 @@ export function StorefrontClient({
 
     // Online ödeme (0185): sipariş kaydedildi, müşteri ödeme sayfasına geçer.
     // WhatsApp mesajı ödeme sonrası "mağazaya bildir" düğmesi için saklanır.
+    // Sepet burada BOŞALTILMAZ: boşalınca çekmece kapanır, katman geçmişi
+    // history.back() çağırır ve bu yönlendirmeyi iptal ederdi (17 Eki vakası).
     if (paymentUrl) {
       const paymentToken = extractOrderToken(paymentUrl);
       if (paymentToken) saveOnlinePaymentWhatsAppHref(paymentToken, handoff.href);
-      setCart([]);
       window.location.assign(paymentUrl);
       return;
     }
@@ -3287,7 +3288,6 @@ export function StorefrontClient({
     selectedInstallmentCount,
     selectedPaymentMethod,
     onlineConsent,
-    setCart,
     storefrontSettings.card_campaign_tiers,
     storefrontSettings.card_installment_options,
     storefrontSettings.cash_discount_tiers,
