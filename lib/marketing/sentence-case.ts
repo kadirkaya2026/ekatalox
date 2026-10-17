@@ -1,7 +1,7 @@
 // Görünen başlıkları cümle düzenine çevirir (14 Eki 2026 taslak): "Excel ile
 // Toplu Ürün Yükleme" → "Excel ile toplu ürün yükleme". Marka/kısaltma
 // sözcükleri korunur; iki nokta sonrası sözcük küçülür. Türkçe İ/I kuralı.
-const KEEP = new Set(["WhatsApp", "Excel", "PDF", "eKatalox", "QR", "ZIP", "Google", "Bing", "URL", "SKU", "iOS", "Android", "Instagram", "BizimHesap", "MarketGo", "İyzico", "PayTR", "Paytr", "CSV", "KVKK", "SEO", "ChatGPT", "IP", "VELIRA"]);
+const KEEP = new Set(["WhatsApp", "Excel", "PDF", "eKatalox", "QR", "ZIP", "Google", "Bing", "URL", "SKU", "iOS", "Android", "Instagram", "BizimHesap", "MarketGo", "İyzico", "iyzico", "PayTR", "Paytr", "Paynet", "CSV", "KVKK", "SEO", "ChatGPT", "IP", "VELIRA"]);
 
 function lowerTr(word: string) {
   return word.replace(/İ/g, "i").replace(/I/g, "ı").toLocaleLowerCase("tr-TR");

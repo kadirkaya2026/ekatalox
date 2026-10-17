@@ -1,33 +1,38 @@
 import Image from "next/image";
 import Link from "next/link";
-import { MapPin, ShoppingBasket, Bell, Clock3, PackageCheck, QrCode, ArrowUpRight, Languages } from "lucide-react";
+import { MapPin, Bell, Clock3, PackageCheck, QrCode, ArrowUpRight, Languages, Smartphone, UserRound, CreditCard, Pencil, LifeBuoy } from "lucide-react";
 import { ButtonLink, Container } from "@/components/marketing/ui";
 import { marketingMetadata } from "@/lib/marketing/metadata";
 import { SITE } from "@/lib/marketing/site";
 import { Accent, BandCard, Breadcrumb, ClosingCta, CustomerMarquee, FaqList, PageHero, TintBox, pastelStyle } from "@/components/marketing/home-v2/page-kit";
 
-export const metadata = marketingMetadata("/sektorler/market-bakkal", "Market ve Bakkal Sipariş Programı: Online Katalog", "Marketiniz için online katalog, konumlu WhatsApp siparişi, mobil sepet ve kampanya bildirimleri. Kurumsal pakette marketlere 200 QR magnet hediye.");
+export const metadata = marketingMetadata("/sektorler/market-bakkal", "Market ve Bakkal Sipariş Programı: Online Katalog", "Marketiniz için online katalog: müşteri üyeliği ve sipariş takibi, kayıtlı adresler, kapıda veya online ödeme (iyzico, PayTR, Paynet), konumlu WhatsApp siparişi ve bildirimler. Kurumsal pakette 200 QR magnet hediye.");
 const features = [
-  { icon: Languages, title: "Yabancı müşterileriniz için İngilizce, Almanca ve Rusça", body: "Kataloğunuzda yabancı müşterileriniz için İngilizce, Almanca ve Rusça dil seçenekleri mevcuttur. Müşterileriniz dil menüsünden tercih ettikleri dili seçerek kataloğunuzu kullanabilir." },
-  { icon: MapPin, title: "Siparişin yanında müşterinizin konumu", body: "Müşteriniz isterse cihazından konum paylaşımına izin verir. Konum bağlantısı WhatsApp sipariş mesajına eklenir; yazılı adresle birlikte teslimat için kullanabilirsiniz." },
-  { icon: ShoppingBasket, title: "Mobilde her an erişilen sepet", body: "Müşteriniz ürünleri incelerken ekranın altındaki sabit sepet alanına kolayca ulaşır. Ürün adetlerini düzenler, toplamını görür ve sipariş bilgilerine geçer." },
-  { icon: PackageCheck, title: "Siparişler tek yerde, durumları takipte", body: "Bildirim izni veren müşterilerinize “Siparişiniz onaylandı”, “Siparişiniz hazırlanıyor” ve “Siparişiniz yola çıktı” bildirimleri gönderin. Müşteriniz Sipariş Takip sayfasından da siparişinin hangi aşamada olduğunu görsün." },
-  { icon: Bell, title: "Bir süredir sipariş vermeyen müşterinizi geri kazanın", body: "Bildirim izni veren müşterilerinize hafta sonuna özel kampanya bildirimleri gönderin. Sürekli sipariş veren ama uzun zamandır alışveriş yapmayan müşterilerinize marketinizi hatırlatın, yeniden sipariş vermelerini teşvik edin. Bildirim gönderme Profesyonel ve Kurumsal paketlerde bulunur." },
-  { icon: Clock3, title: "Çalışma saatleri ve kapalı mağaza durumu", body: "Mağazanızın çalışma saatlerini belirleyin; kapalı olduğunuzda müşterinizi bilgilendirin. Sipariş almaya ilişkin ayarları işletmenizin çalışma düzenine göre yönetin." },
-  { icon: ShoppingBasket, title: "Sipariş koşullarını siz belirleyin", body: "Minimum sepet tutarını ve müşteriden istenen bilgilerin zorunluluğunu ayarlayın. Teslimat ücreti ve ücretsiz teslimat eşiğiyle sipariş maliyetlerini müşterinize açıkça gösterin." },
+  { icon: Smartphone, title: "Uygulama gibi alt menü", body: "Müşteriniz Ana sayfa, Arama, Sepet, Hesabım ve Kampanyalar'a ekranın altındaki menüden tek dokunuşla ulaşır. Sepet tutarı sağ üstte her an görünür; ana ekrana eklendiğinde uygulama gibi açılır." },
+  { icon: UserRound, title: "Müşteri üyeliği ve Hesabım", body: "Müşteriniz telefon numarası ve şifresiyle üye olur. Hesabım'da siparişlerini, adreslerini, bilgilerini ve bildirim tercihlerini yönetir. Üye olmadan da sipariş verebilir; siparişten sonra bilgileri dolu kayıt ekranı çıkar." },
+  { icon: PackageCheck, title: "Siparişini adım adım takip eder", body: "Onaylandı, hazırlanıyor, yola çıktı ve teslim edildi durumlarını üye müşteriniz Siparişlerim'de görür. Durum değişince telefonuna bildirim, telefonda bildirim açık değilse e-postasına marketinizin adıyla bilgi gelir." },
+  { icon: MapPin, title: "Kayıtlı adresler, başkasına sipariş", body: "Müşteriniz Ev, İşyeri gibi başlıklarla birden çok adres kaydeder; siparişte adresini seçer. Annesinin evine göndermek isterse teslim alacak kişinin adını ve telefonunu adrese yazar. İsterse konumunu da ekler." },
+  { icon: CreditCard, title: "Kapıda veya online ödeme", body: "Kapıda nakit ve kapıda kart seçenekleri her pakette. Kurumsal pakette kendi iyzico, PayTR veya Paynet hesabınızı bağlayın; müşteriniz sepette kartla online ödesin, para doğrudan sizin hesabınıza geçsin." },
+  { icon: Pencil, title: "Stokta kalmayan ürünü fişten çıkarın", body: "Gelen siparişte ürün eksikse panelden fişi düzenleyin: ürün çıkarın, adet ya da fiyat değiştirin, yeni ürün ekleyin. Güncel fişi müşterinize WhatsApp'tan tek dokunuşla gönderin." },
+  { icon: LifeBuoy, title: "Yardım sayfaları ve sözleşmeler hazır", body: "Müşteri hizmetleri, Hakkımızda ve Sıkça Sorulan Sorular sayfalarını panelden yazın. Mesafeli satış, ön bilgilendirme, iptal-iade ve KVKK metinleri bilgilerinizle otomatik oluşur." },
+  { icon: Bell, title: "Bir süredir sipariş vermeyen müşterinizi geri kazanın", body: "Bildirim izni veren müşterilerinize hafta sonuna özel kampanya bildirimleri gönderin. Uzun zamandır alışveriş yapmayan müşterilerinize marketinizi hatırlatın. Bildirim gönderme Profesyonel ve Kurumsal paketlerde bulunur." },
+  { icon: Languages, title: "Yabancı müşterileriniz için İngilizce, Almanca ve Rusça", body: "Kataloğunuzda İngilizce, Almanca ve Rusça dil seçenekleri mevcuttur. Müşterileriniz Hesabım > Dil Seçenekleri'nden tercih ettikleri dili seçer." },
+  { icon: Clock3, title: "Çalışma saatleri ve sipariş koşulları", body: "Çalışma saatlerinizi belirleyin, kapalıyken müşterinizi bilgilendirin. Minimum sepet tutarını, teslimat ücretini ve ücretsiz teslimat eşiğini siz ayarlayın." },
 ];
 const faq = [
-  { q: "Müşterim uygulama indirmek zorunda mı?", a: "Hayır. Katalog bağlantısı veya QR magnet üzerinden tarayıcıda açılır. Müşteriniz ürünleri seçip sepetini oluşturabilir." },
-  { q: "Konum paylaşmak zorunlu mu?", a: "Hayır. Müşteriniz konum eklemeyi seçer ve cihazındaki konum iznini onaylarsa konum bağlantısı sipariş mesajına eklenir. Yazılı adres ve sipariş notu alanları da kullanılabilir." },
-  { q: "Sipariş WhatsApp üzerinden nasıl gönderilir?", a: "Müşteri sepetini ve bilgilerini tamamladığında sipariş mesajı hazırlanır. WhatsApp üzerinden gönderimi müşteri tamamlar. Konum paylaşmışsa bağlantısı da mesajda yer alır; sipariş kayıtları panelden takip edilebilir." },
+  { q: "Müşterim uygulama indirmek zorunda mı?", a: "Hayır. Katalog bağlantısı veya QR magnet üzerinden tarayıcıda açılır. İsterse ana ekranına ekler, uygulama gibi kullanır." },
+  { q: "Müşterim üye olmak zorunda mı?", a: "Hayır, üye olmadan da sipariş verebilir. Siparişini takip etmek, adreslerini kaydetmek ve bilgilerini her seferinde yazmamak için telefon numarası ve şifreyle üye olur. Siparişten sonra bilgileri dolu bir kayıt ekranı çıkar; kaydolunca verdiği sipariş Siparişlerim'e düşer." },
+  { q: "Müşterim siparişini nasıl takip eder?", a: "Üye müşteriniz Hesabım > Siparişlerim'de siparişinin onaylandı, hazırlanıyor, yola çıktı gibi her adımını görür. Telefonunda bildirimi açarsa durum değişince bildirim gelir; açmazsa ve e-posta bildirimini seçerse marketinizin adıyla e-posta gider. Başkasının numarasını yazarak sipariş görülemez." },
+  { q: "Online ödeme alabilir miyim?", a: "Kurumsal pakette alabilirsiniz. Kendi iyzico, PayTR veya Paynet üye işyeri hesabınızın anahtarlarını panelden girersiniz; müşteriniz sepette Online Ödeme'yi seçip kartıyla öder, para doğrudan sizin hesabınıza geçer. eKatalox komisyon almaz; işlem ücretini kendi sağlayıcı sözleşmeniz belirler. Kapıda nakit ve kapıda kart seçenekleri her pakette vardır." },
+  { q: "Konum paylaşmak zorunlu mu?", a: "Hayır. Müşteriniz konum eklemeyi seçer ve cihazındaki konum iznini onaylarsa konum bağlantısı siparişe eklenir. Yazılı adres ve sipariş notu alanları da kullanılabilir." },
+  { q: "Sipariş size nasıl ulaşır?", a: "Müşteri siparişi tamamladığında sipariş panelinize düşer, PDF fişiyle birlikte WhatsApp mesajı hazırlanır. Konum paylaşmışsa bağlantısı da mesajda yer alır. Online ödendiyse sipariş panelde ödendi olarak görünür." },
   { q: "200 adet QR magnet hangi pakette hediye?", a: "Market işletmelerine Kurumsal pakette 200 adet QR kodlu magnet hediye edilir. Müşteriniz magneti okutarak marketinizin kataloğuna ulaşır. Bu hediye market işletmelerine özeldir." },
   { q: "Marketler ve toptancılar için fiyatlar farklı mı?", a: "Hayır. Aynı paketlerin fiyatları ve limitleri ortaktır. Sektöre göre kullanım örnekleri değişir; marketlere özel 200 magnet hediyesi Kurumsal pakette sunulur." },
-  { q: "Her müşteriye bildirim gönderebilir miyim?", a: "Kampanya bildirimleri bildirim izni veren müşterilere gönderilir. Bildirimlerin ulaşması müşterinin cihazına, tarayıcısına ve izin ayarlarına bağlıdır. Kampanya bildirimi gönderme Profesyonel ve Kurumsal paketlerde bulunur." },
 ];
 const FLOW = [
   ["Magneti okutur veya bağlantıyı açar", "Müşteriniz buzdolabındaki QR magnetten ya da paylaştığınız bağlantıdan marketinizin kataloğuna ulaşır."],
-  ["Ürünleri ve teslimat bilgilerini seçer", "Ürünleri sepete ekler; adresini, sipariş notunu ve isterse konum bilgisini paylaşır."],
-  ["Siparişini WhatsApp’tan gönderir", "Hazırlanan sipariş mesajını size iletir. Siz panelde siparişini takip eder, hazırlık sürecini yönetirsiniz."],
+  ["Sepetini doldurur, adresini seçer", "Ürünleri sepete ekler; kayıtlı adresini, sipariş notunu ve ödeme yöntemini seçer. İsterse konumunu ekler."],
+  ["Siparişini verir, adım adım takip eder", "Kapıda öder ya da online öder. Sipariş panelinize düşer; onaylayıp hazırladıkça müşteriniz durumunu Siparişlerim'de ve bildirimle görür."],
 ];
 
 // TASLAK (14 Eki 2026): market sayfası Beacons dilinde; metinler ve şema aynı.
@@ -47,19 +52,19 @@ export default function MarketPage() {
       breadcrumb={<Breadcrumb items={[{ href: "/sektorler", label: "Sektörler" }, { label: "Market & Bakkallar" }]} />}
       eyebrow="Mahallenizin marketi, müşterinizin cebinde"
       title={<>Market siparişlerinizi konum bilgisiyle <Accent>WhatsApp’tan alın.</Accent></>}
-      lead="Ürünlerinizi online kataloğunuzda sunun. Müşteriniz sepetini oluştursun, adresini ve isterse konumunu ekleyip siparişini size iletsin."
+      lead="Ürünlerinizi online kataloğunuzda sunun. Müşteriniz sepetini oluştursun, adresini ve isterse konumunu ekleyip kapıda ya da online ödesin; siparişini adım adım takip etsin."
       actions={<><ButtonLink href="/basvuru?sektor=market-bakkal" tone="navy" size="lg" className="px-9">Marketinizi ücretsiz açın</ButtonLink><ButtonLink href="https://marketgo.ekatalox.com" tone="outline" size="lg" external>MarketGo demosunu incele <ArrowUpRight className="size-4" aria-hidden /></ButtonLink></>}
       className="pb-6 sm:pb-8"
     >
       <p className="mt-6 text-center text-sm text-brand-muted">Uygulama indirmeden katalog erişimi · Sipariş başına eKatalox komisyonu yok</p>
       <div className="relative mx-auto mt-12 flex max-w-5xl flex-col items-center gap-8 overflow-hidden rounded-[32px] p-8 sm:flex-row sm:p-12" style={pastelStyle(0)}>
         <figure className="w-full max-w-[250px] shrink-0 sm:max-w-[270px]">
-          <div className="overflow-hidden rounded-[2rem] border-[5px] border-white/70 shadow-2xl"><Image src="/site/demo-market-iphone.png" alt="MarketGo mobil kataloğu: görselli kategoriler ve altta sabit Ara, Sepet, Kampanyalar menüsü" width={1206} height={2622} priority sizes="270px" className="h-auto w-full" /></div>
+          <div className="overflow-hidden rounded-[2rem] border-[5px] border-white/70 shadow-2xl"><Image src="/site/demo-market-iphone.png" alt="MarketGo mobil kataloğu: sağ üstte sepet tutarı, görselli kategoriler ve altta Ana sayfa, Arama, Sepet, Hesabım, Kampanyalar menüsü" width={1206} height={2622} priority sizes="270px" className="h-auto w-full" /></div>
           <figcaption className="mt-3 text-center text-xs text-brand-navy/60">MarketGo demo mağazasından gerçek ekran. Fiyat ve kampanyalar örnektir.</figcaption>
         </figure>
         <div className="text-left">
           <div className="inline-flex items-center gap-3 rounded-2xl bg-white/80 p-4"><QrCode className="size-7 shrink-0 text-brand-navy" aria-hidden /><p className="text-sm"><strong className="block text-brand-navy">Kurumsal pakette 200 QR magnet hediye</strong><span className="text-brand-navy/70">Market işletmelerine özel.</span></p></div>
-          <h2 className="mt-6 text-3xl font-extrabold leading-[1.05] tracking-[-0.03em] text-brand-navy sm:text-4xl">Kataloğu açar. Sepetini doldurur. Size iletir.</h2>
+          <h2 className="mt-6 text-3xl font-extrabold leading-[1.05] tracking-[-0.03em] text-brand-navy sm:text-4xl">Kataloğu açar. Sepetini doldurur. Siparişini takip eder.</h2>
           <ol className="mt-6 space-y-3">
             {FLOW.map(([title, body], i) => <li key={title} className="flex gap-3 rounded-2xl bg-white/70 p-4"><span className="text-2xl font-extrabold tracking-[-0.03em] text-brand-navy">0{i + 1}</span><span><span className="block font-semibold text-brand-navy">{title}</span><span className="block text-sm leading-relaxed text-brand-navy/70">{body}</span></span></li>)}
           </ol>
@@ -68,14 +73,34 @@ export default function MarketPage() {
     </PageHero>
 
     <section className="bg-white pb-16 sm:pb-20">
+      <Container className="grid items-center gap-10 lg:grid-cols-[1.4fr_1fr]">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-brand-green">Alıştıkları sipariş ekranı</p>
+          <h2 className="mt-3 text-balance text-3xl font-extrabold leading-[1.05] tracking-[-0.03em] text-brand-navy sm:text-5xl">Adres, not, ödeme: <Accent>tek ekranda.</Accent></h2>
+          <p className="mt-5 text-lg leading-relaxed text-brand-muted">Müşteriniz büyük market uygulamalarından alıştığı düzende siparişini tamamlar: teslimat adresini seçer, &quot;Siparişi kapıya bırak&quot;, &quot;Zili çalma&quot; gibi notları işaretler, ödeme yöntemini seçer, sepet ve ödeme özetini görür.</p>
+          <ul className="mt-6 space-y-3 text-[15px] leading-relaxed text-brand-navy/80">
+            <li className="flex gap-3"><CreditCard className="mt-0.5 size-5 shrink-0 text-brand-navy" aria-hidden /><span><strong className="text-brand-navy">Kapıda nakit ve kapıda kart</strong> her pakette. <strong className="text-brand-navy">Online ödeme</strong> Kurumsal pakette: kendi iyzico, PayTR veya Paynet hesabınızla; para doğrudan size geçer, kart bilgisi eKatalox&apos;a gelmez.</span></li>
+            <li className="flex gap-3"><UserRound className="mt-0.5 size-5 shrink-0 text-brand-navy" aria-hidden /><span>Üye müşteri kayıtlı adresini seçer; üye olmayan &quot;Üye olmadan devam et&quot; der, bilgilerini yazar.</span></li>
+            <li className="flex gap-3"><PackageCheck className="mt-0.5 size-5 shrink-0 text-brand-navy" aria-hidden /><span>Sipariş panelinize düşer; durumunu güncelledikçe müşteriniz bildirim veya e-postayla haberdar olur.</span></li>
+          </ul>
+        </div>
+        <div className="grid grid-cols-2 gap-4 rounded-[28px] p-6 sm:p-8" style={pastelStyle(1)}>
+          <figure><Image src="/site/demo-market-odeme.png" alt="Market sipariş ekranı: teslimat bilgileri, sipariş notu seçenekleri, ödeme yöntemi ve Sipariş Ver tutarı" width={780} height={1696} sizes="(max-width: 1024px) 45vw, 240px" className="h-auto w-full rounded-3xl border border-white/70 shadow-lg" /></figure>
+          <figure className="mt-10"><Image src="/site/demo-market-odeme-yontemi.png" alt="Ödeme yöntemleri: kapıda nakit ödeme ve kapıda kart ile ödeme" width={780} height={1696} sizes="(max-width: 1024px) 45vw, 240px" className="h-auto w-full rounded-3xl border border-white/70 shadow-lg" /></figure>
+          <figcaption className="col-span-2 text-center text-xs text-brand-navy/60">MarketGo demo mağazasından gerçek ekranlar. Online ödeme, sağlayıcı hesabı bağlanan mağazalarda listede görünür.</figcaption>
+        </div>
+      </Container>
+    </section>
+
+    <section className="bg-white pb-16 sm:pb-20">
       <Container className="grid items-center gap-8 lg:grid-cols-[1fr_1.5fr]">
         <div className="flex justify-center rounded-[28px] p-8" style={pastelStyle(3)}>
-          <figure className="w-full max-w-[280px]"><Image src="/site/demo-konum.png" alt="Market sipariş formunda isteğe bağlı şu anki konumumu ekle seçeneği, adres ve sipariş notu" width={780} height={1688} sizes="280px" className="h-auto w-full rounded-3xl border border-white/70 shadow-lg" /><figcaption className="mt-3 text-center text-xs text-brand-navy/60">Gerçek sipariş ekranı; tutarlar demo ayarlarını gösterir.</figcaption></figure>
+          <figure className="w-full max-w-[280px]"><Image src="/site/demo-konum.png" alt="Market sipariş ekranında ad, adres ve isteğe bağlı şu anki konumumu ekle seçeneği" width={780} height={1688} sizes="280px" className="h-auto w-full rounded-3xl border border-white/70 shadow-lg" /><figcaption className="mt-3 text-center text-xs text-brand-navy/60">Gerçek sipariş ekranı; tutarlar demo ayarlarını gösterir.</figcaption></figure>
         </div>
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-brand-green">Teslimat için daha net bilgi</p>
           <h2 className="mt-3 text-balance text-3xl font-extrabold leading-[1.05] tracking-[-0.03em] text-brand-navy sm:text-5xl">“<Accent>Konum atar mısınız?</Accent>” konuşmasını siparişin içinde çözün.</h2>
-          <p className="mt-5 text-lg leading-relaxed text-brand-muted">Müşteriniz yazılı adresinin yanında konumunu da ekleyebilir. Konum bağlantısı WhatsApp sipariş mesajında yer alır; teslimat için ihtiyaç duyduğunuz bilgileri birlikte görürsünüz.</p>
+          <p className="mt-5 text-lg leading-relaxed text-brand-muted">Müşteriniz yazılı adresinin yanında konumunu da ekleyebilir; üye müşteriniz kayıtlı adresini seçerken de. Konum bağlantısı siparişte yer alır; teslimat için ihtiyaç duyduğunuz bilgileri birlikte görürsünüz.</p>
           <p className="mt-4 leading-relaxed text-brand-muted">Konum paylaşımı müşterinin tercihine ve cihaz iznine bağlıdır. Apartman, daire ve teslimat notu gibi ayrıntılar için adres ve sipariş notu alanlarını kullanabilirsiniz.</p>
         </div>
       </Container>
@@ -126,9 +151,9 @@ export default function MarketPage() {
       <Container>
         <TintBox index={2} className="text-center">
           <h2 className="text-3xl font-extrabold tracking-[-0.03em] text-brand-navy sm:text-4xl">Müşterinizin göreceği kataloğu deneyin.</h2>
-          <p className="mx-auto mt-4 max-w-2xl leading-relaxed text-brand-navy/70">MarketGo, market kullanımını inceleyebileceğiniz demo mağazamızdır. Kategorileri, mobil sepeti ve sipariş ekranlarını keşfedin.</p>
+          <p className="mx-auto mt-4 max-w-2xl leading-relaxed text-brand-navy/70">MarketGo, market kullanımını inceleyebileceğiniz demo mağazamızdır. Kategorileri, alt menüyü, sipariş ekranını, Hesabım ve Yardım sayfalarını keşfedin.</p>
           <div className="mt-7 flex flex-wrap justify-center gap-3"><ButtonLink href="https://marketgo.ekatalox.com" tone="navy" external>MarketGo demosunu aç</ButtonLink><ButtonLink href="/fiyatlandirma?gorunum=market" tone="white">Market paketlerini karşılaştır</ButtonLink></div>
-          <p className="mt-5 text-sm text-brand-navy/70">Ürünlerinizi topluca aktarmak için <Link href="/ozellikler/toplu-urun-yukleme" className="font-semibold text-brand-navy underline">toplu ürün yüklemeyi</Link>, ödeme seçenekleri için <Link href="/ozellikler/online-odeme" className="font-semibold text-brand-navy underline">İyzico/Paytr entegrasyonunu</Link> inceleyin.</p>
+          <p className="mt-5 text-sm text-brand-navy/70">Ürünlerinizi topluca aktarmak için <Link href="/ozellikler/toplu-urun-yukleme" className="font-semibold text-brand-navy underline">toplu ürün yüklemeyi</Link>, online ödeme için <Link href="/ozellikler/online-odeme" className="font-semibold text-brand-navy underline">iyzico, PayTR ve Paynet entegrasyonunu</Link> inceleyin.</p>
         </TintBox>
       </Container>
     </section>

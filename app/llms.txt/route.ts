@@ -57,7 +57,7 @@ export async function GET() {
 - Sipariş kuralları: minimum sepet tutarı (tek para birimli sepet), müşteri alanlarının görünürlük ve zorunluluk seçimi
 - Mağaza iletişimi: açılış duyurusu, çalışma saatleri ve mağaza kapalı mesajı
 - Kurumsal pakete dahil kurumsal site ve Bayimiz ol formu; başvuruları panelden inceleme
-- İyzico/Paytr entegrasyonuyla kataloğunuzdan ödeme alın. Sağlayıcı sözleşmesi ve işlem ücretleri ayrıca değerlendirilir.
+- Online ödeme (Kurumsal): işletme kendi iyzico, PayTR veya Paynet hesabını panelden bağlar; müşteri sepette kartla öder, para doğrudan işletmenin hesabına geçer, kart bilgisi eKatalox'a gelmez. Test modu var; sağlayıcı işlem ücretleri işletmenin kendi sözleşmesine göre.
 - Ürün yükleme: Excel/CSV içe aktarma, toplu görsel, stok ve fiyat güncelleme
 - Kampanya, indirim, banner, anlık bildirim (yeni ürün, kampanya, stok)
 - Raporlar: ürün aramaları, görüntülenmeler, sepete eklemeler ve il–fiyat listesi girişleri

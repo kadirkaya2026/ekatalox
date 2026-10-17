@@ -121,6 +121,10 @@ function stepVisual(step: 0 | 1 | 2, sector: string) {
   const demo = SECTOR_DEMO_VISUALS[sector] ?? SECTOR_DEMO_VISUALS["telefon-aksesuar"];
   const key = SECTOR_DEMO_VISUALS[sector] ? sector : "telefon-aksesuar";
   const base = `/site/sektor/${key}`;
+  // Market (17 Eki 2026): sepet görseli artık sipariş ekranı (adres, not, ödeme yöntemi).
+  if (step === 1 && key === "market-bakkal") {
+    return { src: `${base}-sepet.webp`, alt: "Demo market kataloğunda sipariş ekranı: teslimat bilgileri, sipariş notu, ödeme yöntemi", caption: "Müşterileriniz adresini ve ödeme yöntemini seçip siparişi verir, adım adım takip eder" };
+  }
   if (step === 1) return { src: `${base}-sepet.webp`, alt: `Demo ${demo.name} kataloğunda dolu sepet`, caption: `${demo.audience} siparişi sepetten WhatsApp'a gönderir` };
   if (demo.kind === "theme") {
     return step === 0

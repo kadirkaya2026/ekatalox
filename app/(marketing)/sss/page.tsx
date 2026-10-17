@@ -46,7 +46,7 @@ const GROUPS: FaqGroup[] = [
     },
     {
       "q": "Katalogdan online ödeme alabilir miyim?",
-      "a": "İyzico/Paytr entegrasyonuyla kataloğunuzdan ödeme alın. Kurumsal paket kapsamındaki entegrasyon için sağlayıcı hesabınız ve kurulum ihtiyacınız birlikte değerlendirilir. Sağlayıcının işlem ücretleri ve sözleşme koşulları ayrıca geçerlidir."
+      "a": "Evet, Kurumsal pakette. Panelde Ayarlar > Ödeme ve Kampanyalar'dan kendi iyzico, PayTR veya Paynet üye işyeri hesabınızın anahtarlarını girersiniz; müşteriniz sepette Online Ödeme'yi seçip kartıyla ödeme kuruluşunun güvenli sayfasında öder. Para doğrudan sizin hesabınıza geçer, kart bilgisi eKatalox'a gelmez. Önce test modunda deneyebilirsiniz. Açmak için Yasal Bilgiler (satıcı bilgileri ve sözleşmeler) dolu olmalıdır; işlem komisyonunu kendi sağlayıcı sözleşmeniz belirler."
     }
   ]
 },{

@@ -24,7 +24,11 @@ export default async function Page({ searchParams }: { searchParams: Promise<Par
       <PageHero
         eyebrow="Ücretsiz kayıt"
         title={<>Kataloğunuzu <Accent>bugün açın.</Accent></>}
-        lead="Üç kısa adım: işletme bilgileri, WhatsApp numarası, giriş bilgileri. Bitince katalog adresiniz hazır, bayilerinize şifreyi gönderirsiniz."
+        lead={
+          first(params.sektor) === "market-bakkal"
+            ? "Üç kısa adım: işletme bilgileri, WhatsApp numarası, giriş bilgileri. Bitince marketinizin adresi hazır; müşterileriniz üye olup sipariş verir, kapıda ya da online öder, siparişini adım adım takip eder."
+            : "Üç kısa adım: işletme bilgileri, WhatsApp numarası, giriş bilgileri. Bitince katalog adresiniz hazır, bayilerinize şifreyi gönderirsiniz."
+        }
         className="pb-6 sm:pb-8"
       >
         <ul className="mt-8 flex flex-wrap justify-center gap-2">

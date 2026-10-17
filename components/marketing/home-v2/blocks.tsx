@@ -165,7 +165,7 @@ const LINKS: Array<{ label: string; sub: string; href?: string }> = [
   { label: "BizimHesap", sub: "Onaylanan sipariş → satış fişi", href: "/ozellikler/bizimhesap-entegrasyonu" },
   { label: "WhatsApp", sub: "Sipariş fişi ve kampanya mesajı", href: "/ozellikler/whatsapp-siparis" },
   { label: "Excel / CSV", sub: "Ürün, fiyat ve stok yükleme", href: "/ozellikler/toplu-urun-yukleme" },
-  { label: "iyzico / PayTR", sub: "Katalogdan kartla ödeme", href: "/ozellikler/online-odeme" },
+  { label: "iyzico · PayTR · Paynet", sub: "Katalogdan kartla online ödeme", href: "/ozellikler/online-odeme" },
   { label: "Anlık bildirim", sub: "Bayinin telefonuna kampanya", href: "/ozellikler/kampanya-bildirimleri" },
   { label: "Google ve ChatGPT", sub: "llms.txt ve işletme kartı", href: "/ozellikler/kurumsal-site" },
 ];

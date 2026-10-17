@@ -30,7 +30,7 @@ const COMPARISON: Row[] = [
   { label: "Tema, gelişmiş görünüm, ana sayfa düzenleyici", cells: [true, true, true, true] },
   { label: "Raporlar (arama, sepete ekleme, il–fiyat listesi)", cells: [false, true, true, true] },
   { label: "Kurumsal site ve Bayimiz ol formu", cells: [false, false, false, "Pakete dahil"] },
-  { label: "İyzico/Paytr ile online ödeme", cells: [false, false, false, true] },
+  { label: "Online ödeme (iyzico, PayTR, Paynet)", cells: [false, false, false, true] },
   { label: "BizimHesap entegrasyonu (sipariş → satış fişi)", cells: [false, false, false, true] },
   { label: "Kendi alan adınız", cells: [false, false, false, true] },
   { label: "Bayilere bildirim gönderme", cells: [false, false, true, true] },
@@ -41,7 +41,7 @@ const COMPARISON: Row[] = [
 
 const FAQ = [
   { q: "Kurumsal site için ayrıca ücret öder miyim?", a: "Kurumsal tanıtım sitesi ve Bayimiz ol formu Kurumsal pakete dahildir; ayrıca kurumsal site paket ücreti yoktur. Alan adı satın alma/yenileme giderleri ve varsa özel hizmet kapsamı ayrıca netleştirilir." },
-  { q: "Katalogdan ödeme alabilir miyim?", a: "İyzico/Paytr entegrasyonuyla kataloğunuzdan ödeme alın. Kurumsal pakette sağlayıcı başvurusu, entegrasyon kapsamı ve varsa ek kurulum hizmeti birlikte netleştirilir; sağlayıcı işlem ücretleri paket bedeline dahil değildir." },
+  { q: "Katalogdan ödeme alabilir miyim?", a: "Evet, Kurumsal pakette. Kendi iyzico, PayTR veya Paynet hesabınızın anahtarlarını panelden girersiniz; müşteriniz sepette kartla öder, para doğrudan sizin hesabınıza geçer. Sağlayıcının işlem ücretleri paket bedeline dahil değildir, kendi sözleşmenize göre uygulanır." },
   { q: "Ön muhasebe programımla çalışır mı?", a: "BizimHesap kullanıyorsanız Kurumsal pakette onayladığınız siparişler BizimHesap'a satış fişi olarak aktarılır; cari, ürün ve depo eşleştirmesi bir kez yapılır. Ayrıntılar BizimHesap entegrasyonu sayfasında." },
   {
     q: "Ücretsiz planın süresi var mı?",
@@ -65,7 +65,7 @@ const FAQ = [
   },
   {
     q: "Komisyon ya da sipariş başına ücret var mı?",
-    a: "eKatalox sipariş başına komisyon almaz. Online ödeme kullanırsanız İyzico/Paytr gibi sağlayıcıların işlem ücretleri kendi sözleşmenize göre ayrıca uygulanır.",
+    a: "eKatalox sipariş başına komisyon almaz. Online ödeme kullanırsanız iyzico, PayTR veya Paynet'in işlem ücretleri kendi sözleşmenize göre ayrıca uygulanır.",
   },
   {
     q: "Ürün limitim dolarsa?",

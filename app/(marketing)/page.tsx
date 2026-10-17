@@ -135,7 +135,7 @@ const FEATURES = [
   { icon: BellRing, title: "Kampanyayı müşterinize ulaştırın", body: "Bildirim izni veren müşterilerinize yeni ürün, kampanya ve stok duyuruları gönderin.", href: "/ozellikler/kampanya-bildirimleri", plan: "Profesyonel ve üzeri" },
   { icon: BarChart3, title: "Aramalardan aksiyon alın", body: "En çok aranan ve sepete eklenen ürünleri, il–fiyat listesi girişlerini görün. Ürün sıralaması ve kampanyalarınızı buna göre düzenleyin.", href: "/ozellikler/raporlar", plan: "Başlangıç ve üzeri" },
   { icon: Palette, title: "Kurumsal siteniz pakete dahil", body: "Firmanızı SEO uyumlu açık sayfalarda tanıtın. Bayimiz ol formuyla başvuru alın; ayrıca kurumsal site paket ücreti ödemeyin.", href: "/ozellikler/kurumsal-site", plan: "Kurumsal" },
-  { icon: CreditCard, title: "Kataloğunuzdan ödeme alın", body: "İyzico/Paytr entegrasyonuyla kataloğunuzdan ödeme alın.", href: "/ozellikler/online-odeme", plan: "Kurumsal" },
+  { icon: CreditCard, title: "Kataloğunuzdan ödeme alın", body: "Kendi iyzico, PayTR veya Paynet hesabınızı bağlayın; müşteriniz sepette kartla online ödesin, para doğrudan sizin hesabınıza geçsin.", href: "/ozellikler/online-odeme", plan: "Kurumsal" },
 ];
 
 // İtiraz odaklı SSS (14 Eki 2026): toptancının "ama…" dediği yerler.

@@ -43,7 +43,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ s
                     </a>
                     <div className="flex flex-1 flex-col gap-4 p-6">
                       <h3 className="text-xl font-extrabold tracking-[-0.02em] text-brand-navy">MarketGo</h3>
-                      <p className="flex-1 text-sm leading-6 text-brand-muted">Koyu zeminli market vitrini. Kampanya bannerı, görselli kategori şeridi, mobilde altta sabit sepet ve konumlu WhatsApp siparişi.</p>
+                      <p className="flex-1 text-sm leading-6 text-brand-muted">Beyaz, ferah market vitrini. Kampanya bannerı, görselli kategoriler, mobilde uygulama gibi alt menü, müşteri üyeliği ve sipariş takibi, kapıda ya da online ödemeli sipariş ekranı.</p>
                       <div className="flex flex-wrap gap-2">
                         <a className="rounded-full bg-brand-dark px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-navy" href="https://marketgo.ekatalox.com" target="_blank" rel="noopener noreferrer">Canlı demoyu aç</a>
                         <Link className="rounded-full border border-brand-line px-4 py-2.5 text-sm font-semibold text-brand-navy hover:border-brand-navy" href={`/basvuru?sektor=${s.value}`}>Bu temayı seç</Link>

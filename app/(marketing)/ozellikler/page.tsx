@@ -58,7 +58,7 @@ const GROUPS: FeatureGroup[] = [
       { title: "Siparişlerim ve yeni sipariş bildirimi", body: "Siparişlerinizi Siparişlerim sayfasından takip edin. Bildirimleri açtıysanız yeni sipariş geldiğinde haberdar olun." },
       { title: "Minimum sepet tutarı", body: "Minimum sepet tutarı belirleyin; müşteri siparişini belirlediğiniz tutara tamamlasın. Tek para birimli sepetlerde uygulanır." },
       { title: "WhatsApp alıcısını seçme", body: "Siparişi kayıtlı numaranıza yönlendirin veya bu seçeneği kapatıp müşterinizin kendi toptancısı dahil istediği kişiye göndermesine izin verin. Mesajı müşteri WhatsApp’ta gönderir." },
-      { title: "İyzico/Paytr ile ödeme", body: "İyzico/Paytr entegrasyonuyla kataloğunuzdan ödeme alın.", from: "Kurumsal" },
+      { title: "iyzico, PayTR, Paynet ile online ödeme", body: "Kendi iyzico, PayTR veya Paynet hesabınızı bağlayın; müşteriniz sepette kartla online ödesin, para doğrudan sizin hesabınıza geçsin.", from: "Kurumsal" },
       { title: "Sepet önerileri", body: "Sepetteki ürünle birlikte alınanları önerir; bayi eksik kalemi hatırlar, sepet büyür." },
       { title: "Ödeme ve vade ayarları", body: "Peşin indirimi, kart taksit seçenekleri, vadeye göre fiyat notu. Bayi sipariş verirken görür.", from: "Profesyonel" },
     ],

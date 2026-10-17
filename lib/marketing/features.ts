@@ -199,30 +199,30 @@ export const MARKETING_FEATURES: MarketingFeature[] = [
   },
   {
     "slug": "online-odeme",
-    "seoTitle": "Katalogdan Online Ödeme: İyzico ve PayTR",
-    "metaDescription": "Bayileriniz katalogdan ödeme yapsın istiyorsanız iyzico veya PayTR entegrasyonunu birlikte planlayalım. Kurumsal pakette, kapsam görüşmeyle belirlenir.",
+    "seoTitle": "Katalogdan Online Ödeme: iyzico, PayTR ve Paynet",
+    "metaDescription": "Kendi iyzico, PayTR veya Paynet hesabınızı bağlayın; müşteriniz sepette kartla ödesin, para doğrudan sizin hesabınıza geçsin. Kurumsal pakette; eKatalox komisyon almaz.",
     "title": "Kataloğunuzdan online ödeme alın",
-    "lead": "İyzico veya PayTR ile kataloğunuzdan ödeme almak için entegrasyonu birlikte planlayalım.",
-    "plan": "Kurumsal paket · Sağlayıcı başvurusu ve entegrasyon kapsamı birlikte netleştirilir",
+    "lead": "Kendi iyzico, PayTR veya Paynet hesabınızı panelden bağlayın. Müşteriniz sepette Online Ödeme'yi seçsin, kartıyla güvenle ödesin; para doğrudan sizin hesabınıza geçsin.",
+    "plan": "Kurumsal paket · eKatalox ödeme başına komisyon almaz",
     "sections": [
       {
-        "title": "Sipariş ve ödeme ihtiyacınızı birlikte değerlendirelim",
-        "body": "Bayilerinizin sipariş oluştururken katalog üzerinden ödeme yapmasını istiyorsanız kullandığınız sağlayıcıyı ve tahsilat düzeninizi bizimle paylaşın. Katalog, sipariş ve ödeme adımlarının işletmenizde nasıl işleyeceğini birlikte belirleyelim."
+        "title": "Üç sağlayıcı, sizin hesabınız",
+        "body": "iyzico, PayTR veya Paynet'ten hangisiyle çalışıyorsanız onun üye işyeri anahtarlarını Ayarlar > Ödeme ve Kampanyalar'a girin. Ödemeler sizin sağlayıcı hesabınıza düşer; komisyon oranını ve hakediş süresini kendi sözleşmeniz belirler."
       },
       {
-        "title": "Sağlayıcı hesabı ve işletme koşulları",
-        "body": "İyzico veya Paytr üzerinden çalışmak, ilgili sağlayıcının işletme başvurusu ve sözleşme koşullarına tabidir. Mevcut sağlayıcı hesabınız varsa kurulum görüşmesinde belirtin. Sağlayıcının istediği bilgileri kendi güvenli başvuru kanalları üzerinden iletin."
+        "title": "Müşteri sepette kartla öder",
+        "body": "Müşteriniz kapıda nakit, kapıda kart ve online ödeme seçenekleri arasından seçim yapar. Online ödemede kart bilgisini ödeme kuruluşunun güvenli sayfasına girer; kart bilgisi eKatalox'a hiç gelmez."
       },
       {
-        "title": "Paket bedeli ile tahsilat ücretini ayırın",
-        "body": "eKatalox paket ücretini fiyatlandırma sayfasından inceleyin. Ödeme sağlayıcısının işlem komisyonları ve diğer hizmet bedelleri, sağlayıcı sözleşmesine göre ayrıca değerlendirilir. Entegrasyon kapsamını ve varsa ek kurulum hizmetini başlamadan önce netleştirin."
+        "title": "Ödenen sipariş panelde ve fişte görünür",
+        "body": "Ödeme onaylanınca sipariş panelde \"Ödendi\" olarak işaretlenir, tutarı ve saati görünür. Sipariş fişi ödeme bilgisiyle yeniden üretilir, WhatsApp mesajına \"Online ödeme alındı\" satırı eklenir."
       },
       {
-        "title": "İşletmenize uygun kurulum",
-        "body": "Kullandığınız sağlayıcıyı, katalog adresinizi ve ödeme ihtiyacınızı paylaşarak bize ulaşın. Paket seçimi, sağlayıcı koşulları ve entegrasyon adımlarını birlikte görüşelim."
+        "title": "Önce test edin, sonra açın",
+        "body": "Sağlayıcının test anahtarlarıyla test modunu açın, gerçek para çekilmeden deneyin. Online ödemeyi açmak için Yasal Bilgiler'de satıcı bilgileriniz ve mesafeli satış, ön bilgilendirme, iptal-iade ve KVKK metinleriniz hazır olmalıdır; bu metinler bilgilerinizle otomatik oluşturulur."
       }
     ],
-    "example": "Örneğin halihazırda Paytr ile çalışan bir işletme, aynı sağlayıcıyla katalogdan tahsilat ihtiyacını iletebilir. Kurulum kapsamı mevcut hesap ve işletmenin sipariş düzeni üzerinden değerlendirilir.",
+    "example": "Örneğin PayTR ile çalışan bir market, PayTR mağaza panelindeki entegrasyon bilgilerini eKatalox'a girer. Müşteri sepette Online Ödeme'yi seçer, PayTR'nin güvenli ödeme sayfasında öder; sipariş markete ödendi olarak düşer.",
     "related": [
       "whatsapp-siparis",
       "kurumsal-site"
