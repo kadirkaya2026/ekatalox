@@ -3,10 +3,11 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { isRateLimited } from "@/lib/api/rate-limit";
 import { sendEmail } from "@/lib/email/send";
-import { button, escapeHtml, noteBox, paragraph, renderEmailLayout, renderEmailText } from "@/lib/email/layout";
+import { escapeHtml } from "@/lib/email/layout";
+import { renderStoreEmailLayout } from "@/lib/email/store-layout";
 import { getTenantStorefrontOrigin } from "@/lib/push/send-tenant-broadcast-push";
 import { getClientIp } from "@/lib/storefront/client-ip";
-import { normalizeCustomerPhone } from "@/lib/storefront/customer-phone";
+import { normalizeCustomerPhone, toWhatsAppDigits } from "@/lib/storefront/customer-phone";
 import {
   claimGuestOrders,
   clearMemberCookie,
@@ -201,32 +202,43 @@ export async function POST(request: Request) {
     }
     const storeName = tenant.company_name;
     const resetUrl = `${getTenantStorefrontOrigin(tenant)}/giris?sifirla=${encodeURIComponent(token)}`;
-    const greeting = row.full_name ? `Merhaba ${row.full_name},` : "Merhaba,";
+    const greeting = row.full_name ? `Merhaba ${row.full_name.split(" ")[0]},` : "Merhaba,";
+    const { data: settings } = await supabase
+      .from("tenant_storefront_settings")
+      .select("logo_url, footer_phone, footer_whatsapp, footer_email, storefront_title")
+      .eq("tenant_id", tenant.id)
+      .maybeSingle();
+    const brand = {
+      name: settings?.storefront_title?.trim() || storeName,
+      logoUrl: settings?.logo_url ?? null,
+      phone: settings?.footer_phone?.trim() || null,
+      whatsapp: toWhatsAppDigits(settings?.footer_whatsapp || tenant.whatsapp_number),
+    };
     await sendEmail({
       to: row.email,
-      fromName: storeName,
-      subject: `${storeName} — şifre yenileme`,
-      html: renderEmailLayout({
+      fromName: brand.name,
+      store: true,
+      replyTo: settings?.footer_email?.trim() || tenant.contact_email || undefined,
+      subject: `${brand.name} — şifre yenileme`,
+      html: renderStoreEmailLayout({
+        brand,
         title: "Şifrenizi yenileyin",
         preheader: `Yeni şifre bağlantınız ${RESET_TTL_MINUTES} dakika geçerli.`,
-        hero: { eyebrow: storeName, title: "Şifrenizi yenileyin", subtitle: "Tek tıkla yeni şifrenizi belirleyin." },
         bodyHtml: [
-          paragraph(escapeHtml(greeting)),
-          paragraph(`${escapeHtml(storeName)} üyeliğiniz için şifre yenileme isteği aldık.`),
-          button(resetUrl, "Yeni şifre belirle"),
-          noteBox(
-            `Bağlantı <strong>${RESET_TTL_MINUTES} dakika</strong> geçerlidir ve bir kez kullanılabilir. Bu isteği siz yapmadıysanız bu e-postayı yok sayın; şifreniz değişmez.`,
-          ),
+          `<p style="margin:0 0 14px;font-size:15px;line-height:1.6;color:#111827;">${escapeHtml(greeting)}</p>`,
+          `<p style="margin:0 0 14px;font-size:15px;line-height:1.6;color:#111827;">${escapeHtml(brand.name)} üyeliğiniz için şifre yenileme isteği aldık. Yeni şifrenizi belirlemek için düğmeye dokunun.</p>`,
+          `<table role="presentation" cellspacing="0" cellpadding="0" border="0" align="center" style="margin:20px auto;"><tr><td bgcolor="#111827" style="border-radius:999px;background:#111827;"><a href="${escapeHtml(resetUrl)}" style="display:inline-block;padding:14px 28px;font-size:15px;font-weight:700;color:#FFFFFF;text-decoration:none;border-radius:999px;">Yeni şifre belirle &rarr;</a></td></tr></table>`,
+          `<p style="margin:0 0 8px;font-size:13px;line-height:1.6;color:#6B7280;">Bağlantı ${RESET_TTL_MINUTES} dakika geçerlidir ve bir kez kullanılabilir. Bu isteği siz yapmadıysanız e-postayı yok sayın; şifreniz değişmez.</p>`,
         ].join(""),
       }),
-      text: renderEmailText([
+      text: [
         greeting,
         "",
-        `${storeName} üyeliğiniz için şifre yenileme bağlantısı (${RESET_TTL_MINUTES} dakika geçerli):`,
+        `${brand.name} üyeliğiniz için şifre yenileme bağlantısı (${RESET_TTL_MINUTES} dakika geçerli):`,
         resetUrl,
         "",
         "Bu isteği siz yapmadıysanız bu e-postayı yok sayın.",
-      ]),
+      ].join("\n"),
     });
     return generic;
   }

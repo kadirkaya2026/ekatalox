@@ -1,5 +1,6 @@
 import { NextResponse, after } from "next/server";
 import { sendOrderStatusEmail } from "@/lib/orders/order-status-email";
+import { toWhatsAppDigits } from "@/lib/storefront/customer-phone";
 import { sendOrderStatusPush } from "@/lib/push/send-order-status-push";
 import type { StorefrontOrder } from "@/lib/types";
 import { getSessionContext } from "@/lib/auth/session";
@@ -108,8 +109,14 @@ export async function PATCH(request: Request, ctx: { params: Promise<{ orderId: 
         await sendOrderStatusEmail({
           supabase,
           memberId: (order as StorefrontOrder & { member_id?: string | null }).member_id,
-          tenantName,
-          replyTo: tenant.contact_email,
+          brand: {
+            name: tenantName,
+            logoUrl: settings?.logo_url || null,
+            phone: settings?.footer_phone?.trim() || null,
+            whatsapp: toWhatsAppDigits(settings?.footer_whatsapp || tenant.whatsapp_number),
+          },
+          // Yanıtlar mağazaya: önce vitrin e-postası, yoksa kayıt e-postası.
+          replyTo: settings?.footer_email?.trim() || tenant.contact_email,
           orderNo: formatOrderNo(order),
           status: order.status,
           isTekel: Boolean(tenant.is_tekel),
