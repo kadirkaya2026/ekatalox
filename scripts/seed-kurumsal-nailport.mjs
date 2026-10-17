@@ -53,6 +53,8 @@ const content = {
   hero_image_url: null,
   accent_color: null,
   sections: { featured: true, steps: true, map: true, form: true },
+  // Çok sayfalı düzen: /hakkimizda, /urunler, /markalar, /bayilik, /iletisim, /yasal/*.
+  layout: "pages",
 };
 
 const url = process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -71,6 +73,17 @@ const { error: addressError } = await supabase
 if (addressError) {
   console.error("Adres hatası:", addressError.message);
   process.exit(1);
+}
+
+// Yasal metinler (nailport.com.tr'den alınan 6 sayfa) DB'de durur; üzerine
+// yazmamak için mevcut legal_pages korunur.
+const { data: existing } = await supabase
+  .from("tenant_kurumsal_sites")
+  .select("content")
+  .eq("tenant_id", TENANT_ID)
+  .maybeSingle();
+if (Array.isArray(existing?.content?.legal_pages)) {
+  content.legal_pages = existing.content.legal_pages;
 }
 
 const now = new Date().toISOString();
