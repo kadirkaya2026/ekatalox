@@ -456,6 +456,7 @@ export function MemberAddressSection({
   onUseAddress,
   error,
   anchorRef,
+  locationSlot,
 }: {
   subdomain: string;
   member: StoreMemberProfile;
@@ -463,6 +464,8 @@ export function MemberAddressSection({
   onUseAddress: (address: string) => void;
   error: string | null;
   anchorRef?: Ref<HTMLDivElement>;
+  /** "Şu anki konumumu ekle" kutusu (sepet çekmecesinden). */
+  locationSlot?: ReactNode;
 }) {
   const theme = useStorefrontTheme();
   const { t } = useStorefrontLocale();
@@ -524,6 +527,7 @@ export function MemberAddressSection({
           {member.full_name} · {member.phone}
         </p>
         {error ? <p className={cn("mt-2 text-xs font-medium", theme.dangerText)}>{error}</p> : null}
+        {locationSlot ? <div className="-mb-1">{locationSlot}</div> : null}
       </CheckoutSection>
 
       <InnerSheet open={open} title={t("checkout.addresses")} onClose={closeSheet}>

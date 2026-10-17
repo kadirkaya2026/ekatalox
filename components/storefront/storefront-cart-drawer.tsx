@@ -58,7 +58,8 @@ import { StorefrontImage } from "@/components/storefront/storefront-image";
 import { variantColorDot } from "@/components/storefront/pilot-variant-grid";
 import { ProductImagePlaceholder } from "@/components/product-image-placeholder";
 import { CartQuantityInput } from "@/components/storefront/cart-quantity-input";
-import type { StoreMemberProfile } from "@/components/storefront/member-auth";
+import { OrderSignupPanel, type StoreMemberProfile } from "@/components/storefront/member-auth";
+import type { PendingSignup } from "@/lib/storefront/tracking-phone";
 import {
   CartItemsSection,
   CheckoutSection,
@@ -121,6 +122,9 @@ export type StorefrontCartDrawerProps = {
     member: StoreMemberProfile | null;
     guestChosen: boolean;
     onChooseGuest: () => void;
+    /** Üyeliksiz siparişten sonra "takip için kayıt olun" formunun bilgileri. */
+    pendingSignup: PendingSignup | null;
+    onDismissSignup: () => void;
   };
   orderNoteError: string | null;
   setOrderNoteError: (value: string | null) => void;
@@ -799,6 +803,110 @@ export function StorefrontCartDrawer({
 
   // İletişim alanları bayinin belirlediği sırada çizilir
   // (cart_form_config.sort_order, bkz. lib/storefront/cart-form-config.ts).
+  // "Şu anki konumumu ekle" (market): üyeliksiz formda adres alanının altında,
+  // üyede kayıtlı adres kartının altında (17 Eki 2026).
+  const renderLocationField = () => (
+    <>
+          {/* Tekel teslimat yapmadığı için konum yalnızca teslimatlı
+              marketlerde gösteriliyor. İşaretlemek zorunlu değil: müşteri
+              başka bir yerdeyken eve sipariş veriyor olabilir. */}
+          {isMarketTenant && !isTekel ? (
+            <button
+              type="button"
+              onClick={onToggleLocation}
+              // Kutu, konum GERÇEKTEN geldiğinde yeşile dönüyor. Daha önce
+              // tıklar tıklamaz yeşil oluyordu; müşteri hazır sanıp siparişi
+              // gönderiyordu (kullanıcı isteği, 6 Eyl 2026).
+              aria-pressed={Boolean(customerLocation)}
+              data-error={LOCATION_ERROR_STATUSES.has(locationStatus) ? "" : undefined}
+              aria-busy={locationStatus === "loading"}
+              disabled={locationStatus === "loading"}
+              className={cn(
+                "mt-2.5 flex w-full items-start gap-2.5 rounded-[1.1rem] px-3 py-2.5 text-left",
+                theme.surfaceMuted,
+                locationStatus === "loading" && "opacity-90",
+                LOCATION_ERROR_STATUSES.has(locationStatus) && "ring-2 ring-rose-500/70",
+              )}
+            >
+              <span
+                className={cn(
+                  "mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-md border-2",
+                  customerLocation
+                    ? "border-emerald-500 bg-emerald-500 text-white"
+                    : locationStatus === "loading"
+                      ? "border-transparent"
+                      : LOCATION_ERROR_STATUSES.has(locationStatus)
+                        ? "border-rose-500 bg-rose-500 text-white"
+                        : cn(theme.formField, theme.textMuted),
+                )}
+              >
+                {locationStatus === "loading" ? (
+                  <Loader2 className="size-4 animate-spin text-emerald-500" />
+                ) : customerLocation ? (
+                  <Check className="size-3.5" />
+                ) : LOCATION_ERROR_STATUSES.has(locationStatus) ? (
+                  <span className="text-xs font-black leading-none">!</span>
+                ) : null}
+              </span>
+              <span className="min-w-0">
+                <span className={cn("flex items-center gap-1.5 text-sm font-semibold", theme.text)}>
+                  <MapPin className="size-3.5 shrink-0" />
+                  {t("cart.shareLocation")}
+                </span>
+                <span
+                  className={cn(
+                    "mt-0.5 block text-xs leading-snug",
+                    customerLocation
+                      ? "font-semibold text-emerald-500"
+                      : LOCATION_ERROR_STATUSES.has(locationStatus)
+                        ? "font-semibold text-rose-500"
+                        : theme.textMuted,
+                  )}
+                >
+                  {locationStatus === "loading"
+                    ? t("cart.shareLocationLoading")
+                    : locationStatus === "denied"
+                      ? t("cart.shareLocationDenied")
+                      : locationStatus === "services_off"
+                        ? t("cart.shareLocationServicesOff")
+                        : locationStatus === "unavailable"
+                          ? t("cart.shareLocationUnavailable")
+                          : locationStatus === "timeout"
+                            ? t("cart.shareLocationTimeout")
+                            : locationStatus === "unsupported"
+                              ? t("cart.shareLocationUnsupported")
+                              : customerLocation
+                                ? t("cart.shareLocationAdded")
+                                : t("cart.shareLocationHint")}
+                </span>
+                {locationInApp && (locationStatus === "denied" || locationStatus === "unavailable" || locationStatus === "unsupported") ? (
+                  <span className="mt-1 block text-xs leading-snug text-rose-500">{t("cart.shareLocationInApp")}</span>
+                ) : null}
+                {locationStatus === "unavailable" || locationStatus === "timeout" ? (
+                  <span className={cn("mt-1 block text-xs font-semibold leading-snug", theme.text)}>{t("cart.shareLocationRetry")}</span>
+                ) : null}
+                {locationStatus === "denied" || locationStatus === "services_off" ? (
+                  <span className={cn("mt-1 block text-xs font-semibold leading-snug", theme.text)}>{t("cart.shareLocationReloadHint")}</span>
+                ) : null}
+                {locationDebug ? (
+                  <span className="mt-1 block break-all font-mono text-[10px] leading-snug text-slate-400">{locationDebug}</span>
+                ) : null}
+              </span>
+            </button>
+          ) : null}
+          {!isTekel && onReloadForLocation && (locationStatus === "denied" || locationStatus === "services_off") ? (
+            <Button
+              type="button"
+              variant="danger"
+              onClick={onReloadForLocation}
+              className="mt-2 w-full rounded-[1.1rem] py-2.5 text-sm"
+            >
+              {t("cart.shareLocationReload")}
+            </Button>
+          ) : null}
+    </>
+  );
+
   const contactFieldRenderers: Record<OrderableCartFormFieldKey, () => ReactNode> = {
     customer_phone: () =>
 cartFormConfig.customer_phone.is_visible ? (
@@ -936,103 +1044,7 @@ cartFormConfig.customer_address.is_visible ? (
             </p>
           ) : null}
 
-          {/* Tekel teslimat yapmadığı için konum yalnızca teslimatlı
-              marketlerde gösteriliyor. İşaretlemek zorunlu değil: müşteri
-              başka bir yerdeyken eve sipariş veriyor olabilir. */}
-          {isMarketTenant && !isTekel ? (
-            <button
-              type="button"
-              onClick={onToggleLocation}
-              // Kutu, konum GERÇEKTEN geldiğinde yeşile dönüyor. Daha önce
-              // tıklar tıklamaz yeşil oluyordu; müşteri hazır sanıp siparişi
-              // gönderiyordu (kullanıcı isteği, 6 Eyl 2026).
-              aria-pressed={Boolean(customerLocation)}
-              data-error={LOCATION_ERROR_STATUSES.has(locationStatus) ? "" : undefined}
-              aria-busy={locationStatus === "loading"}
-              disabled={locationStatus === "loading"}
-              className={cn(
-                "mt-2.5 flex w-full items-start gap-2.5 rounded-[1.1rem] px-3 py-2.5 text-left",
-                theme.surfaceMuted,
-                locationStatus === "loading" && "opacity-90",
-                LOCATION_ERROR_STATUSES.has(locationStatus) && "ring-2 ring-rose-500/70",
-              )}
-            >
-              <span
-                className={cn(
-                  "mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-md border-2",
-                  customerLocation
-                    ? "border-emerald-500 bg-emerald-500 text-white"
-                    : locationStatus === "loading"
-                      ? "border-transparent"
-                      : LOCATION_ERROR_STATUSES.has(locationStatus)
-                        ? "border-rose-500 bg-rose-500 text-white"
-                        : cn(theme.formField, theme.textMuted),
-                )}
-              >
-                {locationStatus === "loading" ? (
-                  <Loader2 className="size-4 animate-spin text-emerald-500" />
-                ) : customerLocation ? (
-                  <Check className="size-3.5" />
-                ) : LOCATION_ERROR_STATUSES.has(locationStatus) ? (
-                  <span className="text-xs font-black leading-none">!</span>
-                ) : null}
-              </span>
-              <span className="min-w-0">
-                <span className={cn("flex items-center gap-1.5 text-sm font-semibold", theme.text)}>
-                  <MapPin className="size-3.5 shrink-0" />
-                  {t("cart.shareLocation")}
-                </span>
-                <span
-                  className={cn(
-                    "mt-0.5 block text-xs leading-snug",
-                    customerLocation
-                      ? "font-semibold text-emerald-500"
-                      : LOCATION_ERROR_STATUSES.has(locationStatus)
-                        ? "font-semibold text-rose-500"
-                        : theme.textMuted,
-                  )}
-                >
-                  {locationStatus === "loading"
-                    ? t("cart.shareLocationLoading")
-                    : locationStatus === "denied"
-                      ? t("cart.shareLocationDenied")
-                      : locationStatus === "services_off"
-                        ? t("cart.shareLocationServicesOff")
-                        : locationStatus === "unavailable"
-                          ? t("cart.shareLocationUnavailable")
-                          : locationStatus === "timeout"
-                            ? t("cart.shareLocationTimeout")
-                            : locationStatus === "unsupported"
-                              ? t("cart.shareLocationUnsupported")
-                              : customerLocation
-                                ? t("cart.shareLocationAdded")
-                                : t("cart.shareLocationHint")}
-                </span>
-                {locationInApp && (locationStatus === "denied" || locationStatus === "unavailable" || locationStatus === "unsupported") ? (
-                  <span className="mt-1 block text-xs leading-snug text-rose-500">{t("cart.shareLocationInApp")}</span>
-                ) : null}
-                {locationStatus === "unavailable" || locationStatus === "timeout" ? (
-                  <span className={cn("mt-1 block text-xs font-semibold leading-snug", theme.text)}>{t("cart.shareLocationRetry")}</span>
-                ) : null}
-                {locationStatus === "denied" || locationStatus === "services_off" ? (
-                  <span className={cn("mt-1 block text-xs font-semibold leading-snug", theme.text)}>{t("cart.shareLocationReloadHint")}</span>
-                ) : null}
-                {locationDebug ? (
-                  <span className="mt-1 block break-all font-mono text-[10px] leading-snug text-slate-400">{locationDebug}</span>
-                ) : null}
-              </span>
-            </button>
-          ) : null}
-          {!isTekel && onReloadForLocation && (locationStatus === "denied" || locationStatus === "services_off") ? (
-            <Button
-              type="button"
-              variant="danger"
-              onClick={onReloadForLocation}
-              className="mt-2 w-full rounded-[1.1rem] py-2.5 text-sm"
-            >
-              {t("cart.shareLocationReload")}
-            </Button>
-          ) : null}
+          {renderLocationField()}
         </div>
       ) : null,
   };
@@ -1249,6 +1261,7 @@ cartFormConfig.customer_address.is_visible ? (
           }}
           error={customerAddressError || customerReferenceNameError || customerPhoneError}
           anchorRef={addressFieldRef}
+          locationSlot={renderLocationField()}
         />
       ) : (
         <GuestEntrySection guestChosen={mc.guestChosen} onChooseGuest={mc.onChooseGuest}>
@@ -2004,7 +2017,26 @@ cartFormConfig.customer_address.is_visible ? (
                     <p className={cn("mt-2 max-w-xs text-sm leading-6", theme.textMuted)}>
                       {t("cart.orderSentBody")}
                     </p>
-                    {sentOrder.trackingUrl ? (
+                    {marketCheckout && !marketCheckout.member && marketCheckout.pendingSignup ? (
+                      // Üyeliksiz: takip yalnız üyelikle; bilgiler dolu kayıt formu (17 Eki 2026).
+                      <div className={cn("mt-6 w-full rounded-2xl border p-4", theme.border, theme.surface)}>
+                        <OrderSignupPanel
+                          subdomain={marketCheckout.subdomain}
+                          pending={marketCheckout.pendingSignup}
+                          onDismiss={marketCheckout.onDismissSignup}
+                        />
+                      </div>
+                    ) : marketCheckout?.member ? (
+                      <a
+                        href="/hesabim/siparisler"
+                        className={cn(
+                          "mt-5 inline-flex h-11 items-center justify-center rounded-full px-6 text-sm font-bold shadow-none",
+                          stickyCartButtonClassName,
+                        )}
+                      >
+                        {t("member.myOrders")}
+                      </a>
+                    ) : marketCheckout ? null : sentOrder.trackingUrl ? (
                       <a
                         href={sentOrder.trackingUrl}
                         className={cn(

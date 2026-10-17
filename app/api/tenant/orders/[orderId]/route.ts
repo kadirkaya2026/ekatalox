@@ -1,4 +1,5 @@
 import { NextResponse, after } from "next/server";
+import { sendOrderStatusEmail } from "@/lib/orders/order-status-email";
 import { sendOrderStatusPush } from "@/lib/push/send-order-status-push";
 import type { StorefrontOrder } from "@/lib/types";
 import { getSessionContext } from "@/lib/auth/session";
@@ -83,7 +84,9 @@ export async function PATCH(request: Request, ctx: { params: Promise<{ orderId: 
     }
     after(async () => {
       const settings = await getTenantStorefrontSettings(tenant.id).catch(() => null);
-      await sendOrderStatusPush({
+      const tenantName = settings?.storefront_title?.trim() || tenant.company_name;
+      const trackingUrl = order.tracking_token ? `${origin}/siparis/${order.tracking_token}` : null;
+      const pushed = await sendOrderStatusPush({
         tenantId: tenant.id,
         orderId: order.id,
         customerId: order.customer_id,
@@ -91,12 +94,29 @@ export async function PATCH(request: Request, ctx: { params: Promise<{ orderId: 
         customerPhone: order.customer_phone,
         orderNo: formatOrderNo(order),
         status: order.status,
-        tenantName: settings?.storefront_title?.trim() || tenant.company_name,
+        tenantName,
         isTekel: Boolean(tenant.is_tekel),
         isWholesale: tenant.business_type !== "market",
         iconUrl: settings?.logo_url || settings?.site_favicon_url || null,
-        trackingUrl: order.tracking_token ? `${origin}/siparis/${order.tracking_token}` : null,
-      }).catch((err) => console.error("[push] gönderim hatası:", err));
+        trackingUrl,
+      }).catch((err) => {
+        console.error("[push] gönderim hatası:", err);
+        return 0;
+      });
+      // Telefonda bildirim yoksa üyeye e-posta (Hesabım > Bildirimler'de açtıysa; 0182).
+      if (!pushed) {
+        await sendOrderStatusEmail({
+          supabase,
+          memberId: (order as StorefrontOrder & { member_id?: string | null }).member_id,
+          tenantName,
+          replyTo: tenant.contact_email,
+          orderNo: formatOrderNo(order),
+          status: order.status,
+          isTekel: Boolean(tenant.is_tekel),
+          trackingUrl,
+          cancelReason: order.cancel_reason,
+        });
+      }
     });
   }
 

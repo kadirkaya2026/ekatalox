@@ -22,6 +22,7 @@ import {
   UserRound,
 } from "lucide-react";
 import { AddressForm, useMemberAddresses, type MemberAddress } from "@/components/storefront/market-checkout";
+import { PushInviteCard } from "@/components/storefront/push-invite-view";
 import { MemberAuthForm, type StoreMemberProfile } from "@/components/storefront/member-auth";
 import { OrderSections, type OrderRow } from "@/components/storefront/my-orders-view";
 import { StorefrontBottomNav } from "@/components/storefront/storefront-bottom-nav";
@@ -223,7 +224,7 @@ function MenuRow({
   );
 }
 
-type MemberProps = BaseProps & { member: StoreMemberProfile };
+type MemberProps = BaseProps & { member: StoreMemberProfile; storeName?: string; vapidPublicKey?: string };
 
 export function MemberProfilePage(props: MemberProps & { whatsapp: string | null }) {
   const theme = useStorefrontTheme();
@@ -294,7 +295,7 @@ export function MemberProfilePage(props: MemberProps & { whatsapp: string | null
         <MenuRow href="/hesabim/adres" icon={<MapPin className="size-5" />} label={t("member.myAddress")} />
         <MenuRow href="/hesabim/bilgilerim" icon={<UserRound className="size-5" />} label={t("member.myInfo")} />
         <MenuRow href="/hesabim/sifre" icon={<KeyRound className="size-5" />} label={t("member.changePassword")} />
-        <MenuRow href="/bildirim" icon={<Bell className="size-5" />} label={t("member.notifications")} />
+        <MenuRow href="/hesabim/bildirimler" icon={<Bell className="size-5" />} label={t("member.notifications")} />
         <div className="flex items-center gap-3 px-4 py-3">
           <span className="flex size-6 items-center justify-center text-orange-600">
             <Globe className="size-5" />
@@ -355,7 +356,14 @@ export function MemberOrdersPage(props: MemberProps) {
   );
 }
 
-type MemberPatch = Partial<{ full_name: string; address: string; email: string | null; current_password: string; new_password: string }>;
+type MemberPatch = Partial<{
+  full_name: string;
+  address: string;
+  email: string | null;
+  email_notifications: boolean;
+  current_password: string;
+  new_password: string;
+}>;
 
 function useMemberSave(subdomain: string, member: StoreMemberProfile) {
   const { t } = useStorefrontLocale();
@@ -586,6 +594,50 @@ export function MemberPasswordPage(props: MemberProps) {
         <Field label={t("member.newPassword")}>
           <input type="password" className={field} value={next} onChange={(e) => setNext(e.target.value)} autoComplete="new-password" minLength={6} required />
         </Field>
+      </FormCard>
+    </MemberShell>
+  );
+}
+
+// Hesabım > Bildirimler (17 Eki 2026): telefonda bildirim (iPhone'da Ana Ekrana
+// Ekle adımlarıyla) ve e-posta bildirimi. Telefonda bildirim yoksa sipariş
+// durumu e-postaya mağazanın adıyla gider (lib/orders/order-status-email.ts).
+export function MemberNotificationsPage(props: MemberProps) {
+  const theme = useStorefrontTheme();
+  const { t } = useStorefrontLocale();
+  const field = useFieldClass();
+  const [email, setEmail] = useState(props.member.email ?? "");
+  const [enabled, setEnabled] = useState(Boolean(props.member.email_notifications));
+  const { pending, msg, save } = useMemberSave(props.subdomain, props.member);
+  return (
+    <MemberShell {...props} title={t("member.notifications")} backHref="/hesabim">
+      <p className={cn("mb-2 px-1 text-[15px] font-semibold", theme.text)}>{t("member.pushTitle")}</p>
+      <PushInviteCard
+        subdomain={props.subdomain}
+        tenantName={props.storeName ?? ""}
+        vapidPublicKey={props.vapidPublicKey ?? ""}
+        token={null}
+        invite={{ name: props.member.full_name, phone: props.member.phone, subscribed: false }}
+      />
+      <p className={cn("mb-2 mt-6 px-1 text-[15px] font-semibold", theme.text)}>{t("member.emailNotifTitle")}</p>
+      <FormCard
+        pending={pending}
+        msg={msg}
+        onSubmit={(e) => {
+          e.preventDefault();
+          void save({ email: email || null, email_notifications: enabled && Boolean(email) });
+        }}
+      >
+        <p className={cn("text-sm leading-6", theme.textMuted)}>{t("member.emailNotifHint")}</p>
+        <Field label={t("member.email")}>
+          <input type="email" className={field} value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" placeholder="ornek@mail.com" />
+        </Field>
+        <button type="button" onClick={() => setEnabled((v) => !v)} className="flex w-full items-center justify-between gap-3 text-left">
+          <span className={cn("text-[15px] font-medium", theme.text)}>{t("member.emailNotifToggle")}</span>
+          <span className={cn("relative h-7 w-12 shrink-0 rounded-full transition", enabled ? "bg-orange-600" : "bg-slate-300")}>
+            <span className={cn("absolute top-0.5 size-6 rounded-full bg-white shadow transition", enabled ? "left-[1.375rem]" : "left-0.5")} />
+          </span>
+        </button>
       </FormCard>
     </MemberShell>
   );

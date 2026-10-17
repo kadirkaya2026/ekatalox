@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import {
   countUnseen,
-  readGuestOrderTokens,
   readMemberSignedInHint,
   readSeen,
   readTrackingPhone,
@@ -25,8 +24,9 @@ export function useUnseenOrderUpdates(subdomain: string | undefined) {
     const refresh = async () => {
       // Market/tekel'de sunucu numarayı yok sayar: üye çerezi ya da kodlar (0180).
       const phone = readTrackingPhone();
-      const tokens = readGuestOrderTokens();
-      if (!phone && !tokens.length && !readMemberSignedInHint()) {
+      // Sipariş takibi yalnız üyelikle (17 Eki 2026): üyeliksiz cihaz kodları sayılmaz.
+      const tokens: string[] = [];
+      if (!phone && !readMemberSignedInHint()) {
         setCount(0);
         return;
       }
