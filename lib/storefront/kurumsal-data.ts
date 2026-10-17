@@ -40,7 +40,10 @@ export interface KurumsalData {
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-const MAX_PAGES = 20; // 60'lık sayfa × 20 = 1.200 ürün; kurumsal sayfa için fazlasıyla yeterli
+// 60'lık sayfa × 100 = 6.000 ürün. 20 (1.200) iken Nailport'ta (2.252 ürün) sıralamada
+// sondaki kök kategoriler hiç görünmüyor, sayılar eksik çıkıyordu (17 Eki 2026).
+// Sonuç 5 dk önbellekte (getKurumsalDataCached).
+const MAX_PAGES = 100;
 const FEATURED_COUNT = 12;
 
 // Kategori id → kök kategori id (en fazla 10 seviye yukarı çıkar).
@@ -144,7 +147,7 @@ async function loadKurumsalData(tenantId: string): Promise<KurumsalData> {
 }
 
 export function getKurumsalDataCached(tenantId: string): Promise<KurumsalData> {
-  return unstable_cache(() => loadKurumsalData(tenantId), ["kurumsal-data", tenantId], {
+  return unstable_cache(() => loadKurumsalData(tenantId), ["kurumsal-data-v2", tenantId], {
     revalidate: 300,
     tags: [`storefront_${tenantId}`],
   })();

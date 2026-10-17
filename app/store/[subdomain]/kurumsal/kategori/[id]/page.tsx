@@ -8,7 +8,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { KurumsalBreadcrumb, KurumsalProductCard, KurumsalShell } from "@/components/kurumsal/kurumsal-shell";
 import { kurumsalPath } from "@/lib/kurumsal/domain";
-import { titleCaseTr, whatsappLink } from "@/lib/kurumsal/format";
+import { categoryLabel, whatsappLink } from "@/lib/kurumsal/format";
 import { getKurumsalPageContext } from "@/lib/kurumsal/page-context";
 import { getKurumsalCategoryCached } from "@/lib/storefront/kurumsal-data";
 import { buildStorefrontIcons } from "@/lib/storefront/white-label";
@@ -26,7 +26,7 @@ export async function generateMetadata(
   const page = await getKurumsalCategoryCached(ctx.tenant.id, id);
   if (!page) return {};
 
-  const name = titleCaseTr(page.category.name);
+  const name = categoryLabel(page.category.name, ctx.keepCategoryNameCase);
   const description = `${ctx.tenant.company_name} ${name} ürünleri: ${page.total} ürün. Fiyatlar bayilerimize özeldir.`;
   const image = page.products.find((product) => product.imageUrl)?.imageUrl;
 
@@ -53,7 +53,7 @@ export default async function KurumsalCategoryPage(
   const page = await getKurumsalCategoryCached(ctx.tenant.id, id);
   if (!page) notFound();
 
-  const name = titleCaseTr(page.category.name);
+  const name = categoryLabel(page.category.name, ctx.keepCategoryNameCase);
   const { content } = ctx;
   const applyHref = content.sections.form
     ? kurumsalPath(ctx.basePath, "#basvuru")

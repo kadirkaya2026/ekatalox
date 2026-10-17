@@ -76,6 +76,7 @@ export default async function KurumsalPage(props: PageProps<"/store/[subdomain]/
       subdomain={subdomain}
       logoUrl={ctx.settings.logo_url}
       wordmark={ctx.wordmark}
+      keepCategoryNameCase={ctx.keepCategoryNameCase}
       accent={ctx.accent}
       heroImage={ctx.heroImage}
       content={ctx.content}

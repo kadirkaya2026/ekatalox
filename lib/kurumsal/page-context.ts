@@ -31,6 +31,8 @@ export interface KurumsalPageContext {
   accent: string;
   heroImage: string | null;
   wordmark: string | null;
+  /** true: kategori adları olduğu gibi gösterilir (bkz. GateBranding.keepCategoryNameCase) */
+  keepCategoryNameCase: boolean;
   contact: KurumsalContact;
   isWhiteLabel: boolean;
   /** Site tabanı: https://{kurumsal_domain} ya da https://{katalog}/kurumsal — alt sayfa adresleri buna eklenir */
@@ -76,7 +78,9 @@ export async function getKurumsalPageContext(subdomain: string): Promise<Kurumsa
       settingsHero: settings.hero_image_url,
       bannerImages: (settings.banner_items ?? []).map((item) => item.image_url),
     }),
-    wordmark: branding?.wordmark ?? null,
+    // Yazı logosu varsa yanına ad tekrar basılmaz ("" → boş, null → firma adı).
+    wordmark: branding?.logoIsWordmark && settings.logo_url ? "" : (branding?.wordmark ?? null),
+    keepCategoryNameCase: Boolean(branding?.keepCategoryNameCase),
     contact: buildKurumsalContact(tenant, settings),
     isWhiteLabel: isWhiteLabelStorefront(tenant),
     kurumsalOrigin,

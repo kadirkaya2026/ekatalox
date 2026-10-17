@@ -1,7 +1,7 @@
 import { DealerApplicationForm } from "@/components/kurumsal/dealer-application-form";
 import { KurumsalProductCard, KurumsalShell, kurumsalHref } from "@/components/kurumsal/kurumsal-shell";
 import { kurumsalPath } from "@/lib/kurumsal/domain";
-import { telHref, titleCaseTr, whatsappLink } from "@/lib/kurumsal/format";
+import { categoryLabel, telHref, whatsappLink } from "@/lib/kurumsal/format";
 import type { KurumsalContent } from "@/lib/kurumsal/schema";
 import type { KurumsalData } from "@/lib/storefront/kurumsal-data";
 
@@ -23,6 +23,8 @@ export interface KurumsalViewProps {
   subdomain: string;
   logoUrl: string | null;
   wordmark: string | null;
+  /** true: kategori adları olduğu gibi (bkz. GateBranding.keepCategoryNameCase) */
+  keepCategoryNameCase?: boolean;
   accent: string;
   heroImage: string | null;
   content: KurumsalContent;
@@ -43,6 +45,7 @@ export function KurumsalView({
   subdomain,
   logoUrl,
   wordmark,
+  keepCategoryNameCase = false,
   accent,
   heroImage,
   content,
@@ -184,7 +187,7 @@ export function KurumsalView({
                   ) : null}
                 </div>
                 <div className="border-t border-slate-100 px-4 py-3">
-                  <div className="text-sm font-bold">{titleCaseTr(category.name)}</div>
+                  <div className="text-sm font-bold">{categoryLabel(category.name, keepCategoryNameCase)}</div>
                   <div className="text-xs text-slate-500">{category.productCount} ürün</div>
                 </div>
               </a>

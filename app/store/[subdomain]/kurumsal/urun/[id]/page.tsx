@@ -8,7 +8,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { KurumsalBreadcrumb, KurumsalShell } from "@/components/kurumsal/kurumsal-shell";
 import { kurumsalPath } from "@/lib/kurumsal/domain";
-import { titleCaseTr, whatsappLink } from "@/lib/kurumsal/format";
+import { categoryLabel, whatsappLink } from "@/lib/kurumsal/format";
 import { getKurumsalPageContext } from "@/lib/kurumsal/page-context";
 import {
   getDescriptionPlainText,
@@ -96,7 +96,7 @@ export default async function KurumsalProductPage(props: PageProps<"/store/[subd
     `Merhaba, ${product.name} (${product.sku}) hakkında bilgi almak istiyorum.`,
   );
   const [mainImage, ...otherImages] = product.images;
-  const categoryName = product.category ? titleCaseTr(product.category.name) : null;
+  const categoryName = product.category ? categoryLabel(product.category.name, ctx.keepCategoryNameCase) : null;
   const text = plainDescription(product.description);
 
   // Fiyat/offer bilinçli olarak yok: fiyatlar bayilere özel.

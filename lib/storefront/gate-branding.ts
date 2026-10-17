@@ -22,6 +22,12 @@ export type GateBranding = {
   backgroundVideo?: { src: string; mobileSrc?: string };
   // Mobilde (lg altı) arka plan odağı; yoksa "72% center".
   mobileBackgroundPosition?: string;
+  // Mağaza logosu zaten firma adını yazıyorsa (ör. NAILPORT yazı logosu)
+  // kurumsal sitenin üst menüsünde logonun yanına ad tekrar yazılmaz.
+  logoIsWordmark?: boolean;
+  // Kategori adları zaten düzgün yazılıysa (marka adları büyük harf: "SNRQI &
+  // COMEUV") kurumsal sitede büyük/küçük harf düzeltmesi yapılmaz.
+  keepCategoryNameCase?: boolean;
   copy: Partial<Record<StorefrontLocale, GateBrandingCopy>> & { tr: GateBrandingCopy };
 };
 
@@ -286,6 +292,8 @@ const GATE_BRANDING: Record<string, GateBranding> = {
   nailport: {
     backgroundImage: "/gate/nailport/bg.jpg",
     mobileBackgroundPosition: "82% center",
+    logoIsWordmark: true,
+    keepCategoryNameCase: true,
     logoMark: "/gate/nailport/logo-mark.png",
     wordmark: "NAILPORT",
     accentColor: "#FF7F00",
