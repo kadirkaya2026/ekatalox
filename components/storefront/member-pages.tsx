@@ -521,6 +521,11 @@ export function MemberAddressPage(props: MemberProps) {
                         </span>
                       ) : null}
                     </p>
+                    {a.recipient_name || a.recipient_phone ? (
+                      <p className={cn("mt-0.5 text-sm font-medium", theme.text)}>
+                        {[a.recipient_name, a.recipient_phone].filter(Boolean).join(" · ")}
+                      </p>
+                    ) : null}
                     <p className={cn("mt-0.5 text-sm", theme.textMuted)}>{a.address}</p>
                   </div>
                 </div>

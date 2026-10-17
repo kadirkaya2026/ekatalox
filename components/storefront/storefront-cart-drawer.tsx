@@ -1256,8 +1256,13 @@ cartFormConfig.customer_address.is_visible ? (
           member={mc.member}
           selectedAddress={customerAddress}
           onUseAddress={(value) => {
-            setCustomerAddress(value);
+            // Adreste teslim alacak kişi varsa (ör. annesi) siparişe o yazılır; yoksa üye.
+            setCustomerAddress(value.address);
+            setCustomerReferenceName(value.recipient_name || mc.member?.full_name || "");
+            setCustomerPhone(value.recipient_phone || mc.member?.phone || "");
             setCustomerAddressError(null);
+            setCustomerReferenceNameError(null);
+            setCustomerPhoneError(null);
           }}
           error={customerAddressError || customerReferenceNameError || customerPhoneError}
           anchorRef={addressFieldRef}

@@ -208,14 +208,22 @@ export function hashResetToken(token: string) {
   return createHash("sha256").update(token).digest("hex");
 }
 
-export type StoreMemberAddress = { id: string; title: string; address: string; is_default: boolean };
+export type StoreMemberAddress = {
+  id: string;
+  title: string;
+  address: string;
+  is_default: boolean;
+  /** Teslim alacak kişi (0183); boşsa üyenin kendisi. */
+  recipient_name: string | null;
+  recipient_phone: string | null;
+};
 
 export const MAX_MEMBER_ADDRESSES = 10;
 
 export async function listMemberAddresses(supabase: SupabaseClient, memberId: string): Promise<StoreMemberAddress[]> {
   const { data } = await supabase
     .from("store_member_addresses")
-    .select("id, title, address, is_default")
+    .select("id, title, address, is_default, recipient_name, recipient_phone")
     .eq("member_id", memberId)
     .order("is_default", { ascending: false })
     .order("created_at", { ascending: true });
@@ -226,7 +234,12 @@ export async function listMemberAddresses(supabase: SupabaseClient, memberId: st
  * Kayıtlı adresi olmayan üyenin ilk siparişindeki adres ana adres ("Ev") olur
  * (Getir mantığı, 17 Eki 2026). Adresi zaten varsa dokunulmaz.
  */
-export async function saveFirstOrderAddress(supabase: SupabaseClient, member: StoreMember, address: string) {
+export async function saveFirstOrderAddress(
+  supabase: SupabaseClient,
+  member: StoreMember,
+  address: string,
+  recipient?: { name: string; phone: string },
+) {
   const text = address.trim();
   if (!text) return;
   const { count } = await supabase
@@ -236,6 +249,16 @@ export async function saveFirstOrderAddress(supabase: SupabaseClient, member: St
   if (count) return;
   await supabase
     .from("store_member_addresses")
-    .insert({ member_id: member.id, tenant_id: member.tenant_id, title: "Ev", address: text, is_default: true });
+    .insert({
+      member_id: member.id,
+      tenant_id: member.tenant_id,
+      title: "Ev",
+      address: text,
+      is_default: true,
+      // Siparişte başka birinin adı/telefonu yazıldıysa adres o kişiye kaydedilir.
+      recipient_name: recipient?.name.trim() && recipient.name.trim() !== member.full_name ? recipient.name.trim() : null,
+      recipient_phone:
+        recipient?.phone && normalizeCustomerPhone(recipient.phone) !== member.phone ? normalizeCustomerPhone(recipient.phone) : null,
+    });
   await supabase.from("store_members").update({ address: text }).eq("id", member.id);
 }

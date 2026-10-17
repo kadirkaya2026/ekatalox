@@ -604,7 +604,8 @@ export async function POST(request: Request) {
     await supabase.from("orders").update({ member_id: member.id }).eq("id", recorded.orderId);
     // Kayıtlı adresi yoksa bu siparişin adresi ana adres olur (0181).
     const memberAddress = parsed.data.customer_address;
-    after(() => saveFirstOrderAddress(supabase, member, memberAddress));
+    const recipient = { name: parsed.data.customer_reference_name, phone: parsed.data.customer_phone };
+    after(() => saveFirstOrderAddress(supabase, member, memberAddress, recipient));
   }
   if (recorded && accessCodeId) {
     const orderId = recorded.orderId;

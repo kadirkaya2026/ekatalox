@@ -20,7 +20,15 @@ import type { CartItem } from "@/lib/types";
 import { useOverlayHistory } from "@/lib/storefront/overlay-history";
 import { cn } from "@/lib/utils";
 
-export type MemberAddress = { id: string; title: string; address: string; is_default: boolean };
+export type MemberAddress = {
+  id: string;
+  title: string;
+  address: string;
+  is_default: boolean;
+  /** Teslim alacak kişi (ör. annesi); boşsa üyenin kendisi. */
+  recipient_name?: string | null;
+  recipient_phone?: string | null;
+};
 
 export function CheckoutSection({ title, action, children }: { title: string; action?: ReactNode; children: ReactNode }) {
   const theme = useStorefrontTheme();
@@ -352,6 +360,8 @@ export function AddressForm({
   const [title, setTitle] = useState(initial?.title ?? presets[0]);
   const [custom, setCustom] = useState(Boolean(initial && !presets.includes(initial.title)));
   const [address, setAddress] = useState(initial?.address ?? "");
+  const [recipientName, setRecipientName] = useState(initial?.recipient_name ?? "");
+  const [recipientPhone, setRecipientPhone] = useState(initial?.recipient_phone ?? "");
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -362,7 +372,14 @@ export function AddressForm({
       const r = await fetch("/api/storefront/member/addresses", {
         method: initial ? "PATCH" : "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ subdomain, id: initial?.id, title, address }),
+        body: JSON.stringify({
+          subdomain,
+          id: initial?.id,
+          title,
+          address,
+          recipient_name: recipientName || null,
+          recipient_phone: recipientPhone || null,
+        }),
       });
       const d = (await r.json().catch(() => null)) as { addresses?: MemberAddress[]; created_id?: string; error?: string } | null;
       if (!r.ok || !d?.addresses) {
@@ -420,6 +437,26 @@ export function AddressForm({
       {custom ? (
         <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder={t("checkout.address.titlePlaceholder")} maxLength={40} className={field} />
       ) : null}
+      <p className={cn("pt-1 text-xs font-semibold", theme.textMuted)}>{t("checkout.address.recipientLabel")}</p>
+      <input
+        value={recipientName}
+        onChange={(e) => setRecipientName(e.target.value)}
+        placeholder={t("member.fullName")}
+        autoComplete="name"
+        maxLength={120}
+        className={field}
+      />
+      <input
+        type="tel"
+        inputMode="tel"
+        value={recipientPhone}
+        onChange={(e) => setRecipientPhone(e.target.value)}
+        placeholder={t("member.phone")}
+        autoComplete="tel"
+        className={field}
+      />
+      <p className={cn("-mt-1 text-xs", theme.textMuted)}>{t("checkout.address.recipientHint")}</p>
+      <p className={cn("pt-1 text-xs font-semibold", theme.textMuted)}>{t("member.address")}</p>
       <textarea
         value={address}
         onChange={(e) => setAddress(e.target.value)}
@@ -461,7 +498,7 @@ export function MemberAddressSection({
   subdomain: string;
   member: StoreMemberProfile;
   selectedAddress: string;
-  onUseAddress: (address: string) => void;
+  onUseAddress: (address: MemberAddress) => void;
   error: string | null;
   anchorRef?: Ref<HTMLDivElement>;
   /** "Şu anki konumumu ekle" kutusu (sepet çekmecesinden). */
@@ -478,7 +515,7 @@ export function MemberAddressSection({
   if (addresses && !autoApplied) {
     setAutoApplied(true);
     const primary = addresses.find((a) => a.is_default) ?? addresses[0];
-    if (primary && !addresses.some((a) => a.address === selectedAddress)) onUseAddress(primary.address);
+    if (primary && !addresses.some((a) => a.address === selectedAddress)) onUseAddress(primary);
   }
   const current = addresses?.find((a) => a.address === selectedAddress) ?? null;
 
@@ -500,7 +537,7 @@ export function MemberAddressSection({
                 setAddresses(list);
                 setAdding(false);
                 const created = list.find((a) => a.id === createdId) ?? list[0];
-                if (created) onUseAddress(created.address);
+                if (created) onUseAddress(created);
               }}
               onCancel={() => setAdding(false)}
             />
@@ -524,7 +561,7 @@ export function MemberAddressSection({
         )}
         <p className={cn("mt-2.5 flex items-center gap-1.5 text-xs", theme.textMuted)}>
           <UserRound className="size-3.5" />
-          {member.full_name} · {member.phone}
+          {current?.recipient_name || member.full_name} · {current?.recipient_phone || member.phone}
         </p>
         {error ? <p className={cn("mt-2 text-xs font-medium", theme.dangerText)}>{error}</p> : null}
         {locationSlot ? <div className="-mb-1">{locationSlot}</div> : null}
@@ -538,7 +575,7 @@ export function MemberAddressSection({
                 key={a.id}
                 type="button"
                 onClick={() => {
-                  onUseAddress(a.address);
+                  onUseAddress(a);
                   closeSheet();
                 }}
                 className={cn("flex w-full items-center gap-3 px-4 py-3.5 text-left", theme.border)}
@@ -554,6 +591,11 @@ export function MemberAddressSection({
                       </span>
                     ) : null}
                   </span>
+                  {a.recipient_name || a.recipient_phone ? (
+                    <span className={cn("block text-xs font-medium", theme.text)}>
+                      {[a.recipient_name, a.recipient_phone].filter(Boolean).join(" · ")}
+                    </span>
+                  ) : null}
                   <span className={cn("line-clamp-2 block text-xs", theme.textMuted)}>{a.address}</span>
                 </span>
               </button>
@@ -566,7 +608,7 @@ export function MemberAddressSection({
             onSaved={(list, createdId) => {
               setAddresses(list);
               const created = list.find((a) => a.id === createdId);
-              if (created) onUseAddress(created.address);
+              if (created) onUseAddress(created);
               closeSheet();
             }}
             onCancel={() => setAdding(false)}
