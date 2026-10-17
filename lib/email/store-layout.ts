@@ -140,11 +140,14 @@ export function buildStoreOrderStatusEmail(params: {
   cancelReason?: string | null;
 }) {
   const style = STATUS_STYLE[params.status];
-  const greeting = params.customerName ? `Merhaba ${params.customerName.split(" ")[0]},` : "Merhaba,";
+  const firstName = params.customerName?.trim().split(/\s+/)[0] ?? "";
+  const greeting = firstName ? `Merhaba ${firstName},` : "Merhaba,";
   const reason = params.status === "cancelled" && params.cancelReason ? params.cancelReason : null;
 
   const bodyHtml = [
-    `<p style="margin:0 0 14px;font-size:15px;line-height:1.6;color:${INK};">${escapeHtml(greeting)}</p>`,
+    // Selamlama belirgin (17 Eki 2026, kullanıcı: "soluk kalmış").
+    `<div style="margin:0 0 4px;font-size:20px;line-height:1.3;font-weight:700;color:${INK};">${escapeHtml(firstName ? `Merhaba ${firstName} 👋` : "Merhaba 👋")}</div>`,
+    `<p style="margin:0 0 16px;font-size:15px;line-height:1.6;color:#374151;">Siparişinizle ilgili bir güncelleme var.</p>`,
     `<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background:${style.soft};border-radius:16px;"><tr><td align="center" style="padding:22px 18px 18px;">
 <div style="font-size:38px;line-height:1;">${style.emoji}</div>
 <div style="margin-top:10px;font-size:21px;line-height:1.3;font-weight:700;color:${INK};">${escapeHtml(params.statusTitle)}</div>
