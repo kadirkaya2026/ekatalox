@@ -1,12 +1,12 @@
 import Image from "next/image";
 import Link from "next/link";
-import { MapPin, Bell, Clock3, PackageCheck, QrCode, ArrowUpRight, Languages, Smartphone, UserRound, CreditCard, Pencil, LifeBuoy } from "lucide-react";
+import { MapPin, Bell, Clock3, PackageCheck, Gift, ArrowUpRight, Languages, Smartphone, UserRound, CreditCard, Pencil, LifeBuoy } from "lucide-react";
 import { ButtonLink, Container } from "@/components/marketing/ui";
 import { marketingMetadata } from "@/lib/marketing/metadata";
 import { SITE } from "@/lib/marketing/site";
 import { Accent, BandCard, Breadcrumb, ClosingCta, CustomerMarquee, FaqList, PageHero, TintBox, pastelStyle } from "@/components/marketing/home-v2/page-kit";
 
-export const metadata = marketingMetadata("/sektorler/market-bakkal", "Market ve Bakkal Sipariş Programı: Online Katalog", "Marketiniz için online katalog: müşteri üyeliği ve sipariş takibi, kayıtlı adresler, kapıda veya online ödeme (iyzico, PayTR, Paynet), konumlu WhatsApp siparişi ve bildirimler. Kurumsal pakette 200 QR magnet hediye.");
+export const metadata = marketingMetadata("/sektorler/market-bakkal", "Market ve Bakkal Sipariş Programı: Online Katalog", "Marketiniz için online katalog: müşteri üyeliği ve sipariş takibi, kayıtlı adresler, kapıda veya online ödeme (iyzico, PayTR, Paynet), konumlu WhatsApp siparişi ve bildirimler. Sınırlı süre: Kurumsal pakette 1000 QR magnet hediye.");
 const features = [
   { icon: Smartphone, title: "Uygulama gibi alt menü", body: "Müşteriniz Ana sayfa, Arama, Sepet, Hesabım ve Kampanyalar'a ekranın altındaki menüden tek dokunuşla ulaşır. Sepet tutarı sağ üstte her an görünür; ana ekrana eklendiğinde uygulama gibi açılır." },
   { icon: UserRound, title: "Müşteri üyeliği ve Hesabım", body: "Müşteriniz telefon numarası ve şifresiyle üye olur. Hesabım'da siparişlerini, adreslerini, bilgilerini ve bildirim tercihlerini yönetir. Üye olmadan da sipariş verebilir; siparişten sonra bilgileri dolu kayıt ekranı çıkar." },
@@ -26,8 +26,8 @@ const faq = [
   { q: "Online ödeme alabilir miyim?", a: "Kurumsal pakette alabilirsiniz. Kendi iyzico, PayTR veya Paynet üye işyeri hesabınızın anahtarlarını panelden girersiniz; müşteriniz sepette Online Ödeme'yi seçip kartıyla öder, para doğrudan sizin hesabınıza geçer. eKatalox komisyon almaz; işlem ücretini kendi sağlayıcı sözleşmeniz belirler. Kapıda nakit ve kapıda kart seçenekleri her pakette vardır." },
   { q: "Konum paylaşmak zorunlu mu?", a: "Hayır. Müşteriniz konum eklemeyi seçer ve cihazındaki konum iznini onaylarsa konum bağlantısı siparişe eklenir. Yazılı adres ve sipariş notu alanları da kullanılabilir." },
   { q: "Sipariş size nasıl ulaşır?", a: "Müşteri siparişi tamamladığında sipariş panelinize düşer, PDF fişiyle birlikte WhatsApp mesajı hazırlanır. Konum paylaşmışsa bağlantısı da mesajda yer alır. Online ödendiyse sipariş panelde ödendi olarak görünür." },
-  { q: "200 adet QR magnet hangi pakette hediye?", a: "Market işletmelerine Kurumsal pakette 200 adet QR kodlu magnet hediye edilir. Müşteriniz magneti okutarak marketinizin kataloğuna ulaşır. Bu hediye market işletmelerine özeldir." },
-  { q: "Marketler ve toptancılar için fiyatlar farklı mı?", a: "Hayır. Aynı paketlerin fiyatları ve limitleri ortaktır. Sektöre göre kullanım örnekleri değişir; marketlere özel 200 magnet hediyesi Kurumsal pakette sunulur." },
+  { q: "1000 adet QR magnet hediyesi nedir, hangi pakette?", a: "Sınırlı süre için Kurumsal paketi seçen market işletmelerine 1000 adet 6 × 9 cm QR kodlu buzdolabı magneti hediye ediyoruz. Magnetler marketinize tanımlı QR kodlarıyla basılı gelir; müşterilerinize dağıtırsınız, müşteriniz okuttuğunda doğrudan sizin kataloğunuz açılır. Hangi magnetin okutulduğunu panelden görürsünüz." },
+  { q: "Marketler ve toptancılar için fiyatlar farklı mı?", a: "Hayır. Aynı paketlerin fiyatları ve limitleri ortaktır. Sektöre göre kullanım örnekleri değişir; marketlere özel 1000 magnet hediyesi (sınırlı süre) Kurumsal pakette sunulur." },
 ];
 const FLOW = [
   ["Magneti okutur veya bağlantıyı açar", "Müşteriniz buzdolabındaki QR magnetten ya da paylaştığınız bağlantıdan marketinizin kataloğuna ulaşır."],
@@ -63,7 +63,15 @@ export default function MarketPage() {
           <figcaption className="mt-3 text-center text-xs text-brand-navy/60">MarketGo demo mağazasından gerçek ekran. Fiyat ve kampanyalar örnektir.</figcaption>
         </figure>
         <div className="text-left">
-          <div className="inline-flex items-center gap-3 rounded-2xl bg-white/80 p-4"><QrCode className="size-7 shrink-0 text-brand-navy" aria-hidden /><p className="text-sm"><strong className="block text-brand-navy">Kurumsal pakette 200 QR magnet hediye</strong><span className="text-brand-navy/70">Market işletmelerine özel.</span></p></div>
+          {/* Sınırlı süreli 1000 magnet kampanyası (17 Eki 2026, kullanıcı isteği). */}
+          <a href="#magnet-hediye" className="flex items-center gap-4 rounded-3xl bg-brand-dark p-4 pr-5 text-white shadow-xl ring-2 ring-brand-neon/40 transition hover:-translate-y-0.5">
+            <span className="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-brand-neon text-brand-dark"><Gift className="size-7" aria-hidden /></span>
+            <span>
+              <span className="inline-block rounded-full bg-brand-neon px-2.5 py-0.5 text-[11px] font-extrabold uppercase tracking-[0.12em] text-brand-dark">Sınırlı süre</span>
+              <strong className="mt-1 block text-xl font-extrabold leading-tight tracking-[-0.02em]">1000 adet QR magnet hediye</strong>
+              <span className="block text-sm text-white/75">6 × 9 cm buzdolabı magneti · Kurumsal pakette marketlere</span>
+            </span>
+          </a>
           <h2 className="mt-6 text-3xl font-extrabold leading-[1.05] tracking-[-0.03em] text-brand-navy sm:text-4xl">Kataloğu açar. Sepetini doldurur. Siparişini takip eder.</h2>
           <ol className="mt-6 space-y-3">
             {FLOW.map(([title, body], i) => <li key={title} className="flex gap-3 rounded-2xl bg-white/70 p-4"><span className="text-2xl font-extrabold tracking-[-0.03em] text-brand-navy">0{i + 1}</span><span><span className="block font-semibold text-brand-navy">{title}</span><span className="block text-sm leading-relaxed text-brand-navy/70">{body}</span></span></li>)}
@@ -119,21 +127,36 @@ export default function MarketPage() {
 
     <section className="bg-white pb-16 sm:pb-20">
       <Container>
-        <div className="grid items-center gap-10 overflow-hidden rounded-[32px] bg-brand-dark p-8 text-white sm:p-12 lg:grid-cols-[1.3fr_1fr]">
+        <div id="magnet-hediye" className="relative grid scroll-mt-28 items-center gap-10 overflow-hidden rounded-[32px] bg-brand-dark p-8 text-white sm:p-12 lg:grid-cols-[1.15fr_1fr]">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-brand-neon">QR magnet hediyesi</p>
-            <h2 className="mt-4 text-balance text-3xl font-extrabold leading-[1.05] tracking-[-0.03em] sm:text-5xl">Marketinizin adresi, müşterinizin buzdolabında.</h2>
-            <p className="mt-5 text-lg leading-relaxed text-white/75">Müşterinizin yeniden sipariş vermek için bağlantınızı araması gerekmesin. QR kodlu magneti okutsun, kataloğunuzu açsın, ihtiyaçlarını sepete eklesin.</p>
-            <p className="mt-4 leading-relaxed text-white/65">Magnetlerin okutulma sayılarını ve müşteri eşleşmelerini panelinizden takip ederek dağıttığınız magnetlerin kullanımını görebilirsiniz.</p>
-            <div className="mt-7 rounded-2xl border border-brand-neon/25 bg-brand-neon/10 p-6">
-              <p className="text-4xl font-extrabold tracking-[-0.03em] text-white">200 adet <span className="text-xl font-semibold text-brand-neon">hediye</span></p>
-              <h3 className="mt-3 text-xl font-semibold">6 × 9 cm QR kodlu buzdolabı magneti</h3>
-              <p className="mt-3 leading-relaxed text-white/70">Kurumsal paketi seçen market işletmelerine özel.</p>
-              <div className="mt-5"><ButtonLink href="/fiyatlandirma?gorunum=market">Paket kapsamını incele</ButtonLink></div>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="rounded-full bg-brand-neon px-3 py-1 text-xs font-extrabold uppercase tracking-[0.14em] text-brand-dark">Sınırlı süre</span>
+              <span className="text-xs font-semibold uppercase tracking-[0.16em] text-brand-neon">Kurumsal pakette marketlere hediye</span>
             </div>
+            <p className="mt-5 text-7xl font-extrabold leading-none tracking-[-0.05em] text-white sm:text-8xl">1000<span className="ml-3 align-middle text-2xl font-bold tracking-normal text-brand-neon sm:text-3xl">adet magnet</span></p>
+            <h2 className="mt-5 text-balance text-3xl font-extrabold leading-[1.05] tracking-[-0.03em] sm:text-4xl">Marketinizin adresi, müşterinizin buzdolabında.</h2>
+            <p className="mt-4 text-lg leading-relaxed text-white/75">Müşterinizin yeniden sipariş vermek için bağlantınızı araması gerekmesin. Buzdolabındaki magneti okutsun, kataloğunuz açılsın, ihtiyaçlarını sepete eklesin.</p>
+            <ul className="mt-6 grid gap-3 sm:grid-cols-2">
+              {[
+                ["1000 adet buzdolabı magneti", "6 × 9 cm, mıknatıslı, QR kodlu"],
+                ["Size tanımlı QR kodlar", "Okutulan her magnet doğrudan sizin kataloğunuzu açar"],
+                ["Panelden takip", "Hangi magnet kaç kez okutuldu, ilk siparişi kim verdi görürsünüz"],
+                ["Ek ücret yok", "Kurumsal paketi seçen market işletmelerine hediye"],
+              ].map(([title, body]) => (
+                <li key={title} className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                  <span className="block font-semibold text-white">{title}</span>
+                  <span className="mt-1 block text-sm leading-relaxed text-white/65">{body}</span>
+                </li>
+              ))}
+            </ul>
+            <div className="mt-7 flex flex-wrap gap-3">
+              <ButtonLink href="/basvuru?sektor=market-bakkal&plan=corporate">Hediyeyi alarak başlayın</ButtonLink>
+              <ButtonLink href="/fiyatlandirma?gorunum=market" tone="outline-dark">Paket kapsamını incele</ButtonLink>
+            </div>
+            <p className="mt-4 text-xs text-white/50">Kampanya sınırlı süre içindir; süre bitiminde hediye adedi değişebilir.</p>
           </div>
-          <figure className="mx-auto w-full max-w-[320px]">
-            <Image src="/site/market-qr-magnet-6x9.png" alt="Marketlere verilen 6 × 9 cm QR kodlu magnet tasarımı: Kapına Gelsin, kameranı aç ve okut" width={1419} height={2127} sizes="(max-width: 640px) 85vw, 320px" className="h-auto w-full rounded-2xl border border-white/15 shadow-2xl" />
+          <figure className="mx-auto w-full max-w-[560px]">
+            <Image src="/site/market-magnet-buzdolabi.jpg" alt="Buzdolabı kapağına yapışık 6 × 9 cm QR kodlu market magneti: Kapına Gelsin, kameranı aç ve okut" width={1536} height={1030} sizes="(max-width: 1024px) 90vw, 560px" className="h-auto w-full rounded-3xl border border-white/15 object-cover shadow-2xl" />
             <figcaption className="mt-4 text-center"><span className="inline-block rounded-full border border-white/20 px-4 py-1.5 text-sm text-white/80">6 × 9 cm · Gerçek magnet tasarımı</span></figcaption>
           </figure>
         </div>

@@ -96,9 +96,9 @@ Tüm sektörlerde yabancı müşteriler için İngilizce, Almanca ve Rusça kata
 - [Sektörler](${site}/sektorler)
 ${WHOLESALE_SECTORS.map((sector) => `- [${sector.name}](${site}/sektorler/${sector.slug}): ${sector.description}`).join("\n")}
 - [Market ve bakkallar için WhatsApp sipariş sistemi](${site}/sektorler/market-bakkal)
-- Market müşterisi isteğe bağlı konum paylaşabilir; konum bağlantısı WhatsApp sipariş mesajına eklenir. Mobilde sabit alt sepet bulunur.
+- Market müşterisi isteğe bağlı konum paylaşabilir; konum bağlantısı WhatsApp sipariş mesajına eklenir. Mobilde Ana sayfa, Arama, Sepet, Hesabım ve Kampanyalar alt menüsü bulunur; müşteri üyeliği, sipariş takibi ve kayıtlı adresler vardır.
 - Kampanya bildirimleri izin veren müşterilere, paket kapsamına göre gönderilir.
-- Market işletmelerine Kurumsal pakette 200 adet QR kodlu magnet hediye edilir.
+- Sınırlı süre: Kurumsal paketi seçen market işletmelerine 1000 adet 6 × 9 cm QR kodlu buzdolabı magneti hediye edilir (QR kodlar markete tanımlı).
 - Market ve toptancı paket fiyatları ortaktır; kullanım sunumu sektöre göre değişir.
 - [MarketGo demo mağazası](https://marketgo.ekatalox.com)
 - [VELIRA tekstil ve giyim demosu](https://demo-giyim.ekatalox.com/): Giyim kategorileri ve görselli ürün kataloğu.

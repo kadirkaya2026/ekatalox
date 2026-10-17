@@ -79,8 +79,9 @@ export function PlanCards({ compact = false, dark = false, audience }: { compact
               Aylık {plan.visitorLimit.toLocaleString("tr-TR")} ziyaretçi
             </p>
             {market && plan.slug === "corporate" && <div className={cn("mt-5 rounded-xl border p-4", dark ? "border-brand-neon/30 bg-brand-neon/10 text-white" : "border-brand-green/25 bg-brand-green-soft text-brand-navy")}>
-              <p className="font-semibold">200 adet QR kodlu magnet hediye</p>
-              <p className="mt-1 text-xs leading-relaxed">Kurumsal pakette market işletmelerine özel. Müşteriniz magneti okutsun, kataloğunuzdan sipariş oluştursun.</p>
+              <p className="text-[11px] font-extrabold uppercase tracking-[0.12em] opacity-80">Sınırlı süre</p>
+              <p className="mt-0.5 text-lg font-extrabold leading-tight">1000 adet QR magnet hediye</p>
+              <p className="mt-1 text-xs leading-relaxed">6 × 9 cm buzdolabı magneti, marketinize tanımlı QR kodlarıyla. Müşteriniz magneti okutsun, kataloğunuzdan sipariş versin.</p>
             </div>}
             <div className="mt-auto pt-6">
               <Link

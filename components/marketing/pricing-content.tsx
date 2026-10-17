@@ -101,8 +101,8 @@ export function PricingContent({ initialAudience }: { initialAudience: PlanAudie
     "Bayilere bildirim gönderme": "İzin veren müşterilere kampanya bildirimi",
     "Kurumsal site ve Bayimiz ol formu": "Kurumsal tanıtım sitesi",
   }[row.label] ?? row.label) : row.label }));
-  if (market) comparison.push({ label: "Market işletmelerine QR magnet hediyesi", cells: [false, false, false, "200 adet"] });
-  const faq = market ? [{ q: "200 adet magnet hangi pakette hediye?", a: "Market işletmelerine Kurumsal pakette 200 adet QR kodlu magnet hediye edilir. Müşterileriniz magneti okutarak kataloğunuza ulaşır ve sipariş oluşturur." }, ...FAQ.filter(item => !item.q.startsWith("Kurumsal site") && !item.q.startsWith("Ön muhasebe"))] : FAQ;
+  if (market) comparison.push({ label: "Market işletmelerine QR magnet hediyesi", cells: [false, false, false, "1000 adet (sınırlı süre)"] });
+  const faq = market ? [{ q: "1000 adet magnet hangi pakette hediye?", a: "Sınırlı süre için Kurumsal paketi seçen market işletmelerine 1000 adet 6 × 9 cm QR kodlu buzdolabı magneti hediye edilir. Magnetler marketinize tanımlı QR kodlarıyla gelir; müşteriniz okuttuğunda kataloğunuz açılır ve sipariş oluşturur." }, ...FAQ.filter(item => !item.q.startsWith("Kurumsal site") && !item.q.startsWith("Ön muhasebe"))] : FAQ;
   return (
     <>
       <Section tone="white" className="border-b border-brand-line pt-14 sm:pt-24">
