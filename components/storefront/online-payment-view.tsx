@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { CheckCircle2, CreditCard, Loader2, Lock, MessageCircle, XCircle } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 import { readOnlinePaymentWhatsAppHref } from "@/lib/storefront/online-payment-handoff";
+import { isValidTcKimlik } from "@/lib/payments/identity";
 
 type PaymentStatus = "awaiting" | "paid" | "failed";
 
@@ -28,6 +29,7 @@ interface OnlinePaymentViewProps {
 export function OnlinePaymentView({ subdomain, token, storeName, returnedFromProvider, order }: OnlinePaymentViewProps) {
   const [status, setStatus] = useState<PaymentStatus>(order.paymentStatus);
   const [email, setEmail] = useState("");
+  const [identityNumber, setIdentityNumber] = useState("");
   const [starting, setStarting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [iframeUrl, setIframeUrl] = useState<string | null>(null);
@@ -83,12 +85,16 @@ export function OnlinePaymentView({ subdomain, token, storeName, returnedFromPro
     event.preventDefault();
     setError(null);
     setAttemptError(null);
+    if (!isValidTcKimlik(identityNumber)) {
+      setError("T.C. kimlik numarası geçersiz. 11 haneyi kontrol edin.");
+      return;
+    }
     setStarting(true);
     try {
       const response = await fetch("/api/storefront/payments/start", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ subdomain, token, email: email.trim() }),
+        body: JSON.stringify({ subdomain, token, email: email.trim(), identity_number: identityNumber }),
       });
       const data = (await response.json().catch(() => ({}))) as {
         status?: string;
@@ -203,6 +209,21 @@ export function OnlinePaymentView({ subdomain, token, storeName, returnedFromPro
               autoComplete="email"
               className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-base outline-none focus:border-slate-500"
             />
+          </label>
+          <label className="mt-3 block">
+            <span className="mb-1.5 block text-sm font-medium text-slate-700">T.C. kimlik no</span>
+            <input
+              required
+              value={identityNumber}
+              onChange={(event) => setIdentityNumber(event.target.value.replace(/\D/g, "").slice(0, 11))}
+              placeholder="11 haneli kimlik numaranız"
+              inputMode="numeric"
+              autoComplete="off"
+              className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-base tracking-wider outline-none focus:border-slate-500"
+            />
+            <span className="mt-1 block text-xs text-slate-500">
+              Ödeme kuruluşu ve fatura için istenir; mağazada saklanmaz.
+            </span>
           </label>
           {error ? <p className="mt-2 text-sm font-medium text-red-600">{error}</p> : null}
           <button

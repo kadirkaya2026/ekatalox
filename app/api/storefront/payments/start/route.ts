@@ -7,6 +7,7 @@ import { getPublicOrigin } from "@/lib/tenancy/request-host";
 import { loadTenantPaymentProvider } from "@/lib/payments/credentials";
 import { startProviderPayment } from "@/lib/payments/gateway";
 import { getOnlinePaymentProblems } from "@/lib/payments/readiness";
+import { isValidTcKimlik, normalizeTcKimlik } from "@/lib/payments/identity";
 import {
   buildPaymentReference,
   createPaymentAttempt,
@@ -20,6 +21,8 @@ const bodySchema = z.object({
   subdomain: z.string().trim().min(1).max(80),
   token: z.string().uuid(),
   email: z.string().trim().email().max(100),
+  // Saklanmaz; yalnız ödeme kuruluşuna iletilir.
+  identity_number: z.string().trim().max(20),
 });
 
 const MAX_ATTEMPTS_PER_ORDER = 15;
@@ -28,6 +31,9 @@ export async function POST(request: Request) {
   const parsed = bodySchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) {
     return NextResponse.json({ error: "Geçerli bir e-posta adresi girin." }, { status: 400 });
+  }
+  if (!isValidTcKimlik(parsed.data.identity_number)) {
+    return NextResponse.json({ error: "T.C. kimlik numarası geçersiz." }, { status: 400 });
   }
   const supabase = createSupabaseAdminClient();
   const tenant = await getStorefrontTenant(parsed.data.subdomain);
@@ -100,6 +106,7 @@ export async function POST(request: Request) {
       address: (order.customer_address as string | null) ?? "",
       city: "",
       ip: getClientIp(request) ?? "85.105.0.1",
+      identityNumber: normalizeTcKimlik(parsed.data.identity_number),
     },
     installmentsEnabled: settings.online_payment_settings?.installments_enabled ?? true,
     urls: {

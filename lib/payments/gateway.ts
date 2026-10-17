@@ -24,7 +24,16 @@ export interface StartPaymentParams {
   reference: string;
   amount: number;
   orderLabel: string;
-  buyer: { name: string; phone: string; email: string; address: string; city: string; ip: string };
+  buyer: {
+    name: string;
+    phone: string;
+    email: string;
+    address: string;
+    city: string;
+    ip: string;
+    /** T.C. kimlik no (ödeme sayfasında zorunlu, doğrulanmış). */
+    identityNumber: string;
+  };
   installmentsEnabled: boolean;
   /** Sağlayıcının tarayıcıyı / bildirimini göndereceği adresler. */
   urls: { iyzicoCallback: string; paynetConfirm: string; returnOk: string; returnFail: string };
@@ -126,9 +135,7 @@ async function startIyzico(
       id: params.reference,
       name,
       surname,
-      // Bireysel alıcıda T.C. kimlik no sorulmuyor; iyzico'nun yaygın kabul
-      // ettiği yer tutucu. Sorun çıkarsa ödeme sayfasına TCKN alanı eklenmeli.
-      identityNumber: "11111111111",
+      identityNumber: params.buyer.identityNumber,
       email: params.buyer.email,
       gsmNumber: iyzicoPhone(params.buyer.phone),
       registrationAddress: address,
