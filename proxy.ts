@@ -582,11 +582,18 @@ export async function proxy(request: NextRequest) {
 
     // /yasal/*: mağazanın sözleşme ve satıcı bilgisi sayfaları (0178) şifre
     // kapısından bağımsız açılır; ödeme kuruluşu ve müşteri önceden görebilmeli.
+    // /giris, /uye-ol, /hesabim/*: market/tekel üyelik sayfaları (0180) fiyat
+    // göstermez; kapıdan geçerse ISR kapı sayfası asıl adresi bilmediği için
+    // ziyaretçiyi ana sayfaya atıyordu (şifre yenileme bağlantısı da bozulurdu).
+    const isMemberPage =
+      (pathname === "/giris" || pathname === "/uye-ol" || pathname === "/hesabim" || pathname.startsWith("/hesabim/")) &&
+      (tenant?.business_type === "market" || Boolean(tenant?.is_tekel));
     if (
       pathname.startsWith("/siparis/") ||
       pathname === "/siparislerim" ||
       pathname === "/bildirim" ||
-      pathname.startsWith("/yasal/")
+      pathname.startsWith("/yasal/") ||
+      isMemberPage
     ) {
       const trackUrl = request.nextUrl.clone();
       trackUrl.pathname = `/store/${hostResolution.subdomain}${pathname}`;
