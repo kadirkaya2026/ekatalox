@@ -4,7 +4,10 @@
 export const dynamic = "force-dynamic";
 
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
+import { MemberProfilePage } from "@/components/storefront/member-pages";
+import { loadMemberPage, MemberPageProviders } from "@/lib/storefront/member-page";
+import { hasStoreMembership } from "@/lib/storefront/member";
 import { AccountView } from "@/components/storefront/account-view";
 import { getStorefrontTenantCached, getTenantStorefrontSettings } from "@/lib/data";
 import { getAppearanceFromSettings } from "@/lib/storefront/appearance";
@@ -28,6 +31,23 @@ export async function generateMetadata(props: AccountPageProps): Promise<Metadat
 export default async function AccountPage(props: AccountPageProps) {
   const { subdomain } = await props.params;
   const tenant = await getStorefrontTenantCached(subdomain);
+  // Market/tekel (0180): üye profili (Getir "Profil" düzeni); giriş yoksa /giris.
+  if (tenant && tenant.status === "active" && hasStoreMembership(tenant)) {
+    const page = await loadMemberPage(subdomain);
+    if (!page) notFound();
+    if (!page.member) redirect("/giris");
+    return (
+      <MemberPageProviders page={page} subdomain={subdomain}>
+        <MemberProfilePage
+          subdomain={subdomain}
+          tenantId={page.tenant.id}
+          isTekel={Boolean(page.tenant.is_tekel)}
+          member={page.member}
+          whatsapp={page.whatsapp}
+        />
+      </MemberPageProviders>
+    );
+  }
   if (!tenant || tenant.status !== "active" || !hasAccountPage(tenant)) notFound();
   const settings = await getTenantStorefrontSettings(tenant.id);
 

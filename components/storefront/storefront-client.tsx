@@ -139,6 +139,7 @@ import { hasAccountPage, hasEnhancedNavCues, hasOrderTracking, isMarketOrTekelTe
 import { ProminentLoadMoreButton } from "@/components/storefront/enhanced-nav-cues";
 import { readPushIdentity, readTrackingPhone, saveGuestOrderToken, saveTrackingPhone } from "@/lib/storefront/tracking-phone";
 import { CartMemberBox, useStoreMember } from "@/components/storefront/member-auth";
+import { useUnseenOrderUpdates } from "@/components/storefront/order-tracking-badge";
 import { getCampaignPushStatus } from "@/lib/push/client";
 import { validateCustomerPhoneInput } from "@/lib/storefront/customer-phone";
 import { StorefrontCouponBanner } from "@/components/storefront/storefront-coupon-banner";
@@ -1611,6 +1612,27 @@ export function StorefrontClient({
   // dolar, sipariş hesabına bağlanır. Üye değişince (giriş/çıkış) bir kez uygulanır.
   const membershipEnabled = isMarketOrTekelTenant(tenant) && !previewMode && !dealerProfile;
   const storeMember = useStoreMember(analyticsSubdomain, membershipEnabled);
+  // Vitrin dışı sayfaların alt barı vitrine ?ara=1 / ?sepet=1 / ?kampanyalar=1
+  // ile döner (bkz. storefront-bottom-nav.tsx): ilgili panel açılır, parametre
+  // adresten silinir ki geri tuşu ve yenileme paneli tekrar açmasın.
+  useEffect(() => {
+    if (previewMode) return;
+    const params = new URLSearchParams(window.location.search);
+    const action = (["ara", "sepet", "kampanyalar"] as const).find((key) => params.has(key));
+    if (!action) return;
+    params.delete(action);
+    const query = params.toString();
+    window.history.replaceState(window.history.state, "", `${window.location.pathname}${query ? `?${query}` : ""}${window.location.hash}`);
+    const timer = window.setTimeout(() => {
+      if (action === "ara") setIsSearchSheetOpen(true);
+      else if (action === "sepet") setIsCartOpen(true);
+      else setIsCampaignsSheetOpen(true);
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [previewMode]);
+
+  // Hesabım sekmesindeki kırmızı sayaç: üyenin görmediği sipariş güncellemeleri.
+  const memberOrderUpdates = useUnseenOrderUpdates(membershipEnabled ? analyticsSubdomain : undefined);
   const [appliedMemberId, setAppliedMemberId] = useState<string | null>(null);
   if ((storeMember.member?.id ?? null) !== appliedMemberId) {
     const m = storeMember.member;
@@ -4745,8 +4767,9 @@ export function StorefrontClient({
           </div>
         ) : null}
       /> : <StorefrontHeader
-        orderTrackingHref={orderTrackingEnabled ? "/siparislerim" : undefined}
+        orderTrackingHref={orderTrackingEnabled && !membershipEnabled ? "/siparislerim" : undefined}
         accountHref={accountEnabled ? "/hesabim" : undefined}
+        memberAccountHref={membershipEnabled ? "/hesabim" : undefined}
         enhancedNavCues={enhancedNavCues}
         headerStyleKey={storefrontSettings.header_style_key ?? "standard"}
         storefrontSettings={storefrontSettings}
@@ -5390,6 +5413,16 @@ export function StorefrontClient({
           isTekel={isTekel}
           isSearchOpen={isSearchSheetOpen}
           isCampaignsOpen={isCampaignsSheetOpen}
+          isHomeActive={!isSearchSheetOpen && !isCampaignsSheetOpen && !isCartOpen}
+          accountHref={membershipEnabled ? "/hesabim" : undefined}
+          accountBadge={memberOrderUpdates}
+          onGoHome={() => {
+            setIsSearchSheetOpen(false);
+            setIsCampaignsSheetOpen(false);
+            if (detailProduct) closeDetailToList(true);
+            handleGoHome();
+            window.scrollTo({ top: 0, behavior: "smooth" });
+          }}
           onOpenSearch={() => {
             setIsCampaignsSheetOpen(false);
             setIsSearchSheetOpen(true);

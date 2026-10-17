@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, type ReactNode } from "react";
-import { Search, ShoppingCart, Ticket } from "lucide-react";
+import { Gift, House, Search, ShoppingCart, UserRound } from "lucide-react";
 import { useStorefrontLocale } from "@/lib/storefront/locale-context";
 import { cn } from "@/lib/utils";
 
@@ -108,26 +108,46 @@ function useVisualViewportAnchor(ref: React.RefObject<HTMLDivElement | null>) {
   }, [ref]);
 }
 
+// Alt bar düzeni (17 Eki 2026, kullanıcı isteği — Getir örneği): Ana sayfa ·
+// Arama · Sepet (ortada, taşan yuvarlak) · Hesabım · Kampanyalar; yalnız ikon.
+// Vitrin dışındaki sayfalarda (Hesabım, Giriş vb.) işleyici verilmez: düğmeler
+// vitrine ?ara=1 / ?sepet=1 / ?kampanyalar=1 ile döner, vitrin ilgili paneli açar.
 export function StorefrontBottomNav({
   cartItemCount,
   isTekel,
-  isSearchOpen,
-  isCampaignsOpen,
+  isSearchOpen = false,
+  isCampaignsOpen = false,
+  isHomeActive = false,
+  isAccountActive = false,
+  accountHref,
+  accountBadge = 0,
+  onGoHome,
   onOpenSearch,
   onOpenCart,
   onOpenCampaigns,
 }: {
   cartItemCount: number;
   isTekel: boolean;
-  isSearchOpen: boolean;
-  isCampaignsOpen: boolean;
-  onOpenSearch: () => void;
-  onOpenCart: () => void;
-  onOpenCampaigns: () => void;
+  isSearchOpen?: boolean;
+  isCampaignsOpen?: boolean;
+  isHomeActive?: boolean;
+  isAccountActive?: boolean;
+  /** Market üyeliği (0180): Hesabım sekmesi; yoksa sekme çıkmaz. */
+  accountHref?: string;
+  /** Görülmemiş sipariş güncellemesi (yola çıktı vb.) sayısı. */
+  accountBadge?: number;
+  onGoHome?: () => void;
+  onOpenSearch?: () => void;
+  onOpenCart?: () => void;
+  onOpenCampaigns?: () => void;
 }) {
   const { t } = useStorefrontLocale();
   const shellRef = useRef<HTMLDivElement | null>(null);
   useVisualViewportAnchor(shellRef);
+  const go = (handler: (() => void) | undefined, href: string) => () => {
+    if (handler) handler();
+    else window.location.href = href;
+  };
 
   return (
     <div ref={shellRef} className="bottom-nav-shell fixed inset-x-0 bottom-0 z-40 sm:hidden">
@@ -135,44 +155,47 @@ export function StorefrontBottomNav({
         aria-label={t("bottomNav.ariaLabel")}
         // Bar bilerek temadan bağımsız: koyu temalarda (noir) tema yüzeyi
         // sayfa zemininden ayrışmadığı için bar hiç fark edilmiyordu
-        // (kullanıcı isteği, 22 Ağu 2026). Her temada beyaz zemin +
-        // siyah ikon/yazı.
-        className="bottom-nav-inset grid grid-cols-3 items-end gap-1 border-t border-slate-200 bg-white px-2 pt-2 shadow-[0_-8px_28px_rgba(15,23,42,0.16)]"
+        // (kullanıcı isteği, 22 Ağu 2026). Her temada beyaz zemin.
+        className={cn(
+          "bottom-nav-inset grid items-end border-t border-slate-200 bg-white px-1 pt-1.5 shadow-[0_-8px_28px_rgba(15,23,42,0.12)]",
+          accountHref ? "grid-cols-5" : "grid-cols-4",
+        )}
       >
-        <BottomNavButton
-          label={t("bottomNav.search")}
-          icon={<Search className="size-[22px]" />}
-          isActive={isSearchOpen}
-          onClick={onOpenSearch}
-        />
+        <BottomNavButton label={t("bottomNav.home")} icon={<House className="size-6" />} isActive={isHomeActive} onClick={go(onGoHome, "/")} />
+        <BottomNavButton label={t("bottomNav.search")} icon={<Search className="size-6" />} isActive={isSearchOpen} onClick={go(onOpenSearch, "/?ara=1")} />
         <BottomNavButton
           label={t(isTekel ? "bottomNav.cartPickup" : "bottomNav.cart")}
-          icon={<ShoppingCart className="size-[27px]" />}
+          icon={<ShoppingCart className="size-[26px]" />}
           isActive={false}
           badge={cartItemCount || null}
           emphasized
-          onClick={onOpenCart}
+          onClick={go(onOpenCart, "/?sepet=1")}
         />
-        <BottomNavButton
-          label={t("bottomNav.campaigns")}
-          icon={<Ticket className="size-[22px]" />}
-          isActive={isCampaignsOpen}
-          onClick={onOpenCampaigns}
-        />
+        {accountHref ? (
+          <BottomNavButton
+            label={t("bottomNav.account")}
+            icon={<UserRound className="size-6" />}
+            isActive={isAccountActive}
+            dot={accountBadge}
+            onClick={() => {
+              window.location.href = accountHref;
+            }}
+          />
+        ) : null}
+        <BottomNavButton label={t("bottomNav.campaigns")} icon={<Gift className="size-6" />} isActive={isCampaignsOpen} onClick={go(onOpenCampaigns, "/?kampanyalar=1")} />
       </nav>
     </div>
   );
 }
 
-// emphasized: ortadaki sepet butonu. Diğerlerinden büyük ve barın üst
-// çizgisinin dışına taşıyor (kullanıcı isteği). Taşan kısmın altındaki
-// yuvarlak barla aynı yüzey rengini kullanıyor — çizgi ikonun etrafında
-// kesiliyormuş gibi görünsün diye.
+// emphasized: ortadaki sepet butonu; barın üst çizgisinin dışına taşan turuncu
+// yuvarlak (beyaz ikon). Diğerleri yalnız ikon: pasifken gri, aktifken turuncu.
 function BottomNavButton({
   label,
   icon,
   isActive,
   badge = null,
+  dot = 0,
   emphasized = false,
   onClick,
 }: {
@@ -180,6 +203,8 @@ function BottomNavButton({
   icon: ReactNode;
   isActive: boolean;
   badge?: number | null;
+  /** Hesabım'daki kırmızı sayaç (sipariş güncellemesi). */
+  dot?: number;
   emphasized?: boolean;
   onClick: () => void;
 }) {
@@ -187,15 +212,13 @@ function BottomNavButton({
     <button
       type="button"
       onClick={onClick}
+      aria-label={label}
+      title={label}
       aria-current={isActive ? "true" : undefined}
-      // Yazı ve ikonlar her temada siyah; vurgu sadece ortadaki sepet
-      // yuvarlağında (turuncu zemin + beyaz ikon, kullanıcı isteği
-      // 22 Ağu 2026). "Sepet" etiketi yuvarlağın dışında kaldığı için o
-      // da siyah kalıyor.
       className={cn(
-        "flex min-h-[3.25rem] flex-col items-center justify-end gap-1 rounded-2xl px-1 pb-0.5 text-slate-900 transition",
-        emphasized ? "-mt-5" : "pt-1.5",
-        isActive && !emphasized && "bg-slate-100",
+        "flex min-h-[3.25rem] items-center justify-center pb-1 transition",
+        emphasized ? "-mt-7 items-start" : "pt-1",
+        isActive ? "text-orange-600" : "text-slate-400",
       )}
     >
       <span
@@ -203,28 +226,21 @@ function BottomNavButton({
         data-cart-target={emphasized ? "" : undefined}
         className={cn(
           "relative flex items-center justify-center",
-          // Taşan yuvarlak turuncu, içindeki sepet ikonu beyaz; gölge
-          // arkadaki ürünlerden ayırıyor.
           emphasized &&
-            "size-[3.1rem] rounded-full bg-orange-600 text-white shadow-[0_-24px_80px_rgba(15,23,42,0.22)]",
+            "size-[3.6rem] rounded-full bg-orange-600 text-white ring-4 ring-white shadow-[0_8px_24px_rgba(234,88,12,0.35)]",
         )}
       >
         {icon}
-        {/* Rozet turuncu yuvarlağın üstünde duruyor: beyaz zemin +
-            siyah rakam (kullanıcı isteği, 22 Ağu 2026). */}
         {badge ? (
-          <span className="absolute -right-2 -top-2 inline-flex min-w-5 items-center justify-center rounded-full bg-white px-1.5 py-0.5 text-[10px] font-bold text-slate-900 shadow-sm">
+          <span className="absolute -right-1.5 -top-1.5 inline-flex min-w-5 items-center justify-center rounded-full bg-white px-1.5 py-0.5 text-[10px] font-bold text-slate-900 shadow-sm">
             {badge}
           </span>
         ) : null}
-      </span>
-      <span
-        className={cn(
-          "truncate font-semibold leading-tight",
-          emphasized ? "text-[13px]" : "text-[11px]",
-        )}
-      >
-        {label}
+        {dot > 0 ? (
+          <span className="absolute -right-2 -top-1.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-rose-600 px-1 text-[10px] font-bold leading-none text-white ring-2 ring-white">
+            {dot > 9 ? "9+" : dot}
+          </span>
+        ) : null}
       </span>
     </button>
   );

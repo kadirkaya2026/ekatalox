@@ -2,7 +2,7 @@
 
 import { useEffect, useState, type FormEvent } from "react";
 import { Bell, ChevronRight, History, LogOut, PackageSearch, Phone, Radar, UserRound } from "lucide-react";
-import { MemberAuthForm, useStoreMember, type StoreMemberProfile } from "@/components/storefront/member-auth";
+import { useStoreMember, type StoreMemberProfile } from "@/components/storefront/member-auth";
 import { StorefrontSubpageShell } from "@/components/storefront/storefront-subpage-shell";
 import {
   StorefrontThemeProvider,
@@ -23,7 +23,7 @@ import {
   saveTrackingPhone,
 } from "@/lib/storefront/tracking-phone";
 
-interface OrderRow {
+export interface OrderRow {
   id: string;
   order_no: number | null;
   order_number: string;
@@ -266,7 +266,7 @@ function MyOrdersCard({ subdomain, tenantName, logoUrl, isTekel }: { subdomain: 
   );
 }
 
-function OrderSections({ orders, isTekel }: { orders: OrderRow[]; isTekel: boolean }) {
+export function OrderSections({ orders, isTekel }: { orders: OrderRow[]; isTekel: boolean }) {
   const theme = useStorefrontTheme();
   const { t } = useStorefrontLocale();
   const active = orders.filter((o) => o.status !== "delivered" && o.status !== "cancelled");
@@ -395,7 +395,7 @@ function MemberOrdersCard({
   const { member, loaded, setMember, logout } = useStoreMember(subdomain);
   const [orders, setOrders] = useState<OrderRow[] | null>(null);
   const [showInfo, setShowInfo] = useState(false);
-  const [pendingReset, setPendingReset] = useState(resetToken);
+  const [pendingReset] = useState(resetToken);
 
   useEffect(() => {
     if (!loaded) return;
@@ -426,12 +426,7 @@ function MemberOrdersCard({
     };
   }, [loaded, member, subdomain]);
 
-  const onAuthed = (m: StoreMemberProfile) => {
-    setPendingReset(null);
-    if (pendingReset) window.history.replaceState(null, "", "/siparislerim");
-    setOrders(null);
-    setMember(m);
-  };
+
 
   const text = theme.text;
   const muted = theme.textMuted;
@@ -511,8 +506,16 @@ function MemberOrdersCard({
             ))}
           </ul>
         </div>
-        <div className={cn(theme.gateCard, "w-full")}>
-          <MemberAuthForm subdomain={subdomain} resetToken={pendingReset} onAuthed={onAuthed} />
+        <div className={cn(theme.gateCard, "w-full space-y-3")}>
+          <a href="/giris?next=/hesabim/siparisler" className={cn(theme.primaryButton, "h-12 w-full justify-center text-base")}>
+            {t("member.login")}
+          </a>
+          <a
+            href="/uye-ol?next=/hesabim/siparisler"
+            className={cn("flex h-12 w-full items-center justify-center rounded-xl border text-base font-semibold", theme.border, text)}
+          >
+            {t("member.register")}
+          </a>
         </div>
       </section>
       {orders && orders.length ? (

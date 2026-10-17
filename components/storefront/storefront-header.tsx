@@ -78,6 +78,9 @@ export interface StorefrontHeaderProps {
   orderTrackingHref?: string;
   // Kişiye özel bayi şifresiyle girene "Hesabım" (8 Eki 2026, önce Lucatech).
   accountHref?: string;
+  // Market/tekel üyeliği (0180): Hesabım ikonu + sipariş güncellemesi sayacı.
+  // Mobilde alt barda durduğu için başlıkta yalnız masaüstünde görünür.
+  memberAccountHref?: string;
   /** İsego denemesi: kategori şeridinde kaydırma okları + ilk giriş ipucu. */
   enhancedNavCues?: boolean;
 }
@@ -91,7 +94,9 @@ function HeaderActions({
 }) {
   const theme = useStorefrontTheme();
   const { t } = useStorefrontLocale();
-  const unseenOrderUpdates = useUnseenOrderUpdates(props.orderTrackingHref ? props.subdomain : undefined);
+  const unseenOrderUpdates = useUnseenOrderUpdates(
+    props.orderTrackingHref || props.memberAccountHref ? props.subdomain : undefined,
+  );
 
   return (
     <div className={cn("flex items-center justify-end gap-3", compact ? "gap-2" : "lg:gap-4")}>
@@ -124,8 +129,20 @@ function HeaderActions({
           <OrderTrackingBadge count={unseenOrderUpdates} />
         </a>
       ) : null}
+      {props.memberAccountHref ? (
+        <a
+          href={props.memberAccountHref}
+          className={cn(theme.headerIconButton, "relative size-11 lg:size-12", props.hideSearchAndCart ? "hidden sm:inline-flex" : undefined)}
+          aria-label={t("bottomNav.account")}
+          title={t("bottomNav.account")}
+        >
+          <UserRound className="size-5" />
+          <OrderTrackingBadge count={unseenOrderUpdates} />
+        </a>
+      ) : null}
       <StorefrontLanguageSwitcher />
-      {props.storefrontSettings.is_theme_toggle_visible !== false ? (
+      {/* Market mobilde sağ üstte yalnız dil seçimi (17 Eki 2026, kullanıcı isteği). */}
+      {props.storefrontSettings.is_theme_toggle_visible !== false && !props.hideSearchAndCart ? (
         <StorefrontThemeToggle />
       ) : null}
       <div className="hidden text-right sm:block">

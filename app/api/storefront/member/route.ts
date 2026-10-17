@@ -194,7 +194,7 @@ export async function POST(request: Request) {
       return generic;
     }
     const storeName = tenant.company_name;
-    const resetUrl = `${getTenantStorefrontOrigin(tenant)}/siparislerim?sifirla=${encodeURIComponent(token)}`;
+    const resetUrl = `${getTenantStorefrontOrigin(tenant)}/giris?sifirla=${encodeURIComponent(token)}`;
     const greeting = row.full_name ? `Merhaba ${row.full_name},` : "Merhaba,";
     await sendEmail({
       to: row.email,

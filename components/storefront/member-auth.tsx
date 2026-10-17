@@ -86,6 +86,7 @@ export function MemberAuthForm({
   onCancel,
   cancelLabel,
   className,
+  hideTabs = false,
 }: {
   subdomain: string;
   initialMode?: MemberAuthMode;
@@ -95,6 +96,8 @@ export function MemberAuthForm({
   onCancel?: () => void;
   cancelLabel?: string;
   className?: string;
+  /** Ayrı Giriş / Üye ol sayfalarında sekme düğmesi gizlenir (sayfalar birbirine bağlantı verir). */
+  hideTabs?: boolean;
 }) {
   const theme = useStorefrontTheme();
   const { t } = useStorefrontLocale();
@@ -163,10 +166,11 @@ export function MemberAuthForm({
   const icon = cn("size-4 shrink-0", theme.textMuted);
   const link = cn("text-xs font-semibold underline-offset-2 hover:underline", theme.text);
   const tabbed = mode === "login" || mode === "register";
+  const showTabs = tabbed && !hideTabs;
 
   return (
     <form onSubmit={submit} className={cn("space-y-3", className)}>
-      {tabbed ? (
+      {showTabs ? (
         <div className={cn("grid grid-cols-2 gap-1 rounded-xl p-1", theme.surfaceMuted)}>
           {(["login", "register"] as const).map((m) => (
             <button
@@ -182,7 +186,7 @@ export function MemberAuthForm({
             </button>
           ))}
         </div>
-      ) : (
+      ) : tabbed ? null : (
         <p className={cn("text-sm font-semibold", theme.text)}>{t(mode === "forgot" ? "member.forgotTitle" : "member.resetTitle")}</p>
       )}
 

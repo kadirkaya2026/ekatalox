@@ -3,7 +3,8 @@
 export const dynamic = "force-dynamic";
 
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
+import { loadMemberPage } from "@/lib/storefront/member-page";
 import { MyOrdersView } from "@/components/storefront/my-orders-view";
 import { getStorefrontTenantCached, getTenantStorefrontSettings } from "@/lib/data";
 import { getAppearanceFromSettings } from "@/lib/storefront/appearance";
@@ -34,6 +35,12 @@ export default async function MyOrdersPage(props: MyOrdersPageProps) {
   if (!tenant || tenant.status !== "active" || !hasOrderTracking(tenant)) notFound();
   const settings = await getTenantStorefrontSettings(tenant.id);
   const { sifirla } = await props.searchParams;
+  // Market/tekel: üyenin siparişleri Hesabım altında; şifre yenileme Giriş'te.
+  if (hasStoreMembership(tenant)) {
+    if (typeof sifirla === "string") redirect(`/giris?sifirla=${encodeURIComponent(sifirla)}`);
+    const page = await loadMemberPage(subdomain);
+    if (page?.member) redirect("/hesabim/siparisler");
+  }
 
   return (
     <StorefrontLocaleProvider
