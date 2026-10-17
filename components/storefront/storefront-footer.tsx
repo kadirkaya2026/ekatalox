@@ -1,5 +1,6 @@
 "use client";
 
+import { LEGAL_DOC_SLUGS, LEGAL_DOC_TITLES, isLegalProfileComplete, readLegalProfile } from "@/lib/legal/tenant-legal";
 import {
   FOOTER_COPYRIGHT_YEAR,
   FOOTER_EKATALOX_URL,
@@ -187,6 +188,9 @@ export function StorefrontFooter({
   );
 
   let mobileDividerIndex = 0;
+  const legalLinks = isLegalProfileComplete(readLegalProfile(settings.legal_profile))
+    ? LEGAL_DOC_SLUGS.map((slug) => ({ slug, title: LEGAL_DOC_TITLES[slug] }))
+    : [];
 
   return (
     <footer
@@ -305,11 +309,29 @@ export function StorefrontFooter({
           </div>
         ) : null}
 
+        {legalLinks.length ? (
+          // Sözleşme ve satıcı bilgisi sayfaları (0178): yalnız yasal bilgiler tamamsa.
+          <nav
+            aria-label="Yasal sayfalar"
+            className={cn(
+              "flex flex-wrap justify-center gap-x-3 gap-y-1 text-[11px] leading-tight",
+              theme.footerText,
+              hasFooterMainContent && showMainColumns ? "mt-4 md:mt-6" : "mt-0",
+            )}
+          >
+            {legalLinks.map((link) => (
+              <a key={link.slug} href={`/yasal/${link.slug}`} className={cn("transition hover:underline", theme.footerLink)}>
+                {link.title}
+              </a>
+            ))}
+          </nav>
+        ) : null}
+
         <div
           className={cn(
             "py-1.5 text-center text-[11px] leading-tight",
             theme.footerText,
-            hasFooterMainContent && showMainColumns ? "mt-4 md:mt-6" : "mt-0",
+            hasFooterMainContent && showMainColumns && !legalLinks.length ? "mt-4 md:mt-6" : "mt-0",
           )}
         >
           ©{FOOTER_COPYRIGHT_YEAR}{" "}

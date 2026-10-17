@@ -654,6 +654,8 @@ export interface TenantStorefrontSettings {
   transfer_discount_note?: string | null;
   transfer_discount_tiers?: CashDiscountTier[];
   online_payment_settings?: OnlinePaymentSettings | null;
+  /** Yasal satıcı bilgileri ve sözleşmeler (0178), bkz. lib/legal/tenant-legal.ts. */
+  legal_profile?: unknown;
   // 0147: mağazaya özel teslimat bölgesi (il/ilçe sabit, mahalle listesi)
   delivery_area?: unknown;
   /** Perakende ayarları: bilgi bölümleri, teslim tarihi, menü oluşturucu (0155). */

@@ -580,7 +580,14 @@ export async function proxy(request: NextRequest) {
       return previewResponse;
     }
 
-    if (pathname.startsWith("/siparis/") || pathname === "/siparislerim" || pathname === "/bildirim") {
+    // /yasal/*: mağazanın sözleşme ve satıcı bilgisi sayfaları (0178) şifre
+    // kapısından bağımsız açılır; ödeme kuruluşu ve müşteri önceden görebilmeli.
+    if (
+      pathname.startsWith("/siparis/") ||
+      pathname === "/siparislerim" ||
+      pathname === "/bildirim" ||
+      pathname.startsWith("/yasal/")
+    ) {
       const trackUrl = request.nextUrl.clone();
       trackUrl.pathname = `/store/${hostResolution.subdomain}${pathname}`;
       const trackResponse = NextResponse.rewrite(trackUrl);

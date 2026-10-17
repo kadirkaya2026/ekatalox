@@ -1,4 +1,5 @@
 "use client";
+import { LegalFooterLinks } from "@/components/storefront/legal-footer-links";
 import { useState } from "react";
 import { ArrowRight, ArrowUpRight, Search, ShoppingBag, Plus, Minus, Grid2X2, List, SlidersHorizontal, Package, Bell, X, ChevronRight, PackageSearch } from "lucide-react";
 import { type SectorStorefrontProps, sectorUi } from "./electronics-storefront";
@@ -82,6 +83,7 @@ export function PackagingStorefront(p:SectorStorefrontProps) {
       {variant==="kraft" && landing && (c as FormaContent).collectionVisible && <section data-theme-area="collectionVisible" className={s.collection}><div className={s.collectionImage}><Photo src={(c as FormaContent).collectionImage || p.initialProducts[2]?.image_url} alt={(c as FormaContent).collectionTitle}/></div><div><h2>{(c as FormaContent).collectionTitle}</h2><p>{(c as FormaContent).collectionBody}</p><button className={s.primary} onClick={()=>choose((c as FormaContent).collectionCategoryId || "all")}>{t.discover}<ArrowUpRight size={19}/></button></div></section>}
       {variant==="tedarik" && landing && (c as AkimContent).featureVisible && featured && <section data-theme-area="featureVisible" className={s.feature}><div><p className={s.kicker}>{t.discover}</p><h2>{(c as AkimContent).featureTitle}</h2><p>{(c as AkimContent).featureBody}</p><button className={s.primary} onClick={()=>p.onDetail(featured.id)}>{t.detail}<ArrowUpRight size={18}/></button></div><div className={s.featureImage}><Photo src={(c as AkimContent).featureImage || featured.image_url} alt={featured.product_name}/></div></section>}
       {p.settings.is_footer_visible && <footer className={s.footer}><strong>{p.title}</strong><span>{wholesale?t.wholesale:t.retail}</span><button onClick={()=>choose("all")}>{t.all}<ArrowRight size={18}/></button></footer>}
+      <LegalFooterLinks settings={p.settings} />
 
     </>}
   </div>;

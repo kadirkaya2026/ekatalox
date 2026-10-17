@@ -5,6 +5,7 @@ import { TenantPaymentMethodsForm } from "@/components/dashboard/tenant-payment-
 import { TenantPaymentSettingsForm } from "@/components/dashboard/tenant-payment-settings-form";
 import { getTenantStorefrontSettings } from "@/lib/data";
 import { requireTenantAdminPage } from "@/lib/auth/session";
+import { getLegalProfileProblems, readLegalProfile } from "@/lib/legal/tenant-legal";
 
 export const metadata = { title: "Ödeme ve Kampanyalar" };
 
@@ -31,7 +32,13 @@ export default async function PaymentSettingsPage() {
           { key: "campaigns", label: "Ödeme Kampanyaları" },
         ]}
         panels={{
-          methods: <TenantPaymentMethodsForm storefrontSettings={storefrontSettings} plan={tenant.plan} />,
+          methods: (
+            <TenantPaymentMethodsForm
+              storefrontSettings={storefrontSettings}
+              plan={tenant.plan}
+              legalProblems={getLegalProfileProblems(readLegalProfile(storefrontSettings.legal_profile))}
+            />
+          ),
           campaigns: (
             <PlanFeatureGate feature="payment_settings" plan={tenant.plan} companyName={tenant.company_name}>
               <TenantPaymentSettingsForm storefrontSettings={storefrontSettings} />

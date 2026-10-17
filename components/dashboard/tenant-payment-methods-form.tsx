@@ -62,9 +62,12 @@ function Toggle({ on, onClick, disabled }: { on: boolean; onClick: () => void; d
 export function TenantPaymentMethodsForm({
   storefrontSettings,
   plan,
+  legalProblems,
 }: {
   storefrontSettings: TenantStorefrontSettings;
   plan: TenantPlan;
+  /** Yasal Bilgiler eksikleri (0178); boşsa tamam. */
+  legalProblems: string[];
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -222,6 +225,36 @@ export function TenantPaymentMethodsForm({
               Sanal POS entegrasyonu tamamlandığında buraya sağlayıcınızın API anahtarlarını girip online ödemeyi
               açabileceksiniz. Tercihlerinizi şimdiden kaydedebilirsiniz.
             </p>
+            <div className="rounded-2xl border border-slate-200 bg-white p-4">
+              <p className="text-sm font-semibold text-slate-900">Online ödemeyi açmak için gerekenler</p>
+              <ul className="mt-2 space-y-1.5 text-sm">
+                <li className="flex items-start gap-2">
+                  <span className={cn("mt-0.5 font-bold", legalProblems.length ? "text-amber-600" : "text-emerald-600")}>
+                    {legalProblems.length ? "!" : "✓"}
+                  </span>
+                  <span className="text-slate-700">
+                    Yasal bilgiler ve sözleşmeler{" "}
+                    {legalProblems.length ? (
+                      <>
+                        eksik ({legalProblems.length} alan) ·{" "}
+                        <a href="/settings/legal" className="font-semibold text-emerald-700 underline underline-offset-2">
+                          Tamamla
+                        </a>
+                      </>
+                    ) : (
+                      <span className="text-emerald-700">tamam, mağazanızda yayında</span>
+                    )}
+                  </span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="mt-0.5 font-bold text-slate-400">•</span>
+                  <span className="text-slate-700">
+                    Sağlayıcı (iyzico / PayTR) üye işyeri hesabı ve API anahtarları{" "}
+                    <span className="text-slate-500">— entegrasyon tamamlanınca</span>
+                  </span>
+                </li>
+              </ul>
+            </div>
             <div>
               <p className="mb-2 text-sm font-medium text-slate-700">Sağlayıcı</p>
               <div className="flex flex-wrap gap-2">

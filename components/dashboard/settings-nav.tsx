@@ -6,7 +6,7 @@ import {
   Building2, Clock, ClipboardList, CreditCard, Globe, ImageIcon, LayoutTemplate,
   Megaphone, PackageX, PanelBottom, Palette, Receipt, ShieldCheck, Store, Ticket, Truck,
   UserCircle, PlugZap, type LucideIcon,
-  Lock, Mail,
+  Lock, Mail, Scale,
 } from "lucide-react";
 import {
   getMinimumPlanForFeature,
@@ -50,6 +50,7 @@ const TABS: Tab[] = [
   { href: "/settings/age-verification", label: "Yaş Doğrulama (18+)", icon: ShieldCheck, group: "İçerik & İletişim", requiredBusinessType: "market" },
   { href: "/settings/footer", label: "Footer (Sayfa Altı)", icon: PanelBottom, group: "İçerik & İletişim" },
   { href: "/settings/payment", label: "Ödeme ve Kampanyalar", icon: CreditCard, group: "Ödeme" },
+  { href: "/settings/legal", label: "Yasal Bilgiler", icon: Scale, group: "Ödeme" },
   { href: "/settings/bizimhesap", label: "BizimHesap", icon: PlugZap, group: "Entegrasyonlar", requiredFeature: "bizimhesap", requiredBusinessType: "general" },
 ];
 
