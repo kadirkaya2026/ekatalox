@@ -19,6 +19,21 @@ export async function GET(_request: Request, ctx: RouteContext<"/store/[subdomai
   const origin = page.kurumsalOrigin;
   const entries: Array<{ loc: string; priority: string; changefreq: string }> = [
     { loc: page.homeUrl, priority: "1.0", changefreq: "weekly" },
+    // Çok sayfalı düzen: sabit sayfalar + yasal sayfalar.
+    ...(page.content.layout === "pages"
+      ? [
+          ...["/hakkimizda", "/urunler", "/markalar", "/bayilik", "/iletisim"].map((path) => ({
+            loc: `${origin}${path}`,
+            priority: "0.9",
+            changefreq: "monthly",
+          })),
+          ...(page.content.legal_pages ?? []).map((legal) => ({
+            loc: `${origin}/yasal/${legal.slug}`,
+            priority: "0.3",
+            changefreq: "yearly",
+          })),
+        ]
+      : []),
     ...categoryIds.map((id) => ({ loc: `${origin}/kategori/${id}`, priority: "0.8", changefreq: "weekly" })),
     ...productIds.map((id) => ({ loc: `${origin}/urun/${id}`, priority: "0.6", changefreq: "monthly" })),
   ];

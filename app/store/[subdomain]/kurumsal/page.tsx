@@ -12,6 +12,7 @@ export const revalidate = 300;
 
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { KurumsalProHome, isKurumsalPagesLayout } from "@/components/kurumsal/kurumsal-pro";
 import { KurumsalView } from "@/components/kurumsal/kurumsal-view";
 import { getKurumsalPageContext } from "@/lib/kurumsal/page-context";
 import { getKurumsalDataCached } from "@/lib/storefront/kurumsal-data";
@@ -71,6 +72,9 @@ export default async function KurumsalPage(props: PageProps<"/store/[subdomain]/
       type="application/ld+json"
       dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }}
     />
+    {isKurumsalPagesLayout(ctx) ? (
+      <KurumsalProHome ctx={ctx} data={data} />
+    ) : (
     <KurumsalView
       tenantName={ctx.tenant.company_name}
       subdomain={subdomain}
@@ -86,6 +90,7 @@ export default async function KurumsalPage(props: PageProps<"/store/[subdomain]/
       catalogUrl={ctx.catalogUrl}
       basePath={ctx.basePath}
     />
+    )}
     </>
   );
 }

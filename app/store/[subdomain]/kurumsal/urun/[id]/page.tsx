@@ -6,7 +6,8 @@ export const revalidate = 300;
 
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { KurumsalBreadcrumb, KurumsalShell } from "@/components/kurumsal/kurumsal-shell";
+import { KurumsalBreadcrumb } from "@/components/kurumsal/kurumsal-shell";
+import { KurumsalFrame, kurumsalApplyHref } from "@/components/kurumsal/kurumsal-pro";
 import { kurumsalPath } from "@/lib/kurumsal/domain";
 import { categoryLabel, whatsappLink } from "@/lib/kurumsal/format";
 import { getKurumsalPageContext } from "@/lib/kurumsal/page-context";
@@ -87,10 +88,8 @@ export default async function KurumsalProductPage(props: PageProps<"/store/[subd
   const product = await getKurumsalProductCached(ctx.tenant.id, id);
   if (!product) notFound();
 
-  const { content, tenant } = ctx;
-  const applyHref = content.sections.form
-    ? kurumsalPath(ctx.basePath, "#basvuru")
-    : whatsappLink(ctx.contact.whatsapp, `Merhaba, ${tenant.company_name} bayisi olmak istiyorum.`);
+  const { tenant } = ctx;
+  const applyHref = kurumsalApplyHref(ctx);
   const askWa = whatsappLink(
     ctx.contact.whatsapp,
     `Merhaba, ${product.name} (${product.sku}) hakkında bilgi almak istiyorum.`,
@@ -113,19 +112,7 @@ export default async function KurumsalProductPage(props: PageProps<"/store/[subd
   };
 
   return (
-    <KurumsalShell
-      tenantName={tenant.company_name}
-      logoUrl={ctx.settings.logo_url}
-      wordmark={ctx.wordmark}
-      accent={ctx.accent}
-      legalName={content.legal_name}
-      isWhiteLabel={ctx.isWhiteLabel}
-      applyHref={applyHref}
-      catalogUrl={ctx.catalogUrl}
-      basePath={ctx.basePath}
-      isHome={false}
-      showAbout={content.about.length > 0}
-    >
+    <KurumsalFrame ctx={ctx}>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }}
@@ -258,6 +245,6 @@ export default async function KurumsalProductPage(props: PageProps<"/store/[subd
           </div>
         </div>
       </div>
-    </KurumsalShell>
+    </KurumsalFrame>
   );
 }

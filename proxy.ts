@@ -104,6 +104,8 @@ async function cachedKurumsalPublished(tenantId: string): Promise<boolean> {
  *   /            → /store/{sub}/kurumsal
  *   /kategori/*  → /store/{sub}/kurumsal/kategori/*
  *   /urun/*      → /store/{sub}/kurumsal/urun/*
+ *   /hakkimizda, /urunler, /markalar, /bayilik, /iletisim, /yasal/* →
+ *                  /store/{sub}/kurumsal/... (çok sayfalı düzen; tek sayfalıda 404)
  *   /robots.txt  → /store/{sub}/kurumsal/robots
  *   /sitemap.xml → /store/{sub}/kurumsal/sitemap
  *   /llms.txt    → /store/{sub}/kurumsal/llms (yapay zekâ özeti)
@@ -132,7 +134,7 @@ async function maybeServeKurumsalHost(request: NextRequest, pathname: string): P
   let internalPath: string;
   if (pathname === "/" || pathname === "") {
     internalPath = base;
-  } else if (/^\/(kategori|urun)\/[^/]+\/?$/.test(pathname)) {
+  } else if (/^\/(kategori|urun|yasal)\/[^/]+\/?$/.test(pathname) || KURUMSAL_PAGE_RE.test(pathname)) {
     internalPath = `${base}${pathname.replace(/\/$/, "")}`;
   } else if (pathname === "/robots.txt") {
     internalPath = `${base}/robots`;
@@ -352,6 +354,9 @@ async function maybeServeLegacyBrowserNotice({
   );
 }
 
+// Çok sayfalı kurumsal sitenin sabit sayfaları (bkz. components/kurumsal/kurumsal-pro.tsx).
+const KURUMSAL_PAGE_RE = /^\/(hakkimizda|urunler|markalar|bayilik|iletisim)\/?$/;
+
 // Katalog adresindeki kurumsal site (path modu) dosya yolları.
 const KURUMSAL_PATH_FILES = new Set(["/kurumsal/robots.txt", "/kurumsal/sitemap.xml", "/kurumsal/llms.txt"]);
 
@@ -428,6 +433,7 @@ export async function proxy(request: NextRequest) {
   //   /kurumsal              → /store/{sub}/kurumsal
   //   /kurumsal/kategori/*   → /store/{sub}/kurumsal/kategori/*
   //   /kurumsal/urun/*       → /store/{sub}/kurumsal/urun/*
+  //   /kurumsal/hakkimizda|urunler|markalar|bayilik|iletisim, /kurumsal/yasal/*
   //   /kurumsal/robots.txt   → /store/{sub}/kurumsal/robots
   //   /kurumsal/sitemap.xml  → /store/{sub}/kurumsal/sitemap
   //   diğer /kurumsal/*      → 404
@@ -455,7 +461,10 @@ export async function proxy(request: NextRequest) {
     let kurumsalInternalPath: string | null = null;
     if (kurumsalLive) {
       if (pathname === "/kurumsal") kurumsalInternalPath = `/store/${subdomain}/kurumsal`;
-      else if (/^\/kurumsal\/(kategori|urun)\/[^/]+\/?$/.test(pathname)) {
+      else if (
+        /^\/kurumsal\/(kategori|urun|yasal)\/[^/]+\/?$/.test(pathname) ||
+        KURUMSAL_PAGE_RE.test(pathname.slice("/kurumsal".length))
+      ) {
         kurumsalInternalPath = `/store/${subdomain}${pathname.replace(/\/$/, "")}`;
       } else if (pathname === "/kurumsal/robots.txt") kurumsalInternalPath = `/store/${subdomain}/kurumsal/robots`;
       else if (pathname === "/kurumsal/sitemap.xml") kurumsalInternalPath = `/store/${subdomain}/kurumsal/sitemap`;

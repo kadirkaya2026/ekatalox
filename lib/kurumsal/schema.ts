@@ -74,6 +74,18 @@ export const kurumsalSectionsSchema = z.object({
   form: z.boolean().default(true),
 });
 
+// Yasal sayfa (KVKK, gizlilik, mesafeli satış…): firmanın kendi metni, HTML.
+// Kaydederken ve gösterirken sanitize edilir (lib/kurumsal/legal-html.ts).
+export const kurumsalLegalPageSchema = z.object({
+  slug: z
+    .string()
+    .trim()
+    .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Yasal sayfa adresi geçersiz.")
+    .max(60),
+  title: z.string().trim().min(1).max(80),
+  html: z.string().max(60000, "Yasal metin çok uzun."),
+});
+
 export const kurumsalContentSchema = z.object({
   sector: z.string().trim().min(1).max(40),
   eyebrow: trimmed(KURUMSAL_LIMITS.eyebrow, "Üst etiket"),
@@ -115,11 +127,17 @@ export const kurumsalContentSchema = z.object({
     .nullable()
     .optional(),
   sections: kurumsalSectionsSchema.default({ featured: true, steps: true, map: true, form: true }),
+  // "pages": çok sayfalı site (Ana Sayfa, Hakkımızda, Ürünler, Markalar,
+  // Bayilik, İletişim, Yasal). Yoksa tek sayfa (eski düzen). Sihirbaz bu
+  // alanları göndermez; PUT mevcut değeri korur (app/api/tenant/kurumsal).
+  layout: z.enum(["single", "pages"]).optional(),
+  legal_pages: z.array(kurumsalLegalPageSchema).max(12).optional(),
 });
 
 export type KurumsalContent = z.output<typeof kurumsalContentSchema>;
 export type KurumsalHighlight = z.output<typeof kurumsalHighlightSchema>;
 export type KurumsalSections = z.output<typeof kurumsalSectionsSchema>;
+export type KurumsalLegalPage = z.output<typeof kurumsalLegalPageSchema>;
 
 export interface KurumsalSiteRecord {
   is_published: boolean;

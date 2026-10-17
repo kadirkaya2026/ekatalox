@@ -6,9 +6,10 @@ export const revalidate = 300;
 
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { KurumsalBreadcrumb, KurumsalProductCard, KurumsalShell } from "@/components/kurumsal/kurumsal-shell";
+import { KurumsalBreadcrumb, KurumsalProductCard } from "@/components/kurumsal/kurumsal-shell";
+import { KurumsalFrame, kurumsalApplyHref } from "@/components/kurumsal/kurumsal-pro";
 import { kurumsalPath } from "@/lib/kurumsal/domain";
-import { categoryLabel, whatsappLink } from "@/lib/kurumsal/format";
+import { categoryLabel } from "@/lib/kurumsal/format";
 import { getKurumsalPageContext } from "@/lib/kurumsal/page-context";
 import { getKurumsalCategoryCached } from "@/lib/storefront/kurumsal-data";
 import { buildStorefrontIcons } from "@/lib/storefront/white-label";
@@ -54,25 +55,10 @@ export default async function KurumsalCategoryPage(
   if (!page) notFound();
 
   const name = categoryLabel(page.category.name, ctx.keepCategoryNameCase);
-  const { content } = ctx;
-  const applyHref = content.sections.form
-    ? kurumsalPath(ctx.basePath, "#basvuru")
-    : whatsappLink(ctx.contact.whatsapp, `Merhaba, ${ctx.tenant.company_name} bayisi olmak istiyorum.`);
+  const applyHref = kurumsalApplyHref(ctx);
 
   return (
-    <KurumsalShell
-      tenantName={ctx.tenant.company_name}
-      logoUrl={ctx.settings.logo_url}
-      wordmark={ctx.wordmark}
-      accent={ctx.accent}
-      legalName={content.legal_name}
-      isWhiteLabel={ctx.isWhiteLabel}
-      applyHref={applyHref}
-      catalogUrl={ctx.catalogUrl}
-      basePath={ctx.basePath}
-      isHome={false}
-      showAbout={content.about.length > 0}
-    >
+    <KurumsalFrame ctx={ctx}>
       <section className="border-b border-slate-200 bg-slate-50">
         <div className="mx-auto max-w-6xl px-4 py-10 sm:py-14">
           <KurumsalBreadcrumb items={[{ label: "Ana sayfa", href: kurumsalPath(ctx.basePath, "/") }, { label: name }]} />
@@ -129,6 +115,6 @@ export default async function KurumsalCategoryPage(
           </div>
         </div>
       </section>
-    </KurumsalShell>
+    </KurumsalFrame>
   );
 }

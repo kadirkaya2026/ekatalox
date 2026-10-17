@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getSessionContext } from "@/lib/auth/session";
 import { getTenantStorefrontSettings } from "@/lib/data";
-import { defaultKurumsalContent, kurumsalContentSchema } from "@/lib/kurumsal/schema";
+import { defaultKurumsalContent, kurumsalContentSchema, parseKurumsalContent } from "@/lib/kurumsal/schema";
 import { revalidateStorefrontCache } from "@/lib/storefront/cache";
 import { getKurumsalSite, getKurumsalSiteRow } from "@/lib/storefront/kurumsal-content";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
@@ -62,6 +62,7 @@ export async function PUT(request: Request) {
   }
 
   const existing = await getKurumsalSiteRow(tenant.id);
+  const existingContent = existing ? parseKurumsalContent(existing.content) : null;
   const isPublished = parsed.data.is_published ?? existing?.is_published ?? false;
   const now = new Date().toISOString();
   const publishedAt = isPublished
@@ -76,7 +77,13 @@ export async function PUT(request: Request) {
       {
         tenant_id: tenant.id,
         is_published: isPublished,
-        content: parsed.data.content,
+        // Sihirbaz düzen ve yasal sayfaları göndermez: gönderilmediyse mevcut
+        // değer korunur (yoksa sihirbazdan her kayıtta sayfa düzeni silinirdi).
+        content: {
+          ...parsed.data.content,
+          layout: parsed.data.content.layout ?? existingContent?.layout,
+          legal_pages: parsed.data.content.legal_pages ?? existingContent?.legal_pages,
+        },
         published_at: publishedAt,
         updated_at: now,
       },

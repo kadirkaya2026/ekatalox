@@ -22,6 +22,14 @@ export interface KurumsalCategory {
   name: string;
   productCount: number;
   imageUrl: string | null;
+  /** Ürünü olan alt kategoriler (çok sayfalı sitenin Ürünler sayfası). */
+  children: Array<{ id: string; name: string; productCount: number }>;
+}
+
+export interface KurumsalBrand {
+  name: string;
+  productCount: number;
+  imageUrl: string | null;
 }
 
 export interface KurumsalProduct {
@@ -36,6 +44,8 @@ export interface KurumsalData {
   categories: KurumsalCategory[];
   featured: KurumsalProduct[];
   productCount: number;
+  /** Ürün sayısına göre markalar (products.brand). */
+  brands: KurumsalBrand[];
 }
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -106,11 +116,24 @@ async function loadKurumsalData(tenantId: string): Promise<KurumsalData> {
 
   const counts = new Map<string, number>();
   const images = new Map<string, string>();
+  const directCounts = new Map<string, number>();
+  const brandStats = new Map<string, { productCount: number; imageUrl: string | null }>();
   for (const product of products) {
     const root = rootOf(product.category_id);
     counts.set(root, (counts.get(root) ?? 0) + 1);
     if (product.image_url && !images.has(root)) images.set(root, product.image_url);
+    directCounts.set(product.category_id, (directCounts.get(product.category_id) ?? 0) + 1);
+    const brand = product.brand?.trim();
+    if (brand) {
+      const stat = brandStats.get(brand) ?? { productCount: 0, imageUrl: null };
+      stat.productCount += 1;
+      if (!stat.imageUrl && product.image_url) stat.imageUrl = product.image_url;
+      brandStats.set(brand, stat);
+    }
   }
+  // Alt kategori sayısı: kendisi + torunları.
+  const childCount = (categoryId: string) =>
+    getDescendantCategoryIds(allCategories, categoryId).reduce((sum, id) => sum + (directCounts.get(id) ?? 0), 0);
 
   const categories = visibleRoots
     .map((category) => ({
@@ -118,6 +141,10 @@ async function loadKurumsalData(tenantId: string): Promise<KurumsalData> {
       name: category.name,
       productCount: counts.get(category.id) ?? 0,
       imageUrl: category.tile_image_url ?? images.get(category.id) ?? null,
+      children: allCategories
+        .filter((child) => child.parent_id === category.id && !hiddenIds.has(child.id))
+        .map((child) => ({ id: child.id, name: child.name, productCount: childCount(child.id) }))
+        .filter((child) => child.productCount > 0),
     }))
     .filter((category) => category.productCount > 0);
 
@@ -143,11 +170,14 @@ async function loadKurumsalData(tenantId: string): Promise<KurumsalData> {
     categories,
     featured: featured.slice(0, FEATURED_COUNT).map(toKurumsalProduct),
     productCount: total === Infinity ? products.length : total,
+    brands: [...brandStats.entries()]
+      .map(([name, stat]) => ({ name, ...stat }))
+      .sort((a, b) => b.productCount - a.productCount || a.name.localeCompare(b.name, "tr")),
   };
 }
 
 export function getKurumsalDataCached(tenantId: string): Promise<KurumsalData> {
-  return unstable_cache(() => loadKurumsalData(tenantId), ["kurumsal-data-v2", tenantId], {
+  return unstable_cache(() => loadKurumsalData(tenantId), ["kurumsal-data-v3", tenantId], {
     revalidate: 300,
     tags: [`storefront_${tenantId}`],
   })();
