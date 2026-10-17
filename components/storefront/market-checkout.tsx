@@ -17,6 +17,7 @@ import type { CheckoutPaymentMethod } from "@/lib/storefront/payment-methods";
 import { useStorefrontTheme } from "@/lib/storefront/theme-context";
 import { useStorefrontLocale } from "@/lib/storefront/locale-context";
 import type { CartItem } from "@/lib/types";
+import { useOverlayHistory } from "@/lib/storefront/overlay-history";
 import { cn } from "@/lib/utils";
 
 export type MemberAddress = { id: string; title: string; address: string; is_default: boolean };
@@ -50,6 +51,8 @@ function OutlineButton({ onClick, children }: { onClick: () => void; children: R
 function InnerSheet({ open, title, onClose, children }: { open: boolean; title: string; onClose: () => void; children: ReactNode }) {
   const theme = useStorefrontTheme();
   const { t } = useStorefrontLocale();
+  // Telefonun geri tuşu paneli kapatsın, sepetten çıkmasın.
+  useOverlayHistory(open, onClose);
   return (
     <AnimatePresence>
       {open ? (

@@ -1285,11 +1285,46 @@ cartFormConfig.customer_address.is_visible ? (
       ) : null}
       {!isCatalogOnly ? <div className="empty:hidden">{renderCampaignBars()}</div> : null}
       <CartItemsSection items={cart} />
-      <CheckoutSection title={t("checkout.paymentSummary")}>
-        <div className="-m-1.5">{renderSummaryBox()}</div>
-      </CheckoutSection>
+      {isCatalogOnly ? null : (
+        <CheckoutSection title={t("checkout.paymentSummary")}>{renderMarketSummary()}</CheckoutSection>
+      )}
     </div>
   );
+
+  // Getir "Ödeme Özeti": açık zeminde satırlar + vurgulu Toplam Tutar.
+  const renderMarketSummary = () => {
+    const ps = cartPaymentSummary;
+    const currency = ps?.currency ?? cartCurrency;
+    const rows: Array<{ label: string; amount: number; tone?: "minus" | "plus" }> = [
+      { label: t("checkout.orderAmount"), amount: ps?.subtotal ?? cartTotal },
+    ];
+    if (ps?.isQualified && ps.discountAmount > 0) rows.push({ label: t("checkout.paymentDiscount"), amount: ps.discountAmount, tone: "minus" });
+    if (ps && ps.campaignDiscountAmount > 0) rows.push({ label: t("checkout.campaignDiscount"), amount: ps.campaignDiscountAmount, tone: "minus" });
+    if (ps && ps.couponDiscountAmount > 0) rows.push({ label: t("checkout.couponDiscount"), amount: ps.couponDiscountAmount, tone: "minus" });
+    if (ps && ps.surchargeAmount > 0) rows.push({ label: t("checkout.surcharge"), amount: ps.surchargeAmount, tone: "plus" });
+    const fee = ps?.deliveryFeeAmount ?? deliveryFeeAmount;
+    if (fee > 0) rows.push({ label: t("cart.deliveryFee"), amount: fee, tone: "plus" });
+    const total = ps?.finalTotal ?? cartTotal + deliveryFeeAmount;
+    return (
+      <div className="-m-3.5 overflow-hidden rounded-2xl">
+        <div className="space-y-2 px-3.5 py-3">
+          {rows.map((row) => (
+            <div key={row.label} className="flex items-center justify-between gap-3">
+              <span className={cn("text-[15px]", theme.text)}>{row.label}</span>
+              <span className={cn("text-[15px] font-semibold tabular-nums", row.tone === "minus" ? "text-emerald-600" : theme.text)}>
+                {row.tone === "minus" ? "-" : row.tone === "plus" ? "+" : ""}
+                {formatCurrency(row.amount, currency)}
+              </span>
+            </div>
+          ))}
+        </div>
+        <div className="flex items-center justify-between gap-3 bg-orange-50 px-3.5 py-3">
+          <span className="text-[15px] font-semibold text-orange-700">{t("checkout.totalAmount")}</span>
+          <span className="text-[15px] font-bold tabular-nums text-orange-700">{formatCurrency(total, currency)}</span>
+        </div>
+      </div>
+    );
+  };
 
   // Öneri şeridi — eski tek sayfalı düzende sepetin altında yatay kayan şerit.
   const renderInlineSuggestions = () =>
