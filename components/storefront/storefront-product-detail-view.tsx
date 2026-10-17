@@ -206,6 +206,9 @@ export function StorefrontProductDetailView({
   // Sayfa içi beden seçimi (Moda vitrini): sepete ekle bedenlerin altında,
   // sayfayla birlikte kayar; mobilde altta sabit çubuk yok (28 Eyl 2026).
   const inlineVariantMode = hasVariants && Boolean(onAddVariants);
+  // Market (17 Eki 2026, Getir): mobilde "Sepete ekle" fiyatın hemen altında,
+  // sayfayla birlikte kayar; altta sabit bar yok (alt menü barı görünür kalır).
+  const inlineMobileAction = inlineVariantMode || Boolean(isMarketTenant);
   const sortedVariants = useMemo(
     () => [...(product.variants ?? [])].sort((a, b) => a.display_order - b.display_order),
     [product.variants],
@@ -328,7 +331,8 @@ export function StorefrontProductDetailView({
               theme.stickyCartButton,
             )}
           >
-            <span className="flex items-center gap-1.5 truncate">
+            {/* Dar ekranda "Sepette" yazısı adet seçicinin altında kalıp kesiliyordu (17 Eki 2026). */}
+            <span className="flex shrink-0 items-center gap-1.5 whitespace-nowrap">
               <Check className="size-5 shrink-0" /> Sepette
             </span>
             {hasVariants ? (
@@ -341,7 +345,7 @@ export function StorefrontProductDetailView({
               </button>
             ) : (
               <span className="flex h-11 items-center rounded-xl bg-white/15">
-                <button type="button" onClick={onDecrease} className="flex h-full w-10 items-center justify-center" aria-label="Azalt">
+                <button type="button" onClick={onDecrease} className="flex h-full w-9 items-center justify-center" aria-label="Azalt">
                   <Minus className="size-4" />
                 </button>
                 <CartQuantityInput
@@ -349,11 +353,11 @@ export function StorefrontProductDetailView({
                   onCommit={onSetQuantity}
                   ariaLabel="Sepetteki adet"
                   className={cn(
-                    "h-full w-14 bg-transparent text-center font-bold tabular-nums outline-none focus:rounded-lg focus:bg-white/20",
+                    "h-full w-11 bg-transparent text-center text-[16px] font-bold tabular-nums outline-none focus:rounded-lg focus:bg-white/20",
                     flash && "animate-[ek-pop_0.45s_ease-out]",
                   )}
                 />
-                <button type="button" onClick={onIncrease} className="flex h-full w-10 items-center justify-center" aria-label="Artır">
+                <button type="button" onClick={onIncrease} className="flex h-full w-9 items-center justify-center" aria-label="Artır">
                   <Plus className="size-4" />
                 </button>
               </span>
@@ -362,13 +366,15 @@ export function StorefrontProductDetailView({
           <button
             type="button"
             onClick={onOpenCart}
+            aria-label="Sepete Git"
             className={cn(
-              "flex h-14 shrink-0 items-center justify-center rounded-2xl px-4 text-sm font-bold",
+              "flex h-14 shrink-0 items-center justify-center gap-1.5 rounded-2xl px-3.5 text-sm font-bold",
               compact ? "" : "sm:px-6",
               theme.primaryButton,
             )}
           >
-            Sepete Git →
+            <ShoppingCart className="size-5 shrink-0" />
+            <span className="hidden min-[400px]:inline">Sepete Git</span>
           </button>
         </div>
       );
@@ -393,7 +399,7 @@ export function StorefrontProductDetailView({
   }
 
   return (
-    <div data-commerce="detail" className={inlineVariantMode ? "pb-4" : "pb-28 lg:pb-4"}>
+    <div data-commerce="detail" className={inlineMobileAction ? "pb-4" : "pb-28 lg:pb-4"}>
       <div className="mb-4 flex flex-wrap items-center gap-2 text-sm">
         <button
           type="button"
@@ -821,7 +827,9 @@ export function StorefrontProductDetailView({
             </div>
           ) : null}
 
-          <div data-commerce-slot="detail-action" className={cn("mt-6", inlineVariantMode ? "block" : "hidden lg:block")}>{actionArea(false)}</div>
+          <div data-commerce-slot="detail-action" className={cn("mt-6", inlineMobileAction ? "block" : "hidden lg:block")}>
+            {actionArea(isMarketTenant ? true : false)}
+          </div>
         </div>
       </div>
 
@@ -850,7 +858,7 @@ export function StorefrontProductDetailView({
       ) : null}
 
       {/* Mobil: altta sabit sepete ekle (sayfa içi beden seçiminde yok) */}
-      {inlineVariantMode ? null : (
+      {inlineMobileAction ? null : (
         <div data-commerce-slot="detail-mobile-action" className={cn("fixed inset-x-0 bottom-0 z-40 border-t px-3.5 pb-[calc(env(safe-area-inset-bottom)+12px)] pt-3 lg:hidden", theme.surface, theme.border)}>
           {actionArea(true)}
         </div>

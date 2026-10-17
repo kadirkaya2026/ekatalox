@@ -344,7 +344,9 @@ export async function renderStorefrontHome({
   const featuredId = (sectorDesign?.themeId === "electronics-akim" || sectorDesign?.themeId === "food-kiler" || sectorDesign?.themeId === "textile-seri" || sectorDesign?.themeId === "hardware-depo" || sectorDesign?.themeId === "cosmetics-rituel" || sectorDesign?.themeId === "stationery-rota" || sectorDesign?.themeId === "packaging-tedarik" || sectorDesign?.themeId === "electricity-devre" || sectorDesign?.themeId === "homeware-istif" || sectorDesign?.themeId === "automotive-sevk" || sectorDesign?.themeId === "general-birim") ? (getDesignContent(sectorDesign) as AkimContent).featureProductId : "";
   const designProducts = featuredId && /^[0-9a-f-]{36}$/i.test(featuredId)
     ? (await getStorefrontProductsByIds({ ...pricingParams, ids: [featuredId] })).filter(p => !p.category_id || !hiddenCategoryIds.includes(p.category_id)) : [];
-  const footerVisible = viewSettings.is_footer_visible;
+  // Market mağazalarında sayfa altı yok (17 Eki 2026, Getir): iletişim ve yasal
+  // sayfalar Hesabım > Yardım'da (/yardim).
+  const footerVisible = viewSettings.is_footer_visible && tenant.business_type !== "market";
   const ads = await resolveStorefrontAds(tenant);
   const headersList = await headers();
   const requestHost = getRequestHostFromHeaders(headersList);

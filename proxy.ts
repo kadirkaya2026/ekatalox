@@ -586,7 +586,12 @@ export async function proxy(request: NextRequest) {
     // göstermez; kapıdan geçerse ISR kapı sayfası asıl adresi bilmediği için
     // ziyaretçiyi ana sayfaya atıyordu (şifre yenileme bağlantısı da bozulurdu).
     const isMemberPage =
-      (pathname === "/giris" || pathname === "/uye-ol" || pathname === "/hesabim" || pathname.startsWith("/hesabim/")) &&
+      (pathname === "/giris" ||
+        pathname === "/uye-ol" ||
+        pathname === "/hesabim" ||
+        pathname.startsWith("/hesabim/") ||
+        pathname === "/yardim" ||
+        pathname.startsWith("/yardim/")) &&
       (tenant?.business_type === "market" || Boolean(tenant?.is_tekel));
     if (
       pathname.startsWith("/siparis/") ||

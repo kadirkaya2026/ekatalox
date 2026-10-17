@@ -12,12 +12,15 @@ import {
   ChevronRight,
   Gift,
   Globe,
+  CircleHelp,
   KeyRound,
   LogOut,
+  Mail,
   MapPin,
   MessageCircle,
   PackageCheck,
   Pencil,
+  Phone,
   Plus,
   UserRound,
 } from "lucide-react";
@@ -165,6 +168,9 @@ export function MemberLoginPage(props: AuthPageProps) {
         </a>
       </Card>
       <GuestLink />
+      <a href="/yardim" className={cn("mt-3 block text-center text-sm font-semibold underline-offset-2 hover:underline", theme.textMuted)}>
+        {t("member.help")}
+      </a>
     </MemberShell>
   );
 }
@@ -303,6 +309,7 @@ export function MemberProfilePage(props: MemberProps & { whatsapp: string | null
         <MenuRow href="/hesabim/bilgilerim" icon={<UserRound className="size-5" />} label={t("member.myInfo")} />
         <MenuRow href="/hesabim/sifre" icon={<KeyRound className="size-5" />} label={t("member.changePassword")} />
         <MenuRow href="/hesabim/bildirimler" icon={<Bell className="size-5" />} label={t("member.notifications")} />
+        <MenuRow href="/yardim" icon={<CircleHelp className="size-5" />} label={t("member.help")} />
         <div className="flex items-center gap-3 px-4 py-3">
           <span className="flex size-6 items-center justify-center text-orange-600">
             <Globe className="size-5" />
@@ -651,6 +658,122 @@ export function MemberNotificationsPage(props: MemberProps) {
           </span>
         </button>
       </FormCard>
+    </MemberShell>
+  );
+}
+
+export type HelpSupport = {
+  phone: string | null;
+  whatsapp: string | null;
+  email: string | null;
+  address: string | null;
+  note: string;
+};
+
+// Hesabım > Yardım (17 Eki 2026, Getir örneği): açılır "Müşteri Hizmetleri" ve
+// mağazanın sayfaları (Hakkımızda, SSS, sözleşmeler). Giriş gerektirmez.
+export function MemberHelpPage(
+  props: BaseProps & { storeName: string; support: HelpSupport; links: Array<{ href: string; label: string }> },
+) {
+  const theme = useStorefrontTheme();
+  const { t } = useStorefrontLocale();
+  const [open, setOpen] = useState(true);
+  const { support } = props;
+  const rows = [
+    support.phone ? { icon: <Phone className="size-4" />, label: support.phone, href: `tel:${support.phone.replace(/\s/g, "")}` } : null,
+    support.whatsapp ? { icon: <MessageCircle className="size-4" />, label: t("member.whatsappWrite"), href: `https://wa.me/${support.whatsapp}` } : null,
+    support.email ? { icon: <Mail className="size-4" />, label: support.email, href: `mailto:${support.email}` } : null,
+    support.address ? { icon: <MapPin className="size-4" />, label: support.address, href: null } : null,
+  ].filter(Boolean) as Array<{ icon: ReactNode; label: string; href: string | null }>;
+
+  return (
+    <MemberShell {...props} title={t("member.help")} backHref="/hesabim">
+      <Card className="overflow-hidden">
+        <button type="button" onClick={() => setOpen((v) => !v)} className="flex w-full items-center gap-3 px-4 py-4 text-left">
+          <Phone className="size-5 shrink-0 text-orange-600" />
+          <span className="flex-1 text-[15px] font-semibold text-orange-700">
+            {props.storeName} {t("member.customerService")}
+          </span>
+          <span className="flex size-8 items-center justify-center rounded-full bg-orange-50 text-orange-600">
+            <ChevronRight className={cn("size-5 transition", open ? "-rotate-90" : "rotate-90")} />
+          </span>
+        </button>
+        {open ? (
+          <div className={cn("space-y-1 border-t px-4 py-3", theme.border)}>
+            {rows.length === 0 && !support.note ? <p className={cn("text-sm", theme.textMuted)}>{t("member.noContact")}</p> : null}
+            {rows.map((row) =>
+              row.href ? (
+                <a
+                  key={row.label}
+                  href={row.href}
+                  target={row.href.startsWith("http") ? "_blank" : undefined}
+                  rel={row.href.startsWith("http") ? "noreferrer" : undefined}
+                  className={cn("flex items-center gap-3 rounded-lg py-2 text-sm font-medium", theme.text)}
+                >
+                  <span className="text-orange-600">{row.icon}</span>
+                  {row.label}
+                </a>
+              ) : (
+                <p key={row.label} className={cn("flex items-start gap-3 py-2 text-sm", theme.text)}>
+                  <span className="mt-0.5 text-orange-600">{row.icon}</span>
+                  {row.label}
+                </p>
+              ),
+            )}
+            {support.note ? <p className={cn("whitespace-pre-line pt-1 text-sm leading-6", theme.textMuted)}>{support.note}</p> : null}
+          </div>
+        ) : null}
+      </Card>
+
+      {props.links.length ? (
+        <Card className={cn("mt-3 divide-y overflow-hidden", theme.border)}>
+          {props.links.map((link) => (
+            <a
+              key={link.href}
+              href={link.href}
+              className={cn("flex touch-manipulation items-center gap-3 px-4 py-4 text-[15px] active:bg-orange-50", theme.text, theme.border)}
+            >
+              <span className="flex-1">{link.label}</span>
+              <ChevronRight className={cn("size-5", theme.textMuted)} />
+            </a>
+          ))}
+        </Card>
+      ) : null}
+    </MemberShell>
+  );
+}
+
+export function MemberHelpArticlePage(props: BaseProps & { title: string; body: string }) {
+  const theme = useStorefrontTheme();
+  return (
+    <MemberShell {...props} title={props.title} backHref="/yardim">
+      <Card className="p-5">
+        <p className={cn("whitespace-pre-line text-[15px] leading-7", theme.text)}>{props.body}</p>
+      </Card>
+    </MemberShell>
+  );
+}
+
+export function MemberHelpFaqPage(props: BaseProps & { title: string; items: Array<{ q: string; a: string }> }) {
+  const theme = useStorefrontTheme();
+  const [openIndex, setOpenIndex] = useState<number | null>(0);
+  return (
+    <MemberShell {...props} title={props.title} backHref="/yardim">
+      <Card className={cn("divide-y overflow-hidden", theme.border)}>
+        {props.items.map((item, index) => (
+          <div key={item.q} className={theme.border}>
+            <button
+              type="button"
+              onClick={() => setOpenIndex((current) => (current === index ? null : index))}
+              className="flex w-full items-center gap-3 px-4 py-4 text-left"
+            >
+              <span className={cn("flex-1 text-[15px] font-medium", theme.text)}>{item.q}</span>
+              <ChevronRight className={cn("size-5 shrink-0 text-orange-600 transition", openIndex === index ? "-rotate-90" : "rotate-90")} />
+            </button>
+            {openIndex === index ? <p className={cn("whitespace-pre-line px-4 pb-4 text-sm leading-6", theme.textMuted)}>{item.a}</p> : null}
+          </div>
+        ))}
+      </Card>
     </MemberShell>
   );
 }
