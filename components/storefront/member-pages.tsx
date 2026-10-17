@@ -18,8 +18,10 @@ import {
   MessageCircle,
   PackageCheck,
   Pencil,
+  Plus,
   UserRound,
 } from "lucide-react";
+import { AddressForm, useMemberAddresses, type MemberAddress } from "@/components/storefront/market-checkout";
 import { MemberAuthForm, type StoreMemberProfile } from "@/components/storefront/member-auth";
 import { OrderSections, type OrderRow } from "@/components/storefront/my-orders-view";
 import { StorefrontBottomNav } from "@/components/storefront/storefront-bottom-nav";
@@ -455,24 +457,104 @@ export function MemberInfoPage(props: MemberProps) {
 }
 
 export function MemberAddressPage(props: MemberProps) {
+  const theme = useStorefrontTheme();
   const { t } = useStorefrontLocale();
-  const field = useFieldClass();
-  const [address, setAddress] = useState(props.member.address);
-  const { pending, msg, save } = useMemberSave(props.subdomain, props.member);
+  const { addresses, setAddresses } = useMemberAddresses(props.subdomain, true);
+  const [editing, setEditing] = useState<MemberAddress | "new" | null>(null);
+  const [pendingId, setPendingId] = useState<string | null>(null);
+
+  const mutate = async (method: "PATCH" | "DELETE", id: string) => {
+    setPendingId(id);
+    try {
+      const url =
+        method === "DELETE"
+          ? `/api/storefront/member/addresses?subdomain=${encodeURIComponent(props.subdomain)}&id=${encodeURIComponent(id)}`
+          : "/api/storefront/member/addresses";
+      const r = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: method === "PATCH" ? JSON.stringify({ subdomain: props.subdomain, id, make_default: true }) : undefined,
+      });
+      const d = (await r.json().catch(() => null)) as { addresses?: MemberAddress[] } | null;
+      if (d?.addresses) setAddresses(d.addresses);
+    } finally {
+      setPendingId(null);
+    }
+  };
+
   return (
     <MemberShell {...props} title={t("member.myAddress")} backHref="/hesabim">
-      <FormCard
-        pending={pending}
-        msg={msg}
-        onSubmit={(e) => {
-          e.preventDefault();
-          void save({ address });
-        }}
-      >
-        <Field label={t("member.address")}>
-          <textarea rows={4} className={cn(field, "resize-none")} value={address} onChange={(e) => setAddress(e.target.value)} autoComplete="street-address" />
-        </Field>
-      </FormCard>
+      {addresses === null ? (
+        <p className={cn("py-10 text-center text-sm", theme.textMuted)}>{t("orders.loading")}</p>
+      ) : (
+        <div className="space-y-3">
+          {addresses.map((a) =>
+            editing !== "new" && editing?.id === a.id ? (
+              <AddressForm
+                key={a.id}
+                subdomain={props.subdomain}
+                initial={a}
+                onSaved={(list) => {
+                  setAddresses(list);
+                  setEditing(null);
+                }}
+                onCancel={() => setEditing(null)}
+              />
+            ) : (
+              <Card key={a.id} className="p-4">
+                <div className="flex items-start gap-3">
+                  <MapPin className="mt-0.5 size-5 shrink-0 text-orange-600" />
+                  <div className="min-w-0 flex-1">
+                    <p className={cn("text-[15px] font-semibold", theme.text)}>
+                      {a.title}
+                      {a.is_default ? (
+                        <span className="ml-2 rounded-full bg-orange-50 px-2 py-0.5 text-[11px] font-semibold text-orange-700">
+                          {t("checkout.address.primary")}
+                        </span>
+                      ) : null}
+                    </p>
+                    <p className={cn("mt-0.5 text-sm", theme.textMuted)}>{a.address}</p>
+                  </div>
+                </div>
+                <div className="mt-3 flex flex-wrap gap-2 pl-8">
+                  <button type="button" onClick={() => setEditing(a)} className="text-sm font-semibold text-orange-600">
+                    {t("member.edit")}
+                  </button>
+                  {a.is_default ? null : (
+                    <button type="button" disabled={pendingId === a.id} onClick={() => void mutate("PATCH", a.id)} className={cn("text-sm font-semibold", theme.text)}>
+                      · {t("member.makePrimary")}
+                    </button>
+                  )}
+                  <button type="button" disabled={pendingId === a.id} onClick={() => void mutate("DELETE", a.id)} className="text-sm font-semibold text-rose-600">
+                    · {t("member.delete")}
+                  </button>
+                </div>
+              </Card>
+            ),
+          )}
+          {editing === "new" ? (
+            <AddressForm
+              subdomain={props.subdomain}
+              onSaved={(list) => {
+                setAddresses(list);
+                setEditing(null);
+              }}
+              onCancel={() => setEditing(null)}
+            />
+          ) : (
+            <button
+              type="button"
+              onClick={() => setEditing("new")}
+              className={cn("flex w-full items-center gap-3 rounded-2xl border px-4 py-4 text-left shadow-sm", theme.border, theme.surface)}
+            >
+              <span className="flex size-10 items-center justify-center rounded-xl bg-orange-50 text-orange-600">
+                <Plus className="size-5" />
+              </span>
+              <span className={cn("text-[15px] font-semibold", theme.text)}>{t("checkout.address.add")}</span>
+            </button>
+          )}
+        </div>
+      )}
     </MemberShell>
   );
 }

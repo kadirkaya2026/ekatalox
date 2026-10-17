@@ -203,3 +203,35 @@ export const memberProfileSchema = z.object({
 export function hashResetToken(token: string) {
   return createHash("sha256").update(token).digest("hex");
 }
+
+export type StoreMemberAddress = { id: string; title: string; address: string; is_default: boolean };
+
+export const MAX_MEMBER_ADDRESSES = 10;
+
+export async function listMemberAddresses(supabase: SupabaseClient, memberId: string): Promise<StoreMemberAddress[]> {
+  const { data } = await supabase
+    .from("store_member_addresses")
+    .select("id, title, address, is_default")
+    .eq("member_id", memberId)
+    .order("is_default", { ascending: false })
+    .order("created_at", { ascending: true });
+  return (data ?? []) as StoreMemberAddress[];
+}
+
+/**
+ * Kayıtlı adresi olmayan üyenin ilk siparişindeki adres ana adres ("Ev") olur
+ * (Getir mantığı, 17 Eki 2026). Adresi zaten varsa dokunulmaz.
+ */
+export async function saveFirstOrderAddress(supabase: SupabaseClient, member: StoreMember, address: string) {
+  const text = address.trim();
+  if (!text) return;
+  const { count } = await supabase
+    .from("store_member_addresses")
+    .select("id", { count: "exact", head: true })
+    .eq("member_id", member.id);
+  if (count) return;
+  await supabase
+    .from("store_member_addresses")
+    .insert({ member_id: member.id, tenant_id: member.tenant_id, title: "Ev", address: text, is_default: true });
+  await supabase.from("store_members").update({ address: text }).eq("id", member.id);
+}

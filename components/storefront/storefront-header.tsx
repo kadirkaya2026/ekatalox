@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import { CategoryScrollFrame } from "@/components/storefront/enhanced-nav-cues";
 import { AnimatePresence, motion } from "framer-motion";
-import { ChevronDown, PackageSearch, Search, ShoppingCart, Store, Ticket, UserRound } from "lucide-react";
+import { ChevronDown, PackageSearch, Search, ShoppingBasket, ShoppingCart, Store, Ticket, UserRound } from "lucide-react";
 import type { CategoryNode } from "@/lib/categories/tree";
 import type { Category } from "@/lib/types";
 import type { CurrencyCode } from "@/lib/products/constants";
@@ -140,8 +140,28 @@ function HeaderActions({
           <OrderTrackingBadge count={unseenOrderUpdates} />
         </a>
       ) : null}
-      <StorefrontLanguageSwitcher />
-      {/* Market mobilde sağ üstte yalnız dil seçimi (17 Eki 2026, kullanıcı isteği). */}
+      {props.hideSearchAndCart ? (
+        // Market mobil (17 Eki 2026, Getir örneği): sağ üstte sepet tutarı; sepet
+        // boşken görünmez. Dil seçimi Hesabım > Dil Seçenekleri'nde.
+        props.cartLength ? (
+          <button
+            type="button"
+            onClick={props.onOpenCart}
+            className="flex h-10 items-stretch overflow-hidden rounded-xl border border-orange-200 bg-white shadow-sm"
+            aria-label={t("header.openCartAria")}
+          >
+            <span className="flex items-center bg-orange-50 px-2.5 text-orange-600">
+              <ShoppingBasket className="size-5" />
+            </span>
+            <span className="flex items-center px-3 text-sm font-bold tabular-nums text-orange-600">
+              {formatCurrency(props.cartTotalEntries[0]?.total ?? props.cartTotal, props.cartTotalEntries[0]?.currency ?? props.cartCurrency)}
+            </span>
+          </button>
+        ) : null
+      ) : (
+        <StorefrontLanguageSwitcher />
+      )}
+      {/* Market mobilde gece/gündüz düğmesi yok (17 Eki 2026, kullanıcı isteği). */}
       {props.storefrontSettings.is_theme_toggle_visible !== false && !props.hideSearchAndCart ? (
         <StorefrontThemeToggle />
       ) : null}

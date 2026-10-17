@@ -155,6 +155,12 @@ export async function POST(request: Request) {
       console.error("[member] kayıt hatası:", error);
       return NextResponse.json({ error: "Üyelik oluşturulamadı, tekrar deneyin." }, { status: 500 });
     }
+    // Kayıtta yazılan adres ana adres ("Ev") olur (0181).
+    if (profile.data.address) {
+      await supabase
+        .from("store_member_addresses")
+        .insert({ member_id: row.id, tenant_id: tenant.id, title: "Ev", address: profile.data.address, is_default: true });
+    }
     // Eski siparişler yalnız bu cihazın takip kodlarıyla bağlanır; numara
     // aynı diye başkasının siparişi hesaba gelmez.
     await claimGuestOrders(supabase, tenant.id, row.id, sanitizeTrackingTokens(body.guest_tokens));

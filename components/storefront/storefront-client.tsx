@@ -1634,6 +1634,8 @@ export function StorefrontClient({
   // Hesabım sekmesindeki kırmızı sayaç: üyenin görmediği sipariş güncellemeleri.
   const memberOrderUpdates = useUnseenOrderUpdates(membershipEnabled ? analyticsSubdomain : undefined);
   const [appliedMemberId, setAppliedMemberId] = useState<string | null>(null);
+  // Market son adımı: üyeliksiz müşteri "Üye olmadan devam et"e basınca ad/telefon/adres açılır.
+  const [guestCheckoutChosen, setGuestCheckoutChosen] = useState(false);
   if ((storeMember.member?.id ?? null) !== appliedMemberId) {
     const m = storeMember.member;
     setAppliedMemberId(m?.id ?? null);
@@ -5563,6 +5565,16 @@ export function StorefrontClient({
               onAdd={addDealerAddress}
             />
           ) : undefined
+        }
+        marketCheckout={
+          membershipEnabled && isMarketTenant
+            ? {
+                subdomain: analyticsSubdomain,
+                member: storeMember.member,
+                guestChosen: guestCheckoutChosen,
+                onChooseGuest: () => setGuestCheckoutChosen(true),
+              }
+            : undefined
         }
         memberSlot={
           membershipEnabled && storeMember.loaded ? (

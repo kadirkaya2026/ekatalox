@@ -58,6 +58,15 @@ import { StorefrontImage } from "@/components/storefront/storefront-image";
 import { variantColorDot } from "@/components/storefront/pilot-variant-grid";
 import { ProductImagePlaceholder } from "@/components/product-image-placeholder";
 import { CartQuantityInput } from "@/components/storefront/cart-quantity-input";
+import type { StoreMemberProfile } from "@/components/storefront/member-auth";
+import {
+  CartItemsSection,
+  CheckoutSection,
+  GuestEntrySection,
+  MemberAddressSection,
+  OrderNoteSection,
+  PaymentMethodSection,
+} from "@/components/storefront/market-checkout";
 
 export type StorefrontCartDrawerProps = {
   /** Pilot sepet özeti (lib/storefront/pilot.ts) */
@@ -106,6 +115,13 @@ export type StorefrontCartDrawerProps = {
   dealerSlot?: ReactNode;
   /** Market/tekel üyeliği (0180): bilgi alanlarının üstünde "Giriş yap / Üye ol / Üyeliksiz devam" kutusu. */
   memberSlot?: ReactNode;
+  /** Market son adımı Getir "Ödeme Yap" düzeninde (17 Eki 2026): üye/adres bilgisi. */
+  marketCheckout?: {
+    subdomain: string;
+    member: StoreMemberProfile | null;
+    guestChosen: boolean;
+    onChooseGuest: () => void;
+  };
   orderNoteError: string | null;
   setOrderNoteError: (value: string | null) => void;
   /** Teslim tarihi (0155): en erken seçilebilir gün; null = alan yok. */
@@ -203,6 +219,7 @@ export function StorefrontCartDrawer({
   dealerLabel = null,
   dealerSlot,
   memberSlot,
+  marketCheckout,
   orderNoteError,
   setOrderNoteError,
   deliveryDateMin = null,
@@ -437,6 +454,13 @@ export function StorefrontCartDrawer({
   const hasCheckoutFieldError = Boolean(
     paymentMethodError || customerReferenceNameError || customerAddressError || customerPhoneError,
   );
+  // Market son adımı: üyeliksiz müşteri "Üye olmadan devam et"e basmadan
+  // Sipariş Ver'e basarsa eksik alanlar görünsün diye form açılır.
+  useEffect(() => {
+    if (hasCheckoutFieldError && marketCheckout && !marketCheckout.member && !marketCheckout.guestChosen) {
+      marketCheckout.onChooseGuest();
+    }
+  }, [hasCheckoutFieldError, marketCheckout]);
   const [prevFieldError, setPrevFieldError] = useState(hasCheckoutFieldError);
   if (hasCheckoutFieldError !== prevFieldError) {
     setPrevFieldError(hasCheckoutFieldError);
@@ -1210,6 +1234,63 @@ cartFormConfig.customer_address.is_visible ? (
     </div>
     ) : null;
 
+  // Market son adımı (Getir "Ödeme Yap"): adres → not → ödeme yöntemi →
+  // kampanyalar → sepet özeti → ödeme özeti; alt barda yalnız "Sipariş Ver | tutar".
+  const renderMarketCheckout = (mc: NonNullable<StorefrontCartDrawerProps["marketCheckout"]>) => (
+    <div className="space-y-5 pb-2">
+      {mc.member ? (
+        <MemberAddressSection
+          subdomain={mc.subdomain}
+          member={mc.member}
+          selectedAddress={customerAddress}
+          onUseAddress={(value) => {
+            setCustomerAddress(value);
+            setCustomerAddressError(null);
+          }}
+          error={customerAddressError || customerReferenceNameError || customerPhoneError}
+          anchorRef={addressFieldRef}
+        />
+      ) : (
+        <GuestEntrySection guestChosen={mc.guestChosen} onChooseGuest={mc.onChooseGuest}>
+          {getOrderedCartFormFieldKeys(cartFormConfig).map((key) => (
+            <Fragment key={key}>{contactFieldRenderers[key]()}</Fragment>
+          ))}
+        </GuestEntrySection>
+      )}
+      {renderDeliveryDatePanel()}
+      {cartFormConfig.order_note.is_visible ? (
+        <OrderNoteSection
+          title={cartFormConfig.order_note.label ?? t(isTekel ? "cart.orderNotePickup" : "cart.orderNote")}
+          note={note}
+          onChange={(value) => {
+            setNote(value);
+            setOrderNoteError(null);
+          }}
+          error={orderNoteError}
+          placeholder={t(isTekel ? "cart.orderNotePlaceholderPickup" : "cart.orderNotePlaceholder")}
+        />
+      ) : null}
+      {checkoutMethods.length ? (
+        <PaymentMethodSection
+          methods={checkoutMethods}
+          selected={selectedPaymentMethod}
+          onSelect={(method) => {
+            setSelectedPaymentMethod(method);
+            setSelectedInstallmentCount(null);
+            setPaymentMethodError(null);
+          }}
+          error={paymentMethodError}
+          anchorRef={paymentFieldRef}
+        />
+      ) : null}
+      {!isCatalogOnly ? <div className="empty:hidden">{renderCampaignBars()}</div> : null}
+      <CartItemsSection items={cart} />
+      <CheckoutSection title={t("checkout.paymentSummary")}>
+        <div className="-m-1.5">{renderSummaryBox()}</div>
+      </CheckoutSection>
+    </div>
+  );
+
   // Öneri şeridi — eski tek sayfalı düzende sepetin altında yatay kayan şerit.
   const renderInlineSuggestions = () =>
     suggestedList.length ? (
@@ -1287,6 +1368,16 @@ cartFormConfig.customer_address.is_visible ? (
   // küçük, satır araları dar (kullanıcı isteği, 4 Eyl 2026). Toptancı/genel
   // tipte eski ölçüler korunur.
   const sc = useStepFlow;
+  const marketCheckoutActive = Boolean(marketCheckout) && useStepFlow && step === 3 && cart.length > 0 && !sentOrder;
+  const grandTotalLabel = isCatalogOnly
+    ? null
+    : cartPaymentSummary
+      ? formatCurrency(cartPaymentSummary.finalTotal, cartPaymentSummary.currency)
+      : cartDiscountSummary
+        ? formatCurrency(cartDiscountSummary.totalAfterDiscount, cartDiscountSummary.currency)
+        : cartTotalEntries.length <= 1
+          ? formatCurrency(cartTotal + deliveryFeeAmount, cartCurrency)
+          : null;
   const sumGapCls = sc ? "space-y-1.5" : "space-y-2.5";
   const sumLabelCls = sc ? "text-[12.5px] font-medium" : "text-sm font-medium";
   const sumSideValueCls = sc
@@ -1678,6 +1769,26 @@ cartFormConfig.customer_address.is_visible ? (
           )
         )}
       </div>
+    ) : marketCheckoutActive ? (
+      // Getir alt barı: solda "Sipariş Ver", sağda toplam tutar.
+      <button
+        type="button"
+        onClick={opts.onCta}
+        disabled={!canCompleteWhatsAppOrder}
+        className={cn(
+          "flex h-14 w-full items-stretch overflow-hidden rounded-2xl text-base font-bold shadow-sm",
+          !canCompleteWhatsAppOrder && "pointer-events-none opacity-50",
+        )}
+      >
+        <span className={cn("flex flex-[1.4] items-center justify-center", stickyCartButtonClassName, "rounded-none")}>
+          {isGeneratingOrderPdf ? t("cart.pdfPreparing") : t("checkout.placeOrder")}
+        </span>
+        {grandTotalLabel ? (
+          <span className={cn("flex flex-1 items-center justify-center border px-3 text-lg tabular-nums text-orange-600", theme.border, theme.surface, "rounded-r-2xl")}>
+            {grandTotalLabel}
+          </span>
+        ) : null}
+      </button>
     ) : (
       <Button
         type="button"
@@ -1811,6 +1922,8 @@ cartFormConfig.customer_address.is_visible ? (
                       </div>
                     ) : step === 2 ? (
                       renderStepSuggestions()
+                    ) : marketCheckout ? (
+                      renderMarketCheckout(marketCheckout)
                     ) : (
                       <div className="space-y-4">
                         {renderPaymentPanel()}
@@ -1943,7 +2056,7 @@ cartFormConfig.customer_address.is_visible ? (
                   ) : (
                     <>
                       {renderFreeDeliveryHint()}
-                      <div data-commerce-slot="cart-summary">{renderSummaryBox()}</div>
+                      {marketCheckoutActive ? null : <div data-commerce-slot="cart-summary">{renderSummaryBox()}</div>}
                       {renderFooterNotices()}
 
                       {twoStepFlow &&
