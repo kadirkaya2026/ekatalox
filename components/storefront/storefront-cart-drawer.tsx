@@ -104,6 +104,8 @@ export type StorefrontCartDrawerProps = {
   dealerLabel?: string | null;
   /** Hesabım açık tenantlarda (8 Eki 2026) kayıtlı adres seçici; verilirse dealerLabel notunun yerine geçer. */
   dealerSlot?: ReactNode;
+  /** Market/tekel üyeliği (0180): bilgi alanlarının üstünde "Giriş yap / Üye ol / Üyeliksiz devam" kutusu. */
+  memberSlot?: ReactNode;
   orderNoteError: string | null;
   setOrderNoteError: (value: string | null) => void;
   /** Teslim tarihi (0155): en erken seçilebilir gün; null = alan yok. */
@@ -200,6 +202,7 @@ export function StorefrontCartDrawer({
   cartFormConfig,
   dealerLabel = null,
   dealerSlot,
+  memberSlot,
   orderNoteError,
   setOrderNoteError,
   deliveryDateMin = null,
@@ -803,7 +806,7 @@ cartFormConfig.customer_phone.is_visible ? (
           {customerPhoneError ? (
             <p className={cn("mt-2 text-xs font-medium", theme.dangerText)}>{customerPhoneError}</p>
           ) : null}
-          <p className={cn("mt-2 text-xs", theme.textMuted)}>{t("cart.customerPhoneAutofillHint")}</p>
+          {memberSlot ? null : <p className={cn("mt-2 text-xs", theme.textMuted)}>{t("cart.customerPhoneAutofillHint")}</p>}
         </div>
       ) : null,
     customer_name: () =>
@@ -1090,6 +1093,7 @@ cartFormConfig.customer_address.is_visible ? (
           yazılır.
         </p>
       ) : null}
+      {memberSlot}
       {getOrderedCartFormFieldKeys(cartFormConfig).map((key) => (
         <Fragment key={key}>{contactFieldRenderers[key]()}</Fragment>
       ))}

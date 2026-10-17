@@ -1,5 +1,5 @@
-// Müşterinin telefon numarasıyla sipariş listesi (başlıktaki "Sipariş Takip"
-// ikonu). Girişsiz; proxy.ts şifre/yaş/kota kapılarından önce buraya yazar.
+// Başlıktaki "Sipariş Takip" ikonu. Market/tekel: üye girişi + siparişler
+// (0180); toptancı takip mağazaları: telefon numarasıyla liste. Girişsiz; proxy.ts şifre/yaş/kota kapılarından önce buraya yazar.
 export const dynamic = "force-dynamic";
 
 import type { Metadata } from "next";
@@ -8,9 +8,13 @@ import { MyOrdersView } from "@/components/storefront/my-orders-view";
 import { getStorefrontTenantCached, getTenantStorefrontSettings } from "@/lib/data";
 import { getAppearanceFromSettings } from "@/lib/storefront/appearance";
 import { StorefrontLocaleProvider } from "@/lib/storefront/locale-context";
+import { hasStoreMembership } from "@/lib/storefront/member";
 import { buildStorefrontIcons, buildStorefrontTitle, hasOrderTracking } from "@/lib/storefront/white-label";
 
-type MyOrdersPageProps = { params: Promise<{ subdomain: string }> };
+type MyOrdersPageProps = {
+  params: Promise<{ subdomain: string }>;
+  searchParams: Promise<{ sifirla?: string | string[] }>;
+};
 
 export async function generateMetadata(props: MyOrdersPageProps): Promise<Metadata> {
   const { subdomain } = await props.params;
@@ -29,6 +33,7 @@ export default async function MyOrdersPage(props: MyOrdersPageProps) {
   const tenant = await getStorefrontTenantCached(subdomain);
   if (!tenant || tenant.status !== "active" || !hasOrderTracking(tenant)) notFound();
   const settings = await getTenantStorefrontSettings(tenant.id);
+  const { sifirla } = await props.searchParams;
 
   return (
     <StorefrontLocaleProvider
@@ -41,6 +46,8 @@ export default async function MyOrdersPage(props: MyOrdersPageProps) {
         tenantName={settings.storefront_title?.trim() || tenant.company_name}
         logoUrl={settings.logo_url ?? null}
         isTekel={Boolean(tenant.is_tekel)}
+        membership={hasStoreMembership(tenant)}
+        resetToken={typeof sifirla === "string" ? sifirla : null}
         appearance={getAppearanceFromSettings(settings)}
       />
     </StorefrontLocaleProvider>

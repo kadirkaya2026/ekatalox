@@ -137,7 +137,8 @@ import { StorefrontCampaignsSheet } from "@/components/storefront/storefront-cam
 import { StorefrontSearchSheet } from "@/components/storefront/storefront-search-sheet";
 import { hasAccountPage, hasEnhancedNavCues, hasOrderTracking, isMarketOrTekelTenant } from "@/lib/storefront/white-label";
 import { ProminentLoadMoreButton } from "@/components/storefront/enhanced-nav-cues";
-import { readPushIdentity, readTrackingPhone, saveTrackingPhone } from "@/lib/storefront/tracking-phone";
+import { readPushIdentity, readTrackingPhone, saveGuestOrderToken, saveTrackingPhone } from "@/lib/storefront/tracking-phone";
+import { CartMemberBox, useStoreMember } from "@/components/storefront/member-auth";
 import { getCampaignPushStatus } from "@/lib/push/client";
 import { validateCustomerPhoneInput } from "@/lib/storefront/customer-phone";
 import { StorefrontCouponBanner } from "@/components/storefront/storefront-coupon-banner";
@@ -1523,10 +1524,9 @@ export function StorefrontClient({
     return () => window.clearTimeout(timer);
   }, [cart]);
 
-  // Daha önce sipariş vermiş bir müşteri telefon numarasını tekrar
-  // yazdığında isim/adresi otomatik doldurur (bkz. /api/storefront/customer-lookup).
-  // Sadece market tenant'larda ve sadece boş alanlar doldurulur — müşteri
-  // manuel bir şey yazdıysa üzerine yazılmaz.
+  // Telefona özel kuponu getirir (bkz. /api/storefront/customer-lookup). Ad/adres
+  // 17 Eki 2026'dan beri numarayla DÖNMEZ (başkasının adresi görünüyordu);
+  // otomatik doldurma yalnız giriş yapmış üyeye (useStoreMember, aşağıda).
   const debouncedCustomerPhoneForLookup = useDebouncedValue(customerPhone, 500);
   const lastLookedUpPhoneRef = useRef<string | null>(null);
 
@@ -1606,6 +1606,21 @@ export function StorefrontClient({
     if (saved) setCustomerPhone((current) => (current.trim() ? current : saved));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isMarketTenant]);
+
+  // Market/tekel üyeliği (0180): giriş yapmış üyenin ad/telefon/adresi sepete
+  // dolar, sipariş hesabına bağlanır. Üye değişince (giriş/çıkış) bir kez uygulanır.
+  const membershipEnabled = isMarketOrTekelTenant(tenant) && !previewMode && !dealerProfile;
+  const storeMember = useStoreMember(analyticsSubdomain, membershipEnabled);
+  const [appliedMemberId, setAppliedMemberId] = useState<string | null>(null);
+  if ((storeMember.member?.id ?? null) !== appliedMemberId) {
+    const m = storeMember.member;
+    setAppliedMemberId(m?.id ?? null);
+    if (m) {
+      if (m.full_name) setCustomerReferenceName(m.full_name);
+      setCustomerPhone(m.phone);
+      if (m.address) setCustomerAddress(m.address);
+    }
+  }
 
   useEffect(() => {
     if (previewMode || !orderTrackingEnabled) return;
@@ -3116,6 +3131,8 @@ export function StorefrontClient({
       // Sipariş kaydedildi: bu numara takip sayfasına "giriş yapmış" olur.
       // Başka numarayla sipariş verilirse üzerine yazılır.
       if (orderTrackingEnabled && customerPhone.trim()) saveTrackingPhone(customerPhone);
+      // Üyeliksiz sipariş bu cihazdan takip edilebilsin (numarayla sorgu kapalı, 0180).
+      if (orderTrackingEnabled) saveGuestOrderToken(trackingUrl);
     } catch (error) {
       const apiError =
         error instanceof OrderPdfRequestError && error.apiError?.trim()
@@ -5504,6 +5521,17 @@ export function StorefrontClient({
               selectedId={dealerAddressId}
               onSelect={setDealerAddressId}
               onAdd={addDealerAddress}
+            />
+          ) : undefined
+        }
+        memberSlot={
+          membershipEnabled && storeMember.loaded ? (
+            <CartMemberBox
+              subdomain={analyticsSubdomain}
+              member={storeMember.member}
+              defaultPhone={customerPhone}
+              onAuthed={storeMember.setMember}
+              onLogout={() => void storeMember.logout()}
             />
           ) : undefined
         }

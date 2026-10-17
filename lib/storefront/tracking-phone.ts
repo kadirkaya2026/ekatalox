@@ -101,3 +101,53 @@ export function readPushIdentity(): { name: string; phone: string } | null {
     return null;
   }
 }
+
+// Üyeliksiz siparişlerin takip kodları (0180, 17 Eki 2026): numarayla sorgu
+// kapandığı için üyeliksiz müşteri bu cihazdan verdiği siparişleri bu
+// kodlarla görür; üye olunca/giriş yapınca bu siparişler hesabına bağlanır.
+const GUEST_ORDERS_KEY = "ekx-guest-orders";
+const TOKEN_RE = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i;
+
+export function readGuestOrderTokens(): string[] {
+  try {
+    const parsed = JSON.parse(window.localStorage.getItem(GUEST_ORDERS_KEY) ?? "[]") as unknown;
+    return Array.isArray(parsed) ? parsed.filter((t): t is string => typeof t === "string" && TOKEN_RE.test(t)) : [];
+  } catch {
+    return [];
+  }
+}
+
+/** Takip linkinden (…/siparis/<uuid>) ya da doğrudan koddan kaydeder. */
+export function saveGuestOrderToken(trackingUrlOrToken: string | null | undefined) {
+  const token = trackingUrlOrToken?.match(TOKEN_RE)?.[0]?.toLowerCase();
+  if (!token) return;
+  try {
+    const next = [token, ...readGuestOrderTokens().filter((t) => t !== token)].slice(0, 50);
+    window.localStorage.setItem(GUEST_ORDERS_KEY, JSON.stringify(next));
+    window.dispatchEvent(new Event("ekx-track-phone-changed"));
+  } catch {
+    /* özel pencere / depolama kapalı */
+  }
+}
+
+// Üye girişi ipucu: oturum çerezi HttpOnly olduğu için istemci okuyamaz; başlık
+// rozeti yalnız giriş yapmış ya da cihazda siparişi olan ziyaretçide sorgu atsın.
+const MEMBER_HINT_KEY = "ekx-member-signed-in";
+
+export function setMemberSignedInHint(signedIn: boolean) {
+  try {
+    if (signedIn) window.localStorage.setItem(MEMBER_HINT_KEY, "1");
+    else window.localStorage.removeItem(MEMBER_HINT_KEY);
+    window.dispatchEvent(new Event("ekx-track-phone-changed"));
+  } catch {
+    /* yok say */
+  }
+}
+
+export function readMemberSignedInHint() {
+  try {
+    return window.localStorage.getItem(MEMBER_HINT_KEY) === "1";
+  } catch {
+    return false;
+  }
+}

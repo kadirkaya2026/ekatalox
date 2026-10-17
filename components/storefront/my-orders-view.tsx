@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState, type FormEvent } from "react";
-import { Bell, ChevronRight, History, PackageSearch, Phone, Radar } from "lucide-react";
+import { Bell, ChevronRight, History, LogOut, PackageSearch, Phone, Radar, UserRound } from "lucide-react";
+import { MemberAuthForm, useStoreMember, type StoreMemberProfile } from "@/components/storefront/member-auth";
 import { StorefrontSubpageShell } from "@/components/storefront/storefront-subpage-shell";
 import {
   StorefrontThemeProvider,
@@ -14,7 +15,13 @@ import type { CurrencyCode } from "@/lib/products/constants";
 import type { OrderStatus } from "@/lib/types";
 import { getStatusLabel } from "@/lib/orders/status";
 import { normalizeCustomerPhone } from "@/lib/storefront/customer-phone";
-import { clearTrackingPhone, markSeen, readTrackingPhone, saveTrackingPhone } from "@/lib/storefront/tracking-phone";
+import {
+  clearTrackingPhone,
+  markSeen,
+  readGuestOrderTokens,
+  readTrackingPhone,
+  saveTrackingPhone,
+} from "@/lib/storefront/tracking-phone";
 
 interface OrderRow {
   id: string;
@@ -48,6 +55,45 @@ function displayNo(o: Pick<OrderRow, "order_no" | "order_number">) {
 
 function fmtDate(iso: string) {
   return new Date(iso).toLocaleString("tr-TR", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
+}
+
+function OrderCard({ o, isTekel }: { o: OrderRow; isTekel: boolean }) {
+  const theme = useStorefrontTheme();
+  const { t } = useStorefrontLocale();
+  const text = theme.text;
+  const muted = theme.textMuted;
+  const inner = (
+    <>
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className={cn("text-base font-semibold", text)}>{displayNo(o)}</p>
+          <p className={cn("mt-0.5 text-xs", muted)}>{fmtDate(o.created_at)}</p>
+        </div>
+        <span className={cn("inline-flex shrink-0 items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold", theme.border, text)}>
+          <span className={cn("size-2 rounded-full", STATUS_DOT[o.status])} />
+          {getStatusLabel(o.status, { isTekel })}
+        </span>
+      </div>
+      <p className={cn("mt-3 line-clamp-2 text-sm", muted)}>
+        {o.preview.length ? `${o.preview.join(", ")}${o.item_count > o.preview.length ? "…" : ""}` : `${o.item_count} ${t("orders.items")}`}
+      </p>
+      <div className={cn("mt-3 flex items-center justify-between gap-3 border-t pt-3", theme.border)}>
+        <span className={cn("text-xs", muted)}>{o.item_count} {t("orders.items")}</span>
+        <span className="flex items-center gap-2">
+          <span className={cn("text-sm font-bold tabular-nums", o.status === "cancelled" ? cn("line-through", muted) : text)}>
+            {o.currency === "CATALOG" ? "—" : formatCurrency(o.total_amount, o.currency as CurrencyCode)}
+          </span>
+          {o.tracking_token ? <ChevronRight className={cn("size-4", muted)} /> : null}
+        </span>
+      </div>
+    </>
+  );
+  const cls = cn("block rounded-2xl border p-4 transition", theme.border, theme.surface, o.tracking_token && "hover:-translate-y-0.5 hover:shadow-md");
+  return o.tracking_token ? (
+    <a href={`/siparis/${o.tracking_token}`} className={cls} title={t("orders.detail")}>{inner}</a>
+  ) : (
+    <div className={cls}>{inner}</div>
+  );
 }
 
 function MyOrdersCard({ subdomain, tenantName, logoUrl, isTekel }: { subdomain: string; tenantName: string; logoUrl: string | null; isTekel: boolean }) {
@@ -117,40 +163,7 @@ function MyOrdersCard({ subdomain, tenantName, logoUrl, isTekel }: { subdomain: 
   const active = (orders ?? []).filter((o) => o.status !== "delivered" && o.status !== "cancelled");
   const past = (orders ?? []).filter((o) => o.status === "delivered" || o.status === "cancelled");
 
-  const renderOrder = (o: OrderRow) => {
-    const inner = (
-      <>
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <p className={cn("text-base font-semibold", text)}>{displayNo(o)}</p>
-            <p className={cn("mt-0.5 text-xs", muted)}>{fmtDate(o.created_at)}</p>
-          </div>
-          <span className={cn("inline-flex shrink-0 items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold", theme.border, text)}>
-            <span className={cn("size-2 rounded-full", STATUS_DOT[o.status])} />
-            {getStatusLabel(o.status, { isTekel })}
-          </span>
-        </div>
-        <p className={cn("mt-3 line-clamp-2 text-sm", muted)}>
-          {o.preview.length ? `${o.preview.join(", ")}${o.item_count > o.preview.length ? "…" : ""}` : `${o.item_count} ${t("orders.items")}`}
-        </p>
-        <div className={cn("mt-3 flex items-center justify-between gap-3 border-t pt-3", theme.border)}>
-          <span className={cn("text-xs", muted)}>{o.item_count} {t("orders.items")}</span>
-          <span className="flex items-center gap-2">
-            <span className={cn("text-sm font-bold tabular-nums", o.status === "cancelled" ? cn("line-through", muted) : text)}>
-              {o.currency === "CATALOG" ? "—" : formatCurrency(o.total_amount, o.currency as CurrencyCode)}
-            </span>
-            {o.tracking_token ? <ChevronRight className={cn("size-4", muted)} /> : null}
-          </span>
-        </div>
-      </>
-    );
-    const cls = cn("block rounded-2xl border p-4 transition", theme.border, theme.surface, o.tracking_token && "hover:-translate-y-0.5 hover:shadow-md");
-    return o.tracking_token ? (
-      <a key={o.id} href={`/siparis/${o.tracking_token}`} className={cls} title={t("orders.detail")}>{inner}</a>
-    ) : (
-      <div key={o.id} className={cls}>{inner}</div>
-    );
-  };
+  const renderOrder = (o: OrderRow) => <OrderCard key={o.id} o={o} isTekel={isTekel} />;
 
   const features = [
     { icon: Radar, label: t("orders.feature1") },
@@ -253,11 +266,275 @@ function MyOrdersCard({ subdomain, tenantName, logoUrl, isTekel }: { subdomain: 
   );
 }
 
+function OrderSections({ orders, isTekel }: { orders: OrderRow[]; isTekel: boolean }) {
+  const theme = useStorefrontTheme();
+  const { t } = useStorefrontLocale();
+  const active = orders.filter((o) => o.status !== "delivered" && o.status !== "cancelled");
+  const past = orders.filter((o) => o.status === "delivered" || o.status === "cancelled");
+  if (!orders.length) {
+    return (
+      <div className={cn("mt-8 rounded-2xl border px-6 py-12 text-center", theme.border, theme.surface)}>
+        <PackageSearch className={cn("mx-auto size-8", theme.textMuted)} />
+        <p className={cn("mt-3 text-sm font-semibold", theme.text)}>{t("orders.noPastOrders")}</p>
+      </div>
+    );
+  }
+  return (
+    <>
+      {active.length ? (
+        <div className="mt-8">
+          <h2 className={cn("text-xs font-semibold uppercase tracking-wide", theme.textMuted)}>{t("orders.active")} · {active.length}</h2>
+          <div className="mt-3 grid gap-3 sm:grid-cols-2">{active.map((o) => <OrderCard key={o.id} o={o} isTekel={isTekel} />)}</div>
+        </div>
+      ) : null}
+      {past.length ? (
+        <div className="mt-10">
+          <h2 className={cn("text-xs font-semibold uppercase tracking-wide", theme.textMuted)}>{t("orders.past")} · {past.length}</h2>
+          <div className="mt-3 grid gap-3 sm:grid-cols-2">{past.map((o) => <OrderCard key={o.id} o={o} isTekel={isTekel} />)}</div>
+        </div>
+      ) : null}
+    </>
+  );
+}
+
+function MemberInfoForm({ subdomain, member, onSaved }: { subdomain: string; member: StoreMemberProfile; onSaved: (m: StoreMemberProfile) => void }) {
+  const theme = useStorefrontTheme();
+  const { t } = useStorefrontLocale();
+  const [fullName, setFullName] = useState(member.full_name);
+  const [address, setAddress] = useState(member.address);
+  const [email, setEmail] = useState(member.email ?? "");
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [pending, setPending] = useState(false);
+  const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
+
+  const submit = async (e: FormEvent) => {
+    e.preventDefault();
+    setPending(true);
+    setMsg(null);
+    try {
+      const r = await fetch("/api/storefront/member", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          subdomain,
+          full_name: fullName,
+          address,
+          email: email || null,
+          ...(newPassword ? { current_password: currentPassword, new_password: newPassword } : {}),
+        }),
+      });
+      const d = (await r.json().catch(() => null)) as { member?: StoreMemberProfile; error?: string } | null;
+      if (!r.ok || !d?.member) {
+        setMsg({ ok: false, text: d?.error ?? t("member.error") });
+        return;
+      }
+      setCurrentPassword("");
+      setNewPassword("");
+      setMsg({ ok: true, text: t("member.saved") });
+      onSaved(d.member);
+    } catch {
+      setMsg({ ok: false, text: t("member.error") });
+    } finally {
+      setPending(false);
+    }
+  };
+
+  const field = cn("w-full rounded-xl border px-3 py-2.5 text-[16px] outline-none", theme.border, theme.surface, theme.text);
+  const label = cn("mb-1 block text-xs font-semibold", theme.textMuted);
+  return (
+    <form onSubmit={submit} className={cn("mt-4 grid gap-3 rounded-2xl border p-4 sm:grid-cols-2", theme.border, theme.surface)}>
+      <label>
+        <span className={label}>{t("member.fullName")}</span>
+        <input className={field} value={fullName} onChange={(e) => setFullName(e.target.value)} required />
+      </label>
+      <label>
+        <span className={label}>{t("member.emailOptional")}</span>
+        <input type="email" className={field} value={email} onChange={(e) => setEmail(e.target.value)} />
+      </label>
+      <label className="sm:col-span-2">
+        <span className={label}>{t("member.address")}</span>
+        <textarea rows={2} className={cn(field, "resize-none")} value={address} onChange={(e) => setAddress(e.target.value)} />
+      </label>
+      <p className={cn("text-xs font-semibold sm:col-span-2", theme.text)}>{t("member.changePassword")}</p>
+      <label>
+        <span className={label}>{t("member.currentPassword")}</span>
+        <input type="password" autoComplete="current-password" className={field} value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} />
+      </label>
+      <label>
+        <span className={label}>{t("member.newPassword")}</span>
+        <input type="password" autoComplete="new-password" minLength={6} className={field} value={newPassword} onChange={(e) => setNewPassword(e.target.value)} />
+      </label>
+      <div className="flex items-center gap-3 sm:col-span-2">
+        <button type="submit" disabled={pending} className={cn(theme.primaryButton, "h-11 justify-center px-6 text-sm disabled:opacity-60")}>
+          {pending ? t("member.wait") : t("member.save")}
+        </button>
+        {msg ? <span className={cn("text-sm", msg.ok ? theme.text : theme.dangerText)}>{msg.text}</span> : null}
+      </div>
+    </form>
+  );
+}
+
+// Market/tekel (0180): numarayla sorgu yok. Üye → hesabındaki siparişler +
+// bilgilerim; üyeliksiz → giriş/üye ol formu + bu cihazdan verilen siparişler.
+function MemberOrdersCard({
+  subdomain,
+  tenantName,
+  logoUrl,
+  isTekel,
+  resetToken,
+}: {
+  subdomain: string;
+  tenantName: string;
+  logoUrl: string | null;
+  isTekel: boolean;
+  resetToken: string | null;
+}) {
+  const theme = useStorefrontTheme();
+  const { t } = useStorefrontLocale();
+  const { member, loaded, setMember, logout } = useStoreMember(subdomain);
+  const [orders, setOrders] = useState<OrderRow[] | null>(null);
+  const [showInfo, setShowInfo] = useState(false);
+  const [pendingReset, setPendingReset] = useState(resetToken);
+
+  useEffect(() => {
+    if (!loaded) return;
+    let cancelled = false;
+    const tokens = readGuestOrderTokens();
+    if (!member && !tokens.length) {
+      const timer = window.setTimeout(() => setOrders([]), 0);
+      return () => window.clearTimeout(timer);
+    }
+    void (async () => {
+      try {
+        const r = await fetch("/api/storefront/my-orders", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ subdomain, tokens }),
+        });
+        const d = (await r.json().catch(() => null)) as { orders?: OrderRow[] } | null;
+        if (cancelled) return;
+        const list = d?.orders ?? [];
+        setOrders(list);
+        markSeen(list.map((o) => ({ orderNo: o.order_no, statusUpdatedAt: o.status_updated_at })));
+      } catch {
+        if (!cancelled) setOrders([]);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [loaded, member, subdomain]);
+
+  const onAuthed = (m: StoreMemberProfile) => {
+    setPendingReset(null);
+    if (pendingReset) window.history.replaceState(null, "", "/siparislerim");
+    setOrders(null);
+    setMember(m);
+  };
+
+  const text = theme.text;
+  const muted = theme.textMuted;
+
+  if (!loaded) {
+    return (
+      <StorefrontSubpageShell logoUrl={logoUrl} title={tenantName}>
+        <p className={cn("py-16 text-center text-sm", muted)}>{t("orders.loading")}</p>
+      </StorefrontSubpageShell>
+    );
+  }
+
+  if (member && !pendingReset) {
+    return (
+      <StorefrontSubpageShell logoUrl={logoUrl} title={tenantName}>
+        <section>
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <p className={cn("text-xs font-semibold uppercase tracking-[0.22em]", muted)}>{t("orders.eyebrow")}</p>
+              <h1 className={cn("mt-2 text-2xl font-semibold sm:text-3xl", text)}>
+                {t("member.hello")}
+                {member.full_name ? `, ${member.full_name.split(" ")[0]}` : ""}
+              </h1>
+              <p className={cn("mt-1 text-sm", muted)}>{member.phone}</p>
+            </div>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setShowInfo((v) => !v)}
+                className={cn("inline-flex h-10 items-center gap-1.5 rounded-full border px-4 text-xs font-semibold transition hover:opacity-80", theme.border, text)}
+              >
+                <UserRound className="size-4" />
+                {t("member.myInfo")}
+              </button>
+              <button
+                type="button"
+                onClick={() => void logout()}
+                className={cn("inline-flex h-10 items-center gap-1.5 rounded-full border px-4 text-xs font-semibold transition hover:opacity-80", theme.border, text)}
+              >
+                <LogOut className="size-4" />
+                {t("member.logout")}
+              </button>
+            </div>
+          </div>
+          {showInfo ? <MemberInfoForm subdomain={subdomain} member={member} onSaved={(m) => setMember(m)} /> : null}
+          {orders === null ? (
+            <p className={cn("mt-8 text-sm", muted)}>{t("orders.loading")}</p>
+          ) : (
+            <OrderSections orders={orders} isTekel={isTekel} />
+          )}
+        </section>
+      </StorefrontSubpageShell>
+    );
+  }
+
+  return (
+    <StorefrontSubpageShell logoUrl={logoUrl} title={tenantName}>
+      <section className="grid items-start gap-10 lg:grid-cols-[1.1fr_1fr] lg:gap-16">
+        <div>
+          <p className={cn("text-xs font-semibold uppercase tracking-[0.22em]", muted)}>{t("orders.eyebrow")}</p>
+          <h1 className={cn("mt-3 text-3xl font-semibold leading-tight sm:text-4xl", text)} style={{ textWrap: "balance" }}>
+            {t("member.ordersHeroTitle")}
+          </h1>
+          <p className={cn("mt-4 max-w-md text-base leading-7", muted)}>{t("member.ordersIntro")}</p>
+          <ul className="mt-8 space-y-4">
+            {[
+              { icon: Radar, label: t("orders.feature1") },
+              { icon: Bell, label: t("orders.feature2") },
+              { icon: History, label: t("orders.feature3") },
+            ].map(({ icon: Icon, label }) => (
+              <li key={label} className="flex items-start gap-3">
+                <span className={cn("flex size-9 shrink-0 items-center justify-center rounded-xl border", theme.border, theme.surface)}>
+                  <Icon className={cn("size-4", text)} />
+                </span>
+                <span className={cn("pt-1.5 text-sm leading-6", text)}>{label}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+        <div className={cn(theme.gateCard, "w-full")}>
+          <MemberAuthForm subdomain={subdomain} resetToken={pendingReset} onAuthed={onAuthed} />
+        </div>
+      </section>
+      {orders && orders.length ? (
+        <section className="mt-12">
+          <h2 className={cn("text-lg font-semibold", text)}>{t("member.guestDeviceOrders")}</h2>
+          <p className={cn("mt-1 text-sm", muted)}>{t("member.guestDeviceHint")}</p>
+          <OrderSections orders={orders} isTekel={isTekel} />
+        </section>
+      ) : null}
+    </StorefrontSubpageShell>
+  );
+}
+
 export function MyOrdersView(props: {
   subdomain: string;
   tenantName: string;
   logoUrl: string | null;
   isTekel: boolean;
+  /** Market/tekel üyeliği (0180): numara yerine giriş/üye ol. */
+  membership?: boolean;
+  /** E-postadaki şifre yenileme bağlantısının kodu (?sifirla=). */
+  resetToken?: string | null;
   appearance?: StorefrontAppearanceSettings;
 }) {
   return (
@@ -267,7 +544,17 @@ export function MyOrdersView(props: {
       brandAccentColor={props.appearance?.brand_accent_color}
       brandPalette={props.appearance?.brand_palette}
     >
-      <MyOrdersCard subdomain={props.subdomain} tenantName={props.tenantName} logoUrl={props.logoUrl} isTekel={props.isTekel} />
+      {props.membership ? (
+        <MemberOrdersCard
+          subdomain={props.subdomain}
+          tenantName={props.tenantName}
+          logoUrl={props.logoUrl}
+          isTekel={props.isTekel}
+          resetToken={props.resetToken ?? null}
+        />
+      ) : (
+        <MyOrdersCard subdomain={props.subdomain} tenantName={props.tenantName} logoUrl={props.logoUrl} isTekel={props.isTekel} />
+      )}
     </StorefrontThemeProvider>
   );
 }

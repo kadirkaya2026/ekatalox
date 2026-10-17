@@ -40,6 +40,7 @@ import { createShortLink } from "@/lib/storage/short-links";
 import { storefrontOrderPdfSchema } from "@/lib/validators/storefront-order-pdf";
 import { ALCOHOL_ONLINE_ORDER_ERROR } from "@/lib/products/alcohol";
 import type { CartItem } from "@/lib/types";
+import { hasStoreMembership, readMemberForTenant } from "@/lib/storefront/member";
 import { resolveStorefrontAds } from "@/lib/ads/server";
 import {
   findMissingRequiredCartFields,
@@ -179,6 +180,8 @@ export async function POST(request: Request) {
   const accessCodeId =
     priceListCookie && priceListCookie.tenantId === tenant.id ? (priceListCookie.accessCodeId ?? null) : null;
   const dealerProfile = await resolveStorefrontDealerProfile(tenant, accessCodeId);
+  // Market/tekel üyesi (0180): sipariş hesabına bağlanır, "Siparişlerim"de görünür.
+  const member = hasStoreMembership(tenant) ? await readMemberForTenant(supabase, tenant.id) : null;
   if (dealerProfile) {
     parsed.data.customer_reference_name = formatDealerDisplayName(dealerProfile);
     parsed.data.customer_phone = dealerProfile.phone ?? "";
@@ -377,6 +380,9 @@ export async function POST(request: Request) {
       note: parsed.data.note,
       magnetCodeId,
     });
+    if (recorded && member) {
+      await supabase.from("orders").update({ member_id: member.id }).eq("id", recorded.orderId);
+    }
     if (recorded && accessCodeId) {
       const orderId = recorded.orderId;
       after(async () => {
@@ -592,6 +598,10 @@ export async function POST(request: Request) {
       p_order_id: recorded.orderId,
       p_discount: paymentSummary.couponDiscountAmount,
     });
+  }
+  if (recorded && member) {
+    // Senkron: müşteri hemen "Siparişlerim"e geçerse sipariş listede olsun.
+    await supabase.from("orders").update({ member_id: member.id }).eq("id", recorded.orderId);
   }
   if (recorded && accessCodeId) {
     const orderId = recorded.orderId;

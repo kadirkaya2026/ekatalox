@@ -5,9 +5,8 @@ import { isLikelyCompletePhone, normalizeCustomerPhone } from "@/lib/storefront/
 import { getClientIp } from "@/lib/storefront/client-ip";
 import { findActiveCouponForPhone } from "@/lib/coupons/data";
 
-// Telefonla otomatik doldurma: tam numara eşleşmesinde önceki sipariş
-// bilgisini döner. Bir müşterinin başka müşterinin bilgisini görebilmesi
-// (numara taraması/enumeration) riskine karşı IP bazlı basit bir rate limit
+// Telefona özel kupon sorgusu (eskiden ad/adres de dönüyordu; 17 Eki 2026'da
+// kaldırıldı). Numara taraması riskine karşı IP bazlı basit bir rate limit
 // uygulanıyor — proxy.ts'deki tenantLookupCache ile aynı üslup, bellek içi.
 const RATE_LIMIT_WINDOW_MS = 5 * 60_000;
 const RATE_LIMIT_MAX_REQUESTS = 20;
@@ -61,23 +60,11 @@ export async function GET(request: Request) {
   }
 
   const phone = normalizeCustomerPhone(rawPhone);
-  const { data } = await supabase
-    .from("customers")
-    .select("full_name, address")
-    .eq("tenant_id", tenant.id)
-    .eq("phone", phone)
-    .maybeSingle();
 
-  if (!data) {
-    return NextResponse.json({ customer: null, coupon: null });
-  }
-
-  // Müşteriye özel kupon: yalnız indirim bilgisi döner (ad/adres zaten
-  // autofill için dönüyor; kupon bunun ötesinde kişisel veri taşımıyor).
+  // Ad/adres artık numarayla DÖNMEZ (17 Eki 2026): komşusunun numarasını yazan
+  // adresini görebiliyordu. Otomatik doldurma yalnız giriş yapmış üyeye, kendi
+  // bilgileriyle (bkz. /api/storefront/member). Burada yalnız kupon kalır.
   const coupon = await findActiveCouponForPhone(supabase, tenant.id, phone);
 
-  return NextResponse.json({
-    customer: { full_name: data.full_name, address: data.address },
-    coupon,
-  });
+  return NextResponse.json({ customer: null, coupon });
 }

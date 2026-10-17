@@ -1,11 +1,18 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { countUnseen, readSeen, readTrackingPhone } from "@/lib/storefront/tracking-phone";
+import {
+  countUnseen,
+  readGuestOrderTokens,
+  readMemberSignedInHint,
+  readSeen,
+  readTrackingPhone,
+} from "@/lib/storefront/tracking-phone";
 
 const POLL_MS = 60_000;
 
-// Başlıktaki "Sipariş Takip" ikonunun kırmızı sayacı. Numara cihazda kayıtlıysa
+// Başlıktaki "Sipariş Takip" ikonunun kırmızı sayacı. Üye girişi, cihazda
+// üyeliksiz sipariş kodu ya da (toptancı takip mağazalarında) numara varsa
 // siparişleri çeker, görülmemiş durum değişikliklerini sayar; 60 sn'de bir ve
 // sekme öne gelince yeniler.
 export function useUnseenOrderUpdates(subdomain: string | undefined) {
@@ -16,8 +23,10 @@ export function useUnseenOrderUpdates(subdomain: string | undefined) {
     let cancelled = false;
 
     const refresh = async () => {
+      // Market/tekel'de sunucu numarayı yok sayar: üye çerezi ya da kodlar (0180).
       const phone = readTrackingPhone();
-      if (!phone) {
+      const tokens = readGuestOrderTokens();
+      if (!phone && !tokens.length && !readMemberSignedInHint()) {
         setCount(0);
         return;
       }
@@ -25,7 +34,7 @@ export function useUnseenOrderUpdates(subdomain: string | undefined) {
         const r = await fetch("/api/storefront/my-orders", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ subdomain, phone }),
+          body: JSON.stringify({ subdomain, phone: phone ?? undefined, tokens }),
         });
         if (!r.ok) return;
         const d = (await r.json()) as {

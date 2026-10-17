@@ -2,6 +2,7 @@ import { Header } from "@/components/dashboard/header";
 import { Card } from "@/components/ui/card";
 import { CustomersManager } from "@/components/dashboard/customers-manager";
 import { IpBlocksManager } from "@/components/dashboard/ip-blocks-manager";
+import { StoreMembersManager } from "@/components/dashboard/store-members-manager";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { requireTenantAdminPage } from "@/lib/auth/session";
 import { getTenantCustomersOverview } from "@/lib/customers/data";
@@ -23,7 +24,7 @@ export default async function TenantCustomersPage() {
   }
 
   const supabase = createSupabaseAdminClient();
-  const [customers, { data: ipBlockRows }, categories] = await Promise.all([
+  const [customers, { data: ipBlockRows }, categories, { data: memberRows }] = await Promise.all([
     getTenantCustomersOverview(tenant.id),
     supabase
       ? supabase
@@ -33,6 +34,14 @@ export default async function TenantCustomersPage() {
           .order("created_at", { ascending: false })
       : Promise.resolve({ data: [] }),
     getTenantCategories(tenant.id),
+    supabase
+      ? supabase
+          .from("store_members")
+          .select("id, phone, full_name, email, created_at, last_login_at")
+          .eq("tenant_id", tenant.id)
+          .order("created_at", { ascending: false })
+          .limit(1000)
+      : Promise.resolve({ data: [] }),
   ]);
 
   return (
@@ -43,6 +52,7 @@ export default async function TenantCustomersPage() {
         description="Sipariş veren her müşteri burada: kim ne kadar alışveriş yaptı, en son ne zaman sipariş verdi."
       />
       <CustomersManager initialCustomers={customers} isTekel={Boolean(tenant.is_tekel)} categories={categories} />
+      <StoreMembersManager initialMembers={memberRows ?? []} />
       <IpBlocksManager initialBlocks={ipBlockRows ?? []} />
     </div>
   );
