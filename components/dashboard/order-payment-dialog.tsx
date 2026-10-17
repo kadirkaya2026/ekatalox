@@ -18,12 +18,15 @@ const METHODS = [
 // bağlı; yöntem seçilmezse sipariş ödemesiz onaylanır. Raporlamada kullanılır.
 export function OrderPaymentDialog({
   orderLabel,
+  showOnline,
   defaultAmount,
   currencySymbol,
   onClose,
   onConfirm,
 }: {
   orderLabel: string;
+  /** Mağazada online ödeme açıksa "Online" seçeneği de gösterilir. */
+  showOnline: boolean;
   /** Sipariş toplamı; fiyatsız katalogda 0 (tutar elle girilir). */
   defaultAmount: number;
   currencySymbol: string;
@@ -70,8 +73,8 @@ export function OrderPaymentDialog({
           </button>
         </div>
 
-        <div className="mt-4 grid grid-cols-3 gap-2">
-          {METHODS.map((item) => {
+        <div className={cn("mt-4 grid gap-2", showOnline ? "grid-cols-3" : "grid-cols-2")}>
+          {METHODS.filter((item) => showOnline || item.key !== "online").map((item) => {
             const Icon = item.icon;
             const active = method === item.key;
             return (

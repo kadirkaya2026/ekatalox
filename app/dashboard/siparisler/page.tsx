@@ -6,6 +6,8 @@ import { getTenantOrdersPage } from "@/lib/orders/data";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { resolveBizimHesapPolicy } from "@/lib/integrations/bizimhesap";
 import { getTenantStorefrontOrigin } from "@/lib/push/send-tenant-broadcast-push";
+import { getTenantStorefrontSettings } from "@/lib/data";
+import { resolvePaymentMethods } from "@/lib/storefront/payment-methods";
 
 export const metadata = { title: "Siparişler" };
 
@@ -21,6 +23,8 @@ export default async function TenantOrdersPage() {
   const { data: bizimhesap } = supabase
     ? await supabase.from("tenant_bizimhesap").select("is_enabled, send_on").eq("tenant_id", tenant.id).maybeSingle()
     : { data: null };
+  // Onay penceresindeki "Online" tahsilat seçeneği yalnız online ödeme açıksa (0187).
+  const onlinePaymentEnabled = resolvePaymentMethods(await getTenantStorefrontSettings(tenant.id)).online;
   const bizimhesapSendOn = bizimhesap?.is_enabled ? resolveBizimHesapPolicy(tenant.id, bizimhesap).sendOn : null;
 
   return (
@@ -43,6 +47,7 @@ export default async function TenantOrdersPage() {
         storefrontOrigin={getTenantStorefrontOrigin(tenant)}
         orderEditEnabled={Boolean(tenant.order_edit_enabled)}
         bizimhesapSendOn={bizimhesapSendOn}
+        onlinePaymentEnabled={onlinePaymentEnabled}
       />
     </div>
   );

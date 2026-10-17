@@ -76,6 +76,7 @@ export function OrdersManager({
   storefrontOrigin = null,
   orderEditEnabled = false,
   bizimhesapSendOn = null,
+  onlinePaymentEnabled = false,
 }: {
   initialPage: OrdersPage;
   tenantName: string;
@@ -87,6 +88,8 @@ export function OrdersManager({
   orderEditEnabled?: boolean;
   /** BizimHesap bağlıysa aktarım zamanı (0166); null = entegrasyon yok, şerit gösterilmez. */
   bizimhesapSendOn?: "order" | "confirmed" | null;
+  /** Mağazada online ödeme açık mı (0185); kapalıysa onayda "Online" tahsilat seçeneği yok. */
+  onlinePaymentEnabled?: boolean;
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -420,6 +423,7 @@ export function OrdersManager({
   const paymentAskDialog = paymentAskOrder ? (
     <OrderPaymentDialog
       orderLabel={formatOrderNo(paymentAskOrder)}
+      showOnline={onlinePaymentEnabled}
       defaultAmount={paymentAskOrder.currency === "CATALOG" ? 0 : Number(paymentAskOrder.total_amount)}
       currencySymbol={paymentAskOrder.currency === "USD" ? "$" : paymentAskOrder.currency === "EUR" ? "€" : "₺"}
       onClose={() => setPaymentAskOrder(null)}
