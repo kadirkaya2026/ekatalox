@@ -49,5 +49,7 @@ export function getStoreSenderAddress() {
 
 /** Satış/kayıt bildirimlerinin gittiği adres. */
 export function getSalesRecipient() {
-  return process.env.CONTACT_RECIPIENT ?? process.env.SMTP_USER ?? "";
+  // SMTP kullanıcısı e-posta değilse (Resend: "resend") info@ adresine düşer.
+  const smtpUser = process.env.SMTP_USER ?? "";
+  return process.env.CONTACT_RECIPIENT ?? (smtpUser.includes("@") ? smtpUser : "info@ekatalox.com");
 }
