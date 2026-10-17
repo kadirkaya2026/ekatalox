@@ -1099,7 +1099,7 @@ export function OrdersManager({
           <p className="p-6 text-sm text-slate-600">Bu süzgeçte sipariş yok.</p>
         ) : (
           <div className="divide-y divide-slate-100">
-            <div className="hidden grid-cols-[200px_minmax(0,1fr)_150px_110px_250px_44px] items-center gap-3 bg-slate-50 px-4 py-2 text-[11px] font-semibold uppercase tracking-wide text-slate-500 md:grid">
+            <div className="hidden grid-cols-[270px_minmax(0,1fr)_150px_110px_250px_44px] items-center gap-3 bg-slate-50 px-4 py-2 text-[11px] font-semibold uppercase tracking-wide text-slate-500 md:grid">
               <span>Sipariş</span><span>Müşteri</span><span>Tarih</span><span className="text-right">Tutar</span><span>İşlem</span><span />
             </div>
             {page.orders.map((order) => {
@@ -1113,7 +1113,7 @@ export function OrdersManager({
               return (
                 <div
                   key={order.id}
-                  className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1 px-4 py-3 md:grid-cols-[200px_minmax(0,1fr)_150px_110px_250px_44px]"
+                  className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1 px-4 py-3 md:grid-cols-[270px_minmax(0,1fr)_150px_110px_250px_44px]"
                 >
                   <div className="flex min-w-0 items-center gap-2">
                     {bulkMode && isBulkSelectable(order) ? (
