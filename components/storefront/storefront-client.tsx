@@ -5460,7 +5460,8 @@ export function StorefrontClient({
           isSearchOpen={isSearchSheetOpen}
           isCampaignsOpen={isCampaignsSheetOpen}
           isHomeActive={!isSearchSheetOpen && !isCampaignsSheetOpen && !isCartOpen}
-          accountHref={membershipEnabled ? "/hesabim" : undefined}
+          // Üye değilse doğrudan Giriş'e (yoksa /hesabim → /giris fazladan yönlenme beklemesi).
+          accountHref={membershipEnabled ? (storeMember.member ? "/hesabim" : "/giris") : undefined}
           accountBadge={memberOrderUpdates}
           onGoHome={() => {
             setIsSearchSheetOpen(false);
