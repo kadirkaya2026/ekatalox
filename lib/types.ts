@@ -289,6 +289,8 @@ export interface StorefrontOrder {
   payment_provider?: string | null;
   paid_amount?: number | null;
   paid_at?: string | null;
+  /** Fiilen tahsil edilen yöntem (0187): onaylarken girilir ya da online ödemede 'online'. */
+  paid_method?: "cash" | "card" | "online" | "transfer" | null;
   legal_consent_at?: string | null;
   magnet_code_id?: string | null;
   // Bayi paneli için veri katmanında doldurulur (lib/orders/data.ts):

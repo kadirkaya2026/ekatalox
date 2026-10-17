@@ -18,6 +18,13 @@ export const orderStatusPatchSchema = z
   .object({
     to_status: z.enum(ORDER_STATUSES as [string, ...string[]]),
     reason: z.string().trim().max(300).optional(),
+    /** Onaylarken alınan ödeme (isteğe bağlı, 0187): raporlama için. */
+    payment: z
+      .object({
+        method: z.enum(["cash", "card", "online"]),
+        amount: z.number().positive("Tutar sıfırdan büyük olmalı.").max(100_000_000),
+      })
+      .optional(),
   })
   .refine((v) => v.to_status !== "cancelled" || (v.reason?.length ?? 0) >= 3, {
     message: "İptal sebebi gerekli (en az 3 karakter).",

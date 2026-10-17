@@ -72,7 +72,24 @@ export async function PATCH(request: Request, ctx: { params: Promise<{ orderId: 
     return NextResponse.json({ error: "Durum güncellenemedi." }, { status: 500 });
   }
 
-  const order = data as StorefrontOrder | null;
+  let order = data as StorefrontOrder | null;
+  // Onayla + "Ödeme alındı" (0187): tahsilat siparişe işlenir. Online ödemesi
+  // sağlayıcıdan zaten alınmış siparişin kaydı ezilmez.
+  if (order && parsed.data.payment && order.status === "confirmed" && order.payment_status !== "paid") {
+    const { data: paidOrder } = await supabase
+      .from("orders")
+      .update({
+        payment_status: "paid",
+        paid_method: parsed.data.payment.method,
+        paid_amount: Math.round(parsed.data.payment.amount * 100) / 100,
+        paid_at: new Date().toISOString(),
+      })
+      .eq("id", order.id)
+      .eq("tenant_id", tenant.id)
+      .select("*")
+      .maybeSingle();
+    if (paidOrder) order = paidOrder as StorefrontOrder;
+  }
   if (order) {
     // Müşteriye bildirim: yanıtı bekletmeden, arka planda (best-effort).
     const origin = tenant.custom_domain?.trim()

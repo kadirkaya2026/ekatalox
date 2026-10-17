@@ -16,6 +16,9 @@ import type { CurrencyCode } from "@/lib/products/constants";
 import type { OrderStatus, OrderStatusEvent, StorefrontOrder } from "@/lib/types";
 import type { OrdersPage } from "@/lib/orders/data";
 import { formatOnlinePaymentStatus, formatOrderTotal, formatPaymentMethod, formatOrderNo } from "@/lib/orders/format";
+import { OrderPaymentDialog, type OrderPaymentEntry } from "@/components/dashboard/order-payment-dialog";
+
+const PAID_METHOD_LABELS = { cash: "Nakit", card: "Kart", online: "Online", transfer: "Havale" } as const;
 
 const ONLINE_PAYMENT_TONE = {
   paid: "bg-emerald-50 text-emerald-700 ring-emerald-200",
@@ -99,6 +102,9 @@ export function OrdersManager({
   const [pending, setPending] = useState<string | null>(null);
   // BizimHesap "onaylanınca" modunda Onayla önce cari/ürün seçim penceresini açar (0167).
   const [approveOrder, setApproveOrder] = useState<StorefrontOrder | null>(null);
+  // Onaylarken girilen tahsilat (0187); BizimHesap penceresi açılırsa onaya taşınır.
+  const [paymentAskOrder, setPaymentAskOrder] = useState<StorefrontOrder | null>(null);
+  const [approvePayment, setApprovePayment] = useState<OrderPaymentEntry | null>(null);
   // Onaylı ama BizimHesap'a gitmemiş sipariş: aynı pencere, onaylamadan yalnız gönderir.
   const [sendOrder, setSendOrder] = useState<StorefrontOrder | null>(null);
   const [cancelOpen, setCancelOpen] = useState(false);
@@ -217,13 +223,18 @@ export function OrdersManager({
   const canFixOrder = (order: StorefrontOrder) =>
     (isWholesale || orderEditEnabled) && order.status !== "delivered" && order.status !== "cancelled";
 
-  async function transition(order: StorefrontOrder, toStatus: OrderStatus, reason?: string) {
+  async function transition(
+    order: StorefrontOrder,
+    toStatus: OrderStatus,
+    reason?: string,
+    payment?: OrderPaymentEntry | null,
+  ) {
     setPending(order.id);
     setError(null);
     const response = await fetch(`/api/tenant/orders/${order.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ to_status: toStatus, reason }),
+      body: JSON.stringify({ to_status: toStatus, reason, ...(payment ? { payment } : {}) }),
     });
     const result = await response.json().catch(() => ({}));
     if (!response.ok) {
@@ -280,11 +291,22 @@ export function OrdersManager({
   }
 
   function requestTransition(order: StorefrontOrder, toStatus: OrderStatus) {
+    // Onaylarken önce "ödeme alındı mı?" sorulur (0187); online ödemesi
+    // alınmış siparişte sorulmaz.
+    if (toStatus === "confirmed" && order.payment_status !== "paid") {
+      setPaymentAskOrder(order);
+      return;
+    }
+    continueApprove(order, toStatus, null);
+  }
+
+  function continueApprove(order: StorefrontOrder, toStatus: OrderStatus, payment: OrderPaymentEntry | null) {
     if (toStatus === "confirmed" && bizimhesapSendOn === "confirmed" && order.currency !== "CATALOG") {
+      setApprovePayment(payment);
       setApproveOrder(order);
       return;
     }
-    void transition(order, toStatus);
+    void transition(order, toStatus, undefined, payment);
   }
 
   async function creditAction(order: StorefrontOrder, action: "mark" | "unmark" | "paid") {
@@ -395,12 +417,26 @@ export function OrdersManager({
     </div>
   ) : null;
 
+  const paymentAskDialog = paymentAskOrder ? (
+    <OrderPaymentDialog
+      orderLabel={formatOrderNo(paymentAskOrder)}
+      defaultAmount={paymentAskOrder.currency === "CATALOG" ? 0 : Number(paymentAskOrder.total_amount)}
+      currencySymbol={paymentAskOrder.currency === "USD" ? "$" : paymentAskOrder.currency === "EUR" ? "€" : "₺"}
+      onClose={() => setPaymentAskOrder(null)}
+      onConfirm={(payment) => {
+        const target = paymentAskOrder;
+        setPaymentAskOrder(null);
+        continueApprove(target, "confirmed", payment);
+      }}
+    />
+  ) : null;
+
   const approveDialog = approveOrder ? (
     <BizimHesapApproveDialog
       orderId={approveOrder.id}
       orderLabel={formatOrderNo(approveOrder)}
       onClose={() => setApproveOrder(null)}
-      onApprove={() => transition(approveOrder, "confirmed")}
+      onApprove={() => transition(approveOrder, "confirmed", undefined, approvePayment)}
       onEdit={
         canFixOrder(approveOrder)
           ? () => {
@@ -451,6 +487,7 @@ export function OrdersManager({
     return (
       <>
       {approveDialog}
+      {paymentAskDialog}
       {sendDialog}
       {confirmDialog}
       {bulkDialog}
@@ -520,8 +557,13 @@ export function OrdersManager({
               <OnlinePaymentBadge status={formatOnlinePaymentStatus(order)} />
               {order.payment_status === "paid" && order.paid_at ? (
                 <p className="mt-1 text-xs text-emerald-700">
-                  {formatOrderTotal({ ...order, total_amount: Number(order.paid_amount ?? order.total_amount) })} ·{" "}
-                  {formatDateTime(order.paid_at)}
+                  {order.paid_method ? `${PAID_METHOD_LABELS[order.paid_method]} · ` : ""}
+                  {formatOrderTotal({
+                    ...order,
+                    currency: order.currency === "CATALOG" ? "TRY" : order.currency,
+                    total_amount: Number(order.paid_amount ?? order.total_amount),
+                  })}{" "}
+                  · {formatDateTime(order.paid_at)}
                   {order.payment_provider ? ` · ${order.payment_provider}` : ""}
                 </p>
               ) : null}
@@ -897,6 +939,7 @@ export function OrdersManager({
   return (
     <div className="space-y-4">
       {approveDialog}
+      {paymentAskDialog}
       {sendDialog}
       {confirmDialog}
       {bulkDialog}

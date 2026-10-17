@@ -98,6 +98,7 @@ export async function settlePaymentAttempt(
     .from("orders")
     .update({
       payment_status: "paid",
+      paid_method: "online",
       payment_provider: attempt.provider,
       paid_amount: result.amount,
       paid_at: now,

@@ -28,8 +28,9 @@ export function formatPaymentMethod(method: StorefrontOrder["payment_method"]) {
 export function formatOnlinePaymentStatus(
   order: Pick<StorefrontOrder, "payment_method" | "payment_status">,
 ): { label: string; tone: "paid" | "waiting" | "failed" } | null {
-  if (order.payment_method !== "online" || !order.payment_status) return null;
+  // Onaylarken girilen tahsilat (0187) da "Ödendi" sayılır.
   if (order.payment_status === "paid") return { label: "Ödendi", tone: "paid" };
+  if (order.payment_method !== "online" || !order.payment_status) return null;
   if (order.payment_status === "failed") return { label: "Ödeme başarısız", tone: "failed" };
   return { label: "Ödeme bekleniyor", tone: "waiting" };
 }
