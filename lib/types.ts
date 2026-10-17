@@ -284,6 +284,12 @@ export interface StorefrontOrder {
   // dolu, paid boş. Bayi panelinden yönetilir.
   credit_marked_at?: string | null;
   credit_paid_at?: string | null;
+  // Online ödeme (0185): yalnız payment_method='online' siparişlerde dolu.
+  payment_status?: "awaiting" | "paid" | "failed" | null;
+  payment_provider?: string | null;
+  paid_amount?: number | null;
+  paid_at?: string | null;
+  legal_consent_at?: string | null;
   magnet_code_id?: string | null;
   // Bayi paneli için veri katmanında doldurulur (lib/orders/data.ts):
   // siparişin geldiği magnetin kodu, magnetin tanımlı müşterisi ve siparişi
@@ -818,7 +824,7 @@ export interface StorefrontSectionProduct {
 export interface StorefrontSectionWithProducts extends StorefrontSection {
   products: StorefrontProduct[];
 }
-/** Sepette seçilebilen ödeme yöntemi (0145). "online" sanal POS entegrasyonuyla açılacak. */
+/** Sepette seçilebilen ödeme yöntemi (0145). "online": mağazanın kendi iyzico/PayTR/Paynet hesabı (0185). */
 export type OrderPaymentMethod = "cash" | "card" | "transfer" | "online";
 
 export interface PaymentMethodToggles {
@@ -829,7 +835,7 @@ export interface PaymentMethodToggles {
 }
 
 export interface OnlinePaymentSettings {
-  provider?: "iyzico" | "paytr" | null;
+  provider?: "iyzico" | "paytr" | "paynet" | null;
   installments_enabled?: boolean;
   commission_to_customer?: boolean;
 }

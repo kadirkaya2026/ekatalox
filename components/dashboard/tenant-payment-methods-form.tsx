@@ -2,7 +2,11 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Banknote, CreditCard, Globe, Landmark, Lock, type LucideIcon } from "lucide-react";
+import { Banknote, CreditCard, Globe, Landmark, type LucideIcon } from "lucide-react";
+import {
+  TenantOnlinePaymentCard,
+  type OnlineProviderSummary,
+} from "@/components/dashboard/tenant-online-payment-card";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -37,7 +41,7 @@ const METHODS: Array<{ key: MethodKey; title: string; body: string; icon: Lucide
   {
     key: "online",
     title: "Online Ödeme",
-    body: "iyzico / PayTR ile sitede kartla ödeme. Entegrasyon tamamlanınca açılacak.",
+    body: "Kendi iyzico / PayTR / Paynet hesabınızla sitede kartla ödeme. Ayarları aşağıda.",
     icon: Globe,
   },
 ];
@@ -63,11 +67,20 @@ export function TenantPaymentMethodsForm({
   storefrontSettings,
   plan,
   legalProblems,
+  onlineProvider,
+  onlineProblems,
+  paytrNotifyUrl,
+  paynetEgressIp,
 }: {
   storefrontSettings: TenantStorefrontSettings;
   plan: TenantPlan;
   /** Yasal Bilgiler eksikleri (0178); boşsa tamam. */
   legalProblems: string[];
+  /** Online ödeme (0185): kayıtlı sağlayıcı özeti (anahtarsız) ve açma engelleri. */
+  onlineProvider: OnlineProviderSummary | null;
+  onlineProblems: string[];
+  paytrNotifyUrl: string;
+  paynetEgressIp: string | null;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -80,13 +93,12 @@ export function TenantPaymentMethodsForm({
   const [bankName, setBankName] = useState(storefrontSettings.bank_name ?? "");
 
   const online = storefrontSettings.online_payment_settings ?? {};
-  const [provider, setProvider] = useState<"iyzico" | "paytr" | null>(online.provider ?? null);
   const [installmentsEnabled, setInstallmentsEnabled] = useState(online.installments_enabled ?? true);
-  const [commissionToCustomer, setCommissionToCustomer] = useState(online.commission_to_customer ?? false);
   const canUseOnline = hasPlanFeature(plan, "online_payment");
+  const onlineReady = onlineProblems.length === 0;
 
   function toggle(key: MethodKey) {
-    if (key === "online") return;
+    if (key === "online" && !onlineReady && !methods.online) return;
     setMethods((current) => ({ ...current, [key]: !current[key] }));
     setMessage(null);
     setError(null);
@@ -97,7 +109,7 @@ export function TenantPaymentMethodsForm({
     setMessage(null);
     setError(null);
 
-    if (!methods.cash && !methods.transfer && !methods.card) {
+    if (!methods.cash && !methods.transfer && !methods.card && !(methods.online && onlineReady)) {
       setError("En az bir ödeme yöntemi açık olmalı.");
       return;
     }
@@ -116,16 +128,16 @@ export function TenantPaymentMethodsForm({
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          payment_methods: { ...methods, online: false },
+          payment_methods: { ...methods, online: methods.online && onlineReady },
           bank_iban: normalizedIban || null,
           bank_account_holder: holder.trim() || null,
           bank_name: bankName.trim() || null,
           ...(canUseOnline
             ? {
                 online_payment_settings: {
-                  provider,
+                  provider: onlineProvider?.provider ?? null,
                   installments_enabled: installmentsEnabled,
-                  commission_to_customer: commissionToCustomer,
+                  commission_to_customer: online.commission_to_customer ?? false,
                 },
               }
             : {}),
@@ -166,16 +178,16 @@ export function TenantPaymentMethodsForm({
                   <div>
                     <p className="flex items-center gap-2 text-sm font-semibold text-slate-900">
                       {method.title}
-                      {isOnline ? (
-                        <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold uppercase text-slate-500">
-                          Yakında
+                      {isOnline && !onlineReady ? (
+                        <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold uppercase text-amber-700">
+                          {canUseOnline ? "Kurulum gerekli" : "Kurumsal"}
                         </span>
                       ) : null}
                     </p>
                     <p className="mt-1 text-xs text-slate-500">{method.body}</p>
                   </div>
                 </div>
-                <Toggle on={on} onClick={() => toggle(method.key)} disabled={isOnline} />
+                <Toggle on={on} onClick={() => toggle(method.key)} disabled={isOnline && !onlineReady && !on} />
               </div>
             );
           })}
@@ -217,103 +229,23 @@ export function TenantPaymentMethodsForm({
         </div>
       </Card>
 
-      <Card className="p-5">
-        <SettingsSectionHeader icon={Globe} title="Online ödeme (iyzico / PayTR)" />
-        {canUseOnline ? (
-          <div className="space-y-4">
-            <p className="text-sm text-slate-500">
-              Sanal POS entegrasyonu tamamlandığında buraya sağlayıcınızın API anahtarlarını girip online ödemeyi
-              açabileceksiniz. Tercihlerinizi şimdiden kaydedebilirsiniz.
-            </p>
-            <div className="rounded-2xl border border-slate-200 bg-white p-4">
-              <p className="text-sm font-semibold text-slate-900">Online ödemeyi açmak için gerekenler</p>
-              <ul className="mt-2 space-y-1.5 text-sm">
-                <li className="flex items-start gap-2">
-                  <span className={cn("mt-0.5 font-bold", legalProblems.length ? "text-amber-600" : "text-emerald-600")}>
-                    {legalProblems.length ? "!" : "✓"}
-                  </span>
-                  <span className="text-slate-700">
-                    Yasal bilgiler ve sözleşmeler{" "}
-                    {legalProblems.length ? (
-                      <>
-                        eksik ({legalProblems.length} alan) ·{" "}
-                        <a href="/settings/legal" className="font-semibold text-emerald-700 underline underline-offset-2">
-                          Tamamla
-                        </a>
-                      </>
-                    ) : (
-                      <span className="text-emerald-700">tamam, mağazanızda yayında</span>
-                    )}
-                  </span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="mt-0.5 font-bold text-slate-400">•</span>
-                  <span className="text-slate-700">
-                    Sağlayıcı (iyzico / PayTR) üye işyeri hesabı ve API anahtarları{" "}
-                    <span className="text-slate-500">— entegrasyon tamamlanınca</span>
-                  </span>
-                </li>
-              </ul>
-            </div>
-            <div>
-              <p className="mb-2 text-sm font-medium text-slate-700">Sağlayıcı</p>
-              <div className="flex flex-wrap gap-2">
-                {(["iyzico", "paytr"] as const).map((key) => (
-                  <button
-                    key={key}
-                    type="button"
-                    onClick={() => setProvider((current) => (current === key ? null : key))}
-                    aria-pressed={provider === key}
-                    className={cn(
-                      "rounded-xl border px-4 py-2 text-sm font-semibold transition",
-                      provider === key
-                        ? "border-emerald-500 bg-emerald-50 text-emerald-800"
-                        : "border-slate-200 bg-white text-slate-700 hover:border-slate-300",
-                    )}
-                  >
-                    {key === "iyzico" ? "iyzico" : "PayTR"}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div className="grid gap-3 sm:grid-cols-2">
-              <label className="block">
-                <span className="mb-1.5 flex items-center gap-1.5 text-sm font-medium text-slate-700">
-                  <Lock className="size-3.5" /> API anahtarı
-                </span>
-                <Input disabled placeholder="Entegrasyon tamamlanınca açılacak" />
-              </label>
-              <label className="block">
-                <span className="mb-1.5 flex items-center gap-1.5 text-sm font-medium text-slate-700">
-                  <Lock className="size-3.5" /> Gizli anahtar
-                </span>
-                <Input disabled placeholder="Entegrasyon tamamlanınca açılacak" />
-              </label>
-            </div>
-            <div className="flex items-start justify-between gap-4 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
-              <div>
-                <p className="text-sm font-semibold text-slate-900">Taksit seçenekleri açık olsun</p>
-                <p className="mt-0.5 text-xs text-slate-500">Kapalıysa online ödemede yalnız tek çekim sunulur.</p>
-              </div>
-              <Toggle on={installmentsEnabled} onClick={() => setInstallmentsEnabled((value) => !value)} />
-            </div>
-            <div className="flex items-start justify-between gap-4 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
-              <div>
-                <p className="text-sm font-semibold text-slate-900">Komisyon müşteriye yansıtılsın</p>
-                <p className="mt-0.5 text-xs text-slate-500">
-                  Açıksa sağlayıcının taksit/komisyon farkı sepet toplamına eklenir; kapalıysa siz üstlenirsiniz.
-                </p>
-              </div>
-              <Toggle on={commissionToCustomer} onClick={() => setCommissionToCustomer((value) => !value)} />
-            </div>
-          </div>
-        ) : (
+      {canUseOnline ? (
+        <TenantOnlinePaymentCard
+          summary={onlineProvider}
+          legalProblems={legalProblems}
+          installmentsEnabled={installmentsEnabled}
+          setInstallmentsEnabled={setInstallmentsEnabled}
+          paytrNotifyUrl={paytrNotifyUrl}
+          paynetEgressIp={paynetEgressIp}
+        />
+      ) : (
+        <Card className="p-5">
+          <SettingsSectionHeader icon={Globe} title="Online ödeme (iyzico / PayTR / Paynet)" />
           <p className="text-sm text-slate-500">
-            Online ödeme (iyzico / PayTR) Kurumsal pakette sunulacak. Nakit, Havale / EFT ve Kredi Kartı tüm
-            paketlerde kullanılabilir.
+            Online ödeme Kurumsal pakette sunulur. Nakit, Havale / EFT ve Kredi Kartı tüm paketlerde kullanılabilir.
           </p>
-        )}
-      </Card>
+        </Card>
+      )}
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-h-6 space-y-1">

@@ -591,6 +591,8 @@ export async function proxy(request: NextRequest) {
 
     // /yasal/*: mağazanın sözleşme ve satıcı bilgisi sayfaları (0178) şifre
     // kapısından bağımsız açılır; ödeme kuruluşu ve müşteri önceden görebilmeli.
+    // /odeme/{token}: online ödeme sayfası (0185); sağlayıcıdan dönüşte şifre
+    // çerezi olmayabilir (başka tarayıcı/uygulama içi), token yetkidir.
     // /giris, /uye-ol, /hesabim/*: market/tekel üyelik sayfaları (0180) fiyat
     // göstermez; kapıdan geçerse ISR kapı sayfası asıl adresi bilmediği için
     // ziyaretçiyi ana sayfaya atıyordu (şifre yenileme bağlantısı da bozulurdu).
@@ -607,6 +609,7 @@ export async function proxy(request: NextRequest) {
       pathname === "/siparislerim" ||
       pathname === "/bildirim" ||
       pathname.startsWith("/yasal/") ||
+      pathname.startsWith("/odeme/") ||
       isMemberPage
     ) {
       const trackUrl = request.nextUrl.clone();

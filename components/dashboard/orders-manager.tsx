@@ -15,7 +15,24 @@ import { cn, formatCurrency, formatDate, formatDateTime } from "@/lib/utils";
 import type { CurrencyCode } from "@/lib/products/constants";
 import type { OrderStatus, OrderStatusEvent, StorefrontOrder } from "@/lib/types";
 import type { OrdersPage } from "@/lib/orders/data";
-import { formatOrderTotal, formatPaymentMethod, formatOrderNo } from "@/lib/orders/format";
+import { formatOnlinePaymentStatus, formatOrderTotal, formatPaymentMethod, formatOrderNo } from "@/lib/orders/format";
+
+const ONLINE_PAYMENT_TONE = {
+  paid: "bg-emerald-50 text-emerald-700 ring-emerald-200",
+  waiting: "bg-amber-50 text-amber-700 ring-amber-200",
+  failed: "bg-red-50 text-red-700 ring-red-200",
+} as const;
+
+function OnlinePaymentBadge({ status }: { status: ReturnType<typeof formatOnlinePaymentStatus> }) {
+  if (!status) return null;
+  return (
+    <span
+      className={`inline-flex shrink-0 items-center rounded-full px-2 py-0.5 text-[11px] font-semibold ring-1 ${ONLINE_PAYMENT_TONE[status.tone]}`}
+    >
+      {status.label}
+    </span>
+  );
+}
 import {
   ORDER_EDITABLE_STATUSES,
   ORDER_EDIT_EVENT_PREFIX,
@@ -498,6 +515,7 @@ export function OrdersManager({
             <div className="text-right">
               <p className="text-2xl font-semibold tabular-nums text-slate-900">{formatOrderTotal(order)}</p>
               {payment ? <p className="text-sm text-slate-500">{payment}</p> : null}
+              <OnlinePaymentBadge status={formatOnlinePaymentStatus(order)} />
             </div>
           </div>
 
@@ -1067,6 +1085,7 @@ export function OrdersManager({
                     <button type="button" onClick={() => void openOrder(order)} className="flex items-center gap-2 text-left">
                     <span className="text-sm font-semibold text-slate-900">{formatOrderNo(order)}</span>
                     <StatusBadge status={order.status} isTekel={isTekel} />
+                    <OnlinePaymentBadge status={formatOnlinePaymentStatus(order)} />
                     {order.credit_marked_at && !order.credit_paid_at ? (
                       // Veresiye defteri: çerçevesiz, sadece kırmızı defter
                       // ikonu (kullanıcı isteği, 1 Eyl 2026) — dar sütuna

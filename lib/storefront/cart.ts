@@ -54,7 +54,8 @@ export interface CardTieredConfig {
 
 /** Tutar hesabına giren ödeme yöntemi. Havale (0145): tanımlıysa kendi
  *  basamaklı iskontosu (nakit mantığıyla), yoksa düz fiyat. */
-export type SummaryPaymentMethod = "cash" | "card" | "transfer";
+/** online (0185): kampanya/vade farkı yok, düz fiyat; tutarı sağlayıcı tahsil eder. */
+export type SummaryPaymentMethod = "cash" | "card" | "transfer" | "online";
 
 // Backward-compat — hâlâ kullanılabilir
 export interface CartDiscountConfig {

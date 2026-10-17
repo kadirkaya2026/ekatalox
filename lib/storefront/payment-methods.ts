@@ -9,9 +9,9 @@ export const DEFAULT_PAYMENT_METHODS: PaymentMethodToggles = {
   online: false,
 };
 
-/** Sepette seçilebilen yöntemler, gösterim sırasıyla. Online, sanal POS
- *  entegrasyonu tamamlanana kadar vitrinde gösterilmez. */
-export type CheckoutPaymentMethod = "cash" | "transfer" | "card";
+/** Sepette seçilebilen yöntemler, gösterim sırasıyla. Online (0185) yalnız
+ *  panelde koşullar sağlanıp açıldıysa (payment_methods.online) görünür. */
+export type CheckoutPaymentMethod = "cash" | "transfer" | "card" | "online";
 
 export function resolvePaymentMethods(
   settings: Pick<TenantStorefrontSettings, "payment_methods"> | null | undefined,
@@ -30,7 +30,7 @@ export function getCheckoutPaymentMethods(
   settings: Pick<TenantStorefrontSettings, "payment_methods"> | null | undefined,
 ): CheckoutPaymentMethod[] {
   const toggles = resolvePaymentMethods(settings);
-  return (["cash", "transfer", "card"] as const).filter((key) => toggles[key]);
+  return (["cash", "transfer", "card", "online"] as const).filter((key) => toggles[key]);
 }
 
 /** "TR12 0006 1005 ..." biçiminde; boşluksuz büyük harfle saklanır. */

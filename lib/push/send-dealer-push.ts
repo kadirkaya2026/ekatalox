@@ -20,7 +20,8 @@ export interface DealerPushOrder {
 // sipariş akışını etkilemez; ölü abonelikler (404/410) silinir.
 export async function sendDealerOrderPush(params: {
   tenantId: string;
-  kind: "new" | "customer_cancelled";
+  /** paid: online ödemesi alınan sipariş (0185). */
+  kind: "new" | "customer_cancelled" | "paid";
   order: DealerPushOrder;
 }) {
   if (!hasWebPushEnv()) return;
@@ -43,7 +44,12 @@ export async function sendDealerOrderPush(params: {
   // Bayi paneli app.ekatalox.com (appEnv.appDomain); /dashboard/... orada da geçerli.
   const url = `https://${appEnv.appDomain}/dashboard/siparisler?order=${o.id}`;
   const payload = JSON.stringify({
-    title: params.kind === "new" ? `Yeni sipariş ${no} 🛒` : `Sipariş ${no} iptal edildi (müşteri)`,
+    title:
+      params.kind === "new"
+        ? `Yeni sipariş ${no} 🛒`
+        : params.kind === "paid"
+          ? `Ödeme alındı ${no} 💳`
+          : `Sipariş ${no} iptal edildi (müşteri)`,
     body: bodyParts.join(" · "),
     icon: "/ekatalox-logo-v2.png",
     url,

@@ -6,6 +6,7 @@ import { ensureTenantAdminResponse } from "@/lib/tenancy/guards";
 import { revalidateStorefrontCache } from "@/lib/storefront/cache";
 import { hasPlanFeature } from "@/lib/billing/plans";
 import { isValidIban, normalizeIban } from "@/lib/storefront/payment-methods";
+import { getOnlinePaymentProblems } from "@/lib/payments/readiness";
 
 // Ayarlar → Ödeme ve Kampanyalar (0145, 28 Eyl 2026). İki formdan kısmi
 // gövdeyle çağrılır: "Ödeme" sekmesi (yöntemler, IBAN, online tercihleri —
@@ -31,7 +32,7 @@ const bodySchema = z
     bank_name: z.string().trim().max(80).nullable().optional(),
     online_payment_settings: z
       .object({
-        provider: z.enum(["iyzico", "paytr"]).nullable().optional(),
+        provider: z.enum(["iyzico", "paytr", "paynet"]).nullable().optional(),
         installments_enabled: z.boolean().optional(),
         commission_to_customer: z.boolean().optional(),
       })
@@ -63,9 +64,28 @@ export async function PATCH(request: Request) {
   const update: Record<string, unknown> = {};
 
   if (body.payment_methods) {
-    // Sanal POS entegrasyonu tamamlanana kadar online vitrinde açılamaz.
-    const methods = { ...body.payment_methods, online: false };
-    update.payment_methods = methods;
+    // Online ödeme (0185): Kurumsal paket + yasal bilgiler + doğrulanmış anahtar.
+    if (body.payment_methods.online) {
+      const admin = createSupabaseAdminClient();
+      const { data: legalRow } = admin
+        ? await admin.from("tenant_storefront_settings").select("legal_profile").eq("tenant_id", tenant.id).maybeSingle()
+        : { data: null };
+      const problems = admin
+        ? await getOnlinePaymentProblems({
+            supabase: admin,
+            tenantId: tenant.id,
+            plan: tenant.plan,
+            legalProfile: (legalRow as { legal_profile?: unknown } | null)?.legal_profile,
+          })
+        : ["Sunucu yapılandırması eksik"];
+      if (problems.length) {
+        return NextResponse.json(
+          { error: `Online ödeme açılamadı: ${problems.join(", ")}.` },
+          { status: 400 },
+        );
+      }
+    }
+    update.payment_methods = { ...body.payment_methods };
   }
 
   if (body.bank_iban !== undefined) {

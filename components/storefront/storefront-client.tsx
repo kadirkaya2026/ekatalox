@@ -62,6 +62,7 @@ import {
   updateCartLineQuantity,
 } from "@/lib/storefront/cart";
 import { getCheckoutPaymentMethods, type CheckoutPaymentMethod } from "@/lib/storefront/payment-methods";
+import { extractOrderToken, saveOnlinePaymentWhatsAppHref } from "@/lib/storefront/online-payment-handoff";
 import { resolveCartFormConfig } from "@/lib/storefront/cart-form-config";
 import { useResolvedStorefrontTheme } from "@/lib/storefront/use-resolved-storefront-theme";
 import { StorefrontThemeProvider, useStorefrontTheme, withProductModelNo } from "@/lib/storefront/theme-context";
@@ -1503,6 +1504,7 @@ export function StorefrontClient({
   }, [storefrontSettings]);
 
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<CheckoutPaymentMethod | null>(null);
+  const [onlineConsent, setOnlineConsent] = useState(false);
   const [selectedInstallmentCount, setSelectedInstallmentCount] = useState<number | null>(null);
   const [paymentMethodError, setPaymentMethodError] = useState<string | null>(null);
   const [isGeneratingOrderPdf, setIsGeneratingOrderPdf] = useState(false);
@@ -3087,6 +3089,11 @@ export function StorefrontClient({
         setPaymentMethodError(t("cart.paymentMethodRequiredError"));
         hasValidationError = true;
       }
+      // Online ödeme (0185): sözleşmeler onaylanmadan sipariş açılmaz.
+      if (selectedPaymentMethod === "online" && !onlineConsent) {
+        setPaymentMethodError(t("cart.onlineConsentRequired"));
+        hasValidationError = true;
+      }
 
       // Alan zorunlulukları bayinin sepet ayarından gelir (cartFormConfig);
       // market'te ayar yoksa eskisi gibi ad+adres+telefon zorunlu.
@@ -3146,6 +3153,7 @@ export function StorefrontClient({
     let pdfIncluded = false;
     let trackingUrl: string | null = null;
     let locationUrl: string | null = null;
+    let paymentUrl: string | null = null;
 
     try {
       const result = await requestOrderReceiptPdf({
@@ -3165,6 +3173,7 @@ export function StorefrontClient({
           customer_location: isMarketTenant ? customerLocation : null,
           dealer_address_id: accountEnabled ? (dealerAddressId ?? undefined) : undefined,
           paymentMethod: selectedPaymentMethod,
+          legal_consent: selectedPaymentMethod === "online" ? onlineConsent : undefined,
           selectedInstallmentCount: isCatalogOnly ? null : selectedInstallmentCount,
           cashDiscountTiers: storefrontSettings.cash_discount_tiers ?? [],
           isCashDiscountActive: storefrontSettings.is_cash_discount_active,
@@ -3176,6 +3185,7 @@ export function StorefrontClient({
       pdfUrl = result.pdfUrl;
       pdfIncluded = true;
       trackingUrl = result.trackingUrl ?? null;
+      paymentUrl = result.paymentUrl ?? null;
       // Sipariş kaydedildi: bu numara takip sayfasına "giriş yapmış" olur.
       // Başka numarayla sipariş verilirse üzerine yazılır.
       if (orderTrackingEnabled && customerPhone.trim()) saveTrackingPhone(customerPhone);
@@ -3247,15 +3257,24 @@ export function StorefrontClient({
     }
 
     const message = buildWhatsAppOrderMessage(pdfUrl, trackingUrl, locationUrl);
-    setWhatsappHandoff(
-      buildWhatsAppOrderHandoff({
-        phone: tenant.whatsapp_number,
-        message,
-        directToRegisteredNumber: tenant.is_whatsapp_order_direct ?? true,
-        pdfIncluded,
-        trackingUrl,
-      }),
-    );
+    const handoff = buildWhatsAppOrderHandoff({
+      phone: tenant.whatsapp_number,
+      message,
+      directToRegisteredNumber: tenant.is_whatsapp_order_direct ?? true,
+      pdfIncluded,
+      trackingUrl,
+    });
+
+    // Online ödeme (0185): sipariş kaydedildi, müşteri ödeme sayfasına geçer.
+    // WhatsApp mesajı ödeme sonrası "mağazaya bildir" düğmesi için saklanır.
+    if (paymentUrl) {
+      const paymentToken = extractOrderToken(paymentUrl);
+      if (paymentToken) saveOnlinePaymentWhatsAppHref(paymentToken, handoff.href);
+      setCart([]);
+      window.location.assign(paymentUrl);
+      return;
+    }
+    setWhatsappHandoff(handoff);
   }, [
     analyticsSubdomain,
     buildWhatsAppOrderMessage,
@@ -3267,6 +3286,8 @@ export function StorefrontClient({
     note,
     selectedInstallmentCount,
     selectedPaymentMethod,
+    onlineConsent,
+    setCart,
     storefrontSettings.card_campaign_tiers,
     storefrontSettings.card_installment_options,
     storefrontSettings.cash_discount_tiers,
@@ -5569,6 +5590,8 @@ export function StorefrontClient({
         setSelectedInstallmentCount={setSelectedInstallmentCount}
         paymentMethodError={paymentMethodError}
         setPaymentMethodError={setPaymentMethodError}
+        onlineConsent={onlineConsent}
+        setOnlineConsent={setOnlineConsent}
         storefrontSettings={storefrontSettings}
         note={note}
         setNote={setNote}

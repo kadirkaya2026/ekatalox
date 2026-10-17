@@ -10,6 +10,7 @@ import {
   readLegalProfile,
   type TenantLegalProfile,
 } from "@/lib/legal/tenant-legal";
+import { disableOnlinePaymentMethod } from "@/lib/payments/readiness";
 
 // Ayarlar → Yasal Bilgiler (0178, 17 Eki 2026): satıcı bilgileri ve sözleşme
 // metinleri. Online ödeme bunlar eksiksizken açılabilir (bkz. tenant-legal.ts).
@@ -113,8 +114,12 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: "Yasal bilgiler kaydedilemedi." }, { status: 400 });
   }
 
+  const saved = readLegalProfile((data as { legal_profile?: unknown }).legal_profile);
+  const problems = getLegalProfileProblems(saved);
+  // Yasal bilgiler eksilirse online ödeme vitrinde kapanır (0185).
+  if (problems.length) await disableOnlinePaymentMethod(supabase, tenant.id);
+
   revalidateStorefrontCache({ tenantId: tenant.id, subdomain: tenant.subdomain });
 
-  const saved = readLegalProfile((data as { legal_profile?: unknown }).legal_profile);
-  return NextResponse.json({ profile: saved, problems: getLegalProfileProblems(saved) });
+  return NextResponse.json({ profile: saved, problems });
 }

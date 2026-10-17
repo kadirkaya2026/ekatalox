@@ -6,6 +6,10 @@ import { TenantPaymentSettingsForm } from "@/components/dashboard/tenant-payment
 import { getTenantStorefrontSettings } from "@/lib/data";
 import { requireTenantAdminPage } from "@/lib/auth/session";
 import { getLegalProfileProblems, readLegalProfile } from "@/lib/legal/tenant-legal";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { getTenantPaymentProviderSummary } from "@/lib/payments/credentials";
+import { getOnlinePaymentProblems } from "@/lib/payments/readiness";
+import { appEnv } from "@/lib/env";
 
 export const metadata = { title: "Ödeme ve Kampanyalar" };
 
@@ -16,6 +20,20 @@ export default async function PaymentSettingsPage() {
   const session = await requireTenantAdminPage();
   const tenant = session.tenant!;
   const storefrontSettings = await getTenantStorefrontSettings(tenant.id);
+  const admin = createSupabaseAdminClient();
+  const onlineProvider = admin ? await getTenantPaymentProviderSummary(admin, tenant.id) : null;
+  const onlineProblems = admin
+    ? await getOnlinePaymentProblems({
+        supabase: admin,
+        tenantId: tenant.id,
+        plan: tenant.plan,
+        legalProfile: storefrontSettings.legal_profile,
+      })
+    : ["Sunucu yapılandırması eksik"];
+  // PayTR Bildirim URL'i mağazanın kendi adresinde (özel alan adı varsa o).
+  const storefrontOrigin = tenant.custom_domain?.trim()
+    ? `https://${tenant.custom_domain.trim()}`
+    : `https://${tenant.subdomain}.${appEnv.rootDomain}`;
 
   return (
     <div className="space-y-6">
@@ -37,6 +55,10 @@ export default async function PaymentSettingsPage() {
               storefrontSettings={storefrontSettings}
               plan={tenant.plan}
               legalProblems={getLegalProfileProblems(readLegalProfile(storefrontSettings.legal_profile))}
+              onlineProvider={onlineProvider}
+              onlineProblems={onlineProblems}
+              paytrNotifyUrl={`${storefrontOrigin}/api/payments/paytr/notify`}
+              paynetEgressIp={process.env.PAYNET_EGRESS_IP?.trim() || null}
             />
           ),
           campaigns: (

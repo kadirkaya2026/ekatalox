@@ -8,7 +8,7 @@
 // çekmecesinde (storefront-cart-drawer) kalır.
 import { useCallback, useEffect, useState, type ReactNode, type Ref } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Banknote, Briefcase, Check, ChevronDown, CreditCard, Home, Landmark, MapPin, Plus, UserRound, X } from "lucide-react";
+import { Banknote, Briefcase, Check, ChevronDown, CreditCard, Globe, Home, Landmark, MapPin, Plus, UserRound, X } from "lucide-react";
 import type { StoreMemberProfile } from "@/components/storefront/member-auth";
 import { StorefrontImage } from "@/components/storefront/storefront-image";
 import { ProductImagePlaceholder } from "@/components/product-image-placeholder";
@@ -110,7 +110,12 @@ function Radio({ active }: { active: boolean }) {
   );
 }
 
-const METHOD_ICON: Record<CheckoutPaymentMethod, typeof Banknote> = { cash: Banknote, card: CreditCard, transfer: Landmark };
+const METHOD_ICON: Record<CheckoutPaymentMethod, typeof Banknote> = {
+  cash: Banknote,
+  card: CreditCard,
+  transfer: Landmark,
+  online: Globe,
+};
 
 export function PaymentMethodSection({
   methods,

@@ -12,6 +12,7 @@ import {
   ChevronLeft,
   ChevronRight,
   CreditCard,
+  Globe,
   Landmark,
   Minus,
   Loader2,
@@ -84,6 +85,9 @@ export type StorefrontCartDrawerProps = {
   setSelectedInstallmentCount: Dispatch<SetStateAction<number | null>>;
   paymentMethodError: string | null;
   setPaymentMethodError: Dispatch<SetStateAction<string | null>>;
+  /** Online ödemede ön bilgilendirme + mesafeli satış onayı (0185). */
+  onlineConsent: boolean;
+  setOnlineConsent: Dispatch<SetStateAction<boolean>>;
   storefrontSettings: TenantStorefrontSettings;
   note: string;
   setNote: Dispatch<SetStateAction<string>>;
@@ -195,6 +199,8 @@ export function StorefrontCartDrawer({
   setSelectedInstallmentCount,
   paymentMethodError,
   setPaymentMethodError,
+  onlineConsent,
+  setOnlineConsent,
   storefrontSettings,
   note,
   setNote,
@@ -1066,9 +1072,10 @@ cartFormConfig.customer_address.is_visible ? (
             {isMarketTenant ? t("cart.required") : t("cart.optional")}
           </span>
         </div>
-        <div className={cn("grid gap-2", checkoutMethods.length === 1 ? "grid-cols-1" : checkoutMethods.length === 2 ? "grid-cols-2" : "grid-cols-3")}>
+        <div className={cn("grid gap-2", checkoutMethods.length === 1 ? "grid-cols-1" : checkoutMethods.length === 3 ? "grid-cols-3" : "grid-cols-2")}>
           {checkoutMethods.map((method) => {
-            const Icon = method === "cash" ? Banknote : method === "card" ? CreditCard : Landmark;
+            const Icon =
+              method === "cash" ? Banknote : method === "card" ? CreditCard : method === "online" ? Globe : Landmark;
             const active = selectedPaymentMethod === method;
             return (
               <button
@@ -1084,7 +1091,7 @@ cartFormConfig.customer_address.is_visible ? (
                 className={cn(
                   "flex items-center justify-center gap-2 rounded-2xl border px-2 py-3 text-center text-sm font-semibold leading-tight transition",
                   active
-                    ? method === "card"
+                    ? method === "card" || method === "online"
                       ? theme.cartPaymentCardActive
                       : theme.cartPaymentCashActive
                     : theme.cartPaymentInactive,
@@ -1117,6 +1124,41 @@ cartFormConfig.customer_address.is_visible ? (
               {bankTransferInfo.iban}
             </p>
             <p className={cn("mt-2 text-xs", theme.textMuted)}>{t("cart.transferHint")}</p>
+          </div>
+        ) : null}
+        {selectedPaymentMethod === "online" ? (
+          <div className={cn("mt-3 rounded-xl p-3 text-sm", theme.surfaceMuted)}>
+            <p className={cn("text-xs", theme.textMuted)}>{t("cart.onlineHint")}</p>
+            <label className={cn("mt-3 flex cursor-pointer items-start gap-2.5 text-[13px] leading-5", theme.text)}>
+              <input
+                type="checkbox"
+                checked={onlineConsent}
+                onChange={(event) => {
+                  setOnlineConsent(event.target.checked);
+                  setPaymentMethodError(null);
+                }}
+                className="mt-0.5 size-4 shrink-0 accent-current"
+              />
+              <span>
+                {t("cart.onlineConsent")
+                  .split(/(\{pre\}|\{sales\})/)
+                  .map((part, index) =>
+                    part === "{pre}" || part === "{sales}" ? (
+                      <a
+                        key={index}
+                        href={part === "{pre}" ? "/yasal/on-bilgilendirme-formu" : "/yasal/mesafeli-satis-sozlesmesi"}
+                        target="_blank"
+                        rel="noopener"
+                        className="font-semibold underline underline-offset-2"
+                      >
+                        {t(part === "{pre}" ? "cart.onlineConsentPre" : "cart.onlineConsentSales")}
+                      </a>
+                    ) : (
+                      <Fragment key={index}>{part}</Fragment>
+                    ),
+                  )}
+              </span>
+            </label>
           </div>
         ) : null}
         {paymentMethodError ? (
@@ -1290,7 +1332,8 @@ cartFormConfig.customer_address.is_visible ? (
       ) : null}
       {checkoutMethods.length ? (
         <PaymentMethodSection
-          methods={checkoutMethods}
+          // Online ödeme (0185) market sepetinde henüz yok: onay kutusu bu düzende değil.
+          methods={checkoutMethods.filter((method) => method !== "online")}
           selected={selectedPaymentMethod}
           onSelect={(method) => {
             setSelectedPaymentMethod(method);
@@ -2170,7 +2213,11 @@ cartFormConfig.customer_address.is_visible ? (
                         </Button>
                       ) : (
                         renderHandoffOrCta({
-                          label: useStepFlow ? t("cart.step.placeOrder") : nonMarketCtaLabel,
+                          label: useStepFlow
+                            ? t("cart.step.placeOrder")
+                            : selectedPaymentMethod === "online"
+                              ? t("cart.onlinePayCta")
+                              : nonMarketCtaLabel,
                           onCta: handleWhatsAppOrder,
                         })
                       )}

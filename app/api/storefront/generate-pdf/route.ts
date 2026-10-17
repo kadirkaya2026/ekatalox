@@ -42,13 +42,14 @@ import { ALCOHOL_ONLINE_ORDER_ERROR } from "@/lib/products/alcohol";
 import type { CartItem } from "@/lib/types";
 import { hasStoreMembership, readMemberForTenant, saveFirstOrderAddress } from "@/lib/storefront/member";
 import { resolveStorefrontAds } from "@/lib/ads/server";
+import { getOnlinePaymentProblems } from "@/lib/payments/readiness";
 import {
   findMissingRequiredCartFields,
   resolveCartFormConfig,
 } from "@/lib/storefront/cart-form-config";
 
 function buildPaymentMethodLabel(params: {
-  paymentMethod: "cash" | "card" | "transfer";
+  paymentMethod: "cash" | "card" | "transfer" | "online";
   selectedInstallment: { label: string; surchargePercentage: number } | null;
   zeroCommissionApplied: boolean;
 }) {
@@ -57,6 +58,9 @@ function buildPaymentMethodLabel(params: {
   }
   if (params.paymentMethod === "transfer") {
     return "Havale / EFT";
+  }
+  if (params.paymentMethod === "online") {
+    return "Online Ödeme (Kredi Kartı)";
   }
 
   if (!params.selectedInstallment) {
@@ -352,6 +356,48 @@ export async function POST(request: Request) {
     }
   }
 
+  // Online ödeme (0185): mağazanın kendi sağlayıcı hesabıyla. Koşullar sunucuda
+  // yeniden denetlenir; sözleşme onayı olmadan sipariş açılmaz.
+  if (parsed.data.paymentMethod === "online") {
+    if (catalogMode) {
+      return errorResponse(requestId, "Fiyatsız katalogda online ödeme yapılamaz.", 400, {
+        reason: "online_catalog",
+        tenantId: tenant.id,
+      });
+    }
+    const onlineSettings = await getTenantStorefrontSettings(tenant.id);
+    const onlineProblems = onlineSettings.payment_methods?.online
+      ? await getOnlinePaymentProblems({
+          supabase,
+          tenantId: tenant.id,
+          plan: tenant.plan,
+          legalProfile: onlineSettings.legal_profile,
+        })
+      : ["kapalı"];
+    if (onlineProblems.length) {
+      return errorResponse(
+        requestId,
+        "Bu mağazada şu an online ödeme kullanılamıyor. Lütfen başka bir ödeme yöntemi seçin.",
+        400,
+        { reason: "online_unavailable", tenantId: tenant.id, problems: onlineProblems },
+      );
+    }
+    if (!parsed.data.legal_consent) {
+      return errorResponse(
+        requestId,
+        "Online ödeme için Ön Bilgilendirme Formu ve Mesafeli Satış Sözleşmesi'ni onaylayın.",
+        400,
+        { reason: "legal_consent_missing", tenantId: tenant.id },
+      );
+    }
+    if (items.some((item) => item.currency !== "TRY")) {
+      return errorResponse(requestId, "Online ödeme yalnız TL fiyatlı siparişlerde kullanılabilir.", 400, {
+        reason: "online_currency",
+        tenantId: tenant.id,
+      });
+    }
+  }
+
   if (catalogMode) {
     // Fiyatsız katalogda da ödeme yöntemi seçilebilir (tutar hesabı yok, sadece bilgi).
     const catalogPaymentMethod = parsed.data.paymentMethod ?? null;
@@ -590,6 +636,13 @@ export async function POST(request: Request) {
     note: parsed.data.note,
     magnetCodeId,
   });
+  if (recorded && paymentMethod === "online") {
+    // Ödeme sağlayıcıdan onay gelene kadar "bekleniyor" (bkz. lib/payments/order-payments.ts).
+    await supabase
+      .from("orders")
+      .update({ payment_status: "awaiting", legal_consent_at: new Date().toISOString() })
+      .eq("id", recorded.orderId);
+  }
   if (recorded && paymentSummary.appliedCoupon && paymentSummary.couponDiscountAmount > 0) {
     // Kuponu tüket ve siparişe işle (atomik; ikinci kullanımda false döner)
     await supabase.rpc("redeem_customer_coupon", {
@@ -613,8 +666,9 @@ export async function POST(request: Request) {
       await supabase.from("orders").update({ access_code_id: accessCodeId }).eq("id", orderId);
     });
   }
-  if (recorded) {
+  if (recorded && paymentMethod !== "online") {
     // BizimHesap'a satış belgesi (0159); bağlı değilse sessizce atlanır, hata siparişi etkilemez.
+    // Online ödemede belge ödeme onaylanınca gider (settlePaymentAttempt).
     const bizimhesapOrderId = recorded.orderId;
     after(() => sendOrderToBizimHesap(supabase, bizimhesapOrderId).then(() => undefined));
   }
@@ -742,7 +796,18 @@ export async function POST(request: Request) {
       durationMs,
     });
 
-    return NextResponse.json({ pdfUrl, locationUrl, orderNumber, orderNo: recorded?.orderNo ?? null, securePdfId, requestId, trackingUrl: buildTrackingUrl(request, recorded) });
+    return NextResponse.json({
+      pdfUrl,
+      locationUrl,
+      orderNumber,
+      orderNo: recorded?.orderNo ?? null,
+      securePdfId,
+      requestId,
+      trackingUrl: buildTrackingUrl(request, recorded),
+      // Göreli yol: müşteri hangi adresteyse (alt alan / özel alan adı) orada kalır.
+      paymentUrl:
+        paymentMethod === "online" && recorded?.trackingToken ? `/odeme/${recorded.trackingToken}` : null,
+    });
   } catch (error) {
     logOrderPdfServerEvent("error", "request_failed", {
       requestId,
