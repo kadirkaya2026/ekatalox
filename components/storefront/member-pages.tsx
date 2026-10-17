@@ -58,7 +58,10 @@ function useStoredCartCount(tenantId: string) {
     let value = 0;
     try {
       const parsed = JSON.parse(window.localStorage.getItem(`ekatalox_cart_${tenantId}`) ?? "[]") as unknown;
-      value = Array.isArray(parsed) ? parsed.length : 0;
+      // Vitrindeki sayaçla aynı: toplam adet.
+      value = Array.isArray(parsed)
+        ? parsed.reduce((sum: number, item: { quantity?: unknown }) => sum + (typeof item?.quantity === "number" ? item.quantity : 0), 0)
+        : 0;
     } catch {
       /* depolama kapalı */
     }
@@ -147,7 +150,7 @@ export function MemberLoginPage(props: AuthPageProps) {
       </Card>
       <Card className="mt-4 flex items-center justify-between gap-3 p-4">
         <span className={cn("text-sm", theme.textMuted)}>{t("member.noAccount")}</span>
-        <a href={`/uye-ol${nextQuery}`} className={cn(theme.primaryButton, "h-10 justify-center px-5 text-sm")}>
+        <a href={`/uye-ol${nextQuery}`} className={cn(theme.primaryButton, "inline-flex h-10 items-center justify-center px-5 text-sm")}>
           {t("member.register")}
         </a>
       </Card>
@@ -164,7 +167,7 @@ export function MemberRegisterPage(props: AuthPageProps) {
     <MemberShell {...props} title={t("member.register")} backHref={`/giris${nextQuery}`}>
       <Card className="p-5">
         <p className={cn("text-lg font-semibold", theme.text)}>{props.storeName}</p>
-        <p className={cn("mt-1 text-sm", theme.textMuted)}>{t("member.registerHint")}</p>
+        <p className={cn("mt-1 text-sm", theme.textMuted)}>{t("member.cartPitch")}</p>
         <MemberAuthForm className="mt-4" subdomain={props.subdomain} initialMode="register" hideTabs onAuthed={() => afterAuth(props.next)} />
       </Card>
       <Card className="mt-4 flex items-center justify-between gap-3 p-4">

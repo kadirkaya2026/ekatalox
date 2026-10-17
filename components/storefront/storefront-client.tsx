@@ -1937,6 +1937,13 @@ export function StorefrontClient({
   });
   useOverlayHistory(isFilterSheetOpen && filterScopeActive, () => setIsFilterSheetOpen(false));
   useOverlayHistory(Boolean(selectedProduct) && !previewMode, () => closeAddToCartModal());
+  // Alt bar panelleri (arama, kampanyalar) ve kategori çekmecesi de geri tuşuyla kapanır.
+  useOverlayHistory(isSearchSheetOpen && !previewMode, () => {
+    setIsSearchSheetOpen(false);
+    handleSearchChange("");
+  });
+  useOverlayHistory(isCampaignsSheetOpen && !previewMode, () => setIsCampaignsSheetOpen(false));
+  useOverlayHistory(isCategoryDrawerOpen && !previewMode, () => setIsCategoryDrawerOpen(false));
   const buildRefine = useCallback(
     (selection: FilterSelection): StorefrontRefine => ({
       ...selection.refine,
