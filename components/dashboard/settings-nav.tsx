@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   Building2, Clock, ClipboardList, CreditCard, Globe, ImageIcon, LayoutTemplate,
-  Megaphone, PackageX, PanelBottom, Palette, Receipt, ShieldCheck, Store, Ticket, Truck,
+  LifeBuoy, Megaphone, PackageX, PanelBottom, Palette, Receipt, ShieldCheck, Store, Ticket, Truck,
   UserCircle, PlugZap, type LucideIcon,
   Lock, Mail, Scale,
 } from "lucide-react";
@@ -49,6 +49,7 @@ const TABS: Tab[] = [
   { href: "/settings/announcement", label: "Duyuru Modalı", icon: Megaphone, group: "İçerik & İletişim" },
   { href: "/settings/age-verification", label: "Yaş Doğrulama (18+)", icon: ShieldCheck, group: "İçerik & İletişim", requiredBusinessType: "market" },
   { href: "/settings/footer", label: "Footer (Sayfa Altı)", icon: PanelBottom, group: "İçerik & İletişim" },
+  { href: "/settings/help", label: "Yardım Sayfaları", icon: LifeBuoy, group: "İçerik & İletişim", requiredBusinessType: "market" },
   { href: "/settings/payment", label: "Ödeme ve Kampanyalar", icon: CreditCard, group: "Ödeme" },
   { href: "/settings/legal", label: "Yasal Bilgiler", icon: Scale, group: "Ödeme" },
   { href: "/settings/bizimhesap", label: "BizimHesap", icon: PlugZap, group: "Entegrasyonlar", requiredFeature: "bizimhesap", requiredBusinessType: "general" },

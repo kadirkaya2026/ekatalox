@@ -7,7 +7,12 @@ import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { KeyRound, Lock, Mail, MapPin, Phone, User } from "lucide-react";
 import { useStorefrontTheme } from "@/lib/storefront/theme-context";
 import { useStorefrontLocale } from "@/lib/storefront/locale-context";
-import { readGuestOrderTokens, setMemberSignedInHint } from "@/lib/storefront/tracking-phone";
+import {
+  clearPendingSignup,
+  readGuestOrderTokens,
+  setMemberSignedInHint,
+  type PendingSignup,
+} from "@/lib/storefront/tracking-phone";
 import { cn } from "@/lib/utils";
 
 export type StoreMemberProfile = {
@@ -16,6 +21,7 @@ export type StoreMemberProfile = {
   full_name: string;
   address: string;
   email: string | null;
+  email_notifications?: boolean;
 };
 
 export type MemberAuthMode = "login" | "register" | "forgot" | "reset";
@@ -82,6 +88,8 @@ export function MemberAuthForm({
   initialMode = "login",
   resetToken,
   defaultPhone = "",
+  defaultName = "",
+  defaultAddress = "",
   onAuthed,
   onCancel,
   cancelLabel,
@@ -92,6 +100,8 @@ export function MemberAuthForm({
   initialMode?: MemberAuthMode;
   resetToken?: string | null;
   defaultPhone?: string;
+  defaultName?: string;
+  defaultAddress?: string;
   onAuthed: (member: StoreMemberProfile) => void;
   onCancel?: () => void;
   cancelLabel?: string;
@@ -104,8 +114,8 @@ export function MemberAuthForm({
   const [mode, setMode] = useState<MemberAuthMode>(resetToken ? "reset" : initialMode);
   const [phone, setPhone] = useState(defaultPhone);
   const [password, setPassword] = useState("");
-  const [fullName, setFullName] = useState("");
-  const [address, setAddress] = useState("");
+  const [fullName, setFullName] = useState(defaultName);
+  const [address, setAddress] = useState(defaultAddress);
   const [email, setEmail] = useState("");
   const [identifier, setIdentifier] = useState("");
   const [pending, setPending] = useState(false);
@@ -375,6 +385,59 @@ export function CartMemberBox({
         </button>
       </div>
       <p className={cn("mt-2 text-center text-xs", theme.textMuted)}>{t("member.cartGuestHint")}</p>
+    </div>
+  );
+}
+
+/**
+ * Üyeliksiz sipariş sonrası: "Siparişinizi takip etmek için kayıt olun".
+ * Form siparişte yazılan bilgilerle dolu gelir; kayıt olunca bu siparişler
+ * (cihazdaki takip kodları) hesaba bağlanır ve Siparişlerim açılır.
+ */
+export function OrderSignupPanel({
+  subdomain,
+  pending,
+  onDismiss,
+}: {
+  subdomain: string;
+  pending: Pick<PendingSignup, "name" | "phone" | "address">;
+  onDismiss: () => void;
+}) {
+  const theme = useStorefrontTheme();
+  const { t } = useStorefrontLocale();
+  return (
+    <div className="w-full text-left">
+      <p className={cn("text-lg font-bold", theme.text)}>{t("member.trackSignupTitle")}</p>
+      <p className={cn("mt-1 text-sm leading-6", theme.textMuted)}>{t("member.trackSignupBody")}</p>
+      <MemberAuthForm
+        className="mt-4"
+        subdomain={subdomain}
+        initialMode="register"
+        hideTabs
+        defaultPhone={pending.phone}
+        defaultName={pending.name}
+        defaultAddress={pending.address}
+        onAuthed={() => {
+          clearPendingSignup();
+          setMemberSignedInHint(true);
+          window.location.href = "/hesabim/siparisler";
+        }}
+      />
+      <div className="mt-3 flex items-center justify-between gap-3">
+        <a href={`/giris?next=${encodeURIComponent("/hesabim/siparisler")}`} className="text-sm font-semibold text-orange-600">
+          {t("member.haveAccount")} {t("member.login")}
+        </a>
+        <button
+          type="button"
+          onClick={() => {
+            clearPendingSignup();
+            onDismiss();
+          }}
+          className={cn("text-sm font-semibold", theme.textMuted)}
+        >
+          {t("member.notNow")}
+        </button>
+      </div>
     </div>
   );
 }

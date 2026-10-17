@@ -31,7 +31,7 @@ import { isSecureStorefrontRequest } from "@/lib/storefront/session";
 
 const RESET_TTL_MINUTES = 60;
 const NO_STORE = { "Cache-Control": "no-store" };
-const MEMBER_SELECT = "id, tenant_id, phone, full_name, address, email, password_hash";
+const MEMBER_SELECT = "id, tenant_id, phone, full_name, address, email, email_notifications, password_hash";
 
 const phoneSchema = z
   .string()
@@ -155,6 +155,12 @@ export async function POST(request: Request) {
       console.error("[member] kayıt hatası:", error);
       return NextResponse.json({ error: "Üyelik oluşturulamadı, tekrar deneyin." }, { status: 500 });
     }
+    // Kayıtta yazılan adres ana adres ("Ev") olur (0181).
+    if (profile.data.address) {
+      await supabase
+        .from("store_member_addresses")
+        .insert({ member_id: row.id, tenant_id: tenant.id, title: "Ev", address: profile.data.address, is_default: true });
+    }
     // Eski siparişler yalnız bu cihazın takip kodlarıyla bağlanır; numara
     // aynı diye başkasının siparişi hesaba gelmez.
     await claimGuestOrders(supabase, tenant.id, row.id, sanitizeTrackingTokens(body.guest_tokens));
@@ -254,6 +260,7 @@ const patchSchema = z.object({
   full_name: z.string(),
   address: z.string().optional(),
   email: z.string().nullish(),
+  email_notifications: z.boolean().optional(),
   current_password: z.string().max(72).optional(),
   new_password: memberPasswordSchema.optional(),
 });
@@ -268,14 +275,25 @@ export async function PATCH(request: Request) {
   const member = await readMemberForTenant(supabase, tenant.id);
   if (!member) return NextResponse.json({ error: "Oturumunuz kapanmış, tekrar giriş yapın." }, { status: 401 });
 
-  const profile = memberProfileSchema.safeParse({ full_name: body.full_name, address: body.address ?? "", email: body.email });
+  const profile = memberProfileSchema.safeParse({
+    full_name: body.full_name,
+    address: body.address ?? "",
+    email: body.email,
+    email_notifications: body.email_notifications,
+  });
   if (!profile.success) return NextResponse.json({ error: firstIssue(profile.error) }, { status: 400 });
+  if (profile.data.email_notifications && !profile.data.email) {
+    return NextResponse.json({ error: "E-posta bildirimi için e-posta adresinizi yazın." }, { status: 400 });
+  }
   if (profile.data.email && profile.data.email !== member.email) {
     const other = await findMemberByEmail(supabase, tenant.id, profile.data.email);
     if (other && other.id !== member.id) return NextResponse.json({ error: "Bu e-posta başka bir üyelikte kayıtlı." }, { status: 409 });
   }
 
   const update: Record<string, unknown> = { ...profile.data, updated_at: new Date().toISOString() };
+  if (profile.data.email_notifications === undefined) delete update.email_notifications;
+  // E-posta silinirse e-posta bildirimi de kapanır.
+  if (!profile.data.email) update.email_notifications = false;
   if (body.new_password) {
     const current = await findMemberByPhone(supabase, tenant.id, member.phone);
     if (!current || !verifyMemberPassword(body.current_password ?? "", current.password_hash)) {

@@ -151,3 +151,37 @@ export function readMemberSignedInHint() {
     return false;
   }
 }
+
+// Üyeliksiz sipariş sonrası "Takip için kayıt olun" (17 Eki 2026): siparişte
+// yazılan bilgiler kayıt formunu doldurur; sayfa yenilense de vitrin açılınca
+// sorulur. Kayıt olunca ya da "Şimdi değil" denince silinir.
+const PENDING_SIGNUP_KEY = "ekx-pending-signup";
+
+export type PendingSignup = { name: string; phone: string; address: string; token: string | null; at: number };
+
+export function savePendingSignup(value: Omit<PendingSignup, "at">) {
+  try {
+    window.localStorage.setItem(PENDING_SIGNUP_KEY, JSON.stringify({ ...value, at: Date.now() }));
+  } catch {
+    /* depolama kapalı */
+  }
+}
+
+export function readPendingSignup(): PendingSignup | null {
+  try {
+    const parsed = JSON.parse(window.localStorage.getItem(PENDING_SIGNUP_KEY) ?? "null") as PendingSignup | null;
+    // 3 günden eski istek sorulmaz.
+    if (!parsed || typeof parsed.at !== "number" || Date.now() - parsed.at > 3 * 86400_000) return null;
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+export function clearPendingSignup() {
+  try {
+    window.localStorage.removeItem(PENDING_SIGNUP_KEY);
+  } catch {
+    /* yok say */
+  }
+}

@@ -42,10 +42,12 @@ export async function sendOrderStatusPush(params: {
   isTekel: boolean;
   isWholesale?: boolean;
   trackingUrl: string | null;
-}) {
-  if (!hasWebPushEnv()) return;
+}): Promise<number> {
+  // Dönen değer: bildirim gönderilen abonelik sayısı (0 = telefonda bildirim yok;
+  // çağıran üyeye e-posta düşer, bkz. lib/orders/order-status-email.ts).
+  if (!hasWebPushEnv()) return 0;
   const supabase = createSupabaseAdminClient();
-  if (!supabase) return;
+  if (!supabase) return 0;
 
   // Alıcılar panelin "Bildirim açık" işaretiyle AYNI kuralla seçilir
   // (lib/push/reach.ts): sipariş takibi, müşteri kaydı, kişiye özel şifre ya
@@ -62,7 +64,7 @@ export async function sendOrderStatusPush(params: {
     .select("id, endpoint, p256dh, auth, failure_count, order_id, customer_id, access_code_id, subscriber_phone")
     .eq("tenant_id", params.tenantId)
     .or(conditions.join(","));
-  if (!rows?.length) return;
+  if (!rows?.length) return 0;
 
   // Ortak liste şifresi kimlik değildir: şifre eşleşmesi yalnız kişiye özelse.
   let personalCode = false;
@@ -82,7 +84,7 @@ export async function sendOrderStatusPush(params: {
       (personalCode && row.access_code_id === params.accessCodeId) ||
       (phoneKey && phoneReachKey(row.subscriber_phone) === phoneKey),
   );
-  if (!subs.length) return;
+  if (!subs.length) return 0;
 
   webpush.setVapidDetails(appEnv.vapidSubject, appEnv.vapidPublicKey, appEnv.vapidPrivateKey);
   // iOS bildirimi zaten "from {uygulama adı}" satırı ekliyor; başlıkta mağaza
@@ -114,4 +116,5 @@ export async function sendOrderStatusPush(params: {
       }
     }),
   );
+  return subs.length;
 }

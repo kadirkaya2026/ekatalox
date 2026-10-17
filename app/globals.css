@@ -154,6 +154,12 @@ button:focus-visible {
   @apply rounded-2xl border border-slate-200 bg-card text-card-foreground shadow-sm dark:border-slate-800;
 }
 
+/* Çift dokunarak yakınlaştırma kapalı (17 Eki 2026): sepette "+"ya hızlı iki kez
+   basınca iPhone ekranı büyütüp düzeni kaydırıyordu. İki parmakla büyütme açık. */
+html {
+  touch-action: manipulation;
+}
+
 .sticky-safe-bottom {
   padding-bottom: calc(env(safe-area-inset-bottom) + 5rem);
 }
@@ -276,6 +282,12 @@ section[id] {
 ::-webkit-scrollbar-track { background: var(--color-background); }
 ::-webkit-scrollbar-thumb { background: var(--color-muted); border-radius: 4px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--color-muted-foreground); }
+
+/* Tam sayfa geçişinde üstte akan ilerleme çizgisi (storefront-bottom-nav.tsx). */
+@keyframes ekx-nav-progress {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(300%); }
+}
 
 @keyframes ek-homepage-shimmer {
   0% {

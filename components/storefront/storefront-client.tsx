@@ -137,8 +137,16 @@ import { StorefrontCampaignsSheet } from "@/components/storefront/storefront-cam
 import { StorefrontSearchSheet } from "@/components/storefront/storefront-search-sheet";
 import { hasAccountPage, hasEnhancedNavCues, hasOrderTracking, isMarketOrTekelTenant } from "@/lib/storefront/white-label";
 import { ProminentLoadMoreButton } from "@/components/storefront/enhanced-nav-cues";
-import { readPushIdentity, readTrackingPhone, saveGuestOrderToken, saveTrackingPhone } from "@/lib/storefront/tracking-phone";
-import { CartMemberBox, useStoreMember } from "@/components/storefront/member-auth";
+import {
+  readPendingSignup,
+  readPushIdentity,
+  readTrackingPhone,
+  saveGuestOrderToken,
+  savePendingSignup,
+  saveTrackingPhone,
+  type PendingSignup,
+} from "@/lib/storefront/tracking-phone";
+import { CartMemberBox, OrderSignupPanel, useStoreMember } from "@/components/storefront/member-auth";
 import { useUnseenOrderUpdates } from "@/components/storefront/order-tracking-badge";
 import { getCampaignPushStatus } from "@/lib/push/client";
 import { validateCustomerPhoneInput } from "@/lib/storefront/customer-phone";
@@ -1634,6 +1642,17 @@ export function StorefrontClient({
   // Hesabım sekmesindeki kırmızı sayaç: üyenin görmediği sipariş güncellemeleri.
   const memberOrderUpdates = useUnseenOrderUpdates(membershipEnabled ? analyticsSubdomain : undefined);
   const [appliedMemberId, setAppliedMemberId] = useState<string | null>(null);
+  // Market son adımı: üyeliksiz müşteri "Üye olmadan devam et"e basınca ad/telefon/adres açılır.
+  const [guestCheckoutChosen, setGuestCheckoutChosen] = useState(false);
+  // Üyeliksiz sipariş sonrası "takip için kayıt olun" (yenilemede de sorulur).
+  const [pendingSignup, setPendingSignup] = useState<PendingSignup | null>(null);
+  useEffect(() => {
+    if (!membershipEnabled) return;
+    const saved = readPendingSignup();
+    if (!saved) return;
+    const timer = window.setTimeout(() => setPendingSignup(saved), 0);
+    return () => window.clearTimeout(timer);
+  }, [membershipEnabled]);
   if ((storeMember.member?.id ?? null) !== appliedMemberId) {
     const m = storeMember.member;
     setAppliedMemberId(m?.id ?? null);
@@ -3160,8 +3179,19 @@ export function StorefrontClient({
       // Sipariş kaydedildi: bu numara takip sayfasına "giriş yapmış" olur.
       // Başka numarayla sipariş verilirse üzerine yazılır.
       if (orderTrackingEnabled && customerPhone.trim()) saveTrackingPhone(customerPhone);
-      // Üyeliksiz sipariş bu cihazdan takip edilebilsin (numarayla sorgu kapalı, 0180).
+      // Üyeliksiz sipariş: kodu cihazda saklanır (kayıt olunca hesaba bağlanır, 0180)
+      // ve takip için bilgileri dolu kayıt formu sorulur.
       if (orderTrackingEnabled) saveGuestOrderToken(trackingUrl);
+      if (membershipEnabled && isMarketTenant && !storeMember.member) {
+        const signup = {
+          name: customerReferenceName.trim(),
+          phone: customerPhone.trim(),
+          address: customerAddress.trim(),
+          token: trackingUrl,
+        };
+        savePendingSignup(signup);
+        setPendingSignup({ ...signup, at: Date.now() });
+      }
     } catch (error) {
       const apiError =
         error instanceof OrderPdfRequestError && error.apiError?.trim()
@@ -5414,6 +5444,15 @@ export function StorefrontClient({
 
       {/* Telefonda gezerken çıkan "Sipariş Özeti" şeridi kaldırıldı (17 Eki 2026, kullanıcı isteği); sepete sepet ikonundan girilir. */}
 
+      {/* Siteye dönen üyeliksiz müşteri: "Siparişinizi takip etmek için kayıt olun". */}
+      {isMounted && membershipEnabled && isMarketTenant && pendingSignup && storeMember.loaded && !storeMember.member && !isCartOpen ? (
+        <div className="fixed inset-0 z-[70] flex items-end justify-center bg-black/45 p-0 sm:items-center sm:p-4">
+          <div className={cn("max-h-[92svh] w-full overflow-y-auto rounded-t-3xl p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] sm:max-w-md sm:rounded-3xl", theme.page)}>
+            <OrderSignupPanel subdomain={analyticsSubdomain} pending={pendingSignup} onDismiss={() => setPendingSignup(null)} />
+          </div>
+        </div>
+      ) : null}
+
       {isMounted && usesBottomNav ? (
         <StorefrontBottomNav
           cartItemCount={badgeCartCount}
@@ -5421,7 +5460,8 @@ export function StorefrontClient({
           isSearchOpen={isSearchSheetOpen}
           isCampaignsOpen={isCampaignsSheetOpen}
           isHomeActive={!isSearchSheetOpen && !isCampaignsSheetOpen && !isCartOpen}
-          accountHref={membershipEnabled ? "/hesabim" : undefined}
+          // Üye değilse doğrudan Giriş'e (yoksa /hesabim → /giris fazladan yönlenme beklemesi).
+          accountHref={membershipEnabled ? (storeMember.member ? "/hesabim" : "/giris") : undefined}
           accountBadge={memberOrderUpdates}
           onGoHome={() => {
             setIsSearchSheetOpen(false);
@@ -5563,6 +5603,18 @@ export function StorefrontClient({
               onAdd={addDealerAddress}
             />
           ) : undefined
+        }
+        marketCheckout={
+          membershipEnabled && isMarketTenant
+            ? {
+                subdomain: analyticsSubdomain,
+                member: storeMember.member,
+                guestChosen: guestCheckoutChosen,
+                onChooseGuest: () => setGuestCheckoutChosen(true),
+                pendingSignup,
+                onDismissSignup: () => setPendingSignup(null),
+              }
+            : undefined
         }
         memberSlot={
           membershipEnabled && storeMember.loaded ? (

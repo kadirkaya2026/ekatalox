@@ -40,7 +40,7 @@ import { createShortLink } from "@/lib/storage/short-links";
 import { storefrontOrderPdfSchema } from "@/lib/validators/storefront-order-pdf";
 import { ALCOHOL_ONLINE_ORDER_ERROR } from "@/lib/products/alcohol";
 import type { CartItem } from "@/lib/types";
-import { hasStoreMembership, readMemberForTenant } from "@/lib/storefront/member";
+import { hasStoreMembership, readMemberForTenant, saveFirstOrderAddress } from "@/lib/storefront/member";
 import { resolveStorefrontAds } from "@/lib/ads/server";
 import {
   findMissingRequiredCartFields,
@@ -602,6 +602,10 @@ export async function POST(request: Request) {
   if (recorded && member) {
     // Senkron: müşteri hemen "Siparişlerim"e geçerse sipariş listede olsun.
     await supabase.from("orders").update({ member_id: member.id }).eq("id", recorded.orderId);
+    // Kayıtlı adresi yoksa bu siparişin adresi ana adres olur (0181).
+    const memberAddress = parsed.data.customer_address;
+    const recipient = { name: parsed.data.customer_reference_name, phone: parsed.data.customer_phone };
+    after(() => saveFirstOrderAddress(supabase, member, memberAddress, recipient));
   }
   if (recorded && accessCodeId) {
     const orderId = recorded.orderId;

@@ -170,7 +170,9 @@ export default async function SectionDetailPage(props: {
   // Süresi geçmiş/pasif kampanyalar getStorefrontCampaigns içinde süzülüyor.
   const campaigns = await getStorefrontCampaigns(tenant.id);
 
-  const footerVisible = storefrontSettings.is_footer_visible;
+  // Market mağazalarında sayfa altı yok (17 Eki 2026, Getir): iletişim ve yasal
+  // sayfalar Hesabım > Yardım'da (/yardim).
+  const footerVisible = storefrontSettings.is_footer_visible && tenant.business_type !== "market";
   const headersList = await headers();
   const requestHost = getRequestHostFromHeaders(headersList);
   // Boş bırakılırsa altbilgi "©2026 eKatalox" bağlantısı basıyor.

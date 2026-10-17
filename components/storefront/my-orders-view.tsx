@@ -518,13 +518,6 @@ function MemberOrdersCard({
           </a>
         </div>
       </section>
-      {orders && orders.length ? (
-        <section className="mt-12">
-          <h2 className={cn("text-lg font-semibold", text)}>{t("member.guestDeviceOrders")}</h2>
-          <p className={cn("mt-1 text-sm", muted)}>{t("member.guestDeviceHint")}</p>
-          <OrderSections orders={orders} isTekel={isTekel} />
-        </section>
-      ) : null}
     </StorefrontSubpageShell>
   );
 }

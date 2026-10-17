@@ -56,7 +56,12 @@ export function resolveHost(hostHeader: string | null): HostResolution {
 
   const suffix = `.${rootDomain}`;
   if (host.endsWith(suffix)) {
-    const subdomain = host.slice(0, -suffix.length);
+    let subdomain = host.slice(0, -suffix.length);
+    // Önizleme dağıtımı (yalnız VERCEL_ENV=preview): "<mağaza>-onizleme.<kök>"
+    // adresi o mağazayı açar; değişiklik canlıya alınmadan telefonda gösterilir.
+    if (process.env.VERCEL_ENV === "preview" && subdomain.endsWith("-onizleme")) {
+      subdomain = subdomain.slice(0, -"-onizleme".length);
+    }
 
     if (subdomain === "www") {
       return { host, kind: "marketing", subdomain: null };

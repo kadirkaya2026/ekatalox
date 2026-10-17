@@ -23,11 +23,13 @@ export type StoreMember = {
   full_name: string;
   address: string;
   email: string | null;
+  /** Telefonda bildirim yoksa sipariş durumu e-postayla (0182). */
+  email_notifications: boolean;
 };
 
 type MemberRow = StoreMember & { password_hash: string };
 
-const MEMBER_COLUMNS = "id, tenant_id, phone, full_name, address, email, password_hash";
+const MEMBER_COLUMNS = "id, tenant_id, phone, full_name, address, email, email_notifications, password_hash";
 
 /** Üyelik yalnız market/tekel vitrinlerinde (toptancıda kişiye özel bayi şifresi var). */
 export function hasStoreMembership(tenant: Pick<Tenant, "business_type" | "is_tekel"> | null | undefined) {
@@ -108,6 +110,7 @@ export function publicMember(row: MemberRow | StoreMember): StoreMember {
     full_name: row.full_name ?? "",
     address: row.address ?? "",
     email: row.email ?? null,
+    email_notifications: Boolean(row.email_notifications),
   };
 }
 
@@ -198,8 +201,64 @@ export const memberProfileSchema = z.object({
     .nullish()
     .transform((v) => (v ? v.toLowerCase() : null))
     .refine((v) => v === null || z.email().safeParse(v).success, "Geçerli bir e-posta yazın."),
+  email_notifications: z.boolean().optional(),
 });
 
 export function hashResetToken(token: string) {
   return createHash("sha256").update(token).digest("hex");
+}
+
+export type StoreMemberAddress = {
+  id: string;
+  title: string;
+  address: string;
+  is_default: boolean;
+  /** Teslim alacak kişi (0183); boşsa üyenin kendisi. */
+  recipient_name: string | null;
+  recipient_phone: string | null;
+};
+
+export const MAX_MEMBER_ADDRESSES = 10;
+
+export async function listMemberAddresses(supabase: SupabaseClient, memberId: string): Promise<StoreMemberAddress[]> {
+  const { data } = await supabase
+    .from("store_member_addresses")
+    .select("id, title, address, is_default, recipient_name, recipient_phone")
+    .eq("member_id", memberId)
+    .order("is_default", { ascending: false })
+    .order("created_at", { ascending: true });
+  return (data ?? []) as StoreMemberAddress[];
+}
+
+/**
+ * Kayıtlı adresi olmayan üyenin ilk siparişindeki adres ana adres ("Ev") olur
+ * (Getir mantığı, 17 Eki 2026). Adresi zaten varsa dokunulmaz.
+ */
+export async function saveFirstOrderAddress(
+  supabase: SupabaseClient,
+  member: StoreMember,
+  address: string,
+  recipient?: { name: string; phone: string },
+) {
+  const text = address.trim();
+  if (!text) return;
+  const { count } = await supabase
+    .from("store_member_addresses")
+    .select("id", { count: "exact", head: true })
+    .eq("member_id", member.id);
+  if (count) return;
+  await supabase
+    .from("store_member_addresses")
+    .insert({
+      member_id: member.id,
+      tenant_id: member.tenant_id,
+      title: "Ev",
+      address: text,
+      is_default: true,
+      // Siparişte başka birinin adı/telefonu yazıldıysa adres o kişiye kaydedilir.
+      recipient_name: recipient?.name.trim() && recipient.name.trim() !== member.full_name ? recipient.name.trim() : null,
+      recipient_phone:
+        recipient?.phone && normalizeCustomerPhone(recipient.phone) !== member.phone ? normalizeCustomerPhone(recipient.phone) : null,
+    });
+  await supabase.from("store_members").update({ address: text }).eq("id", member.id);
 }

@@ -1,5 +1,5 @@
 // Market/tekel Hesabım alt sayfaları (17 Eki 2026): siparişler, bilgilerim,
-// adres, şifre. Giriş yoksa /giris'e (dönüşte aynı sayfaya) yönlenir.
+// adres, şifre, bildirimler. Giriş yoksa /giris'e (dönüşte aynı sayfaya) yönlenir.
 export const dynamic = "force-dynamic";
 
 import type { Metadata } from "next";
@@ -7,6 +7,7 @@ import { notFound, redirect } from "next/navigation";
 import {
   MemberAddressPage,
   MemberInfoPage,
+  MemberNotificationsPage,
   MemberOrdersPage,
   MemberPasswordPage,
 } from "@/components/storefront/member-pages";
@@ -17,6 +18,7 @@ const SECTIONS = {
   bilgilerim: { title: "Bilgilerim", Component: MemberInfoPage },
   adres: { title: "Adresim", Component: MemberAddressPage },
   sifre: { title: "Şifre değiştir", Component: MemberPasswordPage },
+  bildirimler: { title: "Bildirimler", Component: MemberNotificationsPage },
 } as const;
 
 type Props = { params: Promise<{ subdomain: string; bolum: string }> };
@@ -40,7 +42,14 @@ export default async function MemberSectionPage(props: Props) {
 
   return (
     <MemberPageProviders page={page} subdomain={subdomain}>
-      <Component subdomain={subdomain} tenantId={page.tenant.id} isTekel={Boolean(page.tenant.is_tekel)} member={page.member} />
+      <Component
+        subdomain={subdomain}
+        tenantId={page.tenant.id}
+        isTekel={Boolean(page.tenant.is_tekel)}
+        member={page.member}
+        storeName={page.storeName}
+        vapidPublicKey={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? ""}
+      />
     </MemberPageProviders>
   );
 }

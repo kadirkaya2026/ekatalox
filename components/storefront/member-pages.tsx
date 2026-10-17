@@ -12,17 +12,27 @@ import {
   ChevronRight,
   Gift,
   Globe,
+  CircleHelp,
   KeyRound,
   LogOut,
+  Mail,
   MapPin,
   MessageCircle,
   PackageCheck,
   Pencil,
+  Phone,
+  Plus,
   UserRound,
 } from "lucide-react";
+import { AddressForm, useMemberAddresses, type MemberAddress } from "@/components/storefront/market-checkout";
+import { PushInviteCard } from "@/components/storefront/push-invite-view";
 import { MemberAuthForm, type StoreMemberProfile } from "@/components/storefront/member-auth";
 import { OrderSections, type OrderRow } from "@/components/storefront/my-orders-view";
-import { StorefrontBottomNav } from "@/components/storefront/storefront-bottom-nav";
+import {
+  NavigationProgressBar,
+  StorefrontBottomNav,
+  useLinkNavigationProgress,
+} from "@/components/storefront/storefront-bottom-nav";
 import { StorefrontLanguageSwitcher } from "@/components/storefront/storefront-language-switcher";
 import { useUnseenOrderUpdates } from "@/components/storefront/order-tracking-badge";
 import { useStorefrontTheme } from "@/lib/storefront/theme-context";
@@ -47,6 +57,7 @@ type BaseProps = Omit<ShellProps, "title" | "backHref" | "children" | "accountAc
 const LOCALE_NAMES: Record<string, string> = { tr: "Türkçe", de: "Deutsch", en: "English", ru: "Русский" };
 
 function goBack(fallback: string) {
+  window.dispatchEvent(new Event("ekx-nav-start"));
   const sameOrigin = document.referrer.startsWith(window.location.origin);
   if (sameOrigin && window.history.length > 1) window.history.back();
   else window.location.href = fallback;
@@ -76,9 +87,11 @@ export function MemberShell({ subdomain, tenantId, isTekel, title, backHref, acc
   const { t } = useStorefrontLocale();
   const cartCount = useStoredCartCount(tenantId);
   const updates = useUnseenOrderUpdates(subdomain);
+  const navigating = useLinkNavigationProgress();
 
   return (
     <div data-storefront className={cn(theme.page, "flex min-h-svh flex-col")}>
+      {navigating ? <NavigationProgressBar /> : null}
       <header className="sticky top-0 z-30 bg-orange-600 text-white shadow-sm">
         <div className="mx-auto grid h-14 max-w-xl grid-cols-[3rem_1fr_3rem] items-center px-2">
           <button
@@ -155,6 +168,9 @@ export function MemberLoginPage(props: AuthPageProps) {
         </a>
       </Card>
       <GuestLink />
+      <a href="/yardim" className={cn("mt-3 block text-center text-sm font-semibold underline-offset-2 hover:underline", theme.textMuted)}>
+        {t("member.help")}
+      </a>
     </MemberShell>
   );
 }
@@ -209,7 +225,7 @@ function MenuRow({
       {danger ? null : <ChevronRight className="size-5 text-orange-600" />}
     </>
   );
-  const cls = "flex w-full items-center gap-3 px-4 py-4 text-left transition hover:opacity-80";
+  const cls = "flex w-full touch-manipulation items-center gap-3 px-4 py-4 text-left transition hover:opacity-80 active:bg-orange-50";
   return href ? (
     <a href={href} className={cls}>
       {inner}
@@ -221,7 +237,7 @@ function MenuRow({
   );
 }
 
-type MemberProps = BaseProps & { member: StoreMemberProfile };
+type MemberProps = BaseProps & { member: StoreMemberProfile; storeName?: string; vapidPublicKey?: string };
 
 export function MemberProfilePage(props: MemberProps & { whatsapp: string | null }) {
   const theme = useStorefrontTheme();
@@ -270,7 +286,7 @@ export function MemberProfilePage(props: MemberProps & { whatsapp: string | null
             target={tile.external ? "_blank" : undefined}
             rel={tile.external ? "noreferrer" : undefined}
             className={cn(
-              "flex flex-col items-center gap-2 rounded-2xl border px-2 py-4 text-center shadow-sm transition hover:opacity-90",
+              "flex touch-manipulation flex-col items-center gap-2 rounded-2xl border px-2 py-4 text-center shadow-sm transition hover:opacity-90 active:scale-95",
               theme.border,
               theme.surface,
             )}
@@ -292,7 +308,8 @@ export function MemberProfilePage(props: MemberProps & { whatsapp: string | null
         <MenuRow href="/hesabim/adres" icon={<MapPin className="size-5" />} label={t("member.myAddress")} />
         <MenuRow href="/hesabim/bilgilerim" icon={<UserRound className="size-5" />} label={t("member.myInfo")} />
         <MenuRow href="/hesabim/sifre" icon={<KeyRound className="size-5" />} label={t("member.changePassword")} />
-        <MenuRow href="/bildirim" icon={<Bell className="size-5" />} label={t("member.notifications")} />
+        <MenuRow href="/hesabim/bildirimler" icon={<Bell className="size-5" />} label={t("member.notifications")} />
+        <MenuRow href="/yardim" icon={<CircleHelp className="size-5" />} label={t("member.help")} />
         <div className="flex items-center gap-3 px-4 py-3">
           <span className="flex size-6 items-center justify-center text-orange-600">
             <Globe className="size-5" />
@@ -353,7 +370,14 @@ export function MemberOrdersPage(props: MemberProps) {
   );
 }
 
-type MemberPatch = Partial<{ full_name: string; address: string; email: string | null; current_password: string; new_password: string }>;
+type MemberPatch = Partial<{
+  full_name: string;
+  address: string;
+  email: string | null;
+  email_notifications: boolean;
+  current_password: string;
+  new_password: string;
+}>;
 
 function useMemberSave(subdomain: string, member: StoreMemberProfile) {
   const { t } = useStorefrontLocale();
@@ -455,24 +479,109 @@ export function MemberInfoPage(props: MemberProps) {
 }
 
 export function MemberAddressPage(props: MemberProps) {
+  const theme = useStorefrontTheme();
   const { t } = useStorefrontLocale();
-  const field = useFieldClass();
-  const [address, setAddress] = useState(props.member.address);
-  const { pending, msg, save } = useMemberSave(props.subdomain, props.member);
+  const { addresses, setAddresses } = useMemberAddresses(props.subdomain, true);
+  const [editing, setEditing] = useState<MemberAddress | "new" | null>(null);
+  const [pendingId, setPendingId] = useState<string | null>(null);
+
+  const mutate = async (method: "PATCH" | "DELETE", id: string) => {
+    setPendingId(id);
+    try {
+      const url =
+        method === "DELETE"
+          ? `/api/storefront/member/addresses?subdomain=${encodeURIComponent(props.subdomain)}&id=${encodeURIComponent(id)}`
+          : "/api/storefront/member/addresses";
+      const r = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: method === "PATCH" ? JSON.stringify({ subdomain: props.subdomain, id, make_default: true }) : undefined,
+      });
+      const d = (await r.json().catch(() => null)) as { addresses?: MemberAddress[] } | null;
+      if (d?.addresses) setAddresses(d.addresses);
+    } finally {
+      setPendingId(null);
+    }
+  };
+
   return (
     <MemberShell {...props} title={t("member.myAddress")} backHref="/hesabim">
-      <FormCard
-        pending={pending}
-        msg={msg}
-        onSubmit={(e) => {
-          e.preventDefault();
-          void save({ address });
-        }}
-      >
-        <Field label={t("member.address")}>
-          <textarea rows={4} className={cn(field, "resize-none")} value={address} onChange={(e) => setAddress(e.target.value)} autoComplete="street-address" />
-        </Field>
-      </FormCard>
+      {addresses === null ? (
+        <p className={cn("py-10 text-center text-sm", theme.textMuted)}>{t("orders.loading")}</p>
+      ) : (
+        <div className="space-y-3">
+          {addresses.map((a) =>
+            editing !== "new" && editing?.id === a.id ? (
+              <AddressForm
+                key={a.id}
+                subdomain={props.subdomain}
+                initial={a}
+                onSaved={(list) => {
+                  setAddresses(list);
+                  setEditing(null);
+                }}
+                onCancel={() => setEditing(null)}
+              />
+            ) : (
+              <Card key={a.id} className="p-4">
+                <div className="flex items-start gap-3">
+                  <MapPin className="mt-0.5 size-5 shrink-0 text-orange-600" />
+                  <div className="min-w-0 flex-1">
+                    <p className={cn("text-[15px] font-semibold", theme.text)}>
+                      {a.title}
+                      {a.is_default ? (
+                        <span className="ml-2 rounded-full bg-orange-50 px-2 py-0.5 text-[11px] font-semibold text-orange-700">
+                          {t("checkout.address.primary")}
+                        </span>
+                      ) : null}
+                    </p>
+                    {a.recipient_name || a.recipient_phone ? (
+                      <p className={cn("mt-0.5 text-sm font-medium", theme.text)}>
+                        {[a.recipient_name, a.recipient_phone].filter(Boolean).join(" · ")}
+                      </p>
+                    ) : null}
+                    <p className={cn("mt-0.5 text-sm", theme.textMuted)}>{a.address}</p>
+                  </div>
+                </div>
+                <div className="mt-3 flex flex-wrap gap-2 pl-8">
+                  <button type="button" onClick={() => setEditing(a)} className="text-sm font-semibold text-orange-600">
+                    {t("member.edit")}
+                  </button>
+                  {a.is_default ? null : (
+                    <button type="button" disabled={pendingId === a.id} onClick={() => void mutate("PATCH", a.id)} className={cn("text-sm font-semibold", theme.text)}>
+                      · {t("member.makePrimary")}
+                    </button>
+                  )}
+                  <button type="button" disabled={pendingId === a.id} onClick={() => void mutate("DELETE", a.id)} className="text-sm font-semibold text-rose-600">
+                    · {t("member.delete")}
+                  </button>
+                </div>
+              </Card>
+            ),
+          )}
+          {editing === "new" ? (
+            <AddressForm
+              subdomain={props.subdomain}
+              onSaved={(list) => {
+                setAddresses(list);
+                setEditing(null);
+              }}
+              onCancel={() => setEditing(null)}
+            />
+          ) : (
+            <button
+              type="button"
+              onClick={() => setEditing("new")}
+              className={cn("flex w-full items-center gap-3 rounded-2xl border px-4 py-4 text-left shadow-sm", theme.border, theme.surface)}
+            >
+              <span className="flex size-10 items-center justify-center rounded-xl bg-orange-50 text-orange-600">
+                <Plus className="size-5" />
+              </span>
+              <span className={cn("text-[15px] font-semibold", theme.text)}>{t("checkout.address.add")}</span>
+            </button>
+          )}
+        </div>
+      )}
     </MemberShell>
   );
 }
@@ -505,6 +614,166 @@ export function MemberPasswordPage(props: MemberProps) {
           <input type="password" className={field} value={next} onChange={(e) => setNext(e.target.value)} autoComplete="new-password" minLength={6} required />
         </Field>
       </FormCard>
+    </MemberShell>
+  );
+}
+
+// Hesabım > Bildirimler (17 Eki 2026): telefonda bildirim (iPhone'da Ana Ekrana
+// Ekle adımlarıyla) ve e-posta bildirimi. Telefonda bildirim yoksa sipariş
+// durumu e-postaya mağazanın adıyla gider (lib/orders/order-status-email.ts).
+export function MemberNotificationsPage(props: MemberProps) {
+  const theme = useStorefrontTheme();
+  const { t } = useStorefrontLocale();
+  const field = useFieldClass();
+  const [email, setEmail] = useState(props.member.email ?? "");
+  const [enabled, setEnabled] = useState(Boolean(props.member.email_notifications));
+  const { pending, msg, save } = useMemberSave(props.subdomain, props.member);
+  return (
+    <MemberShell {...props} title={t("member.notifications")} backHref="/hesabim">
+      <p className={cn("mb-2 px-1 text-[15px] font-semibold", theme.text)}>{t("member.pushTitle")}</p>
+      <PushInviteCard
+        subdomain={props.subdomain}
+        tenantName={props.storeName ?? ""}
+        vapidPublicKey={props.vapidPublicKey ?? ""}
+        token={null}
+        invite={{ name: props.member.full_name, phone: props.member.phone, subscribed: false }}
+      />
+      <p className={cn("mb-2 mt-6 px-1 text-[15px] font-semibold", theme.text)}>{t("member.emailNotifTitle")}</p>
+      <FormCard
+        pending={pending}
+        msg={msg}
+        onSubmit={(e) => {
+          e.preventDefault();
+          void save({ email: email || null, email_notifications: enabled && Boolean(email) });
+        }}
+      >
+        <p className={cn("text-sm leading-6", theme.textMuted)}>{t("member.emailNotifHint")}</p>
+        <Field label={t("member.email")}>
+          <input type="email" className={field} value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" placeholder="ornek@mail.com" />
+        </Field>
+        <button type="button" onClick={() => setEnabled((v) => !v)} className="flex w-full items-center justify-between gap-3 text-left">
+          <span className={cn("text-[15px] font-medium", theme.text)}>{t("member.emailNotifToggle")}</span>
+          <span className={cn("relative h-7 w-12 shrink-0 rounded-full transition", enabled ? "bg-orange-600" : "bg-slate-300")}>
+            <span className={cn("absolute top-0.5 size-6 rounded-full bg-white shadow transition", enabled ? "left-[1.375rem]" : "left-0.5")} />
+          </span>
+        </button>
+      </FormCard>
+    </MemberShell>
+  );
+}
+
+export type HelpSupport = {
+  phone: string | null;
+  whatsapp: string | null;
+  email: string | null;
+  address: string | null;
+  note: string;
+};
+
+// Hesabım > Yardım (17 Eki 2026, Getir örneği): açılır "Müşteri Hizmetleri" ve
+// mağazanın sayfaları (Hakkımızda, SSS, sözleşmeler). Giriş gerektirmez.
+export function MemberHelpPage(
+  props: BaseProps & { storeName: string; support: HelpSupport; links: Array<{ href: string; label: string }> },
+) {
+  const theme = useStorefrontTheme();
+  const { t } = useStorefrontLocale();
+  const [open, setOpen] = useState(true);
+  const { support } = props;
+  const rows = [
+    support.phone ? { icon: <Phone className="size-4" />, label: support.phone, href: `tel:${support.phone.replace(/\s/g, "")}` } : null,
+    support.whatsapp ? { icon: <MessageCircle className="size-4" />, label: t("member.whatsappWrite"), href: `https://wa.me/${support.whatsapp}` } : null,
+    support.email ? { icon: <Mail className="size-4" />, label: support.email, href: `mailto:${support.email}` } : null,
+    support.address ? { icon: <MapPin className="size-4" />, label: support.address, href: null } : null,
+  ].filter(Boolean) as Array<{ icon: ReactNode; label: string; href: string | null }>;
+
+  return (
+    <MemberShell {...props} title={t("member.help")} backHref="/hesabim">
+      <Card className="overflow-hidden">
+        <button type="button" onClick={() => setOpen((v) => !v)} className="flex w-full items-center gap-3 px-4 py-4 text-left">
+          <Phone className="size-5 shrink-0 text-orange-600" />
+          <span className="flex-1 text-[15px] font-semibold text-orange-700">
+            {props.storeName} {t("member.customerService")}
+          </span>
+          <span className="flex size-8 items-center justify-center rounded-full bg-orange-50 text-orange-600">
+            <ChevronRight className={cn("size-5 transition", open ? "-rotate-90" : "rotate-90")} />
+          </span>
+        </button>
+        {open ? (
+          <div className={cn("space-y-1 border-t px-4 py-3", theme.border)}>
+            {rows.length === 0 && !support.note ? <p className={cn("text-sm", theme.textMuted)}>{t("member.noContact")}</p> : null}
+            {rows.map((row) =>
+              row.href ? (
+                <a
+                  key={row.label}
+                  href={row.href}
+                  target={row.href.startsWith("http") ? "_blank" : undefined}
+                  rel={row.href.startsWith("http") ? "noreferrer" : undefined}
+                  className={cn("flex items-center gap-3 rounded-lg py-2 text-sm font-medium", theme.text)}
+                >
+                  <span className="text-orange-600">{row.icon}</span>
+                  {row.label}
+                </a>
+              ) : (
+                <p key={row.label} className={cn("flex items-start gap-3 py-2 text-sm", theme.text)}>
+                  <span className="mt-0.5 text-orange-600">{row.icon}</span>
+                  {row.label}
+                </p>
+              ),
+            )}
+            {support.note ? <p className={cn("whitespace-pre-line pt-1 text-sm leading-6", theme.textMuted)}>{support.note}</p> : null}
+          </div>
+        ) : null}
+      </Card>
+
+      {props.links.length ? (
+        <Card className={cn("mt-3 divide-y overflow-hidden", theme.border)}>
+          {props.links.map((link) => (
+            <a
+              key={link.href}
+              href={link.href}
+              className={cn("flex touch-manipulation items-center gap-3 px-4 py-4 text-[15px] active:bg-orange-50", theme.text, theme.border)}
+            >
+              <span className="flex-1">{link.label}</span>
+              <ChevronRight className={cn("size-5", theme.textMuted)} />
+            </a>
+          ))}
+        </Card>
+      ) : null}
+    </MemberShell>
+  );
+}
+
+export function MemberHelpArticlePage(props: BaseProps & { title: string; body: string }) {
+  const theme = useStorefrontTheme();
+  return (
+    <MemberShell {...props} title={props.title} backHref="/yardim">
+      <Card className="p-5">
+        <p className={cn("whitespace-pre-line text-[15px] leading-7", theme.text)}>{props.body}</p>
+      </Card>
+    </MemberShell>
+  );
+}
+
+export function MemberHelpFaqPage(props: BaseProps & { title: string; items: Array<{ q: string; a: string }> }) {
+  const theme = useStorefrontTheme();
+  const [openIndex, setOpenIndex] = useState<number | null>(0);
+  return (
+    <MemberShell {...props} title={props.title} backHref="/yardim">
+      <Card className={cn("divide-y overflow-hidden", theme.border)}>
+        {props.items.map((item, index) => (
+          <div key={item.q} className={theme.border}>
+            <button
+              type="button"
+              onClick={() => setOpenIndex((current) => (current === index ? null : index))}
+              className="flex w-full items-center gap-3 px-4 py-4 text-left"
+            >
+              <span className={cn("flex-1 text-[15px] font-medium", theme.text)}>{item.q}</span>
+              <ChevronRight className={cn("size-5 shrink-0 text-orange-600 transition", openIndex === index ? "-rotate-90" : "rotate-90")} />
+            </button>
+            {openIndex === index ? <p className={cn("whitespace-pre-line px-4 pb-4 text-sm leading-6", theme.textMuted)}>{item.a}</p> : null}
+          </div>
+        ))}
+      </Card>
     </MemberShell>
   );
 }

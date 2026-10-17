@@ -26,7 +26,7 @@ function isIpad() {
   return /iPad/i.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
 }
 
-function PushInviteCard({
+export function PushInviteCard({
   subdomain,
   tenantName,
   vapidPublicKey,
