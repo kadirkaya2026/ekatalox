@@ -21,7 +21,7 @@ export const orderStatusPatchSchema = z
     /** Onaylarken alınan ödeme (isteğe bağlı, 0187): raporlama için. */
     payment: z
       .object({
-        method: z.enum(["cash", "card", "online"]),
+        method: z.enum(["cash", "card", "transfer", "online"]),
         amount: z.number().positive("Tutar sıfırdan büyük olmalı.").max(100_000_000),
       })
       .optional(),

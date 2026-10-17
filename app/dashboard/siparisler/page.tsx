@@ -23,8 +23,8 @@ export default async function TenantOrdersPage() {
   const { data: bizimhesap } = supabase
     ? await supabase.from("tenant_bizimhesap").select("is_enabled, send_on").eq("tenant_id", tenant.id).maybeSingle()
     : { data: null };
-  // Onay penceresindeki "Online" tahsilat seçeneği yalnız online ödeme açıksa (0187).
-  const onlinePaymentEnabled = resolvePaymentMethods(await getTenantStorefrontSettings(tenant.id)).online;
+  // Onay penceresindeki "Havale / EFT" ve "Online" tahsilat seçenekleri yalnız mağazada açıksa (0187).
+  const storefrontPaymentMethods = resolvePaymentMethods(await getTenantStorefrontSettings(tenant.id));
   const bizimhesapSendOn = bizimhesap?.is_enabled ? resolveBizimHesapPolicy(tenant.id, bizimhesap).sendOn : null;
 
   return (
@@ -47,7 +47,8 @@ export default async function TenantOrdersPage() {
         storefrontOrigin={getTenantStorefrontOrigin(tenant)}
         orderEditEnabled={Boolean(tenant.order_edit_enabled)}
         bizimhesapSendOn={bizimhesapSendOn}
-        onlinePaymentEnabled={onlinePaymentEnabled}
+        onlinePaymentEnabled={storefrontPaymentMethods.online}
+        transferPaymentEnabled={storefrontPaymentMethods.transfer}
       />
     </div>
   );

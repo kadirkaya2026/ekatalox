@@ -1,16 +1,17 @@
 "use client";
 
 import { useState } from "react";
-import { Banknote, CreditCard, Globe, X } from "lucide-react";
+import { Banknote, CreditCard, Globe, Landmark, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 
-export type OrderPaymentEntry = { method: "cash" | "card" | "online"; amount: number };
+export type OrderPaymentEntry = { method: "cash" | "card" | "transfer" | "online"; amount: number };
 
 const METHODS = [
   { key: "cash", label: "Nakit", icon: Banknote },
   { key: "card", label: "Kart", icon: CreditCard },
+  { key: "transfer", label: "Havale / EFT", icon: Landmark },
   { key: "online", label: "Online", icon: Globe },
 ] as const;
 
@@ -19,6 +20,7 @@ const METHODS = [
 export function OrderPaymentDialog({
   orderLabel,
   showOnline,
+  showTransfer,
   defaultAmount,
   currencySymbol,
   onClose,
@@ -27,6 +29,8 @@ export function OrderPaymentDialog({
   orderLabel: string;
   /** Mağazada online ödeme açıksa "Online" seçeneği de gösterilir. */
   showOnline: boolean;
+  /** Mağazada Havale / EFT açıksa "Havale / EFT" seçeneği de gösterilir. */
+  showTransfer: boolean;
   /** Sipariş toplamı; fiyatsız katalogda 0 (tutar elle girilir). */
   defaultAmount: number;
   currencySymbol: string;
@@ -36,6 +40,9 @@ export function OrderPaymentDialog({
   const [method, setMethod] = useState<OrderPaymentEntry["method"] | null>(null);
   const [amount, setAmount] = useState(defaultAmount > 0 ? String(defaultAmount) : "");
   const [error, setError] = useState<string | null>(null);
+  const visibleMethods = METHODS.filter(
+    (item) => (item.key !== "online" || showOnline) && (item.key !== "transfer" || showTransfer),
+  );
 
   function confirmWithPayment() {
     if (!method) {
@@ -73,8 +80,8 @@ export function OrderPaymentDialog({
           </button>
         </div>
 
-        <div className={cn("mt-4 grid gap-2", showOnline ? "grid-cols-3" : "grid-cols-2")}>
-          {METHODS.filter((item) => showOnline || item.key !== "online").map((item) => {
+        <div className="mt-4 grid grid-cols-2 gap-2">
+          {visibleMethods.map((item) => {
             const Icon = item.icon;
             const active = method === item.key;
             return (
