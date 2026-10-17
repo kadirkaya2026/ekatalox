@@ -1,7 +1,7 @@
 // Tek gönderim noktası. ASLA fırlatmaz: SMTP yoksa/patlarsa console.error ile
 // loglar ve false döner; kayıt/sipariş akışı e-posta yüzünden hiç bozulmaz.
 import { getEmailTransport, getSenderAddress, getStoreSenderAddress } from "@/lib/email/transport";
-import { SITE } from "@/lib/marketing/site";
+const PLATFORM_REPLY_TO = "info@ekatalox.com";
 
 export interface SendEmailParams {
   to: string | string[];
@@ -36,8 +36,9 @@ export async function sendEmail(params: SendEmailParams): Promise<boolean> {
       html: params.html,
       text: params.text,
       // bildirim@ adresi gelen kutusu değil: yanıt adresi yoksa platform
-      // e-postaları info@ekatalox.com'a yanıtlanır (mağaza e-postaları mağazaya).
-      ...(params.replyTo ? { replyTo: params.replyTo } : params.store ? {} : { replyTo: SITE.supportEmail }),
+      // e-postaları info@ekatalox.com'a yanıtlanır (Cloudflare → Gmail yönlendirmesi
+      // olan adres); mağaza e-postaları mağazanın adresine.
+      ...(params.replyTo ? { replyTo: params.replyTo } : params.store ? {} : { replyTo: PLATFORM_REPLY_TO }),
     });
     return true;
   } catch (error) {
