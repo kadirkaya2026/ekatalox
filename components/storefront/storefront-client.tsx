@@ -62,7 +62,12 @@ import {
   updateCartLineQuantity,
 } from "@/lib/storefront/cart";
 import { getCheckoutPaymentMethods, type CheckoutPaymentMethod } from "@/lib/storefront/payment-methods";
-import { extractOrderToken, saveOnlinePaymentWhatsAppHref } from "@/lib/storefront/online-payment-handoff";
+import {
+  extractOrderToken,
+  saveOnlinePaymentFrame,
+  saveOnlinePaymentWhatsAppHref,
+} from "@/lib/storefront/online-payment-handoff";
+import { isValidTcKimlik } from "@/lib/payments/identity";
 import { resolveCartFormConfig } from "@/lib/storefront/cart-form-config";
 import { useResolvedStorefrontTheme } from "@/lib/storefront/use-resolved-storefront-theme";
 import { StorefrontThemeProvider, useStorefrontTheme, withProductModelNo } from "@/lib/storefront/theme-context";
@@ -1348,7 +1353,7 @@ export function StorefrontClient({
   // Ayar yoksa tür bazlı eski davranış (market: telefon+adres zorunlu).
   // Kişiye özel bayi şifresiyle girende (0138) ad/telefon/adres sorulmaz —
   // bayi alanları görünür/zorunlu işaretlese bile; fişe sunucu yazar.
-  const cartFormConfig = useMemo(() => {
+  const baseCartFormConfig = useMemo(() => {
     const config = resolveCartFormConfig(storefrontSettings.cart_form_config, tenant.business_type);
     if (!dealerProfile) return config;
     const hidden = { is_visible: false, is_required: false };
@@ -1505,6 +1510,21 @@ export function StorefrontClient({
 
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<CheckoutPaymentMethod | null>(null);
   const [onlineConsent, setOnlineConsent] = useState(false);
+  const [onlineEmail, setOnlineEmail] = useState("");
+  const [onlineIdentityNumber, setOnlineIdentityNumber] = useState("");
+  // Online ödemede (0185) ad, telefon ve adres her mağazada zorunlu: ödeme
+  // kuruluşu ve mesafeli satış sözleşmesi alıcı bilgisini ister. Kişiye özel
+  // bayi şifresinde bu bilgiler zaten sunucuda (alanlar gizli kalır).
+  const cartFormConfig = useMemo(() => {
+    if (selectedPaymentMethod !== "online" || dealerProfile) return baseCartFormConfig;
+    const required = { is_visible: true, is_required: true };
+    return {
+      ...baseCartFormConfig,
+      customer_name: { ...baseCartFormConfig.customer_name, ...required },
+      customer_phone: { ...baseCartFormConfig.customer_phone, ...required },
+      customer_address: { ...baseCartFormConfig.customer_address, ...required },
+    };
+  }, [baseCartFormConfig, selectedPaymentMethod, dealerProfile]);
   const [selectedInstallmentCount, setSelectedInstallmentCount] = useState<number | null>(null);
   const [paymentMethodError, setPaymentMethodError] = useState<string | null>(null);
   const [isGeneratingOrderPdf, setIsGeneratingOrderPdf] = useState(false);
@@ -3090,9 +3110,17 @@ export function StorefrontClient({
         hasValidationError = true;
       }
       // Online ödeme (0185): sözleşmeler onaylanmadan sipariş açılmaz.
-      if (selectedPaymentMethod === "online" && !onlineConsent) {
-        setPaymentMethodError(t("cart.onlineConsentRequired"));
-        hasValidationError = true;
+      if (selectedPaymentMethod === "online") {
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(onlineEmail.trim())) {
+          setPaymentMethodError(t("cart.onlineEmailError"));
+          hasValidationError = true;
+        } else if (!isValidTcKimlik(onlineIdentityNumber)) {
+          setPaymentMethodError(t("cart.onlineIdentityError"));
+          hasValidationError = true;
+        } else if (!onlineConsent) {
+          setPaymentMethodError(t("cart.onlineConsentRequired"));
+          hasValidationError = true;
+        }
       }
 
       // Alan zorunlulukları bayinin sepet ayarından gelir (cartFormConfig);
@@ -3265,13 +3293,41 @@ export function StorefrontClient({
       trackingUrl,
     });
 
-    // Online ödeme (0185): sipariş kaydedildi, müşteri ödeme sayfasına geçer.
-    // WhatsApp mesajı ödeme sonrası "mağazaya bildir" düğmesi için saklanır.
+    // Online ödeme (0185): sipariş kaydedildi; ödeme hemen başlatılır ve
+    // müşteri doğrudan ödeme kuruluşunun kart ekranına geçer (PayTR'de bizim
+    // ödeme sayfamızdaki çerçeveye). Başlatılamazsa ödeme sayfası açılır,
+    // müşteri oradan yeniden dener. WhatsApp mesajı ödeme sonrası "mağazaya
+    // bildir" düğmesi için saklanır.
     // Sepet burada BOŞALTILMAZ: boşalınca çekmece kapanır, katman geçmişi
     // history.back() çağırır ve bu yönlendirmeyi iptal ederdi (17 Eki vakası).
     if (paymentUrl) {
       const paymentToken = extractOrderToken(paymentUrl);
-      if (paymentToken) saveOnlinePaymentWhatsAppHref(paymentToken, handoff.href);
+      if (paymentToken) {
+        saveOnlinePaymentWhatsAppHref(paymentToken, handoff.href);
+        setIsGeneratingOrderPdf(true);
+        try {
+          const response = await fetch("/api/storefront/payments/start", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              subdomain: analyticsSubdomain,
+              token: paymentToken,
+              email: onlineEmail.trim(),
+              identity_number: onlineIdentityNumber,
+            }),
+          });
+          const started = (await response.json().catch(() => ({}))) as { mode?: string; url?: string };
+          if (response.ok && started.url && started.mode === "redirect") {
+            window.location.assign(started.url);
+            return;
+          }
+          if (response.ok && started.url && started.mode === "iframe") {
+            saveOnlinePaymentFrame(paymentToken, started.url);
+          }
+        } catch {
+          // ödeme sayfasında yeniden denenir
+        }
+      }
       window.location.assign(paymentUrl);
       return;
     }
@@ -3288,6 +3344,8 @@ export function StorefrontClient({
     selectedInstallmentCount,
     selectedPaymentMethod,
     onlineConsent,
+    onlineEmail,
+    onlineIdentityNumber,
     storefrontSettings.card_campaign_tiers,
     storefrontSettings.card_installment_options,
     storefrontSettings.cash_discount_tiers,
@@ -5592,6 +5650,10 @@ export function StorefrontClient({
         setPaymentMethodError={setPaymentMethodError}
         onlineConsent={onlineConsent}
         setOnlineConsent={setOnlineConsent}
+        onlineEmail={onlineEmail}
+        setOnlineEmail={setOnlineEmail}
+        onlineIdentityNumber={onlineIdentityNumber}
+        setOnlineIdentityNumber={setOnlineIdentityNumber}
         storefrontSettings={storefrontSettings}
         note={note}
         setNote={setNote}

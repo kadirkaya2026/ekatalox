@@ -88,6 +88,10 @@ export type StorefrontCartDrawerProps = {
   /** Online ödemede ön bilgilendirme + mesafeli satış onayı (0185). */
   onlineConsent: boolean;
   setOnlineConsent: Dispatch<SetStateAction<boolean>>;
+  onlineEmail: string;
+  setOnlineEmail: Dispatch<SetStateAction<string>>;
+  onlineIdentityNumber: string;
+  setOnlineIdentityNumber: Dispatch<SetStateAction<string>>;
   storefrontSettings: TenantStorefrontSettings;
   note: string;
   setNote: Dispatch<SetStateAction<string>>;
@@ -201,6 +205,10 @@ export function StorefrontCartDrawer({
   setPaymentMethodError,
   onlineConsent,
   setOnlineConsent,
+  onlineEmail,
+  setOnlineEmail,
+  onlineIdentityNumber,
+  setOnlineIdentityNumber,
   storefrontSettings,
   note,
   setNote,
@@ -1129,6 +1137,30 @@ cartFormConfig.customer_address.is_visible ? (
         {selectedPaymentMethod === "online" ? (
           <div className={cn("mt-3 rounded-xl p-3 text-sm", theme.surfaceMuted)}>
             <p className={cn("text-xs", theme.textMuted)}>{t("cart.onlineHint")}</p>
+            <div className="mt-3 grid gap-2">
+              <Input
+                type="email"
+                autoComplete="email"
+                value={onlineEmail}
+                onChange={(event) => {
+                  setOnlineEmail(event.target.value);
+                  setPaymentMethodError(null);
+                }}
+                placeholder={t("cart.onlineEmailPlaceholder")}
+                className={cn("rounded-[1.1rem] text-[16px]", theme.formField, theme.text)}
+              />
+              <Input
+                inputMode="numeric"
+                autoComplete="off"
+                value={onlineIdentityNumber}
+                onChange={(event) => {
+                  setOnlineIdentityNumber(event.target.value.replace(/\D/g, "").slice(0, 11));
+                  setPaymentMethodError(null);
+                }}
+                placeholder={t("cart.onlineIdentityPlaceholder")}
+                className={cn("rounded-[1.1rem] text-[16px] tracking-wider", theme.formField, theme.text)}
+              />
+            </div>
             <label className={cn("mt-3 flex cursor-pointer items-start gap-2.5 text-[13px] leading-5", theme.text)}>
               <input
                 type="checkbox"

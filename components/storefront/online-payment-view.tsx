@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { CheckCircle2, CreditCard, Loader2, Lock, MessageCircle, XCircle } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
-import { readOnlinePaymentWhatsAppHref } from "@/lib/storefront/online-payment-handoff";
+import { readOnlinePaymentWhatsAppHref, takeOnlinePaymentFrame } from "@/lib/storefront/online-payment-handoff";
 import { isValidTcKimlik } from "@/lib/payments/identity";
 
 type PaymentStatus = "awaiting" | "paid" | "failed";
@@ -41,7 +41,12 @@ export function OnlinePaymentView({ subdomain, token, storeName, returnedFromPro
     // Sepette hazırlanan WhatsApp mesajı (bkz. storefront-client); aynı cihazda varsa.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setWhatsappHref(readOnlinePaymentWhatsAppHref(token));
-  }, [token]);
+    // Sepetten başlatılmış PayTR ödemesi: çerçeve doğrudan açılır.
+    if (order.paymentStatus !== "paid") {
+      const frame = takeOnlinePaymentFrame(token);
+      if (frame) setIframeUrl(frame);
+    }
+  }, [token, order.paymentStatus]);
 
   const poll = useCallback(async () => {
     const response = await fetch(`/api/storefront/payments/status?token=${token}`, { cache: "no-store" }).catch(

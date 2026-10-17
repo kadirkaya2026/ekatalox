@@ -24,3 +24,22 @@ export function extractOrderToken(url: string | null | undefined) {
   const match = url?.match(/\/(?:siparis|odeme)\/([0-9a-f-]{36})/i);
   return match?.[1] ?? null;
 }
+
+/** Sepetten başlatılan PayTR çerçevesi: ödeme sayfası açılınca doğrudan gösterir. */
+export function saveOnlinePaymentFrame(token: string, url: string) {
+  try {
+    window.sessionStorage.setItem(`ek-online-frame:${token}`, url);
+  } catch {
+    // depolama yoksa ödeme sayfası formu gösterir, müşteri oradan başlatır
+  }
+}
+
+export function takeOnlinePaymentFrame(token: string) {
+  try {
+    const value = window.sessionStorage.getItem(`ek-online-frame:${token}`);
+    window.sessionStorage.removeItem(`ek-online-frame:${token}`);
+    return value;
+  } catch {
+    return null;
+  }
+}

@@ -382,6 +382,17 @@ export async function POST(request: Request) {
         { reason: "online_unavailable", tenantId: tenant.id, problems: onlineProblems },
       );
     }
+    if (
+      !dealerProfile &&
+      (!parsed.data.customer_reference_name.trim() ||
+        !parsed.data.customer_phone.trim() ||
+        !parsed.data.customer_address.trim())
+    ) {
+      return errorResponse(requestId, "Online ödeme için ad soyad, telefon ve adres zorunludur.", 400, {
+        reason: "online_contact_missing",
+        tenantId: tenant.id,
+      });
+    }
     if (!parsed.data.legal_consent) {
       return errorResponse(
         requestId,
